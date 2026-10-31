@@ -21,6 +21,12 @@ nets, and ports – the nets that connect to the rest of the circuit. `add` copi
     unconnected: a pin left alone on its net goes into its component's nc instead of a net of one pin
   - an accept keyed by "code place" names the block's designators; they are renamed with the parts
   - the graph file keeps its formatting (indent, UTF-8); nothing is written with --dry-run
+  - a TOML graph is written with a line editor (toml_edit) that keeps its comments and arrangement: a new
+    [components.<des>] table after the last component table, a new [nets.<name>] after the last net table, a pin on an
+    existing net at the end of its array, as the array is written (inline or over several lines), the block's accept
+    as keys of the table (accept."LIM.v J2" = "…"), the graph's grounds into its top-level array; the pin map is left
+    out where the parts entry gives it (parts_to_copy found them equal). What would not read back as the graph the
+    JSON path gives is not written
 
 The block's notes say what is left to decide (values, sim.json, the graph's checks). Afterwards: edakit check (its HINT
 notes among the findings), edakit sim – a block is a starting point that passed the checks once, not a sign-off.
@@ -28,11 +34,13 @@ notes among the findings), edakit sim – a block is a starting point that passe
 
 from __future__ import annotations
 
+import copy
 import json
 import re
 from pathlib import Path
 
-from .design import natural_key
+from . import toml_edit
+from .design import graph_of_toml, load_graph, natural_key
 
 LIBRARY = Path(__file__).with_name("blocks")
 
@@ -220,10 +228,89 @@ def write_json(path, data):
     path.write_text(json.dumps(data, indent=len(m.group(1)) if m else 1, ensure_ascii=False) + "\n", encoding="utf-8")
 
 
+def apply(graph, comps, new_nets, extended, attrs, grounds):
+    """The block into the graph in memory: its grounds, its components, its pins on existing nets and the attributes
+    those lack, its new nets."""
+    if grounds:
+        graph["grounds"] = list(dict.fromkeys(list(graph.get("grounds") or []) + grounds))
+    graph["components"] += comps
+    for net in graph["nets"]:
+        net["pins"] += extended.get(net["name"], [])
+        for key, value in attrs.get(net["name"], {}).items():
+            net.setdefault(key, value)
+    graph["nets"] += new_nets
+
+
+# the order of the keys in a table of the TOML form (the writer of the circuit-language sketch); others follow
+ORDER = ("type", "label", "part", "lcsc", "value", "bom", "board", "supplier", "spare", "v", "pins", "nc", "accept",
+         "verify", "notes")
+
+
+def toml_lines(obj, skip=()):
+    """The lines of a component's or net's table: its keys in ORDER, accept as keys of the table."""
+    out = []
+    for k in sorted((k for k in obj if k not in skip), key=lambda k: ORDER.index(k) if k in ORDER else len(ORDER)):
+        if k == "accept" and isinstance(obj[k], dict) and obj[k]:
+            out += [toml_edit.line(code, reason, "accept.") for code, reason in obj[k].items()]
+        else:
+            out.append(toml_edit.line(k, obj[k]))
+    return out
+
+
+def toml_form(comps):
+    """The block's components as a TOML graph holds them: the pin map left out where the component has an LCSC
+    number – parts_to_copy found it equal to the parts entry's, and the Design takes the entry's (circuit-language.md,
+    decision 3)."""
+    return [{k: v for k, v in c.items() if not (k == "pins" and c.get("lcsc"))} for c in comps]
+
+
+def write_toml(cfg, graph, comps, new_nets, extended, attrs, grounds):
+    """The block into a TOML graph with the line editor: comments and arrangement stay. Written only when the text
+    reads back as the graph with the block in it (apply) – else BlockError, and the file stays as it was."""
+    from .config import ConfigError
+    path, where = Path(cfg.graph), cfg.relative(cfg.graph)
+    nets = {n["name"]: n for n in graph["nets"]}
+    try:
+        doc = toml_edit.Doc(path.read_text(encoding="utf-8"))
+        more = [g for g in grounds if g not in (graph.get("grounds") or [])]
+        if more and not doc.append((), "grounds", more):
+            doc.add_keys((), [toml_edit.line("grounds", more)])
+        for c in comps:
+            doc.add_table(("components", c["designator"]), toml_lines(c, ("designator",)), after="components",
+                          before="nets")
+        for name in dict.fromkeys([*extended, *attrs]):
+            if not doc.has_table(("nets", name)):
+                raise BlockError(f"{where}: net {name} is no table [nets.{toml_edit.key(name)}] – block add writes into "
+                                 "the tables of the TOML form (handbook 3.1); write the block's pins there by hand")
+            if extended.get(name) and not doc.append(("nets", name), "pins", extended[name]):
+                doc.add_keys(("nets", name), [toml_edit.line("pins", extended[name])])
+            if keys := {k: v for k, v in attrs.get(name, {}).items() if k not in nets[name]}:
+                doc.add_keys(("nets", name), toml_lines(keys))
+        for n in new_nets:
+            doc.add_table(("nets", n["name"]), toml_lines(n, ("name",)), after="nets", before="cables")
+    except toml_edit.TomlEditError as e:
+        raise BlockError(f"{where}: {e}") from None
+    expected = copy.deepcopy(graph)
+    apply(expected, copy.deepcopy(comps), copy.deepcopy(new_nets), extended, attrs, grounds)
+    try:
+        got = graph_of_toml(doc.text, where)
+    except ConfigError as e:
+        got = {"error": str(e)}
+    if got != expected:
+        off = sorted(k for k in set(got) | set(expected) if got.get(k) != expected.get(k))
+        raise BlockError(f"{where}: the block would not read back as written ({', '.join(off)} differ) – the file is "
+                         "left as it was; write the block by hand (--dry-run shows it)")
+    path.write_text(doc.text, encoding="utf-8")
+
+
 def add(cfg, name, instance, connect, board=None, file=None, dry_run=False, without=()):
     block = load(name, file)
-    data = json.loads(cfg.graph.read_text(encoding="utf-8"))
-    graph = data.get("graph", data)
+    toml = Path(cfg.graph).suffix == ".toml"
+    if toml:                                      # read as every reader does, written with the line editor
+        data = graph = load_graph(cfg.graph)
+    else:
+        data = json.loads(cfg.graph.read_text(encoding="utf-8"))
+        graph = data.get("graph", data)
     if board is None and len(cfg.boards) > 1:
         raise BlockError(f"several boards ({', '.join(cfg.boards)}): say which one with --board")
     if board is not None and board not in cfg.boards:
@@ -233,15 +320,11 @@ def add(cfg, name, instance, connect, board=None, file=None, dry_run=False, with
                                                            board if len(cfg.boards) > 1 else None, without)
     copy = parts_to_copy(lcsc, cfg.parts, comps)
     if not dry_run:
-        if grounds:
-            graph["grounds"] = list(dict.fromkeys(list(graph.get("grounds") or []) + grounds))
-        graph["components"] += comps
-        for net in graph["nets"]:
-            net["pins"] += extended.get(net["name"], [])
-            for key, value in attrs.get(net["name"], {}).items():
-                net.setdefault(key, value)
-        graph["nets"] += new_nets
-        write_json(cfg.graph, data)
+        if toml:
+            write_toml(cfg, graph, toml_form(comps), new_nets, extended, attrs, grounds)
+        else:
+            apply(graph, comps, new_nets, extended, attrs, grounds)
+            write_json(cfg.graph, data)
         from . import library as parts_library
         for n in copy:
             parts_library.copy_into(cfg.parts, n)

@@ -1,10 +1,96 @@
 # 3 The hardware graph
 
-The graph is a pin-level netlist in JSON. It is the **only** place where parts, values and connections are decided.
-Example: [the Christmas bell's graph](https://github.com/tgd1975/automatic_christmas_bell/blob/main/hardware/graph.json); the snippets below come from the
-[test project](../tests/fixtures/led-bar/hardware/graph.json).
+The graph is a pin-level netlist. It is the **only** place where parts, values and connections are decided. It is
+written as TOML, `hardware/graph.toml`, with pins by name or role and comments where a reader needs the reason, or as
+JSON, `hardware/graph.json` – the form every project had until October 2026, kept until the project converts;
+`[project] graph` in edakit.toml names the file (10.1), and both forms read to the same graph. Example: [the Christmas
+bell's graph](https://github.com/tgd1975/automatic_christmas_bell/blob/main/hardware/graph.json) (JSON); the snippets
+below come from the [test project](../tests/fixtures/led-bar/hardware/graph.json), in TOML as `edakit graph convert`
+writes it, shortened.
 
 ## 3.1 Format
+
+```toml
+# The hardware graph (handbook 3.1): components, nets and cables keyed by designator and name, pins by name
+# or role through the parts entries. edakit graph json writes the resolved graph beside it (graph.json).
+name = "led-bar"
+version = "1.0"
+date = "2026-10-25"
+description = """\
+  Example for edakit: a Raspberry Pi Pico 2 drives eight LEDs through a TLC5916 constant-current sink; 5 V input \
+  with reverse-polarity diode, one push button."""
+
+[purpose]
+use = "private"
+market = "EU"
+notes = "An example board for edakit, built for testing, not sold or given away."
+
+[components.J1]
+type = "connector"
+label = "5 V input (JST PH, top entry)"
+part = "B2B-PH-K-S(LF)(SN)"
+lcsc = "C131337"
+bom = false
+source = "reversible"
+
+[components.U2]
+type = "ic"
+label = "TLC5916 8-channel constant-current LED driver"
+part = "TLC5916IDR"
+lcsc = "C90107"
+nc = ["SDO"]
+notes = "I_OUT = 15 x 1.26 V / R1 = 9.45 mA per output."
+
+[components.R2]
+type = "resistor"
+label = "OE pull-up 10 k: LEDs off until the firmware runs"
+part = "0805W8F1002T5E"
+lcsc = "C17414"
+value = "10k"
+
+[nets."+5V"]
+pins = ["D1.cathode", "U1.VSYS", "C2.1", "D2.anode", "D3.anode", "D4.anode", "D5.anode", "D6.anode", "D7.anode",
+        "D8.anode", "D9.anode"]
+v = [0, 5.5]
+notes = "Behind D1: module VSYS and all LED anodes."
+
+[nets.GND]
+pins = ["J1.2", "U2.GND", "R1.2", "C1.2", "C2.2", "SW1.C", "U1.GND", "U1.AGND"]
+v = [0, 0]
+
+# GP2 and GP3 shift into the driver on SPI0 (the pins locked below)
+[nets.LED_CLK]
+pins = ["U1.GP2", "U2.CLK"]
+v = [0, 3.4]
+fn = "spi.sck"
+fn_bus = "LED"
+accept."LVL.undefined" = """\
+  Floating until the firmware runs, but harmless: R2 holds OE high, so no output can switch on."""
+
+[cables.W1]          # a cable to a second board: J2 there, J1 here
+from = "J2"
+to = "J1"
+pins = {1 = "1", 2 = "2"}
+r_ohm_per_wire = 0.065
+
+[locks.pins]
+"U1.GP2" = "LED_CLK"
+"U1.GP3" = "LED_SDI"
+```
+
+Components, nets and cables are tables keyed by designator and name – `[components.U2]`, `[nets."+5V"]`, the name in
+quotes where it has more than letters, digits, `_` and `-` –, read in the order of the file. Every other key is the
+JSON's, a map as a table of its own (`[purpose]`, `[layout]`, `[locks.pins]`), inline (`pins = {1 = "1", 2 = "2"}`) or
+as dotted keys (`accept."LVL.undefined" = "…"`). A component states no `pins`: its parts entry gives numbers and names,
+and a pin map is written only where the graph's differs (the `pins` row below). Nets, `nc`, locks, loop ends and
+cables name pins by name or role (below). `#` starts a comment – the reason a reader needs beside the wiring; a long
+text runs over several lines as `"""\`, where a line-ending backslash joins the next line with the blank before it. A
+key or table twice is an error with its line, TOML has no null, and a net is one table with all its pins: `[nets.GND]`
+once – an array of tables, `[[nets]]`, is refused. A graph without component or net tables has none yet (a new
+project's, 2.7).
+
+The same graph in JSON – a project that has not converted, and the `hardware/graph.json` edakit generates beside a
+TOML graph (below), there with pin numbers and every component's pin map:
 
 ```json
 {"graph": {
@@ -31,14 +117,16 @@ Example: [the Christmas bell's graph](https://github.com/tgd1975/automatic_chris
 }}
 ```
 
+The fields are the same in both forms; the table writes them as the JSON does (`bom: false` is `bom = false` in TOML):
+
 | Field | Meaning |
 |---|---|
-| `designator` | as on schematic, PCB and silkscreen |
+| `designator` | as on schematic, PCB and silkscreen; in TOML the key of the component's table |
 | `type` | rough class for the generated template layout and the schematic blocks: `microcontroller`, `module`, `ic`, `transistor`, `connector`, `regulator`, `diode`, `led`, `resistor`, `capacitor`, `inductor`, `button`, `switch`, `potentiometer`, `audio`, `testpoint`, `battery_holder`, `fuse` |
 | `lcsc` | the LCSC number – identifies symbol, footprint, parts entry and the BOM line |
 | `part` | the manufacturer part number; without `lcsc` it names the parts entry (its `mpn`) – a part bought elsewhere (chapter 4); with `lcsc` it must name the entry's `mpn` too (STRUCT.identity) |
-| `pins` | pin number → pin name, **with the pin numbers of the EasyEDA/LCSC symbol of exactly this part**. The names must equal the parts entry (STRUCT.entry). |
-| `nc` | pins deliberately unconnected; every pin is in exactly one net or in `nc` |
+| `pins` | pin number → pin name, **with the pin numbers of the EasyEDA/LCSC symbol of exactly this part**; optional – without it the component takes its parts entry's numbers and names. Where it is written, the names must equal the parts entry (STRUCT.entry). A part without an entry and without `pins` takes the numbers its nets and `nc` use, and STRUCT.entry reports the missing entry |
+| `nc` | pins deliberately unconnected, by number, name or role (below); every pin is in exactly one net or in `nc` |
 | `board` | which board the part is on (a key of `[boards]` in edakit.toml); may be omitted with one board. On a bought board (`bought = true`) or a hand-wired one (`wired = true`, 4.5) every part has `bom: false` (STRUCT.board) |
 | `value` | shown in the BOM ("10k", "100nF"); STRUCT.identity holds it to the entry's `value_ohm`, `value_f` or `value_h` |
 | `bom: false` | the part is placed on the PCB but not in the BOM for assembly (hand-soldered, bought separately); `edakit order` puts it into the cart of its supplier (8.4) |
@@ -68,18 +156,69 @@ Example: [the Christmas bell's graph](https://github.com/tgd1975/automatic_chris
 | `ground` | name of the ground net (default `GND`) – the checks, the simulation and the schematic's flags use it; STRUCT.ref checks that the net exists |
 | `grounds` | further nets that are ground on purpose, `["AGND"]` – an analog ground joined at one point, an isolated side: their `ground` pins pass PATH.unfed (default: none) |
 | `locks` | what the firmware relies on: `pins` (`{"U1.4": "LED_SDI"}` – pins on their nets, STRUCT.lock), `doc_pin_table` (`{component, file, prefix, regex}` – a pin table in the documentation, STRUCT.lock); part of the circuit hash, STRUCT.ref checks the names |
+| `conventions` | how the graph is written, for whoever reads it: `pin_reference`, `v`, `accept` in the example – free text no check reads (3.2) |
+
+**A pin by number, name or role.** Wherever the graph names a pin – the `pins` of a net, `nc`, `locks.pins`, the ends
+of `layout.loops`, the `pins` of a cable – it may write the symbol's pin number (`U1.9`), the pin's name (`U1.GP6`,
+the names of the pin map) or its role in the parts entry (`D2.anode`; the role of the config the part runs in, 4.1).
+edakit reads a word as the pin number first, then the name of one pin, then the role of one pin, then a name or role
+several pins share, which stands for all of them: `U1.GND` is every GND pin of the Pico, wherever they stand in the
+net, `SW1.a` both pins of a button's side. Where one pin is meant – a loop end, a cable's wire – a word that names
+several is STRUCT.pin, and so is a word that names no pin of its part, with the net or the place it stands in; the
+rest is checked all the same. The checks, the simulation, the schematic, the hand-over and the firmware contract read
+the numbers the words stand for. A finding names a pin by the same rule the other way: the first of its name and role
+that names only this pin – the name first on an IC or a module, whose names are the datasheet's, the role first
+elsewhere (`D2.anode (1)`, a symbol's name may mislead) –, with the number in brackets where the two differ; a name
+with a blank (the Pico's TP1, "GND (USB)"), a word that says no more than the number (`R4.1`, a connector's role
+`pin3`) and a name several pins share give the number. A name that misleads stays the symbol's – the Nano whose symbol
+labels pin 14 PB4 although D11 is PB3 on the chip is written `U1.PB4` with a note –; there is no alias per pin.
+
+**The JSON generated beside a TOML graph.** `edakit graph json` prints the resolved graph – `{"graph": …}` as a JSON
+graph has it, pin numbers wherever a pin is named, every component's pin map (its entry's where the graph has none),
+the lists in the order of the file. `edakit graph json --write` keeps it beside the TOML as `hardware/graph.json`,
+committed with it: a rewire through a parts entry – a role corrected, `D2.anode` now on pad 2 – changes no line of the
+TOML but shows in the generated file as pin numbers, in the diff the review M-1 reads. So two files change with every
+edit of the circuit, as with the firmware contract (3.5): the TOML, then `edakit graph json --write`; the pre-commit
+hook runs `edakit graph json --check`, which exits 2 with what differs, keyed by designator and net, when the committed
+file no longer matches (3.4). The generated file is derived and never edited – `--write` refuses to write over a JSON
+graph, which is the source itself: the circuit hash (8.2) and the scripts' data name `graph` (8.6) take the TOML, and
+project scripts and tools that read the graph as JSON read the generated file as before.
+
+**Moving a project to TOML.** `edakit graph convert` translates a JSON graph once; `--dry-run` prints the TOML and
+what would change. It writes `hardware/graph.toml` – components, nets and cables keyed in the order of the JSON, pins by
+the word rule above (a name several pins share, `U1.GND`, where all of them stand in the net), the pin maps left out
+where they equal the entries', long text over several lines, the convention `pin_reference` rewritten (3.2) –, sets
+`[project] graph` in edakit.toml with its comment kept, and writes the resolved `hardware/graph.json` in place of the
+source. A graph with null, a name twice or a pin that names none is refused with what to fix in the JSON (`edakit
+check` names them too), and nothing is written unless the TOML reads back to the same graph. It writes no comment but
+the two lines at the top: the reasons in `notes` stay there, and comments come by hand. The circuit hash changes once
+(8.2) –
+when the files were the signed ones, the sign-offs of scope `circuit` keep counting: the new hash goes into the
+sign-off file, both into `rehashed`. Two things follow the new hash once, by hand: with `[firmware]` the contract's
+`state_sha256` (convert says so; `edakit firmware` and commit the contract, else its `--check` in the hook fails), and
+the project scripts that read `graph` (8.6) show as outdated until `edakit run <name>` runs them or `edakit scripts
+stamp <name>` records them as they are – what they read did not change, only its hash.
 
 ## 3.2 Conventions that save trouble
 
-- **Pin numbers come from the EasyEDA symbol**, not from the datasheet. They usually agree; for LEDs and diodes they
-  often do not (anode = 1 for one LED, = 2 for another of the same shape). `edakit part import C2297` reads them
-  from the library without EasyEDA (4.2) and keeps the symbol, so STRUCT.entry compares the graph with it; inside EasyEDA,
+- **Pins by role or name, numbers from the EasyEDA symbol.** Write a pin as the datasheet and the firmware know it –
+  the role where the part has one (`D2.anode`, `Q1.gate`), the name on an IC or a module (`U1.GP6`) –, not as a number
+  looked up, which is where wrong pins and reversed LEDs come from. The parts entry says which number a word stands for,
+  and the numbers are the EasyEDA symbol's, not the datasheet's. They usually agree; for LEDs and diodes they often do
+  not (anode = 1 for one LED, = 2 for another of the same shape). `edakit part import C2297` reads them from the
+  library without EasyEDA (4.2) and keeps the symbol, so STRUCT.entry compares the pins with it; inside EasyEDA,
   `edakit schematic create --only U3` and `easyeda_schematic_component_pins` show the placed symbol. Write the roles
   into the parts entry. Code that needs "the cathode" asks for the role, never for the pin name.
+- **The graph says how it names pins.** `conventions.pin_reference` tells a reader how to read `U1.GP6`: in a graph by
+  names and roles `"'<designator>.<pin>' with the pin's name or role, else its symbol number – the parts entry says
+  which pin that is"` – the text `edakit graph convert` writes –, in a graph by numbers `"'<designator>.<pin>' with
+  the pin numbers of the EasyEDA/LCSC symbol"`. No check reads it; it keeps the graph readable without this handbook.
 - **Net names are stable identifiers** used by firmware, simulation config and docs. Rename deliberately.
 - **Voltage ranges are worst case.** `v` is what LIM.v compares with the pin limits and what the simulation checks every
   scenario against. Think about the unloaded supply, the reversed supply, a programming cable plugged in at the same time.
-- **Decisions in the graph.** "Why 2 k?" – `notes: "D-9: I_OUT = 9.45 mA"`. The decision log has the reasoning.
+- **Decisions in the graph.** "Why 2 k?" – `notes = "D-9: I_OUT = 9.45 mA"`. The decision log has the reasoning. A
+  `#` comment in a TOML graph says what a reader needs beside the wiring ("LED 1 of the bar"); no check reads it and
+  the circuit hash leaves it out (8.2), so a decision or a statement for a review goes into `notes` or `purpose.notes`.
 - **One part, one LCSC number.** A footprint variant is a different part.
 
 ## 3.3 Rule checks (stages P and G)
@@ -101,7 +240,7 @@ Every designator and every net name occurs once in the graph.
 - structure: unique designators and nets, every pin in exactly one net or `nc`, nets with ≥ 2 pins, a voltage range per net, a known board per part, `bom: false` on a bought or hand-wired board, nets across boards only through a cable; the names in `layout` and `locks`, the `ground` net, `purpose.use` – finds e.g.: a forgotten pin, a typo in a pin reference
 
 **`STRUCT.pin`** – every pin in one net or nc (error; replaces G-1)  
-Every pin of a part is in exactly one net or listed in the part's nc, a net names only pins the part has, and a pin in nc is in no net.
+Every pin of a part is in exactly one net or listed in the part's nc, a net names only pins the part has, and a pin in nc is in no net. A pin is written by its number, its name or its role – read in that order, a name or role several pins share standing for all of them (handbook 3.1) –; a word that names no pin of its part, in a net, nc, locks.pins, layout.loops or a cable, is reported where it stands, and so is a word that names several pins where one is meant (a loop end, a cable's wire).
 
 **`STRUCT.net`** – nets well-formed (error; replaces G-1)  
 Every net has at least two pins and a voltage range v = [min, max]; a net that spans boards does so through a cable, and the two pins of a cable wire are on one net.
@@ -123,8 +262,8 @@ Every pin in locks.pins is on its net, and a pin table in a document (locks.doc_
 Every domain the graph suggests (edakit/domains, suggested_by) is named in [project] domains, when the project names its domains.
 
 **`STRUCT.entry`** – graph pins = parts entry (error, symbol: error, declared: note, strip: warning; replaces P-1)  
-Every part with an LCSC number or a part number has a parts entry, its pins (number and name) equal the entry's, no supply pin is in nc, a component's config names one of its entry's configs and its states name output or bidirectional pins of the entry, each high, low or off (high not on an open-drain output), and – with the library symbol cached by edakit part import – the pins equal that symbol (case and blanks ignored); the symbol gives no number to two pins and has a pin for every pad of its footprint (grade symbol). Pins the entry's symbol_differs names follow the datasheet against the symbol on purpose: left out of the comparison and named in a note with the reason (grade declared). An LED strip (kind led_strip) gives its length, strip.length_m or strip.pixels (grade strip).
-- graph pins (number and name) = parts entry; an entry exists for every LCSC number; no supply pin marked `nc`; with the library's symbol cached by `edakit part import`, graph pins = that symbol (case and blanks ignored, as SYNC.schematic; `accept` on the component) – not where the entry's footprint data builds the copy's symbol as a box (`"symbol": "box"`, 4.5): the carrier's library symbol is not the copy's; the cached symbol giving one number to two pins or no pin to a pad of its footprint is grade `symbol`; pins the entry names in `symbol_differs` (`{"<pin>": "reason from the datasheet"}`) are left out of the comparison and named in a note (grade `declared`) – finds e.g.: a wrong part number, pins shifted by one, an LED whose pin 1 is the cathode, a library symbol that numbers a data input like the ground pin
+Every part with an LCSC number or a part number has a parts entry, its pins (number and name) equal the entry's where the component states them – without `pins` it takes the entry's, and only the comparison with the library symbol is left; without an entry as well, the numbers its nets and nc use, so that the rest is checked –, no supply pin is in nc, a component's config names one of its entry's configs and its states name output or bidirectional pins of the entry, each high, low or off (high not on an open-drain output), and – with the library symbol cached by edakit part import – the pins equal that symbol (case and blanks ignored); the symbol gives no number to two pins and has a pin for every pad of its footprint (grade symbol). Pins the entry's symbol_differs names follow the datasheet against the symbol on purpose: left out of the comparison and named in a note with the reason (grade declared). An LED strip (kind led_strip) gives its length, strip.length_m or strip.pixels (grade strip).
+- graph pins (number and name) = parts entry where the component states `pins` (without them it takes the entry's map, 3.1) – where they differ and the library symbol is cached, the finding says whether the symbol agrees with the entry (the graph has another part's pins) or with the graph (the entry to be checked against the datasheet); an entry exists for every LCSC number; no supply pin marked `nc`; with the library's symbol cached by `edakit part import`, graph pins = that symbol (case and blanks ignored, as SYNC.schematic; `accept` on the component) – not where the entry's footprint data builds the copy's symbol as a box (`"symbol": "box"`, 4.5): the carrier's library symbol is not the copy's; the cached symbol giving one number to two pins or no pin to a pad of its footprint is grade `symbol`; pins the entry names in `symbol_differs` (`{"<pin>": "reason from the datasheet"}`) are left out of the comparison and named in a note (grade `declared`) – finds e.g.: a wrong part number, pins shifted by one, an LED whose pin 1 is the cathode, a library symbol that numbers a data input like the ground pin
 
 **`STRUCT.identity`** – graph and entry name the same part (error; replaces P-6)  
 A component names the part of its entry: the entry's lcsc is its file name, the component's lcsc is no C99… user-library number (unless bom: false), its part names the entry's mpn, its value reads as the entry's value within 1 %, its type fits the entry's kind.
@@ -137,7 +276,7 @@ The designator's letters fit the kind of its entry (R resistor, C capacitor, D d
 Every voltage a part sees stays within the limit of its entry: across a capacitor, reverse across a polarized capacitor (vr_max_v, grade polarized), a pin above the supply it refers to – the pin's v_rel_max_v against the pin its ref names (null: none, a pin rated above its supply), else the part's vin_rel_max_v for its inputs, bidirectional pins and outputs against its supply; where the pin gives i_inject_max_a and only resistors feed it, the current its clamp takes against that (grade inject) –, reverse across a diode or LED – a TVS (values tvs) against its working voltage, and the rail of an ESD array (kind esd_array) against its stand-off vrwm_max_v, both without the derating factor –, VCE, VEB, VDS, VGS, on a pin (v_max_v; v_max_powered_v while the part is powered, v_max_v unpowered: grade powered; the pin's v_min_v, else an active pin not below −0.3 V, a negative rail's supply pin – role vee – excepted; against the part's own ground pin where that is not the board's ground), one supply not above another the entry orders (supply_order, grade order), on a fuse, switch, resistor or connector, and every limit a transient run sets on a net. Stage G takes the declared net ranges times the derating factor (1.5 on capacitors and semiconductors) – not the reverse voltage of a coupling capacitor in a signal path (a side on a net marked signal or instrument), whose range extremes never coincide, and across a capacitor with both sides on such nets the larger difference of the ranges' like ends (top against top, bottom against bottom: its sides carry the same signal) –, stage E the simulated value against the derated limit. A net marked isolated (a MIDI-in loop, the far side of an optocoupler) has a range of its own loop: a pin there is held to it only where its part has a ground pin on an isolated net too.
 - voltage domains: every net's range within `v_max_v` of every pin on it – finds e.g.: a 5-V signal on a 3.3-V GPIO
 - voltage ratings with margin: capacitors (×1.5), diodes VRRM (×1.5), BJT VCEO, MOSFET VDS/VGS (×1.5), fuses, switches, connectors – finds e.g.: a 6.3-V capacitor on a 5-V rail
-- stress of every part against its ratings with derating: resistor power ≤ 50 %, currents ≤ 80 %, capacitor/diode/transistor voltages ≤ 67 %, LED forward current and reverse voltage, fuse hold current at ambient, connector, switch and relay contact current, relay coil voltage, the current of every MCU output (`gpio_i_max_a`) and of all outputs together, sourced and sunk (`gpio_i_total_max_a`) – each pin may be fine and the sum beyond the package; the junction temperature of every part with `rth_ja_k_per_w` against its `tj_max_c`, and on a board of `touch_c` against the touch limit (5.3)
+- stress of every part against its ratings with derating: the power of resistors, transistors and LEDs ≤ 50 %, currents ≤ 80 %, capacitor/diode/transistor voltages ≤ 67 %, LED forward current, reverse voltage and power (VF × IF), fuse hold current at ambient, connector, switch and relay contact current, relay coil voltage, the current of every MCU output (`gpio_i_max_a`) and of all outputs together, sourced and sunk (`gpio_i_total_max_a`) – each pin may be fine and the sum beyond the package; the junction temperature of every part with `rth_ja_k_per_w` against its `tj_max_c`, and on a board of `touch_c` against the touch limit (5.3)
 - transient limits: in every run of `transients` each limit of its `expect` – a net's lowest voltage ≥ `min_v`, highest ≤ `max_v`, a source's peak current ≤ `i_max_a` – and every MCU's supply pin, once it has reached its `vin_min_v` (`vsys_min_v`), never below it again before the run ends; actual value with the time it occurs ("2.985 V at 1.3 ms")
 
 **`LIM.hazardous`** – hazardous voltage recognised, not checked (error)  
@@ -149,7 +288,7 @@ Every current stays within its limit: through resistors, fuses (below the derate
 - fuse against what it protects: the hold current of every fuse (`i_hold_a`; at the lowest ambient `ambient_min_c` of sim.json from `i_hold_vs_temp`) is at most the `i_max_a` of every connector, switch and cable its current flows through – its own nets and on through fuses and switches; a trip current (`i_trip_a`) above it is a warning – finds e.g.: a 1.5-A polyfuse in front of a connector rated 1.25 A, an overload that heats the contacts instead of tripping the fuse
 
 **`LIM.p`** – power within its limit (error; replaces E-2)  
-Every part's dissipation stays within the derated p_max_w of its entry.
+Every part's dissipation stays within the derated p_max_w of its entry (sim.json derating p, 50 % by default) at the operating point of every scenario: a resistor's I²R, a transistor's VCE × IC + VBE × IB, a MOSFET's VDS × ID, a JFET's VDS × ID + VGS × IG, an LED's forward voltage × forward current – each colour of an RGB LED against its colour's p_max_w where its entry gives the limits per colour.
 
 **`LIM.t`** – temperature within its limit (error; replaces E-2, E-3)  
 Every part whose entry gives rth_ja_k_per_w stays at or below its junction limit (its tj_max_c, at most the criteria's) at the ambient of sim.json, and on a board people touch (touch_c) at or below the touch limit.
@@ -315,13 +454,16 @@ polarity check before the codes; it was retired.
 
 ## 3.4 Working rules
 
-1. Change the graph, never the schematic or the PCB. The hardware-change skill walks through the rest.
+1. Change the graph – the file `[project] graph` names, beside a TOML graph never the generated `graph.json` –, never
+   the schematic or the PCB. The hardware-change skill walks through the rest.
 2. Every new LCSC number gets its parts entry first (part-search skill). A new function starts from a building block
    where one fits (`edakit block`, chapter 14.5).
-3. `edakit check` and `edakit sim` before every commit that touches `hardware/` – the pre-commit hook does it.
+3. `edakit check` and `edakit sim` before every commit that touches `hardware/` – the pre-commit hook does it, with a
+   TOML graph also `edakit graph json --check` (3.1).
 4. A finding is fixed or accepted with a reason. Never edit a check to make a finding go away.
 5. Generated files (firmware pin tables, the circuit description's parts list) are regenerated from the graph, never
-   edited, and committed together with the graph change – the firmware contract with `edakit firmware` (3.5).
+   edited, and committed together with the graph change – the resolved `hardware/graph.json` beside a TOML graph with
+   `edakit graph json --write` (3.1), the firmware contract with `edakit firmware` (3.5).
 
 ## 3.5 The firmware contract
 

@@ -19,15 +19,15 @@ soldered by hand (D-4). Released on 2026-10-31.
 | [hardware/boards/main.toml](hardware/boards/main.toml) | the board: round outline, tooling holes, placement plan, silkscreen, looks, a remark for JLCPCB |
 | [hardware/boards/main.geometry.json](hardware/boards/main.geometry.json) | the footprints as placed in EasyEDA (`edakit pcb dump`) |
 | [hardware/signoff.json](hardware/signoff.json) | the manual checks: M-1, M-6 and M-5 signed by the review agents; M-2 (before paying) and M-4 (the delivered boards) open |
-| [docs/decisions.md](docs/decisions.md) | D-1 to D-6 |
+| [docs/decisions.md](docs/decisions.md) | D-1 to D-7 |
 | [docs/schematic.svg](docs/schematic.svg), [docs/pcb_plan_main.png](docs/pcb_plan_main.png), [docs/silk_main_top.png](docs/silk_main_top.png) | drawn by `edakit schematic draw`, `edakit pcb plan` and `edakit silk apply` |
 
 Offline, from this folder:
 
 ```bash
 edakit check      # 0 errors; PATH.reverse accepted (a cell upside down: D1 blocks it, D-3) and three hints
-edakit sim        # 9 scenarios, 95 comparisons
-edakit gate       # P, G, E pass; NOT RELEASED offline: stages S, L, F and M-5 (bound to the Gerber files) need EasyEDA
+edakit sim        # 9 scenarios, 112 comparisons: the cell's current with SW1 held accepted on BT1 (D-7)
+edakit gate       # P, G, E pass; NOT RELEASED offline: stages S, L, F need EasyEDA, M-5 is signed for fab f958da9ad4f8… – checked by stage F
 ```
 
 With the EasyEDA project `coin-cell-led` open, `edakit gate --easyeda` exports the manufacturing files and says

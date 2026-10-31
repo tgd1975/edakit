@@ -102,6 +102,23 @@ def test_annular_ring_is_the_copper_around_the_hole():
     assert fab.ring_mm(parts, (3.0, 2.0, 3.0, 2.0, 0.3)) is None                         # no copper there
 
 
+def test_a_vias_ring_is_its_own_pad_also_inside_a_pour():
+    """Walkthrough gaps B1: a via of 0.61 mm on a 0.305 mm hole has a ring of 0.15 mm. Inside a pour of its own net the
+    copper around the hole reaches the pour's edge (ring_mm stops at RING_REACH_MM, 1.0 mm), so the via's ring is
+    measured on its own pad – the flash at its centre; a pour is a region, a track a draw."""
+    hole = (5.0, 5.0, 5.0, 5.0, 0.3048)
+    via = ("flash", (("C", 0.6096, 0.6096), 5.0, 5.0))
+    pour = ("region", [[(0.0, 0.0), (10.0, 0.0), (10.0, 10.0), (0.0, 10.0), (0.0, 0.0)]])
+    track = ("draw", (("C", 0.6, 0.6), [(5.0, 5.0), (9.0, 5.0)]))
+    for ops in ([via], [via, track], [pour, via], [via, pour, track]):
+        parts = [(a.bounds, a) for a in (gerber.shape([op], 64) for op in ops)]
+        assert fab.via_ring_mm(fab.flashes(ops), hole) == pytest.approx(0.1524, abs=1e-3)
+    assert fab.ring_mm(parts, hole) == pytest.approx(fab.RING_REACH_MM)               # the pour: what was measured
+    assert fab.via_ring_mm(fab.flashes([pour, track]), hole) is None                 # no pad of its own
+    assert fab.via_ring_mm(fab.flashes([("flash", (("C", 0.38, 0.38), 5.0, 5.0)), pour]), hole) == pytest.approx(
+        0.0376, abs=1e-3)
+
+
 # --- SYNC.plan: every part of the board has a row in [place] (step 2.1) ---------------------------------------------------
 
 def rows_check(project):

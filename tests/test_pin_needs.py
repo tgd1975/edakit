@@ -26,18 +26,18 @@ def test_a_capacitor_in_its_window(project):
     assert found(project, "REQ.missing") == found(project, "REQ.value") == []      # C1 100 nF on 3V3
     needs_on(project, "16", [{"what": "capacitor", "c_min_f": 1e-6}])
     assert found(project, "REQ.value") == [
-        ("U2.16 (VDD): needs a capacitor of at least 1 µF to GND – C1 on 3V3: 100 nF", "pin", "warning")]
+        ("U2.VDD (16): needs a capacitor of at least 1 µF to GND – C1 on 3V3: 100 nF", "pin", "warning")]
 
 
 def test_a_pull_up_the_pin_lacks(project):
     needs_on(project, "4", [{"what": "pull_up", "r_min_ohm": 4.7e3, "r_max_ohm": 10e3}])     # LE(ED1): none on it
     assert found(project, "REQ.missing") == [
-        ("U2.4 (LE(ED1)): needs a pull up of 4.7 kΩ … 10 kΩ to a supply – LED_LE has none", "pin", "warning")]
+        ("U2.LE(ED1) (4): needs a pull up of 4.7 kΩ … 10 kΩ to a supply – LED_LE has none", "pin", "warning")]
 
 
 def test_ground_and_never_ground(project):
     needs_on(project, "1", [{"what": "never_to_ground"}])                       # U2.1 is GND
-    assert found(project, "REQ.forbidden") == [("U2.1 (GND): must never be on ground, is on GND", "pin", "warning")]
+    assert found(project, "REQ.forbidden") == [("U2.GND (1): must never be on ground, is on GND", "pin", "warning")]
     needs_on(project, "1", [{"what": "to_ground"}])
     assert found(project, "REQ.missing") == []
 

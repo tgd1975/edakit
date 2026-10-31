@@ -2,16 +2,29 @@
 
 Graph file (JSON), either {"graph": {...}} or the inner object directly:
 
-    components: [{designator, type, lcsc, pins: {number: name}, nc: [numbers], board, value, label, notes,
-                  verify, waive: {check: reason}, bom: false, easyeda_device: {...}}]
-    nets:       [{name, pins: ["R1.1", ...], v: [min, max], notes, waive}]
+    components: [{designator, type, lcsc, pins: {number: name}, nc: [pins], board, value, label, notes,
+                  verify, accept: {code: reason}, bom: false, easyeda_device: {...}}]
+    nets:       [{name, pins: ["R1.1", "U1.PD6", "LED5.anode", ...], v: [min, max], notes, accept}]
     cables:     [{name, from, to, pins: {from_pin: to_pin}, r_ohm_per_wire}]
+    locks:      {pins: {"U1.4": net}, doc_pin_table}
+    layout:     {loops: [{a, b, max_mm}], ...}
     ground:     name of the ground net (default "GND")
+
+or a .toml file ([project] graph = "hardware/graph.toml") with the same keys, components, nets and cables as tables
+keyed by designator and name – [components.R1], [nets."+5V"] –, read to the same dict (graph_of_toml).
 
 Parts database: one JSON file per part (hardware/parts/C17414.json) with kind, pins (name, type, role, vmax),
 params, ratings, spice, footprint, lead, compliance, order, verified. See handbook/04-parts-database.md. A component
 finds its entry by its LCSC number (the file name) – or, without one, by its manufacturer part number `part` (the
 entry's `mpn`): a part bought from another distributor.
+
+Pins by name or role (circuit-language-plan.md, L.1 and L.2): a component without `pins` takes its entry's
+{number: name}; without an entry either, the numbers its nets and nc use (STRUCT.entry reports the missing entry). A
+pin word in the nets, nc, locks.pins, layout.loops and the pins of a cable is read once, when the Design is built, as
+the pin number first, then the name of one pin, then the role of one pin (the entry's), then a name or role several
+pins share, which stands for all of them – and written back as "DES.NUM", so that everything after the Design reads
+numbers as before. A word that names no pin stays as it is written, for STRUCT.pin to report. word() is the rule the
+other way: the word a finding names a pin by.
 
 A resistor whose parts entry has value_ohm 0 is a bridge: copper that crosses a track on a board with all tracks on
 one side. The nets it joins are one net for the graph checks (`joined()`) and for the simulation's LED drivers.
@@ -22,6 +35,7 @@ from __future__ import annotations
 import copy
 import json
 import re
+import tomllib
 from pathlib import Path
 
 
@@ -30,9 +44,49 @@ def natural_key(text):
     return [int(t) if t.isdigit() else t for t in re.split(r"(\d+)", str(text))]
 
 
+KEYED = {"components": "designator", "nets": "name", "cables": "name"}   # the tables of a TOML graph and their key
+
+
 def load_graph(path):
-    data = json.loads(Path(path).read_text(encoding="utf-8"))
+    """The graph of a file (the inner object): a .toml file through graph_of_toml, else JSON, {"graph": {...}} or the
+    inner object directly."""
+    path = Path(path)
+    text = path.read_text(encoding="utf-8")
+    if path.suffix == ".toml":
+        return graph_of_toml(text, path)
+    data = json.loads(text)
     return data.get("graph", data)
+
+
+def graph_of_toml(text, where="graph"):
+    """The graph of its TOML form, as the JSON gives it: [components.<designator>], [nets.<name>] and [cables.<name>]
+    become the lists components, nets and cables in the order of the file, the table's key as designator or name
+    first; every other key stays as it is – purpose, conventions, accept, layout, locks, ground, grounds –, the pin
+    words as written. A graph without component or net tables has none (a new project's: `components = []` would
+    stand in the way of the first table written by hand). A key or table twice and what is no TOML – null among it –
+    is a ConfigError with the file (`where`) and the line tomllib names."""
+    from .config import ConfigError
+    try:
+        data = tomllib.loads(text)
+    except tomllib.TOMLDecodeError as e:
+        raise ConfigError(f"{where}: {e}") from None
+    for key, field in KEYED.items():
+        table = data.get(key)
+        if table is None or table == []:                    # cables = []: none, as the JSON writes it
+            continue
+        if not isinstance(table, dict):
+            raise ConfigError(f"{where}: {key}: a table keyed by {field}, [{key}.<{field}>]")
+        rows = []
+        for name, row in table.items():
+            if not isinstance(row, dict):
+                raise ConfigError(f"{where}: {key}.{name}: a table, [{key}.{name}]")
+            if field in row:
+                raise ConfigError(f"{where}: [{key}.{name}]: {field} is the table's key")
+            rows.append({field: name, **row})
+        data[key] = rows
+    for key in ("components", "nets"):                      # what every reader of the graph expects
+        data.setdefault(key, [])
+    return data
 
 
 def load_parts(directory):
@@ -113,6 +167,12 @@ def configured(entry, config, connected_pins=()):
     return out
 
 
+# --- pins by number, name or role (circuit-language-plan.md, L.1) ---------------------------------------------------
+PLAIN = re.compile(r"\d+|pin\d+")       # a name or role that says no more than the number: R4.1, J1.3 (role pin3)
+WORD = re.compile(r'[^\s"\\]+')          # a name a pin can be written by: no blank – "GND (USB)" is written TP1
+ONE = {"layout.loops": "a loop end is one pin", "cable": "a wire lands on one pin"}
+
+
 class Design:
     def __init__(self, graph_path, parts_dir, boards=None, graph=None, parts=None):
         self.graph_path = Path(graph_path)
@@ -123,8 +183,6 @@ class Design:
         self.comps = {c["designator"]: c for c in self.graph["components"]}
         for c in self.comps.values():
             c.setdefault("board", default)
-        self.nets = {n["name"]: n for n in self.graph["nets"]}
-        self.pin_net = {ref: n["name"] for n in self.graph["nets"] for ref in n["pins"]}
         self.parts = load_parts(parts_dir) if parts is None else parts
         if why := old_form(self.graph, self.parts):
             from .config import ConfigError
@@ -134,6 +192,142 @@ class Design:
         self.by_mpn = {}
         for key, entry in self.parts.items():
             self.by_mpn.setdefault(str(entry.get("mpn") or key), key)
+        self.entry_maps = set()         # designators whose pin map is their entry's (L.2)
+        self.unresolved = []            # (where, ref, why): a pin word of locks.pins, layout.loops or a cable naming
+                                        # no pin or several where one is meant – STRUCT.pin
+        self._pin_maps()
+        self._resolve()
+        self.nets = {n["name"]: n for n in self.graph["nets"]}
+        self.pin_net = {ref: n["name"] for n in self.graph["nets"] for ref in n["pins"]}
+
+    # --- pins by number, name or role ------------------------------------------------------------------------------
+    def _pin_maps(self):
+        """A component without `pins` takes its entry's {number: name}; without an entry the numbers its nets and nc
+        use, so that the structure is checked – STRUCT.entry reports the missing entry (L.2)."""
+        used = {}
+        for net in self.graph["nets"]:
+            for ref in net.get("pins") or []:
+                des, dot, pin = str(ref).partition(".")
+                if dot:
+                    used.setdefault(des, []).append(pin)
+        for des, c in self.comps.items():
+            if c.get("pins") is not None:
+                continue
+            key = self.entry_key(des)
+            pins = self.parts[key].get("pins") if key else None
+            if isinstance(pins, dict):
+                c["pins"] = {num: (p or {}).get("name", num) for num, p in pins.items()}
+                self.entry_maps.add(des)
+            else:
+                nums = dict.fromkeys(used.get(des, []) + [str(p) for p in c.get("nc") or []])
+                c["pins"] = {num: num for num in sorted(nums, key=natural_key)}
+
+    def _roles(self, des):
+        """{number: role} of the component's parts entry in the config it runs its part in (handbook 4.1) – an
+        SSD1306 panel's D0 is scl in I2C, sck in SPI. part() is not asked: its pin needs depend on the nets this
+        resolves first; the roles do not."""
+        key = self.entry_key(des)
+        if not key:
+            return {}
+        entry = self.parts[key]
+        if conditional(entry):
+            entry = configured(entry, config_of(entry, self.comps[des]))
+        return {num: (p or {}).get("role") for num, p in (entry.get("pins") or {}).items()}
+
+    def resolve(self, des, word):
+        """The pin numbers a word names on `des`: its number; the name of one pin; the role of one pin; else every pin
+        that shares the name, else the role; [] for none."""
+        pins = (self.comps.get(des) or {}).get("pins")
+        if not isinstance(pins, dict):
+            return []
+        word = str(word)
+        if word in pins:
+            return [word]
+        roles = self._roles(des)
+        named = [n for n, name in pins.items() if name == word]
+        roled = [n for n in pins if roles.get(n) == word]
+        return next((hits for hits in (named, roled) if len(hits) == 1), named or roled)
+
+    def words(self, des, num):
+        """The words a pin may be written by, in the order a writer tries them: its name first on an IC or a module
+        (their names are the datasheet's), its role first elsewhere (anode, cathode: a symbol's name may mislead). A
+        name with a blank, a word that says no more than a number (1, pin3) or one that is another pin's number is
+        none. Each may name this pin alone or a group of pins sharing it (resolve)."""
+        num = str(num)
+        pins = (self.comps.get(des) or {}).get("pins")
+        if not isinstance(pins, dict) or num not in pins:
+            return []
+        key = self.entry_key(des)
+        kind = self.parts[key].get("kind") if key else None
+        name, role = pins.get(num), self._roles(des).get(num)
+        return [w for w in ((name, role) if kind in ("ic", "module") else (role, name))
+                if isinstance(w, str) and WORD.fullmatch(w) and not PLAIN.fullmatch(w) and w not in pins]
+
+    def word(self, des, num):
+        """The word for one pin: the first of its words that reads back as exactly this pin, else its number."""
+        num = str(num)
+        return next((w for w in self.words(des, num) if self.resolve(des, w) == [num]), num)
+
+    def pin_text(self, ref):
+        """A pin as a finding names it: "U1.PD6 (9)" – its word, with the number in brackets where they differ."""
+        des, dot, num = str(ref).partition(".")
+        if not dot:
+            return str(ref)
+        w = self.word(des, num)
+        return f"{des}.{num}" if w == num else f"{des}.{w} ({num})"
+
+    def _refs(self, ref):
+        """The references "DES.NUM" a written pin stands for; the reference as written where it names no pin."""
+        if not isinstance(ref, str):
+            return [ref]
+        des, dot, word = ref.partition(".")
+        if not dot or des not in self.comps or word in (self.comps[des].get("pins") or {}):
+            return [ref]
+        return [f"{des}.{n}" for n in self.resolve(des, word)] or [ref]
+
+    def _one(self, des, word, where):
+        """The one pin a word names where one is meant (a loop end, a cable's wire) – recorded for STRUCT.pin where it
+        names none or several."""
+        if des not in self.comps or not isinstance(word, (str, int)):
+            return word
+        hits = self.resolve(des, word)
+        if len(hits) == 1:
+            return hits[0] if str(word) not in self.comps[des]["pins"] else word
+        why = (f"{des}.{word} names no pin of {des}" if not hits else
+               f"{des}.{word} names {len(hits)} pins ({', '.join(hits)}) – {ONE[where.split(' ')[0]]}")
+        self.unresolved.append((where, f"{des}.{word}", why))
+        return word
+
+    def _resolve(self):
+        """Every pin word of the graph as "DES.NUM": nets, nc, locks.pins, layout.loops, the pins of a cable."""
+        g = self.graph
+        for net in g["nets"]:
+            if isinstance(net.get("pins"), list):
+                net["pins"] = [r for ref in net["pins"] for r in self._refs(ref)]
+        for des, c in self.comps.items():
+            if isinstance(c.get("nc"), list) and isinstance(c["pins"], dict):
+                c["nc"] = [p for w in c["nc"] for p in ([w] if str(w) in c["pins"] else self.resolve(des, w) or [w])]
+        lk = g.get("locks")
+        if isinstance(lk, dict) and isinstance(lk.get("pins"), dict):
+            out = {}
+            for ref, net in lk["pins"].items():
+                refs = self._refs(ref)
+                des, _, word = ref.partition(".")
+                if refs == [ref] and des in self.comps and word not in self.comps[des]["pins"]:
+                    self.unresolved.append(("locks.pins", ref, f"{ref} names no pin of {des} (locked to net {net})"))
+                out.update(dict.fromkeys(refs, net))
+            lk["pins"] = out
+        for lp in (g.get("layout") or {}).get("loops") or []:
+            for k in ("a", "b"):
+                if isinstance(lp, dict) and isinstance(lp.get(k), str) and "." in lp[k]:
+                    des, _, word = lp[k].partition(".")
+                    pin = self._one(des, word, "layout.loops")
+                    lp[k] = f"{des}.{pin}"
+        for cab in g.get("cables") or []:
+            if isinstance(cab, dict) and isinstance(cab.get("pins"), dict):
+                where = f"cable {cab.get('name')}"
+                cab["pins"] = {self._one(cab.get("from"), a, where): self._one(cab.get("to"), b, where)
+                               for a, b in cab["pins"].items()}
 
     @classmethod
     def from_config(cls, cfg):

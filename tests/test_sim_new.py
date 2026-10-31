@@ -95,7 +95,7 @@ def test_the_divider_is_too_high_impedance_for_the_adc(project):
     cfg = project.config()
     found = [f.text for f in engines.run(Design.from_config(cfg), cfg).findings
              if f.code == "REQ.value" and f.grade == "adc"]
-    assert found == ["U1.31 (VSENSE): source resistance 5 kΩ – the ADC allows 1 kΩ"]
+    assert found == ["U1.GP26_ADC0 (31) on VSENSE: source resistance 5 kΩ – the ADC allows 1 kΩ"]
 
 
 def test_a_hold_capacitor_makes_it_fit(project):

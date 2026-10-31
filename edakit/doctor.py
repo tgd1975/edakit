@@ -162,9 +162,9 @@ def kicad_line(line):
     except cli.CliError as e:
         line("FAIL", "kicad-cli: missing", f"{e}")
         return
-    major = version.split(".")[0]
-    line("OK" if major == str(cli.MAJOR) else "WARN", f"KiCad {version} (kicad-cli: {cli.binary()})",
-         "" if major == str(cli.MAJOR) else f"edakit writes and reads for KiCad {cli.MAJOR}: sudo add-apt-repository "
+    ok = cli.major(version) == cli.MAJOR
+    line("OK" if ok else "WARN", f"KiCad {version} (kicad-cli: {cli.binary()})",
+         "" if ok else f"edakit writes and reads for KiCad {cli.MAJOR}: sudo add-apt-repository "
          f"ppa:kicad/kicad-{cli.MAJOR}.0-releases && sudo apt install kicad (handbook 2)")
 
 

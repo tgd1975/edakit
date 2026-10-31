@@ -1,6 +1,6 @@
 """kicad-cli: what the KiCad tool chain cannot do with files (handbook 16.5) – KiCad 10, from KiCad's PPA for Ubuntu.
 
-    version()                    "10.0.6"
+    version()                    "10.0.6"; major(version()) 10 – compared with MAJOR by doctor and the live tests
     fill_zones(pcb)              pcb drc --refill-zones --save-board: the zones filled and saved in the file
     drc(pcb, out)                pcb drc, JSON report -> findings as EasyEDA's DRC gives them (drc.json, GEO.drc)
     erc(sch, out)                sch erc, JSON report -> findings (SYNC.schematic, section erc)
@@ -61,6 +61,12 @@ def version():
     out = run("version").stdout.strip()
     m = re.search(r"\d+\.\d+(?:\.\d+)?", out)
     return m.group(0) if m else out
+
+
+def major(text):
+    """The major version in what kicad-cli reports: "10.0.6" -> 10, "9.0.8" -> 9; None when it names none."""
+    m = re.search(r"(\d+)\.\d+", text)
+    return int(m.group(1)) if m else None
 
 
 def fill_zones(pcb, verbose=False):

@@ -9,8 +9,9 @@ waive on nets and components -> accept keyed by the codes that replace the check
 checks.reverse_protect [J1] -> "source": "reversible" on J1. Sign-off file: accepted_warnings -> accept, the pattern's
 leading check ID replaced by its codes; documents, schematic notes and requirements files: their quotes and rows
 patterns (text). The files written as they were: their indent, UTF-8 as it is. Converting what is converted changes
-nothing. When the files were the signed ones, the sign-offs of scope 'circuit' keep counting: the new circuit hash goes
-into the sign-off file and both into its `rehashed` (carry_signoffs).
+nothing. A TOML graph is in the form of the restructuring by construction and is not rewritten (toml_graph). When the
+files were the signed ones, the sign-offs of scope 'circuit' keep counting: the new circuit hash goes into the sign-off
+file and both into its `rehashed` (carry_signoffs).
 """
 
 from __future__ import annotations
@@ -203,7 +204,8 @@ def files(cfg):
         new = json.dumps(fn(json.loads(old)), indent=len(m.group(1)) if m else 1, ensure_ascii=False) + "\n"
         if json.loads(new) != json.loads(old):
             out.append((path, old, new))
-    one(Path(cfg.graph), graph)
+    if Path(cfg.graph).suffix != ".toml":         # a TOML graph: toml_graph says why there is nothing to do
+        one(Path(cfg.graph), graph)
     for p in sorted(Path(cfg.parts).glob("*.json")):
         one(p, part)
     one(Path(cfg.signoff), signoff)
@@ -214,10 +216,15 @@ def files(cfg):
     return out
 
 
-def carry_signoffs(cfg, before):
+CARRIED = ("graph, parts entries and sign-off file in the form of the restructuring (handbook 14.2): names with their "
+           "unit, accept by code, locks – every value carried over; the files were the signed ones")
+
+
+def carry_signoffs(cfg, before, by="edakit convert", why=CARRIED):
     """After the conversion: when the files were the signed ones (the sign-off file's state_sha256 was their circuit
     hash), the sign-offs of scope 'circuit' keep counting – the new hash goes into the file and both into `rehashed`,
-    as the gate records a change of [release] hash_ignore. -> the line to print, or None."""
+    as the gate records a change of [release] hash_ignore. `by` and `why` say which conversion (edakit graph convert
+    too). -> the line to print, or None."""
     import datetime as dt
     from .release import gate
     path = Path(cfg.signoff)
@@ -229,18 +236,30 @@ def carry_signoffs(cfg, before):
     if s.get("state_sha256") != before or after == before:
         return None
     s["state_sha256"] = after
-    s.setdefault("rehashed", []).append({
-        "date": dt.date.today().isoformat(), "by": "edakit convert",
-        "why": "graph, parts entries and sign-off file in the form of the restructuring (handbook 14.2): names with "
-               "their unit, accept by code, locks – every value carried over; the files were the signed ones",
-        "state_sha256": [before, after]})
+    s.setdefault("rehashed", []).append({"date": dt.date.today().isoformat(), "by": by, "why": why,
+                                         "state_sha256": [before, after]})
     m = re.search(r"^( +)\S", old, re.M)
     path.write_text(json.dumps(s, indent=len(m.group(1)) if m else 1, ensure_ascii=False) + "\n", encoding="utf-8")
     return (f"{cfg.relative(path)}: the sign-offs of scope 'circuit' keep counting – state_sha256 {before[:12]}… → "
             f"{after[:12]}… (rehashed)")
 
 
+def toml_graph(cfg):
+    """The line for a TOML graph, or None for a JSON one: a TOML graph is in the form of the restructuring by
+    construction – it was written after it –, and convert does not rewrite one; a key of before in it is named."""
+    if Path(cfg.graph).suffix != ".toml" or not Path(cfg.graph).exists():
+        return None
+    from .design import load_graph, old_form
+    why = old_form(load_graph(cfg.graph), {})
+    return f"{cfg.relative(cfg.graph)}: " + (
+        "a TOML graph is in the form of the restructuring – nothing to convert" if why is None else
+        f"{why} – the form of before; convert does not rewrite a TOML graph: write accept and locks in its place by "
+        "hand (handbook 3.1)")
+
+
 def main(cfg, args):
+    if line := toml_graph(cfg):
+        print(line)
     changed = files(cfg)
     before = None
     if args.write and changed:

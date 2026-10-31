@@ -45,8 +45,9 @@ With the key, the file is part of the circuit (handbook 3.6, 8.7):
                  is a warning to accept, may informs; what is tested only after the export does not hold it up; a
                  draft binds nothing yet – it is evaluated and listed, it neither blocks nor needs acceptance.
                  Section 11 of the protocol lists every requirement with its evidence and the result.
-  circuit hash   the files count byte for byte, [release] hash_ignore does not reach into them: a changed
-                 requirement voids M-1 and M-6, and the firmware contract shows drift.
+  circuit hash   the files count byte for byte, a comment too – unlike a TOML graph, which counts with its data –,
+                 [release] hash_ignore does not reach into them: a changed requirement voids M-1 and M-6, and the
+                 firmware contract shows drift.
 A file named in the key that is missing or not valid stops edakit check and the gate as it stops edakit req.
 Exit codes: 0 = listed, 1 = error (no key, a file missing or not valid, an ID not in the files).
 """
@@ -447,7 +448,10 @@ def _signoff(sid, rid, signoff):
         return "fail", f"no manual check {sid} in the sign-off file"
     phase = m.get("phase", "export")
     by = f"signed by {m.get('done_by')} ({m.get('date')})"
-    if not m.get("done_by"):
+    if u := m.get("unchecked"):      # a run without stage F: signed for a fab hash only stage F computes
+        what = (f"signed for fab {u['fab_sha256'][:12]}… by {u['by']} ({m.get('date')}) – checked by stage F, which did "
+                "not run")
+    elif not m.get("done_by"):
         what = "not signed for this state" if phase == "export" else "not signed yet"
     elif names(m.get("note"), rid):
         return "pass", f"{by}, its note names {rid}"

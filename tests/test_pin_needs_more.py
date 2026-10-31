@@ -80,9 +80,9 @@ def test_a_capacitor_between_two_pins_of_the_part():
     ic = part({"3": [{"what": "capacitor", "to": "VM", "c_min_f": 10e-9, "c_max_f": 22e-9}]})
     assert texts(design(ic, [("C1", cap("C1", 10e-9), ("VCP", "VM"))])) == []
     assert texts(design(ic, [("C1", cap("C1", 10e-9), ("VCP", "GND"))]), "REQ.missing") == [
-        "U1.3 (VCP): needs a capacitor of 10 nF … 22 nF to U1.4 (VM) (VM) – VCP has none"]
+        "U1.VCP (3): needs a capacitor of 10 nF … 22 nF to U1.VM (4) (VM) – VCP has none"]
     assert texts(design(ic, [("C1", cap("C1", 1e-9), ("VCP", "VM"))]), "REQ.value") == [
-        "U1.3 (VCP): needs a capacitor of 10 nF … 22 nF to U1.4 (VM) (VM) – C1 on VCP: 1 nF"]
+        "U1.VCP (3): needs a capacitor of 10 nF … 22 nF to U1.VM (4) (VM) – C1 on VCP: 1 nF"]
 
 
 def test_to_names_a_pin_by_number_or_name_and_nothing_else():
@@ -99,9 +99,9 @@ def test_a_crystal_between_two_pins_in_its_window():
     ic = part({"5": need})
     assert texts(design(ic, [("Y1", xtal("Y1", 12e6), ("XI", "XO"))])) == []
     assert texts(design(ic, [("Y1", xtal("Y1", 8e6), ("XI", "XO"))]), "REQ.value") == [
-        "U1.5 (XI): needs a crystal of 11.98 MHz … 12.02 MHz to U1.6 (XO) – Y1: 8 MHz"]
+        "U1.XI (5): needs a crystal of 11.98 MHz … 12.02 MHz to U1.XO (6) – Y1: 8 MHz"]
     assert texts(design(ic), "REQ.missing") == [
-        "U1.5 (XI): needs a crystal of 11.98 MHz … 12.02 MHz to U1.6 (XO) (XO) – none between XI and it"]
+        "U1.XI (5): needs a crystal of 11.98 MHz … 12.02 MHz to U1.XO (6) (XO) – none between XI and it"]
 
 
 def test_a_crystal_need_names_its_other_pin():
@@ -115,25 +115,25 @@ def test_a_pin_tied_to_another_pin():
     ic = part({"7": [{"what": "tie", "to": "VDD"}]})
     assert texts(design(ic, nets={"7": "3V3"})) == []
     assert texts(design(ic, [("R1", res("R1", 10e3), ("CSB", "3V3"))]), "REQ.missing") == [
-        "U1.7 (CSB): must be tied to U1.1 (VDD) (3V3), is on CSB"]
+        "U1.CSB (7): must be tied to U1.VDD (1) (3V3), is on CSB"]
 
 
 def test_no_external_pull_resistor():
     ic = part({"8": [{"what": "no_pull", "dir": "up"}]})
     assert texts(design(ic)) == []
     assert texts(design(ic, [("R1", res("R1", 10e3), ("RST", "3V3"))]), "REQ.forbidden") == [
-        "U1.8 (RST): must have no external pull-up resistor – R1 on RST"]
+        "U1.RST (8): must have no external pull-up resistor – R1 on RST"]
     assert texts(design(ic, [("R1", res("R1", 10e3), ("RST", "GND"))])) == []       # dir up: a pull-down is allowed
     ic = part({"8": [{"what": "no_pull"}]})
     assert texts(design(ic, [("R1", res("R1", 10e3), ("RST", "GND"))]), "REQ.forbidden") == [
-        "U1.8 (RST): must have no external pull resistor – R1 on RST"]
+        "U1.RST (8): must have no external pull resistor – R1 on RST"]
 
 
 def test_no_series_resistor():
     ic = part({"9": [{"what": "no_series"}]})
     assert texts(design(ic)) == []
     assert texts(design(ic, [("R1", res("R1", 22), ("DP", "USB_DP"))]), "REQ.forbidden") == [
-        "U1.9 (DP): must have no series resistor – R1 on DP"]
+        "U1.DP (9): must have no series resistor – R1 on DP"]
 
 
 # --- D4: a required capacitor's voltage rating ---------------------------------------------------------------------
@@ -141,7 +141,7 @@ def test_a_required_capacitor_rated_too_low():
     ic = part({"3": [{"what": "capacitor", "c_min_f": 10e-9, "v_min_v": 50}]})
     assert texts(design(ic, [("C1", cap("C1", 10e-9, v=50), ("VCP", "GND"))])) == []
     assert texts(design(ic, [("C1", cap("C1", 10e-9, v=16), ("VCP", "GND"))]), "REQ.value") == [
-        "U1.3 (VCP): needs a capacitor rated at least 50 V to GND – C1 16 V"]
+        "U1.VCP (3): needs a capacitor rated at least 50 V to GND – C1 16 V"]
     assert texts(design(ic, [("C1", cap("C1", 10e-9), ("VCP", "GND"))])) == []       # rating unknown: not judged
 
 
@@ -150,10 +150,10 @@ def test_a_capacitor_window_judged_on_the_capacitors_next_to_the_part():
     ic = part({"1": [{"what": "capacitor", "c_min_f": 0.1e-6, "c_max_f": 1e-6}]})
     caps = [("C1", cap("C1", 0.1e-6), ("3V3", "GND")), ("C2", cap("C2", 10e-6), ("3V3", "GND"))]
     assert texts(design(ic, caps), "REQ.value") == [
-        "U1.1 (VDD): needs a capacitor of 100 nF … 1 µF to GND – C1, C2 on 3V3: 10.1 µF"]   # the net's sum
+        "U1.VDD (1): needs a capacitor of 100 nF … 1 µF to GND – C1, C2 on 3V3: 10.1 µF"]   # the net's sum
     assert texts(design(ic, caps, layout={"near": {"C1": "U1"}})) == []                     # C1 next to U1
     assert texts(design(ic, caps, layout={"near": {"C2": "U1"}}), "REQ.value") == [
-        "U1.1 (VDD): needs a capacitor of 100 nF … 1 µF to GND next to the part (layout.near) – C2 on 3V3: 10 µF"]
+        "U1.VDD (1): needs a capacitor of 100 nF … 1 µF to GND next to the part (layout.near) – C2 on 3V3: 10 µF"]
 
 
 # --- float_ok = false on a bidirectional pin ------------------------------------------------------------------------
@@ -166,4 +166,4 @@ def test_a_bidirectional_pin_that_must_not_float():
     assert sdo(undefined_inputs(design(part()))) == []              # without float_ok = false: the pin may float
     d = design(ic)
     d.comps["U1"]["nc"] = ["10"]
-    assert sdo(open_inputs(d)) == ["U1.10 (SDO): an input left open (nc) – it floats"]
+    assert sdo(open_inputs(d)) == ["U1.SDO (10): an input left open (nc) – it floats"]

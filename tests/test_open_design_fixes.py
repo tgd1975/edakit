@@ -183,13 +183,13 @@ def test_a_crystal_with_two_ground_pads_is_found_between_its_crystal_pins():
     assert crystal_needs(oscillator(crystal(2))) == []
     assert crystal_needs(oscillator(crystal(4))) == []          # before: edakit check stopped (four pins unpacked)
     assert crystal_needs(oscillator(crystal(4, 8e6))) == [
-        ("REQ.value", "U1.3 (XIN): needs a crystal of 12 MHz … 12 MHz to U1.4 (XOUT) – Y1: 8 MHz")]
+        ("REQ.value", "U1.XIN (3): needs a crystal of 12 MHz … 12 MHz to U1.XOUT (4) – Y1: 8 MHz")]
 
 
 def test_a_crystal_behind_the_damping_resistor_at_xout_counts():
     assert crystal_needs(oscillator(crystal(4), damping=1000)) == []   # before: REQ.missing, none between XIN and XOUT
     assert crystal_needs(oscillator(crystal(4, 8e6), damping=1000)) == [
-        ("REQ.value", "U1.3 (XIN): needs a crystal of 12 MHz … 12 MHz to U1.4 (XOUT) – Y1: 8 MHz")]
+        ("REQ.value", "U1.XIN (3): needs a crystal of 12 MHz … 12 MHz to U1.XOUT (4) – Y1: 8 MHz")]
 
 
 def test_a_crystal_behind_a_resistor_from_a_rail_does_not_count():

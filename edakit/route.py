@@ -8,7 +8,8 @@ start, has a fixed 900 s limit and left nets open. So routing happens outside Ea
     2 dsn      offline: our own Specctra DSN (rules from [routing] of the board file; with widths = "sim" every net
                at least the IPC-2221 width of its simulated current); parts, pins and nets in a fixed order; with
                fanout on a plane, a protected via and stub for each SMD pad on the other layer; with
-               hand_solder_keep_mm a via keep-out around every hand-soldered joint on its solder side (GEO.spacing)
+               hand_solder_keep_mm a via keep-out around every hand-soldered joint on its solder side (GEO.spacing;
+               an SMD pad of a bom: false part on its own side)
     3 route    offline: Freerouting (pinned, downloads itself once, SHA-256 checked), no GUI -> <board>.ses
     4 check    offline: pads of different parts on different nets at least the clearance apart (GEO.spacing), SMD pads on
                an assembled side at least the paste gap apart (GEO.spacing), pads of other nets at least
@@ -78,6 +79,7 @@ FANOUT_DIRECTIONS = 16     # fanout: a via is tried in this many directions arou
 FANOUT_STEP_MIL = 5        # the distance growing in these steps
 FANOUT_REACH_MIL = 60      # up to this much beyond the nearest spot
 EDGE_ARC_SEGMENTS = 8      # edge keep-out: chords per quarter circle around an inner corner (reach ≥ 0.989 d)
+DSN_STEPS_PER_MIL = 100    # (resolution mil 100): Freerouting reads every DSN coordinate in steps of 0.01 mil
 
 FR_VERSION = "2.4.1"
 FR_ZIP = f"https://github.com/freerouting/freerouting/releases/download/v{FR_VERSION}/freerouting-{FR_VERSION}-linux-x64.zip"
@@ -286,9 +288,19 @@ def _polygons(geom):
     return [p for g in getattr(geom, "geoms", []) for p in _polygons(g)]
 
 
+def flat_on_grid(poly):
+    """True for a polygon with no area left once its corners are rounded to the DSN's grid (DSN_STEPS_PER_MIL), as
+    Freerouting reads them: a slice thinner than 0.01 mil. Freerouting skips such a keep-out with "Keepout zone … was
+    skipped because its geometry is degenerate"."""
+    return Polygon([(round(x * DSN_STEPS_PER_MIL), round(y * DSN_STEPS_PER_MIL))
+                    for x, y in poly.exterior.coords]).area == 0
+
+
 def convex_pieces(geom, min_area=1.0):
     """Split a (possibly concave, multi-part) area into convex pieces: horizontal strips at every vertex, then
-    vertical cuts where a strip is still concave. Freerouting wants convex keep-outs."""
+    vertical cuts where a strip is still concave. Freerouting wants convex keep-outs. A piece under min_area (mil²)
+    is left out, and so is one with no area on the DSN's grid (flat_on_grid) – two vertices less than 0.01 mil apart
+    in height leave such a slice."""
     pieces = []
     for g in _parts(geom):
         if g.geom_type != "Polygon":
@@ -299,7 +311,7 @@ def convex_pieces(geom, min_area=1.0):
             if b - a < 1e-6:
                 continue
             for s in _parts(g.intersection(box(x0 - 1, a, x1 + 1, b))):
-                if s.geom_type != "Polygon" or s.area < min_area:
+                if s.geom_type != "Polygon" or s.area < min_area or flat_on_grid(s):
                     continue
                 if s.convex_hull.area - s.area < 0.5:
                     pieces.append(s)
@@ -307,7 +319,7 @@ def convex_pieces(geom, min_area=1.0):
                 xs = sorted({x for x, _ in s.exterior.coords})
                 for c, d in zip(xs, xs[1:]):
                     pieces += [u for u in _parts(s.intersection(box(c, a, d, b)))
-                               if u.geom_type == "Polygon" and u.area >= min_area]
+                               if u.geom_type == "Polygon" and u.area >= min_area and not flat_on_grid(u)]
     bad = [p for p in pieces if p.convex_hull.area - p.area > 0.5]
     if bad:
         raise SystemExit(f"{len(bad)} keep-out pieces are not convex – route.convex_pieces needs a look")
@@ -324,9 +336,12 @@ def outside_strips(rules, outer, margin=20.0):
     board – 0.3957 mm with 0.4 mm, 4.3 µm short of the arc. With 4 a chord spanned up to 33.75° (0.383 mm). Mitred
     joins reached d / sin(θ/2) into the board there – 0.57 mm at a 90° corner and 1.3 mm at a 36° notch with 0.4 mm.
     Outlines without inner corners get the same strips either way.
-    Every piece is kept, however small: the cuts at the arc's vertices leave slices under 1 mil² at a sharp notch tip,
-    and without them the keep-out reached 0.3 mm into the board there instead of the clearance. Freerouting skips a
-    piece thinner than its 0.01 mil resolution with a warning; `route check` keeps it."""
+    Every piece Freerouting can read is kept, however small: the cuts at the arc's vertices leave slices under 1 mil²
+    at a sharp notch tip, and without them the keep-out reached 0.3 mm into the board there instead of the clearance.
+    Only a slice with no area on the DSN's grid is left out (flat_on_grid): on a round board read back from EasyEDA,
+    mirrored corners lie up to 1e-4 mil apart in height, and the cuts at both left slices of 4e-6 to 7e-5 mil that
+    Freerouting skipped as degenerate. The seam such a slice leaves is thinner than 0.01 mil – no copper passes it –,
+    and `route check` tests the strips Freerouting was given."""
     inner = outer.buffer(-rules.edge_um / 25.4, join_style="round", quad_segs=EDGE_ARC_SEGMENTS)
     x0, y0, x1, y1 = outer.bounds
     frame = box(x0 - margin, y0 - margin, x1 + margin, y1 + margin)
@@ -362,21 +377,24 @@ def config_keepouts(rules, data):
 
 def hand_soldered(graph, board):
     """Designators of the parts soldered by hand on this board: bom: false in the graph (the inner object, as
-    design.load_graph returns it) – on an Economic PCBA order the through-hole parts you solder yourself (8.4)."""
+    design.load_graph returns it) – on an Economic PCBA order the through-hole parts you solder yourself (8.4), and an
+    SMD part the assembler does not place (the example's coin cell holder)."""
     return {c["designator"] for c in graph.get("components", [])
             if c.get("bom") is False and c.get("board", board) in (None, board)}
 
 
 def hand_joints(data, hand):
-    """GEO.spacing: every through-hole pad of a part in `hand`, with its solder side – the copper layer its part does not sit
-    on. -> [(pad, layer)] in the order of the pads."""
+    """GEO.spacing: every pad of a part in `hand`, with its solder side – for a through-hole pad the copper layer its part
+    does not sit on, for an SMD pad its own layer, the side the part sits on (a tab soldered by hand bridges to a via
+    as a through-hole joint does). -> [(pad, layer)] in the order of the pads."""
     side = {c["ref"]: c["layer"] for c in data["components"]}
-    return [(p, LAYERS[3 - side[p["ref"]]]) for p in data["pads"]
-            if p["ref"] in hand and p["layer"] == 12 and side.get(p["ref"]) in LAYERS]
+    return [(p, LAYERS[3 - side[p["ref"]]] if p["layer"] == 12 else LAYERS[p["layer"]]) for p in data["pads"]
+            if p["ref"] in hand and side.get(p["ref"]) in LAYERS and (p["layer"] == 12 or p["layer"] in LAYERS)]
 
 
 def joint_keepouts(rules, data):
-    """GEO.spacing in the DSN: a via keep-out on the solder side around every hand-soldered joint, the pad grown by
+    """GEO.spacing in the DSN: a via keep-out on the solder side around every hand-soldered joint (hand_joints: a
+    through-hole pad on the side its part does not sit on, an SMD pad on its own), the pad grown by
     joint_keep – Specctra via_keepout, which Freerouting 2.4.1 reads. Its chords lie outside the true distance.
     Freerouting's keep-outs are not per net: a via of the joint's own net stays out too, its tracks still reach it.
     -> [(layer, convex polygon in mil)]"""
@@ -388,14 +406,14 @@ def joint_keepouts(rules, data):
 
 
 def joint_gaps(data, keep_mil, hand, vias=(), waivers=({}, {})):
-    """GEO.spacing: on the solder side of every through-hole pad of a hand-soldered part (hand_joints), vias and pads of other
-    nets closer than keep_mil, copper to copper. Tracks do not count: they run under the solder mask, between the pins
+    """GEO.spacing: on the solder side of every pad of a hand-soldered part (hand_joints: a through-hole pad on the side its
+    part does not sit on, an SMD pad on its own), vias and pads of other nets closer than keep_mil, copper to copper. Tracks do not count: they run under the solder mask, between the pins
     of a 2.54 mm part too (the owner's decision on #59). A pad without a net counts as a net of its own; the part's own
     pads are not compared, nor pads without a part (tooling holes). vias: [(net, or None when unknown, (x, y),
     diameter)] in mil; a via of unknown net counts as another net's. A finding is waived when the joint's part or net,
     or the other pad's part or the other net, has the accept (pad_accepts(graph, "GEO.spacing", "joint")). -> [{"joint", "net",
-    "layer", "kind" ("pad", "via"), "other" (pad name, net or None), "other_net", "mil", "at" (the other pad's
-    closest point, the via's centre), "waived"}], closest first; a pair of two joints once."""
+    "layer", "tht" (the joint a through-hole pad), "kind" ("pad", "via"), "other" (pad name, net or None), "other_net",
+    "mil", "at" (the other pad's closest point, the via's centre), "waived"}], closest first; a pair of two joints once."""
     from shapely.ops import nearest_points
     from shapely.strtree import STRtree
     parts, nets = waivers
@@ -424,7 +442,8 @@ def joint_gaps(data, keep_mil, hand, vias=(), waivers=({}, {})):
             if key in found and found[key]["mil"] <= gap:
                 continue
             at = nearest_points(g, h)[1]
-            found[key] = {"joint": name, "net": own, "layer": layer, "kind": kind, "other": other, "other_net": onet,
+            found[key] = {"joint": name, "net": own, "layer": layer, "tht": p["layer"] == 12, "kind": kind,
+                          "other": other, "other_net": onet,
                           "mil": gap, "at": (at.x, at.y),
                           "waived": next((w[k] for w, k in ((parts, p["ref"]), (parts, oref), (nets, own), (nets, onet))
                                           if k and k in w), None)}
@@ -433,16 +452,17 @@ def joint_gaps(data, keep_mil, hand, vias=(), waivers=({}, {})):
 
 def joint_text(item, keep_mil, board=None):
     """'J1.1 (VIN) – via GND at (84.00, 9.70): 0.30 mm apart on BOTTOM, the solder side of J1, below
-    hand_solder_keep_mm 0.5' – the point in plan mm with the board, else in EasyEDA mm."""
-    mm = 1 / MIL_PER_MM
+    hand_solder_keep_mm 0.5' – at an SMD joint 'on TOP, the side D1 sits on' –, the point in plan mm with the board,
+    else in EasyEDA mm."""
+    mm, ref = 1 / MIL_PER_MM, item["joint"].split(".")[0]
     x, y = (v * mm for v in item["at"])
     if board is not None:
         x, y = board.plan_point(x, y)
     other = (f"pad {item['other']} ({item['other_net'] or 'no net'})" if item["kind"] == "pad"
              else f"via {item['other'] or '(no track, net unknown)'}")
     return (f"{item['joint']} ({item['net'] or 'no net'}) – {other} at ({x:.2f}, {y:.2f}): {item['mil'] * mm:.2f} mm "
-            f"apart on {item['layer']}, the solder side of {item['joint'].split('.')[0]}, below hand_solder_keep_mm "
-            f"{keep_mil * mm:g}")
+            f"apart on {item['layer']}, " + (f"the solder side of {ref}" if item.get("tht", True) else f"the side {ref} sits on")
+            + f", below hand_solder_keep_mm {keep_mil * mm:g}")
 
 
 def fixed_wires(rules):
@@ -578,7 +598,7 @@ def write_dsn(rules, data, out, variant=0):
          '  (parser (string_quote ") (space_in_quoted_tokens on) (host_cad "edakit") (host_version "1"))',
          # 1/100 mil: with 1/1000 mil Freerouting 2.4.1 computes wrongly (board ≈ 7 million units high: unreachable
          # pads, 19 phantom violations); with mil 100 it routed at once
-         "  (resolution mil 100)", "  (unit mil)", "  (structure"]
+         f"  (resolution mil {DSN_STEPS_PER_MIL})", "  (unit mil)", "  (structure"]
     for i, name in enumerate(("TOP", "BOTTOM")):
         L.append(f"    (layer {name} (type signal) (property (index {i})))")
     L.append("    (boundary (path pcb 0 " + " ".join(f"{f(x)} {f(y)}" for x, y in frame.exterior.coords) + "))")

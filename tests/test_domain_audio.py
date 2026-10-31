@@ -67,7 +67,7 @@ def test_a_bridge_tied_output_with_its_speaker_is_clean(project):
 def test_a_bridge_tied_output_on_ground(project):
     amplifier(project, out_n="GND")
     assert [f.text for f in found(project, "REQ.forbidden", "btl")] == [
-        "U8.2 (out_n): a bridge-tied output on GND – it is never ground"]
+        "U8.OUT- (2): a bridge-tied output on GND – it is never ground"]
 
 
 def test_audio_hints(project):

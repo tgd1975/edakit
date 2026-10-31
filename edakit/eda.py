@@ -307,17 +307,37 @@ def ensure_focus(mcp):
     raise MCPError("the page cannot be activated again – is someone working in EasyEDA in parallel? Abort.")
 
 
+def active_page(mcp):
+    """The uuid of the schematic page EasyEDA has active; None when no schematic page is (the PCB, the start page)."""
+    sheet = mcp.call("easyeda_schematic_sheet_info")
+    return None if sheet.get("not_available") else (sheet.get("sheet") or {}).get("uuid")
+
+
 def focus_page(mcp, sch_uuid, page_uuid, timeout=200):
     """Open a page and wait until it is active. A large A1 sheet (120 parts) took up to 160 s."""
     api(mcp, "DMT_EditorControl.openDocument", page_uuid)
     deadline = time.monotonic() + timeout
     while time.monotonic() < deadline:
-        sheet = mcp.call("easyeda_schematic_sheet_info")
-        if not sheet.get("not_available") and sheet["sheet"].get("uuid") == page_uuid:
+        if active_page(mcp) == page_uuid:
             FOCUS.update(schematic=sch_uuid, page=page_uuid)
             return
         time.sleep(1)
     raise MCPError(f"page {page_uuid} did not become active")
+
+
+def read_on_page(mcp, sch_uuid, page_uuid, read, tries=3):
+    """read() – a tool that answers for the FOCUSED page (the BOM, the page's parts and nets) – on one page of a
+    schematic, counted only when the page is still the active one afterwards: EasyEDA switches tabs on its own, and
+    with another schematic open (the template, another board's) the answer would be that schematic's. Read again
+    otherwise; MCPError after tries."""
+    for _ in range(tries):
+        focus_page(mcp, sch_uuid, page_uuid)
+        out = read()
+        if active_page(mcp) == page_uuid:
+            return out
+        print(f"  ? page {page_uuid} lost the focus while it was read – reading it again")
+    raise MCPError(f"page {page_uuid}: another tab became active while it was read, {tries} times – is someone "
+                   "working in EasyEDA in parallel?")
 
 
 def activate_schematic(mcp, uuid):

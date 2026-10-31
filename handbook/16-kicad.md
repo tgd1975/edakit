@@ -7,7 +7,9 @@ the tool chain's: an EasyEDA project driven through the bridge, or KiCad files t
 
 **State 2026-10-30:** built; tested offline against a kicad-cli the tests fake, and in CI against KiCad 10 (the job
 `kicad` of tests.yml, KiCad's container image, `tests/test_kicad_live.py`) on the led-bar example. No board has gone
-through it to a release yet; 16.8 says what is confirmed and what is open.
+through it to a release yet; 16.8 says what is confirmed and what is open. On a machine with kicad-cli of another major
+version (KiCad 9, say) the live tests are skipped with the reason – they hold KiCad 10's behaviour, and a red run there
+is no regression; the CI job sets `EDAKIT_KICAD_LIVE=required`, so a missing kicad-cli or another major fails there.
 
 ## 16.1 Choosing it
 

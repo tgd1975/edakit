@@ -148,12 +148,15 @@ NOTE    GEO.hole  build/edakit/pcb_geometry_main.json: footprint geometry of boa
 one beside the board file counts.
 
 **What the circuit hands over** (SYNC.plan) comes first. The circuit designer writes it into the graph, the PCB designer
-keeps it (14.1); `edakit handover` lists it:
+keeps it (14.1); `edakit handover` lists it (a JSON graph has the same keys, `"layout": {"fixed": […], …}`, 3.1):
 
-```json
-"layout": {"fixed": ["SW1", "D2"], "edge": ["J1"], "near": {"R1": "U2"},
-           "loops": [{"a": "C5.1", "b": "U3.2", "max_mm": 8, "what": "buck input loop"}],
-           "notes": ["D2 to D9 form the bar: one row, in this order"]}
+```toml
+[layout]
+fixed = ["SW1", "D2"]
+edge = ["J1"]
+near = {R1 = "U2"}
+loops = [{a = "C5.1", b = "U3.VIN", max_mm = 8, what = "buck input loop"}]
+notes = ["D2 to D9 form the bar: one row, in this order"]
 ```
 
 `fixed` parts need a position in `place`; `edge` parts also a box within `edge_mm` of the outline (default 1 mm);
@@ -470,10 +473,13 @@ that drifts from it.
   the board: 0.3957 mm with 0.4 mm, 4.3 µm short of the arc. Mitred joins reached d / sin(θ/2) into the board there –
   0.57 mm at a 90° corner, 1.3 mm at a 36° notch with 0.4 mm. Tracks that kept the clearance were reported, and
   Freerouting lost that room in every notch.
-  `route check` and the fanout vias use the same strips. Every strip is kept, however small: at a sharp notch tip the
-  cuts leave slices under 1 mil², and without them the keep-out reached only 0.3 mm into the board there. Freerouting
-  skips a strip thinner than its 0.01 mil resolution with a warning ("Keepout zone … was skipped because its geometry
-  is degenerate"); that is harmless, and `route check` still tests against it.
+  `route check` and the fanout vias use the same strips. Every strip Freerouting can read is kept, however small: at a
+  sharp notch tip the cuts leave slices under 1 mil², and without them the keep-out reached only 0.3 mm into the board
+  there. Only a strip with no area on the DSN's grid of 0.01 mil is left out – Freerouting skipped it with "Keepout
+  zone … was skipped because its geometry is degenerate". On the round board of chapter 17, read back from EasyEDA,
+  mirrored corners lie up to 1e-4 mil apart in height; the cuts at both left 16 slices of 4e-6 to 7e-5 mil among 66
+  strips. The seam such a slice leaves is thinner than the grid, no copper passes it, and the 50 strips left cover the
+  same band.
 - `autoroute_settings` after the keep-outs: no parts read at all. A `plane` placed before the keep-outs: no
   connections read. Order matters.
 - Fanout is on by default and puts a via at every SMD pad: `--router.fanout.enabled=false`. It does not connect an
@@ -515,10 +521,12 @@ the pads of the last `route read` (GEO.spacing, 8.1).
 
 **Hand-soldered joints (GEO.spacing)** with `hand_solder_keep_mm` (0, off, by default): a joint soldered by hand gets an iron
 and wire solder, not a stencil print of fixed volume, and a tented via or a foreign pad a few tenths of a millimetre
-away can take a bridge that only shows at assembly. The joints are the through-hole pads of every part with `bom: false`
-in the graph (8.4), each on its solder side – the copper layer its part does not sit on. On that side no via and no pad
-of another net comes closer than the keep, copper to copper; a pad without a net is a net of its own, the part's own
-pads are not compared, and tracks do not count – they run under the solder mask, between the pins of a 2.54 mm part too.
+away can take a bridge that only shows at assembly. The joints are the pads of every part with `bom: false` in the
+graph (8.4), each on its solder side – for a through-hole pad the copper layer its part does not sit on, for an SMD pad
+its own layer, the side the part sits on: a tab soldered with an iron, such as a coin cell holder's, bridges to a via as
+a through-hole joint does. On that side no via and no pad of another net comes closer than the keep, copper to copper;
+a pad without a net is a net of its own, the part's own pads are not compared, and tracks do not count – they run under
+the solder mask, between the pins of a 2.54 mm part too.
 Pads too close stop `route all` like GEO.spacing (Freerouting cannot move them); a via gets the reshuffled attempts. `route
 dsn` keeps vias away from the start: around every joint a via keep-out on its solder side, the pad grown by the keep
 (Specctra `via_keepout`, which Freerouting reads) – it keeps out vias of the joint's own net as well, which reaches the
@@ -529,6 +537,9 @@ the other part or net, accepts a pair:
 hand-soldered joints (GEO.spacing): 2 on their solder side, 1 vias of other nets closer than hand_solder_keep_mm 0.5
     J1.1 (VIN) – via GND at (84.00, 9.70): 0.30 mm apart on BOTTOM, the solder side of J1, below hand_solder_keep_mm 0.5
 ```
+
+At an SMD joint the line names the part's own side: `D1.2 (VIN) – via GND at (77.20, 13.45): 0.30 mm apart on TOP,
+the side D1 sits on, below hand_solder_keep_mm 0.5`.
 
 In the reference project the layout reviews found a via 0.25 mm from an LED joint, a via 0.26 mm between two
 potentiometer pins and a resistor pad 0.37 mm from an LED joint, each after every check had passed; 0.5 mm finds all
@@ -566,7 +577,9 @@ BOTTOM (visible): 0.18 m of track, 2 vias
 
 The lengths are those of the routing preview's titles. A warning changes no exit code: the routing is not wrong, the
 look is not what the board file asked for. Stage L of the gate gives the same row from the PCB itself (8.1), and GEO.silk
-holds the side's print to the board file (7.7). Without `[looks]` nothing is printed.
+holds the side's print to the board file (7.7). Without `[looks]` nothing is printed. A board with `[looks]` is
+ordered without the maker's order number (`mark = "remove"`, edakit's default there, 10.2) unless `[order]` says
+otherwise.
 Preview: `<artifacts>/route/<board>_routing.png`, open connections dashed yellow. Nothing is written to EasyEDA until
 the check passes.
 
@@ -701,6 +714,16 @@ left, then vertical, then at the corners; not on pads, footprint print, parts or
 last resort; test points first) or at its fixed spot (`[silk.place]`, below), then exports again and checks that no own
 silkscreen lies on a solder-mask opening (JLCPCB cuts it off there) – target 0 mm² – and runs the DRC. Pictures per side
 in `<artifacts>/silk_<board>_<side>.png`.
+
+**A body larger than its footprint.** A part's box is its footprint, but a coin cell stands out of its holder. A
+designator placed beside such a footprint lies under the body once the part is in. Where the
+parts entry gives the body seen from above (`body.box`, 4.1), `silk apply` takes it as part of the part's box on its
+side: the designator goes beside the body, and no other label or the board label goes under it. A fixed designator
+(below) under a body is a finding – `R1: fixed designator under the body of R1 (top) – 2.36 mm² of its box, hidden
+once the part is in (body.box of its parts entry)`. The gate warns about any print under the body beyond the footprint
+box (GEO.silk, grade body, 8.1). The example's BT1 has no `body.box` (its entry gives the height only); the walkthrough
+fixed its designator with `[silk.place]` (17.11).
+
 The export stays in `<artifacts>/gerber_<board>/` (`edakit silk check` writes it again without placing anything): the
 copper of every layer as EasyEDA filled it, which the layout review at the end of the round reads (skill pcb-round) –
 the routing picture shows the pours edakit computed, not what EasyEDA made of them.

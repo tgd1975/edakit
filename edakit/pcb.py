@@ -482,18 +482,27 @@ def _given_mm(v, low=None, above=False):
 
 def part_mech(part):
     """The third dimension of a parts entry, every field optional: `body.h_mm` (height of the body above the board, on
-    the part's side), `lead.<pad or "*">.length_mm` (lead length below the seating plane, beside the cross-section of
+    the part's side), `body.box` (the body seen from above, [x0, y0, x1, y1] in footprint mm, where it is larger than
+    the footprint – a coin cell standing out of its holder; GEO.silk counts it as covering the print under it),
+    `lead.<pad or "*">.length_mm` (lead length below the seating plane, beside the cross-section of
     GEO.hole), `mate` – the mated plug with its strain relief: `box` [x0, y0, x1, y1] in footprint mm (relative to the
     part's origin at 0° on TOP, as the geometry dump), `h_mm`, and `exit`, the direction the cable leaves the box:
-    "+x", "-x", "+y", "-y", or "+z" away from the board. -> ({"h_mm", "leads": {pad: length}, "mate"} as far as the
-    entry gives them, [what is wrong])."""
+    "+x", "-x", "+y", "-y", or "+z" away from the board. -> ({"h_mm", "box", "leads": {pad: length}, "mate"} as far as
+    the entry gives them, [what is wrong])."""
     part, out, bad = part or {}, {}, []
     if "body" in part:
-        h = part["body"].get("h_mm") if isinstance(part["body"], dict) else None
+        body = part["body"] if isinstance(part["body"], dict) else {}
+        h, box = body.get("h_mm"), body.get("box")
         if _given_mm(h, 0):
             out["h_mm"] = float(h)
-        else:
+        elif "h_mm" in body or box is None:
             bad.append("body.h_mm must be a height in mm, 0 or more")
+        if box is not None:
+            if isinstance(box, list) and len(box) == 4 and all(_given_mm(v) for v in box) and box[0] < box[2] \
+                    and box[1] < box[3]:
+                out["box"] = [float(v) for v in box]
+            else:
+                bad.append("body.box must be [x0, y0, x1, y1] in footprint mm with x0 < x1 and y0 < y1")
     leads = {}
     for pad, lead in (part.get("lead") or {}).items():
         if isinstance(lead, dict) and "length_mm" in lead:
@@ -1944,9 +1953,8 @@ def _number(text, pattern):
 def schematic_parts(mcp, board):
     sch_uuid, pages = eda.find_pages(mcp, board.schematic)
     parts = {}
-    for page in pages:
-        eda.focus_page(mcp, sch_uuid, page)
-        for c in api(mcp, "SCH_PrimitiveComponent.getAll") or []:
+    for page in pages:              # getAll answers for the focused page: counted only while it stayed active
+        for c in eda.read_on_page(mcp, sch_uuid, page, lambda: api(mcp, "SCH_PrimitiveComponent.getAll")) or []:
             st = eda.state(c)
             if st.get("ComponentType") == "part" and st.get("AddIntoPcb", True) and st.get("Designator"):
                 parts[st["Designator"]] = {**st, "_page": page}

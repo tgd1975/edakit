@@ -32,9 +32,10 @@ RELEASED only if
     further layout_files of [release], the footprint geometry, the footprint data of the parts entries – footprint.py,
     only where an entry has it) or 'fab' (what the manufacturer builds from: the
     Gerber layers rasterised, the drill hits, BOM and CPL rows, with [order] the order settings that change the board
-    as made – known after stage F, fab.fab_layers). An accepted warning with scope 'decision' counts regardless of the
-    hash and refers to a numbered decision in the docs; one that names its parts ({designator: LCSC}) counts only
-    while they are the same parts.
+    as made – known after stage F, fab.fab_layers; a run without stage F counts no sign-off of scope 'fab' and names
+    the fab hash a signed one is bound to: stage F checks it, it is not open). An accepted warning with scope
+    'decision' counts regardless of the hash and refers to a numbered decision in the docs; one that names its parts
+    ({designator: LCSC}) counts only while they are the same parts.
   - with [project] requirements (requirements.py): every requirement 'must' has passing evidence in this run, and
     every 'should' without it is accepted like a warning – section 11 of the protocol lists them all, section 6 the
     acceptance steps. A draft binds nothing yet: it never blocks and needs no acceptance, the findings about it are
@@ -78,7 +79,8 @@ from fnmatch import fnmatch
 from pathlib import Path
 
 from .. import catalog, docs, eda, requirements
-from ..design import Design
+from ..config import ConfigError
+from ..design import KEYED, Design, graph_of_toml
 from ..toolchain import is_kicad
 
 STAGES = [
@@ -133,30 +135,53 @@ def strip(data, ignore):
     return data
 
 
-def content(path, ignore=()):
+def arranged(graph):
+    """A graph with the arrangement of its form taken out: components sorted by designator, nets and cables by name,
+    the pins of a net sorted – the order no check reads (circuit-language decision 2)."""
+    out = dict(graph)
+    for key, field in KEYED.items():           # graph_of_toml made each a list of tables
+        if isinstance(out.get(key), list):
+            out[key] = sorted(out[key], key=lambda row: str(row[field]))
+    if isinstance(out.get("nets"), list):
+        out["nets"] = [{**n, "pins": sorted(n["pins"], key=str)} if isinstance(n.get("pins"), list) else n
+                       for n in out["nets"]]
+    return out
+
+
+def content(path, ignore=(), graph=False):
     """What the hash takes of a file: its bytes; with ignore, a JSON file as canonical JSON (sorted keys, no
-    whitespace) without those keys. A file that is no valid JSON stays bytes."""
+    whitespace) without those keys. A file that is no valid JSON stays bytes. graph: the file is the project's graph –
+    a TOML graph is read as data in any case and taken as canonical JSON, arranged, without the keys of ignore, so that
+    a comment, a blank line and a table or pin moved count for nothing; one that does not load stays bytes. A JSON
+    graph as any JSON file."""
     path = Path(path)
     if not path.exists():
         return b"<missing>"
     raw = path.read_bytes()
-    if not ignore:
+    if graph and path.suffix == ".toml":
+        try:
+            data = arranged(graph_of_toml(raw.decode("utf-8"), path))
+        except (ConfigError, UnicodeDecodeError):
+            return raw
+    elif not ignore:
         return raw
-    try:
-        data = json.loads(raw)
-    except (json.JSONDecodeError, UnicodeDecodeError):
-        return raw
+    else:
+        try:
+            data = json.loads(raw)
+        except (json.JSONDecodeError, UnicodeDecodeError):
+            return raw
     return json.dumps(strip(data, set(ignore)), sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode()
 
 
-def file_hash(root, files, ignore=(), documented=(), extra=()):
-    """SHA-256 over the names and contents of files; the files in `documented` without the keys in ignore. extra:
-    [(name, bytes)] taken after the files the same way – none, and the hash is that of the files alone."""
+def file_hash(root, files, ignore=(), documented=(), extra=(), graph=None):
+    """SHA-256 over the names and contents of files; the files in `documented` without the keys in ignore, the graph
+    file `graph` as content() takes a graph. extra: [(name, bytes)] taken after the files the same way – none, and the
+    hash is that of the files alone."""
     h = hashlib.sha256()
     documented = {Path(f) for f in documented}
     for f in files:
         h.update(str(Path(f).relative_to(root) if Path(f).is_relative_to(root) else f).encode() + b"\0"
-                 + content(f, ignore if Path(f) in documented else ()))
+                 + content(f, ignore if Path(f) in documented else (), graph is not None and Path(f) == Path(graph)))
     for name, data in extra:
         h.update(name.encode() + b"\0" + data)
     return h.hexdigest()
@@ -173,9 +198,10 @@ def state_files(cfg):
 def state_hash(cfg, ignore=None):
     """The circuit hash (state_sha256). [release] hash_ignore leaves its keys out of the graph and the parts entries;
     the simulation config (its `sources` are the supplies), the plugin, state_files and the requirements files stay
-    bytes – the reviews read the requirements whole."""
+    bytes – the reviews read the requirements whole. A TOML graph counts with its data, a JSON graph with its bytes
+    or, with hash_ignore, as canonical JSON (content)."""
     ignore = cfg.release.get("hash_ignore", []) if ignore is None else ignore
-    return file_hash(cfg.root, state_files(cfg), ignore, [cfg.graph, *cfg.parts.glob("*.json")])
+    return file_hash(cfg.root, state_files(cfg), ignore, [cfg.graph, *cfg.parts.glob("*.json")], graph=cfg.graph)
 
 
 def layout_files(cfg):
@@ -286,7 +312,9 @@ def load_signoff(cfg, head, write=False):
     """Sign-offs and accepted warnings that count for the current hash of their scope. A required manual check the
     file does not list is added as open – also the sign-off of a project agent ([agents.<name>], required): it counts
     only signed by its agent (held). When only [release] hash_ignore changed, the circuit sign-offs keep counting and
-    the old and new hash go into `rehashed` – into the file only with write (the gate)."""
+    the old and new hash go into `rehashed` – into the file only with write (the gate). Without stage F (no fab_sha256
+    in head) a signed manual check of scope 'fab' does not count either, but is not open: `unchecked` holds the file's
+    fab_sha256 it is bound to and who signed it, for decide and the protocol."""
     from .. import scripts
     path = cfg.signoff
     missing = not path.exists()          # no file: nothing is signed, and every required check is open
@@ -302,19 +330,28 @@ def load_signoff(cfg, head, write=False):
             save_manifest(path, s, indent=2)
             print(f"  {notes[-1]}")
     used = {x.get("scope", "circuit") for x in [*s.get("manual", []), *s.get("accept", [])]}
+    bound = s.get("fab_sha256") if head.get("fab_sha256") is None else None   # signed for a hash this run lacks
     for scope, key in SCOPE_KEY.items():
         if scope == "fab" and head.get(key) is None:   # known only after stage F
             valid[scope] = False
             if scope in used:
-                notes.append(f"{path.name}: sign-offs with scope 'fab' are not checked in a run without stage F "
+                notes.append(f"{path.name}: sign-offs with scope 'fab' are bound to fab {bound[:12]}… – a hash only "
+                             "stage F computes: this run cannot check them, stage F does" if bound else
+                             f"{path.name}: sign-offs with scope 'fab' are not checked in a run without stage F "
                              "(no fab_sha256) and do not count")
             continue
         valid[scope] = s.get(key) == head.get(key)
         if not (missing or valid[scope]) and (scope != "fab" or scope in used or key in s):
             notes.append(f"{path.name}: sign-offs with scope '{scope}' belong to another state ({key}) and do not count")
-    manual = [m if valid.get(m.get("scope", "circuit")) else {**m, "done_by": None} for m in s.get("manual", [])]
     team = scripts.agents(cfg)          # [agents.<name>]: what the project's agents sign, held to them
-    manual = [held(m, team.signers.get(m.get("id")), path.name, notes) for m in manual]
+    manual = []
+    for m in s.get("manual", []):
+        unchecked = bound and m.get("scope", "circuit") == "fab" and m.get("done_by")
+        m = held(m if valid.get(m.get("scope", "circuit")) or unchecked else {**m, "done_by": None},
+                 team.signers.get(m.get("id")), path.name, notes)
+        if unchecked and m.get("done_by"):  # it does not count here, and is not open: stage F holds it to its hash
+            m = {**m, "done_by": None, "unchecked": {"fab_sha256": bound, "by": m["done_by"]}}
+        manual.append(m)
     for sid, m in required(cfg, team).items():
         if sid not in {x.get("id") for x in manual}:
             agent = team.signers.get(sid)
@@ -576,10 +613,14 @@ def decide(rows, sim_checks, signoff, stages_run, stages, reqs=()):
     pend = sum(r["result"] == "pending" for r in rows)
     if pend:
         reasons.append(f"{pend} open sign-off(s) (section 5)")
-    open_manual = [m for m in signoff.get("manual", []) if m.get("phase", "export") == "export" and not m.get("done_by")]
+    export = [m for m in signoff.get("manual", []) if m.get("phase", "export") == "export" and not m.get("done_by")]
+    open_manual = [m for m in export if not m.get("unchecked")]
     if open_manual:
         reasons.append(f"{len(open_manual)} manual check(s) before the export open: "
                        + ", ".join(m["id"] for m in open_manual) + " (section 6)")
+    if unchecked := [m for m in export if m.get("unchecked")]:     # without stage F: signed for a fab hash
+        reasons.append(f"{', '.join(m['id'] for m in unchecked)} signed for fab "
+                       f"{unchecked[0]['unchecked']['fab_sha256'][:12]}… – checked by stage F (section 6)")
     missing = [f"{sid} ({name})" for sid, name, _ in stages if sid not in stages_run]
     if missing:
         reasons.append("stages not run: " + ", ".join(missing))
@@ -656,7 +697,7 @@ def signer(m):
     """Who signs an open manual check that a project agent signs, for its line in section 6 – nothing when its text
     names the agent already."""
     from .. import scripts
-    if not m.get("agent") or m.get("done_by") or scripts.names_agent(m.get("text"), m["agent"]):
+    if not m.get("agent") or m.get("done_by") or m.get("unchecked") or scripts.names_agent(m.get("text"), m["agent"]):
         return ""
     return f" – the project agent {m['agent']} signs it" + (f", in place of {m['replaces']}" if m.get("replaces") else "")
 
@@ -923,7 +964,9 @@ def write_protocol(cfg, outdir, head, rows, sim, signoff, notes, decision, reaso
         L += ["\nAcceptances that lapsed – a part they name is another one now; judge again and update `parts`, or "
               "remove them:\n", *[f"- `{a['match']}`: {a['lapsed']}" for a in gone]]
     L.append("\n## 4 Accepted in the graph\n")
-    L += [f"- {r['id']} {r['check']}  \n  reason: {r['reason']}" for r in rows if r["result"] == "waived"] or ["None."]
+    L += [f"- {r['id']} {r['check']}  \n  reason: {r['reason']}" for r in rows if r["result"] == "waived"] + [
+        f"- {c['id']} [{c['scenario']}] {c['item']}: {c['check']} {c.get('actual', '')}, expected {c.get('expected', '')}"
+        f"  \n  reason: {c['reason']}" for c in sim["checks"] if c["result"] == "waived"] or ["None."]
     L.append("\n## 5 Open sign-offs\n")
     L += [f"- [ ] {r['check']}" for r in rows if r["result"] == "pending"] or ["None."]
     L.append("\n## 6 Manual checks\n")
@@ -937,6 +980,8 @@ def write_protocol(cfg, outdir, head, rows, sim, signoff, notes, decision, reaso
             L.append(f"**{title}**\n")
             for m in items:
                 by = (f" – {m['done_by']}, {m.get('date')}" + (f": {m['note']}" if m.get("note") else "")) if m.get("done_by") else ""
+                if u := m.get("unchecked"):     # a run without stage F: the fab hash it is bound to is unknown here
+                    by = f" – signed for fab {u['fab_sha256'][:12]}… by {u['by']}, {m.get('date')}: checked by stage F"
                 L.append(f"- [{'x' if m.get('done_by') else ' '}] {m['id']} {m['text']}{signer(m)}{by}")
             L += answered
             L.append("")

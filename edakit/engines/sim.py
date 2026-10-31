@@ -340,10 +340,13 @@ def stress(s):
                 info = meta["leds"].get(el["name"], {})
                 label, color = el["name"][2:].upper(), info.get("color") or ""
                 rr = r.get(color, r) if color else r
-                if kind == "led" and "if_max_a" in rr:
-                    s.q(label, "if", cur, "A", kind, des, "forward current", color=color)
-                    s.q(label, "vr", max(k - a, 0), "V", kind, des, "reverse voltage", color=color)
-                elif kind == "diode" and "if_max_a" in r:
+                if kind == "led":
+                    if "if_max_a" in rr:
+                        s.q(label, "if", cur, "A", kind, des, "forward current", color=color)
+                        s.q(label, "vr", max(k - a, 0), "V", kind, des, "reverse voltage", color=color)
+                    if "p_max_w" in rr:      # vf × if at the operating point, its series resistance included
+                        s.q(label, "p", abs((a - k) * cur), "W", kind, des, "power dissipation", color=color)
+                elif "if_max_a" in r:
                     s.q(des, "if", cur, "A", kind, des, "forward current")
                     s.q(des, "vr", max(k - a, 0), "V", kind, des, "reverse voltage")
             elif kind in ("npn", "pnp") and "ic_max_a" in r:
@@ -485,13 +488,13 @@ def function(s, load, low=None, plugin=None):
         s.q(des, "i", max(res.get(src["branch"], 0.0), 0.0), "A", "", des, "current into the supply (fed backwards)",
             code="LIM.backfeed", entry=False,
             lims=[Limit(max=lim, source=f"i_back_max_a of sources.{des} (default the criteria's blocking_max_a)")])
-    for name, cell in meta.get("cells", {}).items():
+    for name, cell in meta.get("cells", {}).items():     # name: the holder – an accept on it reaches its cell's rows
         lim = s.sim["cells"][cell["state"]].get("i_charge_max_a", crit["blocking_max_a"])
-        s.q(name, "i", max(res.get(cell["branch"], 0.0), 0.0), "A", "", None, "current into the cell (charging)",
+        s.q(name, "i", max(res.get(cell["branch"], 0.0), 0.0), "A", "", name, "current into the cell (charging)",
             code="LIM.backfeed", entry=False,
             lims=[Limit(max=lim, source=f"i_charge_max_a of cells.{cell['state']} in sim.json")])
         if (most := s.sim["cells"][cell["state"]].get("i_max_a")) is not None:
-            s.q(name, "i", max(-res.get(cell["branch"], 0.0), 0.0), "A", "", None, "current from the cell", code="LIM.i",
+            s.q(name, "i", max(-res.get(cell["branch"], 0.0), 0.0), "A", "", name, "current from the cell", code="LIM.i",
                 entry=False, grade="cell",
                 lims=[Limit(max=most, source=f"i_max_a of cells.{cell['state']} in sim.json")])
     for des, reg in meta["regs"].items():
@@ -1034,7 +1037,7 @@ def config_windows(s):
                    and w.get("min_v", -math.inf) <= x <= w.get("max_v", math.inf)]
             expected = "; ".join(f"{w.get('state')} " + (f"{w['min_v']:g}" if "min_v" in w else "") + " … "
                                  + (f"{w['max_v']:g}" if "max_v" in w else "") + " V" for w in ws)
-            s.check("REQ.value", ref, f"{ref} ({p.get('name', num)}) inside one window of its setting"
+            s.check("REQ.value", ref, f"{d.pin_text(ref)} inside one window of its setting"
                     + (f": {hit[0]}" if hit else ""), x, expected, bool(hit), "V",
                     f"pin windows of {s.n.entry_key(des)}", grade="window", on=(("component", des),))
 

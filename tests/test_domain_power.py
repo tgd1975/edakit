@@ -160,6 +160,27 @@ def test_a_cell_above_its_current(project):
     assert "BT1" not in [f.place for f in found(project, "HINT.input_polarity")]
 
 
+
+@ngspice
+def test_an_accept_on_the_holder_takes_the_cell_current(project):
+    """walkthrough-gaps C1: the current from a cell above its i_max_a is accepted on the holder, as a finding at any
+    other part – `accept: {"LIM.i/cell": …}` on BT1 (the walkthrough's coin cell, pressed for a moment) –, and the
+    comparison's row says so: the gate counts it waived, not failed."""
+    from test_sim_supply import cells_on_the_rail
+    sim = cells_on_the_rail(project)
+    sim["cells"]["fresh"]["i_max_a"] = 0.05
+
+    def cell():
+        return [f for f in simulate(project, sim)["findings"] if f["code"] == "LIM.i" and f.get("grade") == "cell"]
+    assert cell() and not any(f.get("accepted") for f in cell())
+    g = project.graph()
+    project.comp(g, "BT1")["accept"] = {"LIM.i/cell": "a test: the load is short"}
+    project.save_graph(g)
+    assert cell() and all(f.get("accepted") == "a test: the load is short" for f in cell())
+    rows = [c for c in simulate(project, sim)["checks"] if c["item"] == "BT1" and c["check"] == "current from the cell"
+            and c["result"] != "pass"]                   # the gate counts these rows: accepted, a row is waived
+    assert rows and {(c["result"], c.get("reason")) for c in rows} == {("waived", "a test: the load is short")}
+
 def test_a_plug_whose_polarity_nobody_checks(project):
     """HT-6: a supply connector the graph does not mark as reversible gets the polarity hint; marked, PATH.reverse
     checks it and the hint is quiet. A battery holder never gets it – the walkthrough of handbook 17 had to accept it

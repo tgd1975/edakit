@@ -250,6 +250,23 @@ def test_version_of_the_fake(fake_cli):
     assert cli.version() == "10.0.6"
 
 
+@pytest.mark.parametrize("text, major", [("10.0.6", 10), ("9.0.8", 9), ("10.0.6-1~ubuntu24.04.1", 10),
+                                         ("11.0", 11), ("no version", None)])
+def test_the_major_of_kicad_cli(text, major):
+    assert cli.major(text) == major
+
+
+def test_the_live_tests_skip_on_another_major(fake_cli):
+    """tests/test_kicad_live.py runs against kicad-cli of cli.MAJOR only (walkthrough-gaps B8: KiCad 9.0.8 failed two
+    of them, a red local run that is no regression); with EDAKIT_KICAD_LIVE=required – the CI job kicad – it runs
+    against any, and a wrong container fails instead of being skipped."""
+    import test_kicad_live as live
+    assert live.skip_reason(cli.version()) is None                           # the fake is KiCad 10
+    assert live.skip_reason("9.0.8") == ("kicad-cli is KiCad 9.0.8 – edakit writes for and is tested with KiCad 10 "
+                                         "(cli.MAJOR); the CI job kicad runs these tests in KiCad 10's container")
+    assert live.skip_reason("9.0.8", required=True) is None
+
+
 def test_fab_collects_the_files_of_stages_l_and_f_from_kicad(project, fake_cli):
     cfg = kicad_project(project)
     board = cfg.board()

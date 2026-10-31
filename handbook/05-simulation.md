@@ -12,6 +12,10 @@ switch-over between two sources – a DC scenario sits on one side of the gap or
 the supply over time and LIM.v judges them. Switching spikes and fast edges are measured on the delivered board
 (acceptance test): the behaviour models know no switching.
 
+A finding of the simulation is accepted as every other is, with `accept` and the reason on its part or net, or on
+the graph keyed by "code place" (3.4): `edakit sim` prints it as accepted, and the comparison's row reads `waived`
+– the gate counts it so and lists it in section 4 of the protocol, as it does an accepted finding of stages P and G.
+
 ## 5.1 How the netlist is built
 
 - Resistors, capacitors, inductors (with DCR), fuses, diodes, LEDs (model from Vf at a test current), BJTs, MOSFETs
@@ -58,7 +62,8 @@ the supply over time and LIM.v judges them. Switching spikes and fast edges are 
 - No supply is fed backwards: where two supplies meet and nothing blocks the way, the higher one feeds the lower one –
   into a PC's USB port through a module whose 5 V pin is its VBUS, into primary cells. LIM.backfeed holds the current into
   every source (against its direction) to `i_back_max_a` of the source, and the current into every cell of a battery
-  holder to `i_charge_max_a` of its cell state, and with `i_max_a` what a cell delivers (LIM.i/cell, a coin cell's few mA) (`"cells": {"nimh": {"v": 1.3, "r": 0.05, "i_charge_max_a": 0.1}}` for a
+  holder to `i_charge_max_a` of its cell state, and with `i_max_a` what a cell delivers (LIM.i/cell, a coin cell's few mA – accepted on the holder like a finding
+  at any part, `accept: {"LIM.i/cell": …}`, the walkthrough's D-7) (`"cells": {"nimh": {"v": 1.3, "r": 0.05, "i_charge_max_a": 0.1}}` for a
   pack its charger charges on purpose); both are `criteria.blocking_max_a` (1 mA) unless set.
 - Every net is one node – a track is 0 Ω – unless sim.json `copper` names it (5.2): then each of its pins gets a node
   of its own, with the routed tracks and vias as resistors in between, and every check sees the voltage at the pin.
@@ -471,6 +476,14 @@ Every expectation of an AC run of the simulation config (ac) holds: the gain fro
 **`SIM.copper`** – copper annotated (note; replaces E-1)  
 A net listed for copper is simulated with its routed copper; where it is not, it stays one ideal node.
 <!-- edakit:end -->
+
+**Power.** What a part dissipates at the operating point of every scenario is held to the `p_max_w` of its entry,
+derated by `derating.p` of sim.json (50 % by default, `catalog/tables/derating.toml`): a resistor's I²R, a
+transistor's VCE × IC + VBE × IB, a MOSFET's VDS × ID, a JFET's VDS × ID + VGS × IG, and an LED's VF × IF, its series
+resistance included – each colour of an RGB LED against its colour's `p_max_w` where the entry gives its limits per
+colour. LIM.i alone does not hold an LED: one below its `if_max_a` with a high forward voltage can be above its power
+rating. The walkthrough's red LED dissipates 14.75 mW at the most, against 32.5 mW, half its 65 mW (17.6). A part
+without `p_max_w` gets no LIM.p row; a diode's power counts into its junction temperature only (below).
 
 **Heat and touch.** Half the power rating is no temperature: an AO3401A (125 K/W) at LIM.p's 0.45 W runs at 96 °C
 at 40 °C ambient. Every part whose entry gives `rth_ja_k_per_w` gets its junction temperature in every scenario,

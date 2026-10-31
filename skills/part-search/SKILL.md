@@ -48,7 +48,8 @@ profile says: `${CLAUDE_PLUGIN_ROOT}/skills/part-search/distributors/<name>.md` 
   pattern of a similar part: `kind`, `pins` (names identical to the graph, `type`, `role`, `v_max_v`), `values`,
   `limits`, `spice` for diodes/transistors, `lead` for through-hole parts (GEO.hole stays pending without it and holds
   it to the footprint's holes at once; with `length_mm` when the drawing gives it), `body` `h_mm` when the board goes
-  into an enclosure, `mate` for a connector whose plug needs room (the mated plug from the manufacturer's assembly
+  into an enclosure and `box` where the body stands out of the footprint (a coin cell over its holder, from the
+  drawing – GEO.silk), `mate` for a connector whose plug needs room (the mated plug from the manufacturer's assembly
   drawing, handbook 4.1), `sources` (mark every assumption as "assumption" – also a value taken from a
   sibling part or the series, e.g. "VR_max = 5 V from XL-304UGD of the same series: assumption"; the gate protocol
   lists them). edakit's parts library (`edakit/parts/` of the plugin, `edakit part add` lists it) has entries to copy

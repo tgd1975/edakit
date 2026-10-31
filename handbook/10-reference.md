@@ -10,7 +10,8 @@ are. What one role decides lives in a file of its own, with one owner and one ha
 |---|---|---|---|
 | `edakit.toml` | project, boards with their EasyEDA documents, where the files are, release settings, the project's scripts and agents | new-project, the user | – |
 | `hardware/requirements.toml` | what the circuit must do: needs and requirements with their evidence (3.6, 10.4), with `[project] requirements` | the skill requirements drafts, only the user accepts | circuit |
-| `hardware/graph.json` | the circuit with its purpose, the hand-over to the layout, the ground net and the check settings (3.1) | circuit designer | circuit |
+| `hardware/graph.toml` | the circuit with its purpose, the hand-over to the layout, the ground net and the check settings (3.1) – in a project that has not converted `hardware/graph.json`, the same graph as JSON | circuit designer | circuit |
+| `hardware/graph.json` beside a TOML graph | the resolved graph, generated: pin numbers, every pin map (3.1) – never edited | `edakit graph json --write`, `edakit graph convert` | – |
 | `hardware/parts/`, `hardware/sim.json` | parts database (4), simulation scenarios (5) | part-selector, circuit designer | circuit |
 | `hardware/schematic.toml` | arrangement of the schematic: blocks, notes, pin table (10.3) | circuit designer | – |
 | `hardware/boards/<name>.toml` | one board: outline, holes, placement, routing, pours, silkscreen (10.2) | PCB designer | layout |
@@ -34,14 +35,14 @@ board, the schematic or the checks (the earlier one-file form) is refused with a
 | `distributors` | `["lcsc"]` | where the agent part-selector searches, in this order: `lcsc`, `rs`, `farnell`, `mouser`, `digikey`, `reichelt` (chapter 4.2) |
 | `lock` | `auto` | EasyEDA claim between Claude sessions: `auto` (when `CLAUDE_CODE_SESSION_ID` is set) or `off` |
 | `agreements` | `true` | the working agreements of handbook 11.4, one line each, in the context of every Claude Code session in the project (plugin hook at session start); `false` turns them off – not the lines of the project's scripts and agents the hook adds after them (11.4) |
-| `graph` | `hardware/graph.json` | the hardware graph |
+| `graph` | `hardware/graph.json` | the hardware graph: a `.json` file, or a `.toml` file with the same keys and components, nets and cables as tables keyed by designator and name – `[components.R1]`, `[nets."+5V"]` –, read to the same graph; a key twice is an error with its line. The skill new-project writes `hardware/graph.toml`, `edakit graph convert` moves a JSON project to it (3.1). Beside a TOML graph `edakit graph json --write` keeps the resolved `graph.json`, which the pre-commit hook checks (`edakit graph json --check`). A TOML graph counts in the circuit hash with its data (8.2); `edakit convert` has nothing to do on it, `edakit block add` writes into it with its comments kept (14.5) |
 | `parts` | `hardware/parts` | parts database, one JSON per part (LCSC number or manufacturer part number) |
 | `sim` | `hardware/sim.json` | simulation config (chapter 5) |
 | `sim_plugin` | – | optional Python file with `MODELS` and `checks` (5.1) |
 | `schematic` | `hardware/schematic.toml` | the schematic file (10.3) |
 | `signoff` | `hardware/signoff.json` | the sign-off file (8.2) |
 | `requirements` | – | the requirements file (3.6, 10.4), e.g. `"hardware/requirements.toml"`; a variant names the main project's file and its own, `["../../hardware/requirements.toml", "hardware/requirements.toml"]`. With it `edakit req` lists the file, `edakit check` checks it (DOCS.ref to DOCS.draft), the gate evaluates every requirement (8.7) and the circuit hash covers it. A file named here must exist and be valid, else `edakit req`, `edakit check` and the gate stop. Without the key no file is read and nothing changes |
-| `domains` | – | the domains the project switches on besides `core` (`edakit/domains`: `usb`, `radio`, `audio`, `guitar`, `motors`, `power`, `cables`), e.g. `["usb"]` – what each switches on, its severities, the facts it requires of the parts, its hints and the reviewers' questions; `edakit domains` lists them. Without the key every domain the graph suggests is on; with it a domain the graph suggests and the list leaves out is a note `STRUCT.domain` and reports nothing |
+| `domains` | – | the domains the project switches on besides `core` (`edakit/domains`: `usb`, `radio`, `audio`, `guitar`, `motors`, `power`, `cables`, `mains`), e.g. `["usb"]` – what each switches on, its severities, the facts it requires of the parts, its hints and the reviewers' questions; `edakit domains` lists them. Without the key every domain the graph suggests is on; with it a domain the graph suggests and the list leaves out is a note `STRUCT.domain` and reports nothing |
 | `artifacts` | `build/edakit` | caches, previews, routing files, exports, Gerber exports (not versioned) |
 | `reports` | `build/release` | gate runs |
 | `datasheets` | `<artifacts>/datasheets` | the datasheets `edakit part fetch` keeps, `<key>.pdf` and `<key>.json` (4.6); a folder in the repository versions them |
@@ -246,7 +247,8 @@ from the outline, in the DSN and in Freerouting; the pours: `pour_inset_mm`), `p
 `widths` (`"classes"`: the DSN takes the widths of `classes` and `signal_mil`; `"sim"`: every class at least the
 IPC-2221 width of its nets' simulated currents, a net outside the classes that needs more than `signal_mil` a class of
 its own – needs `net_currents.json`, 7.5), `hand_solder_keep_mm` (0 = off: GEO.spacing, vias and pads of other nets at
-least this far, in mm, from the through-hole pads of `bom: false` parts on their solder side; `route dsn` writes via
+least this far, in mm, from the pads of `bom: false` parts on their solder side – a through-hole pad's the side its part
+does not sit on, an SMD pad's its own; `route dsn` writes via
 keep-outs around them, 7.5), `drc_rules` (none: GEO.drc as before; `"check"`: the gate reads the rule set of EasyEDA's DRC
 with the DRC and GEO.drc holds it to these rules – clearance, edge clearance, track widths, via, classes, 7.5),
 `[[routing.keepouts]]` ({layer, what = "wire"|"all", rect | polygon, windows, window_mm}), `[[routing.fixed_wires]]`
@@ -262,7 +264,10 @@ switching node).
 
 `[order]`: every question a maker's order form asks, as a key in edakit's words with edakit's default – the board
 edakit assumes when nothing is said, the same for every maker (8.4). Three layers, the later one wins per key: these
-defaults, `[order]` of edakit.toml (every board, 10.1), `[order]` of the board file. The maker's profile only
+defaults, `[order]` of edakit.toml (every board, 10.1), `[order]` of the board file. One default depends on the board:
+on a board with `[looks]` `mark` is `"remove"` – no order number on a board people look at, decided in the files and
+so in the fab hash before the gate and M-5, not at the form (the owner's decision of 2026-10-31); order.md names
+`[looks]` as where it comes from, and a `mark` in either `[order]` wins. The maker's profile only
 translates a value into its word (`edakit/makers/<maker>.toml`, `edakit cart fields`); a value the maker does not
 offer is a finding of FILES.order for that maker. "Board": the key changes the board as made – `fab/<board>/order.json` has
 `thickness_mm`, `mask`, `silkscreen`, `finish` and `mark` whenever the board has `[order]`, and every other such key
@@ -280,7 +285,7 @@ where its value differs from the default; so a project that sets none of them ke
 | `vias` | `"tented"` | `"untented"`, `"plugged"`, `"epoxy_filled"` | ✓ |
 | `outline_tolerance` | `"regular"` | `"precision"` | ✓ |
 | `gold_fingers`, `castellated`, `edge_plating` | `false` | true or false | ✓ |
-| `mark` | `"default"` | `"specify"`: at the maker's placeholder (JLCPCB: `JLCJLCJLCJLC`, PCBWay: `WayWayWay`), `"remove"` – the maker's order number; JLCPCB reports its own gone since May 2026, and FILES.order warns about the placeholder | ✓ |
+| `mark` | `"default"`; on a board with `[looks]` `"remove"` | `"specify"`: at the maker's placeholder (JLCPCB: `JLCJLCJLCJLC`, PCBWay: `WayWayWay`), `"remove"` – the maker's order number; JLCPCB reports its own gone since May 2026, and FILES.order warns about the placeholder | ✓ |
 | `barcode`, `serial_number` | `"none"`, `false` | `"qr"`, `"datamatrix"`; true or false – for traceability, printed by the maker where there is room (JLCPCB since May 2026) | ✓ |
 | `electrical_test`, `quality` | `"flying_probe"`, `"ipc2"` | the maker's words | – |
 | `confirm_production_file`, `paper_between` | `false` | true or false | – |
@@ -372,11 +377,13 @@ scripts that write what they read first, when those are outdated or never ran, a
 | `edakit rules [CODE …]` | – | the catalog `edakit/catalog/codes.toml`: engines and codes; an old check ID (G-4) the codes that replace it (10.7; no project needed) | – |
 | `edakit explain CODE …` | – | the catalog: rule, why, fix, sources and severity of a code; an old check ID names its codes (no project needed) | – |
 | `edakit graph show NAME [--json F]` | – | graph, parts entries, the checks of `edakit check` | – (one part or net: type, board, part number and parts entry with kind, limits and values, every pin with name, role and net – or the net's range, fn, cables and pins –, the accepts, and the findings whose place is the name or that may be accepted on it) |
+| `edakit graph json [--write\|--check]` | – | graph, parts entries | – (the resolved graph on stdout: `{"graph": …}` with pin numbers wherever the graph names a pin, every component's pin map – its parts entry's where the graph has none –, the lists in the order of the file); `--write`: beside a TOML graph the generated `hardware/graph.json`, never over a JSON graph (exit 1); `--check`: exit 2 when the committed file differs, with what differs, nothing written – for the pre-commit hook of a project with a TOML graph. The generated file is derived: neither in the circuit hash nor the data name `graph` of the scripts (3.1) |
+| `edakit graph convert [--dry-run]` | – | the JSON graph, parts entries, edakit.toml, sign-off file | `hardware/graph.toml` (components, nets and cables keyed by designator and name, pins by name or role, a pin map only where it differs from the entry's, long text over several lines, the convention `pin_reference` rewritten), `[project] graph` in edakit.toml (a line edit, comments kept), `hardware/graph.json` again as the resolved graph generated from it; refused with what to fix for null, a name twice or a pin that names none, and when the TOML would not read back to the same graph; when the files were the signed ones, the sign-offs of scope 'circuit' keep counting – the new circuit hash goes into the sign-off file, both into `rehashed`; `--dry-run`: the TOML and what would change. Left by hand after it: with `[firmware]` `edakit firmware` (the contract's `state_sha256` is the new circuit hash – convert says so), and the project scripts that read `graph` show as outdated once – `edakit run` or `edakit scripts stamp` (8.6) |
 | `edakit domains [--review R]` | – | graph, parts, `edakit/domains` | – (the domains on and off, suggested; with `--review electrical`, `regulatory` or `pcb` the questions of the enabled domains for that review) |
 | `edakit mutate [--sim] [--json F]` | – | graph, parts, with `--sim` the simulation config | – (mistakes built into a copy one at a time – every part left out, diodes, LEDs and polarized capacitors turned round, resistors ×100 and ÷100, nets shorted to ground – and those that raise no new error, warning or pending finding listed: what no code catches; in memory) |
 | `edakit convert [--write]` | – | graph, parts entries, sign-off file, documents, schematic notes, requirements files | `--write`: the files in the form of the restructuring (limits and values with units, accept by code, locks, codes in quotes and rows patterns), each with its own indent; when they were the signed ones, the sign-offs of scope 'circuit' keep counting – the new circuit hash goes into the sign-off file, both into `rehashed`; without: the list |
 | `edakit block list\|show NAME` | – | the block library (no project needed) | – |
-| `edakit block add NAME --as I [--connect PORT=NET …] [--without DES …] [--board B] [--file F] [--dry-run]` | – | graph, parts, block | graph (formatting kept, the block's `graph.grounds` added to `grounds`), missing parts entries; `--without` leaves out optional parts of the block (14.5) |
+| `edakit block add NAME --as I [--connect PORT=NET …] [--without DES …] [--board B] [--file F] [--dry-run]` | – | graph, parts, block | graph (formatting kept – a TOML graph with its comments and arrangement –, the block's `graph.grounds` added to `grounds`), missing parts entries; `--without` leaves out optional parts of the block (14.5) |
 | `edakit part lint [KEY …]` | – | parts entries, the schema `edakit/catalog/kinds.toml` – each of an entry's `configs` as the entry it makes | – (PARTS.schema per problem; exit 2 on problems) |
 | `edakit part import LCSC [--update]` | – (internet) | EasyEDA's public component data of that number (4.2) | a new `hardware/parts/<LCSC>.json`, else nothing (`--update`: the fields it lacks); `<artifacts>/library/<LCSC>.json`, `<artifacts>/footprints/<footprint>.json`; exit 2 = the entry differs |
 | `edakit part diff OLD NEW [--json F]` | – | geometry of both (the dump of a placed part, else the footprint data of the entry, else the library footprint of `part import`), their parts entries (roles, `lead`), graph | – (F: the comparison as JSON); exit 0 = drop-in, 2 = something to decide (7.3) |
@@ -437,7 +444,9 @@ what each does there is in 16.4; `pcb autolayout` and `lock` have no KiCad side,
 ```text
 edakit.toml                 the table of contents: project, boards, where the files are
 hardware/requirements.toml  what the circuit must do: needs and requirements, if [project] requirements names it
-hardware/graph.json         the hardware graph (only source of parts and connections), ground net, check settings
+hardware/graph.toml         the hardware graph (only source of parts and connections), ground net, check settings;
+                            hardware/graph.json in a project that has not converted
+hardware/graph.json         beside a TOML graph: the resolved graph, generated (edakit graph json --write), never edited
 hardware/parts/*.json       parts database; an own footprint as data in its entry (footprint_data, 4.5)
 hardware/datasheet/<name>.* the board as a part for other projects: parts entry and datasheet (edakit part datasheet)
 hardware/sim.json           simulation scenarios

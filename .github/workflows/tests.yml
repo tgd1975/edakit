@@ -32,6 +32,8 @@ jobs:
     container:
       image: kicad/kicad:10.0
       options: --user root
+    env:
+      EDAKIT_KICAD_LIVE: required   # a missing kicad-cli or another major than cli.MAJOR fails here, not skipped
     steps:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v6

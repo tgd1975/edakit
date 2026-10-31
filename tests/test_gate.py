@@ -450,3 +450,61 @@ def test_gate_with_the_graph_outside_the_project(project, monkeypatch, tmp_path)
     toml = project.root / "edakit.toml"
     toml.write_text(toml.read_text().replace('graph = "hardware/graph.json"', f'graph = "{shared}"'))
     assert f"| Object | `{shared}` v" in gate_run(project, monkeypatch)
+
+
+# --- the layout review offline: bound to a fab hash only stage F computes (walkthrough-gaps A3) ----------------------
+
+FAB = "f958da9ad4f85a2eb6376122c5ec21203dbbc12730c1ca59184b383f90a61d70"    # the walkthrough's
+
+
+def layout_review(project, fab=FAB, signed=True, listed=True):
+    """The example's sign-off file with M-5 signed (or not, or not listed) for the fab hash `fab` (None: no hash)."""
+    path = project.root / "hardware" / "signoff.json"
+    s = json.loads(path.read_text())
+    s["fab_sha256"] = fab
+    s["manual"] = [{**m, "done_by": "agent pcb-reviewer (own session)" if signed else None, "date": "2026-10-31"}
+                   if m["id"] == "M-5" else m for m in s["manual"] if listed or m["id"] != "M-5"]
+    path.write_text(json.dumps(s))
+
+
+def test_offline_a_signed_layout_review_is_bound_not_open(project):
+    """Without stage F the fab hash is unknown: M-5 signed for one does not count – nor is it open. The gate says
+    which hash it is bound to and that stage F checks it."""
+    layout_review(project)
+    loaded, notes = gate.load_signoff(project.config(), {"state_sha256": None, "layout_sha256": None})
+    m5 = next(m for m in loaded["manual"] if m["id"] == "M-5")
+    assert m5["done_by"] is None and m5["unchecked"] == {"fab_sha256": FAB, "by": "agent pcb-reviewer (own session)"}
+    assert any(f"bound to fab {FAB[:12]}…" in n and "stage F" in n for n in notes)
+    d, reasons = gate.decide(rows("pass"), [], loaded, set("PGE"), gate.STAGES)
+    assert d == "NOT RELEASED"
+    assert reasons[0] == "2 manual check(s) before the export open: M-1, M-6 (section 6)"
+    assert reasons[1] == f"M-5 signed for fab {FAB[:12]}… – checked by stage F (section 6)"
+    assert reasons[2].startswith("stages not run: ")
+    with_f, _ = gate.load_signoff(project.config(), {"state_sha256": None, "layout_sha256": None, "fab_sha256": "x"})
+    assert "unchecked" not in next(m for m in with_f["manual"] if m["id"] == "M-5")    # stage F: another hash, open
+
+
+@pytest.mark.parametrize("change", [dict(signed=False), dict(listed=False), dict(fab=None)])
+def test_offline_a_missing_layout_review_stays_open(project, change):
+    """Not signed, not in the file, or signed without a fab hash to be bound to: open, as before."""
+    layout_review(project, **change)
+    loaded, _ = gate.load_signoff(project.config(), {"state_sha256": None, "layout_sha256": None})
+    assert "unchecked" not in next(m for m in loaded["manual"] if m["id"] == "M-5")
+    reasons = gate.decide(rows("pass"), [], loaded, set("PGE"), gate.STAGES)[1]
+    assert reasons[0] == "3 manual check(s) before the export open: M-1, M-6, M-5 (section 6)"
+    assert not any("signed for fab" in r for r in reasons)
+
+
+def test_offline_gate_names_the_fab_hash_of_the_layout_review(project, monkeypatch, capsys):
+    layout_review(project)
+    text = gate_run(project, monkeypatch)
+    out = capsys.readouterr().out
+    assert f"  - M-5 signed for fab {FAB[:12]}… – checked by stage F (section 6)\n" in out
+    assert "open: M-1, M-6 (section 6)" in out
+    six = section(text, 6)
+    assert (f"- [ ] M-5 Layout reviewed independently (manufacturability, mechanics, operation, looks) on the "
+            "manufacturing files of a gate run with this layout – e.g. by the agent pcb-reviewer. No finding 'block' "
+            "open, every 'important' finding fixed or rejected by the owner – signed for fab "
+            f"{FAB[:12]}… by agent pcb-reviewer (own session), 2026-10-31: checked by stage F") in six
+    layout_review(project, signed=False)
+    assert "open: M-1, M-6, M-5 (section 6)" in decision(gate_run(project, monkeypatch))

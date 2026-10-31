@@ -16,8 +16,9 @@ without any claim to correctness; nothing in it is legally guaranteed.
   also in small series), `market`, `notes`, and `radio` – how the firmware uses the radio of a part: `"off"`, or the
   bands (and the power) it keeps, optional; `edakit check` compares them with the EU bands (LIM.band). It decides what
   applies. Without it, that is your first finding – ask for it and call nothing else fine.
-- The hardware graph: every component, modules that transmit, supply inputs, batteries, the voltages of the nets
-  (`v`), connectors to the outside.
+- The hardware graph (edakit.toml `[project] graph`, TOML or JSON): every component, modules that transmit, supply
+  inputs, batteries, the voltages of the nets (`v`), connectors to the outside. A `#` comment in a TOML graph is no
+  statement of the purpose – what counts for the review stands in `purpose`.
 - The parts database (`[project] parts`): `kind`, `mpn`, `manufacturer`, and `compliance` – `rohs`, `reach`, `radio`
   (`bands_mhz`; `max_dbm`, the conducted power at the RF port; `antenna_dbi`, the gain of the antenna in the product;
   `eirp_dbm` where a certificate states the e.i.r.p.; `doc` – or `"none"`), `source`. What is missing there is open,

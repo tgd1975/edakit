@@ -231,7 +231,7 @@ used/pressed/vf-max                fail      2.500V   2.500V   2.500V
 used/released/vf-min               ok        2.500V   0.000V   0.000V
 used/released/vf-max               ok        2.500V   0.000V   0.000V
 
-84 comparisons: fail 2, pass 82
+92 comparisons: fail 2, pass 90
 
 SIM.state – the circuit does what the scenario expects: 2 error
   E  [used/pressed/vf-min] D1: LED on: 0.0003974 A, expected ≥ 1 mA
@@ -261,12 +261,16 @@ the graph is caught at once:
 STRUCT.entry – graph pins = parts entry: 2 error
   P  D1: pins differ from the library symbol of C84256 (build/edakit/library/C84256.json): pin 1: symbol '-', graph
      'A'; pin 2: symbol '+', graph 'K'
-  P  D1: pins differ from parts entry C84256: graph {'1': 'A', '2': 'K'} vs parts {'1': '-', '2': '+'}
+  P  D1: pins differ from parts entry C84256: graph {'1': 'A', '2': 'K'} vs parts {'1': '-', '2': '+'} – the library
+     symbol agrees with the entry: the graph has the pins of another part
 ```
 
-With the pins and nets swapped, the 150 Ω of the block stay: the simulation gives 1.22 mA from a used cell into the
-LED at its highest forward voltage, 10.7 mA from a fresh cell at its lowest – LIM.i allows 20 mA, 80 % of its 25 mA. The
-computation is in R1's `notes`, the reason in D-2.
+The fix of STRUCT.entry has its advice per case, under the words the finding starts with; for "pins differ from parts
+entry" it is either the part number of the part whose pins the graph has, or – to keep the red LED – its pin names
+and the nets on its pins swapped to the entry's. With the pins and nets swapped, the 150 Ω of the block stay: the simulation gives 1.22 mA from a used cell into the
+LED at its highest forward voltage, 10.7 mA from a fresh cell at its lowest – LIM.i allows 20 mA, 80 % of its 25 mA, and
+LIM.p holds the 14.75 mW it then dissipates (Vf × If) to 32.5 mW, half its 65 mW. The computation is in R1's `notes`,
+the reason in D-2.
 
 **A cell upside down (PATH.reverse, D-3).** The holder takes the cell either way round, and PATH.reverse wants a
 blocking part behind it. A Schottky diode in series costs about 0.3 V – just the margin R-1 needs from a used cell; a P-MOSFET costs two
@@ -285,7 +289,7 @@ button pressed. Its first run failed – the nets were declared from 0 V, and a 
 ```text
 reversed/pressed                   fail     -3.200V  -3.200V  -3.200V
 
-95 comparisons: fail 3, pass 92
+104 comparisons: fail 3, pass 101
 
 LIM.declared – net inside its declared range: 3 error
   E  [reversed/pressed] VBAT: net voltage inside the declared range: -3.2 V, expected 0 … 3.3 V   (v of net VBAT …)
@@ -293,6 +297,25 @@ LIM.declared – net inside its declared range: 3 error
 ```
 
 With VBAT, LED_SW and LED_ANODE declared from −3.3 V it passes: D1 sees 3.2 V in reverse, rated 5 V, and stays dark.
+
+**The cell's current (LIM.i/cell, D-7).** A CR2032 is rated for 3 mA continuous and 15 mA in pulses (Jauch CR 2032
+H2B). With `"i_max_a": 0.003` in the cell states `fresh` and `used`, LIM.i holds the current the cell gives:
+
+```text
+112 comparisons: fail 3, pass 109
+
+LIM.i – current within its limit: 3 warning
+  E  [fresh/pressed/vf-min] BT1: current from the cell 10.7 mA, allowed ≤ 3 mA   (i_max_a of cells.fresh in sim.json)
+  …
+```
+
+SW1 is pressed for a moment, and held longer the cell loses capacity and voltage, nothing worse – the drop is in the
+simulation through the cell's `r`. The finding is accepted on the holder, keyed by its grade, and the gate counts the
+three rows as waived:
+
+```json
+"accept": {"LIM.i/cell": "SW1 is pressed for a moment: while it is held a fresh cell gives up to 10.7 mA, above its 3 mA continuous and below its 15 mA pulse current (Jauch CR 2032 H2B); …"}
+```
 
 **The design hints.** Each HINT note is accepted in the graph with a line – done, or why it does not apply – and the
 reviewer checks the reason:
@@ -304,7 +327,7 @@ reviewer checks the reason:
 }
 ```
 
-Now: 0 errors, 3 accepted; 95 simulation comparisons pass.
+Now: 0 errors, 3 accepted; of 112 simulation comparisons 109 pass and 3 are accepted (LIM.i/cell).
 
 ## 17.7 Stock and cost
 
@@ -426,11 +449,14 @@ hash (8.2):
 
 ```json
 {"id": "M-1", "phase": "export", "scope": "circuit", "done_by": "agent electrical-reviewer (own session)",
- "date": "2026-10-31", "note": "M-1: OK for state 48984185a69a…; requirements met: R-2. …"}
+ "date": "2026-10-31", "note": "M-1: OK for state a2a6ed922953…; requirements met: R-2. …"}
 ```
 
 The note names R-2, and that is R-2's passing evidence in the gate (8.7). Any later change to graph, parts, simulation
-config or requirements changes the hash, and M-1 and M-6 no longer count.
+config or requirements changes the hash, and M-1 and M-6 no longer count. That happened once more the same day: the
+accept of HINT.debounce left the graph – edakit no longer reports the hint without an MCU reading the button – and the
+cell's current limit came in (17.6, D-7). Both agents looked again, M-1 checked the new accept's reason against the
+cell's data sheet, and both signed for the new hash.
 
 ## 17.10 The gate without EasyEDA
 
@@ -442,19 +468,19 @@ $ edakit gate
 [ 0.0 min] step 2/2: E simulation
 
 NOT RELEASED
-  - 1 manual check(s) before the export open: M-5 (section 6)
+  - M-5 signed for fab f958da9ad4f8… – checked by stage F (section 6)
   - stages not run: S (Schematic), L (Board), F (Manufacturing)
 requirements: 1 passed, 1 open after the export (section 11 of the protocol)
 ```
 
 ```text
-| P Parts | parts database complete, graph pins = parts database, parts verified, … | 7 | 0 | 0 | 0 | 0 | passed |
-| G Graph | structure, pin locks, voltage domains, inputs, drivers, decoupling, … | 35 | 0 | 0 | 4 | 0 | passed |
-| E Simulation | ngspice operating points of all scenarios, stress of every part, … | 95 | 0 | 0 | 0 | 0 | passed |
+| P Parts | parts database complete, graph pins = parts database, parts verified, … | 8 | 0 | 0 | 0 | 0 | passed |
+| G Graph | structure, pin locks, voltage domains, inputs, drivers, decoupling, … | 36 | 0 | 0 | 3 | 0 | passed |
+| E Simulation | ngspice operating points of all scenarios, stress of every part, … | 109 | 0 | 0 | 3 | 0 | passed |
 ```
 
 In P and G every code without a finding counts once as passed – the codes the domains `core` and `power` switch on –,
-and G's four accepted findings are PATH.reverse and the three hints. R-2 passed on its rows and on M-1's note;
+G's three accepted findings are PATH.reverse and the two hints, E's three the cell's current with SW1 held (D-7). R-2 passed on its rows and on M-1's note;
 R-1 has passed its rows too and waits for its acceptance step after
 delivery. Section 6 of the protocol already holds the lists for later: what M-2 looks at before paying – D1's
 cathode, from the `open` point of its parts entry – and what M-4 tests on the delivered boards, the holder's
@@ -551,10 +577,10 @@ as follows (chapters 6 and 7). Each command ran in less than half a minute:
    ```
 
 3. `edakit route all`: Freerouting routes, the ground pours, DRC. The area outside the circle goes to Freerouting as
-   66 keep-out strips:
+   50 keep-out strips:
 
    ```text
-   [ 0.0 min] DSN: 4 nets with >= 2 pins, 12 pads, 5 padstacks, 2 hole keep-outs, 66 edge strips, 0 keep-out pieces, …
+   [ 0.0 min] DSN: 4 nets with >= 2 pins, 12 pads, 5 padstacks, 2 hole keep-outs, 50 edge strips, 0 keep-out pieces, …
    [ 0.2 min] check: 4 nets routed, 16 track pieces, 2 vias; open: 0
    [ 0.2 min] track widths (GEO.width offline): 4 nets, 0 below IPC-2221 for 1.5 x the simulated current, 0 below the …
    [ 0.4 min] step 8/8: drc
@@ -579,15 +605,17 @@ as follows (chapters 6 and 7). Each command ran in less than half a minute:
 
 5. The agent pcb-reviewer reviews the round, in a session of its own, on the manufacturing files of a gate run
    (17.12). Nothing blocked; it had four notes:
-   - BT1's designator lay under the cell;
+   - BT1's designator lay under the cell – GEO.silk did not see it then; with a `body.box` in BT1's entry it would
+     (grade body, 8.1);
    - the board label sat 8 mm left of the axis;
    - without `[order]` no file said that the tooling holes are the customer's – JLCPCB might drill its own on the face
-     people see;
+     people see (FILES.order warns about that now, grade tooling);
    - `hand_solder_keep_mm` was not set.
 
    You chose to move both texts above the cell, as it proposed – how the board looks is yours to decide. The
-   designer took the remark for JLCPCB and `[looks]` too. The fourth note it answered: the key covers through-hole
-   joints only, and BT1 has SMD tabs – the reviewer withdrew it. A second `silk apply`, a second gate run, a second
+   designer took the remark for JLCPCB and `[looks]` too. The fourth note it answered: the key covered through-hole
+   joints only then, and BT1 has SMD tabs – the reviewer withdrew it. Since then it covers the SMD tabs of a part
+   with `bom: false` too, on the side the part sits on (7.5): set, it would hold BT1's tabs. A second `silk apply`, a second gate run, a second
    look: only the top silkscreen and the order settings had changed (`edakit fab diff`), and the reviewer signed M-5
    for that run's files.
 
@@ -616,6 +644,9 @@ requirements: 1 passed, 1 open after the export (section 11 of the protocol)
 | L Board | PCB = graph and plan, copper from the Gerber files, DRC, footprints, track widths, holes | 34 | 0 | 0 | 0 | 0 | passed |
 | F Manufacturing | BOM from the graph = EasyEDA, JLCPCB stock, pick and place, Gerber set, outline, manifest | 18 | 0 | 0 | 0 | 0 | passed |
 ```
+
+The offline `edakit gate` cannot compute the fab hash without stage F: from now on it says "M-5 signed for fab
+f958da9ad4f8… – checked by stage F" instead of naming M-5 open (8.2).
 
 The run's folder holds what goes to JLCPCB – `fab/main/gerber_main.zip`, `bom_main.csv`, `cpl_main.csv`, the form's
 fields in `order.md` – and `fab/polarity_main.png` for M-2. A gate run is build output (`[release] archive`, default

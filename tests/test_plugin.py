@@ -290,6 +290,28 @@ def test_the_project_surveyor_reads_a_repository_and_changes_nothing():
         assert words in result, words
 
 
+def test_the_skills_write_the_graph_as_toml_and_never_the_generated_json():
+    """Circuit-language plan L.8: a new project's graph is hardware/graph.toml with the resolved graph.json generated
+    beside it and checked in the hook; the skills that change the circuit edit the file [project] graph names, pins by
+    name or role, never the generated graph.json; the reviewers read the graph as before and take the pin numbers from
+    the resolved graph. No skill or agent tells anyone to edit graph.json."""
+    skill = lambda name: ROOT / "skills" / name / "SKILL.md"                     # noqa: E731
+    files = section(skill("new-project"), "3. Files")
+    assert "`hardware/graph.toml`" in files and "edakit graph json --write" in files and "[conventions]" in files
+    assert "edakit graph json --check" in section(skill("new-project"), "4. Guard rails")
+    for name, heading in (("circuit-design", "5. Into the graph"), ("hardware-change", "1. Graph"),
+                          ("own-part", "5. Into the graph")):
+        text = section(skill(name), heading)
+        for words in ("[project] graph", "by name or role", "edakit graph json --write"):
+            assert words in text, (name, words)
+    assert "[layout]" in section(skill("circuit-design"), "7. Hand over")
+    assert "edakit graph json" in section(ROOT / "agents" / "electrical-reviewer.md", "Sources")
+    for path in [*ROOT.glob("skills/*/SKILL.md"), *ROOT.glob("agents/*.md")]:
+        for unit in units(path):
+            if "graph.json" in unit:
+                assert "generated" in unit or "never" in unit or "has not converted" in unit, (path.name, unit)
+
+
 def test_circuit_design_reads_pin_functions_and_header_pins():
     pins = section(ROOT / "skills" / "circuit-design" / "SKILL.md", "3. Parts and pins")
     for words in ("pwm slice", "peripheral instance", "adc", "header", "errata", "supply range", "vih"):

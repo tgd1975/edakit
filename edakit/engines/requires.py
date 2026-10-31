@@ -183,7 +183,7 @@ def bridge_clamps(d):
                 continue
             lost = " and ".join(w for w, ok in ((f"one from {net} to the supply (cathode at the supply)", up),
                                                 (f"one from {gnd} to {net} (anode at {gnd})", down)) if not ok)
-            out.append(Finding("REQ.missing", "G", f"{des}.{num}", f"{des}.{num} ({pin.get('name', num)}) drives "
+            out.append(Finding("REQ.missing", "G", f"{des}.{num}", f"{d.pin_text(f'{des}.{num}')} drives "
                                f"{', '.join(loads)} and has no clamp diodes of its own (clamp = none) – missing: {lost}",
                                "ST L298 datasheet (January 2000), 3 Applications: an external bridge of diodes is required "
                                "when inductive loads are driven", "fast diodes (trr ≤ 200 ns, Schottky preferred) from "
@@ -301,7 +301,7 @@ def functions(d):
         hits[name] += [(r, *m) for r, _ in known
                        if not any(h[0] == r for h in hits[name]) and (m := matrix_hit(d, r, fn))]
         if not hits[name]:
-            has = "; ".join(f"{r} ({info['name']}) has " + (", ".join(info["functions"]) or "no free function")
+            has = "; ".join(f"{d.pin_text(r)} has " + (", ".join(info["functions"]) or "no free function")
                             for r, info in known)
             out.append(Finding("REQ.function", "G", name, f"{name}: needs {fn}, but {has}", "functions of the pins' entries",
                                on=on))
@@ -372,7 +372,7 @@ def hot_loops(d):
         nets = {}
         for num, role in pins.items():
             if role in roles and (net := d.pin_net.get(f"{des}.{num}")):
-                nets.setdefault(net, f"{des}.{num} {part['pins'][num]['name']}")
+                nets.setdefault(net, d.pin_text(f"{des}.{num}"))
         sw = {d.pin_net.get(f"{des}.{num}") for num, role in pins.items() if role == "sw" and role in roles} - {None}
         for dio in d.comps_of_kind("diode"):
             a, k = d.net_of(dio, "anode"), d.net_of(dio, "cathode")
@@ -414,7 +414,7 @@ def needed_capacitors(d, des, pins, net, need, between, grounds):
     if to:
         to_net = d.pin_net.get(f"{des}.{to}")
         found = list(between.get(frozenset((net, to_net)), [])) if to_net and to_net != net else []
-        there = f"to {des}.{to} ({pins[to].get('name', to)}) ({to_net or 'no net'})"
+        there = f"to {d.pin_text(f'{des}.{to}')} ({to_net or 'no net'})"
     else:
         found = [c for g in sorted(grounds - {net}) for c in between.get(frozenset((net, g)), [])]
         there = f"to {d.ground}"
@@ -555,7 +555,8 @@ def pin_needs(d, gaps=None):
                     out.append(Finding("PARTS.schema", "P", key, f"{key}: pin {num} needs must be a list of requirements"))
                 continue
             ref, net = f"{des}.{num}", d.pin_net.get(f"{des}.{num}")
-            who, on = f"{ref} ({info.get('name', num)})", (("component", des),) + ((("net", net),) if net else ())
+            place, who = f"{ref} ({info.get('name', num)})", d.pin_text(ref)
+            on = (("component", des),) + ((("net", net),) if net else ())
             pins = part.get("pins") or {}
             for need in pin_needs_list:
                 problems = pin_needs_problems(need, pins)
@@ -566,11 +567,11 @@ def pin_needs(d, gaps=None):
                 what, src = need["what"], need.get("source") or n["source"]
                 lo, hi = (need.get(k) for k in n["windows"].get(what, ["", ""]))
                 to = other_pin(pins, need["to"]) if "to" in need else None
-                to_name = f"{des}.{to} ({pins[to].get('name', to)})" if to else ""
+                to_name = d.pin_text(f"{des}.{to}") if to else ""
                 to_net = d.pin_net.get(f"{des}.{to}") if to else None
 
                 def finding(code, text, grade="pin"):
-                    out.append(Finding(code, "G", who, f"{who}: {text}", src, grade=grade, on=on))
+                    out.append(Finding(code, "G", place, f"{who}: {text}", src, grade=grade, on=on))
                 if what == "to_ground":
                     if net not in grounds:
                         finding("REQ.missing", f"must be on ground ({d.ground}), is on {net or 'no net'}")
@@ -814,8 +815,9 @@ def adc_sources(d):
                 held = f", or a hold capacitor of {si(adc['c_hold_min_f'], 'F')} at the pin" if is_number(
                     adc.get("c_hold_min_f")) else ""
                 held += f" ({', '.join(biased)} after DC bias)" if held and biased else ""
-                out.append(Finding("REQ.value", "G", ref, f"{ref} ({name}): source resistance {ohm(r_src)} – the ADC "
-                                   f"allows {ohm(adc['r_source_max_ohm'])}{held}", f"adc of pin {ref}",
+                out.append(Finding("REQ.value", "G", ref, f"{d.pin_text(ref)} on {name}: source resistance "
+                                   f"{ohm(r_src)} – the ADC allows {ohm(adc['r_source_max_ohm'])}{held}",
+                                   f"adc of pin {ref}",
                                    "a smaller divider, a buffer, or the hold capacitor", grade="adc",
                                    on=(("net", name),)))
     return out
@@ -837,7 +839,7 @@ def btl_outputs(d):
             who, on = f"{ref} ({role})", (("component", des), ("net", net))
 
             def bad(text):
-                out.append(Finding("REQ.forbidden", "G", who, f"{who}: {text}", "roles out_p, out_n of "
+                out.append(Finding("REQ.forbidden", "G", who, f"{d.pin_text(ref)}: {text}", "roles out_p, out_n of "
                                    f"{d.entry_key(des)}", "a speaker between the pair and nothing else on it",
                                    grade="btl", topic="btl", on=on))
             if net in grounds:
@@ -912,17 +914,18 @@ def output_loads(d):
             if is_number(r_min):
                 load = dc_load(d, net)
                 if load is not None and load != float("inf") and load < r_min:
-                    out.append(Finding("REQ.value", "G", f"{des}.{num}", f"{des}.{num} ({name}) drives {ohm(load)} on "
-                                       f"{net} – it allows at least {ohm(r_min)}", f"r_load_min_ohm of pin {name} of "
-                                       f"{d.entry_key(des)}", "a larger load resistance, or a buffer",
+                    out.append(Finding("REQ.value", "G", f"{des}.{num}", f"{d.pin_text(f'{des}.{num}')} drives "
+                                       f"{ohm(load)} on {net} – it allows at least {ohm(r_min)}",
+                                       f"r_load_min_ohm of pin {name} of {d.entry_key(des)}","a larger load resistance, or a buffer",
                                        grade="load", on=on))
             if is_number(c_max):
                 caps = [c for c in d.comps_of_kind("capacitor")
                         if any(d.pin_net.get(f"{c}.{n}") == net for n in (d.part(c) or {}).get("pins", {}))]
                 total = sum(values(d.part(c)).get("value_f") or 0 for c in caps)
                 if total > c_max * (1 + 1e-9):
-                    out.append(Finding("REQ.value", "G", f"{des}.{num}", f"{des}.{num} ({name}) drives {total * 1e9:.4g} nF "
-                                       f"on {net} ({', '.join(caps)}) – it allows at most {c_max * 1e9:.4g} nF",
+                    out.append(Finding("REQ.value", "G", f"{des}.{num}", f"{d.pin_text(f'{des}.{num}')} drives "
+                                       f"{total * 1e9:.4g} nF on {net} ({', '.join(caps)}) – it allows at most "
+                                       f"{c_max * 1e9:.4g} nF",
                                        f"c_load_max_f of pin {name} of {d.entry_key(des)}",
                                        "a smaller capacitor, or a series resistor before it", grade="load", on=on))
     return out

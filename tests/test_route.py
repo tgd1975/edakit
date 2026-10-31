@@ -645,6 +645,42 @@ def test_edge_strips_reach_the_promised_depth_in_every_inner_corner(l_board):
     assert shallow == {}    # before: 163 of 179, 77 short of even 0.392 mm, the least 0.3835 mm at 33°
 
 
+# a round board like the example of handbook 17: Ø 44 mm in 48 chords, read back from EasyEDA in mil with three
+# decimals. The rounding moves mirrored corners apart by up to 1e-4 mil in y; the strips, cut at every corner's height,
+# came out as 66, 16 of them slices 4e-6 to 7e-5 mil high – polygons of no height on the DSN's grid of 0.01 mil
+# (Freerouting: "Keepout zone 'R5_TOP' … was skipped because its geometry is degenerate")
+
+ROUND = "[outline]\nrect = [44, 44]\ncorner_radius = 22\narc_steps = 12\n"
+
+
+def dsn_polygons(text):
+    """{name: [(x, y)]} of the polygon keep-outs of a DSN, in 1/100 mil as Freerouting reads them."""
+    out = {}
+    for name, nums in re.findall(r'\(keepout "([^"]+)" \(polygon \S+ 0 ([-\d. ]+)\)\)', text):
+        v = [round(float(n) * 100) for n in nums.split()]
+        out[name] = list(zip(v[0::2], v[1::2]))
+    return out
+
+
+def test_edge_strips_of_a_round_board_have_area_on_the_dsn_grid(tmp_path):
+    from shapely.geometry import Polygon
+    from edakit import pcb
+    rules, data = outline_board(tmp_path, ROUND)
+    board = rules.board
+    data["outlines"] = [route.polyline_points(pcb.outline_arg([board.eda_point(*p) for p in board.outline])["$polygon"])]
+    route.write_dsn(rules, data, tmp_path / "t.dsn")
+    strips = {n: p for n, p in dsn_polygons((tmp_path / "t.dsn").read_text()).items() if n.startswith("R")}
+    outer = Polygon(data["outlines"][0])
+    frame, pieces = route.outside_strips(rules, outer)
+    assert len(strips) == 2 * len(pieces) > 0
+    assert [n for n, p in strips.items() if Polygon(p).area == 0] == []    # before: R5, R6, R13, … – 16 on each layer
+    # the edge clearance still kept everywhere: the strips cover what they covered before, the slivers only gone
+    inner = outer.buffer(-rules.edge_um / 25.4, join_style="round", quad_segs=route.EDGE_ARC_SEGMENTS)
+    band = frame.difference(inner)
+    assert band.area - unary_union(pieces).area < 0.1                      # the slivers: 0.09 mil² together
+    assert band.difference(unary_union(pieces).buffer(0.005)).area < 1e-9  # covered to half a step of the grid
+
+
 # --- pads of different parts keep the clearance (GEO.spacing, #12): R1 and R2 with pads of 0.8 x 0.9 mm in a row at y = 10;
 # R1.2 (N2) and R2.1 (N3) 0.09 mm apart, R1's own pads 0.05 mm apart
 
@@ -1124,6 +1160,49 @@ def test_hand_solder_keep_on_the_solder_side_only():
     assert gaps(data, vias=[(None, mm(84, 11 - JOINT_TO_VIA), 24)])[1][:3] == ("J1.1", "via", None)  # net unknown
 
 
+# a hand-soldered SMD tab (walkthrough gaps B5): D1 of the input stage soldered by hand (bom: false) – its SMD pads on TOP,
+# the side it sits on, are its joints. A GND via 0.30 mm (copper to copper) below D1.2 (VIN)
+TAB_TO_VIA = 0.85 + 0.30 + 24 / MIL / 2       # D1.2's half height + 0.30 mm + the via's radius, from D1.2's centre
+
+
+def test_hand_solder_keep_on_the_side_of_an_smd_part():
+    """The SMD pads of a hand-soldered part are joints too, on the side the part sits on (its pads' layer): a via within
+    the keep fails there; an SMD pad of another net within the keep counts on that side and not on the other; an SMD
+    part that is assembled (not in `hand`) is not looked at."""
+    def gaps(data, vias=(), hand=("D1",)):
+        return [(g["joint"], g["kind"], g["other"], g["layer"], round(g["mil"] / MIL, 2))
+                for g in route.joint_gaps(data, 0.5 * MIL, set(hand), vias)]
+    via = [("GND", mm(77.2, 12 + TAB_TO_VIA), 24)]
+    data = json.loads(json.dumps(STAGE))
+    assert [(p["ref"], p["num"], layer) for p, layer in route.hand_joints(data, {"D1"})] == [
+        ("D1", "1", "TOP"), ("D1", "2", "TOP")]
+    assert gaps(data, via) == [("D1.2", "via", "GND", "TOP", 0.3)]                     # before: not looked at
+    assert gaps(data, via, hand=("J1",)) == []                                         # D1 assembled: no joint
+    data["pads"].append(stage_pad("R2", "1", "BTN", 77.2, 12 + 0.85 + 0.2 + 0.5, 1.0, 1.0) | {"layer": 2})
+    assert gaps(data) == []                                                            # BOTTOM: not D1's side
+    data["pads"][-1]["layer"] = 1
+    assert gaps(data) == [("D1.2", "pad", "R2.1", "TOP", 0.2)]                         # TOP: where D1 is soldered
+    data["components"][1]["layer"] = 2                                                 # D1 on BOTTOM, its pads there
+    for p in data["pads"][2:4]:
+        p["layer"] = 2
+    assert gaps(data, via)[0] == ("D1.2", "via", "GND", "BOTTOM", 0.3)
+
+
+def test_route_check_finds_a_via_next_to_a_hand_soldered_smd_tab(project, capsys):
+    routed_stage(project, routing=KEEP)
+    with_via(project, at=(77.2, 12 + TAB_TO_VIA))
+    assert route_cmd(project, "check", capsys)[0] == 0                                 # D1 assembled: as before
+    g = project.graph()
+    project.comp(g, "D1")["bom"] = False
+    project.save_graph(g)
+    code, out = route_cmd(project, "check", capsys)
+    assert code == 2
+    assert "hand-soldered joints (GEO.spacing): 4 on their solder side, 0 pads of other nets closer than " \
+           "hand_solder_keep_mm 0.5" in out
+    assert "D1.2 (VIN) – via GND at (77.20, 13.45): 0.30 mm apart on TOP, the side D1 sits on, below " \
+           "hand_solder_keep_mm 0.5" in out
+
+
 def test_dsn_keeps_vias_away_from_hand_soldered_joints(project, tmp_path):
     cfg = routed_stage(project)
     data = json.loads((project.root / "build" / "edakit" / "route" / "main_board.json").read_text())
@@ -1142,3 +1221,7 @@ def test_dsn_keeps_vias_away_from_hand_soldered_joints(project, tmp_path):
         v = [float(x) for x in pts.split()]
         reach = [math.dist(mm(*centre), p) / MIL for p in zip(v[0::2], v[1::2])]
         assert min(reach) >= 0.7 + 0.5 - 1e-3 and max(reach) < 0.7 + 0.5 + 0.02            # the pad grown by the keep
+    rules.hand = {"J1", "D1"}                                                          # D1: SMD, soldered by hand
+    route.write_dsn(rules, data, tmp_path / "smd.dsn")
+    found = re.findall(r'\(via_keepout "(J\d_\w+)" \(polygon (\w+) 0 ', (tmp_path / "smd.dsn").read_text())
+    assert found == [("J0_BOTTOM", "BOTTOM"), ("J1_BOTTOM", "BOTTOM"), ("J2_TOP", "TOP"), ("J3_TOP", "TOP")]

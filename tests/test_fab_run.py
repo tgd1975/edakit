@@ -13,7 +13,8 @@ designator visible (GEO.silk). It also has the
 footprint geometry of `edakit pcb dump`, the net currents of `edakit sim` – 0.5 A on all three nets, which puts
 them in class POWER (0.6 mm), with an IPC-2221 width of 0.20 mm – and the board as `edakit route read` saw it (pads
 with their shapes, for GEO.spacing), written from pcb.json when the export is written. J1 is through-hole and the
-example orders Economic assembly (SMD only), so J1 is not in its BOM: it is soldered by hand.
+example orders Economic assembly (SMD only), so J1 is not in its BOM: it is soldered by hand. The board file has
+[order] with a remark, so that order.md tells JLCPCB that the tooling holes are the customer's (FILES.order).
 
 A new check of stage L or F gets its fault here: one more entry in FAULTS.
 """
@@ -27,6 +28,7 @@ import openpyxl
 import pytest
 
 from edakit import cli, drc_rules, gerber
+from edakit.design import Design
 from edakit.release import fab
 
 MIL = 1000 / 25.4
@@ -46,6 +48,10 @@ WIDTH, DRILL = 0.6, 1.0            # tracks, J1's plated holes (mm)
 HOLE = (26, 16, 3.2)               # M3, a circle on the outline layer
 TOOLING = [(2.5, 17.5), (27.5, 2.5)]
 TOOLING_D, TOOLING_OPEN = 1.152, 1.152 + 2 * 0.148
+ORDER = """
+[order]                          # tooling holes of its own on an Economic board: order.md tells JLCPCB (FILES.order)
+remark = "2 NPTH tooling holes added by customer."
+"""
 PLUS = (10.8, 10.9)                # "+" on the top silkscreen, next to D1's anode
 CATHODE = (15.2, 10.9)             # 1.9 mm above D1.1, D1's cathode
 BOARD = f"""# The input stage of the example on a board of its own (tests/test_fab_run.py)
@@ -78,7 +84,7 @@ what = "input"
 
 [routing]
 hand_solder_keep_mm = 0.5        # GEO.spacing: J1 is soldered by hand (bom: false), its joints are on BOTTOM
-"""
+""" + ORDER
 
 
 def turn(p, rot):
@@ -100,7 +106,7 @@ def cut(project):
 
 
 class Layer(list):
-    """Gerber items in mm: ("flash", (kind, a, b), x, y) and ("draw", width, points, tag)."""
+    """Gerber items in mm: ("flash", (kind, a, b), x, y), ("draw", width, points, tag) and ("region", points, tag)."""
 
     def text(self):
         aps, body = {}, []
@@ -111,6 +117,10 @@ class Layer(list):
         for item in self:
             if item[0] == "flash":
                 body += [f"D{code(item[1])}*", f"X{um(item[2])}Y{um(item[3])}D03*"]
+            elif item[0] == "region":
+                pts = item[1] + item[1][:1]
+                body += ["G36*", f"X{um(pts[0][0])}Y{um(pts[0][1])}D02*"]
+                body += [f"X{um(x)}Y{um(y)}D01*" for x, y in pts[1:]] + ["G37*"]
             else:
                 _, w, pts, _ = item
                 body += [f"D{code(('C', w, w))}*", f"X{um(pts[0][0])}Y{um(pts[0][1])}D02*"]
@@ -309,15 +319,16 @@ def findings(rows):
 
 
 CHECKS = ["SYNC.pcb", "GEO.copper", "GEO.drc", "SYNC.footprint", "GEO.width", "SYNC.plan", "GEO.mark", "GEO.hole",
-          "GEO.loop", "GEO.spacing", "GEO.pour", "GEO.ring", "GEO.silk", "SYNC.bom", "PARTS.stock", "SYNC.cpl", "FILES.set"]
-ON_REQUEST = ["FILES.order"]       # run only when the board file asks for it ([order]); [looks] adds GEO.silk rows
+          "GEO.loop", "GEO.spacing", "GEO.pour", "GEO.ring", "GEO.silk", "SYNC.bom", "PARTS.stock", "SYNC.cpl", "FILES.set",
+          "FILES.order"]       # FILES.order with the board file's [order]; [looks] adds GEO.silk rows
 
 
 def test_the_clean_export_passes_every_check(project):
     rows = run(project)
     assert findings(rows) == []
-    assert sorted({r["id"] for r in rows if r["stage"] in "LF"}, key=CHECKS.index) == CHECKS   # no [order]: no FILES.order
-    assert not (project.root / "build" / "fab" / "main" / "order.md").exists()
+    assert sorted({r["id"] for r in rows if r["stage"] in "LF"}, key=CHECKS.index) == CHECKS
+    sheet = (project.root / "build" / "fab" / "main" / "order.md").read_text()
+    assert "| Tooling holes | Added by Customer – 2 x Ø 1.152 mm | [tooling] |" in sheet
     assert len([r for r in rows if r["id"] == "GEO.drc"]) == 2      # no [routing] drc_rules: the DRC's rules not compared
     by = {(r["id"], r["check"]): r["actual"] for r in rows}
     assert by["GEO.loop", "short current loops: path over tracks per pad pair within the limit"] == "J1.1-D1.2 7.8 mm"
@@ -474,6 +485,17 @@ def via(ex, x, y, pad=0.6096, hole=0.3048):
         ex.gerber[layer].append(("flash", ("C", pad, pad), x, y))
 
 
+POUR = [(5, 13), (12, 13), (12, 18.5), (5, 18.5)]   # a GND pour on both layers, on the GND track along y = 13.5
+
+
+def via_in_pour(ex, pad=0.6096):
+    """A GND via at (8, 16) inside a pour of its own net on both layers – the pour a region, as EasyEDA writes it
+    (walkthrough gaps B1)."""
+    for layer in ("top", "bottom"):
+        ex.gerber[layer].append(("region", POUR, "GND"))
+    via(ex, 8, 16, pad=pad)
+
+
 def plus_at(x, y, text=True):
     """The "+" of the export moved to (x, y): drawn in the top silkscreen as two crossing strokes, the way a footprint
     draws it, and as a PCB text unless text is False (a footprint's own print)."""
@@ -495,6 +517,19 @@ def silk_line(*pts):
 ACROSS_C2 = ((18, 9), (20, 9))     # across C2.1's mask opening (1.1 x 1.4 mm): 0.165 mm² of print on it
 
 
+BODY = [-2.5, -2.0, 2.5, 2.0]      # a body of 5 x 4 mm over C2's footprint box of 3.7 x 1.9 mm (walkthrough gaps B3)
+
+
+def c2_body(ex, project, *strokes):
+    """C2's parts entry with a body larger than its footprint (body.box, footprint mm) – the way a coin cell stands out
+    of its holder – and strokes of print (a designator, say) on the top silkscreen. C2 sits at (20, 9): its footprint
+    box reaches to y = 9.95, its body to y = 11."""
+    entry = project.part("C45783")
+    project.save_part("C45783", {**entry, "body": {"box": BODY}})
+    for pts in strokes:
+        silk_line(*pts)(ex, project)
+
+
 def own_print(ex, project):
     """`silk apply` ran – its memo, and the print it found before placing anything, saved – and then a line of its
     own print lies across C2.1: a part moved after it, say."""
@@ -508,6 +543,16 @@ def via_at_joint(ex, project):
     only the via is on J1's solder side."""
     via(ex, 1.6, 9)
     ex.line("GND", 1, [(1.6, 9), (1.6, 6)])
+
+
+TAB_VIA = (10.8, 7.5)        # 0.35 mm (copper to copper) below D1.2 (VIN), an SMD pad 2.5 x 1.7 mm at (10.8, 9)
+
+
+def via_at_smd_tab(ex, project):
+    """D1 soldered by hand (bom: false, walkthrough gaps B5) and a via without a track 0.35 mm below its SMD pad D1.2 –
+    D1 sits on TOP, so TOP is the side of its joints."""
+    graph(project, lambda g: project.comp(g, "D1").update(bom=False))
+    via(ex, *TAB_VIA)
 
 
 def track_at_joint(ex, project):
@@ -527,9 +572,15 @@ REMARK = "No V-cut. Use our 2 NPTH tooling holes (1.152 mm). Tabs only on the ri
 PLACEHOLDER = (18.0, 3.0)          # the order-number placeholder on the top silkscreen, bottom right
 
 
+def unordered(ex, project):
+    """The board file without its [order]: no order.md, no order.json."""
+    board_file(project, ORDER, "")
+
+
 def ordered(ex, project, order=None, placeholder=True, h_mm=1.0):
-    """#40: [order] in the board file (mark = "specify" and REMARK unless order says otherwise), and the placeholder
-    JLCJLCJLCJLC on the top silkscreen – in pcb.json and as [[silk.texts]] of h_mm."""
+    """#40: [order] in the board file (mark = "specify" and REMARK unless order says otherwise) in place of the
+    export's, and the placeholder JLCJLCJLCJLC on the top silkscreen – in pcb.json and as [[silk.texts]] of h_mm."""
+    unordered(ex, project)
     order = {"mark": "specify", "remark": REMARK, **(order or {})}
     text = "\n[order]\n" + "".join(f"{k} = {json.dumps(v, ensure_ascii=False)}\n" for k, v in order.items()
                                    if k != "tab_zones")
@@ -720,8 +771,10 @@ FAULTS = [
      [("GEO.ring", "fail", "J1.1: 0.125 mm on TOP and BOTTOM (hole Ø 1.00 mm); J1.2: 0.125 mm on TOP and BOTTOM")]),
     ("a pad ring below JLCPCB's capability value", j1_pads(1.38),
      [("GEO.ring", "warn", "pad 1, 2: 0.190 mm on TOP and BOTTOM (hole Ø 1.00 mm)")]),
-    ("a via ring below 0.05 mm", lambda ex, p: via(ex, 8, 13.5, pad=0.38),     # on TOP the GND track is its ring
-     [("GEO.ring", "fail", "via at (8.00, 13.50): 0.037 mm on BOTTOM (hole Ø 0.30 mm)")]),
+    ("a via ring below 0.05 mm", lambda ex, p: via(ex, 8, 13.5, pad=0.38),     # the GND track over it is no ring
+     [("GEO.ring", "fail", "via at (8.00, 13.50): 0.037 mm on TOP and BOTTOM (hole Ø 0.30 mm)")]),
+    ("a via ring below 0.05 mm inside a pour of its own net", lambda ex, p: via_in_pour(ex, pad=0.38),
+     [("GEO.ring", "fail", "via at (8.00, 16.00): 0.037 mm on TOP and BOTTOM (hole Ø 0.30 mm)")]),
     ("two vias closer than 0.2 mm", lambda ex, p: (via(ex, 8, 13.5), via(ex, 8.45, 13.5)),
      [("GEO.spacing", "fail", "via at (8.00, 13.50) – via at (8.45, 13.50): 0.145 mm apart, below 0.20 mm")]),
     ("a via closer than 0.45 mm to a component hole", lambda ex, p: via(ex, 3, 12.05),     # J1 is soldered by hand
@@ -741,6 +794,8 @@ FAULTS = [
      [("GEO.silk", "warn", "C2 on the top without a visible designator")]),
     ("the designators not read with the PCB", lambda ex, p: ex.pcb.pop("designators"),
      [("GEO.silk", "fail", "pcb.json without the designators")]),
+    ("print under a body larger than its footprint", lambda ex, p: c2_body(ex, p, [(19.5, 10.6), (20.5, 10.6)]),
+     [("GEO.silk", "warn", "TOP: 0.168 mm² in 1 spot: (20.0, 10.6) mm")]),
     ("a text height below the fab's minimum",
      lambda ex, p: board_file(p, 'edge_ok = ["J1"]', 'edge_ok = ["J1"]\n\n[silk]\nlabel_h_mm = 0.8'),
      [("GEO.silk", "warn", "label_h_mm = 0.8 mm")]),
@@ -750,6 +805,9 @@ FAULTS = [
        "hand_solder_keep_mm 0.5")]),
     ("a via without a track next to a hand-soldered joint", lambda ex, p: via(ex, 1.6, 9),
      [("GEO.spacing", "fail", "J1.1 (VIN) – via (no track, net unknown) at (1.60, 9.00): 0.40 mm")]),
+    ("a via next to a hand-soldered SMD tab", via_at_smd_tab,
+     [("GEO.spacing", "fail", "D1.2 (VIN) – via (no track, net unknown) at (10.80, 7.50): 0.35 mm apart on TOP, the side "
+       "D1 sits on, below hand_solder_keep_mm 0.5")]),
     # GEO.silk (#81) – only with [looks] in the board file
     ("a designator shown on the visible side", visible_designator,
      [("GEO.silk", "fail", "TOP (visible): C2 shows its designator – [silk] designators is bottom")]),
@@ -817,6 +875,9 @@ FAULTS = [
      [GONE, ("FILES.order", "warn", 'JLCJLCJLCJLC at (18.0, 3.0) on the top silkscreen, but mark = "default"')]),
     ("Economic without tooling holes", no_tooling,
      [GONE, ("FILES.order", "warn", "no tooling holes ([tooling]) – JLCPCB adds its own")]),
+    ("Economic tooling holes no order.md names", unordered,
+     [("FILES.order", "warn", '2 tooling holes ([tooling]), but no [order] or [cart]: no order.md says "Added by '
+                              'Customer"')]),
     ("copper in a tab zone", edge_track,       # the track touches no pad: loose copper for GEO.pour too
      [GONE, ("FILES.order", "fail", "copper 0.45 mm from the edge at (0.0, "), ("GEO.pour", "warn", "TOP: 1 piece without pad")]),
     ("a board thickness JLCPCB does not make", thickness(1.57),         # 62 mil: JLCPCB's form has 1.6 mm
@@ -899,6 +960,15 @@ def test_rings_and_hole_spacing_of_the_clean_export(project):
     assert rows == [("pass", "2 holes (narrowest ring 0.200 mm, J1.1), 0 vias"), ("pass", "closest 1.000 mm (J1.1 – J1.2)")]
 
 
+def test_a_via_inside_a_pour_keeps_its_own_ring(project):
+    """Walkthrough gaps B1: the example's vias (0.61 mm on 0.305 mm) sat in its GND pours and GEO.ring reported
+    "narrowest ring 1.000 mm" – the pour, measured up to 1 mm. The via's ring is its own pad's, inside a pour too."""
+    rows = run(project, lambda ex, p: via_in_pour(ex))
+    assert findings(rows) == []
+    ring = next(r for r in rows if r["id"] == "GEO.ring")
+    assert ring["actual"] == "2 holes (narrowest ring 0.200 mm, J1.1), 1 vias (narrowest ring 0.152 mm)"
+
+
 def test_a_waived_annular_ring_is_listed_with_its_reason(project):
     def waived(ex, p):
         j1_pads(1.25)(ex, p)
@@ -944,6 +1014,41 @@ def test_a_waived_sign_is_listed_with_its_reason(project):
     assert "'+' at (15.2, 10.9) mm: nearest pad D1.1 is cathode" in w["check"]
 
 
+def sheet_silk(project):
+    """The pixels of the polarity sheet in the silkscreen's colour, below the tiles' heads: [(x, y)]. The export's only
+    print is the "+", so they are its strokes."""
+    from PIL import Image
+
+    from edakit.release import polarity
+    img = Image.open(project.root / "build" / "fab" / "polarity_main.png").convert("RGB")
+    w, h = img.size
+    px = img.load()
+    return [(x, y) for x in range(w) for y in range(h) if y % polarity.TILE >= polarity.HEAD and px[x, y] == polarity.SILK]
+
+
+def test_the_polarity_sheet_shows_a_sign_beyond_the_pads(project):
+    """FILES.sheet: D1's "+" 5.5 mm above its anode – beyond the 3 mm the tile showed around the pads and the room its
+    scale left, as the walkthrough's "+" beyond BT1's tab. The tile takes in the signs GEO.mark gives the part."""
+    from edakit.release import polarity
+    sign = (10.8, 14.5)
+    rows = run(project, plus_at(*sign))
+    assert findings(rows) == []                                      # the "+" is still D1.2's, the anode
+    silk = sheet_silk(project)
+    assert silk                                                      # before: none – the "+" was cut off
+    xs, ys = [x for x, _ in silk], [y for _, y in silk]
+    assert abs((max(xs) - min(xs)) - (max(ys) - min(ys))) <= 2      # the whole "+", both strokes as long
+    cfg = project.config()
+    board, d = cfg.board(), project.root / "build" / "fab" / "main"
+    data = json.loads((d / "pcb.json").read_text())
+    marks = polarity.part_marks(cfg, board, Design.from_config(cfg), d, data)
+    assert {r: [tuple(round(v, 3) for v in m) for m in ms] for r, ms in marks.items()} == {"D1": [sign]}
+    d1 = next(c for c in data["components"] if c["designator"] == "D1")
+    x0, x1, y0, y1 = polarity.frame(d1["pads"], marks["D1"])
+    reach = fab.TEXT_REACH_MM                                        # how far a sign's strokes lie from its anchor
+    assert x0 + reach <= sign[0] <= x1 - reach and y0 + reach <= sign[1] <= y1 - reach
+    assert polarity.frame(d1["pads"]) == pytest.approx((7.8, 18.2, 6.0, 12.0))   # without a sign: the pads, as before
+
+
 def test_plus_signs_in_a_silkscreen_file(tmp_path):
     lay = Layer([("draw", 0.15, [(0, 1), (1.2, 1)], "+"), ("draw", 0.15, [(0.6, 0.4), (0.6, 1.6)], "+"),   # a "+"
                  ("draw", 0.15, [(5, 0), (6, 0), (6, 1), (5, 1), (5, 0)], "frame"),       # corners meet at their ends
@@ -984,6 +1089,45 @@ def test_silk_apply_run_again_leaves_only_the_footprints_print(project):
     assert l17(rows)["C2: silkscreen on its solder-mask openings – JLCPCB clips it there"][0] == "warn"
 
 
+BODY_CHECK = "print under bodies larger than their footprint (body.box of the parts entry)"
+
+
+def test_print_outside_a_body_or_inside_its_footprint_passes(project):
+    """Walkthrough gaps B3: print outside both body and footprint passes; inside the footprint box it passes as before –
+    the footprint's own print lies there (here a stroke between C2's pads). A part without body.box gets no row: the
+    clean export's GEO.silk rows are what they were (test_silkscreen_of_the_clean_export)."""
+    rows = run(project, lambda ex, p: c2_body(ex, p, [(19.5, 11.5), (20.5, 11.5)], [(20, 8.3), (20, 9.7)]))
+    assert findings(rows) == []
+    assert l17(rows)[BODY_CHECK] == ("pass", "C2: TOP: 0.000 mm²")
+
+
+def test_print_under_a_body_without_footprint_geometry_is_not_checked(project):
+    def no_geometry(ex, p):
+        c2_body(ex, p, [(19.5, 10.6), (20.5, 10.6)])
+        del ex.geo["C2"]
+    rows = run(project, no_geometry)
+    assert l17(rows)["C2: print under its body"] == (
+        "info", "not checked: no footprint geometry of C2 in main.geometry.json (edakit pcb dump)")
+
+
+def test_a_board_printed_by_an_older_silk_apply_is_told_to_run_it_again(project):
+    """walkthrough-gaps B7, the bell's report of 2026-10-30: a board printed by a `silk apply` of before 2026-10-28 has
+    its memo (silk_strings_<board>.json) but no silk_footprints_<board>/. GEO.silk cannot tell edakit's print from the
+    footprints' then: one fail that says so and what to do – silk apply once more, which removes its old print before
+    it keeps the footprints' – and no finding about the board itself; the print on the openings is still held per
+    part. Without the memo edakit printed nothing, and there is nothing to tell apart."""
+    def older(ex, p):
+        ex.silk_memo = {"strings": ["s1"], "fills": []}
+        silk_line(*ACROSS_C2)(ex, p)
+    rows = run(project, older)
+    assert findings(rows) == [("GEO.silk", "fail"), ("GEO.silk", "warn")]
+    assert l17(rows)["edakit's own print (designators, texts, artwork of silk apply) off the solder-mask openings"] == (
+        "fail", "silk_strings_main.json exists, silk_footprints_main/ does not: edakit's print cannot be told from the "
+        "footprints' (silk apply of an older edakit) – run edakit silk apply")
+    assert l17(rows)["C2: silkscreen on its solder-mask openings – JLCPCB clips it there"][0] == "warn"
+    assert not [k for k in l17(rows) if k.startswith(("TOP: edakit's own", "BOTTOM: edakit's own"))]   # not measured
+
+
 def test_a_group_label_or_unlabelled_covers_a_part(project):
     def grouped(ex, p):
         ex.pcb["designators"].update(J1=False, C2=False, D1=False)
@@ -1006,7 +1150,7 @@ def test_the_acknowledgement_alone_leaves_the_other_kinds_passing(project):
 
 
 def test_every_check_has_a_fault():
-    assert {cid for _, _, e in FAULTS for cid, _, _ in e} == set(CHECKS + ON_REQUEST)
+    assert {cid for _, _, e in FAULTS for cid, _, _ in e} == set(CHECKS)
 
 
 def test_the_order_form_of_the_clean_export(project):

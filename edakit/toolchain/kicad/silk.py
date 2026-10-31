@@ -18,9 +18,10 @@ from shapely.ops import unary_union
 from ... import gerber
 from ...config import BOTTOM, MIL_PER_MM, TOP
 from ...design import natural_key
-from ...silk import (GERBER_KEYS, SIDE, art_shapes, board_label_area, board_label_text, board_shape, corner_spot,
-                     fixed_findings, fixed_labels, footprint_print, label_box, label_parts, label_size, picture,
-                     place_labels, polygons, printable, side_obstacles, silk_on_openings, silk_texts)
+from ...silk import (GERBER_KEYS, SIDE, art_shapes, body_findings, board_label_area, board_label_text, board_shape,
+                     corner_spot, fixed_findings, fixed_labels, footprint_print, label_box, label_parts, label_size,
+                     part_bodies, picture, place_labels, polygons, printable, side_obstacles, silk_on_openings,
+                     silk_texts, with_bodies)
 from . import board as kb
 from . import cli
 from . import commands
@@ -70,7 +71,10 @@ def apply(cfg, board, step=None, verbose=False):
     parts = {ref: boxes[ref] for ref in label_parts({r: (c["layer"], r in tht) for r, c in comps.items()}, layer,
                                                      solder_side) if ref in boxes}
     other = [r for r in parts if comps[r]["layer"] != layer]   # solder_side: printed as free texts
-    blocked = unary_union([openings.buffer(0.15), fp_silk.buffer(0.15)] + [box(*bb) for bb in parts.values()])
+    bodies = part_bodies(cfg, comps)                           # bodies larger than their footprint (body.box)
+    parts, here_bodies = with_bodies(parts, bodies, {r: c["layer"] for r, c in comps.items()}, layer)
+    blocked = unary_union([openings.buffer(0.15), fp_silk.buffer(0.15)] + [box(*bb) for bb in parts.values()]
+                          + list(here_bodies.values()))
     vias = unary_union([Point(x / MIL_PER_MM, y / MIL_PER_MM).buffer(d / MIL_PER_MM / 2 + 0.1)
                         for x, y, d, _ in kb.vias(cfg, board)])
     area = board_shape(board).buffer(-0.5)
@@ -105,9 +109,11 @@ def apply(cfg, board, step=None, verbose=False):
     findings = [f"{r}: in [silk] place, but no part of this board" for r in sorted(fixed, key=natural_key)
                 if r not in comps]
     findings += fixed_findings(here, h, area, openings, silk_texts(board, side), side)
+    findings += body_findings(here, h, here_bodies, side)
     if there:
         findings += fixed_findings(there, h, area, gerber.shape(gerber.parse_gerber(
             folder / gerber.FILES[GERBER_KEYS[SIDE[far]][0]])), silk_texts(board, far), far)
+        findings += body_findings(there, h, {r: b for r, b in bodies.items() if comps[r]["layer"] == SIDE[far]}, far)
     placed, grouped, missing = place_labels({r: bb for r, bb in parts.items() if r not in there}, blocked, vias, area,
                                             h, gap, s.get("groups"), tuple(s.get("priority", ["TP"])), here)
     labels = [(name, spot, layer) for name, spot in placed.items()] + [(r, v, SIDE[far]) for r, v in there.items()]

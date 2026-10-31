@@ -48,3 +48,12 @@ The owner wants it round. Ø 44 mm – `rect = [44, 44]` with `corner_radius = 2
 off the circle. The holder sits almost in the middle, the cell (Ø 20 mm) nearly concentric with the board, with 10 mm
 above it to lever it out; button, LED and resistor below. The two tooling holes of the Economic assembly are
 diagonally opposite. A layout decision: the circuit hash stays, and M-1 and M-6 keep counting.
+
+## D-7 The cell's current: a press is short (2026-10-31)
+
+A CR2032 is rated for 3 mA continuous and 15 mA in pulses (Jauch CR 2032 H2B, 15092025; Murata gives 20 mA for 2 s
+pulses and calls more than 10 mA a high drain). `sim.json` holds the continuous value as `i_max_a` of the cell states
+`fresh` and `used`, and LIM.i/cell reports SW1 held down: 10.7 mA from a fresh cell, 6.3 mA from a used one at the
+LED's lowest forward voltage. The finding is accepted on BT1: SW1 is pressed for a moment, and held longer the cell
+loses capacity and voltage, nothing worse – the voltage drop is in the simulation through the cell's `r`. A pulse limit
+with a duration per load was the alternative; the owner judged it more than this board needs.

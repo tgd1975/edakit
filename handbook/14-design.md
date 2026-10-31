@@ -108,8 +108,10 @@ of the basic kinds, parts, files, documents. `usb` switches on the USB-C termina
 and the bands of parts that transmit, `audio` bridge-tied outputs and the hints of hum and switching noise, `guitar`
 the instrument input's load and the pedal's supply, `motors` the hints of motor supplies and heaters, `power` those of
 cells, converters and polarity, `cables` the lines on a lead. Each is suggested by what the graph has: a USB-C
-receptacle, a part that transmits, a speaker, an instrument net, a motor, a battery holder, a cable. `mains` is not
-there yet: edakit says nothing about spacing for hazardous voltage (maker-coverage, open decision 3). A domain file sets severities (also per purpose: `[severity.sale]`), switches codes or
+receptacle, a part that transmits, a speaker, an instrument net, a motor, a battery holder, a cable; `mains` by a
+net above the ES1 limits, which LIM.hazardous recognises – spacing and isolation stay unchecked (rules-at-scale.md,
+decision 7). The interview of a new project asks for no domain: there is no graph yet, and the graph decides
+(skill new-project). A domain file sets severities (also per purpose: `[severity.sale]`), switches codes or
 topics on, names the facts a kind must give (a missing one is `PARTS.fact`), the hints that apply and the questions
 the reviewers ask. A project names its domains in edakit.toml:
 
@@ -238,10 +240,13 @@ A part whose temperature rests on rth_ja_k_per_w: consider whether the layout gi
 A signal net runs through a cable: consider what the cable's length and the world at its end do to it.
 <!-- edakit:end -->
 
-The designer handles each one and writes down how, in the graph:
+The designer handles each one and writes down how, in the graph (a JSON graph has the same keys,
+`"accept": {"HINT.bulk": "…"}`, 3.1):
 
-```json
-"accept": {"HINT.bulk": "C1 1000 µF next to J1 (D-8)", "HINT.debounce": "firmware debounces 20 ms"}
+```toml
+[accept]
+"HINT.bulk" = "C1 1000 µF next to J1 (D-8)"
+"HINT.debounce" = "firmware debounces 20 ms"
 ```
 
 `edakit check` then lists it as accepted, with the reason, and the reviewer checks whether the reason holds.
@@ -356,8 +361,13 @@ edakit block add led --as STATUS --connect in=LED_STATUS
 What `add` does: designators get the next free numbers (`R1` of the block becomes `R7`), internal nets get the
 instance's name (`STATUS_ANODE`), each port joins the net given with `--connect` – or a new net, if the block knows its
 voltage range – and `gnd` joins the project's ground. Missing parts entries are copied from the block library; an
-existing entry must have the same pins. The graph file keeps its indentation. The block's notes say what is left to
-decide: the LED current, the entries in sim.json, `"source": "reversible"` on the connector.
+existing entry must have the same pins. A JSON graph keeps its indentation. A TOML graph (`graph` in 10.1) keeps its
+comments and arrangement: each new part and net is a table after the last of its kind, a pin on an existing net goes at
+the end of its `pins` array as the array is written – inline, or on a line of its own –, the block's `accept` becomes
+keys of the table (`accept."LIM.v" = "…"`), and a part's pin map is left out where its parts entry gives it; what would
+not read back as the graph a JSON file would get is not written. `edakit graph json --write` follows, as after every
+change of a TOML graph (3.1). The block's notes say what is left to decide: the LED
+current, the entries in sim.json, `"source": "reversible"` on the connector.
 
 A block may carry keys of the graph and say what can go:
 

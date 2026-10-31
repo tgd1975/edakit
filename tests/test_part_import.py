@@ -13,7 +13,7 @@ import pytest
 
 from helpers import check as engines_check
 
-from edakit import cli, part, pcb
+from edakit import catalog, cli, part, pcb
 from edakit.design import Design
 
 ANSWERS = Path(__file__).resolve().parent / "fixtures" / "easyeda"
@@ -144,6 +144,39 @@ def test_p1_compares_the_graph_with_the_symbol(project, library):
     project.comp(g, "D2")["accept"] = {"STRUCT.entry": "pin names of our own"}
     project.save_graph(g)
     assert [c for c, _, _ in check(project).waived if c == "STRUCT.entry"]
+
+
+def test_p1_names_the_case_of_a_pin_mismatch(project, library):
+    """STRUCT.entry for pins that differ from the entry (walkthrough-gaps A2): with the library symbol cached the
+    finding says whether the symbol agrees with the entry – the graph has another part's pins (17.6: the green LED's
+    pins on the red LED's entry) – or with the graph – the entry to be checked; the code's fix has the advice of each
+    case under the words its findings start with."""
+    def pin_findings():
+        return [m for c, m in check(project).errors if c == "STRUCT.entry" and "pins differ from parts entry" in m]
+    g = project.graph()
+    project.comp(g, "D2")["pins"] = {"1": "K", "2": "A"}            # another part's pinout on C2297's entry
+    project.save_graph(g)
+    assert pin_findings() == ["D2: pins differ from parts entry C2297: graph {'1': 'K', '2': 'A'} vs parts "
+                              "{'1': 'A', '2': 'K'}"]                 # without the cache: which is right is open
+    assert run(project, "import", "C2297") == 0                      # the symbol: pin 1 A, pin 2 K, as the entry
+    assert pin_findings() == ["D2: pins differ from parts entry C2297: graph {'1': 'K', '2': 'A'} vs parts "
+                              "{'1': 'A', '2': 'K'} – the library symbol agrees with the entry: the graph has the pins "
+                              "of another part"]
+    project.comp(g, "D2")["pins"] = {"1": "A", "2": "K"}
+    project.save_graph(g)
+    e = project.part("C2297")                                        # now the entry is the odd one out
+    e["pins"]["1"]["name"], e["pins"]["2"]["name"] = "K", "A"
+    project.save_part("C2297", e)
+    found = pin_findings()
+    assert len(found) == 8 and found[0].endswith("– the library symbol agrees with the graph: the entry's pins to be "
+                                                 "checked against the datasheet")
+    fix = catalog.code("STRUCT.entry")["fix"]
+    for case in ("No parts entry:", "Pins differ from the parts entry:", "Pins differ from the library symbol",
+                 "A supply pin marked nc:", "A config the entry does not know:", "A state:", "An LED strip:"):
+        assert case in fix
+    pins = fix.split("Pins differ from the parts entry:")[1].split("Pins differ from the library symbol")[0]
+    assert "pin names and the nets on its pins" in pins and "corrected from the datasheet" in pins
+    assert "part-search" not in pins and "symbol_differs" not in pins     # the advice of the other cases
 
 
 def placed_geometry(project, without=()):

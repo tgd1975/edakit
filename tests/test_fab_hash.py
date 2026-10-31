@@ -117,8 +117,9 @@ def test_a_signoff_with_scope_fab_counts_for_its_files_only(project, monkeypatch
     assert by({**base, "fab_sha256": ha})["M-5"] == "agent pcb-reviewer"
     assert by({**base, "fab_sha256": hb})["M-5"] is None
     signoff, notes = gate.load_signoff(cfg, base)            # offline: no stage F, no fab hash
-    assert {m["id"]: m["done_by"] for m in signoff["manual"]}["M-5"] is None
-    assert any("scope 'fab'" in n and "not checked" in n for n in notes)
+    m5 = next(m for m in signoff["manual"] if m["id"] == "M-5")
+    assert m5["done_by"] is None and m5["unchecked"]["fab_sha256"] == ha     # bound to ha, checked by stage F
+    assert any("scope 'fab'" in n and f"bound to fab {ha[:12]}…" in n for n in notes)
 
 
 def test_the_raster_frame_is_the_outline(tmp_path):
@@ -163,7 +164,7 @@ def ordered(**order):
 def test_a_board_without_order_keeps_its_fab_hash(project):
     """No [order], no order settings: fab_layers holds the files the manufacturer builds from and nothing else, so the
     fab hash of a board without [order] stays what it was (the bell's reviewed runs, its D-20)."""
-    d, _ = exported(project)
+    d, _ = exported(project, fr.unordered)
     gerbers, drills = fab.built_files(d / "gerber")
     assert set(layers(d)) == {f.name for f in gerbers + drills} | {"bom_main.csv", "cpl_main.csv"}
     assert not (d / "order.json").exists()

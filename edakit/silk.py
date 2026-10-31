@@ -7,7 +7,9 @@ Both end with EasyEDA's DRC: exit 2 on findings, 3 when the only one is EasyEDA 
 acknowledgement (schematic = PCB, compared as `pcb parts` and `pcb nets` do; Design → Import Changes once).
 
 Placement: every designator gets the first free spot above, below, right or left of its part (horizontal, then
-vertical, then at the corners) – not on pads, footprint silkscreen, other parts or other labels. Test points and the
+vertical, then at the corners) – not on pads, footprint silkscreen, other parts or other labels; a part whose parts entry
+gives a body larger than its footprint (body.box: a coin cell over its holder) counts with its body, and a fixed
+designator under a body is a finding (GEO.silk, grade body, in the gate). Test points and the
 tightest parts come first. A spot on a via (tented, the print holds) only when nothing else is free. Groups
 ([silk] groups = {"R1-R8" = [...]}) get one common label when the single labels do not fit. With solder_side = true the
 through-hole parts of the other side are labelled on this side too, next to their solder joints: a free text in the
@@ -206,6 +208,53 @@ def place_labels(parts, blocked, vias, area, h, gap, groups=None, priority=("TP"
         put(ref, spots(ref, parts[ref], hard))
     missing = sorted((r for r in parts if r not in grouped and r not in placed), key=natural_key)
     return placed, grouped, missing
+
+
+def body_shapes(design, comps):
+    """The bodies the parts entries give larger than the footprint (body.box, footprint mm at 0° on TOP), placed where
+    the parts sit. comps: {designator: {"x", "y" (mil), "rotation", "layer"}} as pcb.json has them -> {designator:
+    area in mm, the frame of the Gerber files} – parts without body.box are left out."""
+    from .release.fab import keepout_polygon
+    out = {}
+    for ref, c in comps.items():
+        box_mm = pcb.part_mech(design.part(ref) if ref in design.comps else None)[0].get("box")
+        if box_mm:
+            out[ref] = Polygon(keepout_polygon(c, box_mm))
+    return out
+
+
+def part_bodies(cfg, comps):
+    """body_shapes of the project's graph and parts; none for a project without its graph file."""
+    if not cfg.graph.exists():
+        return {}
+    from .design import Design
+    return body_shapes(Design.from_config(cfg), comps)
+
+
+def with_bodies(parts, bodies, layers, layer):
+    """The boxes the labels of one side go around, grown by the bodies larger than their footprint (body_shapes) of the
+    parts on that side: parts {designator: box}, layers {designator: EasyEDA layer} -> (the boxes, {designator: body}
+    of the side's parts – what the side's labels keep clear of)."""
+    here = {r: b for r, b in bodies.items() if layers.get(r) == layer}
+    grown = {}
+    for ref, bb in parts.items():
+        if ref in here:
+            x0, y0, x1, y1 = here[ref].bounds
+            bb = (min(bb[0], x0), min(bb[1], y0), max(bb[2], x1), max(bb[3], y1))
+        grown[ref] = bb
+    return grown, here
+
+
+def body_findings(fixed, h, bodies, side="top"):
+    """Fixed designators of one side under a body of that side (body_shapes): hidden once the part is in.
+    fixed: {designator: (x, y, rot)} in EasyEDA mm. -> ["BT1: fixed designator under the body of BT1 (top) – …"]"""
+    out = []
+    for ref in sorted(fixed, key=natural_key):
+        b = label_box(*fixed[ref], *label_size(ref, h))
+        out += [f"{ref}: fixed designator under the body of {other} ({side}) – {b.intersection(body).area:.2f} mm² of "
+                "its box, hidden once the part is in (body.box of its parts entry)"
+                for other, body in sorted(bodies.items(), key=lambda kv: natural_key(kv[0])) if b.intersects(body)]
+    return out
 
 
 def label_parts(parts, layer, solder_side=False):
@@ -472,7 +521,11 @@ def apply(cfg, board, mcp, step=None):
         bb = api(mcp, "PCB_Primitive.getPrimitivesBBox", [attrs[ref][1]["PrimitiveId"]])
         parts[ref] = (mm(bb["minX"]), mm(bb["minY"]), mm(bb["maxX"]), mm(bb["maxY"]))
     other = [r for r in parts if attrs[r][1].get("Layer") != layer]  # solder_side: printed as free texts
-    blocked = unary_union([openings.buffer(0.15), fp_silk.buffer(0.15)] + [box(*bb) for bb in parts.values()])
+    bodies = part_bodies(cfg, {r: {"x": c.get("X", 0), "y": c.get("Y", 0), "rotation": c.get("Rotation", 0),
+                                   "layer": c.get("Layer")} for r, (_, c) in attrs.items()})
+    parts, here_bodies = with_bodies(parts, bodies, {r: c.get("Layer") for r, (_, c) in attrs.items()}, layer)
+    blocked = unary_union([openings.buffer(0.15), fp_silk.buffer(0.15)] + [box(*bb) for bb in parts.values()]
+                          + list(here_bodies.values()))
     vias = unary_union([Point(mm(v["X"]), mm(v["Y"])).buffer(mm(v["Diameter"]) / 2 + 0.1)
                         for v in map(eda.state, api(mcp, "PCB_PrimitiveVia.getAll") or [])])
     area = board_shape(board).buffer(-0.5)
@@ -517,9 +570,12 @@ def apply(cfg, board, mcp, step=None):
     findings = [f"{r}: in [silk] place, but no part of this board" for r in sorted(fixed, key=natural_key)
                 if r not in attrs]
     findings += fixed_findings(here, h, area, openings, silk_texts(board, side), side)
+    findings += body_findings(here, h, here_bodies, side)
     if there:
         findings += fixed_findings(there, h, area, gerber.shape(gerber.parse_gerber(
             folder / gerber.FILES[GERBER_KEYS[SIDE[far]][0]])), silk_texts(board, far), far)
+        findings += body_findings(there, h, {r: b for r, b in bodies.items() if attrs[r][1].get("Layer") == SIDE[far]},
+                                  far)
     placed, grouped, missing = place_labels({r: bb for r, bb in parts.items() if r not in there}, blocked, vias, area,
                                             h, gap, s.get("groups"), tuple(s.get("priority", ["TP"])), here)
     labels = [(name, spot, layer) for name, spot in placed.items()] + [(r, v, SIDE[far]) for r, v in there.items()]

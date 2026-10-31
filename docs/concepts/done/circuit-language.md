@@ -1,7 +1,7 @@
 # The circuit as a language, or as TOML with names
 
 Closed on 2026-10-31: the sketch has done its work – decision 8 of design-as-text is taken – and two concepts carry
-it on: [circuit-language-plan.md](../new/circuit-language-plan.md) builds its decisions (TOML with names, pins by name
+it on: [circuit-language-plan.md](circuit-language-plan.md) builds its decisions (TOML with names, pins by name
 or role, the resolved graph.json), [circuit-dsl.md](../new/circuit-dsl.md) takes up the deferred language.
 
 Status 2026-10-31: sketch of step 4.3 of the [implementation plan](../new/implementation-plan.md), for decision 8 of
@@ -11,7 +11,7 @@ Status 2026-10-31: sketch of step 4.3 of the [implementation plan](../new/implem
 any case; the language is deferred until it offers what a format cannot. The decisions at the end were taken the same
 day: TOML with names as the form, the pin map from the parts entry, the hash over the form's canonical data, a resolved
 `graph.json` generated beside the form, four complete variants, the symbol's names and the roles, no net in fragments;
-what both forms share has a plan of its own, [circuit-language-plan.md](../new/circuit-language-plan.md). Since the
+what both forms share has a plan of its own, [circuit-language-plan.md](circuit-language-plan.md). Since the
 sketch, the cut of rules at scale (`4982d35`) has changed the graph's keys and the codes; the examples below and the
 prototype still use the old ones, and the review lists what to bring along. The Christmas bell's main configuration is
 written down both ways in [prototypes/circuit-language](prototypes/circuit-language/): as a language,
@@ -584,7 +584,7 @@ does and rewrites the convention `pin_reference`; `edakit graph json` prints the
 dropped. Deferred with the language: the extension `.circuit`, `(locked)` and `lock PIN NET`, `set KEY JSON`, a later
 net line that adds pins, quoted text over several lines.
 
-What both forms share has a plan of its own, [circuit-language-plan.md](../new/circuit-language-plan.md): nine steps,
+What both forms share has a plan of its own, [circuit-language-plan.md](circuit-language-plan.md): nine steps,
 built with add-feature when the owner asks for them. The prototypes of this folder stay the record of the sketch at
 `75d5c32`; the round trip they ran moves into the plan's tests.
 
