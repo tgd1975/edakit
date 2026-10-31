@@ -11,7 +11,7 @@ from test_pcb import led_bar_geo
 from edakit import config
 from edakit.config import ConfigError
 from edakit.design import Design
-from edakit.part import file_name
+from edakit.part import SILK_VERSION, file_name
 from edakit.toolchain import is_kicad
 from edakit.toolchain.kicad import board as kb
 from edakit.toolchain.kicad import library, sexp
@@ -47,6 +47,7 @@ def kicad_project(project, rows=None):
                 p.update(shape="RECT", w=40, h=50, rot=0, layer="TOP")
         b = fp["bbox"]
         fp["silk"] = [{"layer": "TOP", "points": [[b[0], b[1]], [b[2], b[1]]], "width": 6, "fill": False}]
+        fp["silk_version"] = SILK_VERSION     # a cache of today's edakit: not read from the library again
         (d / file_name(name)).write_text(json.dumps(fp))
     return project.config()
 
