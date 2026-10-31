@@ -334,4 +334,8 @@ Taken by the owner on 2026-10-31 – maker-coverage's open decisions 3 to 5, thr
 9. **AC analysis** (decision 5): opt-in – ngspice `.ac` (and `.noise`) only where `sim.json` names an expectation
    (gain at a frequency, the −3 dB corners), in the domains audio and guitar; without an expectation nothing runs. Its
    codes start as **warnings**, like every new code of step 6. FT-18 (source models in the audio band) builds on it.
+   Built the same day: `ac` in sim.json (sim/ac.py) – the input net driven with 1 V AC through 1 F behind a source
+   resistance or a source model (R and L in series, C across), the gain and the −3 dB corners against `expect`,
+   SIM.response (grades gain, corner) switched on by audio and guitar, SIM.config/off where neither is on; the audio
+   and guitar reference circuits expect their RC corners and fail with the capacitor a decade off.
 

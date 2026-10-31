@@ -15,13 +15,13 @@ FT-8 = { status = "built", where = "sim.json fault_scenarios: reversed, shorted,
 FT-9 = { status = "open", missing = "DC bias of ceramics needs the capacitance curves – datasheets" }
 FT-10 = { status = "built", where = "edakit firmware: analog (channel, divider, pull) per ADC input; drift by --check", step = 6 }
 FT-11 = { status = "built", where = "loads: expect (engines/sim.py function) – LIM.i, LIM.v", step = 6 }
-FT-12 = { status = "open", missing = "AC analysis – open decision 5" }
+FT-12 = { status = "built", where = "sim.json ac (sim/ac.py): .ac around a DC scenario, gain and -3 dB corners against expect; SIM.response (gain, corner), domains audio and guitar; SIM.config/off where neither is on (decision 9)", step = 6 }
 FT-13 = { status = "open", missing = "LED strip model" }
 FT-14 = { status = "open", missing = "constant-current LED buck – datasheets" }
 FT-15 = { status = "built", where = "fn i2s.*, can.*, onewire, usb.* (circuit.FN_LINES); REQ.function", step = 6 }
 FT-16 = { status = "partial", where = "edakit firmware: devices.i2c with the addresses the pins decide; buses", missing = "SPI mode and maximum clock per device, the bus speed the pull-ups allow – parts facts from datasheets, the bus capacitance", step = 6 }
 FT-17 = { status = "open", missing = "corners of hFE, leakage, IDSS – datasheets" }
-FT-18 = { status = "open", missing = "source models for the audio band – needs FT-12" }
+FT-18 = { status = "partial", where = "ac source: {r_ohm, l_h, c_f} – R and L in series, C across (a pickup); source_ohm (a microphone)", missing = "the numbers of real pickups and microphones – no manufacturer's specification was reachable; the project gives its own", step = 6 }
 FT-19 = { status = "built", where = "engines/coverage.py; edakit check --coverage; the protocol's section 2", step = 6 }
 FT-20 = { status = "built", where = "edakit/domains/, [project] domains, edakit domains", step = 3 }
 FT-21 = { status = "partial", where = "tests/reference.py: a reference circuit per domain, with seeded faults", missing = "the published open designs (DevKitC, Tube Screamer, QMK keyboard …) – their schematics could not be read", step = 7 }

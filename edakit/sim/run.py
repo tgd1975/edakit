@@ -5,7 +5,8 @@
 Scenarios = supplies x loads x LED forward-voltage corners from the simulation config (edakit.toml [project] sim),
 plus "extra_scenarios" listed there. "combine_sources" adds supplies for every combination of the sources it names:
 each alone at both ends of its range, all together with one high and the others low (generated_supplies).
-"fault_scenarios" adds generated fault cases (a reversed source, a cable wire shorted at its far end, one source off),
+"ac" adds AC runs around an operating point – only where it names an expectation, only with the domain audio or guitar on
+(sim/ac.py, decision 9). "fault_scenarios" adds generated fault cases (a reversed source, a cable wire shorted at its far end, one source off),
 their findings warnings at most. "transients" adds runs over time: the supplies follow [t, V] points (plug, unplug, a switch-over), loads may step
 ([t, A] points under "steps": a servo starting, a Wi-Fi burst), ngspice .tran from the operating point at t = 0;
 without the key nothing runs.
@@ -414,9 +415,15 @@ def run_all(design, sim, keep=None, plugin=None, routing=None):
     """All scenarios and transient runs; `sim` is the parsed simulation config (tests pass modified copies), `routing`
     the routed boards for sim.json copper (copper.load_routing). -> {"scenarios", "checks" (rows), "findings",
     "net_currents"}"""
+    from . import ac
     models = getattr(plugin, "MODELS", {}) if plugin else {}
     touch_limits(design, sim)
     runs = transient_runs(design, sim)
+    dc = list(scenarios(sim))
+    try:
+        ac_runs = ac.runs(design, sim, [sc["name"] for sc in dc])
+    except ac.ACError as e:
+        raise SimError(str(e)) from None
     out = {"scenarios": [], "checks": [], "net_currents": {}}
     new, found = design, []
     try:
@@ -427,7 +434,7 @@ def run_all(design, sim, keep=None, plugin=None, routing=None):
         out["checks"].append({"id": "SIM.copper", "scenario": "copper", "item": net, "check": "copper not annotated",
                               "actual": why, "expected": "the routed copper of the net", "result": "info"})
         found.append(Finding("SIM.copper", "E", net, f"copper not annotated: {why}"))
-    for sc in [*scenarios(sim), *fault_scenarios(design, sim)]:
+    for sc in [*dc, *fault_scenarios(design, sim)]:
         row = {"name": sc["name"], "supply": sc["supply_name"], "load": sc["load_name"], "corner": sc["corner"]}
         s = esim.Scene(design, new, sim, {}, {}, sc["name"], sc.get("info", False))
         s.fault = sc.get("fault", False)
@@ -464,7 +471,21 @@ def run_all(design, sim, keep=None, plugin=None, routing=None):
         out["checks"] += rows
         found += fs
         out["scenarios"].append(row)
-    rep = engines.report(found, engines.profile(new), new.graph, notes=False)
+    prof = engines.profile(new)
+    if ac_runs and not prof.on(Finding("SIM.response", "E", "", "")):
+        found.append(ac.off_note(ac_runs))       # opt-in: only with the domain audio or guitar on (decision 9)
+    elif ac_runs:
+        out["ac"] = {}
+        by_name = {sc["name"]: sc for sc in dc}
+        for name, run in ac_runs.items():        # AC runs: around a DC operating point, their expectations only
+            sc = by_name.get(run.get("scenario")) or dc[0]
+            row, rows, fs, curve = ac.run_one(design, new, sim, name, run, sc, ngspice_tran, keep, models)
+            out["checks"] += rows
+            found += fs
+            out["scenarios"].append(row)
+            if curve:
+                out["ac"][name] = curve
+    rep = engines.report(found, prof, new.graph, notes=False)
     out["findings"] = [f.to_dict() for f in rep.findings]
     return out
 

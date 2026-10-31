@@ -204,6 +204,36 @@ On the example, J1 dropping to 0 V in 10 µs leaves +5V at 2.99 V after 0.3 ms w
 holds; its gap comes from the MOSFETs' thresholds and body diodes, and the capacitors bridge it or not. Without
 `transients` nothing runs.
 
+**AC runs.** `ac` names small-signal runs around an operating point – only where it names an expectation, and only
+with the domain audio or guitar on (decision 9 of rules-at-scale.md; without either, a note SIM.config/off says that
+nothing ran):
+
+```json
+"ac": {
+  "output_coupling": {"about": "C22 / R24: f = 1 / (2π · 100 kΩ · 1 µF) = 1.6 Hz",
+                      "input": "GTR_IN", "output": "BUF_OUT", "scenario": "usb-nom/idle/vf-min", "source_ohm": 0,
+                      "expect": {"gain_db": [{"at_hz": 1000, "min": -0.5, "max": 0.5}], "low_hz": {"max": 10},
+                                 "high_hz": {"min": 10000}},
+                      "from_hz": 1, "to_hz": 100000, "points": 20}
+}
+```
+
+`input` is the net driven with 1 V AC – through 1 F, so its DC stays the operating point's – behind `source_ohm`, the
+source's own resistance (a microphone's output; default none), or behind `source`, a source model (maker-coverage
+FT-18): `{"r_ohm", "l_h", "c_f"}`, R and L in series with C across – a magnetic pickup's coil resistance, inductance and
+winding plus cable capacitance, the project's values with their source in `note`; edakit has no pickup's numbers of its
+own. `output` is the net measured against its board's
+ground; `scenario` the DC scenario linearised around (default the first). ngspice runs `.ac dec` from `from_hz` to
+`to_hz` with `points` per decade (default: a decade beyond the expectation's frequencies on each side, 20 per decade).
+The gain is 20·log10 |V(output) / V(source)| – with a source resistance it includes what the input's load does to the
+source –; a corner is where the gain falls 3.01 dB below its largest value in the sweep, interpolated in log f, and a
+corner outside the sweep is reported as beyond it (below the sweep it meets a `max` the sweep reaches, never a `min`).
+Each expectation is a row, a missed one SIM.response (grade gain or corner), a warning while new; the run gets its row
+in the scenario table and its curve in result.json (`ac`). The op-amp model has no gain-bandwidth: an upper corner comes
+from the passive parts only. On the reference circuits: the guitar buffer's output coupling C22 / R24 gives 1.59 Hz,
+with 100 nF instead of 1 µF 15.9 Hz – SIM.response; the audio input's R20 / C21 low-pass 15.9 kHz, with 100 nF
+1.6 kHz.
+
 `expect` in a load holds what the project expects there, as in a transient run: per source `i_max_a`, `i_min_a` – a sleep
 current budget, the evidence for a battery-life requirement (LIM.i) –, per net `min_v`, `max_v` (LIM.v).
 
@@ -219,7 +249,7 @@ engines judge them as they judge the declared ranges of the graph – LIM agains
 protocol carries its code, the scenario and the item. The codes of the simulation itself, generated from the catalog:
 
 <!-- edakit:generated codes SIM -->
-**`SIM.config`** – simulation config readable (error; replaces E-1, E-3)  
+**`SIM.config`** – simulation config readable (error, off: note; replaces E-1, E-3)  
 The simulation config names existing parts, nets and boards, and every value has the form the config needs; a part whose thresholds are ratios has one supply pin to take them of.
 
 **`SIM.converge`** – every scenario converges (error; replaces E-1)  
@@ -233,6 +263,9 @@ In every scenario the circuit reaches the state its load expects: LEDs on or dar
 **`SIM.driver`** – every LED has a known driver (error; replaces E-4)  
 Every LED – each colour of an RGB LED – has a state the simulation checks in every scenario: its cathode on a driver output (directly, behind 0 Ω bridges or a balancing resistor), or the load lists it in leds_on.
 - LED has a known driver: in every scenario every LED – each colour of an RGB LED – has a state SIM.state checks, its cathode on a driver output (directly, behind 0 Ω bridges or one resistor) or the load's `leds_on`; an LED with neither, or one the netlist left out because its parts entry lacks a role it reads (anode, cathode and their colours, 4.1), fails as "LED without a known driver"
+
+**`SIM.response`** – frequency response as expected (warning, gain: warning, corner: warning)  
+Every expectation of an AC run of the simulation config (ac) holds: the gain from its input to its output at the frequencies named (grade gain), and the lower and upper −3 dB corners within their ranges (grade corner). The gain is 20·log10 |V(output) / V(source)| for 1 V AC behind the run's source_ohm, linearised around a DC scenario; a corner is where the gain falls 3.01 dB below its largest value in the sweep. Runs only where sim.json names an expectation, only with the domain audio or guitar on.
 
 **`SIM.copper`** – copper annotated (note; replaces E-1)  
 A net listed for copper is simulated with its routed copper; where it is not, it stays one ideal node.
