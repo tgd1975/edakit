@@ -8,7 +8,7 @@ tag = "r"
 
 [reverse]                                    # PATH.reverse
 sources = ["battery_holder"]                 # kinds that may be inserted reversed; also a component "source": "reversible"
-passes = ["fuse", "switch", "connector"]     # hand a reversed source on unchanged
+passes = ["fuse", "switch", "button", "connector"]     # hand a reversed source on unchanged
 tolerates = ["battery_holder", "capacitor"]  # take a reversed voltage without harm
 blocks = [
   { kind = "diode", role = "anode", outside = ["cathode"] },          # the cathode on the protected side
@@ -17,7 +17,7 @@ blocks = [
 
 [supply]                                     # PATH.unfed: what a supply reaches
 inputs = { battery_holder = "plus", connector = "vbus" }   # pin roles where a supply comes in (role prefix)
-passes = ["fuse", "switch", "connector", "inductor"]       # every pin to every pin
+passes = ["fuse", "switch", "button", "connector", "inductor"]       # every pin to every pin
 passes_roles = { nmos = ["drain", "source"], pmos = ["drain", "source"] }
 forward = { diode = ["anode", "cathode"] }                 # from the first role to the second only
 resistor_max_ohm = 100                                     # a shunt or a filter resistor passes a supply
