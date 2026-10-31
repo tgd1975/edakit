@@ -1,15 +1,15 @@
 # The schematic with every connection drawn through
 
-Status 2026-10-31: concept, asked for by the owner – "a different way of drawing the schematics: today we have these
-excerpts with named nets, which is what people who do this often use; the maker scene, for smaller circuits, prefers
-a drawing as Fritzing draws it; it will reach its limits soon, let us see how far we get". Written against main at
-`6139c4c`, the jukebox of anTONIEa at `63aa3b7` and the Christmas bell at `021f2ae`, with a prototype that draws
-every project at hand this way and measures what it costs
+Status 2026-10-31: decided (the table at the end, in a decision round the same day); the build of W.2 to W.5 starts
+when the owner asks for it, one step per branch. Asked for by the owner – "a different way of drawing the schematics:
+today we have these excerpts with named nets, which is what people who do this often use; the maker scene, for
+smaller circuits, prefers a drawing as Fritzing draws it; it will reach its limits soon, let us see how far we get".
+Written against main at `6139c4c`, the jukebox of anTONIEa at `63aa3b7` and the Christmas bell at `021f2ae`, with a
+prototype that draws every project at hand this way and measures what it costs
 ([prototypes/wired-schematic](prototypes/wired-schematic/README.md)); checked the same day against main at
 `b15a3ac` – L.1 to L.8 of circuit-language-plan built since (pins by name or role, the pin map from the parts entry,
-the graph as TOML), the drawing code unchanged, the measures the same. Nothing of it is built in edakit; what the
-owner asked for on the side the same day – the frame of the SVG optional – is built on the branch
-`claude/friendly-carson-20hhbg` and waits for the OK. The decisions are at the end, open.
+the graph as TOML), the drawing code unchanged, the measures the same. Built so far: W.1, the frame of the SVG
+optional, which the owner asked for on the side – merged into main the same day.
 
 ## The short answer
 
@@ -27,14 +27,14 @@ parts, 157 connections, a module whose pins go to two 19-pin headers) is a mesh 
 half (73 parts, a key matrix) 221. The limit is not the number of parts: the Tubescreamer/Rat pedal with 86 parts
 routes with 44 crossings. It is the structure – headers that mirror a module, buses, a matrix. A mixed style that
 keeps the labels for those nets and wires everything else brings the DevKitC to 28 crossings and leaves the matrix
-unreadable (155). So the proposal is a third style beside the two, chosen per board by what the drawing measures
-about itself, and overridable by a key: wires through for the maker-size circuit, labels for the pass-throughs and
-buses, today's drawing for the rest. It is one plan drawn three ways – the SVG, EasyEDA's board schematic and the
-KiCad schematic all draw the same plan –, so the style reaches all of them.
+unreadable (155). Decided: a third style of `edakit schematic draw` beside the two – wires through for the
+maker-size circuit, the mixed style with labels for the pass-throughs and buses, today's drawing for the rest –,
+chosen per board by the key `style` of the schematic file, labels without it; the project interview of new-project
+asks for it. The SVG alone: EasyEDA's board schematic and the KiCad schematic keep their labels. Fritzing was the
+example of the drawing, nothing more – no breadboard view, no export.
 
 Everything stays text in the repository: the style is a key of the schematic file, the drawing is generated from the
-graph and regenerated on every change, nothing lives in a drawing tool. An export to Fritzing, which would give its
-breadboard view and its part pictures, is set aside: a file edited there holds what the repository does not.
+graph and regenerated on every change, nothing lives in a drawing tool.
 
 ## What the owner means
 
@@ -77,9 +77,10 @@ matter). The last row is the one edakit must keep: a drawing nobody draws by han
 - **A hand-wired board** (`wired = true`, 4.5): panel parts, jacks, pots, a strip on a cable. edakit refuses to draw
   it today ("has no schematic", 6.5) – though it is the one board whose only build document is a drawing of what
   goes to what. The guitar pedals' `wiring` boards are the case: 4 and 7 parts, 14 and 26 connections.
-- **The board schematic in EasyEDA** (`schematic layout`, 6.3) and **the KiCad schematic** (16.3): both are drawn from
-  the same plan as the SVG (`schematic_layout.Layout`, `schematic_draw.drawing`); the style reaches them once the
-  plan has it, with one probe each (below).
+- **Not the board schematic in EasyEDA** (`schematic layout`, 6.3) and **not the KiCad schematic** (16.3), by
+  decision 1: both are drawn from the same plan as the SVG (`schematic_layout.Layout`, `schematic_draw.drawing`), so
+  the style could reach them – the owner keeps them labelled; the PCB hangs on the board schematic, and a crossing
+  there would need a probe in EasyEDA first.
 - **Not** the template schematic (`schematic create`: stubs with net labels, "exact, ugly", rebuilt on every run) and
   not the reference project with 123 parts: that one is what labels are for.
 
@@ -95,12 +96,10 @@ wire or a flag. EasyEDA's `SCH_PrimitiveWire.create` refuses a crossing with fou
 check takes two nets' wires touching for a short – a crossing without a junction, which the wired style lives on,
 is not told apart from a T today.
 
-**Fritzing.** The app's source is GPL v3, its documentation and part designs CC BY-SA 3.0 (the repository's README;
-the parts repository's licence file says "all graphics and documentation"). A `.fzz` is a zip with one XML file:
-instances of parts by module id with a position per view – breadboard, schematic, PCB – and wires as instances of
-their own, one per straight piece, with a colour; the jukebox's modules without a Fritzing part are "mystery parts",
-a SIP of n pins with a label. Nothing of this reads a hardware graph; fritzing.org was not reachable from this
-session, so its current version and its documentation were not read.
+**Fritzing** is the example of the drawing, nothing more (decision 6): its schematic view is where the owner's two
+drawings come from. Read for the measures only: a `.fzz` is a zip with one XML file, parts with a position per view
+and wires as instances of their own, one per straight piece, with a colour – that is where the jukebox's 124 pieces
+come from.
 
 **The other school.** EasyEDA and KiCad draw either way: a wire is a wire, a label joins what has the same name, a
 junction dot says that crossing wires connect. The labelled drawing is what edakit generates today; the wired one is
@@ -163,21 +162,20 @@ the drawing, speed (half a minute for a keyboard half in plain Python).
 
 ## What to build
 
-One plan, three styles, chosen per board. The style is data – a key of the schematic file, as the add-feature skill
-asks –, and without the key the drawing chooses by its own measure and says so in its output line.
+Three styles of `edakit schematic draw`, chosen per board by a key of the schematic file – data, as the add-feature
+skill asks –, labels without the key; the interview of new-project asks for it. The SVG alone (decision 1).
 
 | step | what | where | size (estimate) |
 | --- | --- | --- | --- |
-| W.1 | **The frame optional.** `--no-frame`, or `frame = false` in the schematic file: no sheet border, no title block, the page the drawing and its margin – for a drawing embedded in a document. | `schematic_draw` (`fit`, `render`), `config.SCHEMATIC_KEYS`, `cli`, a test, handbook 6.5 and 10.3 | built on the branch, 30 lines |
-| W.2 | **The wired style in the plan.** `style = "wires" \| "mixed" \| "labels"` in `hardware/schematic.toml`; the leads, rails, router and colours of the prototype as part of `schematic_layout`/`schematic_draw`; the geometry check learns to tell a crossing from a T; the output line reports crossings and wire length; the measure chooses without the key (crossings ≤ nets: wires; else mixed if that gets there; else labels), and the title block names the style. A hand-wired board is drawn (`made=True` of `schematic draw` goes). Tests on led-bar and the bell's graph; the catalog's reference circuits drawn through where the measure allows. SVG only. | `schematic_layout.py`, `schematic_draw.py`, `config.py`, `cli.py`, `tests/test_schematic_draw.py`, handbook 6.5, 10.3, 14.5 | ~500 lines with tests, one session |
-| W.3 | **Placement for wires.** The module in the middle, the other blocks around it by the nets they share, channels as wide as the wires that must pass; the prototype's table as the test – fewer crossings, less wire, no bigger page. | `schematic_layout.py` | ~200 lines, one session |
-| W.4 | **EasyEDA and KiCad.** Probe on a scratch sheet (agreement 18): two wires of different nets crossing without a junction stay two nets after `SCH_PrimitiveWire.create`, save and reload (6.1 saves only a netlist equal to the graph – the safety net); then `schematic layout` takes the style key; the KiCad schematic gets the same plan through `drawing()`, its ERC and the netlist compared by SYNC.schematic (16.6). **(probe)** | `schematic_layout.apply`, `toolchain/kicad/schematic.py` | half a session plus the owner's EasyEDA |
+| W.1 | **The frame optional.** `--no-frame`, or `frame = false` in the schematic file: no sheet border, no title block, the page the drawing and its margin – for a drawing embedded in a document. | `schematic_draw` (`fit`, `render`), `config.SCHEMATIC_KEYS`, `cli`, a test, handbook 6.5 and 10.3 | built, merged into main 2026-10-31 |
+| W.2 | **The wired style.** `style = "labels" \| "wires" \| "mixed"` in `hardware/schematic.toml`, labels without it; the leads, rails, router and colours of the prototype in `schematic_draw`; the geometry check learns to tell a crossing from a T; the output line reports crossings and wire length, the title block names the style. A hand-wired board is drawn (the `made=True` filter of `schematic draw` goes; decision 4). Tests on led-bar and the bell's graph; the catalog's reference circuits keep labels unless their schematic file says otherwise. | `schematic_draw.py` (the plan's leads and rails in `schematic_layout.py` behind the style, the EasyEDA path unchanged), `config.py`, `cli.py`, `tests/test_schematic_draw.py`, handbook 6.5, 10.3 | ~500 lines with tests, one session |
+| W.3 | **Placement for wires.** The module in the middle, the other blocks around it by the nets they share, channels as wide as the wires that must pass; the prototype's table as the test – fewer crossings, less wire, no bigger page. | `schematic_draw.py` | ~200 lines, one session |
+| W.4 | **The interview asks.** new-project asks which style the board's drawing takes – labels (the default, for a board of any size), wires through (a maker-size circuit, a hand-wired board), mixed (a module with headers) – and writes `style` into the schematic file; project-surveyor reports it for a project that moves to edakit. | `skills/new-project/SKILL.md`, `agents/project-surveyor.md`, handbook 10.3 | half a session |
 | W.5 | **Pin names as the board prints them.** A key per pin of a module's parts entry – `"print": "D2"` – that the drawing writes beside the symbol's name, nowhere else; the Nano's and the Pico's entries get them from their pinout pages; `edakit part lint` holds the key to the schema. | `catalog/kinds.toml`, `schematic_draw.box`, the entries, handbook 4.1 | 50 lines plus the data |
-| W.6 | **The breadboard or perfboard view.** The physical drawing Fritzing is known for: THT parts and modules on a 2.54 mm hole grid as their footprint outline with pads (the data is in the parts entries and footprints, 4.1, 4.5), wires as straight lines from hole to hole, a colour per net; for a hand-wired board and for a THT variant like the bell's; SMD parts have no place on it. A placer of its own on the grid, a wire drawer, a check (one wire per hole, every pin in a hole) – the size of `schematic_draw` again. | new module | ~700 lines, two sessions; deferred |
-| – | **Export to Fritzing.** Set aside: it needs a Fritzing part per edakit part (the core library's generic parts would do for resistors, LEDs, buttons, transistors and "mystery" modules, not for the boards), and a file edited in Fritzing holds positions and bends the repository does not – against the yardstick of design as text. Revisit if a project needs Fritzing's part pictures. | – | – |
 
-Order: W.1 is done; W.2 and W.3 together give the owner the drawing; W.5 is independent and small; W.4 when the
-owner's EasyEDA is at hand; W.6 only when a hand-wired project asks for it.
+Order: W.1 is done; W.2 and W.3 together give the owner the drawing, W.4 follows them; W.5 is independent and small.
+Not built, by decision: the style in EasyEDA's board schematic and the KiCad schematic (1), a breadboard or
+perfboard view (5), an export to Fritzing (6).
 
 ## Costs and risks
 
@@ -190,22 +188,24 @@ owner's EasyEDA is at hand; W.6 only when a hand-wired project asks for it.
   file (`rows`, `near`, `style`), not the drawing. For the wired style the file gets no new way to pin a wire's
   route – a route by hand would be the one thing outside the generator.
 - **Time.** The prototype's router is plain Python: a second for the bell, a minute for a keyboard half. W.2 keeps
-  the grid but drops the per-cell dicts for arrays; the measure that chooses the style runs the router once.
-- **Taste.** Which style a reader prefers is theirs; the key decides per board, the default by the measure. The
-  catalog pages would mix styles across circuits – acceptable, each reads best its own way.
+  the grid but drops the per-cell dicts for arrays; the router runs only for a board whose key asks for wires.
+- **Taste.** Which style a reader prefers is theirs; the key decides per board, asked once at the project's setup,
+  labels when nobody asked. The catalog's reference circuits stay as they are.
 
 ## Decisions
 
-Open; the recommendation first, as the skill decision-round asks them.
+Taken by the owner on 2026-10-31, in a decision round in Claude Code's form; "accepted" is the owner's yes to the
+recommendation.
 
-| # | Question | Recommendation | Alternative | Status |
-| --- | --- | --- | --- | --- |
-| 1 | Build the wired style as a third style of the one plan (W.2, W.3)? | Yes: the measured drawings of the maker-size circuits read as the owner's old ones, and the plan reaches SVG, EasyEDA and KiCad alike | a separate drawer for the SVG only – less code, and the board schematic in EasyEDA stays labelled | open |
-| 2 | How is the style chosen? | By the measure after routing when the schematic file says nothing – crossings against nets –, `style` in the file overrides; the output line and the title block say which | always labels unless the file says otherwise – predictable, and every maker project has to set the key | open |
-| 3 | Pin names as the board prints them (W.5)? | A `print` key per pin in the parts entry, drawn beside the symbol's name, used nowhere else – decision 6 of circuit-language.md stays (the graph names pins as the symbol does) | leave it: the symbol's names and a note, as the bell has today | open |
-| 4 | A hand-wired board gets the drawing? | Yes, in W.2: the board filter of `schematic draw` is the only thing in the way, and the drawing is that board's build document | – | open |
-| 5 | The breadboard or perfboard view (W.6)? | Later, when a hand-wired or THT project asks; the wired schematic covers "what goes to what", the physical view is a second drawing of the size of the first | now, together with W.2 | open |
-| 6 | An export to Fritzing? | No: a second drawing tool, a part mapping to maintain, and a file whose hand edits live outside the repository | an export that is only ever generated, never edited | open |
+| # | Question | Decision | Status |
+| --- | --- | --- | --- |
+| 1 | Build the wired style as a third style of the one plan, reaching SVG, EasyEDA and KiCad alike? | For the SVG only: a style of `edakit schematic draw`; EasyEDA's board schematic and the KiCad schematic keep their labels | the owner's choice; the plan for all three was recommended and not taken |
+| 2 | How is the style chosen? | `style` in the schematic file, labels without it; the question belongs to the project interview – new-project asks it (W.4) – and no measure chooses | the owner's choice: "labels is the default – but it counts among the questions that must be asked when setting up a project"; the default by the measure was recommended and not taken |
+| 3 | Pin names as the board prints them (W.5)? | A `print` key per pin in the parts entry, drawn beside the symbol's name, used nowhere else; decision 6 of circuit-language.md stays | accepted |
+| 4 | A hand-wired board gets the drawing? | Yes, in W.2 | accepted |
+| 5 | A breadboard or perfboard view? | No – "the schematic as Fritzing draws it, not the playful breadboard view"; the step is struck | the owner's choice; "later, when a project asks" was recommended |
+| 6 | An export to Fritzing? | No – Fritzing was the example of how the schematics are drawn, "and that is where it all ends again"; never a question | the owner's word |
+| 7 | Merge the branch of W.1 into main? | Yes – merged and the branch deleted the same day | accepted |
 
 ## Sources
 

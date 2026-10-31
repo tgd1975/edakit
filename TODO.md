@@ -104,3 +104,15 @@ Decided on 2026-10-31; nothing to build in edakit beforehand. Simulation over ti
       to 12 up to RELEASED and `edakit export`; what breaks (E2 to E6) fixed on the way; handbook chapter 18,
       `tests/test_walkthrough_kicad.py`. Afterwards: the KiCad live test's steps 1, 3, 4 and 5 count as done, and
       whether boards are ordered is decided.
+
+## The schematic with every connection drawn through ([wired-schematic.md](docs/concepts/new/wired-schematic.md))
+
+Decided on 2026-10-31; W.1 (the frame of the SVG optional) built and merged the same day. The rest starts on the
+owner's word, one step per branch:
+
+- [ ] **W.2** the wired style of `schematic draw`: `style` in the schematic file (labels without it), leads, rails,
+      router, colours, the geometry check telling a crossing from a T, hand-wired boards drawn.
+- [ ] **W.3** placement for wires: the module in the middle, channels as wide as the wires that must pass; the
+      prototype's table as the test.
+- [ ] **W.4** new-project asks for the style and writes the key; project-surveyor reports it.
+- [ ] **W.5** `print` per pin in the parts entry, drawn beside the symbol's name; the Nano's and the Pico's entries.
