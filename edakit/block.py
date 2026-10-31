@@ -20,7 +20,8 @@ nets, and ports – the nets that connect to the rest of the circuit. `add` copi
   - "optional": {"parts": [designator, …], "ports": [port, …]} – parts --without may leave out, and ports that may stay
     unconnected: a pin left alone on its net goes into its component's nc instead of a net of one pin
   - an accept keyed by "code place" names the block's designators; they are renamed with the parts
-  - the graph file keeps its formatting (indent, UTF-8); nothing is written with --dry-run
+  - the graph file keeps its formatting (indent, UTF-8); nothing is written with --dry-run. A TOML graph is read, and
+    only --dry-run runs on it until block add gets its line editor
 
 The block's notes say what is left to decide (values, sim.json, the graph's checks). Afterwards: edakit check (its HINT
 notes among the findings), edakit sim – a block is a starting point that passed the checks once, not a sign-off.
@@ -32,7 +33,7 @@ import json
 import re
 from pathlib import Path
 
-from .design import natural_key
+from .design import load_graph, natural_key
 
 LIBRARY = Path(__file__).with_name("blocks")
 
@@ -222,8 +223,14 @@ def write_json(path, data):
 
 def add(cfg, name, instance, connect, board=None, file=None, dry_run=False, without=()):
     block = load(name, file)
-    data = json.loads(cfg.graph.read_text(encoding="utf-8"))
-    graph = data.get("graph", data)
+    if Path(cfg.graph).suffix == ".toml":         # read as every reader does; written only with a line editor
+        if not dry_run:
+            raise BlockError(f"{cfg.relative(cfg.graph)}: block add on a TOML graph: step L.7 of the circuit-language "
+                             "plan, not built yet – --dry-run shows what it would add")
+        data = graph = load_graph(cfg.graph)
+    else:
+        data = json.loads(cfg.graph.read_text(encoding="utf-8"))
+        graph = data.get("graph", data)
     if board is None and len(cfg.boards) > 1:
         raise BlockError(f"several boards ({', '.join(cfg.boards)}): say which one with --board")
     if board is not None and board not in cfg.boards:

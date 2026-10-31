@@ -34,7 +34,7 @@ board, the schematic or the checks (the earlier one-file form) is refused with a
 | `distributors` | `["lcsc"]` | where the agent part-selector searches, in this order: `lcsc`, `rs`, `farnell`, `mouser`, `digikey`, `reichelt` (chapter 4.2) |
 | `lock` | `auto` | EasyEDA claim between Claude sessions: `auto` (when `CLAUDE_CODE_SESSION_ID` is set) or `off` |
 | `agreements` | `true` | the working agreements of handbook 11.4, one line each, in the context of every Claude Code session in the project (plugin hook at session start); `false` turns them off – not the lines of the project's scripts and agents the hook adds after them (11.4) |
-| `graph` | `hardware/graph.json` | the hardware graph |
+| `graph` | `hardware/graph.json` | the hardware graph: a `.json` file, or a `.toml` file with the same keys and components, nets and cables as tables keyed by designator and name – `[components.R1]`, `[nets."+5V"]` –, read to the same graph; a key twice is an error with its line. A TOML graph counts in the circuit hash with its data (8.2); `edakit convert` has nothing to do on it, `edakit block add` runs only with `--dry-run` on it so far |
 | `parts` | `hardware/parts` | parts database, one JSON per part (LCSC number or manufacturer part number) |
 | `sim` | `hardware/sim.json` | simulation config (chapter 5) |
 | `sim_plugin` | – | optional Python file with `MODELS` and `checks` (5.1) |

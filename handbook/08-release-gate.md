@@ -284,6 +284,14 @@ before (none: the bytes), nothing but the method changed – the gate counts the
 file and records both in `rehashed` (`by` "edakit gate", `hash_ignore`, `state_sha256` [old, new]). When the circuit
 changed as well, nothing is rehashed and the sign-offs of scope `circuit` are done again.
 
+**A graph in TOML** (`[project] graph` a `.toml` file, 10.1) counts with its data, whatever the list says: it is read
+as the graph and hashed as canonical JSON with the components sorted by designator, the nets and cables by name and
+the pins of a net sorted, the keys of `hash_ignore` left out as from a JSON graph, `purpose` whole. A comment, a blank
+line, a table or a pin moved change nothing; a pin, a value or `purpose.notes` changed voids M-1 and M-6 – a
+regulatory statement belongs in `purpose.notes`, not in a comment. `graph_sha256` in the protocol's header names the
+file's bytes, comments included. A file that is no valid TOML is hashed as bytes, and `edakit check` names its line.
+The requirements files are TOML too and stay bytes.
+
 The sign-off file (`[project] signoff`, [example](https://github.com/tgd1975/automatic_christmas_bell/blob/main/hardware/signoff.json)) holds manual checks and
 accepted warnings. Each counts only if the hash of its scope (`circuit`, `layout`, `fab`) equals the current one. The
 fab hash is known only after stage F: in a run without it (the offline gate) sign-offs with scope `fab` are listed as
