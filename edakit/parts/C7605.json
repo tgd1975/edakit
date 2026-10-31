@@ -14,45 +14,60 @@
   "1": {
    "name": "A0",
    "type": "input",
-   "hint": "no internal pull-up: hold HIGH or LOW, directly or through a resistor (7.1)"
+   "hint": "no internal pull-up: hold HIGH or LOW, directly or through a resistor (7.1)",
+   "v_min_v": -0.5
   },
   "2": {
    "name": "A1",
    "type": "input",
-   "hint": "no internal pull-up: hold HIGH or LOW, directly or through a resistor (7.1)"
+   "hint": "no internal pull-up: hold HIGH or LOW, directly or through a resistor (7.1)",
+   "v_min_v": -0.5
   },
   "3": {
    "name": "A2",
    "type": "input",
-   "hint": "no internal pull-up: hold HIGH or LOW, directly or through a resistor (7.1)"
+   "hint": "no internal pull-up: hold HIGH or LOW, directly or through a resistor (7.1)",
+   "v_min_v": -0.5
   },
   "4": {
    "name": "P0",
    "type": "bidirectional",
    "drive": "open_drain",
    "pull": "up",
-   "hint": "quasi-bidirectional: strong sink to VSS, weak 100 µA current source to VDD (IOH 30–300 µA) – write 1 before reading it as an input (8.1)"
+   "hint": "quasi-bidirectional: strong sink to VSS, weak 100 µA current source to VDD (IOH 30–300 µA) – write 1 before reading it as an input (8.1)",
+   "i_max_a": 0.025,
+   "i_inject_max_a": 0.0004,
+   "v_min_v": -0.5
   },
   "5": {
    "name": "P1",
    "type": "bidirectional",
    "drive": "open_drain",
    "pull": "up",
-   "hint": "quasi-bidirectional: strong sink to VSS, weak 100 µA current source to VDD (IOH 30–300 µA) – write 1 before reading it as an input (8.1)"
+   "hint": "quasi-bidirectional: strong sink to VSS, weak 100 µA current source to VDD (IOH 30–300 µA) – write 1 before reading it as an input (8.1)",
+   "i_max_a": 0.025,
+   "i_inject_max_a": 0.0004,
+   "v_min_v": -0.5
   },
   "6": {
    "name": "P2",
    "type": "bidirectional",
    "drive": "open_drain",
    "pull": "up",
-   "hint": "quasi-bidirectional: strong sink to VSS, weak 100 µA current source to VDD (IOH 30–300 µA) – write 1 before reading it as an input (8.1)"
+   "hint": "quasi-bidirectional: strong sink to VSS, weak 100 µA current source to VDD (IOH 30–300 µA) – write 1 before reading it as an input (8.1)",
+   "i_max_a": 0.025,
+   "i_inject_max_a": 0.0004,
+   "v_min_v": -0.5
   },
   "7": {
    "name": "P3",
    "type": "bidirectional",
    "drive": "open_drain",
    "pull": "up",
-   "hint": "quasi-bidirectional: strong sink to VSS, weak 100 µA current source to VDD (IOH 30–300 µA) – write 1 before reading it as an input (8.1)"
+   "hint": "quasi-bidirectional: strong sink to VSS, weak 100 µA current source to VDD (IOH 30–300 µA) – write 1 before reading it as an input (8.1)",
+   "i_max_a": 0.025,
+   "i_inject_max_a": 0.0004,
+   "v_min_v": -0.5
   },
   "8": {
    "name": "VSS",
@@ -64,45 +79,60 @@
    "type": "bidirectional",
    "drive": "open_drain",
    "pull": "up",
-   "hint": "quasi-bidirectional: strong sink to VSS, weak 100 µA current source to VDD (IOH 30–300 µA) – write 1 before reading it as an input (8.1)"
+   "hint": "quasi-bidirectional: strong sink to VSS, weak 100 µA current source to VDD (IOH 30–300 µA) – write 1 before reading it as an input (8.1)",
+   "i_max_a": 0.025,
+   "i_inject_max_a": 0.0004,
+   "v_min_v": -0.5
   },
   "10": {
    "name": "P5",
    "type": "bidirectional",
    "drive": "open_drain",
    "pull": "up",
-   "hint": "quasi-bidirectional: strong sink to VSS, weak 100 µA current source to VDD (IOH 30–300 µA) – write 1 before reading it as an input (8.1)"
+   "hint": "quasi-bidirectional: strong sink to VSS, weak 100 µA current source to VDD (IOH 30–300 µA) – write 1 before reading it as an input (8.1)",
+   "i_max_a": 0.025,
+   "i_inject_max_a": 0.0004,
+   "v_min_v": -0.5
   },
   "11": {
    "name": "P6",
    "type": "bidirectional",
    "drive": "open_drain",
    "pull": "up",
-   "hint": "quasi-bidirectional: strong sink to VSS, weak 100 µA current source to VDD (IOH 30–300 µA) – write 1 before reading it as an input (8.1)"
+   "hint": "quasi-bidirectional: strong sink to VSS, weak 100 µA current source to VDD (IOH 30–300 µA) – write 1 before reading it as an input (8.1)",
+   "i_max_a": 0.025,
+   "i_inject_max_a": 0.0004,
+   "v_min_v": -0.5
   },
   "12": {
    "name": "P7",
    "type": "bidirectional",
    "drive": "open_drain",
    "pull": "up",
-   "hint": "quasi-bidirectional: strong sink to VSS, weak 100 µA current source to VDD (IOH 30–300 µA) – write 1 before reading it as an input (8.1)"
+   "hint": "quasi-bidirectional: strong sink to VSS, weak 100 µA current source to VDD (IOH 30–300 µA) – write 1 before reading it as an input (8.1)",
+   "i_max_a": 0.025,
+   "i_inject_max_a": 0.0004,
+   "v_min_v": -0.5
   },
   "13": {
    "name": "INT#",
    "type": "output",
    "drive": "open_drain",
-   "hint": "active-LOW open-drain interrupt output (1, 7) – needs a pull-up"
+   "hint": "active-LOW open-drain interrupt output (1, 7) – needs a pull-up",
+   "v_min_v": -0.5
   },
   "14": {
    "name": "SCL",
    "type": "input",
-   "role": "scl"
+   "role": "scl",
+   "v_min_v": -0.5
   },
   "15": {
    "name": "SDA",
    "type": "bidirectional",
    "role": "sda",
-   "drive": "open_drain"
+   "drive": "open_drain",
+   "v_min_v": -0.5
   },
   "16": {
    "name": "VDD",
@@ -167,12 +197,12 @@
    "SO16 pinout (Fig 4, Table 3) = the EasyEDA symbol's pin numbers and names (INT named INT# there); footprint pads 1–8 in one row, 9–16 back along the other (top view)",
    "address base 0x20, A0/A1/A2 add 1/2/4 (Table 4)",
    "VDD abs. max 7 V; operating 2.5–6.0 V; VI ≤ VDD + 0.5 V; ISS 100 mA; Ptot 400 mW; Tj 125 °C; Rth(j-a) 115 °C/W (SO16); Tamb −40 … +85 °C",
-   "VIH 0.7 VDD, VIL 0.3 VDD for SCL/SDA, ports and address inputs; fSCL max 100 kHz"
+   "VIH 0.7 VDD, VIL 0.3 VDD for SCL/SDA, ports and address inputs; fSCL max 100 kHz",
+   "2026-10-31, pin limits (schema-gaps A6, B1–B3, C1–C4): NXP PCF8574/PCF8574A Rev. 5: Table 7 limiting values, VI VSS − 0.5 V to VDD + 0.5 V (v_min_v −0.5; the entry's vin_rel_max_v 0.5 holds the ports, SDA and INT too), IO output current 25 mA (P0–P7 i_max_a); Table 9, I/Os P0–P7 IIHL(max) maximum allowed input current 400 µA at VI ≥ VDD or VI ≤ VSS (i_inject_max_a)"
   ],
   "open": [
-   "per-pin current limits of Table 7 (IO 25 mA per port, II 20 mA, 100 mW per output) and IIHL(max) 400 µA through the protection diodes (Table 9): the schema has no per-pin current field",
+   "II 20 mA (input current) and 100 mW per output of Table 7 have no field; IO 25 mA and IIHL(max) 400 µA are entered (i_max_a, i_inject_max_a on P0–P7)",
    "the port pull-up is a 30–300 µA current source, not a resistor: pull 'up' without pull_ohm",
-   "VI ≤ VDD + 0.5 V also applies to the bidirectional P0–P7 and SDA; LIM.v/inject (vin_rel_max_v) reads only pins of type input (A0–A2, SCL)",
    "no supply capacitor named in the data sheet; the default decoupling requirement stays on",
    "no behaviour model: supply current (IDD ≤ 100 µA at 100 kHz, Table 9) and port sink currents are not simulated"
   ]

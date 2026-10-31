@@ -15,15 +15,20 @@
    "name": "DIN",
    "type": "input",
    "role": "sdi",
-   "v_max_v": 6
+   "v_max_v": 6,
+   "v_rel_max_v": null
   },
   "2": {
    "name": "DIG0",
-   "type": "output"
+   "type": "output",
+   "i_max_a": 0.5,
+   "v_rel_max_v": 0.3
   },
   "3": {
    "name": "DIG4",
-   "type": "output"
+   "type": "output",
+   "i_max_a": 0.5,
+   "v_rel_max_v": 0.3
   },
   "4": {
    "name": "GND",
@@ -38,19 +43,27 @@
   },
   "5": {
    "name": "DIG6",
-   "type": "output"
+   "type": "output",
+   "i_max_a": 0.5,
+   "v_rel_max_v": 0.3
   },
   "6": {
    "name": "DIG2",
-   "type": "output"
+   "type": "output",
+   "i_max_a": 0.5,
+   "v_rel_max_v": 0.3
   },
   "7": {
    "name": "DIG3",
-   "type": "output"
+   "type": "output",
+   "i_max_a": 0.5,
+   "v_rel_max_v": 0.3
   },
   "8": {
    "name": "DIG7",
-   "type": "output"
+   "type": "output",
+   "i_max_a": 0.5,
+   "v_rel_max_v": 0.3
   },
   "9": {
    "name": "GND",
@@ -65,38 +78,52 @@
   },
   "10": {
    "name": "DIG5",
-   "type": "output"
+   "type": "output",
+   "i_max_a": 0.5,
+   "v_rel_max_v": 0.3
   },
   "11": {
    "name": "DIG1",
-   "type": "output"
+   "type": "output",
+   "i_max_a": 0.5,
+   "v_rel_max_v": 0.3
   },
   "12": {
    "name": "LOAD(CS#)",
    "type": "input",
    "v_max_v": 6,
-   "hint": "LOAD latches the last 16 bits on its rising edge – it must rise with or after the 16th rising CLK edge and before the next (p. 6)"
+   "hint": "LOAD latches the last 16 bits on its rising edge – it must rise with or after the 16th rising CLK edge and before the next (p. 6)",
+   "v_rel_max_v": null
   },
   "13": {
    "name": "CLK",
    "type": "input",
-   "v_max_v": 6
+   "v_max_v": 6,
+   "v_rel_max_v": null
   },
   "14": {
    "name": "SEG A",
-   "type": "output"
+   "type": "output",
+   "i_max_a": 0.1,
+   "v_rel_max_v": 0.3
   },
   "15": {
    "name": "SEG F",
-   "type": "output"
+   "type": "output",
+   "i_max_a": 0.1,
+   "v_rel_max_v": 0.3
   },
   "16": {
    "name": "SEG B",
-   "type": "output"
+   "type": "output",
+   "i_max_a": 0.1,
+   "v_rel_max_v": 0.3
   },
   "17": {
    "name": "SEG G",
-   "type": "output"
+   "type": "output",
+   "i_max_a": 0.1,
+   "v_rel_max_v": 0.3
   },
   "18": {
    "name": "ISET",
@@ -108,7 +135,8 @@
      "source": "Maxim MAX7219/MAX7221 data sheet 19-4452 Rev 4 (7/03), pin description p. 5: ISET to V+ through RSET; Table 11, p. 11: RSET for the maximum recommended 40 mA segment current is 9.69–12.2 kΩ (VLED 3.5–1.5 V)"
     }
    ],
-   "hint": "segment current ≈ 100 × the current in ISET (p. 10, Table 11); with external segment drivers use RSET = 47 kΩ"
+   "hint": "segment current ≈ 100 × the current in ISET (p. 10, Table 11); with external segment drivers use RSET = 47 kΩ",
+   "v_rel_max_v": 0.3
   },
   "19": {
    "name": "V+",
@@ -124,19 +152,27 @@
   },
   "20": {
    "name": "SEG C",
-   "type": "output"
+   "type": "output",
+   "i_max_a": 0.1,
+   "v_rel_max_v": 0.3
   },
   "21": {
    "name": "SEG E",
-   "type": "output"
+   "type": "output",
+   "i_max_a": 0.1,
+   "v_rel_max_v": 0.3
   },
   "22": {
    "name": "SEG DP",
-   "type": "output"
+   "type": "output",
+   "i_max_a": 0.1,
+   "v_rel_max_v": 0.3
   },
   "23": {
    "name": "SEG D",
-   "type": "output"
+   "type": "output",
+   "i_max_a": 0.1,
+   "v_rel_max_v": 0.3
   },
   "24": {
    "name": "DOUT",
@@ -146,7 +182,8 @@
    "t_pd_ns": [
     null,
     25
-   ]
+   ],
+   "v_rel_max_v": 0.3
   }
  },
  "values": {
@@ -196,11 +233,11 @@
    "pinout (p. 1, 5) = EasyEDA symbol pin numbers and names; footprint pads 1–12 in one row, 13–24 back along the other",
    "V+ abs. max. 6 V, operating 4.0–5.5 V; inputs −0.3 … 6 V; VIH 3.5 V, VIL 0.8 V; CLK 10 MHz; tDO 25 ns on CLK's falling edge",
    "θJA 85 °C/W, TJ 150 °C, 941 mW (wide SO); −40 … +85 °C (E grade)",
-   "10 µF + 0.1 µF at V+, both GND pins connected, RSET from ISET to V+ (Table 11)"
+   "10 µF + 0.1 µF at V+, both GND pins connected, RSET from ISET to V+ (Table 11)",
+   "2026-10-31, pin limits (schema-gaps A6, B1–B3, C1–C4): Maxim 19-4452 Rev 4, absolute maximum ratings: DIG 0–DIG 7 sink current 500 mA, SEG A–G, DP source current 100 mA (i_max_a); DIN, CLK, LOAD, CS −0.3 V to 6 V regardless of V+ (v_rel_max_v null); all other pins −0.3 V to V+ + 0.3 V (v_rel_max_v 0.3)"
   ],
   "open": [
    "revision: the LCSC copy is 19-4452 Rev 4 (7/03) with the Maxim Integrated footer; analog.com gave an empty reply, so whether a newer revision exists was not checked",
-   "per-pin current limits (DIG 500 mA sink, SEG 100 mA source) and the limit of all other pins (−0.3 … V+ + 0.3 V): the schema has no per-pin current field and vin_rel_max_v is read on inputs only",
    "no behaviour model: segment current sources (≈ 100 × I(ISET)), multiplexed digit sinks and the supply current are not simulated; LEDs between SEG and DIG pins have no driver output for SIM.driver",
    "the 0.1 µF ceramic beside the 10 µF electrolytic is no separate requirement: the V+ need holds the total ≥ 10 µF",
    "p_max_w 0.941 W: value at +70 °C (see sources), derating above it is not modelled"

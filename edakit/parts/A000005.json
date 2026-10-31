@@ -387,7 +387,8 @@
    "ATmega328P absolute maximum: VCC + 0.5 V per pin, 40 mA per pin, 200 mA VCC/GND; VIH 0.6 VCC, VIL 0.3 VCC",
    "speed grades 4/10/20 MHz at 1.8/2.7/4.5 V; the board runs at 16 MHz",
    "alternate functions of D0–D13 and A0–A7",
-   "RoHS (no exemptions) and REACH statement of the user manual"
+   "RoHS (no exemptions) and REACH statement of the user manual",
+   "2026-10-31, pin limits (schema-gaps A6, B1–B3, C1–C4): Microchip ATmega328P DS40002061B: 29.1 DC current per I/O pin 40 mA (the entry's gpio_i_max_a); 29.2 notes 3 and 4 – the sum of IOH over C0–C5, D0–D4, ADC7, RESET and over B0–B5, D5–D7, ADC6, XTAL1, XTAL2 at most 150 mA, the sum of IOL over C0–C5, ADC7, ADC6, over B0–B5, D5–D7, XTAL1, XTAL2 and over D0–D4, RESET at most 100 mA (i_group_max_a with dir); the ports from the Nano schematic NanoV3.3 (23/01/19): D0–D7 PD0–PD7, D8–D13 PB0–PB5, A0–A5 PC0–PC5, A6/A7 ADC6/ADC7, RESET PC6 (header pins 3 and 28, counted once as pin 3)"
   ],
   "open": [
    "footprint: no EasyEDA footprint name chosen for the plug-in board (header pair 2 × 15, 2.54 mm) – to be set with the project's footprint",
@@ -398,5 +399,83 @@
    "MFFSMF050 polyfuse and SS1P3L diode ratings not read",
    "the user manual's pinout tables 5.1/5.2 contradict the schematic (pin 1 '+3V3'/'5V USB Power', pin 12 twice) – the schematic is followed"
   ]
+ },
+ "i_group_max_a": {
+  "ioh_c_d0_d4": {
+   "pins": [
+    "19",
+    "20",
+    "21",
+    "22",
+    "23",
+    "24",
+    "2",
+    "1",
+    "5",
+    "6",
+    "7",
+    "26",
+    "3"
+   ],
+   "max": 0.15,
+   "dir": "sourced"
+  },
+  "ioh_b_d5_d7": {
+   "pins": [
+    "11",
+    "12",
+    "13",
+    "14",
+    "15",
+    "16",
+    "8",
+    "9",
+    "10",
+    "25"
+   ],
+   "max": 0.15,
+   "dir": "sourced"
+  },
+  "iol_c": {
+   "pins": [
+    "19",
+    "20",
+    "21",
+    "22",
+    "23",
+    "24",
+    "26",
+    "25"
+   ],
+   "max": 0.1,
+   "dir": "sunk"
+  },
+  "iol_b_d5_d7": {
+   "pins": [
+    "11",
+    "12",
+    "13",
+    "14",
+    "15",
+    "16",
+    "8",
+    "9",
+    "10"
+   ],
+   "max": 0.1,
+   "dir": "sunk"
+  },
+  "iol_d0_d4": {
+   "pins": [
+    "2",
+    "1",
+    "5",
+    "6",
+    "7",
+    "3"
+   ],
+   "max": 0.1,
+   "dir": "sunk"
+  }
  }
 }

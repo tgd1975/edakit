@@ -16,25 +16,29 @@
    "type": "output",
    "v_max_v": 7.3,
    "drive": "tristate",
-   "hint": "receiver output, high impedance while RE is high (p. 7); high when A − B ≥ 200 mV, low when ≤ −200 mV, high with both inputs open (p. 12); VOH ≥ VCC − 0.4 V at 1.5 mA"
+   "hint": "receiver output, high impedance while RE is high (p. 7); high when A − B ≥ 200 mV, low when ≤ −200 mV, high with both inputs open (p. 12); VOH ≥ VCC − 0.4 V at 1.5 mA",
+   "v_rel_max_v": 0.3
   },
   "2": {
    "name": "RE#",
    "type": "input",
    "v_max_v": 7,
-   "hint": "receiver output enable, active low; RE high with DE low enters shutdown (p. 7)"
+   "hint": "receiver output enable, active low; RE high with DE low enters shutdown (p. 7)",
+   "v_rel_max_v": null
   },
   "3": {
    "name": "DE",
    "type": "input",
    "v_max_v": 7,
-   "hint": "driver output enable, active high (p. 7); no internal pull is stated – a floating DE at reset leaves the bus undefined"
+   "hint": "driver output enable, active high (p. 7); no internal pull is stated – a floating DE at reset leaves the bus undefined",
+   "v_rel_max_v": null
   },
   "4": {
    "name": "DI",
    "type": "input",
    "v_max_v": 7,
-   "hint": "driver input (p. 7)"
+   "hint": "driver input (p. 7)",
+   "v_rel_max_v": null
   },
   "5": {
    "name": "GND",
@@ -48,7 +52,9 @@
    "drive": "tristate",
    "z_in_ohm": 12000.0,
    "hint": "non-inverting receiver input and driver output; bus pin: absolute maximum −7.5 V … +12.5 V; receiver specified for −7 V ≤ VCM ≤ 12 V; input resistance ≥ 12 kΩ (32 transceivers per bus); driver high impedance while DE is low",
-   "short_proof": true
+   "short_proof": true,
+   "v_min_v": -7.5,
+   "v_rel_max_v": null
   },
   "7": {
    "name": "B",
@@ -58,7 +64,9 @@
    "drive": "tristate",
    "z_in_ohm": 12000.0,
    "hint": "inverting receiver input and driver output; bus pin: absolute maximum −7.5 V … +12.5 V; receiver specified for −7 V ≤ VCM ≤ 12 V; input resistance ≥ 12 kΩ (32 transceivers per bus); driver high impedance while DE is low",
-   "short_proof": true
+   "short_proof": true,
+   "v_min_v": -7.5,
+   "v_rel_max_v": null
   },
   "8": {
    "name": "VCC",
@@ -116,11 +124,12 @@
    "RO and driver outputs high impedance when disabled (p. 7, p. 12); 10 Mbps (p. 1)",
    "termination at both ends, short stubs (p. 14)",
    "2026-10-31: bus pins A/B with the roles rs485_a/rs485_b that REQ termination and failsafe read (CK-17)",
-   "2026-10-31: A/B short_proof – the driver limits a short to ±250 mA and shuts down thermally (MAX3485 19-0333 Rev 1, as read by the block agent of BL-10)"
+   "2026-10-31: A/B short_proof – the driver limits a short to ±250 mA and shuts down thermally (MAX3485 19-0333 Rev 1, as read by the block agent of BL-10)",
+   "2026-10-31, pin limits (schema-gaps A6, B1–B3, C1–C4): Maxim 19-0333 Rev 1, absolute maximum: driver output and receiver input voltage (A, B) −7.5 V to 12.5 V (v_min_v −7.5, v_rel_max_v null); control and driver inputs (RE, DE, DI) −0.3 V to 7 V regardless of VCC (null); receiver output RO −0.3 V to VCC + 0.3 V (v_rel_max_v 0.3)"
   ],
   "open": [
    "termination (120 Ω at both ends), the bus load (12 kΩ, 32 transceivers), the data rate (10 Mbps) and the receiver threshold (±200 mV): no schema field – in hints and sources, for CK-17",
-   "the negative bus limit (−7.5 V) and the common-mode range (−7 … +12 V) have no pin field; only v_max_v 12.5 is entered",
+   "the common-mode range (−7 … +12 V) has no pin field; the bus limits v_max_v 12.5 and v_min_v −7.5 are entered",
    "the 8-pin SO θJA is not in Rev 1 (its package section lists the 14-pin SOIC only)",
    "no supply capacitor named in the data sheet; the default decoupling requirement stays on",
    "Rev 1's selection table contradicts its pin description for the MAX3485 (enable pins) – see sources",

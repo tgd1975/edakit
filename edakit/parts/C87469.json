@@ -51,24 +51,29 @@
   "5": {
    "name": "SCL",
    "type": "input",
-   "role": "scl"
+   "role": "scl",
+   "i_inject_max_a": 0.005
   },
   "6": {
    "name": "SDA",
    "type": "bidirectional",
    "role": "sda",
    "drive": "open_drain",
-   "v_max_v": 6.0
+   "v_max_v": 6.0,
+   "v_rel_max_v": null,
+   "i_max_a": 0.01
   },
   "7": {
    "name": "A0",
    "type": "input",
-   "hint": "address pin: GND, VS, SDA or SCL – four states; edakit's address model knows only low and high, so a pin tied to SDA or SCL is not computed right"
+   "hint": "address pin: GND, VS, SDA or SCL – four states; edakit's address model knows only low and high, so a pin tied to SDA or SCL is not computed right",
+   "i_inject_max_a": 0.005
   },
   "8": {
    "name": "A1",
    "type": "input",
-   "hint": "address pin: GND, VS, SDA or SCL – four states; edakit's address model knows only low and high, so a pin tied to SDA or SCL is not computed right"
+   "hint": "address pin: GND, VS, SDA or SCL – four states; edakit's address model knows only low and high, so a pin tied to SDA or SCL is not computed right",
+   "i_inject_max_a": 0.005
   }
  },
  "values": {
@@ -112,7 +117,8 @@
    "abs. max VS 6 V, IN± 26 V, SDA 6 V, SCL VS + 0.3 V, TJ 150 °C; RθJA 135.4 °C/W (DCN)",
    "VS 3–5.5 V; VIH 0.7 × VS, VIL 0.3 × VS; quiescent current max 1 mA",
    "I2C address 0x40 + A0 (1) + A1 (4) for GND/VS",
-   "0.1 µF supply bypass"
+   "0.1 µF supply bypass",
+   "2026-10-31, pin limits (schema-gaps A6, B1–B3, C1–C4): TI SBOS448G 7.1: SDA GND − 0.3 V to 6 V regardless of VS (v_rel_max_v null), SCL GND − 0.3 V to VS + 0.3 V (the entry's vin_rel_max_v), input current into any pin 5 mA (i_inject_max_a on SCL, A0, A1), open-drain digital output current 10 mA (SDA i_max_a)"
   ],
   "open": [
    "address pins tied to SDA or SCL (0x42, 0x43, 0x48…) cannot be expressed in the entry's address model",

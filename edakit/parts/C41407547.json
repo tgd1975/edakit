@@ -24,7 +24,9 @@
     "uart0.tx",
     "i2c0.sda",
     "pwm0.a"
-   ]
+   ],
+   "v_max_powered_v": 5.5,
+   "v_min_v": -0.5
   },
   "2": {
    "name": "GP1",
@@ -37,7 +39,9 @@
     "uart0.rx",
     "i2c0.scl",
     "pwm0.b"
-   ]
+   ],
+   "v_max_powered_v": 5.5,
+   "v_min_v": -0.5
   },
   "3": {
    "name": "GND",
@@ -55,7 +59,9 @@
     "i2c1.sda",
     "pwm1.a",
     "uart0.tx"
-   ]
+   ],
+   "v_max_powered_v": 5.5,
+   "v_min_v": -0.5
   },
   "5": {
    "name": "GP3",
@@ -69,7 +75,9 @@
     "i2c1.scl",
     "pwm1.b",
     "uart0.rx"
-   ]
+   ],
+   "v_max_powered_v": 5.5,
+   "v_min_v": -0.5
   },
   "6": {
    "name": "GP4",
@@ -82,7 +90,9 @@
     "uart1.tx",
     "i2c0.sda",
     "pwm2.a"
-   ]
+   ],
+   "v_max_powered_v": 5.5,
+   "v_min_v": -0.5
   },
   "7": {
    "name": "GP5",
@@ -95,7 +105,9 @@
     "uart1.rx",
     "i2c0.scl",
     "pwm2.b"
-   ]
+   ],
+   "v_max_powered_v": 5.5,
+   "v_min_v": -0.5
   },
   "8": {
    "name": "GND",
@@ -113,7 +125,9 @@
     "i2c1.sda",
     "pwm3.a",
     "uart1.tx"
-   ]
+   ],
+   "v_max_powered_v": 5.5,
+   "v_min_v": -0.5
   },
   "10": {
    "name": "GP7",
@@ -127,7 +141,9 @@
     "i2c1.scl",
     "pwm3.b",
     "uart1.rx"
-   ]
+   ],
+   "v_max_powered_v": 5.5,
+   "v_min_v": -0.5
   },
   "11": {
    "name": "GP8",
@@ -140,7 +156,9 @@
     "uart1.tx",
     "i2c0.sda",
     "pwm4.a"
-   ]
+   ],
+   "v_max_powered_v": 5.5,
+   "v_min_v": -0.5
   },
   "12": {
    "name": "GP9",
@@ -153,7 +171,9 @@
     "uart1.rx",
     "i2c0.scl",
     "pwm4.b"
-   ]
+   ],
+   "v_max_powered_v": 5.5,
+   "v_min_v": -0.5
   },
   "13": {
    "name": "GND",
@@ -171,7 +191,9 @@
     "i2c1.sda",
     "pwm5.a",
     "uart1.tx"
-   ]
+   ],
+   "v_max_powered_v": 5.5,
+   "v_min_v": -0.5
   },
   "15": {
    "name": "GP11",
@@ -185,7 +207,9 @@
     "i2c1.scl",
     "pwm5.b",
     "uart1.rx"
-   ]
+   ],
+   "v_max_powered_v": 5.5,
+   "v_min_v": -0.5
   },
   "16": {
    "name": "GP12",
@@ -198,7 +222,9 @@
     "uart0.tx",
     "i2c0.sda",
     "pwm6.a"
-   ]
+   ],
+   "v_max_powered_v": 5.5,
+   "v_min_v": -0.5
   },
   "17": {
    "name": "GP13",
@@ -211,7 +237,9 @@
     "uart0.rx",
     "i2c0.scl",
     "pwm6.b"
-   ]
+   ],
+   "v_max_powered_v": 5.5,
+   "v_min_v": -0.5
   },
   "18": {
    "name": "GND",
@@ -229,7 +257,9 @@
     "i2c1.sda",
     "pwm7.a",
     "uart0.tx"
-   ]
+   ],
+   "v_max_powered_v": 5.5,
+   "v_min_v": -0.5
   },
   "20": {
    "name": "GP15",
@@ -243,7 +273,9 @@
     "i2c1.scl",
     "pwm7.b",
     "uart0.rx"
-   ]
+   ],
+   "v_max_powered_v": 5.5,
+   "v_min_v": -0.5
   },
   "21": {
    "name": "GP16",
@@ -256,7 +288,9 @@
     "uart0.tx",
     "i2c0.sda",
     "pwm0.a"
-   ]
+   ],
+   "v_max_powered_v": 5.5,
+   "v_min_v": -0.5
   },
   "22": {
    "name": "GP17",
@@ -269,7 +303,9 @@
     "uart0.rx",
     "i2c0.scl",
     "pwm0.b"
-   ]
+   ],
+   "v_max_powered_v": 5.5,
+   "v_min_v": -0.5
   },
   "23": {
    "name": "GND",
@@ -287,7 +323,9 @@
     "i2c1.sda",
     "pwm1.a",
     "uart0.tx"
-   ]
+   ],
+   "v_max_powered_v": 5.5,
+   "v_min_v": -0.5
   },
   "25": {
    "name": "GP19",
@@ -301,7 +339,9 @@
     "i2c1.scl",
     "pwm1.b",
     "uart0.rx"
-   ]
+   ],
+   "v_max_powered_v": 5.5,
+   "v_min_v": -0.5
   },
   "26": {
    "name": "GP20",
@@ -314,7 +354,9 @@
     "uart1.tx",
     "i2c0.sda",
     "pwm2.a"
-   ]
+   ],
+   "v_max_powered_v": 5.5,
+   "v_min_v": -0.5
   },
   "27": {
    "name": "GP21",
@@ -327,7 +369,9 @@
     "uart1.rx",
     "i2c0.scl",
     "pwm2.b"
-   ]
+   ],
+   "v_max_powered_v": 5.5,
+   "v_min_v": -0.5
   },
   "28": {
    "name": "GND",
@@ -345,7 +389,9 @@
     "i2c1.sda",
     "pwm3.a",
     "uart1.tx"
-   ]
+   ],
+   "v_max_powered_v": 5.5,
+   "v_min_v": -0.5
   },
   "30": {
    "name": "RUN",
@@ -368,7 +414,10 @@
     "pwm5.a",
     "uart1.tx",
     "adc0"
-   ]
+   ],
+   "v_rel_max_v": 0.5,
+   "ref": "3V3(OUT)",
+   "v_min_v": -0.5
   },
   "32": {
    "name": "GP27_ADC1",
@@ -383,7 +432,10 @@
     "pwm5.b",
     "uart1.rx",
     "adc1"
-   ]
+   ],
+   "v_rel_max_v": 0.5,
+   "ref": "3V3(OUT)",
+   "v_min_v": -0.5
   },
   "33": {
    "name": "AGND",
@@ -402,7 +454,10 @@
     "i2c0.sda",
     "pwm6.a",
     "adc2"
-   ]
+   ],
+   "v_rel_max_v": 0.5,
+   "ref": "3V3(OUT)",
+   "v_min_v": -0.5
   },
   "35": {
    "name": "ADC_VREF",
@@ -554,7 +609,8 @@
    "GPIO26–28: IOVDD + about 300 mV, leak when unpowered",
    "RP2350: VIH 2 V / VIL 0.8 V at 3.3 V, total IO current 100 mA sourced and sunk, abs. max pin voltage",
    "functions of GPIO0–28 from the FUNCSEL values of io_bank0.h; PWM slice (n >> 1) & 7, channel a/b",
-   "–20 … 85 °C incl. self-heating, 70 °C recommended ambient"
+   "–20 … 85 °C incl. self-heating, 70 °C recommended ambient",
+   "2026-10-31, pin limits (schema-gaps A6, B1–B3, C1–C4): RP2350 datasheet (build 01/10/2026), pin types: Digital IO (FT) 'tolerate voltages up to 5.5 V, provided IOVDD is powered to 3.3 V'; Table 1680 absolute maximum: VPIN_FT −0.5 to 5.5 V at IOVDD 3.3 V, 3.63 V at IOVDD 0 V (GP0–GP22: v_max_powered_v 5.5 beside v_max_v 3.63 – the Pico 2's IOVDD is its 3.3 V SMPS), VPIN (standard, the ADC pins GP26–GP28) −0.5 to IOVDD + 0.5 V (v_rel_max_v 0.5 against 3V3(OUT)); v_min_v −0.5"
   ],
   "open": [
    "core current (i_core_a): the datasheet gives only typical VBUS currents of example programs, no maximum – the simulation's default applies",

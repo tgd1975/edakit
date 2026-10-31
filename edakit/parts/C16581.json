@@ -16,7 +16,8 @@
    "type": "analog",
    "role": "temp",
    "v_max_v": 10,
-   "hint": "battery NTC input: charging is suspended while TEMP is below 45 % or above 80 % of VCC; TEMP to GND disables the temperature sense (p. 7, p. 10)"
+   "hint": "battery NTC input: charging is suspended while TEMP is below 45 % or above 80 % of VCC; TEMP to GND disables the temperature sense (p. 7, p. 10)",
+   "v_rel_max_v": null
   },
   "2": {
    "name": "PROG",
@@ -29,7 +30,8 @@
      "r_min_ohm": 1100,
      "source": "NanJing Top Power ASIC Corp. TP4056 '1A Standalone Linear Li-Ion Battery Charger' REV_2.4, p. 9 RPROG table: 1.1 kΩ → 1000 mA, the largest charge current the data sheet programs (p. 2 'up to 1000 mA'); IBAT = 1100 / RPROG (p. 7, 9)"
     }
-   ]
+   ],
+   "v_rel_max_v": 0.3
   },
   "3": {
    "name": "GND",
@@ -80,7 +82,8 @@
    "type": "input",
    "role": "ce",
    "v_max_v": 10,
-   "hint": "chip enable: high = normal operation, low = shutdown; 'TTL or CMOS logic level' – no thresholds given (p. 7)"
+   "hint": "chip enable: high = normal operation, low = shutdown; 'TTL or CMOS logic level' – no thresholds given (p. 7)",
+   "v_rel_max_v": null
   },
   "9": {
    "name": "EP",
@@ -134,12 +137,12 @@
    "electrical characteristics p. 5: VCC 4.0 … 8.0 V, VFLOAT 4.2 V ±1 %, IBAT at 1.1 / 2.2 kΩ, trickle, UVLO, termination, status outputs",
    "charge current 1100 / RPROG and the RPROG table p. 9; status outputs open drain p. 7, 10",
    "typical applications p. 3: 10 µF at VCC and at BAT",
-   "2026-10-31: prog_v 1100 V – I_BAT = 1100 V / R_PROG, TP4056 REV_2.4 (as read for the library draft and for FT-4)"
+   "2026-10-31: prog_v 1100 V – I_BAT = 1100 V / R_PROG, TP4056 REV_2.4 (as read for the library draft and for FT-4)",
+   "2026-10-31, pin limits (schema-gaps A6, B1–B3, C1–C4): TP4056 REV_2.4, absolute maximum ratings: PROG −0.3 V to Vcc + 0.3 V (v_rel_max_v 0.3); TEMP and CE −0.3 V to 10 V regardless of VCC (v_rel_max_v null)"
   ],
   "open": [
    "the absolute maximum of BAT reads '-0.3V~0.7V' (p. 2) – evidently misprinted; no v_max_v for BAT",
    "an absolute maximum line reads 'EMBED PBrush: -0.3V~10V' (p. 2) – the pin names are a broken embedded object (presumably the overlined CHRG and STDBY, not readable); no v_max_v on CHRG# and STDBY#",
-   "PROG absolute maximum is relative (VCC + 0.3 V) – no field for it",
    "no θJA: the data sheet's example assumes 125 °C/W, the charge-cycle chart names 130 °C/W – no rth_ja_k_per_w, no LIM.t",
    "CE: no input thresholds (only 'TTL or CMOS logic level')",
    "capacitors at VCC and BAT: 10 µF in the typical applications, 1 µF in fig. 3 – no minimum stated, so no window",
