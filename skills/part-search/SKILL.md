@@ -67,7 +67,11 @@ profile says: `${CLAUDE_PLUGIN_ROOT}/skills/part-search/distributors/<name>.md` 
   (HINT.readback); MCU pin `functions` from the pin-mux table (`["spi0.sck", "i2c1.sda", "pwm1.a", "adc0"]`, `[]` for a pin used
   on the module – REQ.function, handbook 4.1); a fuse's `i_hold_a`, `i_trip_a` and its derating table `i_hold_vs_temp`, and the
   `i_max_a` of a connector or switch as a whole – every contact of the current path counted (LIM.i); a 0 Ω jumper
-  `value_ohm: 0` with its maximum resistance `r_max_ohm` (it joins its nets, handbook 3.3); a switching regulator's
+  `value_ohm: 0` with its maximum resistance `r_max_ohm` (it joins its nets, handbook 3.3); a class-2 ceramic's
+  (X5R, X7R) DC-bias curve `dc_bias: [[V, ratio], …]`, read off the graph of the maker's sheet for this part with
+  "read from the graph" in the source, and a capacitor's `esr_ohm` at 100 kHz – none where the sheet has none
+  (REQ.value/bias, /esr; handbook 4.1); a regulator's output capacitor need with `esr_min_ohm`/`esr_max_ohm` where its
+  datasheet gives an ESR window; a switching regulator's
   `hot_loop`, the pin roles of its hot loop from the datasheet's layout section (REQ.missing); a pin `hint` or part `hints` for
   what the datasheet warns about (shown by `edakit check`).
 - `compliance` for the regulatory review (M-6, handbook 15): `rohs` (true, false or the exemption), `reach` (the
