@@ -391,6 +391,10 @@ def function(s, load, low=None, plugin=None):
             s.q(des, "vin", None, "V", "", des, "input voltage", lo=vin, code="LIM.range", entry=False,
                 lims=[Limit(min=r["vin_min_v"], source=f"vin_min_v of {s.n.entry_key(des)}")])
         s.q(des, "i_out", max(res.get(reg["ammeter"], 0.0), 0.0), "A", "", des, "output current")
+        if (least := reg["values"].get("i_load_min_a")) is not None:      # maker-coverage FT-5: LM317, AMS1117
+            s.q(des, "i_out_min", None, "A", "", des, "output current at least the minimum load", code="LIM.range",
+                entry=False, grade="min_load", lo=max(res.get(reg["ammeter"], 0.0), 0.0),
+                lims=[Limit(min=least, source=f"i_load_min_a of {s.n.entry_key(des)}")])
         if reg["kind"] == "ldo" and "rth_ja_k_per_w" in r:
             junction(s, des, ldo_power(res, reg), r, f"junction temperature at {s.amb} °C")
     for des, m in meta["mcu"].items():

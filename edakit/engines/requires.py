@@ -33,7 +33,8 @@ def run(ctx):
     d = ctx.joined
     return (decoupling(d) + i2c(d) + flyback(d) + usb_c(d) + functions(d) + hot_loops(ctx.design) + pin_needs(d)
             + balancing(d) + addresses(d) + uart_lines(d) + adc_sources(d) + btl_outputs(d) + instrument_loads(d)
-            + stable_gains(d) + usb_data(d) + leaving_lines(d) + matrix(d) + bus_terminations(d) + bridge_clamps(d))
+            + stable_gains(d) + usb_data(d) + leaving_lines(d) + matrix(d) + bus_terminations(d) + bridge_clamps(d)
+            + feedback_dividers(d))
 
 
 def decoupling(d):
@@ -116,6 +117,36 @@ def flyback(d):
             out.append(Finding("REQ.missing", "G", des, f"{des}: {word} switched by {', '.join(switches)} without a diode "
                                f"across it (cathode at {plus}, anode at {minus})", n["source"],
                                "a diode directly across the coil", on=(("component", des),)))
+    return out
+
+
+def feedback_dividers(d):
+    """REQ.missing/feedback, REQ.value/feedback (maker-coverage FT-5): an adjustable regulator (values vref_v, a pin
+    with the role adj or fb) has its divider – R1 from the output to that pin, R2 from it to ground –, and the output it
+    sets stays within the output net's declared range."""
+    from ..circuit import feedback_vout
+    out = []
+    for des in sorted(d.comps):
+        part = d.part(des) or {}
+        role = next((r for r in ("adj", "fb") if d.net_of(des, r)), None)
+        if not is_number(values(part).get("vref_v")) or not role:
+            continue
+        net, on = d.net_of(des, "vout"), (("component", des),)
+        fb = feedback_vout(d, des)
+        if fb is None:
+            out.append(Finding("REQ.missing", "G", des, f"{des}: an adjustable regulator ({role.upper()}) without its "
+                               f"divider – a resistor from {net or 'its output'} to {d.net_of(des, role)} and one from "
+                               f"there to {d.ground}", f"vref_v of {d.entry_key(des)}", "the divider of the datasheet's "
+                               "application circuit", grade="feedback", on=on))
+            continue
+        vout, r1, r2 = fb
+        hi = v_range(d.nets[net])[1] if net in d.nets else None
+        if hi is not None and vout > hi + 1e-9:
+            out.append(Finding("REQ.value", "G", des, f"{des}: R1 {ohm(r1)} and R2 {ohm(r2)} set the output to "
+                               f"{vout:.3g} V, the net {net} declares up to {hi:g} V", f"vref_v of {d.entry_key(des)} "
+                               "(VOUT = VREF × (1 + " + ("R2/R1" if role == "adj" else "R1/R2") + "))",
+                               "the divider for the output the net is meant to carry, or the net's range",
+                               grade="feedback", on=on))
     return out
 
 

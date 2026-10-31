@@ -434,14 +434,22 @@ class Netlist:
         self.meta["regs"][des] = {"kind": kind, "vin": vin, "vout": vout, "gnd": gnd, "vset": vset,
                                   "ammeter": f"v_{tag}_am#branch", "values": p, "extra_i": extra_i, "vin_min": vin_min}
 
+    def reg_values(self, des, part):
+        """The regulator's values; an adjustable one's vout_v from its divider and vref_v (circuit.feedback_vout)."""
+        from ..circuit import feedback_vout
+        p = dict(values(part))
+        if (fb := feedback_vout(self.d, des)) is not None:
+            p["vout_v"] = round(fb[0], 6)
+        return p
+
     def ic_ldo(self, des, part):
         self._regulator(des, self.rn(des, "vin", True), self.rn(des, "vout", True), self._gnd_of(des), "ldo",
-                        values(part), vin_min=limits(part).get("vin_min_v"))
+                        self.reg_values(des, part), vin_min=limits(part).get("vin_min_v"))
         self.meta["regs"][des]["limits"] = limits(part)
 
     def ic_buck(self, des, part, kind="buck"):
         self._regulator(des, self.rn(des, "vin", True), self.rn(des, "vout", True), self._gnd_of(des), kind,
-                        values(part), vin_min=limits(part).get("vin_min_v"))
+                        self.reg_values(des, part), vin_min=limits(part).get("vin_min_v"))
         self.meta["regs"][des]["limits"] = limits(part)
 
     def ic_boost(self, des, part):

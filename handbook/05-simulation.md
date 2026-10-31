@@ -49,8 +49,15 @@ the supply over time and LIM.v judges them. Switching spikes and fast edges are 
 
 | Model | Roles | Parameters | Behaviour |
 |---|---|---|---|
-| `ldo` | `vin`, `vout`, (`gnd`) | `vout_v`, `dropout_v`, `iq_a` | output = min(vout, vin − dropout); input current = output current + iq |
-| `buck`, `boost` | `vin`, `vout` | `vout_v`, `efficiency`, `iq_a` | ideal output; input power = output power / efficiency |
+| `ldo` | `vin`, `vout`, (`gnd`), (`adj` or `fb`) | `vout_v`, `dropout_v`, `iq_a`; adjustable: `vref_v`, `i_load_min_a` | output = min(vout, vin − dropout); input current = output current + iq |
+| `buck`, `boost` | `vin`, `vout`, (`fb`) | `vout_v`, `efficiency`, `iq_a`; adjustable: `vref_v`, `i_load_min_a` | ideal output; input power = output power / efficiency |
+
+An adjustable regulator – `vref_v` and a pin with the role `adj` (the reference between the output and ADJ: LM317,
+AMS1117) or `fb` (the reference from FB to ground: most bucks and boosts) – takes its output from its divider instead of
+`vout_v`: R1 from the output to the pin, R2 from the pin to ground, VOUT = VREF × (1 + R2/R1) with `adj`, VREF × (1 +
+R1/R2) with `fb` (the adjust pin's current left out, as the datasheets do). The check holds the divider to the output
+net's declared range (REQ.value/feedback, REQ.missing/feedback without one); with `i_load_min_a` every scenario loads
+the regulator at least that much (LIM.range/min_load – the AMS1117 needs 10 mA, which its divider can draw itself).
 | `mcu` | `vsys`/`vin`/`vdd`, optional `vout`/`3v3`, `gpio` | `v_io_v` (V, or `"vin"` when the I/O runs from the supply pin, as on a 5 V AVR), `i_core_a` (default 0.03 A; an upper bound), `i_core_min_a` (the least current, for the minimum load only – above; default `i_core_a`), `gpio_r_out_ohm`, `regulator` (`buck`/`ldo`), `vout_v` (regulator output, default `v_io_v`), `efficiency`, `vih_v`/`vih_ratio`, `vil_v`/`vil_ratio` | on-board regulator feeding the core and external loads; GPIO outputs as sources with output resistance (levels from the load's `gpio`), pull-ups from the config; the config's `inputs` must sit at a defined logic level |
 | `cc_sink` | `rext`, `out` (or `out0` … `outN`), `vdd`, `oe_n` | `vrext_v`, `iout_gain`, `vout_knee_v`, `idd_max_a` | constant-current LED driver (TLC5916, STP08CP05, …): R-EXT held at vrext, every enabled output sinks gain × I(R-EXT) with a soft knee; `oe_n` high = all off; pins of type `output` (SDO to the next driver's SDI or to an MCU input that reads the chain back) low through 50 Ω, as in `logic`; an unconnected SDO stays out of the netlist |
 | `opamp` | `vcc`, `vee` (or `gnd`), per channel `in_p`, `in_n`, `out` – with a suffix for several (`in_p_a`, `out_a`, `in_p_b` …) | `vout_swing_v`, `vicm_v`, `iq_a`, `r_out_ohm`, `comparator` | op-amp: the output follows the inputs with an open-loop gain of 10⁴, limited to the rails plus `vout_swing_v` – `[above vee, from vcc]`, e.g. `[0.02, -1.5]` for an output that stops 1.5 V below the supply (none: rail to rail) –, behind `r_out_ohm` (50 Ω); `iq_a` from vcc to vee; the output's own current comes from ground in the model, so a source's current misses it. LIM.range/opamp (a warning) holds every input to the common-mode range `vicm_v` (same form: `[0, -1.5]` from vee to 1.5 V below vcc) and every output to its linear range – an output at its limit while the inputs stand apart has saturated; `comparator: true` is meant to |
