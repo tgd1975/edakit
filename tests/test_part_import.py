@@ -219,6 +219,16 @@ def test_library_geometry_is_the_easyeda_pro_geometry(project, library):
     assert max(abs(a - b) for a, b in zip(geo["bbox"], [-161.42, -182.09, 161.42, 189.96])) < 1   # BBox: 1 mil steps
 
 
+def test_library_bbox_covers_every_pad():
+    """The LMC555's SOIC-8 (C90760, handbook 18): EasyEDA's BBox ends at 126 mil on one side while the pads reach
+    137.8 mil – `pcb place` put C1 onto two of U1's pads and `pcb plan` saw no overlap. The box is the union now."""
+    ds = {"head": {"x": 0, "y": 0}, "BBox": {"x": -5, "y": -5, "width": 10, "height": 10},   # ±50 mil
+          "shape": ["PAD~RECT~0~10~2.3~7~1~~1~0~~0~id1~0~~Y",               # (0, −100 mil), 70 mil tall: to −135
+                    "PAD~RECT~-10~0~2.3~7~1~~2~0~~90~id2~0~~Y"]}            # (−100, 0), turned: 70 mil wide
+    geo = part.footprint_geometry(ds, "TEST")
+    assert geo["bbox"] == [-135.0, -135.0, 50.0, 50.0]
+
+
 def test_parser():
     args = cli.build_parser().parse_args(["part", "import", "C2297", "--update"])
     assert (args.action, args.source, args.update) == ("import", "C2297", True)

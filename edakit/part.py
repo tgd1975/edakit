@@ -532,6 +532,17 @@ def duplicate_pins(res):
     return {n: names for n, names in sorted(seen.items(), key=lambda kv: natural_key(kv[0])) if len(names) > 1}
 
 
+def pad_corners(p):
+    """The corners of a pad (mil, the footprint's frame): its polygon, else its rectangle turned by its rotation."""
+    import math
+    if p.get("points"):
+        return [(p["x"] + x, p["y"] + y) for x, y in p["points"]]
+    a = math.radians(p.get("rot") or 0)
+    c, s = math.cos(a), math.sin(a)
+    return [(p["x"] + dx * c - dy * s, p["y"] + dx * s + dy * c)
+            for dx in (-p["w"] / 2, p["w"] / 2) for dy in (-p["h"] / 2, p["h"] / 2)]
+
+
 def footprint_geometry(ds, footprint):
     """The footprint as `pcb dump` stores it – mil, y up, relative to the origin – with shape, size and hole per pad.
     A pad: `PAD~shape~x~y~w~h~layer~net~number~hole radius~points~rotation~id~slot length~hole point~plated~…` in
@@ -556,14 +567,18 @@ def footprint_geometry(ds, footprint):
             pad["hole"] = [round(w, 3), round(max(w, float(f[13] or 0) * UNIT_MIL / MIL_PER_MM), 3)]
             pad["plated"] = f[15].strip().lower() not in ("n", "no", "false", "0")
         pads.append((f[8], pad))
+    corners = [c for _, p in pads for c in pad_corners(p)]
     bb = ds.get("BBox")
-    if bb:
+    if bb:          # EasyEDA's box, widened to every pad: its BBox may end inside a row of pads (the SOIC-8 of C90760)
         box = [(bb["x"] - hx) * UNIT_MIL, (hy - bb["y"] - bb["height"]) * UNIT_MIL,
                (bb["x"] + bb["width"] - hx) * UNIT_MIL, (hy - bb["y"]) * UNIT_MIL]
+        box = [min([box[0], *(x for x, _ in corners)]), min([box[1], *(y for _, y in corners)]),
+               max([box[2], *(x for x, _ in corners)]), max([box[3], *(y for _, y in corners)])]
+    elif corners:
+        box = [min(x for x, _ in corners), min(y for _, y in corners), max(x for x, _ in corners),
+               max(y for _, y in corners)]
     else:
-        half = [max(p["w"], p["h"]) / 2 for _, p in pads] or [0]
-        box = [min(p["x"] - h for (_, p), h in zip(pads, half)), min(p["y"] - h for (_, p), h in zip(pads, half)),
-               max(p["x"] + h for (_, p), h in zip(pads, half)), max(p["y"] + h for (_, p), h in zip(pads, half))]
+        box = [0, 0, 0, 0]
     geo = {"footprint": footprint, "bbox": [round(v, 2) for v in box], "pads": {}, "silk": footprint_silk(ds, hx, hy)}
     for n, p in pads:
         geo["pads"].setdefault(n, p)
