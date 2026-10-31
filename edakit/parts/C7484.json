@@ -16,14 +16,16 @@
    "type": "input",
    "role": "oe_n",
    "v_max_v": 7,
-   "hint": "output enable, active low (Table 7-1): low – Y follows A; high – Y high impedance. Must not float (5.3 note 1); tied to GND the output always drives, TI asks for a pull-up to VCC where Y must stay high impedance during power-up (7.1)"
+   "hint": "output enable, active low (Table 7-1): low – Y follows A; high – Y high impedance. Must not float (5.3 note 1); tied to GND the output always drives, TI asks for a pull-up to VCC where Y must stay high impedance during power-up (7.1)",
+   "v_min_v": -0.5
   },
   "2": {
    "name": "A",
    "type": "input",
    "role": "a",
    "v_max_v": 7,
-   "hint": "data input with TTL thresholds (VIH 2.0 V, VIL 0.8 V at VCC 4.5–5.5 V, 5.3); takes up to 5.5 V at any valid VCC (8.2.2) – a 3.3 V output drives it, the up-translation of Figure 8-1"
+   "hint": "data input with TTL thresholds (VIH 2.0 V, VIL 0.8 V at VCC 4.5–5.5 V, 5.3); takes up to 5.5 V at any valid VCC (8.2.2) – a 3.3 V output drives it, the up-translation of Figure 8-1",
+   "v_min_v": -0.5
   },
   "3": {
    "name": "GND",
@@ -36,7 +38,11 @@
    "role": "y",
    "v_max_v": 6.0,
    "drive": "tristate",
-   "hint": "3-state output: high impedance while OE is high (Table 7-1); ±8 mA recommended (5.3), ±25 mA absolute maximum (5.1); VOH ≥ 3.8 V at −8 mA and ≥ 4.4 V at −50 µA (VCC 4.5 V, −40…125 °C, 5.5); must not be pulled above VCC (8.2.2)"
+   "hint": "3-state output: high impedance while OE is high (Table 7-1); ±8 mA recommended (5.3), ±25 mA absolute maximum (5.1); VOH ≥ 3.8 V at −8 mA and ≥ 4.4 V at −50 µA (VCC 4.5 V, −40…125 °C, 5.5); must not be pulled above VCC (8.2.2)",
+   "v_rel_max_v": 0.5,
+   "v_min_v": -0.5,
+   "i_max_a": 0.025,
+   "i_inject_max_a": 0.02
   },
   "5": {
    "name": "VCC",
@@ -95,12 +101,12 @@
    "recommended (p. 4): VCC 4.5–5.5 V, VIH 2 V, VIL 0.8 V, IOH/IOL ±8 mA, TA −40…125 °C",
    "RθJA DBV 278 °C/W (p. 5, Rev P)",
    "ICC 10 µA, ΔICC 1.5 mA at 3.4 V input (p. 5)",
-   "OE active low, Y high impedance with OE high (Table 7-1, p. 8); 0.1 µF bypass (8.3, p. 10)"
+   "OE active low, Y high impedance with OE high (Table 7-1, p. 8); 0.1 µF bypass (8.3, p. 10)",
+   "2026-10-31, pin limits (schema-gaps A6, B1–B3, C1–C4): TI SCLS378P 5.1: VO −0.5 V to VCC + 0.5 V (Y: v_rel_max_v 0.5), IO continuous output current ±25 mA (i_max_a), IOK output clamp current ±20 mA (i_inject_max_a); VI −0.5 V to 7 V (A, OE#: v_min_v −0.5, no relative limit)"
   ],
   "open": [
    "the pin-out figure of p. 3 is a drawing without a text layer – the pin numbers are from Table 4-1 and the EasyEDA symbol; the footprint's pin-1 dot against the part's marking at the assembly preview",
    "drive tristate on Y: in a circuit with OE tied to GND the output never lets go, but LVL.undefined/open_drain cannot see that and warns about the net Y drives",
-   "Y's v_max_v 6.0 V holds for VCC 5.5 V only (VCC + 0.5 V) – no schema field for a limit relative to the part's own supply on an output",
    "the behaviour model 'logic' holds Y low; the simulation does not pass A through to Y"
   ]
  }

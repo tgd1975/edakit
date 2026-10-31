@@ -20,7 +20,10 @@
   "1": {
    "name": "CLKIN",
    "type": "input",
-   "hint": "optional external reference clock input; connect to GND if unused"
+   "hint": "optional external reference clock input; connect to GND if unused",
+   "ref": "VLOGIC",
+   "rel_ref": "VDD",
+   "v_min_v": -0.5
   },
   "2": {
    "name": "NC",
@@ -58,13 +61,19 @@
    "name": "AUX_DA",
    "type": "bidirectional",
    "drive": "open_drain",
-   "hint": "auxiliary I2C master data, for external sensors; logic level VLOGIC (AUX_VDDIO = 0)"
+   "hint": "auxiliary I2C master data, for external sensors; logic level VLOGIC (AUX_VDDIO = 0)",
+   "ref": "VLOGIC",
+   "v_rel_max_v": 0.5,
+   "v_min_v": -0.5
   },
   "7": {
    "name": "AUX_CL",
    "type": "bidirectional",
    "drive": "open_drain",
-   "hint": "auxiliary I2C master clock, for external sensors; logic level VLOGIC (AUX_VDDIO = 0)"
+   "hint": "auxiliary I2C master clock, for external sensors; logic level VLOGIC (AUX_VDDIO = 0)",
+   "ref": "VLOGIC",
+   "v_rel_max_v": 0.5,
+   "v_min_v": -0.5
   },
   "8": {
    "name": "VLOGIC",
@@ -78,12 +87,18 @@
      "source": "InvenSense MPU-6000 and MPU-6050 Product Specification, PS-MPU-6000A-00 Revision 3.4 (08/19/2013), p. 22 section 7.3 Bill of Materials for External Components: C4 VLOGIC bypass, ceramic X7R 10 nF ±10 %, 4 V"
     }
    ],
-   "hint": "digital I/O supply: VLOGIC ≤ VDD at all times (abs. max VDD + 0.5 V); monotonic ramp, 10–90 % within 3 ms, not before VDD starts to rise"
+   "hint": "digital I/O supply: VLOGIC ≤ VDD at all times (abs. max VDD + 0.5 V); monotonic ramp, 10–90 % within 3 ms, not before VDD starts to rise",
+   "v_rel_max_v": 0.5,
+   "rel_ref": "VDD",
+   "v_min_v": -0.5
   },
   "9": {
    "name": "AD0",
    "type": "input",
-   "hint": "I2C address LSB: low 0x68, high 0x69"
+   "hint": "I2C address LSB: low 0x68, high 0x69",
+   "ref": "VLOGIC",
+   "rel_ref": "VDD",
+   "v_min_v": -0.5
   },
   "10": {
    "name": "REGOUT",
@@ -96,17 +111,24 @@
      "source": "InvenSense MPU-6000 and MPU-6050 Product Specification, PS-MPU-6000A-00 Revision 3.4 (08/19/2013), p. 22 section 7.3 Bill of Materials for External Components: C1 regulator filter, ceramic X7R 0.1 µF ±10 %, 2 V"
     }
    ],
-   "hint": "regulator filter capacitor connection only"
+   "hint": "regulator filter capacitor connection only",
+   "v_rel_max_v": null,
+   "v_min_v": -0.5
   },
   "11": {
    "name": "FSYNC",
    "type": "input",
-   "hint": "frame synchronization input; connect to GND if unused"
+   "hint": "frame synchronization input; connect to GND if unused",
+   "ref": "VLOGIC",
+   "rel_ref": "VDD",
+   "v_min_v": -0.5
   },
   "12": {
    "name": "INT",
    "type": "output",
-   "hint": "interrupt output, totem pole or open-drain as configured (the register map is a separate document, not read here)"
+   "hint": "interrupt output, totem pole or open-drain as configured (the register map is a separate document, not read here)",
+   "rel_ref": "VDD",
+   "v_min_v": -0.5
   },
   "13": {
    "name": "VDD",
@@ -143,7 +165,9 @@
      "v_min_v": 50
     }
    ],
-   "hint": "charge pump capacitor connection: 2.2 nF X7R rated 50 V (BOM 7.3); CPOUT abs. max 30 V"
+   "hint": "charge pump capacitor connection: 2.2 nF X7R rated 50 V (BOM 7.3); CPOUT abs. max 30 V",
+   "v_rel_max_v": null,
+   "v_min_v": -0.5
   },
   "21": {
    "name": "RESV",
@@ -158,13 +182,19 @@
   "23": {
    "name": "SCL",
    "type": "input",
-   "role": "scl"
+   "role": "scl",
+   "ref": "VLOGIC",
+   "v_rel_max_v": 0.5,
+   "v_min_v": -0.5
   },
   "24": {
    "name": "SDA",
    "type": "bidirectional",
    "role": "sda",
-   "drive": "open_drain"
+   "drive": "open_drain",
+   "ref": "VLOGIC",
+   "v_rel_max_v": 0.5,
+   "v_min_v": -0.5
   },
   "25": {
    "name": "EP",
@@ -216,7 +246,8 @@
    "VDD 2.375–3.46 V, VLOGIC 1.71 V…VDD; VIH 0.7 × VLOGIC, VIL 0.3 × VLOGIC",
    "I2C address 0x68/0x69 by AD0",
    "external capacitors C1–C4 from the bill of materials 7.3",
-   "2026-10-31: CPOUT capacitor rated at least 50 V (PS-MPU-6000A-00 Rev 3.4, 7.3 Bill of Materials: C3 X7R 2.2 nF ±10 % 50 V, read now)"
+   "2026-10-31: CPOUT capacitor rated at least 50 V (PS-MPU-6000A-00 Rev 3.4, 7.3 Bill of Materials: C3 X7R 2.2 nF ±10 % 50 V, read now)",
+   "2026-10-31, pin limits (schema-gaps A6, B1–B3, C1–C4): PS-MPU-6000A-00 Rev 3.4: 6.3 'VLOGIC must be ≤VDD at all times' (supply_order); 6.4 digital inputs (SDA, AD0, SCL, FSYNC, CLKIN) VIH 0.7·VLOGIC, VIL 0.3·VLOGIC (ref VLOGIC); 6.5 primary and auxiliary I2C I/O (auxiliary at AUX_VDDIO = 0) VIH up to VLOGIC + 0.5 V, stricter than 6.9 (SCL, SDA, AUX_DA, AUX_CL: v_rel_max_v 0.5 against VLOGIC); 6.9 absolute maximum: VLOGIC, CLKIN, AUX_DA, AD0, FSYNC, INT, SCL, SDA −0.5 V to VDD + 0.5 V (rel_ref VDD where the thresholds refer to VLOGIC; v_min_v −0.5), REGOUT −0.5 to 2 V and CPOUT −0.5 to 30 V absolute (v_rel_max_v null)"
   ],
   "open": [
    "maximum supply current: the datasheet gives only typical values (3.9 mA gyro + accel + DMP) – idd_max_a left out",
@@ -232,7 +263,14 @@
    },
    "end-of-life status not confirmed from TDK (see notes)",
    "no thermal resistance or junction temperature in the datasheet",
-   "RoHS/REACH not entered"
+   "RoHS/REACH not entered",
+   "SCL, SDA, AUX_DA, AUX_CL are held to VLOGIC + 0.5 V, the upper end of VIH in 6.5, not to the absolute VDD + 0.5 V of 6.9; with AUX_VDDIO = 1 the auxiliary bus refers to VDD (7.11) – the owner decides which limit LIM.v should hold"
   ]
- }
+ },
+ "supply_order": [
+  [
+   "VLOGIC",
+   "VDD"
+  ]
+ ]
 }

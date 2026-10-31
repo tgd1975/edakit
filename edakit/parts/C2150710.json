@@ -16,7 +16,8 @@
    "type": "output",
    "drive": "bridge",
    "short_proof": true,
-   "hint": "motor coil output (N-channel FET bridge): floating while ENN is high (2.2); short to GND and short to VS detection switches the bridge off (15.2 – 'cannot protect … for all possible short events')"
+   "hint": "motor coil output (N-channel FET bridge): floating while ENN is high (2.2); short to GND and short to VS detection switches the bridge off (15.2 – 'cannot protect … for all possible short events')",
+   "v_rel_max_v": null
   },
   "2": {
    "name": "ENN",
@@ -163,7 +164,8 @@
    "type": "output",
    "drive": "bridge",
    "short_proof": true,
-   "hint": "motor coil output (N-channel FET bridge): floating while ENN is high (2.2); short to GND and short to VS detection switches the bridge off (15.2 – 'cannot protect … for all possible short events')"
+   "hint": "motor coil output (N-channel FET bridge): floating while ENN is high (2.2); short to GND and short to VS detection switches the bridge off (15.2 – 'cannot protect … for all possible short events')",
+   "v_rel_max_v": null
   },
   "22": {
    "name": "VS",
@@ -190,7 +192,8 @@
    "type": "output",
    "drive": "bridge",
    "short_proof": true,
-   "hint": "motor coil output (N-channel FET bridge): floating while ENN is high (2.2); short to GND and short to VS detection switches the bridge off (15.2 – 'cannot protect … for all possible short events')"
+   "hint": "motor coil output (N-channel FET bridge): floating while ENN is high (2.2); short to GND and short to VS detection switches the bridge off (15.2 – 'cannot protect … for all possible short events')",
+   "v_rel_max_v": null
   },
   "25": {
    "name": "UNUSED",
@@ -202,7 +205,8 @@
    "type": "output",
    "drive": "bridge",
    "short_proof": true,
-   "hint": "motor coil output (N-channel FET bridge): floating while ENN is high (2.2); short to GND and short to VS detection switches the bridge off (15.2 – 'cannot protect … for all possible short events')"
+   "hint": "motor coil output (N-channel FET bridge): floating while ENN is high (2.2); short to GND and short to VS detection switches the bridge off (15.2 – 'cannot protect … for all possible short events')",
+   "v_rel_max_v": null
   },
   "27": {
    "name": "BRB",
@@ -272,7 +276,8 @@
    "DC characteristics (20.2): RDSON 0.21 Ω max, input levels 0.3 / 0.7 × VVIO, pull resistors, IS 10 mA, 5VOUT",
    "RTMJA 30 K/W (20.3); UART address by MS1 bit 0, MS2 bit 1 (4); capacitors (2.2, 3.1, 21.3)",
    "2026-10-31: bridge outputs drive = bridge – the H-bridge outputs the datasheet of this draft describes (source above): driven high or low while enabled, off in sleep or coast; LEVELS counts them as defining their net (schema-gaps A2)",
-   "2026-10-31: CPI–CPO 22 nF 50 V, VCP–VS 100 nF (Rev. 1.03 pin table, read now)"
+   "2026-10-31: CPI–CPO 22 nF 50 V, VCP–VS 100 nF (Rev. 1.03 pin table, read now)",
+   "2026-10-31, pin limits (schema-gaps A6, B1–B3, C1–C4): TMC2209 datasheet Rev. 1.03, absolute maximum: logic input voltage −0.5 V to VVIO + 0.5 V (the entry's vin_rel_max_v, against VCC_IO); the bridge outputs OA1, OA2, OB1, OB2 swing to VS (up to 32 V) and are not held against VCC_IO (v_rel_max_v null)"
   ],
   "open": [
    "read the LCSC copy of Rev. 1.03 (2019); ADI's current Rev. 1.09 could not be fetched – differences not checked",
@@ -281,7 +286,7 @@
    "the outputs' clamping (body diodes of the output MOSFETs, named in note *) of 19) has no field; REQ.missing (flyback) asks for a diode across a motor on an output pin – here a false finding",
    "drive tristate makes a motor net driven only by these outputs an LVL.undefined/open_drain warning – no pin type fits a bridge output",
    "which pins besides those marked (pd) carry the 132–200 kΩ pull resistors is not stated per pin – ENN, STEP, CLK and PDN_UART are entered without a pull",
-   "logic inputs have no absolute v_max_v (VCC_IO + 0.5 V, held by vin_rel_max_v); PDN_UART is bidirectional and so outside LIM.v/inject",
+   "logic inputs have no absolute v_max_v (VCC_IO + 0.5 V, held by vin_rel_max_v – the bidirectional PDN_UART too since outputs and bidirectional pins are held)",
    "i_out_max_a 1.4 A is the RMS design guideline; peak and duty-cycle values are in sources only",
    "no ambient operating temperature range in the datasheet (junction only)"
   ]

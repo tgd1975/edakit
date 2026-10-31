@@ -54,7 +54,10 @@
    "name": "VIOUT",
    "type": "output",
    "v_max_v": 8,
-   "hint": "analog output, VCC/2 at 0 A (ratiometric); load at least 4.7 kΩ and at most 10 nF to GND"
+   "hint": "analog output, VCC/2 at 0 A (ratiometric); load at least 4.7 kΩ and at most 10 nF to GND",
+   "r_load_min_ohm": 4700,
+   "c_load_max_f": 1e-08,
+   "v_min_v": -0.1
   },
   "8": {
    "name": "VCC",
@@ -67,7 +70,8 @@
      "c_min_f": 1e-07,
      "source": "Allegro ACS712-DS, Rev. 22 (February 13, 2024), MCO-0000197, p. 1, Application 1: CBYP 0.1 µF at VCC – the value shown, read as the minimum: assumption"
     }
-   ]
+   ],
+   "v_min_v": -0.1
   }
  },
  "values": {
@@ -121,15 +125,14 @@
    "abs. max VCC 8 V, VIOUT 8 V, output 3 mA source / 10 mA sink, TJ 165 °C (p. 2)",
    "operating VCC 4.5–5.5 V, ICC ≤ 13 mA, RLOAD ≥ 4.7 kΩ, CLOAD ≤ 10 nF (p. 5)",
    "isolation 2400 VRMS / 420 VPK basic working voltage (p. 3); RθJA 23 °C/W on the evaluation board (p. 5)",
-   "sensitivity, noise and total error of the variant (x20A PERFORMANCE CHARACTERISTICS, p. 6)"
+   "sensitivity, noise and total error of the variant (x20A PERFORMANCE CHARACTERISTICS, p. 6)",
+   "2026-10-31, pin limits (schema-gaps A6, B1–B3, C1–C4): ACS712-DS Rev. 22: absolute maximum, reverse supply voltage VRCC −0.1 V and reverse output voltage VRIOUT −0.1 V (v_min_v); common operating characteristics, output resistive load RLOAD (VIOUT to GND) at least 4.7 kΩ, output capacitance load CLOAD at most 10 nF (r_load_min_ohm, c_load_max_f); output current source 3 mA and sink 10 mA differ, so no pin i_max_a"
   ],
   "open": [
    "the schema has no field for the sensitivity (mV/A), the zero-current output (VCC/2, ratiometric), the isolation (withstand 2400 VRMS, impulse 4000 VPK, creepage/clearance 4 mm) or the primary conductor (1.2 mΩ, 100 A transient): kept in hints and sources",
    "the primary path IP+ → IP− is not modelled (no behaviour model joins the two nets)",
-   "RLOAD ≥ 4.7 kΩ and CLOAD ≤ 10 nF at VIOUT: no field for a minimum load resistance or a maximum load capacitance",
    "v_max_v 420 on the IP pins is the basic-isolation working voltage, not an absolute maximum – the owner decides whether LIM.v should hold the primary net to it",
    "rth_ja_k_per_w 23 is the value on Allegro's 85-0322 evaluation board, not on an ordinary board",
-   "no negative-voltage field: reverse VCC and VIOUT −0.1 V (p. 2) are not entered",
    "VCC bypass: 0.1 µF is the application circuit's value, read as a minimum",
    "Allegro's product status page was not checked (ACS712 'product status' changed in Rev. 16 and 19)"
   ]

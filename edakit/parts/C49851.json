@@ -31,30 +31,37 @@
   "1": {
    "name": "A1",
    "type": "input",
-   "hint": "address pin: GND, VS, SDA or SCL – four states; edakit's address model knows only low and high, so a pin tied to SDA or SCL is not computed right"
+   "hint": "address pin: GND, VS, SDA or SCL – four states; edakit's address model knows only low and high, so a pin tied to SDA or SCL is not computed right",
+   "i_inject_max_a": 0.005
   },
   "2": {
    "name": "A0",
    "type": "input",
-   "hint": "address pin: GND, VS, SDA or SCL – four states; edakit's address model knows only low and high, so a pin tied to SDA or SCL is not computed right"
+   "hint": "address pin: GND, VS, SDA or SCL – four states; edakit's address model knows only low and high, so a pin tied to SDA or SCL is not computed right",
+   "i_inject_max_a": 0.005
   },
   "3": {
    "name": "Alert",
    "type": "output",
    "drive": "open_drain",
-   "hint": "multi-functional alert, open-drain: pull it up to the VS voltage (8.2.1.2)"
+   "hint": "multi-functional alert, open-drain: pull it up to the VS voltage (8.2.1.2)",
+   "v_rel_max_v": null,
+   "i_max_a": 0.01
   },
   "4": {
    "name": "SDA",
    "type": "bidirectional",
    "role": "sda",
    "drive": "open_drain",
-   "v_max_v": 6.0
+   "v_max_v": 6.0,
+   "v_rel_max_v": null,
+   "i_max_a": 0.01
   },
   "5": {
    "name": "SCL",
    "type": "input",
-   "role": "scl"
+   "role": "scl",
+   "i_inject_max_a": 0.005
   },
   "6": {
    "name": "VS+",
@@ -136,11 +143,12 @@
    "VS 2.7–5.5 V; VIH 0.7 × VS, VIL 0.3 × VS; IQ max 420 µA",
    "I2C address 0x40 + A0 (1) + A1 (4) for GND/VS",
    "Alert open-drain; 0.1 µF supply bypass (typical value)",
-   "2026-10-31: address pins with four states (low, high, sda, scl) – TI SBOS547C (revised August 2026), Table 6-2 Address Pins and Target Addresses: A1, A0 each on GND, VS, SDA or SCL give 1000000 to 1001111 – A0 adds 0/1/2/3, A1 0/4/8/12 (schema-gaps A4)"
+   "2026-10-31: address pins with four states (low, high, sda, scl) – TI SBOS547C (revised August 2026), Table 6-2 Address Pins and Target Addresses: A1, A0 each on GND, VS, SDA or SCL give 1000000 to 1001111 – A0 adds 0/1/2/3, A1 0/4/8/12 (schema-gaps A4)",
+   "2026-10-31, pin limits (schema-gaps A6, B1–B3, C1–C4): TI SBOS547C 5.1: VSDA GND − 0.3 V to 6 V regardless of VS (v_rel_max_v null), VSCL GND − 0.3 V to VS + 0.3 V (the entry's vin_rel_max_v), input current into any pin 5 mA (i_inject_max_a on SCL, A0, A1), open-drain digital output current 10 mA (SDA and Alert i_max_a); the table names no voltage limit of Alert against VS (v_rel_max_v null)"
   ],
   "open": [
    "address pins tied to SDA or SCL cannot be expressed in the entry's address model",
-   "A0/A1 and Alert have no absolute-maximum row; vin_rel_max_v (from SCL's row) is applied to A0/A1 too",
+   "A0/A1 and Alert have no absolute-maximum row; vin_rel_max_v (from SCL's row) is applied to A0/A1, Alert is exempt from it (v_rel_max_v null) – whether Alert may be pulled above VS is not stated",
    "the operating supply range comes from 5.5 (Power Supply), the Recommended Operating Conditions give only a nominal 3.3 V",
    "Alert pull-up is required when Alert is used (8.2.1.2); not entered as a pin need because an unused Alert may be left open – the datasheet does not say",
    {

@@ -34,7 +34,7 @@ def run(ctx):
     return (decoupling(d) + i2c(d) + flyback(d) + usb_c(d) + functions(d) + hot_loops(ctx.design) + pin_needs(d)
             + balancing(d) + addresses(d) + uart_lines(d) + adc_sources(d) + btl_outputs(d) + instrument_loads(d)
             + stable_gains(d) + usb_data(d) + leaving_lines(d) + matrix(d) + bus_terminations(d) + bridge_clamps(d)
-            + feedback_dividers(d) + pd_requests(d))
+            + feedback_dividers(d) + pd_requests(d) + output_loads(d))
 
 
 def decoupling(d):
@@ -790,6 +790,38 @@ def dc_load(d, net, seen=frozenset()):
         if onward != float("inf"):
             branches.append(r + onward)
     return 1 / sum(1 / x for x in branches) if branches else float("inf")
+
+
+def output_loads(d):
+    """REQ.value/load (schema-gaps C4): an output with r_load_min_ohm or c_load_max_f drives no more than it allows –
+    its DC load to fixed levels (dc_load: the resistors to them, a series resistor into capacitors no load) at least
+    r_load_min_ohm, the capacitors on its net together at most c_load_max_f (an ACS712's VIOUT: 4.7 kΩ, 10 nF)."""
+    out = []
+    for des in sorted(d.comps):
+        part = d.part(des) or {}
+        for num, info in (part.get("pins") or {}).items():
+            net = d.pin_net.get(f"{des}.{num}")
+            r_min, c_max = info.get("r_load_min_ohm"), info.get("c_load_max_f")
+            if not net or not (is_number(r_min) or is_number(c_max)):
+                continue
+            name, on = info.get("name", num), (("net", net), ("component", des))
+            if is_number(r_min):
+                load = dc_load(d, net)
+                if load is not None and load != float("inf") and load < r_min:
+                    out.append(Finding("REQ.value", "G", f"{des}.{num}", f"{des}.{num} ({name}) drives {ohm(load)} on "
+                                       f"{net} – it allows at least {ohm(r_min)}", f"r_load_min_ohm of pin {name} of "
+                                       f"{d.entry_key(des)}", "a larger load resistance, or a buffer",
+                                       grade="load", on=on))
+            if is_number(c_max):
+                caps = [c for c in d.comps_of_kind("capacitor")
+                        if any(d.pin_net.get(f"{c}.{n}") == net for n in (d.part(c) or {}).get("pins", {}))]
+                total = sum(values(d.part(c)).get("value_f") or 0 for c in caps)
+                if total > c_max * (1 + 1e-9):
+                    out.append(Finding("REQ.value", "G", f"{des}.{num}", f"{des}.{num} ({name}) drives {total * 1e9:.4g} nF "
+                                       f"on {net} ({', '.join(caps)}) – it allows at most {c_max * 1e9:.4g} nF",
+                                       f"c_load_max_f of pin {name} of {d.entry_key(des)}",
+                                       "a smaller capacitor, or a series resistor before it", grade="load", on=on))
+    return out
 
 
 def stable_gains(d):

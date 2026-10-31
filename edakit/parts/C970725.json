@@ -33,39 +33,51 @@
    "name": "CFG2",
    "type": "input",
    "role": "cfg2",
-   "hint": "request voltage selection (table 6.2 p. 9); no internal pull-up on the CH224K (7.1 p. 11); absolute maximum -0.5 … VDD + 0.5 V (8.1.3)"
+   "hint": "request voltage selection (table 6.2 p. 9); no internal pull-up on the CH224K (7.1 p. 11); absolute maximum -0.5 … VDD + 0.5 V (8.1.3)",
+   "v_rel_max_v": 0.5,
+   "v_min_v": -0.5
   },
   "3": {
    "name": "CFG3",
    "type": "input",
    "role": "cfg3",
-   "hint": "request voltage selection (table 6.2 p. 9); no internal pull-up on the CH224K (7.1 p. 11); absolute maximum -0.5 … VDD + 0.5 V (8.1.3)"
+   "hint": "request voltage selection (table 6.2 p. 9); no internal pull-up on the CH224K (7.1 p. 11); absolute maximum -0.5 … VDD + 0.5 V (8.1.3)",
+   "v_rel_max_v": 0.5,
+   "v_min_v": -0.5
   },
   "4": {
    "name": "DP",
    "type": "bidirectional",
    "role": "dp",
-   "hint": "USB D+ for the BC1.2 and similar protocols; absolute maximum -0.5 … VDD + 0.5 V (8.1.3)"
+   "hint": "USB D+ for the BC1.2 and similar protocols; absolute maximum -0.5 … VDD + 0.5 V (8.1.3)",
+   "v_rel_max_v": 0.5,
+   "v_min_v": -0.5
   },
   "5": {
    "name": "DM",
    "type": "bidirectional",
    "role": "dm",
-   "hint": "USB D−; absolute maximum -0.5 … VDD + 0.5 V (8.1.3)"
+   "hint": "USB D−; absolute maximum -0.5 … VDD + 0.5 V (8.1.3)",
+   "v_rel_max_v": 0.5,
+   "v_min_v": -0.5
   },
   "6": {
    "name": "CC2",
    "type": "bidirectional",
    "role": "cc2",
    "v_max_v": 8,
-   "hint": "Type-C CC line, driven by the CH224K – no 5.1 kΩ Rd in the reference schematic 6.2"
+   "hint": "Type-C CC line, driven by the CH224K – no 5.1 kΩ Rd in the reference schematic 6.2",
+   "v_rel_max_v": null,
+   "v_min_v": -0.5
   },
   "7": {
    "name": "CC1",
    "type": "bidirectional",
    "role": "cc1",
    "v_max_v": 8,
-   "hint": "Type-C CC line, driven by the CH224K – no 5.1 kΩ Rd in the reference schematic 6.2"
+   "hint": "Type-C CC line, driven by the CH224K – no 5.1 kΩ Rd in the reference schematic 6.2",
+   "v_rel_max_v": null,
+   "v_min_v": -0.5
   },
   "8": {
    "name": "VBUS",
@@ -78,14 +90,17 @@
      "what": "pull_up",
      "source": "WCH CH224 手册1 (CH224 data sheet, manual 1), version 2.1, Chinese, table 4-2 p. 3: VBUS 'needs a series resistor to the external VBUS'; reference schematic 6.2 p. 9: 10 kΩ – no window stated"
     }
-   ]
+   ],
+   "v_min_v": -0.5
   },
   "9": {
    "name": "CFG1",
    "type": "input",
    "role": "cfg1",
    "v_max_v": 8,
-   "hint": "CFG1 high = 5 V request; CFG1 low: CFG2, CFG3 select 9 / 12 / 15 / 20 V (table 6.2 p. 9)"
+   "hint": "CFG1 high = 5 V request; CFG1 low: CFG2, CFG3 select 9 / 12 / 15 / 20 V (table 6.2 p. 9)",
+   "v_rel_max_v": null,
+   "v_min_v": -0.5
   },
   "10": {
    "name": "PG",
@@ -150,7 +165,8 @@
    "absolute maximum 8.1.3 p. 13 and electrical parameters 8.2.3 p. 14 of the CH224K",
    "reference schematic 6.2 p. 9: 1 kΩ VBUS → VDD, 1 µF at VDD, 10 kΩ VBUS → pin 8, I/O-level table 5–20 V",
    "differences CH224A / CH224K 7.1 p. 11",
-   "2026-10-31 (schema W5, read again): VDD shunt regulator VLDOK 3.24 / 3.3 / 3.36 V, sinking ILDO 0 … 30 mA (8.2.3 p. 14) – values vdd_shunt_v, i_shunt_max_a, behaviour pd_sink; the CH224K's request by I/O levels (reference 6.2 p. 9): CFG1 = 1 → 5 V; CFG1 = 0 with CFG2 CFG3 = 00 → 9 V, 01 → 12 V, 11 → 15 V, 10 → 20 V – values pd_request_v (table 5-2 p. 5 is the CH224Q/A's, with other voltages)"
+   "2026-10-31 (schema W5, read again): VDD shunt regulator VLDOK 3.24 / 3.3 / 3.36 V, sinking ILDO 0 … 30 mA (8.2.3 p. 14) – values vdd_shunt_v, i_shunt_max_a, behaviour pd_sink; the CH224K's request by I/O levels (reference 6.2 p. 9): CFG1 = 1 → 5 V; CFG1 = 0 with CFG2 CFG3 = 00 → 9 V, 01 → 12 V, 11 → 15 V, 10 → 20 V – values pd_request_v (table 5-2 p. 5 is the CH224Q/A's, with other voltages)",
+   "2026-10-31, pin limits (schema-gaps A6, B1–B3, C1–C4): WCH CH224 datasheet, 8.1.3 CH224K absolute maximum: DP, DM, CFG2, CFG3 −0.5 V to VDD + 0.5 V (v_rel_max_v 0.5); CC1, CC2, CFG1 −0.5 V to 8 V and VBUS −0.5 V to 13.5 V regardless of VDD (v_rel_max_v null, v_min_v −0.5)"
   ],
   "open": [
    "not in stock at LCSC or JLCPCB (2026-10-31); WCH recommends the CH224A – it would need its own entry (other ratings and configuration values)",
@@ -160,7 +176,9 @@
    "no input thresholds for CFG1–CFG3, no supply current and no θJA or junction limit for the CH224K",
    "single-resistor configuration values of the CH224K are not in version 2.1 (table 5-1 is for CH224Q/CH224A, and 7.3 says the values differ)",
    "the series resistors at VDD and pin 8 are entered as pull_up (a resistor to the VBUS supply net) without a window; the sink limit 30 mA bounds the VDD resistor from below for the highest VBUS",
-   "behaviour pd_sink models the VDD shunt only; PG, the CC lines and the request on the CC wire are not simulated – the charger is the project's source in sim.json at the voltage it delivers"
+   "behaviour pd_sink models the VDD shunt only; PG, the CC lines and the request on the CC wire are not simulated – the charger is the project's source in sim.json at the voltage it delivers",
+   "VDD is a shunt regulator fed through a resistor: no behaviour model for it – with behaviour none the simulation puts VBUS on VDD and LIM.v would report the 3.6 V limit (schema gap)",
+   "PG has no absolute maximum for the CH224K"
   ]
  }
 }
