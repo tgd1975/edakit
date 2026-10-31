@@ -27,12 +27,12 @@ highest forward voltage (SIM.state) – R-1 asked for 1 mA. No red LED reaches 1
 series resistor without breaking R-4: the current from fresh cells at the LED's lowest VF is about ten times the
 current at the end voltage at its highest, and R-4 allows five. The owner chose a low-current LED and a new number
 for R-1: D1 is Kingbright APTD2012LSURCK (C5366382), specified at 2 mA – VF 1.5–2.1 V, Iv 60–150 mcd (20–50 mcd to
-CIE127) –, at 0.5 mA brighter than the NCD0805R1 at 1 mA (2.5–11.5 mcd). R-1 now asks for at least 0.5 mA down to
+CIE127) –, at 0.5 mA brighter on axis than the NCD0805R1 at 1 mA (2.5–11.5 mcd), in a narrower beam: 40° against
+130°, so off axis the two are about equal (M-1, note 7). R-1 now asks for at least 0.5 mA down to
 1.1 V per cell, 2.2 V for the pair (`sim.json`: cell `used` 2.2 V, `criteria.led_on_min_a` 0.0005).
 
 R2 is 200 Ω (C17540, Basic) – Claude's correction of the 220 Ω proposed in the round, which gave 0.498 mA: from
-fresh cells D1 takes 4.6 mA at its lowest VF and the cells 4.9 mA with U1 (R-4: 5 mA), from cells at 2.2 V D1 takes
-0.52 mA at its highest VF and 2.0 mA at its lowest. Not taken: the same LED with 0.1 mA down to 2.0 V (dim at the
+cells at 2.2 V D1 takes 0.52 mA at its highest VF and 2.0 mA at its lowest. The current from fresh cells is D-9's. Not taken: the same LED with 0.1 mA down to 2.0 V (dim at the
 end); the NCD0805R1 with 1 mA down to 1.4 V per cell (half the capacity unused).
 
 R-3 and R-4 got the rows that test them: the current from the cells in the loads `off` and `on`
@@ -56,8 +56,8 @@ free for D1. With the thresholds at 1/3 and 2/3, t_high = t_low = ln 2 · R1 · 
 
 The spread, as worst case: R1 ±1 % (C17817), C2 ±10 % (C28323, X7R; its DC bias at 3.2 V on a 50 V part below 1 %),
 U1's thresholds from the datasheet's timing accuracy at 1.5 V (monostable 1.1·RC: 0.9–1.25 ms for 1.1 ms, i.e. the
-upper threshold between 0.593 and 0.713 of VDD): T between 0.797 and 1.202 times the nominal, 48.0 to 72.4 flashes a
-minute – R-2's window of 48 to 72. The datasheet gives no astable accuracy below 5 V and no trigger spread tied to the
+upper threshold between 0.593 and 0.713 of VDD): T between 0.798 and 1.204 times the nominal, 47.9 to 72.3 flashes a
+minute – both edges of R-2's window of 48 to 72 touched; no R1 fits the whole stack (M-1, note 6). The datasheet gives no astable accuracy below 5 V and no trigger spread tied to the
 threshold's; the count at the acceptance (R-2, M-4) is the evidence. With 680 kΩ (Extended, preferred – no loading
 fee) the nominal is 63.7 and the worst case reaches 80 a minute; the owner chose 750 kΩ (Extended, a loading fee of
 about 3 USD per order).
@@ -80,9 +80,38 @@ operating point per scenario, no time (concept, decision 3). The dark phase, by 
 - OUTPUT high, DC released: D1 and R2 carry only D1's leakage (≤ 10 µA at 5 V reverse, here about 0 V across it);
   R1 carries C2's charging current, at most (VDD − VDD/3) / 750 kΩ = 2.8 µA at 3.2 V; U1 at most 250 µA (its maximum
   at 5 V; 150 µA at 1.5 V).
-- The cells' mean current over a period, half lit and half dark: (4.9 + 0.25) / 2 = 2.6 mA from fresh cells at D1's
-  lowest VF, about 2 mA at its typical one – some 450 hours, nearly three weeks, of blinking from alkaline AAA cells
-  of about 1000 mAh down to 1.1 V. N-2 is met; it is not a requirement with a number.
+- The cells' mean current over a period, half lit and half dark: (7.6 + 0.25) / 2 = 3.9 mA from fresh cells at D1's
+  lowest VF and U1's discharge pin at 15 Ω, about 3 mA with a typical LED (M-1, finding 1) – some 260 to 330 hours,
+  eleven to fourteen days, of blinking from alkaline AAA cells of about 1000 mAh down to 1.1 V. N-2 is met; it is not
+  a requirement with a number.
 - The edges and U1's current spikes when its output switches are not simulated; C1 and C4 supply them.
 
 The blink rate, the duty cycle and the start-up are in D-5; R-2's evidence is the count at the acceptance.
+
+## D-8 The layout (2026-10-31)
+
+The board is 60 × 28 mm, about the holder's size: BT1 on the bottom with its body 0.7 … 53.8 mm under the board and
+its PC pins at the right end, soldered on the top; SW1 flush with the right edge, its knob over it, its joints on the
+bottom beside BT1's body; D1 beside SW1 on top. `edakit pcb place --rest` put the 555 and its parts around BT1's pins;
+moved by hand 5 mm to the left and rearranged, so that `[routing] hand_solder_keep_mm = 1` keeps other nets' pads 1 mm
+from BT1's and SW1's joints. Freerouting routed all 10 nets (76 track pieces, 4 vias), KiCad filled the ground pours,
+its DRC found nothing.
+
+GEO.silk "silkscreen inside the board outline" is accepted for the outline of SW1's knob, which the library footprint
+draws beyond the body: the knob stands over the edge on purpose (`edge_ok`), and the maker prints nothing beyond the
+outline. A layout decision by Claude: the circuit hash stays.
+
+## D-9 The review M-1: R-4 at 8 mA, and what it corrected (2026-10-31)
+
+The agent electrical-reviewer found nothing that blocks and one important finding: R-4's rows passed only because U1's
+discharge pin was simulated at 150 Ω – the LMC555's maximum at 1.5 V (VDIS ≤ 150 mV at 1 mA). At 3.2 V it is
+stronger; the datasheet's typical part at 5 V has 15 Ω. U1's entry now gives `r_out_ohm` [15, 50, 150], taken at the
+simulation's spread corner (`sim.json` spread min and max): from fresh cells at D1's lowest VF the cells give 7.6 mA.
+R-1 (0.5 mA at 2.2 V) and 5 mA cannot both hold with a series resistor. The owner chose R-4 at 8 mA with R2 at 200 Ω.
+Not taken: R2 390 Ω with R-1 down to 1.2 V per cell; R2 390 Ω with R-1 at 0.3 mA.
+
+What Claude corrected after the review, confirmed by the owner: the hand-over note (C2 at TRIG and TH, C3 at CV), the
+numbers in the accepted reasons, Q1's model (KP 25: 52 mΩ at −1.8 V), D-5's worst case (47.9 to 72.3), "brighter on
+axis, in a narrower beam" for D1. On the top silkscreen '+' and '−' beside BT1's pins and "2x AAA 1.5 V" – AAA-sized
+Li-ion cells (10440, 3.7 V each) would put 8.4 V on Q1's gate (8 V) and overload R2 and D1 (M-1, note 8). Not
+changed: R-1's margin rests on D1's VF at 25 °C (±0.1 V tolerance, −1.9 mV/K – M-1, note 2).

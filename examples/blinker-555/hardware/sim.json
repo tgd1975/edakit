@@ -1,5 +1,5 @@
 {
-  "about": "Scenarios for `edakit sim`: fresh and used cells x switch on or off x the LED's forward-voltage corners, and both cells upside down. On, the 555 sits in the phase in which D1 is lit (U1's states in the graph).",
+  "about": "Scenarios for `edakit sim`: fresh and used cells x switch on or off x the LED's forward-voltage corners x the spread of U1's discharge resistance and Q1's threshold, and both cells upside down. On, the 555 sits in the phase in which D1 is lit (U1's states in the graph).",
   "ambient_c": 25,
   "cells": {
     "fresh": {
@@ -34,7 +34,7 @@
       ],
       "expect": {
         "BT1": {
-          "i_max_a": 0.005
+          "i_max_a": 0.008
         }
       }
     },
@@ -86,5 +86,9 @@
       "load": "on_reversed",
       "corner": "max"
     }
+  ],
+  "spread": [
+    "min",
+    "max"
   ]
 }

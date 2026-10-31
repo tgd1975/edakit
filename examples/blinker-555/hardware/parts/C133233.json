@@ -26,7 +26,7 @@
   "AOS AO3415A data sheet Rev. 3.0, June 2013 (LCSC's copy, edakit part fetch C133233, read 2026-10-31)",
   "p. 1: SOT23, G pin 1, S pin 2, D pin 3; absolute maximum VDS −20 V, VGS ±8 V, ID −5 A (25 °C), PD 1.5 W (25 °C), TJ −55 … 150 °C; RθJA steady state 85 typ / 100 max °C/W; ESD protected",
   "p. 2: VGS(th) −0.3 / −0.57 / −0.9 V; RDS(on) max 41 mΩ at −4.5 V, 53 mΩ at −2.5 V, 65 mΩ at −1.8 V; VSD −0.64 V typ at −1 A; IS −2 A; IDSS ≤ 1 µA at −20 V; IGSS ≤ ±10 µA at ±8 V",
-  "spice: a level-1 model fitted to RDS(on) 52 mΩ typ at −1.8 V and VGS(th) −0.57 V – assumption, the datasheet gives no model",
+  "spice: a level-1 model, VTO −0.57 V and KP 25 A/V², RD 20 mΩ: 52 mΩ at VGS −1.8 V (65 mΩ max), 40 mΩ at −2.5 V (53 mΩ max) – assumption, the datasheet gives no model (M-1, finding 5)",
   "mpn, manufacturer, footprint, jlc_class, pin numbers and names: EasyEDA library data of C133233, https://easyeda.com/api/products/C133233/components?version=6.4.19.5, read 2026-10-31 (edakit part import)"
  ],
  "verified": {
@@ -71,7 +71,7 @@
   "rth_ja_k_per_w": 100
  },
  "spice": {
-  "model": ".model AO3415A PMOS(LEVEL=1 VTO=-0.57 KP=15 RD=0.02 IS=1e-12 LAMBDA=0.01)"
+  "model": ".model AO3415A PMOS(LEVEL=1 VTO=-0.57 KP=25 RD=0.02 IS=1e-12 LAMBDA=0.01)"
  },
  "compliance": {
   "rohs": true,

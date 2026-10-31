@@ -4,21 +4,59 @@
   "layout_sha256": null,
   "fab_sha256": null,
   "manual": [
-    {"id": "M-1", "phase": "export", "scope": "circuit",
-     "text": "Critical parts (U1, Q1, BT1, D1) checked a second time against the datasheet, independently – the agent electrical-reviewer in its own session",
-     "done_by": null, "date": null, "note": null},
-    {"id": "M-6", "phase": "export", "scope": "circuit",
-     "text": "Regulatory review: circuit and parts against EU law for the purpose in the graph – the agent regulatory-reviewer in its own session. No finding 'block' open. Support, not legal advice: no claim to correctness, nothing legally guaranteed",
-     "done_by": null, "date": null, "note": null},
-    {"id": "M-5", "phase": "export", "scope": "fab",
-     "text": "Layout reviewed independently (manufacturability, mechanics, operation, looks) on the manufacturing files of a gate run with this layout – e.g. by the agent pcb-reviewer. No finding 'block' open, every 'important' finding fixed or rejected by the owner",
-     "done_by": null, "date": null, "note": null},
-    {"id": "M-2", "phase": "order", "scope": "fab",
-     "text": "At JLCPCB after the upload: assembly preview – rotation and polarity of every polarised part (compare with polarity_<board>.png); BOM without missing parts; price",
-     "done_by": null, "date": null, "note": null},
-    {"id": "M-4", "phase": "acceptance", "scope": "layout",
-     "text": "Acceptance test of every delivered board: visual check (BT1, U1 and D1 the right way round), D1 blinks while SW1 is on and is dark once it is off",
-     "done_by": null, "date": null, "note": null}
+    {
+      "id": "M-1",
+      "phase": "export",
+      "scope": "circuit",
+      "text": "Critical parts (U1, Q1, BT1, D1) checked a second time against the datasheet, independently – the agent electrical-reviewer in its own session",
+      "done_by": null,
+      "date": null,
+      "note": null
+    },
+    {
+      "id": "M-6",
+      "phase": "export",
+      "scope": "circuit",
+      "text": "Regulatory review: circuit and parts against EU law for the purpose in the graph – the agent regulatory-reviewer in its own session. No finding 'block' open. Support, not legal advice: no claim to correctness, nothing legally guaranteed",
+      "done_by": null,
+      "date": null,
+      "note": null
+    },
+    {
+      "id": "M-5",
+      "phase": "export",
+      "scope": "fab",
+      "text": "Layout reviewed independently (manufacturability, mechanics, operation, looks) on the manufacturing files of a gate run with this layout – e.g. by the agent pcb-reviewer. No finding 'block' open, every 'important' finding fixed or rejected by the owner",
+      "done_by": null,
+      "date": null,
+      "note": null
+    },
+    {
+      "id": "M-2",
+      "phase": "order",
+      "scope": "fab",
+      "text": "At JLCPCB after the upload: assembly preview – rotation and polarity of every polarised part (compare with polarity_<board>.png); BOM without missing parts; price",
+      "done_by": null,
+      "date": null,
+      "note": null
+    },
+    {
+      "id": "M-4",
+      "phase": "acceptance",
+      "scope": "layout",
+      "text": "Acceptance test of every delivered board: visual check (BT1, U1 and D1 the right way round), D1 blinks while SW1 is on and is dark once it is off",
+      "done_by": null,
+      "date": null,
+      "note": null
+    }
   ],
-  "accept": []
+  "accept": [
+    {
+      "match": "GEO.silk main TOP: silkscreen inside the board outline*",
+      "scope": "decision",
+      "reason": "D-8: the outline of SW1's knob, drawn by its library footprint beyond the body – the knob stands over the edge on purpose (edge_ok), and the maker prints nothing beyond the outline",
+      "by": "Claude (PCB designer)",
+      "date": "2026-10-31"
+    }
+  ]
 }

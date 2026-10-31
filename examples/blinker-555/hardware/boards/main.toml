@@ -22,6 +22,28 @@ R3 = { x = 55, y = 6, rot = 0, side = "top" }
 
 [silk]
 designators = "top"
+place = { D1 = { x = 56.5, y = 22.3, rot = 0, side = "top" } }   # under the LED: beside it R2 and the edge leave no room
 
 [routing]
 hand_solder_keep_mm = 1.0  # GEO.spacing: other nets' pads and vias this far from BT1's pins (top) and SW1's (bottom)
+
+[[silk.texts]]             # BT1's poles on the top side, where its pins are soldered and a lab supply is clipped on
+text = "+"
+x = 52.6
+y = 20.35
+h_mm = 1.5
+side = "top"
+
+[[silk.texts]]
+text = "-"
+x = 52.6
+y = 7.65
+h_mm = 1.5
+side = "top"
+
+[[silk.texts]]             # AAA-sized Li-ion cells (10440, 3.7 V) would overload Q1, R2 and D1 (D-9)
+text = "2x AAA 1.5 V"
+x = 14
+y = 14
+h_mm = 2.0
+side = "top"

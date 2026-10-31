@@ -21,7 +21,7 @@ notes = [
   "BT1 (Keystone 2468, 53.0 × 24.6 × 13 mm) on the bottom, the board about its size; its two PC pins are soldered on the top side",
   "SW1 at the board's edge, its knob out over it; its terminals and pegs are soldered on the bottom – not under BT1's body",
   "D1 on top, where it is seen",
-  "C1 and C4 close to U1's V+, C2 close to U1's DC and TH (LMC555 datasheet 11.1)",
+  "C1 and C4 close to U1's V+ (8); C2 close to U1's TRIG (2) and TH (6), its ground next to GND (1); C3 next to CV (5)",
 ]
 
 [conventions]
@@ -52,7 +52,7 @@ label = "CMOS 555 timer"
 part = "LMC555CMX/NOPB"
 lcsc = "C90760"
 states = { OUTPUT = "low", DC = "low" }
-accept = { "HINT.thermal_copper" = "U1 dissipates below 1 mW (250 µA at 3.2 V, D1's 4.4 mA through DIS at 0.15 V): no copper needed" }
+accept = { "HINT.thermal_copper" = "U1 dissipates about 2 mW at most (250 µA at 3.2 V, D1's 7.3 mA through DIS at 15 Ω): under 1 K at 169 K/W, no copper needed" }
 notes = "Runs from 1.5 V. The simulation holds the phase in which D1 is lit: OUTPUT low, DC (discharge) low. R1 from OUTPUT charges and discharges C2 between 1/3 and 2/3 of VDD: f = 1 / (2 ln 2 · R1 · C2). DC is free for D1."
 
 [components.R1]
@@ -100,7 +100,7 @@ label = "LED series resistor"
 part = "0805W8F2000T5E"
 lcsc = "C17540"
 value = "200"
-notes = "Sized between R-4 and R-1: from fresh cells D1 at its lowest Vf takes 4.6 mA (4.9 mA with U1, ≤ 5 mA), from cells at 2.2 V at its highest 0.52 mA (≥ 0.5 mA); 220 Ω gave 0.498 mA there (D-3)."
+notes = "Sized for R-1: from cells at 2.2 V D1 at its highest Vf takes 0.52 mA (≥ 0.5 mA, U1's discharge pin at its 150 Ω end); 220 Ω gave 0.498 mA there (D-3). From fresh cells at its lowest Vf and DIS at 15 Ω: 7.3 mA, 7.6 mA from the cells (R-4: 8 mA, D-9)."
 
 [components.D1]
 type = "led"
@@ -108,8 +108,8 @@ label = "LED (hyper red, low current)"
 part = "APTD2012LSURCK"
 lcsc = "C5366382"
 value = "red"
-notes = "Specified at 2 mA: 60–150 mcd – at 0.5 mA brighter than an ordinary red 0805 LED at 1 mA (D-3)."
-accept = { "HINT.thermal_copper" = "D1 dissipates at most 7.3 mW, its junction 30 °C at 25 °C by the datasheet's 680 K/W" }
+notes = "Specified at 2 mA: 60–150 mcd – at 0.5 mA brighter on axis than an ordinary red 0805 LED at 1 mA, in a narrower 40° beam (D-3)."
+accept = { "HINT.thermal_copper" = "D1 dissipates at most 11.9 mW, its junction 33 °C at 25 °C by the datasheet's 680 K/W (measured on 16 mm² of copper per pad; on its 1.4 mm² pads a few kelvin more, far below its 115 °C)" }
 
 # --- reverse polarity: a P-MOSFET in the plus line behind SW1 (block reverse-pmos) -----------------------------
 [components.Q1]
@@ -118,7 +118,7 @@ label = "Reverse-polarity PMOS"
 part = "AO3415A"
 lcsc = "C133233"
 notes = "Drain towards the cells, source towards VDD, gate to ground: on from 1.8 V, its body diode blocks cells put in upside down (D-4)."
-accept = { "HINT.gate" = "no driver: the gate sits on ground through R3 and Q1 never switches – nothing rings", "HINT.thermal_copper" = "Q1 dissipates about 1 µW (4.9 mA through 65 mΩ at most)" }
+accept = { "HINT.gate" = "no driver: the gate sits on ground through R3 and Q1 never switches – nothing rings", "HINT.thermal_copper" = "Q1 dissipates about 2 µW (7.6 mA through 65 mΩ at most)" }
 
 [components.R3]
 type = "resistor"

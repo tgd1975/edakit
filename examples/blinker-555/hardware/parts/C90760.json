@@ -83,6 +83,7 @@
   "6.1 absolute maximum ratings, p. 4: supply 15 V; input −0.3 V to V+ + 0.3 V; output 15 V; output current 100 mA",
   "6.3 recommended operating conditions, p. 4: LMC555CM −40 … 85 °C; SOIC-8 740 mW at 25 °C; features, p. 1, and 10, p. 17: supply 1.5 V to 15 V ('1.5 V supply operating voltage ensured')",
   "6.4 thermal information, p. 4: RθJA SOIC 169 °C/W",
+  "r_out_ohm: VDIS ≤ 150 mV at IDIS 1 mA, V+ 1.5 V (75 mV typ); ≤ 300 mV at 10 mA, 5 V (150 mV typ) – 6.5, p. 5; the datasheet gives no minimum and nothing between 1.5 and 5 V: the 15 Ω end is the typical part at 5 V, assumption",
   "6.5 electrical characteristics, p. 5: IS, VCTRL, VDIS, VOL, VOH, VTRIG, VRES, timing accuracy at 1.5, 5 and 12 V; IDIS leakage ≤ 100 nA at 12 V",
   "8.4.2 astable operation, p. 10: the capacitor charges and discharges between 1/3 and 2/3 V+, the frequency independent of the supply",
   "11.2 layout example, p. 17: C2 0.01 µF bypass for the control voltage pin, C3 0.1 µF ceramic, C4 1 µF",
@@ -119,7 +120,11 @@
  "values": {
   "behavior": "logic",
   "icc_a": 0.00025,
-  "r_out_ohm": 150
+  "r_out_ohm": [
+   15,
+   50,
+   150
+  ]
  },
  "limits": {
   "vdd_max_v": 15,
@@ -133,7 +138,7 @@
   "supply bypass: 0.1 µF in parallel with 1 µF as close as possible to V+ (10, 11.1); the timing capacitor close to DIS (11.1)",
   "the timing at a low supply: the monostable's 1.1·RC is 0.9–1.25 ms for 1.1 ms at 1.5 V, 1.0–1.20 ms at 5 V (6.5, timing accuracy) – the CV voltage spreads 0.8–1.2 V at 1.5 V, the thresholds with it",
   "icc_a 250 µA: the supply current's maximum at 5 V (6.5: 150 µA max at 1.5 V, 250 µA at 5 V, 400 µA at 12 V) – an upper bound between 2 and 3.2 V",
-  "r_out_ohm 150 Ω: DIS at V+ 1.5 V (≤ 150 mV at 1 mA) – the output that carries D1's current; OUT is weaker at low supply (2 kΩ high, 400 Ω low at 1.5 V) and drives only the timing resistor's µA here; the model has one output resistance for both"
+  "r_out_ohm [15, 50, 150] Ω, taken at the simulation's spread corner: DIS ≤ 150 mV at 1 mA with V+ 1.5 V (the highest, 150 Ω) and 150 mV typical at 10 mA with 5 V (15 Ω, the lowest – assumption: no part at 2–3.2 V below the typical one at 5 V); 50 Ω between them an assumption. DIS carries D1's current; OUT is weaker at a low supply (2 kΩ high, 400 Ω low at 1.5 V) and drives only the timing resistor's µA – the model has one output resistance for both (M-1, finding 1)"
  ],
  "compliance": {
   "rohs": true,

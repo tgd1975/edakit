@@ -17,7 +17,7 @@ status = "accepted"
 [[requirement]]
 id = "R-1"
 text = "With SW1 on, D1 carries at least 0.5 mA while it is lit – from two fresh alkaline AAA cells (3.2 V) down to two used to 1.1 V each (2.2 V)."
-source = "N-1; D-2, changed by D-3: 0.5 mA through a low-current LED (APTD2012LSURCK, 60–150 mcd at 2 mA) is more light than 1 mA through an ordinary red 0805 LED; no red LED reaches 1 mA at 2.0 V by its datasheet without breaking R-4 (sim.json, cell 'used')"
+source = "N-1; D-2, changed by D-3: 0.5 mA through a low-current LED (APTD2012LSURCK, 60–150 mcd at 2 mA) is brighter on axis than 1 mA through an ordinary red 0805 LED, in a narrower 40° beam; no red LED reaches 1 mA at 2.0 V by its datasheet without breaking R-4 (sim.json, cell 'used')"
 from = ["N-1"]
 binding = "must"
 verify = [{ rows = "SIM.state * D1 LED on" },
@@ -45,8 +45,8 @@ status = "accepted"
 
 [[requirement]]
 id = "R-4"
-text = "With SW1 on and D1 lit, the board draws at most 5 mA from the cells."
-source = "N-2: the current budget while the LED is lit"
+text = "With SW1 on and D1 lit, the board draws at most 8 mA from the cells."
+source = "N-2: the current budget while the LED is lit; D-9: 8 mA instead of 5 mA – R-1 and 5 mA cannot both hold with a series resistor once U1's discharge pin is as strong as it is at 3.2 V"
 from = ["N-2"]
 binding = "should"
 verify = [{ rows = "LIM.i */on/* BT1 current from the cell (expected in this load)" }]
