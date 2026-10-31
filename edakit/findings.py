@@ -21,6 +21,7 @@ itself keyed by "code" or "code place" (circuit scope: part of the circuit hash)
 from __future__ import annotations
 
 import json
+import re
 from collections import Counter, defaultdict
 from dataclasses import asdict, dataclass, field
 
@@ -28,6 +29,19 @@ from . import catalog
 
 SHOWN = 5          # findings shown per code; the rest is counted (and in the JSON file)
 ORDER = {"error": 0, "pending": 1, "warning": 2, "note": 3}
+
+
+def names_place(text, place):
+    """Whether a finding's text names its place: as it is written, or a pin "U1.9" by its word, "U1.PD6 (9)"
+    (Design.pin_text) – then the place is not put in front of the text."""
+    if place in text:
+        return True
+    des, dot, num = place.partition(".")
+    num = num.split(" ", 1)[0]               # a place "U9.2 (CSB)"
+    if not (dot and num):
+        return False
+    d, n = re.escape(des), re.escape(num)
+    return re.search(rf"(?<![\w.]){d}\.(?:{n}(?![\w.])|\S+ \({n}\))", text) is not None
 
 
 @dataclass
@@ -58,7 +72,7 @@ class Finding:
 
     def line(self):
         where = f"{self.stage}  " + (f"[{self.scenario}] " if self.scenario else "")
-        out = where + (self.text if self.place in self.text else f"{self.place}: {self.text}")
+        out = where + (self.text if names_place(self.text, self.place) else f"{self.place}: {self.text}")
         if self.source:
             out += f"   ({self.source})"
         if self.fix:

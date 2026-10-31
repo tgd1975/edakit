@@ -1,11 +1,12 @@
 """What the tests read of edakit check: its findings as (code, text) pairs by severity."""
 
 from edakit import engines
+from edakit.findings import names_place
 
 
 def said(f):
     """'Q5: no resistor from …' – the place and what was found, as edakit check prints them."""
-    return f.text if f.place in f.text else f"{f.place}: {f.text}"
+    return f.text if names_place(f.text, f.place) else f"{f.place}: {f.text}"
 
 
 class Checked:

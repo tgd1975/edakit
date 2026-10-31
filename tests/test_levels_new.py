@@ -46,7 +46,7 @@ def test_an_ic_input_left_open(project):
     project.net(g, "LED_LE")["pins"].remove("U2.4")                 # the TLC5916's LE(ED1) into nc
     project.comp(g, "U2")["nc"].append("4")
     project.save_graph(g)
-    assert "U2.4 (LE(ED1)): an input left open (nc) – it floats" in findings(project, "LVL.undefined", "nc")
+    assert "U2.LE(ED1) (4): an input left open (nc) – it floats" in findings(project, "LVL.undefined", "nc")
     part = project.part("C90107")
     part["pins"]["4"]["float_ok"] = True
     project.save_part("C90107", part)

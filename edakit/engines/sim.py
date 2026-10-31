@@ -1037,7 +1037,7 @@ def config_windows(s):
                    and w.get("min_v", -math.inf) <= x <= w.get("max_v", math.inf)]
             expected = "; ".join(f"{w.get('state')} " + (f"{w['min_v']:g}" if "min_v" in w else "") + " … "
                                  + (f"{w['max_v']:g}" if "max_v" in w else "") + " V" for w in ws)
-            s.check("REQ.value", ref, f"{ref} ({p.get('name', num)}) inside one window of its setting"
+            s.check("REQ.value", ref, f"{d.pin_text(ref)} inside one window of its setting"
                     + (f": {hit[0]}" if hit else ""), x, expected, bool(hit), "V",
                     f"pin windows of {s.n.entry_key(des)}", grade="window", on=(("component", des),))
 

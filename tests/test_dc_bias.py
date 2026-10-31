@@ -96,8 +96,8 @@ def test_a_4u7_6v3_0603_falls_below_its_minimum_at_5v(project):
     c2_as(project, KEMET_4U7)
     vsys_needs(project, 2.2e-6)                  # 4.7 µF passes nominal; at 5.5 V 40 % of it is left
     assert findings(project, "bias") == [
-        ("REQ.value", "U1.39 (VSYS): needs a capacitor of at least 2.2 µF to GND – C2 on +5V: 4.7 µF, after DC bias "
-                      "1.864 µF (C2 at 5.5 V)", "warning")]
+        ("REQ.value", "U1.VSYS (39): needs a capacitor of at least 2.2 µF to GND – C2 on +5V: 4.7 µF, after DC "
+                      "bias 1.864 µF (C2 at 5.5 V)", "warning")]
     assert findings(project, "pin") == []        # the nominal value meets it: no REQ.value/pin
 
 
@@ -140,14 +140,14 @@ def test_an_adc_hold_capacitor_counts_after_dc_bias(project):
     project.net(g, "GND")["pins"].append("C8.2")
     project.save_graph(g)
     assert [t for _, t, _ in findings(project, "adc")] == [
-        "U1.31 (VSENSE): source resistance 5 kΩ – the ADC allows 1 kΩ, or a hold capacitor of 4 µF at the pin "
-        "(C8: 3.046 µF after DC bias)"]
+        "U1.GP26_ADC0 (31) on VSENSE: source resistance 5 kΩ – the ADC allows 1 kΩ, or a hold capacitor of 4 µF at "
+        "the pin (C8: 3.046 µF after DC bias)"]
 
 
 def test_a_regulator_that_needs_esr_fails_with_only_a_ceramic(project):
     ldo(project, KEMET_10U)                      # 0.011 Ω at 100 kHz
     assert findings(project, "esr") == [
-        ("REQ.value", "U3.2 (VOUT): needs a capacitor of at least 10 µF with an ESR of 0.3 Ω … 22 Ω to GND – C10 "
+        ("REQ.value", "U3.2: needs a capacitor of at least 10 µF with an ESR of 0.3 Ω … 22 Ω to GND – C10 "
                       "0.011 Ω on V33: none in the window", "warning")]
 
 

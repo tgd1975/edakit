@@ -80,16 +80,16 @@ def test_a_need_with_when_holds_only_in_its_config(project):
     g = project.graph()
     project.comp(g, "U9")["config"] = "vbat_primary"
     project.save_graph(g)
-    assert vbat() == ["U9.14 (VBAT): needs a capacitor of at least 100 nF to GND – VBAT9 has none"]
+    assert vbat() == ["U9.VBAT (14): needs a capacitor of at least 100 nF to GND – VBAT9 has none"]
     project.comp(g, "U9")["config"] = "no_battery"
     project.save_graph(g)
-    assert vbat() == ["U9.14 (VBAT): must be on ground (GND), is on VBAT9"]
+    assert vbat() == ["U9.VBAT (14): must be on ground (GND), is on VBAT9"]
 
 
 def test_parasite_power_puts_vdd_on_ground(project):
     """DS18B20: in parasite power VDD must be grounded (19-7487 Rev 6) – a VDD on 3V3 is reported there only."""
     place(project, "C9753", "U9", {"1": "GND", "2": "OW", "3": "3V3"}, config="parasite")
-    assert ("pin", "U9.3 (VDD): must be on ground (GND), is on 3V3") in findings(project, "REQ.missing", "U9")
+    assert ("pin", "U9.VDD (3): must be on ground (GND), is on 3V3") in findings(project, "REQ.missing", "U9")
     g = project.graph()
     project.comp(g, "U9")["config"] = "external"
     project.save_graph(g)
@@ -102,7 +102,7 @@ def test_a_need_when_connected_leaves_an_unused_pin_alone(project):
     assert not [t for _, t in findings(project, "REQ.missing", "U9") if "Alert" in t]
     place(project, "C49851", "U8", {"6": "3V3", "7": "GND", "3": "ALERT8"})
     assert [t for _, t in findings(project, "REQ.missing", "U8") if "Alert" in t] == [
-        "U8.3 (Alert): needs a pull up to a supply – ALERT8 has none"]
+        "U8.Alert (3): needs a pull up to a supply – ALERT8 has none"]
 
 
 def test_the_interface_config_gives_the_pins_their_roles(project):
