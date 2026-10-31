@@ -18,5 +18,6 @@ input = "reads"
 types = ["output", "power_output"]
 
 [control]                    # a transistor is undefined while its control pin floats: a resistor to these roles
-base = { kinds = ["npn", "pnp"], to = ["emitter"] }
+base = { kinds = ["npn", "pnp"], to = ["emitter", "rail"] }   # rail: a base driven through its resistor by
+                                                           # an output defined at reset
 gate = { kinds = ["nmos", "pmos"], to = ["source", "rail"] }

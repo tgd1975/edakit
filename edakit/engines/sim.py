@@ -460,6 +460,8 @@ def function(s, load, low=None, plugin=None):
         g = v(res, netlist.node(netlist.local_ground(d, name), gnd))
         lo, hi = net.get("v", [0, 0])
         nodes = netlist.net_nodes(d, name)
+        if nodes and all(x not in res and x != "0" for x in nodes):
+            continue        # no element of the netlist touches the net (a header pin, an MCU input): nothing to judge
         xs = [(v(res, x) - g, x) for x in nodes]
         s.q(name, "v_net", max(xs)[0], "V", "", None, "net voltage inside the declared range", lo=min(xs)[0],
             code="LIM.declared", entry=False, lims=[Limit(max=hi, min=lo, eps=tol, source=f"v of net {name} in the "

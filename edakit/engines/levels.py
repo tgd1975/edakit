@@ -65,7 +65,8 @@ def held_nets(d):
 
 
 def undefined_inputs(d):
-    """LVL.undefined: an input with neither a driver nor a pull, or driven only by pins that float at reset."""
+    """LVL.undefined: an input with neither a driver nor a pull – a resistor or a pin's own pull (pull up or down in
+    its parts entry) –, or driven only by pins that float at reset."""
     held = held_nets(d)
     out = []
     for name, net in d.nets.items():
@@ -75,6 +76,8 @@ def undefined_inputs(d):
             continue
         if any(releases(i) for i in infos):
             continue              # outputs that let go: released_nets asks for the pull-up
+        if any(i.get("pull") in ("up", "down") for i in infos):
+            continue              # a pin's own pull resistor (an input's built-in pull-up) holds the net
         on = (("net", name),)
         if not any(defines(t) or reset(t) == "floating" for t in types):
             out.append(Finding("LVL.undefined", "G", name, f"{name}: input without driver or pull resistor", on=on))
@@ -86,7 +89,7 @@ def undefined_inputs(d):
 
 def control_pins(d):
     """LVL.undefined: a transistor whose control pin (base, gate) has no resistor to the roles of [control] – its
-    emitter, its source or a rail."""
+    emitter, its source – or to a rail: a net a pin defines at reset (a push-pull output, a supply, ground)."""
     rails = {name for name, net in d.nets.items() if any(defines(d.pin_info(r).get("type")) for r in net["pins"])}
     held = rails | supply_nets(d)
     out = []
@@ -110,13 +113,16 @@ def control_pins(d):
 
 def contention(d):
     """LVL.contention: two or more pins that drive (catalog/levels.toml [drivers]) on one net – open-drain and
-    tri-state outputs share a line among themselves, a push-pull output shares it with nobody."""
+    tri-state outputs share a line among themselves, a push-pull output shares it with nobody; pins of one part with
+    one name count once."""
     kinds = set(data()["drivers"]["types"])
     out = []
     for name, net in d.nets.items():
         drivers = [r for r in net["pins"] if d.pin_info(r).get("type") in kinds]
         push = [r for r in drivers if not releases(d.pin_info(r))]
-        if len(drivers) > 1 and push:
+        # pins of one part with one name are one terminal (a regulator's VOUT on pin 2 and on its tab)
+        terminals = {(r.split(".", 1)[0], d.pin_info(r).get("name") or r) for r in drivers}
+        if len(terminals) > 1 and push:
             out.append(Finding("LVL.contention", "G", name, f"{name}: several outputs drive this net: {', '.join(drivers)}",
                                on=(("net", name),)))
     return out
