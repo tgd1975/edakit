@@ -35,7 +35,10 @@ def test_check_has_the_accepts_and_nothing_else(example):
 @needs_ngspice
 def test_simulation_gives_the_quoted_currents(example):
     out = simrun.run_all(Design.from_config(example), simrun.load_sim_config(example)[0])
-    assert [c for c in out["checks"] if c["result"] != "pass"] == []
+    assert {(c["id"], c["scenario"], c["item"]) for c in out["checks"] if c["result"] != "pass"} == {
+        ("LIM.i", "fresh/pressed/vf-min", "BT1"), ("LIM.i", "fresh/pressed/vf-max", "BT1"),
+        ("LIM.i", "used/pressed/vf-min", "BT1")}                                 # the cell's 3 mA continuous, D-7
+    assert {c["result"] for c in out["checks"] if c["result"] != "pass"} == {"waived"}   # accepted on BT1
     led = {c["scenario"]: float(c["actual"].split()[0]) for c in out["checks"] if c["check"] == "LED on"}
     assert {c["id"] for c in out["checks"] if c["check"] == "LED on"} == {"SIM.state"}   # R-1's rows
     assert led["used/pressed/vf-max"] == pytest.approx(1.22e-3, rel=0.01)     # R-1, D-2: the least

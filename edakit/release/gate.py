@@ -964,7 +964,9 @@ def write_protocol(cfg, outdir, head, rows, sim, signoff, notes, decision, reaso
         L += ["\nAcceptances that lapsed – a part they name is another one now; judge again and update `parts`, or "
               "remove them:\n", *[f"- `{a['match']}`: {a['lapsed']}" for a in gone]]
     L.append("\n## 4 Accepted in the graph\n")
-    L += [f"- {r['id']} {r['check']}  \n  reason: {r['reason']}" for r in rows if r["result"] == "waived"] or ["None."]
+    L += [f"- {r['id']} {r['check']}  \n  reason: {r['reason']}" for r in rows if r["result"] == "waived"] + [
+        f"- {c['id']} [{c['scenario']}] {c['item']}: {c['check']} {c.get('actual', '')}, expected {c.get('expected', '')}"
+        f"  \n  reason: {c['reason']}" for c in sim["checks"] if c["result"] == "waived"] or ["None."]
     L.append("\n## 5 Open sign-offs\n")
     L += [f"- [ ] {r['check']}" for r in rows if r["result"] == "pending"] or ["None."]
     L.append("\n## 6 Manual checks\n")

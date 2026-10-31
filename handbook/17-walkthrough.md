@@ -298,6 +298,25 @@ LIM.declared – net inside its declared range: 3 error
 
 With VBAT, LED_SW and LED_ANODE declared from −3.3 V it passes: D1 sees 3.2 V in reverse, rated 5 V, and stays dark.
 
+**The cell's current (LIM.i/cell, D-7).** A CR2032 is rated for 3 mA continuous and 15 mA in pulses (Jauch CR 2032
+H2B). With `"i_max_a": 0.003` in the cell states `fresh` and `used`, LIM.i holds the current the cell gives:
+
+```text
+112 comparisons: fail 3, pass 109
+
+LIM.i – current within its limit: 3 warning
+  E  [fresh/pressed/vf-min] BT1: current from the cell 10.7 mA, allowed ≤ 3 mA   (i_max_a of cells.fresh in sim.json)
+  …
+```
+
+SW1 is pressed for a moment, and held longer the cell loses capacity and voltage, nothing worse – the drop is in the
+simulation through the cell's `r`. The finding is accepted on the holder, keyed by its grade, and the gate counts the
+three rows as waived:
+
+```json
+"accept": {"LIM.i/cell": "SW1 is pressed for a moment: while it is held a fresh cell gives up to 10.7 mA, above its 3 mA continuous and below its 15 mA pulse current (Jauch CR 2032 H2B); …"}
+```
+
 **The design hints.** Each HINT note is accepted in the graph with a line – done, or why it does not apply – and the
 reviewer checks the reason:
 
@@ -308,7 +327,7 @@ reviewer checks the reason:
 }
 ```
 
-Now: 0 errors, 3 accepted; 104 simulation comparisons pass.
+Now: 0 errors, 3 accepted; of 112 simulation comparisons 109 pass and 3 are accepted (LIM.i/cell).
 
 ## 17.7 Stock and cost
 

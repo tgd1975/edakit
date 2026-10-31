@@ -21,7 +21,10 @@
      "2": "2"
     },
     "notes": "Pin 1 = plus, pin 2 = minus (datasheet QJ.BS-6). Soldered by hand: JLCPCB places C70377 only under Standard PCBA (D-4) – its ⊕ end (chamfered corner) on pad 1, at the silkscreen '+'.",
-    "bom": false
+    "bom": false,
+    "accept": {
+     "LIM.i/cell": "SW1 is pressed for a moment: while it is held a fresh cell gives up to 10.7 mA, above its 3 mA continuous and below its 15 mA pulse current (Jauch CR 2032 H2B); held longer it costs capacity and voltage, no harm – the voltage drop is in the simulation by the cell's r (D-7)"
+    }
    },
    {
     "designator": "SW1",

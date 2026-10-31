@@ -5,12 +5,14 @@
     "fresh": {
       "v": 3.2,
       "r": 20,
-      "note": "off-load voltage of a fresh CR2032 at least 3.20 V (CR2032 specification, Farnell 1728774); internal resistance at most 20 Ohm fresh (Rayovac CR2032 S6600072 Issue E, 1 kHz, 10 mA pulse)"
+      "i_max_a": 0.003,
+      "note": "off-load voltage of a fresh CR2032 at least 3.20 V (CR2032 specification, Farnell 1728774); internal resistance at most 20 Ohm fresh (Rayovac CR2032 S6600072 Issue E, 1 kHz, 10 mA pulse); at most 3 mA continuous, 15 mA in pulses (Jauch CR 2032 H2B technical data sheet, 15092025: Max. Continuous Current 3 mA, Max. Pulse Current 15 mA; Murata TCN-CR-002-E gives 20 mA for 2 s pulses and calls more than 10 mA a high drain with a large voltage drop) – the continuous value, a press of SW1 is no pulse of a defined length (D-7)"
     },
     "used": {
       "v": 2.5,
       "r": 40,
-      "note": "Rayovac rates the capacity down to 2.5 V (220 mAh at 15 kOhm); 40 Ohm assumed – the internal resistance rises as the cell empties, no datasheet gives it"
+      "i_max_a": 0.003,
+      "note": "Rayovac rates the capacity down to 2.5 V (220 mAh at 15 kOhm); 40 Ohm assumed – the internal resistance rises as the cell empties, no datasheet gives it; at most 3 mA continuous, 15 mA in pulses (Jauch CR 2032 H2B technical data sheet, 15092025: Max. Continuous Current 3 mA, Max. Pulse Current 15 mA; Murata TCN-CR-002-E gives 20 mA for 2 s pulses and calls more than 10 mA a high drain with a large voltage drop) – the continuous value, a press of SW1 is no pulse of a defined length (D-7)"
     },
     "reversed": {
       "v": -3.2,

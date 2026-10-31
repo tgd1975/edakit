@@ -488,13 +488,13 @@ def function(s, load, low=None, plugin=None):
         s.q(des, "i", max(res.get(src["branch"], 0.0), 0.0), "A", "", des, "current into the supply (fed backwards)",
             code="LIM.backfeed", entry=False,
             lims=[Limit(max=lim, source=f"i_back_max_a of sources.{des} (default the criteria's blocking_max_a)")])
-    for name, cell in meta.get("cells", {}).items():
+    for name, cell in meta.get("cells", {}).items():     # name: the holder – an accept on it reaches its cell's rows
         lim = s.sim["cells"][cell["state"]].get("i_charge_max_a", crit["blocking_max_a"])
-        s.q(name, "i", max(res.get(cell["branch"], 0.0), 0.0), "A", "", None, "current into the cell (charging)",
+        s.q(name, "i", max(res.get(cell["branch"], 0.0), 0.0), "A", "", name, "current into the cell (charging)",
             code="LIM.backfeed", entry=False,
             lims=[Limit(max=lim, source=f"i_charge_max_a of cells.{cell['state']} in sim.json")])
         if (most := s.sim["cells"][cell["state"]].get("i_max_a")) is not None:
-            s.q(name, "i", max(-res.get(cell["branch"], 0.0), 0.0), "A", "", None, "current from the cell", code="LIM.i",
+            s.q(name, "i", max(-res.get(cell["branch"], 0.0), 0.0), "A", "", name, "current from the cell", code="LIM.i",
                 entry=False, grade="cell",
                 lims=[Limit(max=most, source=f"i_max_a of cells.{cell['state']} in sim.json")])
     for des, reg in meta["regs"].items():

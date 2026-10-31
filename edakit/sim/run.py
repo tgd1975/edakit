@@ -581,7 +581,32 @@ def run_all(design, sim, keep=None, plugin=None, routing=None):
                     out["ac"][tag] = curve
     rep = engines.report(found, prof, new.graph, notes=False)
     out["findings"] = [f.to_dict() for f in rep.findings]
+    waive_rows(out, rep.findings)
     return out
+
+
+def waive_rows(out, findings):
+    """The row of a failed comparison whose finding the graph accepts – on its part, its net or the graph, with the
+    reason – is waived, as the gate counts an accepted finding of stages P and G; a scenario whose failures are all
+    accepted is ok. A row is its finding's by code, scenario, place and the check its text starts with."""
+    pool = defaultdict(list)
+    for f in findings:
+        if f.accepted and f.severity != "pending":
+            pool[(f.code, f.scenario, f.place)].append(f)
+    if not pool:
+        return
+    for r in out["checks"]:
+        fs = pool.get((r["id"], r.get("scenario", ""), r.get("item", ""))) if r["result"] == "fail" else None
+        f = next((f for f in fs or () if f.text.startswith(str(r.get("check", "")))), None)
+        if f is not None:
+            fs.remove(f)
+            r["result"], r["reason"] = "waived", f.accepted
+    by_scenario = defaultdict(set)
+    for r in out["checks"]:
+        by_scenario[r.get("scenario")].add(r["result"])
+    for row in out["scenarios"]:
+        if row.get("status") == "fail" and "fail" not in by_scenario.get(row.get("name"), {"fail"}):
+            row["status"] = "warn" if "warn" in by_scenario[row["name"]] else "ok"
 
 
 def load_sim_config(cfg):
