@@ -46,7 +46,8 @@ the handbook's chapters and the reader pages; the reference is chapter 10, chapt
 | | Entry | Guides | Reference |
 | --- | --- | --- | --- |
 | Sentence | at most 20 words on average, none over 35 | at most 25 words on average | fragments allowed in entries and cells |
-| Paragraph | at most four sentences | one idea; a subheading every 80 lines at most | one entry per thing |
+| Paragraph | at most four sentences | one idea, at most 120 words; a subheading every 80 lines at most | one entry per thing |
+| Length | a page of at most two screens; the quickstart longer | a chapter of at most 500 lines; the same statements in a third fewer words than before its trim | as long as the things it lists |
 | Asides | none – a second sentence instead | one per sentence, with the en dash | – |
 | Cross-references | to the glossary and to one guide page, by name | the subject and the number: "the board file (10.2)" | by number and name |
 | Terms | one new term per sentence, linked to the glossary at first use | as the glossary has them | as the glossary has them |
@@ -55,6 +56,20 @@ the handbook's chapters and the reader pages; the reference is chapter 10, chapt
 
 A cross-reference names its subject. "The sign-off file (8.2)" tells a reader who does not know the numbering what is
 there; "(8.2)" alone does not.
+
+## Dense
+
+Every statement once, at the place that owns it. Everywhere else a link, not a paraphrase: the README's command block,
+the commands of the reference (10.5) and `edakit --help` are one list in one place.
+
+- One example where one shows it.
+- No sentence that announces another.
+- No restatement of a code block or a table in prose.
+- No history in a guide.
+
+Short sentences and dense text are not opposites. The words that go are the asides, the repetitions and the
+enumerations, not the statements. A qualification – a number, a condition, an exception – is a statement and stays. A
+shorter wording never trades a meaning: in a section the automation names, the wording gets shorter and nothing leaves.
 
 ## Words
 
@@ -98,6 +113,7 @@ code, block quotes, phrases in quotation marks and section 11.4. In them it coun
 
 - on the entry pages, the average and the longest sentence;
 - a section over 80 lines without a subheading;
+- a chapter of the handbook over 500 lines, and a paragraph over 120 words;
 - a bare cross-reference: a parenthesis of section numbers only at the start of a paragraph or after a punctuation
   mark, or "see 8.2" – whether the word before "(8.2)" is its subject is the review's to judge;
 - "the reference project" and "the user";

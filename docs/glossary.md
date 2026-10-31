@@ -261,6 +261,14 @@ One step of the gate, named by a letter. P checks parts, G the graph, E the simu
 and F the manufacturing files.
 Handbook: [8.1 Stages](../handbook/08-release-gate.md#81-stages).
 
+### Station
+
+One of the two results edakit leads to. The circuit is the graph, its checks, the simulation, the drawn schematic
+and the hand-over. The board is the schematic in the EDA program, the PCB, the manufacturing files and the order. The
+circuit is a result on its own, for a hand-wired build or a drawing in a document.
+Handbook: [6.5 Drawn without EasyEDA](../handbook/06-schematic.md#65-drawn-without-easyeda),
+[14.1 Roles](../handbook/14-design.md#141-roles).
+
 ### Tool chain
 
 The EDA program the boards are drawn in: EasyEDA Pro or KiCad. The key `toolchain` in edakit.toml chooses it.

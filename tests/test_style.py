@@ -1,7 +1,7 @@
 """The countable rules of the style guide (docs/style.md, "What the test counts") on the documentation as
-docs/organisation.md lists it: the entry pages' sentences, sections without a subheading, bare cross-references,
-"the user" and "the reference project" in a page's own sentences, dates outside the history, bold terms the glossary
-does not have. It reads documentation only.
+docs/organisation.md lists it: the entry pages' sentences, sections without a subheading, chapters over 500 lines and
+paragraphs over 120 words, bare cross-references, "the user" and "the reference project" in a page's own sentences,
+dates outside the history, bold terms the glossary does not have. It reads documentation only.
 
 A page that does not meet a rule today stands in RED: its test is expected to fail and fails once the page meets the
 rule, so that the page leaves RED (steps D.2 and D.5 of docs/concepts/new/documentation.md). A new page meets every
@@ -20,6 +20,8 @@ DATED = ("handbook/15-regulatory.md",               # the state of the law the r
          "examples/coin-cell-led/docs/decisions.md")  # a decision log: each decision with its day
 QUOTED = ("11.4",)                                  # the working agreements: the hook reads them, their words stay
 SECTION_LINES = 80
+CHAPTER_LINES = 500                        # a chapter of the handbook
+PARAGRAPH_WORDS = 120
 ENTRY_MEAN, ENTRY_MAX = 20, 35
 MONTHS = "January|February|March|April|May|June|July|August|September|October|November|December"
 DATE = re.compile(rf"\b20\d\d-\d\d-\d\d\b|\b(?:\d{{1,2}}(?:–\d{{1,2}})? )?(?:{MONTHS}) 20\d\d\b")
@@ -66,15 +68,25 @@ def terms():
     return out | {t + "s" for t in out}
 
 
-def sentences(text):
-    """The prose sentences of a page: no headings, tables, HTML or list markers; split at . ! ? before a capital."""
+def paragraphs(text):
+    """The prose paragraphs of a page, a list item each on its own: no headings, tables, HTML or list markers."""
     prose = []
     for para in re.split(r"\n\s*\n", text):
         lines = [ln for ln in para.splitlines() if ln.strip() and not ln.lstrip().startswith(("#", "|", "<", "!!!"))]
-        if lines:
-            prose.append(" ".join(re.sub(r"^\s*(?:[-*]|\d+\.)\s+", "", ln) for ln in lines))
+        items = []
+        for ln in lines:
+            if re.match(r"\s*(?:[-*]|\d+\.)\s+", ln) or not items:
+                items.append(re.sub(r"^\s*(?:[-*]|\d+\.)\s+", "", ln))
+            else:
+                items[-1] += " " + ln.strip()
+        prose += items
+    return prose
+
+
+def sentences(text):
+    """The prose sentences of a page, split at . ! ? before a capital."""
     out = []
-    for p in prose:
+    for p in paragraphs(text):
         out += [s for s in re.split(r"(?<=[.!?])\s+(?=[A-Z\"“(*`])", p) if re.search(r"\w", s)]
     return out
 
@@ -99,6 +111,16 @@ def long_sections(page, text):
     starts.append(len(lines))
     return [f"line {a + 1}: {b - a} lines without a subheading (at most {SECTION_LINES})"
             for a, b in zip(starts, starts[1:]) if b - a > SECTION_LINES]
+
+
+def long_chapter(page, text):
+    n = len(text.splitlines())
+    return [f"{n} lines (at most {CHAPTER_LINES})"] if n > CHAPTER_LINES else []
+
+
+def long_paragraphs(page, text):
+    words = [len(re.findall(r"[\w'’-]+", p)) for p in paragraphs(own(text))]
+    return [f"a paragraph of {n} words (at most {PARAGRAPH_WORDS})" for n in words if n > PARAGRAPH_WORDS]
 
 
 def bare_references(page, text):
@@ -146,6 +168,8 @@ def bold_terms(page, text):
 RULES = {                                            # rule: (check, the pages it holds)
     "sentences": (long_sentences, lambda pages: [p for p in pages if p in ENTRY]),
     "sections": (long_sections, lambda pages: pages),
+    "chapters": (long_chapter, lambda pages: [p for p in pages if re.match(r"handbook/\d\d-", p)]),
+    "paragraphs": (long_paragraphs, lambda pages: pages),
     "references": (bare_references, lambda pages: pages),
     "words": (words_from_inside, lambda pages: pages),
     "dates": (dates, lambda pages: pages),
@@ -159,6 +183,11 @@ RED = {
     "sections": {f"handbook/{c}.md" for c in ("03-hardware-graph", "04-parts-database", "05-simulation", "07-pcb",
                                               "08-release-gate", "10-reference", "11-working-with-claude",
                                               "14-design", "17-walkthrough")},
+    "chapters": {f"handbook/{c}.md" for c in ("03-hardware-graph", "04-parts-database", "05-simulation", "07-pcb",
+                                              "08-release-gate", "10-reference", "17-walkthrough")},
+    "paragraphs": {"README.md", "examples/coin-cell-led/docs/decisions.md"} | {f"handbook/{c}.md" for c in (
+        "01-approach", "02-setup", "03-hardware-graph", "04-parts-database", "05-simulation", "06-schematic", "07-pcb",
+        "08-release-gate", "10-reference", "14-design", "15-regulatory", "16-kicad", "17-walkthrough")},
     "references": set(),
     "words": {"README.md"} | {f"handbook/{c}.md" for c in (
         "01-approach", "03-hardware-graph", "04-parts-database", "06-schematic", "07-pcb", "08-release-gate",
@@ -194,6 +223,9 @@ def test_the_rules_find_what_they_count():
     assert long_sentences("x", " ".join(["word"] * 40) + ".") != []
     assert long_sentences("x", "A short one. Another short one.") == []
     assert long_sections("x", "# A\n" + "text\n" * 90) != [] and long_sections("x", "# A\n" + "x\n" * 10) == []
+    assert long_chapter("x", "x\n" * 501) != [] and long_chapter("x", "x\n" * 500) == []
+    assert long_paragraphs("x", " ".join(["word"] * 121)) != []
+    assert long_paragraphs("x", "- " + " ".join(["word"] * 100) + "\n- " + " ".join(["word"] * 100)) == []
     assert long_sections("x", "# A\n```\n" + "# not a heading\n" * 90 + "```\n") != []
     assert bare_references("x", "The gate stops. (8.2) And see 7.4.") == ["line 1: (8.2)", "line 1: see 7.4"]
     assert bare_references("x", "the sign-off file (8.2), 0.2 mm, steps 2.1 to 2.3") == []
