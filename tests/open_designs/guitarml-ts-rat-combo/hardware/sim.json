@@ -1,0 +1,118 @@
+{
+ "about": "9 V at the DC jack J1 (centre negative). The order switch S1 puts the TS first (throw a) or the Rat first (throw b); each footswitch is on in throw a (the effect and its LED) and bypasses in throw b. Pots at half. Values with 'note' are assumptions.",
+ "ambient_c": 25,
+ "sources": {
+  "J1": {
+   "plus": "2",
+   "minus": "1",
+   "r_ohm": 1.0,
+   "note": "a 9 V pedal supply, centre negative, behind its plug and lead: 1 Ω source resistance (assumed)"
+  }
+ },
+ "supplies": {
+  "9v": {
+   "J1": 9.0
+  }
+ },
+ "loads": {
+  "both_on_ts_first": {
+   "about": "both effects on, the TS first",
+   "gpio": {},
+   "leds_on": [
+    "D10",
+    "D11"
+   ],
+   "throw": {
+    "S1": "throw_a",
+    "SW2": "throw_a",
+    "SW3": "throw_a"
+   }
+  },
+  "both_on_rat_first": {
+   "about": "both effects on, the Rat first",
+   "gpio": {},
+   "leds_on": [
+    "D10",
+    "D11"
+   ],
+   "throw": {
+    "S1": "throw_b",
+    "SW2": "throw_a",
+    "SW3": "throw_a"
+   }
+  },
+  "bypass": {
+   "about": "both footswitches in bypass: input to output through the order switch and the bypass links",
+   "gpio": {},
+   "leds_on": [],
+   "throw": {
+    "S1": "throw_a",
+    "SW2": "throw_b",
+    "SW3": "throw_b"
+   }
+  }
+ },
+ "corners": [
+  "min",
+  "max"
+ ],
+ "spread": [
+  "min",
+  "typ",
+  "max"
+ ],
+ "ac": {
+  "ts_stage": {
+   "about": "the TS from its pad ts_in to ts_out, drive, tone and level at half, a pickup in front (information: no source states the response the design intends; the bounds are the test's from the schematic's values – the gain leg R29/C22 sets the lower knee of the mid hump at 1/(2π·4.7 kΩ·47 nF) = 720 Hz, the tone stage R19/C15 rolls off from 1/(2π·1 kΩ·220 nF) = 723 Hz)",
+   "scenario": "9v/both_on_ts_first/vf-min",
+   "input": "TS_IN",
+   "output": "TS_OUT",
+   "source": {
+    "r_ohm": 6000,
+    "l_h": 2.5,
+    "c_f": 2e-10,
+    "note": "the test's values for a single-coil pickup with its cable, not a product's (FT-18 brings the makers' figures)"
+   },
+   "expect": {
+    "low_hz": {
+     "min": 360,
+     "max": 1440
+    }
+   },
+   "from_hz": 10,
+   "to_hz": 100000,
+   "info": true
+  },
+  "rat_stage": {
+   "about": "the Rat from its pad Rat_in to Rat_out, distortion, filter and volume at half, a pickup in front (information: the bounds are the test's – the filter R12 + half of POT2 with C11 rolls off from 1/(2π·51.5 kΩ·3.3 nF) = 936 Hz)",
+   "scenario": "9v/both_on_ts_first/vf-min",
+   "input": "RAT_IN",
+   "output": "RAT_OUT",
+   "source": {
+    "r_ohm": 6000,
+    "l_h": 2.5,
+    "c_f": 2e-10,
+    "note": "the test's values for a single-coil pickup with its cable, not a product's (FT-18 brings the makers' figures)"
+   },
+   "expect": {
+    "high_hz": {
+     "min": 470,
+     "max": 1900
+    }
+   },
+   "from_hz": 10,
+   "to_hz": 100000,
+   "info": true
+  }
+ },
+ "report": [
+  "VCC",
+  "VREF",
+  "TS_E1",
+  "TS_E2",
+  "RAT_SRC",
+  "RAT_OUT1",
+  "TS_OUT1",
+  "TS_OUT2"
+ ]
+}

@@ -97,9 +97,10 @@ def undefined_inputs(d):
 
 def control_pins(d):
     """LVL.undefined: a transistor whose control pin (base, gate) has no resistor to the roles of [control] – its
-    emitter, its source – or to a rail: a net a pin defines at reset (a push-pull output, a supply, ground)."""
+    emitter, its source – or to a rail: a net a pin defines at reset (a push-pull output, a supply), ground, or a net
+    resistors hold to them (held_nets: a bias divider's middle – the base of an analog stage biased by resistors)."""
     rails = {name for name, net in d.nets.items() if any(defines(d.pin_info(r).get("type")) for r in net["pins"])}
-    held = rails | supply_nets(d)
+    held = rails | supply_nets(d) | {d.ground} | held_nets(d)
     out = []
     for role, c in data()["control"].items():
         for des in d.comps_of_kind(*c["kinds"]):

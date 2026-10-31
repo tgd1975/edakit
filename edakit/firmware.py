@@ -74,15 +74,18 @@ def mcu_of(design, fw):
 
 
 def far_side(design, des, role):
-    """The roles that a switch closes `role` against: a ↔ b, ak ↔ bk, common ↔ throw_a/throw_b."""
+    """The roles that a switch closes `role` against: a ↔ b, ak ↔ bk, common ↔ throw_a/throw_b – within the pole of
+    a switch of several poles (common_2 ↔ throw_a_2/throw_b_2)."""
     if role in ("a", "b"):
         return ["b" if role == "a" else "a"]
     m = re.fullmatch(r"([ab])(\d+)", role or "")
     if m:
         return [("b" if m[1] == "a" else "a") + m[2]]
-    if role == "common":
-        return ["throw_a", "throw_b"]
-    return ["common"] if role in ("throw_a", "throw_b") else []
+    m = re.fullmatch(r"(common|throw_a|throw_b)(_\d+)?", role or "")
+    if not m:
+        return []
+    pole = m[2] or ""
+    return [f"throw_a{pole}", f"throw_b{pole}"] if m[1] == "common" else [f"common{pole}"]
 
 
 class Board:

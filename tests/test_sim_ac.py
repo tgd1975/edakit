@@ -118,6 +118,31 @@ def test_a_source_model_resonates_with_its_load():
         assert abs(f[peak] - 1 / (2 * math.pi * math.sqrt(1.0 * 1e-9))) / 5033 < 0.1 and g[peak] > 3
 
 
+@ngspice
+def test_a_run_of_information_reports_what_it_measured_and_finds_nothing():
+    """`info: true` (as a transient run's): the run's rows are information – the response the test computed from the
+    schematic where no source states what the design intends (the open designs' pedals, FT-21). A missed expectation
+    is a row marked info, no SIM.response finding; without info the same run fails."""
+    with tempfile.TemporaryDirectory() as t:
+        p = write_one(f"{t}/guitar", "guitar")
+        sim = p.sim()
+        sim["ac"]["output_coupling"]["expect"] = {"gain_db": [{"at_hz": 1000, "min": 10}]}   # the follower: 0 dB
+        out = simrun.run_all(Design.from_config(p.config()), sim)
+        assert {r["result"] for r in out["checks"] if r["id"] == "SIM.response"} == {"fail"}
+        assert [f for f in out["findings"] if f["code"] == "SIM.response"]
+        sim["ac"]["output_coupling"]["info"] = True
+        out = simrun.run_all(Design.from_config(p.config()), sim)
+        rows = [r for r in out["checks"] if r["id"] == "SIM.response"]
+        assert rows and {r["result"] for r in rows} == {"info"} and rows[0]["actual"].endswith("dB")
+        assert not [f for f in out["findings"] if f["code"] == "SIM.response" and not f.get("data", {}).get("info")]
+
+
+def test_info_is_true_or_false(project):
+    assert list(runs(project, {"r": {**RUN, "info": True}})) == ["r"]
+    with pytest.raises(ac.ACError, match="info"):
+        runs(project, {"r": {**RUN, "info": "yes"}})
+
+
 def test_source_or_source_ohm_not_both(project):
     with pytest.raises(ac.ACError, match="not both"):
         runs(project, {"r": {**RUN, "source_ohm": 10, "source": {"r_ohm": 10}}})

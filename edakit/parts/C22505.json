@@ -1,0 +1,123 @@
+{
+ "lcsc": "C22505",
+ "mpn": "LM301AN",
+ "manufacturer": "Texas Instruments",
+ "kind": "ic",
+ "package": "PDIP-8 (P0008E)",
+ "datasheet": {
+  "url": "https://www.ti.com/lit/ds/symlink/lm101a-n.pdf",
+  "pinout_page": 17,
+  "title": "LM101A/LM201A/LM301A Operational Amplifiers",
+  "revision": "SNOSBS0D (September 1999, revised March 2013)"
+ },
+ "pins": {
+  "1": {
+   "name": "BALANCE/COMPENSATION",
+   "type": "passive",
+   "role": "comp_bal"
+  },
+  "2": {
+   "name": "IN-",
+   "type": "input",
+   "role": "in_n",
+   "v_min_v": 0
+  },
+  "3": {
+   "name": "IN+",
+   "type": "input",
+   "role": "in_p",
+   "v_min_v": 0
+  },
+  "4": {
+   "name": "V-",
+   "type": "ground",
+   "role": "vee"
+  },
+  "5": {
+   "name": "BALANCE",
+   "type": "passive",
+   "role": "balance"
+  },
+  "6": {
+   "name": "OUTPUT",
+   "type": "output",
+   "role": "out"
+  },
+  "7": {
+   "name": "V+",
+   "type": "power_in",
+   "role": "vcc"
+  },
+  "8": {
+   "name": "COMPENSATION",
+   "type": "passive",
+   "role": "comp",
+   "needs": [
+    {
+     "what": "capacitor",
+     "to": "BALANCE/COMPENSATION",
+     "c_min_f": 3e-11,
+     "source": "TI SNOSBS0D: 'compensation with a single 30 pF capacitor' (description); the electrical characteristics apply for C1 = 30 pF (note 1); Figure 17 single-pole compensation CS = 30 pF; minimum values stable only for source resistances below 10 kΩ, strays below 5 pF and loads below 100 pF – else overcompensate (application hints)"
+    }
+   ]
+  }
+ },
+ "values": {
+  "behavior": "opamp",
+  "gain_min_ratio": 1,
+  "vicm_v": [
+   3,
+   -3
+  ],
+  "vout_swing_v": [
+   3,
+   -3
+  ],
+  "iq_a": 0.003
+ },
+ "limits": {
+  "vdd_max_v": 36,
+  "vdd_op_min_v": 10,
+  "vdd_op_max_v": 30,
+  "vin_rel_max_v": 0,
+  "tj_max_c": 100,
+  "t_min_c": 0,
+  "t_max_c": 70,
+  "rth_ja_k_per_w": 135
+ },
+ "hints": [
+  "externally compensated: 30 pF between COMPENSATION (8) and BALANCE/COMPENSATION (1) for unity gain (Figure 17); more where the source resistance exceeds 10 kΩ, the summing junction sees more than 5 pF or the load more than 100 pF",
+  "the electrical characteristics hold for ±5 V ≤ VS ≤ ±15 V (note 1): below a total of 10 V – a 9 V pedal supply behind a diode – the datasheet guarantees nothing"
+ ],
+ "compliance": {
+  "radio": "none",
+  "source": "TI SNOSBS0D: an operational amplifier, no transmitter – read 2026-10-31; RoHS and REACH not read"
+ },
+ "sources": [
+  "TI LM101A/LM201A/LM301A Operational Amplifiers, SNOSBS0D (September 1999, revised March 2013), from TI https://www.ti.com/lit/ds/symlink/lm101a-n.pdf (the LM301A-N's data sheet – ti.com has no lm301a.pdf: /lit/ds/symlink/lm301a.pdf and /product/LM301A answer 404), read 2026-10-31; LCSC C22505 is TI LM301AN, DIP-8 (JLCPCB catalogue 2026-10-31 (edakit part search): Extended Part, no stock; LCSC's product page answers 'Page Not Found')",
+  "pins: Connection Diagrams, Figure 49 (CDIP and PDIP, NAB0008A or P0008E): 1 BALANCE/COMPENSATION, 2 INPUT (inverting), 3 INPUT (non-inverting), 4 V−, 5 BALANCE, 6 OUTPUT, 7 V+, 8 COMPENSATION – read from the drawing; V− typed ground with the role vee",
+  "vdd_max_v 36: Absolute Maximum Ratings, LM301A supply voltage ±18 V; vdd_op_min_v 10, vdd_op_max_v 30: Electrical Characteristics note 1, the specifications apply for ±5 V ≤ VS ≤ ±15 V (LM301A) – entered as the total supply",
+  "vin_rel_max_v 0 and v_min_v 0 on the inputs: Absolute Maximum Ratings input voltage ±15 V, note 3: for supply voltages less than ±15 V the absolute maximum input voltage is equal to the supply voltage",
+  "vicm_v [3, −3]: Electrical Characteristics, LM301A input voltage range ±12 V minimum at VS = ±15 V (typical +15, −13) – 3 V from each rail; vout_swing_v [3, −3]: output voltage swing ±12 V minimum at ±15 V, RL = 10 kΩ",
+  "iq_a 0.003: supply current 3.0 mA maximum (1.8 typical) at VS = ±15 V, 25 °C",
+  "gain_min_ratio 1 with the need of 30 pF between pins 8 and 1: the description ('compensation with a single 30 pF capacitor'), note 1 (C1 = 30 pF), Figure 17 single-pole compensation CS = 30 pF",
+  "tj_max_c 100: Absolute Maximum Ratings, LM301A TJ max (P0008E); rth_ja_k_per_w 135: θJA typical, P0008E; t_min_c 0, t_max_c 70: operating ambient range of the LM301A"
+ ],
+ "notes": "General-purpose op-amp, externally compensated – the Rat's gain stage (30 pF across pins 8 and 1). Library draft.",
+ "verified": {
+  "by": "Claude (datasheet check, library draft)",
+  "date": "2026-10-31",
+  "datasheet": "TI SNOSBS0D (revised March 2013)",
+  "datasheet_sha256": "a584c78ba09e89f25a1e3b4e98b90a5795ac6dd189274cffab95eb17923a1e02",
+  "checked": [
+   "Figure 49: PDIP pinout 1 BALANCE/COMPENSATION, 2 IN−, 3 IN+, 4 V−, 5 BALANCE, 6 OUTPUT, 7 V+, 8 COMPENSATION",
+   "Absolute Maximum Ratings: ±18 V, input ±15 V or the supply below it, TJ 100 °C, θJA 135 °C/W (P0008E)",
+   "Electrical Characteristics: VICR ±12 V min, VOUT ±12 V min (10 kΩ), IS 3.0 mA max – for ±5 V ≤ VS ≤ ±15 V, C1 = 30 pF"
+  ],
+  "open": [
+   "the data sheet is the LM301A-N's; TI lists no other LM301A data sheet",
+   "common-mode range and output swing are given at ±15 V only; the model takes the same distance from the rails at 9 V",
+   "RoHS/REACH not read"
+  ]
+ }
+}

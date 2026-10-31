@@ -15,6 +15,14 @@ published; a finding that appears or goes is a change in edakit to look at, not 
   esp32-devkitc-v4                Espressif ESP32-DevKitC V4, schematic Rev V4 (2017-12-06),
                                    https://dl.espressif.com/dl/schematics/esp32_devkitc_v4-sch.pdf – no licence stated;
                                    the circuit's facts transcribed: usb, radio and power in one board
+  guitarml-classic-boost           GuitarML's Classic Boost v2 (LPB-1 style), KiCad schematic ClassicBoost_1590a/
+                                   ClassicBoost_v2.kicad_sch at commit e2fa7e1 of
+                                   https://github.com/GuitarML/GuitarPedalPCBs, MIT – one 2N5088 common-emitter stage,
+                                   the jacks and the 3PDT footswitch wired by hand to pads
+  guitarml-ts-rat-combo            GuitarML's Tubescreamer/Rat combo, KiCad schematic TS_Rat_Combo_1590bb/
+                                   jack_pedal.kicad_sch at commit e2fa7e1 of the same repository, MIT – a TS808-style
+                                   stage (TL072, 2SC1815 followers) and a Rat-style stage (LM301A, 2N5458 follower), a
+                                   3PDT order switch on the board, two footswitches wired by hand to pads
   sparkfun-logic-level-converter   SparkFun Logic Level Converter Bi-Directional, Rev V01 (2013-09-26), CC BY-SA 3.0,
                                    https://cdn.sparkfun.com/datasheets/BreakoutBoards/Logic_Level_Bidirectional.pdf –
                                    four BSS138 channels, both directions simulated
@@ -212,3 +220,91 @@ def test_the_corne_v3_scan_reads_through_the_diodes_and_ghosts_without_them(tmp_
         g["nets"] = [n for n in g["nets"] if not n["name"].endswith("_A")]
     d, cfg = v3_graph(tmp_path / "bare", no_diodes)
     assert ("col1", "fail") in scan(d, cfg, "ghost_row1")
+
+
+# --- the guitar pedals (GuitarML/GuitarPedalPCBs, decision 21) --------------------------------------------------------
+COMBO, BOOST = "guitarml-ts-rat-combo", "guitarml-classic-boost"
+
+
+def changed(name, tmp_path, change):
+    """The design copied to tmp_path, its graph changed by change(graph) – the Design and the project's config."""
+    cfg = copy(name, tmp_path)
+    f = tmp_path / name / "hardware" / "graph.json"
+    g = json.loads(f.read_text(encoding="utf-8"))
+    change(g["graph"])
+    f.write_text(json.dumps(g, indent=1), encoding="utf-8")
+    cfg = config.load(tmp_path / name / "edakit.toml")
+    return Design.from_config(cfg), cfg
+
+
+@pytest.mark.parametrize("name", [COMBO, BOOST])
+def test_the_pedals_carry_the_mit_notice_and_name_their_changes(name):
+    """MIT asks for the copyright and permission notice with substantial portions; the repository, its commit and the
+    changes are named, and the reading of the licence is no legal advice."""
+    text = " ".join((DESIGNS / name / "README.md").read_text(encoding="utf-8").split())
+    assert "Copyright (c) 2023 Keith Bloemer" in text and "Permission is hereby granted" in text
+    assert "e2fa7e1" in text and "Changes:" in text and "not legal advice" in text
+    toml = tomllib.loads((DESIGNS / name / "edakit.toml").read_text(encoding="utf-8"))
+    assert toml["project"]["domains"] == ["guitar"] and toml["boards"]["wiring"]["wired"] is True
+
+
+def sim_rows(d, cfg, loads=None):
+    from edakit.sim import run as simrun
+    sim = engines.load_sim(cfg)
+    if loads:
+        sim["loads"] = {k: v for k, v in sim["loads"].items() if k in loads}
+        sim.pop("ac", None)
+    return simrun.run_all(d, sim)
+
+
+@pytest.mark.skipif(not shutil.which("ngspice"), reason="ngspice not installed")
+def test_the_combo_s_c19_is_reversed_and_turned_round_it_passes(tmp_path):
+    """C19, the TS's output electrolytic: its plus (pad 1 of CP_Radial) at ts_out, 0 V through R27, its minus at Q2's
+    emitter through R26 – 3 V reverse in every state. Turned round, LIM.v/polarized is quiet."""
+    d, cfg = changed(COMBO, tmp_path / "as", lambda g: None)
+    out = sim_rows(d, cfg, ["bypass"])
+    rev = [r for r in out["checks"] if r["item"] == "C19" and r["check"] == "reverse voltage"]
+    assert rev and {r["result"] for r in rev} == {"fail"}
+    assert all(2.9 < float(r["actual"].split()[0]) < 3.5 for r in rev)
+
+    def turn(g):
+        for n in g["nets"]:
+            n["pins"] = [{"C19.1": "C19.2", "C19.2": "C19.1"}.get(p, p) for p in n["pins"]]
+    d, cfg = changed(COMBO, tmp_path / "turned", turn)
+    out = sim_rows(d, cfg, ["bypass"])
+    assert {r["result"] for r in out["checks"] if r["item"] == "C19" and r["check"] == "reverse voltage"} == {"pass"}
+
+
+def joined(d, cfg, load):
+    """The pairs of nets the switch S1 joins in a load of the combo – from the netlist's elements."""
+    from edakit.sim import netlist
+    sim = engines.load_sim(cfg)
+    sc = {"name": load, "supply": sim["supplies"]["9v"], "load": sim["loads"][load], "corner": "min"}
+    _, meta = netlist.build(d, sim, sc)
+    node = {netlist.node(d.pin_net[r], d.ground): n.rsplit("__", 1)[0] for n in d.nets for r in d.nets[n]["pins"]}
+    return {frozenset(node[x] for x in el["nodes"]) for el in meta["elements"]["S1"]}
+
+
+def test_the_order_switch_puts_either_effect_first(tmp_path):
+    """S1, the 3PDT on the board: throw a sends the input into the TS, the TS's return into the Rat and the Rat's
+    return out; throw b the other way round – every pole with the actuator (a switch of three poles)."""
+    d, cfg = changed(COMBO, tmp_path, lambda g: None)
+    assert joined(d, cfg, "both_on_ts_first") == {frozenset({"IN", "TS_SEND"}), frozenset({"TS_RTN", "RAT_SEND"}),
+                                                  frozenset({"RAT_RTN", "OUT"})}
+    assert joined(d, cfg, "both_on_rat_first") == {frozenset({"IN", "RAT_SEND"}), frozenset({"RAT_RTN", "TS_SEND"}),
+                                                   frozenset({"TS_RTN", "OUT"})}
+
+
+@pytest.mark.skipif(not shutil.which("ngspice"), reason="ngspice not installed")
+def test_the_spread_moves_the_jfet_follower_by_volts_and_the_boost_by_half_a_volt(tmp_path):
+    """FT-17's corners on the pedals: the 2N5458's IDSS 2 … 9 mA with VGS(off) −1 … −7 V put the Rat's source follower
+    anywhere between under 1 V and over 5 V; the 2N5088's hFE 300 … 900 moves the boost's collector by about half a
+    volt around 5.2 V – the divider holds it."""
+    d, cfg = changed(COMBO, tmp_path / "combo", lambda g: None)
+    src = {s["name"].rsplit("/", 1)[-1]: s["nets"]["RAT_SRC"] for s in sim_rows(d, cfg, ["bypass"])["scenarios"]
+           if s["name"].startswith("9v/bypass/vf-min")}
+    assert src["spread-min"] < 1.0 and src["spread-max"] > 5.0 and src["spread-min"] < src["vf-min"] < src["spread-max"]
+    d, cfg = changed(BOOST, tmp_path / "boost", lambda g: None)
+    col = {s["name"].rsplit("/", 1)[-1]: s["nets"]["COL"] for s in sim_rows(d, cfg, ["on"])["scenarios"]
+           if s["name"].startswith("9v/on/vf-min")}
+    assert 4.8 < col["spread-max"] < col["vf-min"] < col["spread-min"] < 5.8

@@ -1,0 +1,74 @@
+{
+ "lcsc": "C232461",
+ "mpn": "1N5817RLG",
+ "manufacturer": "onsemi",
+ "kind": "diode",
+ "package": "axial, case 59 (DO-41)",
+ "datasheet": {
+  "url": "https://www.onsemi.com/pdf/datasheet/1n5817-d.pdf",
+  "pinout_page": 1,
+  "title": "1N5817, 1N5818, 1N5819 – Axial Lead Rectifiers",
+  "revision": "1N5817/D Rev. 11 (August 2021)"
+ },
+ "pins": {
+  "1": {
+   "name": "K",
+   "type": "passive",
+   "role": "cathode"
+  },
+  "2": {
+   "name": "A",
+   "type": "passive",
+   "role": "anode"
+  }
+ },
+ "values": {
+  "vf_v": 0.32,
+  "vf_at_a": 0.1,
+  "ir_a": 0.001,
+  "ir_at_v": 20
+ },
+ "limits": {
+  "vr_max_v": 20,
+  "if_max_a": 1.0,
+  "ifsm_max_a": 25,
+  "rth_ja_k_per_w": 80,
+  "tj_max_c": 125,
+  "t_min_c": -65
+ },
+ "lead": {
+  "*": {
+   "shape": "round",
+   "a_mm": 0.86,
+   "tol_mm": null,
+   "length_mm": 25.4,
+   "source": "onsemi 1N5817/D Rev. 11, case 59 outline: lead diameter D 0.71–0.86 mm (the maximum entered), lead length K 25.40 mm min"
+  }
+ },
+ "spice": {
+  "model": ".model D1N5817 D(IS=4.2e-7 N=1 RS=0.09 BV=24 IBV=1m)"
+ },
+ "sources": [
+  "onsemi 1N5817, 1N5818, 1N5819 Axial Lead Rectifiers, 1N5817/D Rev. 11 (August 2021), from onsemi https://www.onsemi.com/pdf/datasheet/1n5817-d.pdf, read 2026-10-31; LCSC C232461 is onsemi 1N5817RLG, DO-41 (JLCPCB catalogue 2026-10-31 (edakit part search): Extended Part, no stock). The designs name '1N5817' on a DO-35 footprint (Diode_THT:D_DO-35_SOD27_P7.62mm_Horizontal, 0.8 mm holes)",
+  "pins 1 = cathode, 2 = anode: the designs' symbol Device:D (Sim.Pins 1=K 2=A); p. 1: cathode indicated by the polarity band",
+  "vr_max_v 20: p. 2 VRRM/VRWM/VR of the 1N5817 (VRSM 24 V); if_max_a 1.0: average rectified forward current IO; ifsm_max_a 25: one-cycle surge; tj_max_c 125, t_min_c −65: operating junction temperature with reverse voltage applied; rth_ja_k_per_w 80: p. 2 thermal characteristics",
+  "vf_v 0.32 at 0.1 A: p. 2 maximum instantaneous forward voltage of the 1N5817 (0.45 V at 1 A, 0.75 V at 3 A); ir_a 1 mA at 20 V: maximum reverse current at rated DC voltage, 25 °C (10 mA at 100 °C)",
+  "lead: case 59 outline, D 0.71–0.86 mm, K ≥ 25.40 mm",
+  "spice: assumption – fitted by Claude to the maximum forward voltages of p. 2, no manufacturer model read: N 1, IS 0.42 µA from 0.32 V at 0.1 A, RS 0.09 Ω between the points at 1 A and 3 A (0.47 V and 0.68 V against 0.45 V and 0.75 V); BV 24 V (VRSM) at 1 mA (IR at 20 V)"
+ ],
+ "notes": "Schottky rectifier: the pedals' reverse-polarity diode in series with the 9 V input. Open-design transcription.",
+ "verified": {
+  "by": "Claude (datasheet check, open-design transcription)",
+  "date": "2026-10-31",
+  "datasheet": "onsemi 1N5817, 1N5818, 1N5819 Axial Lead Rectifiers, 1N5817/D Rev. 11 (August 2021)",
+  "datasheet_sha256": "9555b32af26ab719b251801bc55f814552cd59540527d4fc302767d5cab909b4",
+  "checked": [
+   "p. 2: VRRM 20 V, IO 1.0 A, IFSM 25 A, TJ −65 … 125 °C, RθJA 80 °C/W",
+   "p. 2: vF ≤ 0.32 / 0.45 / 0.75 V at 0.1 / 1 / 3 A; IR ≤ 1 mA at 20 V",
+   "case 59: lead 0.71–0.86 mm"
+  ],
+  "open": [
+   "SPICE model fitted to the maximum forward voltages: the drop at milliamperes is pessimistic"
+  ]
+ }
+}

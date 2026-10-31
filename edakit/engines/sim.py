@@ -17,7 +17,7 @@ from collections import defaultdict
 
 from .. import catalog
 from ..catalog import table
-from ..circuit import is_number, limits, polarized, relay_sets, values
+from ..circuit import is_number, limits, polarized, relay_sets, switch_sets, values
 from ..findings import Finding
 from ..sim import netlist, strip
 from .limits import CODE, compare
@@ -937,7 +937,8 @@ def pd_shunts(s):
 
 def signal_path_contacts(s):
     """{designator: [{net: pin}, …]} of the switches, buttons, relays and pots whose contacts have both sides in a
-    signal path (nets with signal or instrument) – one group per contact set (a DPDT relay's two sets apart)."""
+    signal path (nets with signal or instrument) – one group per contact set (a DPDT relay's two sets apart, a 3PDT
+    switch's three poles)."""
     if getattr(s, "_signal_contacts", None) is not None:
         return s._signal_contacts
     d, out = s.d, {}
@@ -949,6 +950,8 @@ def signal_path_contacts(s):
             continue
         if kind == "relay":           # each contact set apart: a DPDT's two sets sit in two signal paths
             groups = [sorted(n for nums in roles.values() for n in nums) for roles in relay_sets(part).values()]
+        elif kind == "switch" and len(switch_sets(part)) > 1:     # each pole apart: a 3PDT's poles, three paths
+            groups = [sorted(n for nums in roles.values() for n in nums) for roles in switch_sets(part).values()]
         else:
             groups = [list((part.get("pins") or {}))]
         found = []
@@ -956,6 +959,8 @@ def signal_path_contacts(s):
             on = {}
             for num in group:
                 net = d.pin_net.get(f"{des}.{num}")
+                if net and net not in d.nets:      # a net a cable runs through: its node on this board, 'IN__main'
+                    net = net.rsplit("__", 1)[0]
                 if net in signal:
                     on.setdefault(net, num)
             if len(on) >= 2:

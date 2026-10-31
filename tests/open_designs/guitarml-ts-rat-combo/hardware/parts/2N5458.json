@@ -1,0 +1,76 @@
+{
+ "mpn": "2N5458",
+ "manufacturer": "onsemi",
+ "kind": "njfet",
+ "package": "TO-92 (TO-226), case 29, style 5",
+ "datasheet": {
+  "url": "https://www.onsemi.com/pdf/datasheet/2n5457-d.pdf",
+  "pinout_page": 1,
+  "title": "2N5457, 2N5458 – JFETs – General Purpose, N-Channel – Depletion",
+  "revision": "2N5457/D Rev. 6 (February 2010)"
+ },
+ "pins": {
+  "1": {
+   "name": "D",
+   "type": "passive",
+   "role": "drain"
+  },
+  "2": {
+   "name": "S",
+   "type": "passive",
+   "role": "source"
+  },
+  "3": {
+   "name": "G",
+   "type": "passive",
+   "role": "gate"
+  }
+ },
+ "values": {
+  "idss_a": [
+   0.002,
+   0.006,
+   0.009
+  ],
+  "vgs_off_v": [
+   -1.0,
+   null,
+   -7.0
+  ]
+ },
+ "limits": {
+  "vds_max_v": 25,
+  "vdg_max_v": 25,
+  "vgs_max_v": 25,
+  "ig_max_a": 0.01,
+  "p_max_w": 0.31,
+  "tj_max_c": 135,
+  "t_min_c": -65
+ },
+ "spice": {
+  "model": ".model J2N5458 NJF(VTO=-4.28 BETA=0.327m LAMBDA=0.0017)"
+ },
+ "sources": [
+  "onsemi 2N5457, 2N5458 JFETs – General Purpose, 2N5457/D Rev. 6 (February 2010), from onsemi https://www.onsemi.com/pdf/datasheet/2n5457-d.pdf (onsemi's 2N5458 address /pdf/datasheet/2n5458-d.pdf leads to the documentation page with 'notFound'; 2N5457/D covers both), read 2026-10-31. No LCSC part of onsemi: the catalogue lists only Central Semiconductor's 2N5458 PBFREE (C29630615, no stock), whose host is not reachable from here – the entry is named by its MPN",
+  "pins 1 drain, 2 source, 3 gate: p. 1 (1 DRAIN, 2 SOURCE, 3 GATE) and p. 6 case 29-10 style 5 (PIN 1 DRAIN, 2 SOURCE, 3 GATE)",
+  "vds_max_v 25, vdg_max_v 25, vgs_max_v 25 (VGSR −25 V: the gate reverse-biased against the source), ig_max_a 0.01, p_max_w 0.31, tj_max_c 135, t_min_c −65: p. 1 maximum ratings",
+  "idss_a 2.0 / 6.0 / 9.0 mA (VDS = 15 V, VGS = 0, pulsed) and vgs_off_v −1.0 … −7.0 V (VDS = 15 V, ID = 10 nA, no typical): p. 2 electrical characteristics of the 2N5458 – the spread corners pair the ends (sim/spread.py)",
+  "spice: assumption – JFET level 1 by Claude from the typical figures of p. 2, no manufacturer model read: IDSS 6.0 mA typical and VGS −3.5 V typical at ID = 200 µA (printed 'mAdc' with the PDF's micro sign; the 2N5457's −2.5 V at 100 µA sits as far below its IDSS) give with the square law VTO −4.28 V and BETA = IDSS / VTO² = 0.327 mA/V²; LAMBDA 0.0017 /V from the output admittance |Yos| 10 µmhos typical at IDSS"
+ ],
+ "notes": "N-channel JFET, TO-92: the Rat's output buffer (a source follower, gate at ground through 1 MΩ, 10 kΩ to ground at the source). IDSS 2 … 9 mA with VGS(off) −1 … −7 V move the source over volts between parts; the spread corners of the simulation show it. Library draft.",
+ "verified": {
+  "by": "Claude (datasheet check, library draft)",
+  "date": "2026-10-31",
+  "datasheet": "onsemi 2N5457/D Rev. 6 (February 2010)",
+  "datasheet_sha256": "d547280c34509502772575b907afb58426da1e4795766b036d3a3e46eefcaf66",
+  "checked": [
+   "p. 1: 1 drain, 2 source, 3 gate; VDS 25 V, VDG 25 V, VGSR −25 V, IG 10 mA, PD 310 mW, TJ 135 °C",
+   "p. 2: 2N5458 VGS(off) −1.0 … −7.0 V, IDSS 2.0 / 6.0 / 9.0 mA, |Yfs| 1.5 … 5.5 mmhos",
+   "p. 6: case 29-10 style 5"
+  ],
+  "open": [
+   "SPICE model by Claude from typical figures, not a manufacturer model",
+   "no LCSC number of onsemi's part"
+  ]
+ }
+}

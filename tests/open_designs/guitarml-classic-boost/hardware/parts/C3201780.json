@@ -1,0 +1,74 @@
+{
+ "lcsc": "C3201780",
+ "mpn": "2N5088BU",
+ "manufacturer": "onsemi",
+ "kind": "npn",
+ "package": "TO-92",
+ "datasheet": {
+  "url": "https://www.onsemi.com/pdf/datasheet/2n5088-d.pdf",
+  "pinout_page": 1,
+  "title": "2N5088/2N5089/MMBT5088/MMBT5089 – NPN General Purpose Amplifier",
+  "revision": "Rev A (2001, Fairchild)"
+ },
+ "pins": {
+  "1": {
+   "name": "E",
+   "type": "passive",
+   "role": "emitter"
+  },
+  "2": {
+   "name": "B",
+   "type": "passive",
+   "role": "base"
+  },
+  "3": {
+   "name": "C",
+   "type": "passive",
+   "role": "collector"
+  }
+ },
+ "values": {
+  "hfe_min": 300,
+  "hfe_max": 900,
+  "vce_sat_v": 0.5,
+  "icbo_a": {
+   "25": 5e-08
+  }
+ },
+ "limits": {
+  "vce_max_v": 30,
+  "veb_max_v": 4.5,
+  "ic_max_a": 0.1,
+  "p_max_w": 0.625,
+  "rth_ja_k_per_w": 200,
+  "tj_max_c": 150,
+  "t_min_c": -55
+ },
+ "spice": {
+  "model": ".model Q2N5088 NPN(IS=8.2f BF=600 IKF=0.04)"
+ },
+ "sources": [
+  "Fairchild (onsemi) 2N5088/2N5089/MMBT5088/MMBT5089 NPN General Purpose Amplifier, Rev A (2001), from onsemi https://www.onsemi.com/pdf/datasheet/2n5088-d.pdf (the Fairchild document onsemi serves), read 2026-10-31; LCSC C3201780 is onsemi 2N5088BU, TO-92 (JLCPCB catalogue 2026-10-31 (edakit part search): Extended Part, no stock)",
+  "pins 1 emitter, 2 base, 3 collector: the designs' symbol Transistor_BJT:2N3904 (1 E, 2 B, 3 C) with the value 2N5088 and the footprint TO-92_Inline; p. 1 draws the TO-92's leads E, B, C",
+  "vce_max_v 30, veb_max_v 4.5, ic_max_a 0.1, tj_max_c 150, t_min_c −55: p. 1 absolute maximum ratings of the 2N5088 (VCBO 35 V has no field); p_max_w 0.625, rth_ja_k_per_w 200: p. 1 thermal characteristics",
+  "hfe_min 300: p. 2 DC current gain minimum at 100 µA and 10 mA (350 at 1 mA); hfe_max 900: at 100 µA, the only maximum",
+  "vce_sat_v 0.5: p. 2 at IC = 10 mA, IB = 1.0 mA; icbo_a 50 nA at 25 °C: p. 2 ICBO maximum at VCB = 20 V (the typical curve of p. 4 rises from 0.12 nA at 25 °C to about 2.5 nA at 125 °C – not a maximum, not entered)",
+  "spice: assumption – Gummel-Poon fitted by Claude to the typical curves of p. 4, no manufacturer model read: BF 600 (typical pulsed hFE at 25 °C, about 540 / 600 / 560 at 0.1 / 1 / 10 mA, read from the graph); IS 8.2 fA from the base-emitter on voltage, about 0.66 V at 1 mA (read from the graph); IKF 0.04 A for the fall of the gain above 10 mA"
+ ],
+ "notes": "High-gain, low-noise NPN in TO-92: the Classic Boost's single common-emitter stage. Open-design transcription.",
+ "verified": {
+  "by": "Claude (datasheet check, open-design transcription)",
+  "date": "2026-10-31",
+  "datasheet": "Fairchild (onsemi) 2N5088/2N5089/MMBT5088/MMBT5089 NPN General Purpose Amplifier, Rev A (2001)",
+  "datasheet_sha256": "09f56fcc98024bef153eaf9c05b318e3ffc78fbb1b70e1f993a6d8ce8c4a28c7",
+  "checked": [
+   "p. 1: VCEO 30 V, VCBO 35 V, VEBO 4.5 V, IC 100 mA, TJ 150 °C, PD 625 mW, RθJA 200 °C/W",
+   "p. 2: hFE 300–900 (100 µA), ≥ 350 (1 mA), ≥ 300 (10 mA); ICBO ≤ 50 nA (20 V); VCE(sat) ≤ 0.5 V",
+   "p. 4: typical hFE and VBE(on) curves"
+  ],
+  "open": [
+   "SPICE model fitted by Claude to the typical curves, not a manufacturer model",
+   "the typical curves are drawn for the 2N5088 and 2N5089 together"
+  ]
+ }
+}

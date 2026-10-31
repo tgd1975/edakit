@@ -33,7 +33,9 @@ the supply over time and LIM.v judges them. Switching spikes and fast edges are 
   `anode` to `cathode_<color>` – the layout a constant-current sink or a low-side switch per colour needs. Each colour
   is checked as an LED of its own (`D10_RED`, `D10_GREEN`, `D10_BLUE`): LIM against its ratings, SIM.state on its driver
   output or by the load's `leds_on`, where the designator turns on all three colours and `D10_RED` one.
-- Switches, buttons, DIP switches are closed or open as the scenario's load says (`buttons`, `open`, `dip_closed`).
+- Switches, buttons, DIP switches are closed or open as the scenario's load says (`buttons`, `open`, `dip_closed`;
+  a changeover switch's `"throw": {"S1": "throw_b"}`, default `throw_a`): the throw moves every pole of a switch of
+  several poles (`common_2`, `throw_a_2` … – a 3PDT footswitch's three; REQ.value/switch judges each pole apart).
   A relay is its coil (`coil_ohm`) plus a contact from `common` to `no` when the load lists it in `relays_on`, else to
   `nc` – every contact set of it: a DPDT relay's second set carries the roles `common_2`, `no_2`, `nc_2` and switches
   with the first (REQ.value/switch judges each set apart).
@@ -62,7 +64,9 @@ the supply over time and LIM.v judges them. Switching spikes and fast edges are 
   of its own, with the routed tracks and vias as resistors in between, and every check sees the voltage at the pin.
 - A cable between boards (3.1): a net through it gets a node of its own on the from side (`VIN__usb`), each wire a
   resistor – `r_ohm_per_wire`, or the copper of `length_m` and the gauge – and with `l_nh_per_m` an inductance in
-  series. ngspice gives each wire's current; with the cable's `i_max_a` (the rating per wire of its own datasheet)
+  series; several wires of one net between the same two boards (a pedal's ground to the DC jack, each jack's sleeve
+  and each footswitch, wired by hand from pads) are resistors in parallel between the same two nodes.
+  ngspice gives each wire's current; with the cable's `i_max_a` (the rating per wire of its own datasheet)
   every wire is held to it, derated as every current (LIM.i/cable, a warning while new). Without it, a cable that carries current gets
   one row of information over the scenarios – the highest current through a wire, which wire, the loss per metre of
   wire I² × R (`highest current through a wire, no i_max_a (wire 1 – I² × R: 1.756 mW per metre of wire, AWG 26 copper
@@ -417,8 +421,11 @@ The gain is 20·log10 |V(output) / V(source)| – with a source resistance it in
 source –; a corner is where the gain falls 3.01 dB below its largest value in the sweep, interpolated in log f, and a
 corner outside the sweep is reported as beyond it (below the sweep it meets a `max` the sweep reaches, never a `min`).
 Each expectation is a row, a missed one SIM.response (grade gain or corner), a warning while new; the run gets its row
-in the scenario table and its curve in result.json (`ac`, with the source model it ran: kind, row and values). The
-op-amp model has no gain-bandwidth: an upper corner comes from the passive parts only. On the reference circuits: the
+in the scenario table and its curve in result.json (`ac`, with the source model it ran: kind, row and values).
+`"info": true` makes the run's rows information, as a transient run's: a missed expectation is a row marked info
+and no finding – the response a project computes from its schematic where no source states what the design intends
+(the GuitarML pedals of tests/open_designs/: the TS's mid hump from 1/(2π·4.7 kΩ·47 nF), the boost's gain from
+R3/R4). The op-amp model has no gain-bandwidth: an upper corner comes from the passive parts only. On the reference circuits: the
 guitar buffer's output coupling C22 / R24 gives 1.59 Hz, with 100 nF instead of 1 µF 15.9 Hz – SIM.response; the
 audio input's R20 / C21 low-pass 15.9 kHz, with 100 nF 1.6 kHz. With a pickup (`tests/test_audio_sources.py`: Seymour
 Duncan's SH-1 neck, 7.43 kΩ, and 2.5 H and 500 pF chosen for the test) into a 500 kΩ volume pot and a 1 MΩ input the

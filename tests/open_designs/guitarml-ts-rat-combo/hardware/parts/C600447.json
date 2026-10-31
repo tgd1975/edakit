@@ -1,0 +1,48 @@
+{
+ "lcsc": "C600447",
+ "mpn": "R82EC1100AA50J",
+ "manufacturer": "KEMET",
+ "kind": "capacitor",
+ "package": "radial film box, 5 mm lead spacing",
+ "datasheet": {
+  "url": "https://datasheet.lcsc.com/datasheet/pdf/9d3be92bf6b92152ffd5056d98ceabd4.pdf?productCode=C600429"
+ },
+ "pins": {
+  "1": {
+   "name": "1",
+   "type": "passive",
+   "role": "1"
+  },
+  "2": {
+   "name": "2",
+   "type": "passive",
+   "role": "2"
+  }
+ },
+ "values": {
+  "value_f": 1e-09,
+  "dielectric": "film",
+  "tolerance": 0.05
+ },
+ "limits": {
+  "v_max_v": 100,
+  "t_min_c": -55,
+  "t_max_c": 105
+ },
+ "sources": [
+  "KEMET R82 metallized polyester film capacitors, radial 5 mm, F3101_R82 (2/28/2020), LCSC's copy for C600429 https://datasheet.lcsc.com/datasheet/pdf/9d3be92bf6b92152ffd5056d98ceabd4.pdf?productCode=C600429, read 2026-10-31",
+  "part number system (p. 1): R82, rated voltage E = 100 VDC, C = 5.0 mm, the capacitance code in pF (three figures, the first digit the zeros to add), packaging, J = ±5 %; dielectric polyester film (polyethylene terephthalate); operating temperature −55 … +105 °C",
+  "JLCPCB catalogue 2026-10-31 (edakit part search): C600447 R82EC1100AA50J, Extended Part"
+ ],
+ "verified": {
+  "by": "Claude (datasheet check, open-design transcription)",
+  "date": "2026-10-31",
+  "datasheet": "KEMET R82 metallized polyester film capacitors, radial 5 mm, F3101_R82 (2/28/2020)",
+  "datasheet_sha256": "3a75a138c33c14db05d40c0c03caba225ce7ef4eac93169281c0f58c57c3953f",
+  "checked": [
+   "value, voltage and tolerance from the part number",
+   "dielectric and temperature range"
+  ],
+  "open": []
+ }
+}

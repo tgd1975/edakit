@@ -131,6 +131,20 @@ def relay_sets(part):
     return out
 
 
+SWITCH_SET = re.compile(r"^(common|throw_a|throw_b)(_\d+)?$")    # a switch's poles: pole 1 bare, pole n with _n
+
+
+def switch_sets(part):
+    """{pole: {"common": [pins], "throw_a": [pins], "throw_b": [pins]}} of a changeover switch – pole "" the first,
+    "_2" the second (a 3PDT footswitch: "", "_2", "_3"); every pole follows the one actuator."""
+    out = {}
+    for num, p in ((part or {}).get("pins") or {}).items():
+        m = SWITCH_SET.match(str(p.get("role") or ""))
+        if m:
+            out.setdefault(m.group(2) or "", {}).setdefault(m.group(1), []).append(num)
+    return out
+
+
 def source_outputs(spec):
     """[(name, plus pin, ratio)] of a sim.json source: one output (plus, the supply's voltage) or, with "outputs",
     several against the shared minus – each at its v_ratio times the supply's voltage (−1 for a negative rail)."""

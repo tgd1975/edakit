@@ -280,6 +280,16 @@ edakit, each fixed test first. State: of 92 numbered candidates 84 built, 4 in p
 termination, FT-18 pickups, FT-21 the Tube Screamer), 4 out; 113 library entries, all drafts until the owner signs
 them.
 
+Decisions 19–22, built the same day: FT-4 counts as built (decision 19); FT-2 – LIM.i/cable holds every wire of a
+cable between boards to its `i_max_a`, which the simulation had not done before, a cable that carries current without
+one is reported with its loss per metre, and `[boards] wired = true` marks a hand-wired board (decision 22); FT-18 –
+the makers' values for 15 pickups (Seymour Duncan, DiMarzio, Mojotone: DC resistance and resonant peak, no maker
+states an inductance), 3 piezo discs (Murata) and 3 electret capsules in `catalog/tables/audio_sources.toml`, named by
+an AC run's source, and a cable's capacitance in AC runs (decision 20); FT-21 – GuitarML's Tubescreamer/Rat combo and
+Classic Boost (MIT) as open designs, which found a reversed electrolytic and an LM301A below its supply range in the
+combo and five faults of edakit, each fixed test first (decision 21). State: of 92 numbered candidates 88 built,
+none in part, 4 out; 118 library entries, all drafts until the owner signs them; six open designs.
+
 ### When maker-coverage's candidates are built
 
 After the cut (step 5), not before – decided by the owner. Three reasons:
