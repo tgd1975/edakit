@@ -3,12 +3,14 @@ pin role from the parts database and net from the graph.
 
 Meant for the comparison with the datasheet drawing (link in the parts entry) and with JLCPCB's assembly preview.
 Parts on the bottom side are drawn as seen from below (mirrored). Bright: pads, muted: tracks and pours, white:
-silkscreen. Framed in red: parts with an open 'verify' note.
+silkscreen. Framed in red: parts with an open 'verify' note. A tile shows the part's pads and the signs of the
+silkscreen GEO.mark gives the part, also a sign beyond the footprint.
 """
 
 from __future__ import annotations
 
 import json
+from collections import defaultdict
 
 from PIL import Image, ImageDraw, ImageFont
 
@@ -18,6 +20,7 @@ POLAR = ("led", "led_rgb", "diode", "battery_holder", "buzzer", "connector", "np
          "pjfet", "ic", "module", "switch", "dip_switch")
 MM = 0.0254
 TILE, HEAD, COLS = 420, 46, 4
+MARGIN_MM = 3.0     # a tile shows this much around the part's pads and signs
 BG, PAD, COPPER, SILK = (18, 58, 32), (236, 170, 70), (120, 85, 40), (245, 245, 245)
 
 
@@ -53,11 +56,33 @@ def draw_ops(dr, ops, px, scale, colors):
             dr.line([px(*p) for p in pts], fill=other, width=max(1, round(a * scale)))
 
 
-def tile(ref, comp, part, pcb_comp, layers, pin_net):
+def frame(pads, marks=()):
+    """What a tile shows, in mm (x0, x1, y0, y1): the part's pads (of pcb.json) and its signs of the silkscreen (marks:
+    [(x, y)] mm), MARGIN_MM around – more than the fab.TEXT_REACH_MM a sign's strokes lie from its anchor."""
+    xs = [p["X"] * MM for p in pads] + [x for x, _ in marks]
+    ys = [p["Y"] * MM for p in pads] + [y for _, y in marks]
+    return min(xs) - MARGIN_MM, max(xs) + MARGIN_MM, min(ys) - MARGIN_MM, max(ys) + MARGIN_MM
+
+
+def part_marks(cfg, board, design, d, data):
+    """{ref: [(x, y)] mm}: the signs of the silkscreen ("+", "−") per part, paired as GEO.mark pairs them – a sign
+    belongs to the part of the nearest pad on its side whose pin role has a sign (fab.polarity_signs, fab.mark_pads).
+    data: pcb.json of the export d."""
+    from . import fab
+    signs, _ = fab.polarity_signs(cfg, board, d, data)
+    want = design.board_comps(board.name)
+    on_pcb = {c["designator"]: c for c in data["components"] if c.get("designator")}
+    out = defaultdict(list)
+    for (_, x, y, _, _), at in zip(signs, fab.mark_pads(design, want, on_pcb, fab.polar_parts(design, want, on_pcb),
+                                                        signs)):
+        if at:
+            out[at[0]].append((x, y))
+    return dict(out)
+
+
+def tile(ref, comp, part, pcb_comp, layers, pin_net, marks=()):
     pads = pcb_comp["pads"]
-    xs, ys = [p["X"] * MM for p in pads], [p["Y"] * MM for p in pads]
-    m = 3.0
-    x0, x1, y0, y1 = min(xs) - m, max(xs) + m, min(ys) - m, max(ys) + m
+    x0, x1, y0, y1 = frame(pads, marks)
     mirror = pcb_comp["layer"] == 2
     scale = min(TILE / (x1 - x0), (TILE - HEAD) / (y1 - y0))
     ox = (TILE - (x1 - x0) * scale) / 2
@@ -98,7 +123,9 @@ def tile(ref, comp, part, pcb_comp, layers, pin_net):
 
 
 def sheet(cfg, board, design, d):
-    data = {c["designator"]: c for c in json.loads((d / "pcb.json").read_text())["components"] if c.get("designator")}
+    pcb = json.loads((d / "pcb.json").read_text())
+    data = {c["designator"]: c for c in pcb["components"] if c.get("designator")}
+    marks = part_marks(cfg, board, design, d, pcb)
     g = d / "gerber"
     layers = {"T": (gerber.parse_gerber(g / gerber.FILES["top"]), gerber.parse_gerber(g / gerber.FILES["top_silk"])),
               "B": (gerber.parse_gerber(g / gerber.FILES["bottom"]), gerber.parse_gerber(g / gerber.FILES["bottom_silk"]))}
@@ -107,8 +134,8 @@ def sheet(cfg, board, design, d):
     comps = [c for c in design.board_comps(board.name).values() if c["designator"] in data
              and polar(design.part(c["designator"]) or {})]
     comps.sort(key=lambda c: (not c.get("verify"), design.part(c["designator"])["kind"], c["designator"]))
-    tiles = [tile(c["designator"], c, design.part(c["designator"]), data[c["designator"]], layers, design.pin_net)
-             for c in comps]
+    tiles = [tile(c["designator"], c, design.part(c["designator"]), data[c["designator"]], layers, design.pin_net,
+                  marks.get(c["designator"], ())) for c in comps]
     rows = max(1, (len(tiles) + COLS - 1) // COLS)
     img = Image.new("RGB", (COLS * TILE, rows * TILE), (0, 0, 0))
     for i, t in enumerate(tiles):

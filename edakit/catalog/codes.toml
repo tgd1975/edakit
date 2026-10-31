@@ -1036,7 +1036,7 @@ sources = [
 
 [codes."FILES.sheet"]
 title = "polarity sheet"
-rule = "Every board gets a polarity sheet drawn from the Gerber data: each polarised part with copper, silkscreen, pad numbers, pin roles and nets."
+rule = "Every board gets a polarity sheet drawn from the Gerber data: each polarised part with copper, silkscreen, pad numbers, pin roles and nets, and the signs GEO.mark pairs with it, also beyond the footprint."
 why = "Polarity at the footprint is what neither the graph nor the DRC can see: a library footprint once printed '+' next to the cathode pad. The sheet is what the second datasheet check (M-1) compares with the datasheet drawings, and what is compared with JLCPCB's assembly preview (M-2)."
 fix = "Read the sheet against the datasheets. A wrong pad is fixed in the graph by swapping the nets and roles, not in the footprint."
 severity = "error"
