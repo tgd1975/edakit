@@ -82,7 +82,7 @@ in `sources` – any RP2350 module takes the same list per GPIO. On the RP2040 a
 | every kind | `p_max_w`, `rth_ja_k_per_w`, `tj_max_c`, `t_max_c`, `t_min_c` | – |
 | `resistor` | `v_max_v` | `value_ohm`, `r_max_ohm`, `tolerance` |
 | `potentiometer` | `v_max_v` | `value_ohm`, `tolerance` |
-| `capacitor` | `v_max_v`, `vr_max_v`, `i_ripple_a` | `value_f`, `dielectric`, `polarized`, `tolerance` |
+| `capacitor` | `v_max_v`, `vr_max_v`, `i_ripple_a` | `value_f`, `dielectric`, `polarized`, `tolerance`, `dc_bias`, `esr_ohm` |
 | `crystal` | – | `f_hz`, `c_load_f` |
 | `inductor` | `i_max_a`, `i_sat_a` | `value_h`, `dcr_ohm` |
 | `fuse` | `v_max_v`, `i_max_a`, `i_hold_a`, `i_trip_a` | `r_min_ohm`, `r_max_ohm`, `i_hold_vs_temp` |

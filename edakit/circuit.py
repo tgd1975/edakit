@@ -27,6 +27,62 @@ def polarized(part):
         p.get("role") == "plus" for p in ((part or {}).get("pins") or {}).values()))
 
 
+CLASS_2 = ("X5R", "X7R", "X7S", "X6S", "Y5V")      # ceramics whose capacitance falls with the DC across them (FT-9)
+
+
+def bias_ratio(part, volts):
+    """The share of its nominal capacitance a capacitor keeps at `volts` DC across it (either polarity): linear between
+    the points of values.dc_bias [[V, ratio], …] – the maker's curve –, the first point's ratio below it and the last
+    one's beyond it; 1 without a curve (maker-coverage FT-9)."""
+    curve = sorted(p for p in values(part).get("dc_bias") or [] if isinstance(p, list) and len(p) == 2)
+    if not curve or volts is None:
+        return 1.0
+    v = abs(volts)
+    if v <= curve[0][0]:
+        return curve[0][1]
+    for (v0, r0), (v1, r1) in zip(curve, curve[1:]):
+        if v0 <= v <= v1:
+            return r0 + (r1 - r0) * (v - v0) / (v1 - v0) if v1 > v0 else r1
+    return curve[-1][1]
+
+
+def capacitance(part, volts=0.0):
+    """value_f of a capacitor at `volts` DC across it – its nominal times bias_ratio –, None without value_f."""
+    c = values(part).get("value_f")
+    return c * bias_ratio(part, volts) if isinstance(c, (int, float)) and not isinstance(c, bool) else None
+
+
+def esr_ends(part):
+    """(lowest, highest) ESR of a capacitor's values.esr_ohm – one number, or [min, typ, max] with null where the maker
+    gives none: the lowest is the minimum, else the typical, else the maximum; the highest the other way round. None
+    without esr_ohm."""
+    esr = values(part).get("esr_ohm")
+    if isinstance(esr, (int, float)) and not isinstance(esr, bool):
+        return esr, esr
+    if isinstance(esr, list):
+        known = [x for x in esr if isinstance(x, (int, float)) and not isinstance(x, bool)]
+        if known:
+            return next(x for x in esr if x in known), next(x for x in reversed(esr) if x in known)
+    return None
+
+
+def net_volts(d, net):
+    """[min, max] of a net's declared range, [0, 0] for a ground without one, None where neither is known."""
+    v = (d.nets.get(net) or {}).get("v")
+    if isinstance(v, list) and len(v) == 2 and all(isinstance(x, (int, float)) for x in v) and v[0] <= v[1]:
+        return v
+    return [0, 0] if net == d.ground or net in (d.graph.get("grounds") or []) else None
+
+
+def volts_across(d, a, b):
+    """The highest DC between nets a and b by their declared ranges, None where one of them has none (FT-9: the bias
+    a capacitor between them sees at most)."""
+    ra, rb = net_volts(d, a), net_volts(d, b)
+    if ra is None or rb is None:
+        return None
+    return max(abs(ra[1] - rb[0]), abs(rb[1] - ra[0]))
+
+
 ACTIVE_TYPES = {"input", "output", "bidirectional", "power_in", "power_output", "analog", "current_sink"}
 BOOT_DRIVERS = {"output", "power_output", "ground"}   # define their net while the firmware is not running
 PASS_THROUGH = ("fuse", "switch", "button", "connector")   # pass a reversed source on unchanged
