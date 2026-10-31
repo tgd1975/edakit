@@ -95,7 +95,7 @@ in `sources` – any RP2350 module takes the same list per GPIO. On the RP2040 a
 | `buzzer` | `v_max_v` | `coil_ohm` |
 | `relay` | `v_coil_max_v`, `i_max_a`, `v_max_v` | `coil_ohm`, `v_operate_v`, `v_release_v`, `r_contact_ohm` |
 | `connector` | `v_max_v`, `i_max_a` | `pitch_mm`, `r_contact_ohm`, `r_source_ohm`, `usb_c` |
-| `ic` | `vdd_max_v`, `vdd_op_min_v`, `vdd_op_max_v`, `vin_min_v`, `vin_max_v`, `vout_max_v`, `i_out_max_a`, `vin_rel_max_v`, `i_supply_pin_max_a`, `f_max_hz` | `behavior`, `vout_v`, `dropout_v`, `iq_a`, `efficiency`, `idd_max_a`, `iout_gain`, `iout_accuracy`, `vout_knee_v`, `vrext_v`, `vih_v`, `vil_v`, `vih_ratio`, `vil_ratio`, `first_bit_to`, `vout_swing_v`, `vicm_v`, `r_out_ohm`, `comparator`, `gain_min_ratio`, `f_clock_hz`, `vref_v`, `i_load_min_a` |
+| `ic` | `vdd_max_v`, `vdd_op_min_v`, `vdd_op_max_v`, `vin_min_v`, `vin_max_v`, `vout_max_v`, `i_out_max_a`, `vin_rel_max_v`, `i_supply_pin_max_a`, `f_max_hz` | `behavior`, `vout_v`, `dropout_v`, `iq_a`, `efficiency`, `idd_max_a`, `iout_gain`, `iout_accuracy`, `vout_knee_v`, `vrext_v`, `vih_v`, `vil_v`, `vih_ratio`, `vil_ratio`, `first_bit_to`, `vout_swing_v`, `vicm_v`, `r_out_ohm`, `comparator`, `gain_min_ratio`, `f_clock_hz`, `vref_v`, `i_load_min_a`, `prog_v` |
 | `module` | `vdd_op_min_v`, `vdd_op_max_v`, `vin_min_v`, `vin_max_v`, `vsys_min_v`, `vsys_max_v`, `i_out_max_a`, `gpio_v_max_v`, `gpio_i_max_a`, `gpio_i_total_max_a`, `f_max_hz` | `behavior`, `regulator`, `v_io_v`, `vout_v`, `dropout_v`, `efficiency`, `i_core_a`, `i_core_min_a`, `gpio_r_out_ohm`, `iq_a`, `vih_v`, `vil_v`, `vih_ratio`, `vil_ratio`, `usb_c`, `f_clock_hz` |
 | `motor` | `v_max_v`, `i_max_a` | `coil_ohm` |
 | `solenoid` | `v_max_v`, `i_max_a` | `coil_ohm` |
@@ -141,6 +141,12 @@ entry's before the default of the pin type. What the names do not say:
 - a module or breakout with a USB-C receptacle `usb_c`: `{"cc": "rd_5k1" | "controller" | "none", "source": "…"}` – how
   the board terminates its CC lines, from its schematic (REQ.missing:cc; the RP2350-Zero has 5.1 kΩ on CC1 and CC2,
   the breakout Soldered 333011 has none).
+- a linear Li-ion charger: `prog_v`, the constant of its charge-current equation (I = `prog_v` / R_PROG – MCP73831
+  1000 V, TP4056 1100 V or 1200 V by maker, read from the datasheet of that maker), its pins `prog` and `bat`, and
+  `i_out_max_a`: LIM.i/charge holds the current the PROG resistor programs to the charger and to the cell's
+  `i_charge_max_a` (sim.json cells) on its battery pin.
+- an adjustable regulator: `vref_v` and the pin role `adj` or `fb`, with `i_load_min_a` where it needs a minimum load
+  (chapter 5.2).
 - any IC with logic inputs: the thresholds of the recommended operating conditions, `vih_v` | `vih_ratio` and
   `vil_v` | `vil_ratio` (a ratio of its supply, e.g. 0.7 and 0.3 for VIH 0.7 × VDD), which LVL.threshold holds its
   `input` pins and the MCU outputs that drive them to; ICs further in chapter 5.

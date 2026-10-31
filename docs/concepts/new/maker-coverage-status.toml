@@ -7,7 +7,7 @@
 FT-1 = { status = "built", where = "transients: steps (sim/run.py, sim/netlist.py amps); LIM.range finds the brown-out", step = 6 }
 FT-2 = { status = "partial", where = "cables: length_m, awg | mm2, l_nh_per_m (circuit.wire_ohm, wire_h)", missing = "i_max_a from the gauge (no read ampacity table), c_pf_per_m, a board without a PCB instead of bought", step = 6 }
 FT-3 = { status = "built", where = "behaviour opamp (sim/netlist.py); LIM.range/opamp", step = 6 }
-FT-4 = { status = "open", missing = "the charger model needs the TP4056's and MCP73831's numbers – datasheets" }
+FT-4 = { status = "partial", where = "values prog_v, roles prog and bat; LIM.i/charge against the charger's i_out_max_a and the cell's i_charge_max_a (MCP73831 DS20001984H, TP4056 REV_2.4)", missing = "the CC/CV behaviour in the simulation, the charger's dissipation (5 V into 3 V at 1 A) and the termination current", step = 6 }
 FT-5 = { status = "partial", where = "values vref_v, i_load_min_a, roles adj and fb (circuit.feedback_vout); the simulation regulates to the divider; REQ.missing/feedback, REQ.value/feedback, LIM.range/min_load; AMS1117 datasheet as the example", missing = "a boost converter's output with EN low (VIN − VD): HINT.boost_enable names it, no model", step = 6 }
 FT-6 = { status = "built", where = "kinds motor, solenoid, speaker, heater, optocoupler (catalog/kinds.toml, sim/netlist.py)", step = 6 }
 FT-7 = { status = "open", missing = "the ES1 limits of IEC 62368-1 are tagged to verify; mains is open decision 3" }
