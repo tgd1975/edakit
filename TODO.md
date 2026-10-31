@@ -27,10 +27,12 @@ run against a maker's page or EasyEDA yet.
       placement preview opens again from the cart at JLCPCB ("Product Details → Part Placement") and Eurocircuits
       ("Assembly Visualizer → CPL Editor"), PCBWay shows none (its engineers review the files); no maker's terms say
       anything on automated use. Notes and JLCPCB's quote text in `tests/fixtures/makers/<maker>/` on branch
-      `makers-step0` (worktree `../edakit-step0`, session edakit-c9). Left: the profiles from the notes – labels, words,
-      `ignore`, CPL, cart button, `recorded` – with tests, and the consents the skill must stop at (JLCPCB's
-      pre-checked assembly terms, PCBWay's "Agree" on export control, Eurocircuits' Terms of Sales); no past order
-      exists in the new accounts, so no order page as test data.
+      `makers-step0` (pushed; worktree `../edakit-step0`, session edakit-c9). The profiles of PCBWay, Eurocircuits and
+      AISLER are recorded there, with tests (a field's `more = true` for lists read only in part). Left: JLCPCB's
+      profile with the order number (below; the test helper `ordered()` of 58 tests orders with the placeholder), the
+      consents the skill must stop at (JLCPCB's pre-checked assembly terms, PCBWay's "Agree" on export control,
+      Eurocircuits' Terms of Sales), the merge on the owner's OK; no past order exists in the new accounts, so no
+      order page as test data.
 - [ ] **JLCPCB's order number – gone:** "Mark on PCB" offers only "Remove Mark" (preselected) and "2D barcode (Serial
       Number)" with its own dialog (2D barcode Only | Number Only | both; QR | Data Matrix; 5/8/10 mm; position). Left:
       the placeholder and `mark = "specify"` leave `edakit/makers/jlcpcb.toml`, F-6 still names a `JLCJLCJLCJLC` left on
