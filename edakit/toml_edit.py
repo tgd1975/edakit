@@ -17,7 +17,8 @@ last item, one item to a line where the array has one to a line, with a trailing
 
 literal() writes a JSON value as TOML: strings as JSON escapes them (TOML's basic strings read those), a long one as a
 multi-line string with line-ending backslashes, a long array over several lines, a dict as an inline table, null
-refused – the writer of the circuit-language sketch (docs/concepts/done/prototypes/circuit-language/translate.py).
+refused – the writer of the circuit-language sketch (docs/concepts/done/prototypes/circuit-language/translate.py). It
+is edakit's one TOML value writer: `edakit graph convert` (graph_form.py) writes the values of a whole graph with it.
 """
 
 from __future__ import annotations
@@ -50,7 +51,9 @@ def quoted(s):
 
 def literal(v, start=0):
     """A JSON value as a TOML value that starts at column `start`: a string longer than the line as a multi-line string
-    wrapped at its blanks with line-ending backslashes, an array longer than the line over several lines."""
+    wrapped at its blanks with line-ending backslashes – every line within WIDTH where its words allow –, an array
+    longer than the line over several lines. A string that starts with a blank stays on one line: the backslash would
+    eat the blank (an escaped line break or tab is no blank in the text)."""
     if v is None:
         raise TomlEditError("TOML has no null")
     if isinstance(v, bool):
@@ -60,7 +63,7 @@ def literal(v, start=0):
     if isinstance(v, str):
         q = quoted(v)
         chunks = re.split(r"(?<=\S) (?=\S)", q[1:-1])
-        if start + len(q) <= WIDTH or len(chunks) == 1 or v[:1].isspace():
+        if start + len(q) <= WIDTH or len(chunks) == 1 or q[1:2].isspace():
             return q
         lines, line = [], "  "
         for chunk in chunks:

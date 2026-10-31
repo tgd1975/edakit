@@ -62,8 +62,9 @@ def graph_of_toml(text, where="graph"):
     """The graph of its TOML form, as the JSON gives it: [components.<designator>], [nets.<name>] and [cables.<name>]
     become the lists components, nets and cables in the order of the file, the table's key as designator or name
     first; every other key stays as it is – purpose, conventions, accept, layout, locks, ground, grounds –, the pin
-    words as written. A key or table twice and what is no TOML – null among it – is a ConfigError with the file
-    (`where`) and the line tomllib names."""
+    words as written. A graph without component or net tables has none (a new project's: `components = []` would
+    stand in the way of the first table written by hand). A key or table twice and what is no TOML – null among it –
+    is a ConfigError with the file (`where`) and the line tomllib names."""
     from .config import ConfigError
     try:
         data = tomllib.loads(text)
@@ -83,6 +84,8 @@ def graph_of_toml(text, where="graph"):
                 raise ConfigError(f"{where}: [{key}.{name}]: {field} is the table's key")
             rows.append({field: name, **row})
         data[key] = rows
+    for key in ("components", "nets"):                      # what every reader of the graph expects
+        data.setdefault(key, [])
     return data
 
 

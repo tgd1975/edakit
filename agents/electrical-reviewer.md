@@ -10,7 +10,10 @@ calculate, research and report.
 
 ## Sources
 
-- The hardware graph (edakit.toml `[project] graph`) is the only source for parts, values, pins and nets.
+- The hardware graph (edakit.toml `[project] graph`) is the only source for parts, values, pins and nets – a TOML
+  graph names pins by name or role and keeps its reasons in comments and `notes`. The pin numbers the symbols, the
+  footprints and the polarity sheet use: `edakit graph json 2>&1 | cat`, or the `hardware/graph.json` generated beside
+  a TOML graph, whose diff shows a connection a parts entry moved (a role corrected) where the TOML did not change.
 - The parts database (`[project] parts`, one JSON per LCSC number): parameters, ratings, pin roles, datasheet sign-off.
 - The project's decision log and circuit description.
 - What the circuit must do: the requirements file, if `[project] requirements` names one (`edakit req 2>&1 | cat` –

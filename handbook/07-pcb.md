@@ -148,12 +148,15 @@ NOTE    GEO.hole  build/edakit/pcb_geometry_main.json: footprint geometry of boa
 one beside the board file counts.
 
 **What the circuit hands over** (SYNC.plan) comes first. The circuit designer writes it into the graph, the PCB designer
-keeps it (14.1); `edakit handover` lists it:
+keeps it (14.1); `edakit handover` lists it (a JSON graph has the same keys, `"layout": {"fixed": […], …}`, 3.1):
 
-```json
-"layout": {"fixed": ["SW1", "D2"], "edge": ["J1"], "near": {"R1": "U2"},
-           "loops": [{"a": "C5.1", "b": "U3.2", "max_mm": 8, "what": "buck input loop"}],
-           "notes": ["D2 to D9 form the bar: one row, in this order"]}
+```toml
+[layout]
+fixed = ["SW1", "D2"]
+edge = ["J1"]
+near = {R1 = "U2"}
+loops = [{a = "C5.1", b = "U3.VIN", max_mm = 8, what = "buck input loop"}]
+notes = ["D2 to D9 form the bar: one row, in this order"]
 ```
 
 `fixed` parts need a position in `place`; `edge` parts also a box within `edge_mm` of the outline (default 1 mm);

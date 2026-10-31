@@ -164,6 +164,42 @@ def test_the_example_as_toml_loads_to_its_json(project):
     assert load_graph(path) == g == load_graph(project.graph_file)
 
 
+SKELETON = '''\
+# a new project's graph (skill new-project): no part and no net yet
+name = "new"
+version = "0.1"
+date = "2026-10-31"
+description = "A board still to be designed."
+
+[purpose]
+use = "private"
+market = "EU"
+notes = "Built for oneself."
+'''
+
+
+def test_a_toml_graph_without_parts_or_nets_has_none(project, capsys):
+    """A new project's graph has no part and no net yet, and `components = []` would stand in the way of the first
+    [components.<des>] table written by hand: a graph without component or net tables loads with empty lists –
+    edakit check, edakit graph json and block add run on it as on {"components": [], "nets": []} –, the cables stay
+    as the file has them."""
+    path = project.root / "hardware" / "graph.toml"
+    path.write_text(SKELETON, encoding="utf-8")
+    g = load_graph(path)
+    assert g["components"] == [] and g["nets"] == [] and "cables" not in g
+    cfg = to_toml(project, SKELETON)
+    args = ["--config", str(project.root / "edakit.toml")]
+    assert cli.main(["check", *args]) == 0
+    assert "0 components, 0 nets" in capsys.readouterr().out
+    assert cli.main(["graph", "json", "--write", *args]) == 0
+    assert json.loads((project.root / "hardware" / "graph.json").read_text())["graph"]["components"] == []
+    assert cli.main(["graph", "json", "--check", *args]) == 0
+    cfg.graph.write_text(SKELETON + '\n[nets.GND]\nv = [0, 0]\npins = []\n', encoding="utf-8")
+    block.add(cfg, "power-input-jst", "PWR", {})
+    assert [c["designator"] for c in load_graph(cfg.graph)["components"]] == ["J1", "D1", "C1"]
+    assert cfg.graph.read_text(encoding="utf-8").startswith(SKELETON + "\n[components.J1]\n")
+
+
 BROKEN = [
     ('[components.R1]\ntype = "resistor"\ntype = "led"\n', "Cannot overwrite a value (at line 3, column 13)"),
     ('[components.R1]\ntype = "resistor"\n\n[components.R1]\nvalue = "1k"\n',

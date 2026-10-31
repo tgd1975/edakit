@@ -24,8 +24,9 @@ JSON, their keys in the JSON's order; the other tables as tables, nested tables 
 the word rule of Design.word – and a name or role several pins share (U1.GND) for all of them where they all stand in
 the net, wherever (the pins of a net are compared sorted: decided by Claude and confirmed, 2) – in nc only for a run
 in the entry's order; the pin map left out where it equals the entry's; accept as dotted keys, other maps inline where
-they fit and dotted where not; a string longer than the line as a multi-line string with line-ending backslashes. A
-graph TOML cannot hold or the checks reject – null, a designator or net name twice, a pin that names none of its part –
+they fit and dotted where not; every value through toml_edit.literal, the one TOML value writer edakit has (block add
+writes with it too) – a string longer than the line as a multi-line string with line-ending backslashes. A graph TOML
+cannot hold or the checks reject – null, a designator or net name twice, a pin that names none of its part –
 is refused with what to fix in the JSON. What is written is read back before anything is written: it gives the same
 resolved graph, or convert stops.
 """
@@ -39,13 +40,12 @@ import sys
 import tomllib
 from pathlib import Path
 
+from . import toml_edit
 from .design import KEYED, Design, graph_of_toml, load_graph, load_parts
 
 PIN_REFERENCE = ("'<designator>.<pin>' with the pin's name or role, else its symbol number – the parts entry says "
                  "which pin that is")
-WIDTH = 118                       # the TOML's lines, as edakit's code and handbook
 HEAD = ("designator", "type", "label", "part", "lcsc", "value", "bom", "board", "supplier", "spare")   # before `pins`
-TKEY = re.compile(r"[A-Za-z0-9_-]+")
 HEADER = ["# The hardware graph (handbook 3.1): components, nets and cables keyed by designator and name, pins by name",
           "# or role through the parts entries. edakit graph json writes the resolved graph beside it (graph.json)."]
 
@@ -163,91 +163,29 @@ def main_json(cfg, args):
 
 
 # --- the TOML writer (L.6) ------------------------------------------------------------------------------------------
-def tstr(s):
-    """A TOML basic string: JSON's escapes are TOML's; DEL must be escaped in TOML."""
-    return json.dumps(s, ensure_ascii=False).replace("\x7f", "\\u007f")
-
-
-def tkey(k):
-    return k if TKEY.fullmatch(k) else tstr(k)
-
-
-def multiline(s):
-    """A string too long for its line as a multi-line string: its words over lines that end in a backslash, which
-    joins them with the blank before it – None where that would change the text (a blank at the start, no blank to
-    break at)."""
-    body = tstr(s)[1:-1]
-    chunks = re.split(r"(?<=\S) (?=\S)", body)
-    if len(chunks) < 2 or body[:1].isspace():
-        return None
-    lines, line = [], "  "
-    for chunk in chunks:
-        if line != "  " and len(line) + len(chunk) + 3 > WIDTH:
-            lines.append(line + " \\")
-            line = "  "
-        line += ("" if line == "  " else " ") + chunk
-    return '"""\\\n' + "\n".join(lines + [line + '"""'])
-
-
-def tval(v, start=0, where="graph"):
-    """A JSON value as TOML, starting at column `start`: a long string over several lines, a long array wrapped."""
-    if v is None:
-        raise FormError(f"{where}: null – TOML has none")
-    if isinstance(v, bool):
-        return "true" if v else "false"
-    if isinstance(v, (int, float)):
-        return repr(v)
-    if isinstance(v, str):
-        one = tstr(v)
-        return one if start + len(one) <= WIDTH else (multiline(v) or one)
-    if isinstance(v, list):
-        items = [tval(x, 0, f"{where}[{i}]") for i, x in enumerate(v)]
-        if start + 2 + len(", ".join(items)) <= WIDTH or any("\n" in x for x in items):
-            return "[" + ", ".join(items) + "]"
-        lines, line = [], "["
-        for k, x in enumerate(items):
-            piece = x + ("]" if k == len(items) - 1 else ",")
-            if line != "[" and (0 if lines else start) + len(line) + 1 + len(piece) > WIDTH:
-                lines.append(line)
-                line = " " * (start + 1) + piece
-            else:
-                line += ("" if line == "[" else " ") + piece
-        return "\n".join(lines + [line])
-    if isinstance(v, dict):
-        return "{" + ", ".join(f"{tkey(k)} = {tval(x, 0, f'{where}.{k}')}" for k, x in v.items()) + "}"
-    raise FormError(f"{where}: {v!r} – no JSON value")
-
-
-def tline(key, v, where):
-    head = f"{key} = "
-    return head + tval(v, len(head), where)
-
-
-def element(header, body, where):
+def element(header, body):
     """A component, net or cable: its keys in their order; accept as dotted keys (accept."LIM.i" = "…"), another map
     inline where it fits on its line and dotted where not."""
     out = ["", header]
     for k, v in body.items():
-        at = f"{where}.{k}"
         if isinstance(v, dict) and v:
-            line = tline(tkey(k), v, at)
-            if k == "accept" or len(line) > WIDTH:
-                out += [tline(f"{tkey(k)}.{tkey(x)}", y, f"{at}.{x}") for x, y in v.items()]
+            inline = toml_edit.line(k, v)
+            if k == "accept" or len(inline) > toml_edit.WIDTH:
+                out += [toml_edit.line(x, y, f"{toml_edit.key(k)}.") for x, y in v.items()]
                 continue
-            out.append(line)
+            out.append(inline)
         else:
-            out.append(tline(tkey(k), v, at))
+            out.append(toml_edit.line(k, v))
     return out
 
 
-def table(name, body, where):
+def table(name, body):
     """A table of the graph – purpose, conventions, layout, locks, accept: its keys, then a map in it as [name.key]."""
     nested = [k for k, v in body.items() if isinstance(v, dict) and v]
-    out = [tline(tkey(k), v, f"{where}.{k}") for k, v in body.items() if k not in nested]
+    out = [toml_edit.line(k, v) for k, v in body.items() if k not in nested]
     out = ["", f"[{name}]"] + out if out or not nested else []
     for k in nested:
-        sub = f"{name}.{tkey(k)}"
-        out += ["", f"[{sub}]"] + [tline(tkey(x), y, f"{where}.{k}.{x}") for x, y in body[k].items()]
+        out += ["", f"[{name}.{toml_edit.key(k)}]"] + [toml_edit.line(x, y) for x, y in body[k].items()]
     return out
 
 
@@ -335,7 +273,7 @@ def to_toml(source, design):
         raise FormError("; ".join(bad[:12]) + (f" (and {len(bad) - 12} more)" if len(bad) > 12 else ""))
     g = converted(resolved(source, design))
     tables = [k for k, v in g.items() if (isinstance(v, dict) or k in KEYED) and v]
-    out = HEADER + [tline(tkey(k), v, k) for k, v in g.items() if k not in tables]
+    out = HEADER + [toml_edit.line(k, v) for k, v in g.items() if k not in tables]
     for key in tables:
         if key == "components":
             for src, c in zip(source["components"], g["components"]):
@@ -345,20 +283,20 @@ def to_toml(source, design):
                     body.pop("pins", None)
                 if isinstance(c.get("nc"), list):
                     body["nc"] = [w.partition(".")[2] for w in written(design, [f"{des}.{p}" for p in c["nc"]], False)]
-                out += element(f"[components.{tkey(des)}]", body, f"components.{des}")
+                out += element(f"[components.{toml_edit.key(des)}]", body)
         elif key == "nets":
             for n in g["nets"]:
                 body = {k: v for k, v in n.items() if k != "name"}
                 if isinstance(n.get("pins"), list):
                     body["pins"] = written(design, n["pins"])
-                out += element(f"[nets.{tkey(n['name'])}]", body, f"nets.{n['name']}")
+                out += element(f"[nets.{toml_edit.key(n['name'])}]", body)
         elif key == "cables":
             for c in g["cables"]:
                 body = {k: v for k, v in c.items() if k != "name"}
                 if isinstance(c.get("pins"), dict):
                     body["pins"] = {design.word(c.get("from"), a): design.word(c.get("to"), b)
                                     for a, b in c["pins"].items()}
-                out += element(f"[cables.{tkey(c['name'])}]", body, f"cables.{c['name']}")
+                out += element(f"[cables.{toml_edit.key(c['name'])}]", body)
         else:
             body = dict(g[key])
             if key == "layout" and isinstance(body.get("loops"), list):
@@ -366,7 +304,7 @@ def to_toml(source, design):
                                  if isinstance(lp, dict) else lp for lp in body["loops"]]
             if key == "locks" and isinstance(body.get("pins"), dict):
                 body["pins"] = {one(design, r): n for r, n in body["pins"].items()}
-            out += table(tkey(key), body, key)
+            out += table(toml_edit.key(key), body)
     return "\n".join(out) + "\n"
 
 
@@ -388,11 +326,11 @@ def set_graph(text, value):
     if at is not None:
         m = re.match(r"""(\s*graph\s*=\s*)("(?:[^"\\]|\\.)*"|'[^']*')(.*)""", lines[at], re.S)
         if m:
-            lines[at] = m.group(1) + tstr(value) + m.group(3)
+            lines[at] = m.group(1) + toml_edit.quoted(value) + m.group(3)
     else:
         last = max((i for i in range(head + 1, end) if re.match(r"""\s*[\w"'-]+\s*=""", lines[i])), default=head)
         lines[last] = lines[last] if lines[last].endswith("\n") else lines[last] + "\n"
-        lines.insert(last + 1, f"graph = {tstr(value)}\n")
+        lines.insert(last + 1, f"graph = {toml_edit.quoted(value)}\n")
     new = "".join(lines)
     if tomllib.loads(new).get("project", {}).get("graph") != value:
         raise FormError("edakit.toml: [project] graph could not be set by a line edit – set it by hand")
@@ -423,7 +361,7 @@ def main_convert(cfg, args):
     try:
         design = design_of(src_path, parts, boards, source)
         text = to_toml(source, design)
-    except FormError as e:
+    except (FormError, toml_edit.TomlEditError) as e:
         print(f"edakit graph convert: {rel}: {e} – what TOML cannot hold or STRUCT reports (edakit check): fix the "
               "JSON first", file=sys.stderr)
         return 1
@@ -451,7 +389,7 @@ def main_convert(cfg, args):
         sys.stdout.write(text)
         print(f"\nwould write {cfg.relative(target)} ({lines} lines; {rel} has "
               f"{src_path.read_text(encoding='utf-8').count(chr(10))})")
-        print(f"would set [project] graph = {tstr(value)} in {cfg.relative(cfg.path)}")
+        print(f"would set [project] graph = {toml_edit.quoted(value)} in {cfg.relative(cfg.path)}")
         print(f"would write {rel} again: the resolved graph, generated from {cfg.relative(target)} (edakit graph json)")
         print("the circuit hash takes the TOML graph from then on: when the files are the signed ones, the sign-offs "
               "of scope 'circuit' keep counting (rehashed)")
@@ -461,7 +399,7 @@ def main_convert(cfg, args):
     cfg.path.write_text(toml_text, encoding="utf-8")
     src_path.write_text(generated, encoding="utf-8")
     print(f"{cfg.relative(target)} written: {lines} lines, components, nets and cables keyed, pins by name or role")
-    print(f"{cfg.relative(cfg.path)}: [project] graph = {tstr(value)}")
+    print(f"{cfg.relative(cfg.path)}: [project] graph = {toml_edit.quoted(value)}")
     print(f"{rel} written: the resolved graph, generated from {cfg.relative(target)} – commit both; the pre-commit "
           "hook runs edakit graph json --check")
     new = config.load(cfg.path)

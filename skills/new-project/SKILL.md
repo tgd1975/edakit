@@ -99,9 +99,9 @@ From the answers – each file and key proposed with the answer that sets it, wr
 
 | File | Content |
 |---|---|
-| `edakit.toml` | the table of contents (handbook 10.1), from `tests/fixtures/led-bar/edakit.toml` with its comments, every value from the answers: `[project]` (`name`, `company`, `quantity`, `distributors`), one `[boards.<name>]` per board, `[release] assembly`, and where the answers set them `[cart]` (`maker`, `makers`, `ship_to`, `shipping`), `[order]` for every board, `[cost]`, `[firmware]`, `[docs]`, `[scripts.*]`, `[agents.*]`. Moving: `graph`, `parts`, `sim`, `signoff` name the project's files where they lie |
+| `edakit.toml` | the table of contents (handbook 10.1), from `tests/fixtures/led-bar/edakit.toml` with its comments, every value from the answers: `[project]` (`name`, `company`, `quantity`, `distributors`, `graph = "hardware/graph.toml"`), one `[boards.<name>]` per board, `[release] assembly`, and where the answers set them `[cart]` (`maker`, `makers`, `ship_to`, `shipping`), `[order]` for every board, `[cost]`, `[firmware]`, `[docs]`, `[scripts.*]`, `[agents.*]`. Moving: `graph`, `parts`, `sim`, `signoff` name the project's files where they lie |
 | `hardware/boards/<name>.toml` | per made board, when its size is known: from the example's board file, outline and holes, `[order]` and `thickness_mm` where they differ; leave `place` and `routing.classes` minimal until the parts exist. Otherwise the PCB designer starts it, and the order's answers wait in the decision log. None for a bought or hand-wired board, none without a PCB |
-| `hardware/graph.json` | `{"graph": {"name", "version": "0.1", "date", "description", "purpose": {"use", "market", "notes"}, "components": [], "nets": [], "cables": []}}` – the purpose from the interview |
+| `hardware/graph.toml` | the graph as TOML (handbook 3.1): `name`, `version = "0.1"`, `date`, `description`; `[purpose]` with `use`, `market`, `notes` – the purpose from the interview –; `[conventions]` with `pin_reference = "'<designator>.<pin>' with the pin's name or role, else its symbol number – the parts entry says which pin that is"`. No part and no net yet: circuit-design writes the first `[components.<designator>]` and `[nets.<name>]` tables. Then `edakit graph json --write` writes the resolved `hardware/graph.json` beside it – generated, committed with the TOML, never edited. Moving: the project's circuit converted into edakit's format is written as this TOML too; a graph in edakit's JSON form stays where it lies until the user agrees to `edakit graph convert` (a proposal like any other) |
 | `hardware/parts/` | empty; every LCSC number gets an entry through the part-search skill or the agent part-selector |
 | `hardware/sim.json` | from the example: sources (the supply connector – of a bought board on a cable its connector, the cable in the path), supplies at min/nominal/max, loads, corners; with several sources `combine_sources` (handbook 5.2) |
 | `hardware/signoff.json` | from the example: M-1 (critical parts, second check), M-6 (regulatory review), M-5 (layout review), M-2 (manufacturer preview), M-4 (acceptance); a project agent with `replaces` signs edakit's review in its place, the gate adds an agent's own sign-off by itself (handbook 8.6) |
@@ -121,7 +121,8 @@ report names them.
 ## 4. Guard rails
 
 - Pre-commit hook (`.githooks/pre-commit`, `git config core.hooksPath .githooks`): when `hardware/` changed, run
-  `edakit check` and `edakit sim`, with `[firmware]` also `edakit firmware --check` (handbook 3.5), with `[docs]`
+  `edakit check`, `edakit sim` and, with a TOML graph, `edakit graph json --check` – the generated `graph.json` still
+  the resolved TOML (handbook 3.1) –, with `[firmware]` also `edakit firmware --check` (handbook 3.5), with `[docs]`
   `edakit docs` (handbook 6.6); a failing check blocks the commit. Never bypass it with `--no-verify`. Moving: the
   project's hook keeps its other steps; its own graph check and simulation become edakit's, and a hint in it to
   bypass a failing check goes.
@@ -149,9 +150,10 @@ report names them.
 2. Requirements "now": the skill requirements – it writes `hardware/requirements.toml` with the user, and
    circuit-design reads the file instead of asking.
 3. Graph with the skill circuit-design: power input, MCU, the main functions – building blocks where they fit
-   (`edakit block list`), other parts by LCSC number (part-search skill), nets with voltage ranges `v`. `edakit check`
-   until 0 errors, `edakit check` worked through, `edakit sim` – scenarios first at the supply limits. A moving
-   project has its graph: circuit-design takes what `edakit check` found.
+   (`edakit block list`), other parts by LCSC number (part-search skill), nets with voltage ranges `v`, pins by name
+   or role. `edakit check` until 0 errors, `edakit check` worked through, `edakit sim` – scenarios first at the supply
+   limits –, and `edakit graph json --write` after every change, so that the hook finds the generated file current. A
+   moving project has its graph: circuit-design takes what `edakit check` found.
 4. Without a PCB (a development board and hand wiring) the project stops here: `edakit schematic draw` gives the
    schematic, EasyEDA is not needed. With a PCB: the user creates the EasyEDA project once by hand (File → New →
    Project, named like `[project] name`) – the local desktop client refuses `DMT_Project.createProject`; a moving

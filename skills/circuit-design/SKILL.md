@@ -25,16 +25,17 @@ Without the file, collect them before choosing parts: the supply (source, voltag
 reversed, the current it allows, the minimum load of a power bank), every input and output and what drives or reads
 it, enclosure and what a person touches, what matters to the user (cost, looks, robustness, loudness …).
 
-Either way you settle the MCU or main part, quantity and assembly (JLCPCB SMD, hand-soldered), and **what the board
-is for**: built for oneself, given away or sold, and where – it decides which rules apply (handbook 15). What the
-setup asked already (skill new-project: the graph's `purpose`, `[project] quantity`, `[release] assembly`) stands – a
-change is the user's decision. Default what you can; ask the rest in **one** decision round (skill decision-round),
-not one question after the other. The purpose goes into the graph:
-`"purpose": {"use": "private" | "gift" | "sale", "market": "EU", "notes": "what it is, who uses it"}`. A part that
-can transmit more than the EU allows – an ESP32's Wi-Fi channel 14, a LoRa chip's 902–928 MHz – can get its use
-there too, what the firmware will keep: `"radio": {"U1": {"bands_mhz": [[2412, 2472]], "notes": "Wi-Fi channels
-1–13"}}` or `{"U1": "off"}`. Without it LIM.band tells what the firmware must keep – information, for a board that is
-sold a warning; a part that can transmit in no EU band at all is an error (handbook 15 – support, not legal advice).
+Either way you settle the MCU or main part, quantity and assembly (JLCPCB SMD, hand-soldered), and **what the board is
+for**: built for oneself, given away or sold, and where – it decides which rules apply (handbook 15). What the setup
+asked already (skill new-project: the graph's `purpose`, `[project] quantity`, `[release] assembly`) stands – a change
+is the user's decision. Default what you can; ask the rest in **one** decision round (skill decision-round), not one
+question after the other. The purpose goes into the graph's `[purpose]`: `use = "private"` (or `"gift"`, `"sale"`),
+`market = "EU"`, `notes = "what it is, who uses it"`. A part that can transmit more than the EU allows – an ESP32's
+Wi-Fi channel 14, a LoRa chip's 902–928 MHz – can get its use there too, what the firmware will keep: `radio.U1 =
+{bands_mhz = [[2412, 2472]], notes = "Wi-Fi channels 1–13"}` or `radio.U1 = "off"` (a JSON graph has the same keys,
+`"purpose": {"radio": {"U1": "off"}}`). Without it LIM.band tells what the firmware must keep – information, for a
+board that is sold a warning; a part that can transmit in no EU band at all is an error (handbook 15 – support, not
+legal advice).
 
 ## 2. Building blocks first
 
@@ -75,6 +76,33 @@ candidate (handbook 14.4) – do not present it as an established code.
 
 ## 5. Into the graph
 
+The graph is the file `[project] graph` names: `hardware/graph.toml`, or `hardware/graph.json` with the same keys in a
+project that has not converted (handbook 3.1). In TOML a part is a `[components.<designator>]` table and a net one
+`[nets.<name>]` table with all its pins; pins are written by name or role – the role where the part has one
+(`D2.anode`), the datasheet's name on an IC or a module (`U2.OUT0`, `U1.GP6`) –, resolved through the parts entries; a
+number where no word names that one pin or the word says no more (`R1.2`). A part takes its pin map from its parts
+entry: no `pins` key unless the graph's differs. `#` comments carry what a reader needs beside the wiring; decisions
+still go into `notes` and the decision log, and a regulatory statement into `purpose.notes` – the circuit hash leaves
+comments out. From the example (`tests/fixtures/led-bar`):
+
+```toml
+[components.R1]
+type = "resistor"
+label = "R-EXT 2 k (sets the LED current)"
+part = "0805W8F2001T5E"
+lcsc = "C17604"
+value = "2k"
+
+# LED 1 of the bar: its cathode on the driver's first output
+[nets.LED0]
+pins = ["U2.OUT0", "D2.cathode"]
+v = [0, 5.5]
+```
+
+After every change `edakit graph json --write`: the resolved `hardware/graph.json` beside the TOML, with the pin
+numbers the words stand for – generated, committed with the TOML, never edited; the pre-commit hook checks it
+(`edakit graph json --check`). `edakit graph json 2>&1 | cat` shows the numbers without writing.
+
 Nets with worst-case voltage ranges `v`. A ground that is separate on purpose (an analog ground joined at one point)
 goes into the graph's `grounds` – every other ground pin belongs on the ground net (PATH.unfed). Decisions numbered (D-…) in
 the decision log and cited in `notes`. sim.json:
@@ -101,21 +129,24 @@ edakit sim 2>&1 | cat       # every scenario passes
 edakit schematic draw 2>&1 | cat   # the circuit as a drawing (SVG) for the user to look at – no EasyEDA needed
 ```
 
-A hint that is taken care of gets a line in the graph: `"accept": {"HINT.bulk": "C1 1000 µF next to J1"}`. The pins the
-firmware relies on go into the graph's `locks.pins` (or, where the firmware follows the graph, the contract of
-`edakit firmware`, handbook 3.5, with the roles `sdi`, `sdo`, `out0` … `outN` on drivers); a connector that can be
-plugged in the wrong way gets `"source": "reversible"`. Blocks and notes of the drawing, once it should look
-a certain way, go into the schematic file `hardware/schematic.toml` (handbook 10.3).
+A hint that is taken care of gets a line in the graph's `[accept]`: `"HINT.bulk" = "C1 1000 µF next to J1"`. The pins
+the firmware relies on go into the graph's `[locks.pins]` (`"U1.GP2" = "LED_CLK"`; or, where the firmware follows the
+graph, the contract of `edakit firmware`, handbook 3.5, with the roles `sdi`, `sdo`, `out0` … `outN` on drivers); a
+connector that can be plugged in the wrong way gets `source = "reversible"`. Blocks and notes of the drawing, once it
+should look a certain way, go into the schematic file `hardware/schematic.toml` (handbook 10.3).
 
 ## 7. Hand over
 
 What you know about the board goes into the graph as `layout` – the PCB designer gets nothing else, and the plan check
 holds the layout to it (SYNC.plan, handbook 7.4):
 
-```json
-"layout": {"fixed": ["SW1", "D2"], "edge": ["J1"], "near": {"R1": "U2"},
-           "loops": [{"a": "C5.1", "b": "U3.2", "max_mm": 8, "what": "buck input loop"}],
-           "notes": ["D2 to D9 form the bar: one row, in this order"]}
+```toml
+[layout]
+fixed = ["SW1", "D2"]
+edge = ["J1"]
+near = {R1 = "U2"}
+loops = [{a = "C5.1", b = "U3.VIN", max_mm = 8, what = "buck input loop"}]
+notes = ["D2 to D9 form the bar: one row, in this order"]
 ```
 
 - `edge`: what is plugged in from outside. `fixed`: what a person presses or looks at, and parts with a mechanical
