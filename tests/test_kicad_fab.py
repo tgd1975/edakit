@@ -400,6 +400,15 @@ def test_doctor_asks_kicad_cli_and_not_the_bridge(project, fake_cli, capsys):
     run_cli(project, "doctor", "--offline")
     out = capsys.readouterr().out
     assert "KiCad 10.0.6 (kicad-cli" in out and "Node" not in out and "bridge port" not in out
+    assert "EasyEDA" not in out              # no claim, no history of other sessions' claims (live test, LT-7)
+
+
+def test_the_gate_names_kicads_schematic_and_bom_on_kicad(project):
+    """The stage table said "EasyEDA schematic = graph" and "BOM from the graph = EasyEDA" on KiCad (live test, LT-7)."""
+    from edakit.release import gate
+    cfg = kicad_project(project)
+    texts = " ".join(about for _, _, about in gate.stages_of(cfg))
+    assert "EasyEDA" not in texts and "KiCad schematic = graph" in texts
 
 
 def test_a_session_learns_the_tool_chain(project):

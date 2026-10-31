@@ -92,6 +92,15 @@ STAGES = [
     ("F", "Manufacturing", "BOM from the graph = EasyEDA, JLCPCB stock, pick and place, Gerber set, outline, manifest"),
 ]
 OFFLINE, WITH_EASYEDA = "PGE", "SLF"
+
+
+def stages_of(cfg):
+    """The stages as the project's tool chain names them: KiCad's schematic and BOM on the KiCad tool chain."""
+    if not is_kicad(cfg):
+        return STAGES
+    kicad = {"S": "KiCad schematic = graph (parts, LCSC, nets, pins, no-connects)",
+             "F": "BOM from the graph = KiCad's, JLCPCB stock, pick and place, Gerber set, outline, manifest"}
+    return [(k, title, kicad.get(k, about)) for k, title, about in STAGES]
 PHASES = [("export", "before the export (condition of the release)"),
           ("order", "after uploading to the manufacturer, before paying"),
           ("acceptance", "after delivery, per board")]
@@ -1088,7 +1097,8 @@ def main(cfg, args):
     project_checks = scripts.gate_checks(cfg)
     before = [c for c in project_checks if c.at == "before S"]
     after = [c for c in project_checks if c.at == "after F"]
-    stages = STAGES[:3] + [(c.id, c.title, c.about) for c in before] + STAGES[3:] + [
+    stages = stages_of(cfg)
+    stages = stages[:3] + [(c.id, c.title, c.about) for c in before] + stages[3:] + [
         (c.id, c.title, c.about) for c in after]
     step = eda.Steps(2 + len(before) + (1 + len(cfg.made()) + len(after) if args.easyeda else 0))
     step("P/G parts and graph")
