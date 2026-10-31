@@ -449,11 +449,14 @@ hash (8.2):
 
 ```json
 {"id": "M-1", "phase": "export", "scope": "circuit", "done_by": "agent electrical-reviewer (own session)",
- "date": "2026-10-31", "note": "M-1: OK for state 48984185a69a…; requirements met: R-2. …"}
+ "date": "2026-10-31", "note": "M-1: OK for state a2a6ed922953…; requirements met: R-2. …"}
 ```
 
 The note names R-2, and that is R-2's passing evidence in the gate (8.7). Any later change to graph, parts, simulation
-config or requirements changes the hash, and M-1 and M-6 no longer count.
+config or requirements changes the hash, and M-1 and M-6 no longer count. That happened once more the same day: the
+accept of HINT.debounce left the graph – edakit no longer reports the hint without an MCU reading the button – and the
+cell's current limit came in (17.6, D-7). Both agents looked again, M-1 checked the new accept's reason against the
+cell's data sheet, and both signed for the new hash.
 
 ## 17.10 The gate without EasyEDA
 
@@ -465,19 +468,19 @@ $ edakit gate
 [ 0.0 min] step 2/2: E simulation
 
 NOT RELEASED
-  - 1 manual check(s) before the export open: M-5 (section 6)
+  - M-5 signed for fab f958da9ad4f8… – checked by stage F (section 6)
   - stages not run: S (Schematic), L (Board), F (Manufacturing)
 requirements: 1 passed, 1 open after the export (section 11 of the protocol)
 ```
 
 ```text
-| P Parts | parts database complete, graph pins = parts database, parts verified, … | 7 | 0 | 0 | 0 | 0 | passed |
-| G Graph | structure, pin locks, voltage domains, inputs, drivers, decoupling, … | 35 | 0 | 0 | 4 | 0 | passed |
-| E Simulation | ngspice operating points of all scenarios, stress of every part, … | 104 | 0 | 0 | 0 | 0 | passed |
+| P Parts | parts database complete, graph pins = parts database, parts verified, … | 8 | 0 | 0 | 0 | 0 | passed |
+| G Graph | structure, pin locks, voltage domains, inputs, drivers, decoupling, … | 36 | 0 | 0 | 3 | 0 | passed |
+| E Simulation | ngspice operating points of all scenarios, stress of every part, … | 109 | 0 | 0 | 3 | 0 | passed |
 ```
 
 In P and G every code without a finding counts once as passed – the codes the domains `core` and `power` switch on –,
-and G's four accepted findings are PATH.reverse and the three hints. R-2 passed on its rows and on M-1's note;
+G's three accepted findings are PATH.reverse and the two hints, E's three the cell's current with SW1 held (D-7). R-2 passed on its rows and on M-1's note;
 R-1 has passed its rows too and waits for its acceptance step after
 delivery. Section 6 of the protocol already holds the lists for later: what M-2 looks at before paying – D1's
 cathode, from the `open` point of its parts entry – and what M-4 tests on the delivered boards, the holder's
