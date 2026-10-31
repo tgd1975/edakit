@@ -322,6 +322,10 @@ Taken by the owner on 2026-10-31 – maker-coverage's open decisions 3 to 5, thr
    says that edakit checks neither spacing nor isolation there (CK-22); an **error** that a project may accept with
    its reason in the sign-off file ("power supply bought, only safety extra-low voltage on the board"). No creepage or
    clearance is measured: edakit makes no safety statement others could rely on. FT-7, CK-9, CK-10 and CK-24 stay out.
+   Built the same day: `LIM.hazardous` is core's, always on – a project that names its domains cannot leave it out –
+   and the domain `mains` is suggested by such a net and carries the reviewers' questions. The DC limit (60 V) is read
+   from TI's seminar paper SLUP421; the AC limit is not read yet, so an AC net is judged by its peak against the DC
+   limit.
 8. **Library of checked parts entries** (decision 4): in edakit, `edakit/parts/` – the entries `edakit/blocks/parts/`
    holds today move there, the blocks use the same ones. A project takes an entry over with `edakit part add <part>`
    as a **copy** into its parts folder, which names the library entry and its version; `edakit check` notes when the

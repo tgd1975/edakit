@@ -8,6 +8,8 @@ fuse's trip current) is not reported where the limit itself is exceeded at the s
 Radio (LIM.eirp, LIM.band): a transmitter's e.i.r.p. against the limit of each EU band it transmits in, and its bands
 against the EU licence-exempt bands (radio.py, catalog/tables/radio_eu.toml); what the firmware keeps is graded
 firmware or unknown, its severity the profile's by purpose.
+
+Hazardous voltage (LIM.hazardous): a net beyond the ES1 limit of IEC 62368-1 – recognised, not checked (decision 7).
 """
 
 from __future__ import annotations
@@ -71,7 +73,37 @@ def judge_all(design, quantities):
 def run(ctx):
     found = judge_all(ctx.design, pin_voltages(ctx.design) + part_voltages(ctx.design))
     found += judge_all(ctx.joined, fuse_currents(ctx.joined, ctx.sim))
-    return found + radio_power(ctx.design) + radio_bands(ctx.design)
+    return found + hazardous(ctx.design) + radio_power(ctx.design) + radio_bands(ctx.design)
+
+
+# --- hazardous voltage ------------------------------------------------------------------------------------------------
+def es1_v():
+    from .. import catalog
+    return float(catalog.table("iec62368")["es1"]["dc_v"])
+
+
+def hazardous_nets(d):
+    """{net: its highest voltage magnitude} of the nets whose declared range reaches beyond the ES1 limit."""
+    limit, out = es1_v(), {}
+    for name, net in d.nets.items():
+        v = net.get("v")
+        if isinstance(v, list) and len(v) == 2 and all(is_number(x) for x in v):
+            peak = max(abs(v[0]), abs(v[1]))
+            if peak > limit:
+                out[name] = peak
+    return out
+
+
+def hazardous(d):
+    """LIM.hazardous (rules-at-scale.md, decision 7): a net above the ES1 limit of IEC 62368-1 is hazardous voltage,
+    which edakit recognises and does not check – an error a project may accept with its reason. An AC net is judged by
+    its peak against the DC limit while the AC limit is not read (catalog/tables/iec62368.toml)."""
+    limit = es1_v()
+    return [Finding("LIM.hazardous", "G", name, f"{name}: up to {peak:g} V – above the ES1 limit of IEC 62368-1 "
+                    f"({limit:g} V DC): hazardous voltage, whose spacing and isolation edakit does not check",
+                    "catalog/tables/iec62368.toml", on=(("net", name),), data={"value": peak, "limit": limit,
+                                                                                 "unit": "V"})
+            for name, peak in sorted(hazardous_nets(d).items(), key=lambda x: natural_key(x[0]))]
 
 
 # --- radio ------------------------------------------------------------------------------------------------------------

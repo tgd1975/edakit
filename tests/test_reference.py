@@ -53,4 +53,6 @@ def test_the_seeded_fault_raises_exactly_its_codes(tmp_path, name, what):
 
 def test_every_domain_has_a_reference_circuit():
     from edakit import profile
-    assert set(profile.names()) - {"radio"} <= set(REFERENCES), "a domain without a reference circuit"
+    # radio: a transmitter's facts, no circuit of its own; mains: recognised, not checked – its fault is the one
+    # test_hazardous.py builds into the example (decision 7)
+    assert set(profile.names()) - {"radio", "mains"} <= set(REFERENCES), "a domain without a reference circuit"

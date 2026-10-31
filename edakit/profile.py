@@ -54,6 +54,10 @@ def suggests(design, rule):
         return True
     if rule.get("cables") and design.graph.get("cables"):
         return True
+    if rule.get("hazardous"):
+        from .engines.limits import hazardous_nets
+        if hazardous_nets(design):
+            return True
     if rule.get("radio"):
         if (design.graph.get("purpose") or {}).get("radio") is not None:
             return True

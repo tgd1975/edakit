@@ -1,0 +1,15 @@
+# Energy source classes of IEC 62368-1 – LIM.hazardous: a net above the ES1 limit is hazardous voltage, which edakit
+# recognises and does not check (rules-at-scale.md, decision 7). The standard itself is not at hand; the values are
+# read from a seminar paper that names them. The AC limit (rms and peak up to 1 kHz) is not read yet: an AC net is
+# judged by its peak against the DC limit until it is.
+
+[table]
+about = "energy source class limits of IEC 62368-1 by which edakit recognises hazardous voltage"
+source = "W. Zhang, T. LaBella: Demystifying clearance and creepage distance for high-voltage end equipment, TI Power Supply Design Seminar, SLUP421, slide 'Insulation grade guidelines': '60 V – ES1 limit', '120 V – ES2 limit' (IEC 62368-1) – https://www.ti.com/lit/pdf/SLUP421, read 2026-10-31"
+tag = "r"
+
+[es1]
+dc_v = 60           # above it: ES2 or ES3, hazardous for an ordinary person without a safeguard
+
+[es2]
+dc_v = 120

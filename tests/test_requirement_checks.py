@@ -636,4 +636,4 @@ def test_with_the_key_the_requirement_checks_count_as_executed(project, monkeypa
     assert "DOCS.evidence" in one
     # every code of stage G the profile has on, DOCS.ref to DOCS.draft among them (a code that only warns counts as
     # passed); DOCS.draft about the draft R-4 is information in the gate, no warning to accept
-    assert re.search(r"\| G Graph \| [^|]+ \| 34 \| 0 \| 0 \| 3 \| 0 \| passed \|", one)
+    assert re.search(r"\| G Graph \| [^|]+ \| 35 \| 0 \| 0 \| 3 \| 0 \| passed \|", one)

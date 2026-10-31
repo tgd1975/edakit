@@ -218,6 +218,17 @@ sources = [
   "ngspice User's Manual, independent sources: PWL(T1 V1 T2 V2 …) holds V1 before T1; .tran starts from the DC operating point unless uic is given",
 ]
 
+[codes."LIM.hazardous"]
+title = "hazardous voltage recognised, not checked"
+rule = "Every net's declared voltage range stays within the ES1 limit of IEC 62368-1 (60 V DC, catalog/tables/iec62368.toml); a net beyond it is hazardous voltage, and the finding says that edakit checks neither its spacing nor its isolation. An AC net is judged by its peak against the DC limit while the AC limit is not read."
+why = "edakit's checks are made for safety extra-low voltage. Above the ES1 limit a fault is a shock or a fire, the safeguards – creepage, clearance, insulation, the mains input – are the standard's and a test lab's, and edakit measures none of them; a board with such a net that passed every check would look checked where it was not. So edakit says it, once per net, as an error a project must accept on purpose (rules-at-scale.md, decision 7)."
+fix = "Keep the hazardous voltage off the board – a bought, certified supply that hands the board only safety extra-low voltage – or accept the finding on the net with its reason (\"mains only on the bought relay module's terminals, enclosure IP40\") and have the safeguards reviewed outside edakit (domain mains: the reviewers' questions)."
+severity = "error"
+sources = [
+  "W. Zhang, T. LaBella: Demystifying clearance and creepage distance for high-voltage end equipment, TI Power Supply Design Seminar SLUP421: '60 V – ES1 limit', '120 V – ES2 limit' (IEC 62368-1) – https://www.ti.com/lit/pdf/SLUP421",
+  "rules-at-scale.md, decision 7 (2026-10-31): mains and hazardous voltage recognised, not checked; maker-coverage CK-22",
+]
+
 [codes."LIM.i"]
 title = "current within its limit"
 rule = "Every current stays within its limit: through resistors, fuses (below the derated hold current), switches, connectors and cables, LEDs, diodes, collector and drain, an MCU's outputs per pin and together, a regulator's output, a supply's limit (sim.json sources); and what a fuse lets pass – its hold current at the lowest ambient – within every connector, switch and cable it protects."
