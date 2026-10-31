@@ -261,10 +261,13 @@ the graph is caught at once:
 STRUCT.entry – graph pins = parts entry: 2 error
   P  D1: pins differ from the library symbol of C84256 (build/edakit/library/C84256.json): pin 1: symbol '-', graph
      'A'; pin 2: symbol '+', graph 'K'
-  P  D1: pins differ from parts entry C84256: graph {'1': 'A', '2': 'K'} vs parts {'1': '-', '2': '+'}
+  P  D1: pins differ from parts entry C84256: graph {'1': 'A', '2': 'K'} vs parts {'1': '-', '2': '+'} – the library
+     symbol agrees with the entry: the graph has the pins of another part
 ```
 
-With the pins and nets swapped, the 150 Ω of the block stay: the simulation gives 1.22 mA from a used cell into the
+The fix of STRUCT.entry has its advice per case, under the words the finding starts with; for "pins differ from parts
+entry" it is either the part number of the part whose pins the graph has, or – to keep the red LED – its pin names
+and the nets on its pins swapped to the entry's. With the pins and nets swapped, the 150 Ω of the block stay: the simulation gives 1.22 mA from a used cell into the
 LED at its highest forward voltage, 10.7 mA from a fresh cell at its lowest – LIM.i allows 20 mA, 80 % of its 25 mA, and
 LIM.p holds the 14.75 mW it then dissipates (Vf × If) to 32.5 mW, half its 65 mW. The computation is in R1's `notes`,
 the reason in D-2.
