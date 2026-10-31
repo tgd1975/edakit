@@ -1,3 +1,5 @@
+![edakit](docs/brand/edakit-app-icon.svg)
+
 # edakit
 
 **Circuit design as code.** Everything a board is made of is text in your repository: the circuit, the parts with

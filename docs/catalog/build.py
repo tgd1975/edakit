@@ -312,6 +312,8 @@ h3 { font: 600 1.1rem/1.3 var(--display); margin: 1.6rem 0 0.6rem; }
 h4 { font: 600 1rem/1.3 var(--display); margin: 0; }
 p, li, dd { max-width: 75ch; }
 .muted, .meta { color: var(--muted); }
+.brand a { display: inline-flex; align-items: center; gap: 0.5rem; }
+.brand img { display: block; }
 .meta { font-size: 0.85rem; margin: 0.4rem 0 0; }
 .tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(9.5rem, 1fr)); gap: 0.75rem; margin: 1rem 0; }
 .tile { background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 0.8rem; display: grid; }
@@ -395,7 +397,7 @@ def page(items):
     tiles = "".join(f'<div class="tile"><span class="big">{v}</span><span class="lbl">{k}</span></div>' for k, v in (
         ("Engines", len(catalog.engines())), ("Codes", len(codes)), ("Grades", grades), ("Hints", len(hints)),
         ("Domains", len(profile.domains())), ("Sources cited", sources), ("Reference circuits", len(items))))
-    body = (f'<header class="top"><p class="meta"><a href="../">edakit documentation</a></p><h1>edakit rule catalog</h1><p>Every rule edakit checks – engine, code, severity, '
+    body = (f'<header class="top"><p class="meta brand"><a href="../"><picture><source media="(prefers-color-scheme: dark)" srcset="../brand/edakit-mark-dark.svg"><img src="../brand/edakit-mark.svg" width="28" height="28" alt=""></picture>edakit documentation</a></p><h1>edakit rule catalog</h1><p>Every rule edakit checks – engine, code, severity, '
             'rule, why, what to do and its sources –, the domains that switch rules on, the tables of numbers, the parts '
             'schema, the reference circuits with their seeded faults, and what became of the maker-coverage '
             'candidates. Generated from <code>edakit/catalog</code>, <code>edakit/domains</code> and '
@@ -411,6 +413,7 @@ def page(items):
            'before</a></li></ol></nav>')
     return ('<!DOCTYPE html>\n<html lang="en"><head><meta charset="utf-8"><meta name="viewport" '
             'content="width=device-width, initial-scale=1"><title>edakit rule catalog</title>'
+            '<link rel="icon" type="image/svg+xml" href="../brand/edakit-favicon.svg">'
             '<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="stylesheet" '
             'href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;600&display=swap">'
             f'<style>{CSS}</style></head><body><div class="layout">{nav}<main>{body}</main></div>'
