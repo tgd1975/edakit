@@ -240,8 +240,9 @@ The sketch is [circuit-language.md](circuit-language.md): the bell both ways, a 
 configurations there and back without a difference, what each form costs, and the decisions to take. Reviewed on
 2026-10-31: the gains are independent of a language of its own and are built in any case – pins by name or role, the
 pin map from the parts entry, the hash rule, `edakit graph json` –; the language is deferred until it offers what a
-format cannot, which its section "Review 2026-10-31" spells out. Open is the form: TOML with names, or today's JSON
-with names.
+format cannot, which its section "Review 2026-10-31" spells out. Decided the same day: TOML with names as the form,
+`hardware/graph.toml`, with the resolved `graph.json` generated beside it (its decisions 1–7); what both forms share
+is step 4.6 of the plan.
 
 ## Order
 
@@ -270,7 +271,7 @@ technical point the user left to Claude and then confirmed.
 | 5 | Gap 2: where the footprint data goes | into the parts entry; a change then voids the circuit reviews too – right for M-1, which checks polarity | decided by Claude |
 | 6 | Rule set of EasyEDA's DRC | write it if the API carries it; otherwise read and check it | decided by Claude: reading works, net rules can be written (`overwriteNetRules`); step 4 finds out about the whole set |
 | 7 | Where the order settings go | `[order]` in the board file (#40); mask and print colour join it | settled by #40 |
-| 8 | A language, or TOML with names | first sketch both on the Christmas bell; after the review of 2026-10-31 the language is deferred, what both forms share is built in any case, the form is open (circuit-language.md) | accepted |
+| 8 | A language, or TOML with names | first sketch both on the Christmas bell; after the review of 2026-10-31 the language is deferred and the form decided: TOML with names, the resolved JSON beside it (circuit-language.md, decisions 1–7) | accepted |
 | 9 | The order settings in the fab hash and the estimate | thickness, colours, finish and mark count in the fab hash, the remark does not; `edakit cost` names an order it does not price | the user's choice on 2026-10-28, built as a follow-up of step 1.7 |
 
 ## Sources

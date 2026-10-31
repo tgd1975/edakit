@@ -1,9 +1,9 @@
 # Implementation plan: requirements, design as text, project scripts
 
 Status 2026-10-31: plan; phase 1 (1.1 to 1.8), 3.1 to 3.5, 3.7 and the follow-ups below are done; 2.1 to 2.4 and the
-offline part of 3.6 are built and wait for their live run in EasyEDA; 4.3 is written and reviewed, the language
-deferred and the form open. It builds the three concepts of this folder after the user took their decisions on
-2026-10-28 (e5caf42, 301fd90):
+offline part of 3.6 are built and wait for their live run in EasyEDA; 4.3 is written, reviewed and decided – the
+language deferred, TOML with names the form –, and 4.6 builds what both forms share when the user asks. It builds the
+three concepts of this folder after the user took their decisions on 2026-10-28 (e5caf42, 301fd90):
 [requirements.md](requirements.md), [design-as-text.md](design-as-text.md) and [project-scripts.md](project-scripts.md).
 Phase 5 builds a fourth, [ordering.md](ordering.md) – ordering at the manufacturer, decided on 2026-10-30 –; on the
 user's word ("Implementiere das Konzept") its offline steps were built the same day on one branch: 5.1 to 5.6, 5.8 and
@@ -51,9 +51,10 @@ the list of what is left: [TODO.md](../../../TODO.md). Each other step starts wh
 | 3.7 | Project setup: `new-project` with two ways, agent `project-surveyor` | project-setup, decisions 1–6 | M | no | 3.2, 3.4 | done (92db89f) |
 | 4.1 | Bell: requirements file | requirements order 5, decision 9 | M | no | 3.4, the bell's order | open |
 | 4.2 | Bell: entries for `kunst` and `tdisplay` | project-scripts example | S | no | 2.4 | open |
-| 4.3 | Bell: the circuit as a language and as TOML with names, then the choice | design-as-text decision 8 | M | no | – | written (3f2b9e3, 7bbf3ce); reviewed 2026-10-31: the language deferred, what both forms share – pins by name or role, the pin map from the entry, the hash rule, `edakit graph json` – becomes a step when the user asks, the form (TOML or JSON) open |
+| 4.3 | Bell: the circuit as a language and as TOML with names, then the choice | design-as-text decision 8 | M | no | – | written (3f2b9e3, 7bbf3ce); reviewed and decided 2026-10-31: the language deferred, TOML with names the form; what both forms share is 4.6 |
 | 4.4 | Tree: its positions, scripts, agents and requirements | all three | M | yes | the tree's move, 2.1, 3.7 | open |
 | 4.5 | The requirements file becomes required | requirements decision 5 | S | no | 4.1, 4.4 | open |
+| 4.6 | Pins by name or role, the graph as TOML: `hardware/graph.toml`, the pin map from the parts entry, the hash over the canonical data, the resolved `graph.json` beside it, `edakit graph convert` and `graph json` | circuit-language decisions 1–7 | M | no | – | open |
 | 5.0 | Probes: the makers' pages in the owner's browser, EasyEDA's ODB++ | ordering steps 0, 0b | – | yes (0b) | the owner's Chrome | open |
 | 5.1 | The order form as fields, `order.md` from them | ordering step 1 | S | no | – | done (d58f4ae) |
 | 5.2 | Every field of the form as a key, edakit's defaults, `edakit cart fields` | ordering step 2 | M | no | 5.0, 5.1 | done (d58f4ae) – the keys of the reference orders; 5.0 adds what the forms show |
@@ -106,6 +107,7 @@ flowchart LR
     s43["4.3 bell: language sketch"]
     s44["4.4 tree moves"]
     s45["4.5 requirements required"]
+    s46["4.6 graph as TOML, pins by name"]
   end
   subgraph P5["5 · ordering"]
     s50["5.0 probes"]
@@ -132,6 +134,7 @@ flowchart LR
   s37 --> s44
   s41 --> s45
   s44 --> s45
+  s43 --> s46
   s50 --> s52
   s50 --> s57
   s55 --> s57
@@ -395,9 +398,10 @@ that takes all four configurations of the bell, led-bar and a graph with every f
 difference. The recommendation is the language; six decisions are open.
 
 Reviewed on 2026-10-31 (the concept's section "Review 2026-10-31"): the owner deferred the language – it would need
-abstraction, a schema that stands still and evidence from the evals to be worth its cost. What both forms share is
-built in any case and becomes a step of its own when the user asks for it; what stays to decide is the form, TOML
-with names or today's JSON with names.
+abstraction, a schema that stands still and evidence from the evals to be worth its cost. Decided the same day, the
+concept's table: TOML with names as the form, the pin map from the parts entry, the hash over the canonical data of
+the form, a resolved `graph.json` generated beside it, four complete variants, the symbol's names and the roles, no
+net in fragments. What both forms share is step 4.6.
 
 **4.4 The tree moves.** When the reference project moves to edakit after its order (EK-1 of its concept): the
 takeover of its positions (2.1), seven of its eight scripts – `review` only reads the release (decision 8) – with
@@ -406,6 +410,18 @@ its requirements file.
 
 **4.5 Requirements required.** Once the bell and the tree have a file, a project without one fails the gate
 (decision 5).
+
+**4.6 Pins by name or role, the graph as TOML.** `hardware/graph.toml`, named by `[project] graph`: pins by name or
+role, resolved through the parts entries (the number first, then the name of one pin, the role of one pin, a shared
+name or role for all of them); the pin map from the entry, stated only where the graph differs; `locks.pins` as it
+is. The circuit hash over the form's data as canonical JSON, `hash_ignore` applied, components, nets and pins sorted.
+`edakit graph json`, and the resolved `hardware/graph.json` generated beside the form and checked in the pre-commit
+hook as `firmware.json` is. `edakit graph convert` for a project that moves: it carries the sign-offs over as
+`edakit convert` does and rewrites `pin_reference`. `block add` with a line editor that keeps comments and arrays;
+STRUCT.entry keeps comparing with the library's symbol; findings name pins by the same rule; handbook 3 and the
+skills circuit-design, hardware-change, own-part and new-project. No key, no change: a project keeps
+`hardware/graph.json` as its source until it converts. The bell converts in its repository, at the user's request,
+after the prototypes of 4.3 are brought onto the new keys. Size M, without EasyEDA; starts when the user asks.
 
 ## Phase 5: ordering at the manufacturer
 
@@ -471,6 +487,7 @@ of 5.7, 5.8, 5.10 and 5.12, 5.11.
 | 3.2 | – | – | a project agent's sign-off is required, where a project registers one |
 | 3.6 | changes where footprint data is added | changes likewise | a new check: the copy equals the data |
 | 4.5 | – | – | a missing requirements file blocks |
+| 4.6 | changes once where a project converts to `graph.toml`: the form's data as canonical JSON, sorted, `hash_ignore` applied; `edakit graph convert` carries the sign-offs over | – | the resolved `graph.json` is checked in the pre-commit hook; where the form takes the pin map from the entry, STRUCT.entry has only the library's symbol left to compare |
 | 5.2 | – | changes where a board file sets a new key, as any edit of it; the fab hash where a key differs from edakit's default | F-6 checks every key |
 | 5.3 | – | – | P-4 and F-2 run only with JLCPCB among the makers; a finding for a second maker warns; JLCPCB's placeholder on a board warns (its order number reported gone) |
 | 5.8 | – | – | P-12, only with a maker that matches by MPN |
@@ -482,7 +499,7 @@ Three tracks can run side by side, each in its own worktree:
 
 - project scripts: 1.2 → 1.3 → 1.4 → 2.4 → 3.1, 3.2 → 3.3;
 - requirements: 1.5 → 1.6 → 3.4 → 3.5;
-- design as text: 1.1, 1.7, 1.8, 2.1–2.3, 3.6.
+- design as text: 1.1, 1.7, 1.8, 2.1–2.3, 3.6, 4.6.
 
 They meet in `edakit/release/gate.py` (1.6, 1.8, 3.1, 3.2, 4.5) and `edakit/config.py` (1.2, 1.5, 1.7, 2.3, 3.2).
 Steps that share one of these files go to main one after the other, and the next one is rebased first.

@@ -4,10 +4,13 @@ Status 2026-10-31: sketch of step 4.3 of the [implementation plan](implementatio
 [design-as-text.md](design-as-text.md), written on 2026-10-29 against edakit at `75d5c32` and the bell at `f56b463`,
 reviewed on 2026-10-31 against main at `075574e`. The owner's conclusion from the review is in the section
 [Review 2026-10-31](#review-2026-10-31): what is worth building is independent of a language of its own and is built
-in any case; the language is deferred until it offers what a format cannot. The decisions at the end are narrowed to
-that. Since the sketch, the cut of rules at scale (`4982d35`) has changed the graph's keys and the codes; the examples
-below and the prototype still use the old ones, and the review lists what to bring along. The Christmas bell's main
-configuration is written down both ways in [prototypes/circuit-language](prototypes/circuit-language/): as a language,
+in any case; the language is deferred until it offers what a format cannot. The decisions at the end were taken the
+same day: TOML with names as the form, the pin map from the parts entry, the hash over the form's canonical data, a
+resolved `graph.json` generated beside the form, four complete variants, the symbol's names and the roles, no net in
+fragments; what both forms share is step 4.6 of the plan. Since the sketch, the cut of rules at scale (`4982d35`) has
+changed the graph's keys and the codes; the examples below and the prototype still use the old ones, and the review
+lists what to bring along. The Christmas bell's main configuration is written down both ways in
+[prototypes/circuit-language](prototypes/circuit-language/): as a language,
 [bell.circuit](prototypes/circuit-language/bell.circuit), and as TOML with pin names,
 [bell.toml](prototypes/circuit-language/bell.toml). The translator `translate.py` takes all four configurations
 there and back without a difference, at the state of `75d5c32`.
@@ -544,55 +547,37 @@ with a nicer syntax, so it is a second format for the same data. It would be wor
    editors, a formatter, line-exact errors, one reader every tool uses and one writer for everything that writes the
    graph.
 
-## Open decisions
+## Decisions
 
-Narrowed by the review of 2026-10-31. Each a real choice, the recommended answer first, with its trade-off.
+Taken on 2026-10-31 in a decision round after the review. "Accepted" is the owner's yes to the recommendation;
+"decided by Claude" marks what the owner left to Claude and confirmed. The language itself is deferred – the owner's
+conclusion of the review – until it offers what a format cannot (the section Review 2026-10-31 says what that is).
 
-1. **Which form does edakit build for the circuit?** The language is deferred (the owner, 2026-10-31; the review
-   says what it would need).
-   - *TOML with names, `hardware/graph.toml`* (recommended): comments, a third of the lines, a format every model and
-     editor knows and GitHub highlights, and edakit's configuration files are TOML already; `block add` needs a line
-     editor that keeps comments and arrays, as `write_place_rows` is one for `[place]`; a path stays spread over
-     tables unless `[[nets]]` fragments are allowed.
-   - *Names and roles in today's `hardware/graph.json`*: no new format and no conversion; no comments, and the bell
-     stays at 515 lines.
-2. **What does the circuit hash cover?**
-   - *The data of the form as canonical JSON, `hash_ignore` applied, names unresolved, components, nets and the pins
-     of a net sorted* (recommended): comments and arrangement count for nothing, every change of data does, and a
-     rewire through a parts entry changes the hash through the entry; a sign-off survives an edited comment the
-     reviewer had read, and regulatory text stays in `purpose.notes`.
-   - *The form's bytes, as today for a file that is no JSON*: simple; `hash_ignore` stops working, and every comment
-     and every rearrangement voids M-1 and M-6.
-3. **Where does a part's pin map come from?**
-   - *From its parts entry; the form states it only where the graph differs, and a part without an entry keeps its
-     pins by number for STRUCT.entry to report* (recommended): the Nano's 30 pins leave the graph; a parts entry that
-     moves a name or role moves the connection too, which the hash and `edakit graph json` show and the form's diff
-     does not.
-   - *From the form, as today*: STRUCT.entry keeps comparing graph and entry; about 30 lines for the Nano in TOML.
-4. **Is there a resolved JSON beside the form?**
-   - *Yes: generated, committed and checked in the pre-commit hook, as `firmware.json` is* (recommended since the
-     review): every rewire shows as pin numbers in the diff M-1 reads; two files change with every edit, as with the
-     firmware contract today.
-   - *No: edakit translates when it loads, and `edakit graph json` prints the graph*: one source; a rewire through a
-     parts entry shows only in that output.
-5. **How are the variants written?**
-   - *Four complete files, as today* (recommended): names and roles already make their wiring alike; a change to the
-     circuit is still made four times.
-   - *A variant names the main file and lists its differences*: SMD and THT shrink to about 26 lines; a change to the
-     main file changes the variants' hashes and voids their sign-offs. One of the things a language would have to
-     offer, with its hash model.
-6. **Which pin names may a form use?**
-   - *The symbol's names and the roles* (recommended): what STRUCT.entry and SYNC.schematic hold already; the Nano's
-     swapped labels need a comment (`U1.PB4` is D11).
-   - *Also an alias per pin in the parts entry (`"9": {"name": "PD6", "alias": "D6"}`)*: `U1.D6` reads like
-     `buttons.ino`, avoids the swapped labels, and would give the firmware contract the GPIO number the Nano's port
-     names do not carry; one more field per pin that no check holds to a datasheet.
+| # | Question | Decision | Status |
+| --- | --- | --- | --- |
+| 1 | Which form edakit builds for the circuit | TOML with names, `hardware/graph.toml`: comments, a third of the lines, a format every model knows and GitHub highlights; `block add` gets a line editor that keeps comments and arrays, as `write_place_rows` is one for `[place]`; names and roles in today's JSON was the alternative | accepted |
+| 2 | What the circuit hash covers | the data of the form as canonical JSON, `hash_ignore` applied, names unresolved (the parts entries are in the hash already), components by designator, nets by name and the pins of a net sorted: comments and arrangement count for nothing, every change of data does; regulatory text stays in `purpose.notes` | accepted |
+| 3 | Where a part's pin map comes from | from its parts entry; the form states it only where the graph differs; a part without an entry keeps its pins by number, and STRUCT.entry reports it instead of a loading error | accepted |
+| 4 | A resolved JSON beside the form | yes: generated, committed and checked in the pre-commit hook as `firmware.json` is, so that every rewire through a parts entry shows as pin numbers in the diff M-1 reads; two files change with every edit | accepted |
+| 5 | How the variants are written | four complete files, as today; a variant that names the main file and lists its differences is something a later language would have to offer with its hash model | accepted |
+| 6 | Which pin names a form may use | the symbol's names and the roles, as STRUCT.entry and SYNC.schematic hold them; the Nano's swapped labels get a comment; no alias per pin | accepted |
+| 7 | A net in fragments (review, finding 4) | no: a net is one table, `[nets.GND]` once with all its pins, one way to write a net and one place a reviewer reads it; a path as a block stays the task of a later language | accepted |
 
-Decided by Claude, for confirmation – the part independent of the language: how a word is read and which word the
-writer takes (rules above, with the pins of a net compared sorted); graphs with doubled names or unknown pins are
-refused, not translated; TOML keys components, nets and cables by designator and name, and has no null; the JSON
-comes back with `{"graph": …}`; the lock stays `locks.pins`. Deferred with the language: the extension `.circuit`,
-`(locked)` and `lock PIN NET`, `set KEY JSON`, a later net line that adds pins, quoted text over several lines.
+Decided by Claude, confirmed: (1) a pin word is read as the number first, then the name of one pin, then the role of
+one pin, then a name or role several pins share, which stands for all of them; the writer takes the first word that
+reads back as exactly the pins it means, else the number; findings name pins by the same rule. (2) The pins of a net
+are compared sorted; `U1.GND` means all GND pins wherever they stand. (3) Doubled names and unknown pins are refused
+when the graph is loaded, not translated; a part without an entry keeps its numbers for STRUCT.entry to report.
+(4) TOML keys components, nets and cables by designator and name and has no null; `locks.pins` stays a table of its
+own. (5) The source is `hardware/graph.toml`, named by `[project] graph`; the generated, resolved file keeps the name
+`hardware/graph.json`, with pin numbers and the wrapper `{"graph": …}`, so that project scripts that read the graph as
+JSON keep running. (6) `edakit graph convert` translates a project once, carries its sign-offs over as `edakit convert`
+does and rewrites the convention `pin_reference`; `edakit graph json` prints the resolved graph; `edakit graph fmt` is
+dropped. Deferred with the language: the extension `.circuit`, `(locked)` and `lock PIN NET`, `set KEY JSON`, a later
+net line that adds pins, quoted text over several lines.
+
+What both forms share is step 4.6 of the [implementation plan](implementation-plan.md), built with add-feature when
+the owner asks for it; the prototypes of this folder are brought onto the new keys first.
 
 ## Sources
 
