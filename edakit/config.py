@@ -320,7 +320,11 @@ def _outline(spec, name):
                                (x0 + r, y0 + r, 180)):
                 for k in range(steps + 1):
                     a = math.radians(a0 + 90 * k / steps)
-                    pts.append((round(cx + r * math.cos(a), 4), round(cy + r * math.sin(a), 4)))
+                    pt = (round(cx + r * math.cos(a), 4), round(cy + r * math.sin(a), 4))
+                    if not pts or pt != pts[-1]:      # a radius of half the side: the arcs meet, a circle
+                        pts.append(pt)
+            if pts[-1] == pts[0]:
+                pts.pop()
     else:
         raise ConfigError(f"board {name}: outline needs 'polygon' or 'rect'")
     if len(pts) < 3:
