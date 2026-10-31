@@ -9,7 +9,8 @@ prototype that draws every project at hand this way and measures what it costs
 ([prototypes/wired-schematic](prototypes/wired-schematic/README.md)); checked the same day against main at
 `b15a3ac` – L.1 to L.8 of circuit-language-plan built since (pins by name or role, the pin map from the parts entry,
 the graph as TOML), the drawing code unchanged, the measures the same. Built so far: W.1, the frame of the SVG
-optional, which the owner asked for on the side – merged into main the same day.
+optional, which the owner asked for on the side – merged into main the same day; W.5, the board's print per pin
+(`print` in the parts entry, `PD2 (D2)` in the drawing), the same day.
 
 ## The short answer
 

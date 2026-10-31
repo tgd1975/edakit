@@ -317,12 +317,16 @@ def box_sides(kind, pins, role, connected, spec):
     return {"left": [p for p in shown if p in left_half], "right": [p for p in reversed(shown) if p not in left_half]}
 
 
-def box(sides, names, designator, value):
+def box(sides, names, designator, value, prints=None):
     left, right, top, bottom = (sides.get(k, []) for k in ("left", "right", "top", "bottom"))
 
     def name(p):
         n = str(names.get(p, p))
-        return "" if n == p else n
+        n = "" if n == p else n
+        printed = (prints or {}).get(p)
+        if not printed or printed == n:
+            return n
+        return f"{n} ({printed})" if n else printed     # the board's print beside the symbol's name
 
     wl = max((text_w(name(p), NAME) for p in left), default=0)
     wr = max((text_w(name(p), NAME) for p in right), default=0)
@@ -387,7 +391,8 @@ def symbol(design, d):
         built = potentiometer(pins, role)
     if built is None:
         small = value or part_name
-        built = box(box_sides(kind, pins, role, connected, part.get("symbol")), comp["pins"], d, small)
+        prints = {p: str(info[p]["print"]) for p in pins if (info.get(p) or {}).get("print")}
+        built = box(box_sides(kind, pins, role, connected, part.get("symbol")), comp["pins"], d, small, prints)
     s, dpos, vpos, drawn = built
     labels = [(d, DESIGNATOR), (small, VALUE)]
     core = drawn

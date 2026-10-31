@@ -129,6 +129,11 @@ A parts entry can arrange its box itself – a module whose pin numbers do not r
 `"symbol": {"left": ["1", …, "20"], "right": ["40", …, "21"], "bottom": ["41", "42", "43"]}` (left and right from top
 to bottom, top and bottom from left to right; connected pins not listed go to the right).
 
+A box names its pins as the symbol does (6.2). Where a pin of the parts entry has `print` – its name as the board
+prints it (4.1) – and the two differ, the drawing writes it beside the symbol's name in brackets: `PD2 (D2)` on a Nano
+whose library symbol names the ATmega ports. Only this drawing reads it; EasyEDA's schematic and SYNC.schematic keep
+the symbol's names.
+
 **Without the schematic file** the drawing arranges itself:
 
 - every IC, module, connector, relay and battery holder starts a block, the power inputs first; title: designator and
