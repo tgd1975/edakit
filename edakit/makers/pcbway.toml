@@ -21,6 +21,7 @@ files = ["gerber", "bom_mpn", "cpl"]   # gerber_<b>.zip, bom_<b>_mpn.csv (MPN re
 classes = ["turnkey", "partial_turnkey", "kitted"]   # "3 flexible options": Turnkey, Combo, Kitted or Consigned
 dnp = "omit"                           # a part not to place is left out of BOM and CPL
 cart = "Save to Cart"
+upload = "after_cart"                  # Gerber, BOM and centroid go up in the cart's upload (OrderUploadNew)
 never = ["Order", "Buy", "Checkout", "Proceed to checkout", "Pay", "Pay Now", "Submit Order", "Place Order",
          "Confirm Order", "Submit the File Now", "Agree"]
 excludes = []

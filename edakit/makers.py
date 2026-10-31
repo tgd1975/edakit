@@ -8,7 +8,8 @@ maker takes and refuses:
     name, recorded     the maker's name; the date ordering step 0 recorded the form, false while it is provisional
     start, cart, never the page the skill cart opens, the one button it may press, buttons it must not touch
     files              what is uploaded: gerber, bom, bom_mpn, cpl, odb; unshown: the uploads the maker's pages name
-                       nowhere (ORDER.files holds them by their hash only)
+                       nowhere (ORDER.files holds them by their hash only); upload: "after_cart" where the
+                       files go up in the cart (PCBWay) – their names are read back with the cart line
     bom, cpl           the columns, and the key the maker matches parts by (bom.match: lcsc or mpn)
     fields             per key: section, label, words (edakit's value -> the form's word), unit, values, more (the
                        form offers more than the profile lists: another value is not checked), when ({key = [values]}:
@@ -44,7 +45,8 @@ FILES = ("gerber", "bom", "bom_mpn", "cpl", "odb")   # what a maker takes: profi
 UPLOAD = {"gerber": "gerber_{b}.zip", "bom": "bom_{b}.csv", "bom_mpn": "bom_{b}_mpn.csv", "cpl": "cpl_{b}.csv",
           "odb": "odb_{b}.zip"}
 PROFILE_KEYS = ("name", "recorded", "start", "seat", "currency", "catalogue", "fees", "files", "classes", "dnp",
-                "cart", "never", "ignore", "excludes", "bom", "cpl", "rules", "fields", "about", "sources", "unshown")
+                "cart", "never", "ignore", "excludes", "bom", "cpl", "rules", "fields", "about", "sources", "unshown",
+                "upload")
 FIELD_KEYS = ("section", "label", "words", "unit", "values", "more", "when", "checkout")
 RULE_KEYS = ("thicknesses_mm", "thicknesses_for", "remark_max", "placeholder", "placeholder_min_mm", "placeholder_gone",
              "former_placeholder",
@@ -212,6 +214,8 @@ def shipped():
 def problems(key, data):
     """What is wrong with a profile's form: unknown keys, wrong types."""
     out = [f"maker {key}: unknown key '{k}' (known: {', '.join(PROFILE_KEYS)})" for k in data if k not in PROFILE_KEYS]
+    if data.get("upload", "before_cart") not in ("before_cart", "after_cart"):
+        out.append(f"maker {key}: upload must be \"before_cart\" or \"after_cart\"")
     for k in ("name", "start", "seat", "currency", "catalogue", "fees", "dnp", "cart"):
         if k in data and not isinstance(data[k], str):
             out.append(f"maker {key}: {k} must be a string")

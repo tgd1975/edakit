@@ -236,6 +236,7 @@ def prepare(cfg, args):
                   m.data.get("start"), "cart": m.data.get("cart"),
                   "never": list({w.casefold(): w for w in reversed([*NEVER, *m.data.get("never", [])])}.values())[::-1],
                   "ignore": m.data.get("ignore", {}), "unshown": m.data.get("unshown", []),
+                  "upload": m.data.get("upload", "before_cart"),
                   "seat": m.seat, "currency": m.currency,
                   "role": "planned" if m.key == makers.planned(cfg) else "other"},
         "quantity": o["quantity"] if o else cfg.quantity, "pcba_quantity": o["pcba_quantity"] if o else cfg.quantity,
@@ -407,9 +408,10 @@ def b4(quote, page):
         if lost else [], f"{len(values)} values, each in {PAGE}"
 
 
-def b5(cfg, job, quote):
+def b5(cfg, job, quote, cart=None):
     """The same files: the SHA-256 of the upload files is still that of the job and of the manifest, and the names –
-    and sizes where the page shows them – of the uploads are the job's."""
+    and sizes where the page shows them – of the uploads are the job's. At a maker whose files go up in the cart
+    (upload = "after_cart") the names come with the cart line (cart.json files), and before it only the hashes count."""
     from .release import gate
     cur = gate.current(cfg)
     files = (cur[1].get("files", {}) if cur and cur[0] == job["run"] else {})
@@ -427,8 +429,19 @@ def b5(cfg, job, quote):
         rel = f"fab/{job['board']}/{f['name']}"
         if files and files.get(rel) != now:
             bad.append(f"{f['name']}: not the file of the manifest")
+    after = job["maker"].get("upload") == "after_cart"
+    if after and cart is None:
+        return bad, f"{len(job['files'])} files, SHA-256 of the job and the manifest – they go up in the cart"
+    bad += uploads_shown(job, (cart or {}).get("files", []) if after else quote.get("files", []))
+    return bad, f"{len(job['files'])} files, SHA-256 of the job and the manifest"
+
+
+def uploads_shown(job, files):
+    """The uploads a page shows ([{name, size}]) against the job's files: a name without its extension is the same
+    upload; a kind the profile says the page names nowhere (unshown) is held by its hash alone."""
+    bad = []
     stem = lambda n: norm(Path(str(n)).stem if Path(str(n)).suffix else n)   # noqa: E731 – gerber_main = gerber_main.zip
-    shown = {stem(f.get("name", "")): f for f in quote.get("files", [])}
+    shown = {stem(f.get("name", "")): f for f in files}
     unshown = set(job["maker"].get("unshown", []))           # kinds of upload the maker's page names nowhere
     for f in job["files"]:
         q = shown.get(stem(f["name"]))
@@ -438,9 +451,8 @@ def b5(cfg, job, quote):
         elif q.get("size") and not size_fits(q["size"], f["size"]):
             bad.append(f"{f['name']}: the page shows {q['size']}, the file has {f['size']} bytes")
     names = {stem(f["name"]) for f in job["files"]}
-    bad += [f"{f.get('name')}: uploaded, but no file of the job" for f in quote.get("files", [])
-            if stem(f.get("name", "")) not in names]
-    return bad, f"{len(job['files'])} files, SHA-256 of the job and the manifest"
+    bad += [f"{f.get('name')}: uploaded, but no file of the job" for f in files if stem(f.get("name", "")) not in names]
+    return bad
 
 
 def b6(job, quote):
@@ -502,14 +514,14 @@ def check_cart(job, quote, cart):
     return bad, f"{cart.get('name')}: {cart.get('quantity')} at {price} {cart.get('currency', '')}".rstrip()
 
 
-def evaluate(cfg, out, job, quote, page):
-    """ORDER.form to ORDER.review: [(id, result, actual)]."""
+def evaluate(cfg, out, job, quote, page, cart=None):
+    """ORDER.form to ORDER.review: [(id, result, actual)]; cart: the cart line read back (--cart)."""
     res = []
     for cid, (bad, ok_text) in (("ORDER.form", b1(job, quote)), ("ORDER.parts", b2(job, quote))):
         res.append((cid, "fail" if bad else "pass", "; ".join(bad) if bad else ok_text))
     warn, actual = b3(job, quote)
     res.append(("ORDER.quote", "warn" if warn else "pass", "; ".join(warn) + " – " + actual if warn else actual))
-    for cid, (bad, ok_text) in (("ORDER.read", b4(quote, page)), ("ORDER.files", b5(cfg, job, quote))):
+    for cid, (bad, ok_text) in (("ORDER.read", b4(quote, page)), ("ORDER.files", b5(cfg, job, quote, cart))):
         res.append((cid, "fail" if bad else "pass", "; ".join(bad) if bad else ok_text))
     res.append(("ORDER.finish", *b6(job, quote)))
     res.append(("ORDER.review", *b7(out)))
@@ -816,12 +828,13 @@ def totals_of(cfg, run):
 
 def check(cfg, args):
     board, m, out, job, (quote, page) = load_order(cfg, args)
-    res = evaluate(cfg, out, job, quote, page)
     cart = None
     if args.cart:
         if not (out / CART).exists():
             raise CartError(f"{cfg.relative(out / CART)} is not there – the skill reads the cart line back into it")
         cart = json.loads((out / CART).read_text(encoding="utf-8"))
+    res = evaluate(cfg, out, job, quote, page, cart)
+    if args.cart:
         bad, actual = check_cart(job, quote, cart)
         res.append(("cart", "fail" if bad else "pass", "; ".join(bad) if bad else actual))
     done = write_check(out, job, quote, res, cart)

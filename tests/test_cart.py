@@ -386,3 +386,21 @@ def test_the_record_gets_the_order_number_and_the_totals(prepared, monkeypatch):
     assert cart(prepared, monkeypatch, "actual") == 0
     r = json.loads(next((prepared.root / "hardware" / "orders").glob("*.json")).read_text())
     assert r["order_number"] == "Y8-1234567A" and r["actual"]["quote"] == subtotal and r["actual"]["currency"] == "USD"
+
+
+def test_what_the_live_runs_found_in_the_comparison():
+    """Live runs 5.7 and 5.12 (2026-11-01): JLCPCB shows "60 x 28 mm" for edakit's "60.00 x 28.00 mm" and names only
+    the Gerber upload, as the project gerber_main; PCBWay takes the files in the cart and shows them there."""
+    from edakit import cart as c
+    assert c.norm("60.00 x 28.00 mm") == c.norm("60 x 28 mm") and c.norm("1.0") == c.norm("1") != c.norm("10")
+    files = [{"name": n, "size": 1000} for n in ("gerber_main.zip", "bom_main.csv", "cpl_main.csv")]
+    jlc = {"files": files, "maker": {"unshown": ["bom", "cpl"]}}
+    assert c.uploads_shown(jlc, [{"name": "gerber_main"}]) == []
+    assert c.uploads_shown({**jlc, "maker": {}}, [{"name": "gerber_main"}]) == [
+        "bom_main.csv: not among the uploads the page shows", "cpl_main.csv: not among the uploads the page shows"]
+    way = {"files": files, "maker": {"upload": "after_cart"}}
+    assert c.uploads_shown(way, [{"name": n, "size": "1 KB"} for n in ("gerber_main.zip", "bom_main.csv",
+                                                                         "cpl_main.csv")]) == []
+    assert c.uploads_shown(way, [{"name": "gerber_old.zip"}]) == [
+        "gerber_main.zip: not among the uploads the page shows", "bom_main.csv: not among the uploads the page shows",
+        "cpl_main.csv: not among the uploads the page shows", "gerber_old.zip: uploaded, but no file of the job"]
