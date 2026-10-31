@@ -5,7 +5,8 @@ and check FILES.order (order settings = board, per maker). Both when the board h
 
     DIR/<board>/order.md   every field of the planned maker's form ([cart] maker, JLCPCB without it), in the order of
                            its form, with its value in the maker's words and where it comes from: edakit's default,
-                           [order] of edakit.toml or of the board file, the Gerber files, [project] quantity,
+                           [looks] (mark "remove" on a board people look at, config.LOOKS_MARK), [order] of
+                           edakit.toml or of the board file, the Gerber files, [project] quantity,
                            [release] assembly, [tooling], the stock snapshot, [cart]; the remark; the upload files; the
                            tab zones and the outline stretches free of copper; what is bought separately (edakit order)
     DIR/<board>/order.json the order settings that change the board as made (settings): thickness_mm, mask,
@@ -28,6 +29,9 @@ and check FILES.order (order settings = board, per maker). Both when the board h
        – the run's Gerber is one board; pcba_quantity is at most quantity, and another number than [project] quantity
        warns (PARTS.stock counts that many sets); copper within tab_copper_mm of a declared tab zone fails – measured
        on the Gerber copper of both sides against the Gerber outline. The free outline stretches are information.
+       Without [order] and [cart] (no order.md): [tooling] holes on an assembled board of a class the planned maker asks
+       tooling holes for (tooling_min – JLCPCB: Economic) warn, grade tooling – no file tells the maker they are the
+       customer's, and the form stays at "Added by JLCPCB".
 
 Coordinates in messages and in order.md are Gerber mm (EasyEDA, seen from the top) – what the maker sees; tab zones
 are declared in plan mm like the rest of the board file.
@@ -61,7 +65,7 @@ PCBA_KEYS = FORM[FORM.index("pcba"):FORM.index("ship_to")]
 SHIP_KEYS = ("ship_to", "shipping")
 DERIVED = ("layers", "size_mm", "pcba", "sides", "tooling", "bake", "ship_to", "shipping")   # not values to offer
 FREE = ("quantity", "pcba_quantity", "remark")   # values of the owner's choosing: a form lists none to offer
-FROM = {"board": "board file", "project": "edakit.toml"}
+FROM = {"board": "board file", "project": "edakit.toml", "looks": "[looks]"}   # where a key of the order was set
 
 
 def pt(p):
@@ -152,18 +156,27 @@ def order_of(cfg, board):
         return board.order
     if not makers.of(cfg).get("given"):
         return None
-    o = order_defaults()
-    o.update(silkscreen=silkscreen_on(o["mask"]), quantity=cfg.quantity, pcba_quantity=cfg.quantity, _from={})
+    return defaults_of(cfg, board)
+
+
+def defaults_of(cfg, board):
+    """edakit's defaults as the order of a board without [order]: the print on the mask, [project] quantity, and on a
+    board with [looks] mark = LOOKS_MARK ("_from" names it)."""
+    looks = board.looks is not None
+    o = order_defaults(looks)
+    o.update(silkscreen=silkscreen_on(o["mask"]), quantity=cfg.quantity, pcba_quantity=cfg.quantity,
+             _from={"mark": "looks"} if looks else {})
     return o
 
 
 def settings(board):
     """The order settings that change the board as made – the thickness as ordered (thickness_mm), the colours of
-    solder mask and silkscreen, the surface finish, the order-number mark – and every other key that changes it
-    (config.ORDER, made) whose value differs from edakit's default; None without [order]."""
+    solder mask and silkscreen, the surface finish, the order-number mark (on a board with [looks] "remove" unless
+    [order] says otherwise) – and every other key that changes it (config.ORDER, made) whose value differs from
+    edakit's default; None without [order]."""
     if board.order is None:
         return None
-    o, base = board.order, order_defaults()
+    o, base = board.order, order_defaults(board.looks is not None)
     out = {"thickness_mm": board.thickness_mm, **{k: o[k] for k in FIVE[1:]}}
     out.update({k: o[k] for k in SETTING_KEYS[len(FIVE):] if o.get(k) != base[k]})
     return out
@@ -205,8 +218,7 @@ def form(cfg, design, board, d, maker, o=None, bom=None, found=None):
     from .fab import bom_rows
     o = o if o is not None else order_of(cfg, board)
     if o is None:
-        o = order_defaults()
-        o.update(silkscreen=silkscreen_on(o["mask"]), quantity=cfg.quantity, pcba_quantity=cfg.quantity, _from={})
+        o = defaults_of(cfg, board)
     bom = bom if bom is not None else bom_rows(design, board)
     if found is None:
         data = json.loads((d / "pcb.json").read_text()) if (d / "pcb.json").exists() else {}
@@ -381,6 +393,24 @@ def check_tooling(c, pcba):
             f"({m.word('tooling', 'maker')}), maybe on a visible edge; add [tooling] holes or accept"
     c.add(f"tooling holes of the {pcba[0].capitalize()} PCBA ({pcba[1]})", n >= least, actual, f">= {least} ([tooling])",
           None if n >= least else "warn")
+
+
+def check_untold(cfg, board, rows):
+    """Grade tooling: without [order] and [cart] no order.md is written. A board with tooling holes of its own, on an
+    assembly class whose form asks who drills them (the planned maker's tooling_min – JLCPCB: Economic), then has no
+    file that tells the maker – its form stays at the maker's word (JLCPCB: "Added by JLCPCB"), and the maker drills
+    holes of its own, maybe on the face people see. A warning."""
+    m, pcba = makers.get(cfg), makers.pcba(cfg)
+    if not board.tooling or (m.rules.get("tooling_min") or {}).get(pcba[0]) is None or not m.has("tooling"):
+        return
+    customer, maker = m.word("tooling", "customer"), m.word("tooling", "maker")
+    n = len(board.tooling)
+    rows.add("F", "FILES.order", board.name, f"tooling holes of the {pcba[0].capitalize()} PCBA ({pcba[1]}) told to "
+             f"{m.name}", False, f"{n} tooling hole{'s' if n > 1 else ''} ([tooling]), but no [order] or [cart]: no "
+             f"order.md says \"{customer}\" – the form stays at \"{maker}\" and {m.name} may drill its own on a visible "
+             "face; add [order] to the board file (a remark: tooling holes added by customer)",
+             f"[order] or [cart]: order.md with {customer}", "warn")
+    rows[-1]["maker"] = m.key
 
 
 def check_fields(c, fields, o):
@@ -579,6 +609,8 @@ def check(cfg, board, design, d, rows, bom):
         (d / SETTINGS).write_text(json.dumps(settings(board), indent=1, ensure_ascii=False) + "\n", encoding="utf-8")
     o = order_of(cfg, board)
     if o is None:
+        if bom:
+            check_untold(cfg, board, rows)
         return
     data = json.loads((d / "pcb.json").read_text())
     planned = makers.get(cfg)

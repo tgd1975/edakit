@@ -1953,9 +1953,8 @@ def _number(text, pattern):
 def schematic_parts(mcp, board):
     sch_uuid, pages = eda.find_pages(mcp, board.schematic)
     parts = {}
-    for page in pages:
-        eda.focus_page(mcp, sch_uuid, page)
-        for c in api(mcp, "SCH_PrimitiveComponent.getAll") or []:
+    for page in pages:              # getAll answers for the focused page: counted only while it stayed active
+        for c in eda.read_on_page(mcp, sch_uuid, page, lambda: api(mcp, "SCH_PrimitiveComponent.getAll")) or []:
             st = eda.state(c)
             if st.get("ComponentType") == "part" and st.get("AddIntoPcb", True) and st.get("Designator"):
                 parts[st["Designator"]] = {**st, "_page": page}

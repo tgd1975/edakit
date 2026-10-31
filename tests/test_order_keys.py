@@ -90,6 +90,57 @@ def test_the_project_order_and_the_board_order(tmp_path):
         load(t)
 
 
+LOOKS = {"visible": "top"}
+
+
+def test_a_board_people_look_at_is_ordered_without_the_order_number():
+    """The owner's decision of 2026-10-31 (walkthrough-gaps C4): on a board with [looks] edakit's default of mark is
+    "remove" – decided in the files, so it is in the fab hash before the gate and M-5, not chosen at the form. A mark
+    given in [order] – of the board file or of edakit.toml – wins; a board without [looks] keeps "default"."""
+    o = _board("b", {}, {"looks": LOOKS, "order": {}}).order
+    assert (o["mark"], o["_from"]) == ("remove", {"mark": "looks"})
+    o = _board("b", {}, {"looks": LOOKS, "order": {"mark": "default"}}).order
+    assert (o["mark"], o["_from"]) == ("default", {"mark": "board"})
+    o = _board("b", {}, {"looks": LOOKS}, project={"mark": "specify"}).order
+    assert (o["mark"], o["_from"]) == ("specify", {"mark": "project"})
+    assert _board("b", {}, {"order": {}}).order["mark"] == "default"
+    assert _board("b", {}, {"looks": LOOKS}).order is None          # no [order]: no order of its own, as before
+
+
+def looked_at(ex, p):
+    """[looks] on the export's board, whose [order] gives a remark and no mark (and the "+" as the board file's text on
+    the visible side, for GEO.silk)."""
+    fr.visible(p)
+
+
+def test_order_json_says_remove_on_a_board_people_look_at(project):
+    """order.json has the mark whenever the board has [order]: on a [looks] board without a mark of its own "remove", so
+    the fab hash is that of a board made without the order number – another one than the same files with "default"."""
+    d, plain = fh.exported(project)
+    assert json.loads((d / "order.json").read_text())["mark"] == "default"
+    rows = run(project, looked_at)
+    assert fr.findings(rows) == []
+    d = project.root / "build" / "fab" / "main"
+    assert json.loads((d / "order.json").read_text())["mark"] == "remove"
+    assert "| Mark on PCB | Remove Mark | [looks] |" in sheet(project)
+    assert ("pass", "order-number mark = placeholder JLCJLCJLCJLC on the silkscreen", 'mark = "remove": Remove Mark') \
+        in f6(rows)
+    assert fh.exported(project, looked_at)[1] != plain
+
+
+def test_cart_alone_on_a_board_people_look_at(project):
+    """[cart] without [order] on a [looks] board: order.md has "Remove Mark" – and still no order.json (the fab hash of
+    a board without [order] stays the files')."""
+    def cart(ex, p):
+        fr.unordered(ex, p)
+        looked_at(ex, p)
+        toml(p, '[cart]\nmaker = "jlcpcb"')
+    rows = run(project, cart)
+    assert fr.findings(rows) == []
+    assert not (project.root / "build" / "fab" / "main" / "order.json").exists()
+    assert "| Mark on PCB | Remove Mark | [looks] |" in sheet(project)
+
+
 def test_order_json_holds_a_new_key_only_where_it_differs(project):
     """order.json keeps the five settings it has; a key that changes the board joins it only with another value than
     edakit's default – a default set on purpose leaves the fab hash as it is, 2 oz copper changes it."""
@@ -139,6 +190,7 @@ def test_order_md_lists_every_field_with_where_it_comes_from(project):
 def test_cart_without_order_writes_the_form_but_no_order_json(project):
     """[cart] alone: the form of edakit's defaults, FILES.order – and no order.json, so the fab hash stays the files'."""
     def cart(ex, p):
+        fr.unordered(ex, p)
         toml(p, '[cart]\nmaker = "jlcpcb"\nship_to = "DE"\nshipping = { jlcpcb = "DHL Express" }')
     rows = run(project, cart)
     assert fr.findings(rows) == []
@@ -147,6 +199,54 @@ def test_cart_without_order_writes_the_form_but_no_order_json(project):
     assert "| Ship to | DE | [cart] ship_to |\n| Shipping Method | DHL Express | [cart] shipping |" in sheet(project)
     assert ("info", "order form of this run", "order.md: JLCPCB, Economic PCBA, mark Order Number (JLCPCB places it), "
             "tooling Added by Customer") in f6(rows)
+
+
+# --- tooling holes nobody tells the maker about (walkthrough-gaps B4) ---------------------------------------------
+
+UNTOLD = "tooling holes of the Economic PCBA ([release] assembly.sides top: one side) told to JLCPCB"
+
+
+def test_tooling_holes_without_order_warn(project):
+    """Without [order] and [cart] no order.md is written: the Economic board's own tooling holes are in no file the
+    maker reads, and JLCPCB's form stays at "Added by JLCPCB" – FILES.order warns (grade tooling). [order] with a remark,
+    as the example coin-cell-led has it, writes order.md with "Added by Customer"."""
+    rows = run(project, fr.unordered)
+    assert fr.findings(rows) == [("FILES.order", "warn")]
+    assert f6(rows) == [("warn", UNTOLD, '2 tooling holes ([tooling]), but no [order] or [cart]: no order.md says '
+                         '"Added by Customer" – the form stays at "Added by JLCPCB" and JLCPCB may drill its own on a '
+                         'visible face; add [order] to the board file (a remark: tooling holes added by customer)')]
+    assert not (project.root / "build" / "fab" / "main" / "order.md").exists()
+    rows = run(project)                                       # the export's [order] remark
+    assert fr.findings(rows) == [] and UNTOLD not in [c for _, c, _ in f6(rows)]
+    assert "| Tooling holes | Added by Customer – 2 x Ø 1.152 mm | [tooling] |" in sheet(project)
+
+
+def no_tooling_holes(ex, p):
+    fr.unordered(ex, p)
+    fr.board_file(p, "[tooling]\nholes", "# [tooling]\n# holes")
+
+
+def standard(ex, p):
+    fr.unordered(ex, p)
+    f = p.root / "edakit.toml"
+    f.write_text(f.read_text().replace('smd_only = true }', 'smd_only = true, pcba = "standard" }'))
+
+
+def bare(ex, p):
+    fr.unordered(ex, p)
+    fr.graph(p, lambda g: [c.update(bom=False) for c in g["graph"]["components"]])
+    f = p.root / "edakit.toml"
+    f.write_text(f.read_text().replace('sides = ["top"]', "sides = []"))
+
+
+@pytest.mark.parametrize("fault", [no_tooling_holes, standard, bare], ids=["no tooling holes", "Standard PCBA",
+                                                                          "nothing assembled"])
+def test_no_warning_where_the_form_does_not_ask_for_tooling_holes(project, fault):
+    """No [order], no [cart] – and no tooling holes of the board's own (the maker drills its own, as the form says by
+    default), a Standard assembly (JLCPCB's form asks for no tooling holes there) or no part assembled (no PCBA): FILES.order
+    has nothing to say."""
+    rows = run(project, fault)
+    assert fr.findings(rows) == [] and f6(rows) == []
 
 
 # --- the profiles ----------------------------------------------------------------------------------------------------

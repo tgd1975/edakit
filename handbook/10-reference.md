@@ -263,7 +263,10 @@ switching node).
 
 `[order]`: every question a maker's order form asks, as a key in edakit's words with edakit's default – the board
 edakit assumes when nothing is said, the same for every maker (8.4). Three layers, the later one wins per key: these
-defaults, `[order]` of edakit.toml (every board, 10.1), `[order]` of the board file. The maker's profile only
+defaults, `[order]` of edakit.toml (every board, 10.1), `[order]` of the board file. One default depends on the board:
+on a board with `[looks]` `mark` is `"remove"` – no order number on a board people look at, decided in the files and
+so in the fab hash before the gate and M-5, not at the form (the owner's decision of 2026-10-31); order.md names
+`[looks]` as where it comes from, and a `mark` in either `[order]` wins. The maker's profile only
 translates a value into its word (`edakit/makers/<maker>.toml`, `edakit cart fields`); a value the maker does not
 offer is a finding of FILES.order for that maker. "Board": the key changes the board as made – `fab/<board>/order.json` has
 `thickness_mm`, `mask`, `silkscreen`, `finish` and `mark` whenever the board has `[order]`, and every other such key
@@ -281,7 +284,7 @@ where its value differs from the default; so a project that sets none of them ke
 | `vias` | `"tented"` | `"untented"`, `"plugged"`, `"epoxy_filled"` | ✓ |
 | `outline_tolerance` | `"regular"` | `"precision"` | ✓ |
 | `gold_fingers`, `castellated`, `edge_plating` | `false` | true or false | ✓ |
-| `mark` | `"default"` | `"specify"`: at the maker's placeholder (JLCPCB: `JLCJLCJLCJLC`, PCBWay: `WayWayWay`), `"remove"` – the maker's order number; JLCPCB reports its own gone since May 2026, and FILES.order warns about the placeholder | ✓ |
+| `mark` | `"default"`; on a board with `[looks]` `"remove"` | `"specify"`: at the maker's placeholder (JLCPCB: `JLCJLCJLCJLC`, PCBWay: `WayWayWay`), `"remove"` – the maker's order number; JLCPCB reports its own gone since May 2026, and FILES.order warns about the placeholder | ✓ |
 | `barcode`, `serial_number` | `"none"`, `false` | `"qr"`, `"datamatrix"`; true or false – for traceability, printed by the maker where there is room (JLCPCB since May 2026) | ✓ |
 | `electrical_test`, `quality` | `"flying_probe"`, `"ipc2"` | the maker's words | – |
 | `confirm_production_file`, `paper_between` | `false` | true or false | – |

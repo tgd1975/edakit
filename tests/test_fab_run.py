@@ -13,7 +13,8 @@ designator visible (GEO.silk). It also has the
 footprint geometry of `edakit pcb dump`, the net currents of `edakit sim` – 0.5 A on all three nets, which puts
 them in class POWER (0.6 mm), with an IPC-2221 width of 0.20 mm – and the board as `edakit route read` saw it (pads
 with their shapes, for GEO.spacing), written from pcb.json when the export is written. J1 is through-hole and the
-example orders Economic assembly (SMD only), so J1 is not in its BOM: it is soldered by hand.
+example orders Economic assembly (SMD only), so J1 is not in its BOM: it is soldered by hand. The board file has
+[order] with a remark, so that order.md tells JLCPCB that the tooling holes are the customer's (FILES.order).
 
 A new check of stage L or F gets its fault here: one more entry in FAULTS.
 """
@@ -47,6 +48,10 @@ WIDTH, DRILL = 0.6, 1.0            # tracks, J1's plated holes (mm)
 HOLE = (26, 16, 3.2)               # M3, a circle on the outline layer
 TOOLING = [(2.5, 17.5), (27.5, 2.5)]
 TOOLING_D, TOOLING_OPEN = 1.152, 1.152 + 2 * 0.148
+ORDER = """
+[order]                          # tooling holes of its own on an Economic board: order.md tells JLCPCB (FILES.order)
+remark = "2 NPTH tooling holes added by customer."
+"""
 PLUS = (10.8, 10.9)                # "+" on the top silkscreen, next to D1's anode
 CATHODE = (15.2, 10.9)             # 1.9 mm above D1.1, D1's cathode
 BOARD = f"""# The input stage of the example on a board of its own (tests/test_fab_run.py)
@@ -79,7 +84,7 @@ what = "input"
 
 [routing]
 hand_solder_keep_mm = 0.5        # GEO.spacing: J1 is soldered by hand (bom: false), its joints are on BOTTOM
-"""
+""" + ORDER
 
 
 def turn(p, rot):
@@ -314,15 +319,16 @@ def findings(rows):
 
 
 CHECKS = ["SYNC.pcb", "GEO.copper", "GEO.drc", "SYNC.footprint", "GEO.width", "SYNC.plan", "GEO.mark", "GEO.hole",
-          "GEO.loop", "GEO.spacing", "GEO.pour", "GEO.ring", "GEO.silk", "SYNC.bom", "PARTS.stock", "SYNC.cpl", "FILES.set"]
-ON_REQUEST = ["FILES.order"]       # run only when the board file asks for it ([order]); [looks] adds GEO.silk rows
+          "GEO.loop", "GEO.spacing", "GEO.pour", "GEO.ring", "GEO.silk", "SYNC.bom", "PARTS.stock", "SYNC.cpl", "FILES.set",
+          "FILES.order"]       # FILES.order with the board file's [order]; [looks] adds GEO.silk rows
 
 
 def test_the_clean_export_passes_every_check(project):
     rows = run(project)
     assert findings(rows) == []
-    assert sorted({r["id"] for r in rows if r["stage"] in "LF"}, key=CHECKS.index) == CHECKS   # no [order]: no FILES.order
-    assert not (project.root / "build" / "fab" / "main" / "order.md").exists()
+    assert sorted({r["id"] for r in rows if r["stage"] in "LF"}, key=CHECKS.index) == CHECKS
+    sheet = (project.root / "build" / "fab" / "main" / "order.md").read_text()
+    assert "| Tooling holes | Added by Customer – 2 x Ø 1.152 mm | [tooling] |" in sheet
     assert len([r for r in rows if r["id"] == "GEO.drc"]) == 2      # no [routing] drc_rules: the DRC's rules not compared
     by = {(r["id"], r["check"]): r["actual"] for r in rows}
     assert by["GEO.loop", "short current loops: path over tracks per pad pair within the limit"] == "J1.1-D1.2 7.8 mm"
@@ -566,9 +572,15 @@ REMARK = "No V-cut. Use our 2 NPTH tooling holes (1.152 mm). Tabs only on the ri
 PLACEHOLDER = (18.0, 3.0)          # the order-number placeholder on the top silkscreen, bottom right
 
 
+def unordered(ex, project):
+    """The board file without its [order]: no order.md, no order.json."""
+    board_file(project, ORDER, "")
+
+
 def ordered(ex, project, order=None, placeholder=True, h_mm=1.0):
-    """#40: [order] in the board file (mark = "specify" and REMARK unless order says otherwise), and the placeholder
-    JLCJLCJLCJLC on the top silkscreen – in pcb.json and as [[silk.texts]] of h_mm."""
+    """#40: [order] in the board file (mark = "specify" and REMARK unless order says otherwise) in place of the
+    export's, and the placeholder JLCJLCJLCJLC on the top silkscreen – in pcb.json and as [[silk.texts]] of h_mm."""
+    unordered(ex, project)
     order = {"mark": "specify", "remark": REMARK, **(order or {})}
     text = "\n[order]\n" + "".join(f"{k} = {json.dumps(v, ensure_ascii=False)}\n" for k, v in order.items()
                                    if k != "tab_zones")
@@ -863,6 +875,9 @@ FAULTS = [
      [GONE, ("FILES.order", "warn", 'JLCJLCJLCJLC at (18.0, 3.0) on the top silkscreen, but mark = "default"')]),
     ("Economic without tooling holes", no_tooling,
      [GONE, ("FILES.order", "warn", "no tooling holes ([tooling]) – JLCPCB adds its own")]),
+    ("Economic tooling holes no order.md names", unordered,
+     [("FILES.order", "warn", '2 tooling holes ([tooling]), but no [order] or [cart]: no order.md says "Added by '
+                              'Customer"')]),
     ("copper in a tab zone", edge_track,       # the track touches no pad: loose copper for GEO.pour too
      [GONE, ("FILES.order", "fail", "copper 0.45 mm from the edge at (0.0, "), ("GEO.pour", "warn", "TOP: 1 piece without pad")]),
     ("a board thickness JLCPCB does not make", thickness(1.57),         # 62 mil: JLCPCB's form has 1.6 mm
@@ -1095,6 +1110,24 @@ def test_print_under_a_body_without_footprint_geometry_is_not_checked(project):
         "info", "not checked: no footprint geometry of C2 in main.geometry.json (edakit pcb dump)")
 
 
+def test_a_board_printed_by_an_older_silk_apply_is_told_to_run_it_again(project):
+    """walkthrough-gaps B7, the bell's report of 2026-10-30: a board printed by a `silk apply` of before 2026-10-28 has
+    its memo (silk_strings_<board>.json) but no silk_footprints_<board>/. GEO.silk cannot tell edakit's print from the
+    footprints' then: one fail that says so and what to do – silk apply once more, which removes its old print before
+    it keeps the footprints' – and no finding about the board itself; the print on the openings is still held per
+    part. Without the memo edakit printed nothing, and there is nothing to tell apart."""
+    def older(ex, p):
+        ex.silk_memo = {"strings": ["s1"], "fills": []}
+        silk_line(*ACROSS_C2)(ex, p)
+    rows = run(project, older)
+    assert findings(rows) == [("GEO.silk", "fail"), ("GEO.silk", "warn")]
+    assert l17(rows)["edakit's own print (designators, texts, artwork of silk apply) off the solder-mask openings"] == (
+        "fail", "silk_strings_main.json exists, silk_footprints_main/ does not: edakit's print cannot be told from the "
+        "footprints' (silk apply of an older edakit) – run edakit silk apply")
+    assert l17(rows)["C2: silkscreen on its solder-mask openings – JLCPCB clips it there"][0] == "warn"
+    assert not [k for k in l17(rows) if k.startswith(("TOP: edakit's own", "BOTTOM: edakit's own"))]   # not measured
+
+
 def test_a_group_label_or_unlabelled_covers_a_part(project):
     def grouped(ex, p):
         ex.pcb["designators"].update(J1=False, C2=False, D1=False)
@@ -1117,7 +1150,7 @@ def test_the_acknowledgement_alone_leaves_the_other_kinds_passing(project):
 
 
 def test_every_check_has_a_fault():
-    assert {cid for _, _, e in FAULTS for cid, _, _ in e} == set(CHECKS + ON_REQUEST)
+    assert {cid for _, _, e in FAULTS for cid, _, _ in e} == set(CHECKS)
 
 
 def test_the_order_form_of_the_clean_export(project):

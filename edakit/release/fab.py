@@ -91,7 +91,7 @@ assembly preview at JLCPCB.
        every field a value of the maker's form, the remark, thickness_mm and the colours of mask and silkscreen as its
        form has them, mark = its placeholder on the silkscreen – JLCPCB's placeholder at a maker without one –, its
        tooling holes; for every maker layers and size where set, the quantities, no copper near the edge in a tab zone
-       (order_sheet.py)
+       (order_sheet.py); without both, an Economic board's own tooling holes warn – no order.md tells the maker
 Last stdout line: JSON list of rows {stage, id, item, check, actual, expected, result}. Exit 0 / 2 / 1.
 
 What the manufacturer builds from, hashed for the sign-offs with scope 'fab' (fab_sha256, FAB_METHOD): every Gerber
@@ -153,6 +153,23 @@ def merge_bom(entries):
     return [{**m, "reference": ", ".join(m["reference"])} for m in merged.values()]
 
 
+def board_bom(mcp, board):
+    """EasyEDA's BOM of a board, merged (merge_bom). easyeda_bom_generate lists the parts of the FOCUSED schematic page,
+    not of the board: every page of the board's schematic in turn, each read counted only while its page stayed
+    active (eda.read_on_page) – otherwise the template or another board would be compared. The other schematic tabs –
+    the template's of stage S, another board's – are closed first (saved ones only), so EasyEDA cannot switch to them."""
+    from .. import eda, schematic
+    sch_uuid, pages = eda.find_pages(mcp, board.schematic)
+    if pages:
+        eda.focus_page(mcp, sch_uuid, pages[0])
+        schematic.close_other_schematic_tabs(mcp)
+    entries = []
+    for page in pages:
+        entries += eda.read_on_page(mcp, sch_uuid, page, lambda: mcp.call(
+            "easyeda_bom_generate", projectId="current", format="json", groupBy="lcsc", timeout=120).get("entries", []))
+    return merge_bom(entries)
+
+
 # --- collect from EasyEDA -----------------------------------------------------------------------------------------
 
 def collect(cfg, board, d, verbose=False):
@@ -198,15 +215,7 @@ def collect(cfg, board, d, verbose=False):
         if not res.get("exported"):
             raise SystemExit(f"pick-and-place export failed: {res}")
         shutil.copy(res["file_path"], d / "cpl_easyeda.xlsx")  # EasyEDA delivers xlsx even when csv is asked for
-        # easyeda_bom_generate lists the parts of the FOCUSED schematic page, not of the board: focus every page of
-        # the board schematic in turn and merge (otherwise the template or another board would be compared)
-        sch_uuid, pages = eda.find_pages(mcp, board.schematic)
-        entries = []
-        for page in pages:
-            eda.focus_page(mcp, sch_uuid, page)
-            res = mcp.call("easyeda_bom_generate", projectId="current", format="json", groupBy="lcsc", timeout=120)
-            entries += res.get("entries", [])
-        (d / "bom_easyeda.json").write_text(json.dumps(merge_bom(entries), indent=1, ensure_ascii=False))
+        (d / "bom_easyeda.json").write_text(json.dumps(board_bom(mcp, board), indent=1, ensure_ascii=False))
         if pcb.import_items(found):   # last: the comparison focuses the schematic pages
             try:
                 diff = pcb.netlist_diff(cfg, board, mcp)
@@ -1910,7 +1919,7 @@ def run(cfg, board, out, offline=False, verbose=False):
     check_fab(cfg, board, design, d, rows)
     check_odb(cfg, board, design, d, rows)           # SYNC.odb, only with a maker that takes ODB++
     from . import order_sheet
-    order_sheet.check(cfg, board, design, d, rows, bom_rows(design, board))   # FILES.order, only with [order]
+    order_sheet.check(cfg, board, design, d, rows, bom_rows(design, board))   # FILES.order: [order], [cart], [tooling]
     if not gerber.missing(d / "gerber", "top", "bottom", "top_silk", "bottom_silk"):   # otherwise FILES.set names them
         from . import polarity
         img, n = polarity.sheet(cfg, board, design, d)
