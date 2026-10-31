@@ -125,14 +125,6 @@ Built and merged into main on 2026-10-30, tested offline and in CI against KiCad
       step 7 (a scratch copy of the bell's main board); with them the recorded KiCad export of T.6 and the probe of
       T.7.
 
-## Walkthrough 2: a 555 blinker on KiCad ([walkthrough-kicad-555.md](docs/concepts/done/walkthrough-kicad-555.md))
-
-Run on 2026-10-31 up to RELEASED and `edakit export`: handbook chapter 18, `examples/blinker-555`,
-`tests/test_walkthrough_kicad.py`.
-
-- [ ] **Whether boards are ordered** – the owner's decision at the release (concept, decision 9); ordered, M-2 at
-      JLCPCB's assembly preview and M-4 on the delivered boards: the blink rate counted at 3.2 V and 2.0 V (R-2).
-
 ## The schematic with every connection drawn through ([wired-schematic.md](docs/concepts/new/wired-schematic.md))
 
 Decided on 2026-10-31; W.1 (the frame of the SVG optional) and W.5 (the board's print per pin) built the same day.

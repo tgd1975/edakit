@@ -454,9 +454,9 @@ $ edakit export
 
 `kicad_main.zip` keeps the KiCad project of the release, as an EasyEDA project keeps its `.eprj2` (16.3).
 
-**Order and acceptance.** Whether boards are ordered was left for later at the release: it is yours, as in chapter
-17, and this run's files are ready for `edakit cart prepare` (8.4). Ordered, M-2 looks at JLCPCB's assembly preview
-with `polarity_main.png` – U1's pin 1, Q1, D1's cathode at the chamfer of its outline.
+**Order and acceptance.** This example ends at RELEASED: a walkthrough, no boards ordered – your decision, as the
+order is in chapter 17. A board of your own goes on from here with `edakit cart prepare` (8.4), and M-2 looks at
+JLCPCB's assembly preview with `polarity_main.png` – U1's pin 1, Q1, D1's cathode at the chamfer of its outline.
 
 The hand assembly comes first: SW1, then BT1, its pins trimmed, a dab of glue under its free end (D-10). Then M-4 works
 through the protocol's acceptance list: BT1 the right way round, D1 blinking while SW1 is on and dark once it is off,
