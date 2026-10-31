@@ -10,7 +10,6 @@ names. Stage E's levels – an input between its thresholds, an output that does
 from __future__ import annotations
 
 import tomllib
-from collections import defaultdict
 from functools import lru_cache
 
 from ..catalog import HERE
@@ -47,20 +46,32 @@ def run(ctx):
             + analog_nodes(d))
 
 
+def held_nets(d):
+    """Nets a resistor path holds while the firmware is not running: a resistor to a net a pin defines, to a supply or
+    ground – or to a net held so itself, as a divider's middle is."""
+    held = {name for name, net in d.nets.items() if any(pin_defines(d.pin_info(r)) for r in net["pins"])}
+    held |= supply_nets(d) | {d.ground}
+    edges = resistor_like(d)
+    pulled = set()
+    grew = True
+    while grew:
+        grew = False
+        for _, a, b in edges:
+            for x, y in ((a, b), (b, a)):
+                if x in held | pulled and y not in held | pulled:
+                    pulled.add(y)
+                    grew = True
+    return pulled | {n for n in held if any(n in (a, b) for _, a, b in edges)}
+
+
 def undefined_inputs(d):
     """LVL.undefined: an input with neither a driver nor a pull, or driven only by pins that float at reset."""
-    rails = {name for name, net in d.nets.items() if any(pin_defines(d.pin_info(r)) for r in net["pins"])}
-    pulls = defaultdict(list)
-    for des, a, b in resistor_like(d):
-        if b in rails:
-            pulls[a].append(des)
-        if a in rails:
-            pulls[b].append(des)
+    held = held_nets(d)
     out = []
     for name, net in d.nets.items():
         infos = [d.pin_info(r) for r in net["pins"]]
         types = [i.get("type") for i in infos]
-        if "input" not in types or pulls[name]:
+        if "input" not in types or name in held:
             continue
         if any(releases(i) for i in infos):
             continue              # outputs that let go: released_nets asks for the pull-up

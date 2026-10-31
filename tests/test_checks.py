@@ -512,9 +512,8 @@ def test_zero_ohm_bridges_join_their_nets(project, capsys):
 
 
 def test_a_resistor_joins_no_nets(project):
-    bridged(project, value_ohm=10000)            # the same places with 10 kΩ: the pull-up and the capacitor are cut off
-    assert sorted(run(project).errors) == [
-        ("LVL.undefined", "LED_OE: only MCU pins drive this input – floating until the firmware runs"),
+    bridged(project, value_ohm=10000)            # the same places with 10 kΩ: the capacitor is cut off; the pull-up
+    assert sorted(run(project).errors) == [      # still holds LED_OE, through 20 kΩ to 3V3
         ("REQ.missing", "3V3: 1 IC supply pins (U2.16) but 0 capacitor(s) to GND")]
 
 

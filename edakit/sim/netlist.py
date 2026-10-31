@@ -165,6 +165,8 @@ def local_ground(design, net):
     split_boards(design)
     gnd = design.ground
     boards = {design.comps[ref.split(".", 1)[0]].get("board") for ref in design.nets[net]["pins"]}
+    if not boards:                       # a net without pins: STRUCT.net reports it, the simulation goes on
+        return gnd
     alt = f"{gnd}__{next(iter(boards))}"
     return alt if len(boards) == 1 and any(el["a"] == alt for el in design.cable_elements) else gnd
 
@@ -599,7 +601,7 @@ class Netlist:
         models = "\n".join(self.models.values())
         control = "op\n" + "\n".join(prints) if tran is None else self.tran_control(tran)
         return (f"edakit {self.sc['name']}\n{body}\n{models}\n"
-                f".options gmin=1e-12 reltol=1e-4 itl1=500\n.control\n{control}\n.endc\n.end\n")
+                f".options gmin=1e-12 reltol=1e-4 itl1=500 rshunt=1e12\n.control\n{control}\n.endc\n.end\n")
 
     def tran_control(self, tran):
         """.tran from the operating point at t = 0 (every source at its first point), the voltages of the nets in
