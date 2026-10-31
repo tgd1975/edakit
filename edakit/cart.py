@@ -503,10 +503,14 @@ def b7(out):
 
 
 def check_cart(job, quote, cart):
-    """With --cart: the cart line names the job's board and quantity, and the quote's price within [cart] tolerance."""
+    """With --cart: the cart line names the job's board (its name, a file's, or – where the maker names a line by its
+    specification, PCBWay's "2 Layers Size 60x28mm 1.6mm" – its size) and quantity, and the quote's price within
+    [cart] tolerance."""
     tol, lines = float(job.get("tolerance", makers.TOLERANCE)), board_lines(quote)
     subtotal = round(sum(float(p["amount"]) for p in lines), 2)
     names = [job["board"]] + [Path(f["name"]).stem for f in job["files"]]
+    names += [f["value"].removesuffix(" mm").replace(" ", "") + "mm" for f in job["fields"] if f.get("key") == "size_mm"
+              and f.get("value") not in (None, "–")]
     bad = []
     if not any(norm(n) in norm(cart.get("name", "")) for n in names):
         bad.append(f"the cart line {cart.get('name')!r} names neither the board nor a file of the job")

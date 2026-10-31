@@ -404,3 +404,14 @@ def test_what_the_live_runs_found_in_the_comparison():
     assert c.uploads_shown(way, [{"name": "gerber_old.zip"}]) == [
         "gerber_main.zip: not among the uploads the page shows", "bom_main.csv: not among the uploads the page shows",
         "cpl_main.csv: not among the uploads the page shows", "gerber_old.zip: uploaded, but no file of the job"]
+
+
+def test_a_cart_line_named_by_its_size():
+    """PCBWay names a cart line "2 Layers Size 60x28mm 1.6mm" – the job's size names the board (live run 5.12)."""
+    from edakit import cart as c
+    job = {"board": "main", "quantity": 5, "files": [{"name": "gerber_main.zip"}],
+           "fields": [{"key": "size_mm", "value": "60.00 x 28.00 mm"}]}
+    quote = {"prices": [{"amount": 6.5, "kind": "pcb"}, {"amount": 29.0, "kind": "fee"}]}
+    assert c.check_cart(job, quote, {"name": "2 Layers Size 60x28mm 1.6mm", "quantity": 5, "price": 35.5})[0] == []
+    assert c.check_cart(job, quote, {"name": "2 Layers Size 50x28mm 1.6mm", "quantity": 5, "price": 35.5})[0] == [
+        "the cart line '2 Layers Size 50x28mm 1.6mm' names neither the board nor a file of the job"]
