@@ -517,14 +517,17 @@ def check_rows(board, design, rows):
 
 
 TEXT_REACH_MM = 1.2   # GEO.mark: how far from its anchor, per character, the strokes of a PCB text may lie
+ART_REACH_MM = 0.2    # GEO.mark: how far from an artwork's own shapes a cross is still its print (silk apply closes gaps of 0.2 mm)
 
 
 def polarity_signs(cfg, board, d, data):
     """GEO.mark: the signs of the silkscreen as [(sign, x, y, silk layer, how)] in mm – the PCB texts "+", "−", "-", and the
     "+" a footprint draws as two crossing strokes, read from the silk Gerber files (gerber.plus_signs). A drawn "+"
-    near a PCB text with a "+" is that text's print (a "+" text counts once, a "+5V" is a label); one inside the box
-    of a [[silk.art]] item is artwork. -> (signs, silk files missing)."""
+    near a PCB text with a "+" is that text's print (a "+" text counts once, a "+5V" is a label); one on the shapes of
+    a [[silk.art]] item (within ART_REACH_MM) is artwork – not one merely inside the item's box, so an artwork spanning
+    the board leaves the signs between its shapes to be judged. -> (signs, silk files missing)."""
     from shapely.geometry import Point
+    from shapely.ops import unary_union
 
     from .. import silk
     signs = [("+" if s["Text"] == "+" else "−", s["X"] * MM, s["Y"] * MM, s["Layer"], "text")
@@ -538,8 +541,8 @@ def polarity_signs(cfg, board, d, data):
                  if s["Layer"] == layer and "+" in s["Text"]]
         drawn = [p for p in drawn if not any(math.dist(p, t[:2]) <= t[2] for t in texts)]
         if drawn and board.silk.get("art"):
-            art = [g.envelope for g in silk.art_items(cfg, board, side)]
-            drawn = [p for p in drawn if not any(a.covers(Point(p)) for a in art)]
+            art = unary_union(silk.art_items(cfg, board, side)).buffer(ART_REACH_MM)
+            drawn = [p for p in drawn if not art.covers(Point(p))]
         signs += [("+", x, y, layer, "drawn") for x, y in drawn]
     return signs, lost
 
