@@ -7,7 +7,7 @@ know which files it covers, how each kind of page is written, what you must not 
 ## What it covers
 
 The documentation as [organisation.md](organisation.md) lists it: `README.md`, `handbook/`, `docs/` outside
-`concepts/` and `catalog/`, and the Markdown of `examples/coin-cell-led/`. Nothing else.
+`concepts/` and `catalog/`, and the Markdown of `examples/coin-cell-led/` and `examples/blinker-555/`. Nothing else.
 
 The sources keep their own words, and the documentation follows them:
 
