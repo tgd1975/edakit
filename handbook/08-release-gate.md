@@ -72,8 +72,8 @@ Fixed parts sit where the plan says (±0.02 mm, rotation, side), the plan has no
 - every part the graph puts on the board has a row in `[place]` of the board file – by hand, from `pcb place`, or written back by `pcb autolayout` with `auto = true` (7.4); a part on a bought or hand-wired board (4.5) is on no made board and needs none. The board file decides it alone; the row names the parts without one: `D1, R2: no row in hardware/boards/main.toml [place] (2 of 17 parts)` – why it exists: what EasyEDA's auto-layout placed was in no file: the layout hash did not cover it, SYNC.plan held it to nothing, the direction check, the mated plugs and the mechanical model did not see it, and after a dump the next auto-layout could put it elsewhere – `pcb autolayout` writes its positions back, `pcb takeover --write` takes a board placed before
 
 **`SYNC.bom`** – BOM = graph (error; replaces F-1)  
-The BOM generated from the graph equals EasyEDA's BOM per designator, and every LCSC number is in the parts database; parts with bom: false are left out on purpose.
-- BOM generated **from the graph** in JLCPCB format = EasyEDA's BOM per designator; every LCSC number in the parts database; parts with `bom: false` left out on purpose
+The BOM generated from the graph equals the tool chain's BOM per designator – EasyEDA's, on the KiCad tool chain KiCad's –, and every LCSC number is in the parts database; parts with bom: false are left out on purpose.
+- BOM generated **from the graph** in JLCPCB format = the tool chain's BOM per designator (EasyEDA's, KiCad's on the KiCad tool chain); every LCSC number in the parts database; parts with `bom: false` left out on purpose
 
 **`SYNC.cpl`** – pick and place = PCB (error; replaces F-3)  
 Every BOM part is in the pick-and-place file exactly once with the PCB's side and rotation, and only on the sides [release] assembly allows (Economic PCBA: one side, SMD only). A maker of [cart] makers whose zero orientation of a part is not the footprint's ([cpl] zero of its profile – Eurocircuits: IEC 61188-7) gets cpl_<board>_<maker>.csv, every part turned by its footprint's entry in [cpl.turns]; a footprint the profile does not list, or a turned part on the bottom, keeps its rotation and warns.
@@ -151,8 +151,8 @@ edakit's print lies on no solder-mask opening and inside the outline, every part
 Every board gets a polarity sheet drawn from the Gerber data: each polarised part with copper, silkscreen, pad numbers, pin roles and nets, and the signs GEO.mark pairs with it, also beyond the footprint.
 
 **`FILES.manifest`** – files of one run (error; replaces F-4)  
-Gerber ZIP, BOM and pick-and-place file come from the same gate run, with their SHA-256 in fab/manifest.json.
-- Gerber ZIP, BOM and pick and place from the same run; `fab/manifest.json` with SHA-256 per file, the state hashes and the fab hash (8.2)
+The upload files of every maker of [cart] makers – JLCPCB's Gerber ZIP, BOM and pick-and-place file without [cart] – come from the same gate run, with their SHA-256 in fab/manifest.json; a file the planned maker takes missing fails, one only another maker takes is a warning named with that maker, and edakit cart prepare stops for it.
+- the upload files of every maker of `[cart] makers` from the same run – JLCPCB's Gerber ZIP, BOM and pick and place without `[cart]`, `bom_<b>_mpn.csv`, `cpl_<b>_<maker>.csv` and `odb_<b>.zip` for the makers that take them; `fab/manifest.json` with SHA-256 per file, the state hashes and the fab hash (8.2); a missing file of a maker other than the planned one a warning
 
 **`FILES.set`** – Gerber set (error, margin: warning; replaces F-5)  
 The Gerber set is complete; outline and mounting holes equal the plan (±0.2 mm); tooling holes are in the NPTH drill file with the mask open and no copper in the opening.
@@ -160,7 +160,7 @@ The Gerber set is complete; outline and mounting holes equal the plan (±0.2 mm)
 
 **`FILES.order`** – order settings = board (error, margin: warning, other_maker: warning, tooling: warning, lead: error; replaces F-6)  
 With [order] (of the board file or of edakit.toml) or [cart]: per maker of [cart] makers – a finding fails for [cart] maker, JLCPCB without [cart], and warns for every other maker – every field's value is one the maker's form offers (its profile edakit/makers/<maker>.toml; a list the profile marks as read only in part leaves another value unchecked), no combination the profile excludes; the remark fits the form (JLCPCB: at most 200 characters, all ASCII); the board's thickness_mm is a thickness of the form (JLCPCB, FR-4, 2 layers: 0.4, 0.6, 0.8, 1.0, 1.2, 1.6, 2.0 mm); the silkscreen colour is the one the maker prints on the solder mask colour (JLCPCB: black on a white mask, white on every other); mark = "specify" has the maker's placeholder (PCBWay: WayWayWay) on a silkscreen layer, at least its least height in [[silk.texts]] (a height not given there is a warning) – at a maker whose form offers no order number at its place (JLCPCB since May 2026: "Remove Mark" or a 2D barcode) mark = "specify" is a value the form does not offer; a placeholder with another mark is a warning; while the maker's profile reports its order number gone (rules.placeholder_gone), its placeholder on the board or mark = "specify" is a warning; another maker's placeholder on the silkscreen is a finding – PCBWay's WayWayWay at any other maker: the maker prints the letters; a former placeholder (rules.former_placeholder: JLCPCB's JLCJLCJLCJLC, its order number gone since May 2026, seen on its form by ordering step 0 on 2026-10-31) is a warning at every maker, JLCPCB too: the letters are printed as text; an assembly class with fewer tooling holes than the profile names is a warning (JLCPCB: Economic, 2); [order] customs, the shipment's customs category with its HS code, is an entry of the maker's form (JLCPCB's "Product Description") – not set where the form asks it, it is named as information: the owner chooses it at the cart. Independent of the maker: [order] layers and size_mm, where set, are those of the Gerber files; delivery = panel_by_customer fails (the run is one board); pcba_quantity is at most quantity, and another number than [project] quantity is a warning; no copper of either side lies within tab_copper_mm (1.0 mm) of a declared tab zone of the outline, measured on the Gerber files; a finish with lead (HASL that is not lead-free) fails for purpose.use sale or without a purpose, warns for gift and is a note for private (grade lead, as ORDER.finish grades it at the cart). The outline stretches free of copper are listed, a provisional profile is named, and fab/<board>/order.md holds every field of the planned maker's form with its value and where it comes from. Without [order] and [cart] no order.md is written: a board with [tooling] holes and assembled parts, on a class the planned maker asks tooling holes for (JLCPCB: Economic), is a warning (grade tooling) – no file tells the maker that the holes are the customer's.
-- with `[order]` (board file or edakit.toml) or `[cart]` (8.4), per maker of `[cart] makers` – a finding fails for the planned maker and warns for every other one (grade `other_maker`): every field a value the maker's form offers (its profile), no combination it excludes; the remark at most 200 characters, ASCII (JLCPCB); `thickness_mm` a thickness of the form – JLCPCB 0.4, 0.6, 0.8, 1.0, 1.2, 1.6 or 2.0 mm; the silkscreen colour the one the maker prints on the mask colour – JLCPCB black on white, white on every other; `mark = "specify"` with the maker's placeholder (PCBWay: `WayWayWay`) on a silkscreen layer of pcb.json, at least its least height in `[[silk.texts]]` (no height there: warning) – JLCPCB offers no order number at a place since May 2026, so `mark = "specify"` is not a value of its form; the placeholder with another mark (warning); while the profile reports the maker's order number gone, its placeholder or `mark = "specify"` (warning); another maker's placeholder – PCBWay's `WayWayWay` – on the silkscreen; JLCPCB's former placeholder `JLCJLCJLCJLC` at every maker (warning: printed as text); fewer tooling holes than the class needs (warning: JLCPCB drills its own); `customs` an entry of the maker's form – JLCPCB's "Product Description", category and HS code –, not set where the form asks it (information: the owner chooses it at the cart). For every maker: `layers` and `size_mm` where set = the Gerber files; `panel_by_customer` (fail); `pcba_quantity` at most `quantity`, another number than `[project] quantity` (warning); no copper of either side within `tab_copper_mm` of a declared tab zone, measured on the Gerber copper against the Gerber outline (fail, with the distance and the position); a finish with lead, HASL that is not lead-free – fail for `sale` or no purpose (RoHS), warning for `gift` (REACH Art. 33), information for `private` (grade `lead`, as ORDER.finish at the cart); the outline stretches free of copper and a provisional profile (information). Without `[order]` and `[cart]`: `[tooling]` holes on an assembled board of a class the planned maker asks tooling holes for – JLCPCB Economic – warn (grade `tooling`): no order.md tells the maker they are the customer's
+- with `[order]` (board file or edakit.toml) or `[cart]` (8.4), per maker of `[cart] makers` – a finding fails for the planned maker and warns for every other one (grade `other_maker`): every field a value the maker's form offers (its profile), no combination it excludes; the remark at most 200 characters, ASCII (JLCPCB); `thickness_mm` a thickness of the form – JLCPCB 0.4, 0.6, 0.8, 1.0, 1.2, 1.6 or 2.0 mm; the silkscreen colour the one the maker prints on the mask colour – JLCPCB black on white, white on every other; `mark = "specify"` with the maker's placeholder (PCBWay: `WayWayWay`) on a silkscreen layer of pcb.json, at least its least height in `[[silk.texts]]` (no height there: warning) – JLCPCB offers no order number at a place since May 2026, so `mark = "specify"` is not a value of its form; the placeholder with another mark (warning); while the profile reports the maker's order number gone, its placeholder or `mark = "specify"` (warning); another maker's placeholder – PCBWay's `WayWayWay` – on the silkscreen; JLCPCB's former placeholder `JLCJLCJLCJLC` at every maker (warning: printed as text); fewer tooling holes than the class needs (warning: JLCPCB drills its own); `customs` an entry of the maker's form – JLCPCB's "Product Description", category and HS code –, not set where the form asks it (information: the owner chooses it at the cart). For every maker: `layers` and `size_mm` where set = the Gerber files; `panel_by_customer` (fail); `pcba_quantity` at most `quantity`, another number than `[project] quantity` (warning); no copper of either side within `tab_copper_mm` of a declared tab zone, measured on the Gerber copper against the Gerber outline (fail, with the distance and the position); a finish with lead, HASL that is not lead-free – fail for `sale` or no purpose (RoHS), warning for `gift` (REACH Art. 33), information for `private` (grade `lead`, as ORDER.finish at the cart; support, not legal advice); the outline stretches free of copper and a provisional profile (information). Without `[order]` and `[cart]`: `[tooling]` holes on an assembled board of a class the planned maker asks tooling holes for – JLCPCB Economic – warn (grade `tooling`): no order.md tells the maker they are the customer's
 <!-- edakit:end -->
 
 With `[looks]` in the board file (7.5), stage L adds a row of its own (ID `L`, no check of the catalog): the visible
@@ -545,7 +545,8 @@ and esp32, twelve order files – as a draft with it.
 entries, the board files, the stock snapshot (4.2) and a dated fee table (`edakit/fees/jlcpcb.json`: JLCPCB's assembly
 fees with the page and the day they were read, bake, edge rails and PCB prices from real carts). JLCPCB's profile is the
 only one that names a fee table: with PCBWay, Eurocircuits or AISLER as `[cart] maker`, `edakit cost` stops (exit 1, in
-the gate a note), and the job of an order at one of them carries no estimate. The estimate holds:
+the gate a note), and the job of an order at one of them carries no estimate – ORDER.quote holds the board total of its
+quote to `[cost] budget` alone, through `[cost] rates` for the maker's currency. The estimate holds:
 
 - the class per board – `[release] assembly.pcba` or its sides, raised to Standard by parts on a second side
   (`side` in `[place]`; a part not placed sits on the first side of `assembly.sides`) and by "Standard Only" parts;
@@ -636,8 +637,9 @@ export odb` (16.6).
    purpose, board, maker (start page, cart button, the buttons never to touch, seat, currency, its own RoHS and
    REACH statements – `[compliance]` of its profile), the upload files
    with path, size and SHA-256, every field of the form in the maker's words, the expected BOM by the key the maker
-   matches (LCSC or MPN), the parts not to place where the maker's files hold them, the estimate of `edakit cost` for
-   the board without shipping, and the `compliance` of every BOM part.
+   matches (LCSC or MPN) with each line's manufacturer, the parts not to place where the maker's files hold them,
+   the estimate of `edakit cost` for the board without shipping, `[cost] budget` with its currency and rates, and
+   the `compliance` of every BOM part.
 2. The skill cart (`/edakit:cart`) uploads the files, sets each field and reads it back, reads the maker's matching
    and the quote, takes screenshots of the filled form, the matching and the placement preview, and writes what the
    page showed into `quote.json` and the page text into `quote_page.txt`. A CAPTCHA, a bot check, a rate-limit page
@@ -650,7 +652,9 @@ export odb` (16.6).
    into the cart; 3: ORDER.form to ORDER.finish passed and the review of the order is next. `check.md` and
    `check.json` in the order's folder hold the result.
 4. Only then the skill presses the maker's cart button, reads the cart line back into `cart.json` and runs
-   `edakit cart check --cart`: board and quantity of the job, the quote's price within the tolerance. It writes the
+   `edakit cart check --cart`: board and quantity of the job, the quote's price within the tolerance – at AISLER,
+   which has no cart, the line of the saved project on its page `/checkout` (name, quantity, net price, VAT apart),
+   and the skill stops before "Continue to Checkout". It writes the
    order record `hardware/orders/<date>-<board>-<maker>.json` – versioned, outside every hash: run, hashes, board,
    maker, quantity, the regulatory verdict with the numbers and grades of its findings, the cart line. It is what
    stays of an order when the run folder (not versioned) is gone, and for a board that is sold a part of the technical
@@ -667,7 +671,7 @@ export odb` (16.6).
    order's lines as read in `hardware/fees/<maker>.json`: no fee model prices them yet. `edakit cost` takes per fee the
    value with the newest date, from the project's table or the shipped one; values from the owner's orders reach the
    shipped table through `edakit proposal`. The order record gets the order number and the three totals, and `edakit
-   release current` shows them beside the release.
+   release current` shows them beside the release. A failed ORDER.read writes neither: `actual.md` says why, exit 2.
 
 The board line of a checked quote is the PCB price `edakit cost` takes for the board while fab hash, quantity and maker
 are the quote's – read from `quote.json` of the current release, nothing written into edakit.toml; `[cost] pcb_price`
@@ -699,15 +703,15 @@ the part matching – ORDER.parts has no lines to hold there, and the parts PCBW
 stops after the upload of the cart, submitting the files is the owner's. Three forms ask for a consent in the owner's
 name – JLCPCB's assembly terms (pre-checked), PCBWay's "Agree" on export control, Eurocircuits' Terms of Sales –: the
 skill stops and asks. The placement preview opens again from the cart at JLCPCB and Eurocircuits; PCBWay shows none;
-AISLER has no cart, and the skill stops before "Continue to Checkout". AISLER assembles from ODB++: `odb_<board>.zip`
-from EasyEDA through the patched MCP server and bridge (2.4, 2.5), on the KiCad tool chain from kicad-cli (16.6), held
-to the released files by SYNC.odb. Eurocircuits and AISLER sit inside the EU: there is no import, and for `sale` the
-owner stays the manufacturer of the product (15.1). PARTS.stock and `edakit stock` ask JLCPCB's catalogue only where
-JLCPCB is among the makers; another maker's stock is what its matching shows, checked by ORDER.parts. Each profile also
-holds what the maker itself states about RoHS and REACH (`[compliance]`, read 2026-11-01, with the pages): JLCPCB's and
-PCBWay's boards are RoHS compliant only with a lead-free finish, JLCPCB's assembly terms do not promise lead-free
-solder, AISLER's statement leaves the placed parts out, Eurocircuits makes lead-free only. The job hands it to the
-regulatory review at the order (15.5).
+AISLER has no cart, and the skill stops before "Continue to Checkout", the order record taken from its `/checkout` page.
+AISLER assembles from ODB++: `odb_<board>.zip` from EasyEDA through the patched MCP server and bridge (2.4, 2.5), on the
+KiCad tool chain from kicad-cli (16.6), held to the released files by SYNC.odb. Eurocircuits and AISLER sit inside the
+EU: there is no import, and for `sale` the owner stays the manufacturer of the product (15.1). PARTS.stock and `edakit
+stock` ask JLCPCB's catalogue only where JLCPCB is among the makers; another maker's stock is what its matching shows,
+checked by ORDER.parts. Each profile also holds what the maker itself states about RoHS and REACH (`[compliance]`, read
+2026-11-01, with the pages): JLCPCB's and PCBWay's boards are RoHS compliant only with a lead-free finish, JLCPCB's
+assembly terms do not promise lead-free solder, AISLER's statement leaves the placed parts out, Eurocircuits makes
+lead-free only. The job hands it to the regulatory review at the order (15.5).
 
 The MCP server cannot order. Lessons from the reference order:
 
@@ -753,19 +757,19 @@ The codes of the order at the maker – generated from the catalog, `edakit/cata
 edakit cart check: every field of the job (job.json, from the keys of [order] in the maker's words) is read back from the page with its value (quote.json; case and blanks ignored) – the quantities and, where the job lists parts not to place, their marks included; a field the page shows that is neither in the job nor in the profile's ignore fails.
 
 **`ORDER.parts`** – parts = release (error; replaces B-2)  
-edakit cart check: the maker's matching (quote.json parts) has exactly the lines of the job's BOM – the same part numbers (LCSC or MPN, as the maker matches), the same designators; a line the maker marked (not matched, out of stock, replaced, another manufacturer, 'Standard Only') fails.
+edakit cart check: the maker's matching (quote.json parts) has exactly the lines of the job's BOM – the same part numbers (LCSC or MPN, as the maker matches), the same designators; a line the maker marked (not matched, out of stock, replaced, another manufacturer, 'Standard Only') fails. A maker that matches the BOM only in its review after the cart (matching = "review" in its profile – PCBWay) shows no lines before it: nothing to hold, and the parts it buys show on the order page (edakit cart actual).
 
 **`ORDER.quote`** – quote against the estimate (warning; replaces B-3)  
-edakit cart check: the board's price lines of the quote without shipping and VAT – PCB, assembly fees, parts – against the estimate of edakit cost for the board in the job, each above [cart] tolerance per price line a warning with both values; the board total above [cost] budget a warning. A maker without a fee table: the board total against the budget only.
+edakit cart check: the board's price lines of the quote without shipping and VAT – PCB, assembly fees, parts – against the estimate of edakit cost for the board in the job, each above [cart] tolerance per price line a warning with both values; the board total above [cost] budget a warning. Without an estimate – a maker without a fee table (PCBWay, Eurocircuits, AISLER), a quote in another currency than the estimate – the board total against the budget alone, in [cost] currency through [cost] rates; without a rate for the quote's currency the budget is named, not compared.
 
 **`ORDER.read`** – read, not made up (error; replaces B-4)  
 edakit cart check: every value of quote.json – the fields, the part numbers and designators, the price amounts, the file names, the lead time – occurs in quote_page.txt, the page text Claude kept.
 
 **`ORDER.files`** – the same files (error; replaces B-5)  
-edakit cart check: the SHA-256 of every upload file is still that of the job and of the current release's manifest, the job's run is still the current release, and the names – and sizes, where the page shows them – of the uploads the page lists are the job's files, none more.
+edakit cart check: the SHA-256 of every upload file is still that of the job and of the current release's manifest, the job's run is still the current release, and the names – and sizes, where the page shows them – of the uploads the page lists are the job's files, none more. Where the files go up in the cart (upload = "after_cart" – PCBWay) their names come with the cart line (cart.json files); an upload the maker's pages name nowhere (unshown – JLCPCB's BOM and CPL) is held by its SHA-256 alone.
 
 **`ORDER.finish`** – lead in the finish (error; replaces B-6)  
-edakit cart check: a surface finish with lead (HASL that is not lead-free) in the job or on the page fails for purpose.use sale, warns for gift and is a note for private.
+edakit cart check: a surface finish with lead (HASL that is not lead-free) in the job or on the page fails for purpose.use sale or without a purpose, warns for gift and is a note for private – support, not legal advice (handbook 15).
 
 **`ORDER.review`** – regulatory review of this order (error, open: pending; replaces B-7)  
 edakit cart check: regulatory.md, the result of the agent regulatory-reviewer on the order, exists, names the SHA-256 of job.json and quote.json as they are now and ends with the line 'Order: OK'. Without it the check is open (exit 3); another hash, 'Order: not OK' or another last line fails.

@@ -729,12 +729,12 @@ sources = [
 
 [codes."SYNC.bom"]
 title = "BOM = graph"
-rule = "The BOM generated from the graph equals EasyEDA's BOM per designator, and every LCSC number is in the parts database; parts with bom: false are left out on purpose."
+rule = "The BOM generated from the graph equals the tool chain's BOM per designator – EasyEDA's, on the KiCad tool chain KiCad's –, and every LCSC number is in the parts database; parts with bom: false are left out on purpose."
 why = "JLCPCB assembles what the BOM says; a part that EasyEDA lists differently from the graph ends up differently on the board."
 fix = "Correct the graph and bring the PCB in line (edakit pcb parts --write)."
 severity = "error"
 details = [
-  "BOM generated **from the graph** in JLCPCB format = EasyEDA's BOM per designator; every LCSC number in the parts database; parts with `bom: false` left out on purpose",
+  "BOM generated **from the graph** in JLCPCB format = the tool chain's BOM per designator (EasyEDA's, KiCad's on the KiCad tool chain); every LCSC number in the parts database; parts with `bom: false` left out on purpose",
 ]
 replaces = ["F-1"]
 sources = [
@@ -1059,12 +1059,12 @@ sources = [
 
 [codes."FILES.manifest"]
 title = "files of one run"
-rule = "Gerber ZIP, BOM and pick-and-place file come from the same gate run, with their SHA-256 in fab/manifest.json."
+rule = "The upload files of every maker of [cart] makers – JLCPCB's Gerber ZIP, BOM and pick-and-place file without [cart] – come from the same gate run, with their SHA-256 in fab/manifest.json; a file the planned maker takes missing fails, one only another maker takes is a warning named with that maker, and edakit cart prepare stops for it."
 why = "Files from different states fit together only on paper; the manifest is the record of what was ordered."
 fix = "Run the gate again and upload only from its folder."
 severity = "error"
 details = [
-  "Gerber ZIP, BOM and pick and place from the same run; `fab/manifest.json` with SHA-256 per file, the state hashes and the fab hash (8.2)",
+  "the upload files of every maker of `[cart] makers` from the same run – JLCPCB's Gerber ZIP, BOM and pick and place without `[cart]`, `bom_<b>_mpn.csv`, `cpl_<b>_<maker>.csv` and `odb_<b>.zip` for the makers that take them; `fab/manifest.json` with SHA-256 per file, the state hashes and the fab hash (8.2); a missing file of a maker other than the planned one a warning",
 ]
 replaces = ["F-4"]
 sources = [
@@ -1094,7 +1094,7 @@ fix = "Correct [order] – a value the maker's form offers (edakit cart fields l
 severity = "error"
 grades = { margin = "warning", other_maker = "warning", tooling = "warning", lead = "error" }
 details = [
-  "with `[order]` (board file or edakit.toml) or `[cart]` (8.4), per maker of `[cart] makers` – a finding fails for the planned maker and warns for every other one (grade `other_maker`): every field a value the maker's form offers (its profile), no combination it excludes; the remark at most 200 characters, ASCII (JLCPCB); `thickness_mm` a thickness of the form – JLCPCB 0.4, 0.6, 0.8, 1.0, 1.2, 1.6 or 2.0 mm; the silkscreen colour the one the maker prints on the mask colour – JLCPCB black on white, white on every other; `mark = \"specify\"` with the maker's placeholder (PCBWay: `WayWayWay`) on a silkscreen layer of pcb.json, at least its least height in `[[silk.texts]]` (no height there: warning) – JLCPCB offers no order number at a place since May 2026, so `mark = \"specify\"` is not a value of its form; the placeholder with another mark (warning); while the profile reports the maker's order number gone, its placeholder or `mark = \"specify\"` (warning); another maker's placeholder – PCBWay's `WayWayWay` – on the silkscreen; JLCPCB's former placeholder `JLCJLCJLCJLC` at every maker (warning: printed as text); fewer tooling holes than the class needs (warning: JLCPCB drills its own); `customs` an entry of the maker's form – JLCPCB's \"Product Description\", category and HS code –, not set where the form asks it (information: the owner chooses it at the cart). For every maker: `layers` and `size_mm` where set = the Gerber files; `panel_by_customer` (fail); `pcba_quantity` at most `quantity`, another number than `[project] quantity` (warning); no copper of either side within `tab_copper_mm` of a declared tab zone, measured on the Gerber copper against the Gerber outline (fail, with the distance and the position); a finish with lead, HASL that is not lead-free – fail for `sale` or no purpose (RoHS), warning for `gift` (REACH Art. 33), information for `private` (grade `lead`, as ORDER.finish at the cart); the outline stretches free of copper and a provisional profile (information). Without `[order]` and `[cart]`: `[tooling]` holes on an assembled board of a class the planned maker asks tooling holes for – JLCPCB Economic – warn (grade `tooling`): no order.md tells the maker they are the customer's",
+  "with `[order]` (board file or edakit.toml) or `[cart]` (8.4), per maker of `[cart] makers` – a finding fails for the planned maker and warns for every other one (grade `other_maker`): every field a value the maker's form offers (its profile), no combination it excludes; the remark at most 200 characters, ASCII (JLCPCB); `thickness_mm` a thickness of the form – JLCPCB 0.4, 0.6, 0.8, 1.0, 1.2, 1.6 or 2.0 mm; the silkscreen colour the one the maker prints on the mask colour – JLCPCB black on white, white on every other; `mark = \"specify\"` with the maker's placeholder (PCBWay: `WayWayWay`) on a silkscreen layer of pcb.json, at least its least height in `[[silk.texts]]` (no height there: warning) – JLCPCB offers no order number at a place since May 2026, so `mark = \"specify\"` is not a value of its form; the placeholder with another mark (warning); while the profile reports the maker's order number gone, its placeholder or `mark = \"specify\"` (warning); another maker's placeholder – PCBWay's `WayWayWay` – on the silkscreen; JLCPCB's former placeholder `JLCJLCJLCJLC` at every maker (warning: printed as text); fewer tooling holes than the class needs (warning: JLCPCB drills its own); `customs` an entry of the maker's form – JLCPCB's \"Product Description\", category and HS code –, not set where the form asks it (information: the owner chooses it at the cart). For every maker: `layers` and `size_mm` where set = the Gerber files; `panel_by_customer` (fail); `pcba_quantity` at most `quantity`, another number than `[project] quantity` (warning); no copper of either side within `tab_copper_mm` of a declared tab zone, measured on the Gerber copper against the Gerber outline (fail, with the distance and the position); a finish with lead, HASL that is not lead-free – fail for `sale` or no purpose (RoHS), warning for `gift` (REACH Art. 33), information for `private` (grade `lead`, as ORDER.finish at the cart; support, not legal advice); the outline stretches free of copper and a provisional profile (information). Without `[order]` and `[cart]`: `[tooling]` holes on an assembled board of a class the planned maker asks tooling holes for – JLCPCB Economic – warn (grade `tooling`): no order.md tells the maker they are the customer's",
 ]
 replaces = ["F-6"]
 sources = [
@@ -1161,18 +1161,16 @@ sources = [
 
 [codes."PARTS.fact"]
 title = "required facts given"
-rule = "Every fact a check needs and the profile requires is in the entry: lead for a through-hole part, functions on MCU pins a net's fn uses, hot_loop of a switching regulator, compliance.radio of a module or microcontroller, compliance.rohs of every part the BOM lists (bom not false: true, false or the exemption – a note, for a board that is sold a warning), mpn and manufacturer of every assembled part with a maker of [cart] makers that matches the BOM by manufacturer part number (Eurocircuits; an error for the planned maker, a warning for another one, grade other_maker), what the model of an LED strip needs – pixels_per_m, i_pixel_a, r_vdd_ohm_per_m, r_gnd_ohm_per_m (the rail resistance is in no LED data sheet: the strip's seller, a measurement, or the project's own value), compliance.reach of every part of a board that is given away or sold. The grade names the fact; its severity is the profile's."
+rule = "Every fact a check needs and the profile requires is in the entry: lead for a through-hole part, functions on MCU pins a net's fn uses, hot_loop of a switching regulator, compliance.radio of a module or microcontroller, compliance.rohs of every part the BOM lists (bom not false: true, false or the exemption – a note, for a board that is sold a warning), mpn and manufacturer of every assembled part with a maker of [cart] makers that matches the BOM by manufacturer part number (PCBWay, Eurocircuits, AISLER – bom.match in the profile; an error when the planned maker is one of them, else a warning, grade other_maker), what the model of an LED strip needs – pixels_per_m, i_pixel_a, r_vdd_ohm_per_m, r_gnd_ohm_per_m (the rail resistance is in no LED data sheet: the strip's seller, a measurement, or the project's own value), compliance.reach of every part of a board that is given away or sold. The grade names the fact; its severity is the profile's."
 why = "A check without its fact checks nothing and says so only here."
 fix = "Fill in the fact from the datasheet (handbook 4.1)."
 severity = "note"
 grades = { lead = "pending", functions = "note", hot_loop = "warning", radio = "note", rohs = "note", mpn = "error", other_maker = "warning", pixels_per_m = "warning", i_pixel_a = "warning", r_vdd_ohm_per_m = "warning", r_gnd_ohm_per_m = "warning", reach = "note" }
 details = [
   "SVHC stated: with `purpose.use` (8.1) `\"gift\"` or `\"sale\"` every parts entry the board uses has `compliance.reach` – the supplier's REACH statement, or `\"none above 0.1 %\"` with its source (4.1); an own board's entry gets its summary from `edakit part datasheet`. A gift is placing on the market under REACH too (Art. 3(12): free of charge), and Art. 33(2) asks any supplier of an article to name a substance of very high concern above 0.1 % to a consumer who asks, within 45 days. Graded by purpose (15.4): information for a gift, a warning for a board that is sold, nothing for one built for oneself or without a purpose – `accept` on one of its components with the reason (chapter 15 – support, not legal advice) – finds e.g.: none of the 31 parts entries of the reference project states it, its M-6 review found lead likely present in thick-film resistors, diode die attach and header contacts with no supplier statement on file, and `edakit check` said nothing",
-  "manufacturer part number (4.1): with a maker of `[cart] makers` that matches parts by manufacturer part number (Eurocircuits) every assembled part's entry names its `mpn` and its `manufacturer` – an error for the planned maker, a warning for another one – finds e.g.: a part the maker cannot match, found at its BOM upload",
+  "manufacturer part number (4.1): with a maker of `[cart] makers` that matches parts by manufacturer part number (PCBWay, Eurocircuits, AISLER – `bom.match` in its profile) every assembled part's entry names its `mpn` and its `manufacturer` – an error when the planned maker is one of them, else a warning – finds e.g.: a part the maker cannot match, found at its BOM upload",
   "radio stated: every part of graph type `module` or `microcontroller` has `compliance.radio` in its parts entry – its bands and power (4.1), or `\"none\"` when it does not transmit; missing is graded by `purpose.use` (8.1): a warning for a board that is sold (`\"sale\"`), information for one built for oneself or given away, or without a purpose – `accept` on one of its components –, other parts need it only if they transmit; a `radio` of another shape is an error. The entry is in the circuit hash: the statement renews M-1 and M-6 (8.2) – finds e.g.: an Arduino Nano whose entry says nothing about a radio – found by the regulatory review from the part's name; a plug-in board with an ESP32 its name does not show",
   "RoHS stated: every part the BOM lists (`bom` not false) has `compliance.rohs` in its parts entry – `true`, `false` or the exemption (4.1), from the manufacturer's statement or the distributor's page; missing is graded by `purpose.use` (8.1): a warning for a board that is sold (`\"sale\"`), information for one built for oneself or given away, or without a purpose – `accept` on one of its components; a part soldered by hand or on a bought board (`bom: false`) is the regulatory review's (M-6) – finds e.g.: a resistor the review at the order found without a RoHS status on a board for sale",
-  "Eurocircuits, BOM requirements (MPN and designators required): https://www.eurocircuits.com/?p=9450 – search result of 2026-10-30, the page not reachable from the session (docs/concepts/done/ordering.md)",
-  "Ordering at the manufacturer (docs/concepts/done/ordering.md, decided 2026-10-30): BOM with MPN and PARTS.fact/mpn, in stage P",
 ]
 replaces = ["P-7", "G-15", "G-18", "P-11", "P-12"]
 sources = [
@@ -1246,7 +1244,7 @@ sources = [
 
 [codes."ORDER.parts"]
 title = "parts = release"
-rule = "edakit cart check: the maker's matching (quote.json parts) has exactly the lines of the job's BOM – the same part numbers (LCSC or MPN, as the maker matches), the same designators; a line the maker marked (not matched, out of stock, replaced, another manufacturer, 'Standard Only') fails."
+rule = "edakit cart check: the maker's matching (quote.json parts) has exactly the lines of the job's BOM – the same part numbers (LCSC or MPN, as the maker matches), the same designators; a line the maker marked (not matched, out of stock, replaced, another manufacturer, 'Standard Only') fails. A maker that matches the BOM only in its review after the cart (matching = \"review\" in its profile – PCBWay) shows no lines before it: nothing to hold, and the parts it buys show on the order page (edakit cart actual)."
 why = "The maker's BOM tool decides what is placed: a replaced part, another manufacturer or a line it could not match is a board the gate never checked and M-6 never saw. A part the maker would replace needs a new release – with it a new M-6."
 fix = "A part the maker cannot place: another part in the graph (part-search), a new gate run and a new order. Never accept a replacement on the page."
 severity = "error"
@@ -1258,7 +1256,7 @@ sources = [
 
 [codes."ORDER.quote"]
 title = "quote against the estimate"
-rule = "edakit cart check: the board's price lines of the quote without shipping and VAT – PCB, assembly fees, parts – against the estimate of edakit cost for the board in the job, each above [cart] tolerance per price line a warning with both values; the board total above [cost] budget a warning. A maker without a fee table: the board total against the budget only."
+rule = "edakit cart check: the board's price lines of the quote without shipping and VAT – PCB, assembly fees, parts – against the estimate of edakit cost for the board in the job, each above [cart] tolerance per price line a warning with both values; the board total above [cost] budget a warning. Without an estimate – a maker without a fee table (PCBWay, Eurocircuits, AISLER), a quote in another currency than the estimate – the board total against the budget alone, in [cost] currency through [cost] rates; without a rate for the quote's currency the budget is named, not compared."
 why = "edakit cost came within about 1 $ of the reference carts; a larger difference is a fee edakit does not know, a class or a side that changed, or a field set otherwise than the job says. Shipping and VAT belong to the order, which may hold several boards – edakit cart actual compares them."
 fix = "Find the line that differs: a field of the form (ORDER.form), a part line (ORDER.parts), a fee the table lacks (edakit cart actual brings real costs into the project's fee table). Accept a difference that is understood, or stop the order."
 severity = "warning"
@@ -1281,7 +1279,7 @@ sources = [
 
 [codes."ORDER.files"]
 title = "the same files"
-rule = "edakit cart check: the SHA-256 of every upload file is still that of the job and of the current release's manifest, the job's run is still the current release, and the names – and sizes, where the page shows them – of the uploads the page lists are the job's files, none more."
+rule = "edakit cart check: the SHA-256 of every upload file is still that of the job and of the current release's manifest, the job's run is still the current release, and the names – and sizes, where the page shows them – of the uploads the page lists are the job's files, none more. Where the files go up in the cart (upload = \"after_cart\" – PCBWay) their names come with the cart line (cart.json files); an upload the maker's pages name nowhere (unshown – JLCPCB's BOM and CPL) is held by its SHA-256 alone."
 why = "The second lesson of the reference order: the upload of another run's files. edakit release verify had to be run by hand right before the upload; ORDER.files checks the files and what the page says it received."
 fix = "Upload the job's files again from the paths in job.json; after a new release, edakit cart prepare again."
 severity = "error"
@@ -1293,7 +1291,7 @@ sources = [
 
 [codes."ORDER.finish"]
 title = "lead in the finish"
-rule = "edakit cart check: a surface finish with lead (HASL that is not lead-free) in the job or on the page fails for purpose.use sale, warns for gift and is a note for private."
+rule = "edakit cart check: a surface finish with lead (HASL that is not lead-free) in the job or on the page fails for purpose.use sale or without a purpose, warns for gift and is a note for private – support, not legal advice (handbook 15)."
 why = "The finish is in the layout and fab hash, not in the circuit hash M-6 reviewed: leaded HASL puts lead into the product. For a board that is sold RoHS forbids it; for a gift lead is a substance of very high concern that REACH Art. 33 asks to name to a consumer who asks."
 fix = "finish = \"LeadFree HASL\" or \"ENIG\" in [order] and a new gate run; a gift with lead: accept with the statement at hand, or change the finish."
 severity = "error"
