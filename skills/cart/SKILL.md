@@ -91,6 +91,11 @@ on the page, a mail to the owner) is taken out of `[cart] makers` by the owner.
     VAT apart, currency) into `cart.json`, run `edakit cart check --cart 2>&1 | cat` for the order record, and stop
     before "Continue to Checkout", which is the owner's; a provisional profile: stop before the cart and say so. Tell
     the owner the result, and that M-2 at the maker, ordering and paying are theirs.
+11. **Several makers.** With more than one maker in `[cart] makers`, the owner may want the quotes first: run steps 1 to
+    8 at each maker on its own job (`edakit cart prepare --maker M`), stop before the cart, and run `edakit cart compare
+    2>&1 | cat` – the board totals as quoted and in `[cost] currency`, the parts each maker marked, the lead times, the
+    checks side by side, in `cart/compare.md`. Whose cart to fill is the owner's choice; then step 10 at that maker
+    only.
 
 **AISLER** (the owner's word of 2026-11-01): after the upload, in the BOM tab set "Auto assign parts using" to the job's
 `match` (`mpn`); an MPN AISLER lists more than once (another manufacturer, "Partner Stock") stays unassigned – assign

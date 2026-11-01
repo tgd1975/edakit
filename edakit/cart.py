@@ -4,6 +4,7 @@
     edakit cart prepare [--board B] [--maker M]          the job of the skill cart, from the current release
     edakit cart check   [--board B] [--maker M] [--cart] ORDER.form to ORDER.review on what the skill brought back; --cart: the cart line
     edakit cart actual  [--board B] [--maker M] [--from FILE]   the real cost of the order
+    edakit cart compare [--board B]                      the quotes of every maker of [cart] makers side by side
 
 The skill cart (Claude in Chrome, in the owner's browser) fills the maker's form from the job and stops at the maker's
 cart button – it never orders and never pays. edakit is deterministic and knows the release; Claude reads and fills
@@ -20,6 +21,7 @@ release and the page text Claude kept. The files of an order live next to the up
         check.md          the result of edakit cart check
         cart.json         the cart line as read back after the cart button (--cart)
         actual.json, actual_page.txt, actual.md   the real cost after the owner ordered and paid
+    <reports>/<run>/fab/<board>/cart/compare.md       edakit cart compare: every maker's quote side by side
 
 Exit codes: 0 = ok, 2 = findings (the order stops), 1 = error; edakit cart check 3 = ORDER.form to ORDER.finish passed, the regulatory
 review of the order (ORDER.review) is open.
@@ -39,6 +41,7 @@ from .design import Design, natural_key
 
 JOB, QUOTE, PAGE, SCREENS = "job.json", "quote.json", "quote_page.txt", "screens"
 REVIEW, CHECK, CHECK_JSON, CART = "regulatory.md", "check.md", "check.json", "cart.json"
+COMPARE = "compare.md"
 ACTUAL, ACTUAL_PAGE, ACTUAL_MD = "actual.json", "actual_page.txt", "actual.md"
 ORDERS = Path("hardware") / "orders"   # the order records, versioned, outside every hash
 CHECKS = {"ORDER.form": "form = job", "ORDER.parts": "parts = release", "ORDER.quote": "quote against the estimate",
@@ -891,10 +894,141 @@ def check(cfg, args):
     return 0
 
 
+# --- edakit cart compare -----------------------------------------------------------------------------------------------
+
+def check_state(out):
+    """Whether edakit cart check passed on the quote.json of this order folder: passed, passed with warnings, review
+    open, findings, not checked – or not checked when check.json belongs to another quote.json."""
+    if not (out / CHECK_JSON).exists():
+        return "not checked"
+    done = json.loads((out / CHECK_JSON).read_text(encoding="utf-8"))
+    if done.get("quote_sha256") != sha_of(out / QUOTE):
+        return "not checked (the quote changed)"
+    results = [r.get("result") for r in done.get("results", [])]
+    if "fail" in results:
+        return "findings"
+    if "open" in results:
+        return "review open"
+    return "passed, with warnings" if "warn" in results else "passed"
+
+
+def compare_rows(cfg, run, board):
+    """[{maker, name, state | quote figures}] – one row per maker of [cart] makers, in their order: the board total
+    (PCB, assembly fees, parts) as quoted and in [cost] currency through [cost] rates, the order total where the page
+    showed one, the lines the maker marked or did not match (ORDER.parts), the lead time as read, the check."""
+    money = cfg.cost or {}
+    home = money.get("currency", "USD")
+    rates = {home: 1.0, **{k: float(v) for k, v in (money.get("rates") or {}).items()}}
+    rows = []
+    for key in makers.listed(cfg):
+        m = makers.get(cfg, key)
+        out = folder(cfg, run, board, key)
+        row = {"maker": key, "name": m.name, "home_currency": home}
+        if not (out / JOB).exists():
+            rows.append({**row, "state": f"no job – edakit cart prepare --maker {key}"})
+            continue
+        job = json.loads((out / JOB).read_text(encoding="utf-8"))
+        if not (out / QUOTE).exists():
+            rows.append({**row, "state": f"no quote yet – the skill cart at {m.name}"})
+            continue
+        quote = json.loads((out / QUOTE).read_text(encoding="utf-8"))
+        currency = quote.get("currency") or m.currency or ""
+        total = round(sum(float(p["amount"]) for p in board_lines(quote)), 2)
+        order = next((float(p["amount"]) for p in quote.get("prices", []) if p.get("kind") == "total"), None)
+        bad, _ = b2(job, quote)
+        rate = rates.get(currency)
+        rows.append({**row, "currency": currency, "board_total": total,
+                     "home_total": None if rate is None else round(total * rate, 2), "order_total": order,
+                     "lines": len(job.get("bom", [])), "parts": bad,
+                     "matching": "review" if job["maker"].get("matching") == "review" and not quote.get("parts")
+                     else "page",
+                     "lead_time": quote.get("lead_time") or "", "read": quote.get("read") or "",
+                     "check": check_state(out)})
+    return rows
+
+
+def compare_table(rows):
+    """The rows as text columns: maker, board total, in [cost] currency, order total, parts, lead time, check."""
+    home = rows[0]["home_currency"] if rows else "USD"
+    head = ["maker", "board total", f"in {home}", "order total", "parts", "lead time", "check"]
+    out = []
+    for r in rows:
+        if "state" in r:
+            out.append([r["name"], r["state"]])
+            continue
+        parts = ("matched after the cart" if r["matching"] == "review" else
+                 f"{len(r['parts'])} of {r['lines']} lines" if r["parts"] else f"all {r['lines']} lines")
+        out.append([r["name"], f"{r['board_total']:.2f} {r['currency']}".strip(),
+                    "–" if r["home_total"] is None else f"{r['home_total']:.2f} {home}",
+                    "–" if r["order_total"] is None else f"{r['order_total']:.2f} {r['currency']}".strip(),
+                    parts, r["lead_time"] or "–", r["check"]])
+    return head, out
+
+
+def lowest(rows):
+    """(name, board total, currency, total in [cost] currency) of the lowest board total among at least two quotes
+    that compare – in [cost] currency; None otherwise."""
+    have = [r for r in rows if r.get("home_total") is not None]
+    if len(have) < 2:
+        return None
+    r = min(have, key=lambda x: x["home_total"])
+    return r["name"], r["board_total"], r["currency"], r["home_total"]
+
+
+def compare(cfg, args):
+    """The quotes of every maker of [cart] makers for the board of the current release side by side (handbook 8.4):
+    printed, and written to cart/compare.md of the run. Reads only what the skill cart and edakit cart check wrote –
+    nothing is asked of a maker, nothing ordered."""
+    from .release import gate
+    board = cfg.board(args.board, made=True)
+    cur = gate.current(cfg)
+    if cur is None:
+        raise CartError("no current release")
+    run = cur[0]
+    rows = compare_rows(cfg, run, board.name)
+    head, table = compare_table(rows)
+    width = [max(len(head[i]), *(len(r[i]) for r in table if len(r) > 2)) for i in range(len(head))]
+    print(f"board {board.name}, current release {run} – the quotes as the skill cart read them; nothing ordered")
+    print("  ".join(h.ljust(w) for h, w in zip(head, width)).rstrip())
+    for r in table:
+        print(("  ".join(c.ljust(w) for c, w in zip(r, width)) if len(r) > 2 else
+               f"{r[0].ljust(width[0])}  {r[1]}").rstrip())
+    notes = [f"  {r['name']} – {p}" for r in rows for p in r.get("parts", [])]
+    if notes:
+        print("parts the maker marked or did not match:")
+        print("\n".join(notes))
+    low = lowest(rows)
+    if low:
+        name, total, currency, home_total = low
+        home = rows[0]["home_currency"]
+        print(f"lowest board total: {name}, {total:.2f} {currency}" +
+              ("" if currency == home else f" ({home_total:.2f} {home})"))
+    when = dt.datetime.now().astimezone().isoformat(timespec="seconds")
+    L = [f"# Quotes compared – board {board.name}, run {run}\n",
+         f"Written by edakit cart compare at {when}: the quote the skill cart read at each maker of [cart] makers, the "
+         "board total in [cost] currency through [cost] rates, and whether edakit cart check passed on that very "
+         "quote – nothing ordered.\n",
+         "| " + " | ".join(h[:1].upper() + h[1:] for h in head) + " |", "|" + "---|" * len(head)]
+    L += ["| " + " | ".join(r) + " |" if len(r) > 2 else f"| {r[0]} | {r[1]} |" + " |" * (len(head) - 2)
+          for r in table]
+    if notes:
+        L += ["", "Parts the maker marked or did not match:", "", *(f"- {n.strip()}" for n in notes)]
+    if low:
+        L += ["", f"Lowest board total: {low[0]}, {low[1]:.2f} {low[2]}" +
+              ("" if low[2] == rows[0]["home_currency"] else f" ({low[3]:.2f} {rows[0]['home_currency']})") + "."]
+    path = folder(cfg, run, board.name, makers.planned(cfg)).parent / COMPARE
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text("\n".join(L) + "\n", encoding="utf-8")
+    print(f"compare: {cfg.relative(path)}")
+    return 0
+
+
 def main(cfg, args):
     try:
         if args.action == "fields":
             return fields(cfg, args)
+        if args.action == "compare":
+            return compare(cfg, args)
         if args.action == "prepare":
             return prepare(cfg, args)
         if args.action == "check":

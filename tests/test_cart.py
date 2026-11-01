@@ -560,3 +560,76 @@ def test_the_lead_finding_says_it_is_no_legal_advice():
     from edakit import cart as c
     for use in ("sale", "gift"):
         assert c.lead(["HASL(with lead)"], {"use": use})[1].endswith("(handbook 15.2 – support, not legal advice)")
+
+
+# --- compare ---------------------------------------------------------------------------------------------------------
+
+THREE = ('[cart]\nmakers = ["jlcpcb", "eurocircuits", "aisler"]\nship_to = "DE"\n'
+         'shipping = { jlcpcb = "DHL Express", eurocircuits = "UPS", aisler = "DHL" }')
+
+
+def other_maker(project, key, name, currency, change):
+    """A second maker's job as prepare writes it – the planned maker's job with this maker – and a quote of it as the
+    skill would bring it back, changed by change; returns the order folder."""
+    j = job(project)
+    jo = dict(j, maker=dict(j["maker"], key=key, name=name, currency=currency, role="other"), estimate=None)
+    d = order_dir(project, key)
+    d.mkdir(parents=True)
+    (d / "job.json").write_text(json.dumps(jo, indent=1))
+    q, page = quote_of(j, change)
+    q["maker"] = key
+    (d / "quote.json").write_text(json.dumps(q, indent=1))
+    (d / "quote_page.txt").write_text(page)
+    return d
+
+
+def test_compare_puts_every_makers_quote_side_by_side(project, monkeypatch, capsys):
+    """The quotes of every maker of [cart] makers for the board of the current release side by side: the board total in
+    the quote's currency and, through [cost] rates, in [cost] currency; the lines a maker marked; the lead time as
+    read; whether edakit cart check passed on this very quote. The lowest board total is named, the table goes to
+    cart/compare.md – and a maker without a job or a quote is named with what to do."""
+    released(project, fr.ordered, cart=THREE)
+    toml(project, "[cost]\nbudget = 200\nrates = { EUR = 1.10 }")
+    assert cart(project, monkeypatch, "prepare") == 0
+    jl = write_quote(project)
+    review(project)
+    assert cart(project, monkeypatch, "check") == 0
+    jl_total = sum(p["amount"] for p in jl["prices"] if p["kind"] in ("pcb", "fee", "parts"))
+
+    def euro(q):
+        q.update(currency="EUR", lead_time="10 working days",
+                 prices=[{"label": "PCB", "amount": 400.0, "kind": "pcb"},
+                         {"label": "Assembly", "amount": 300.0, "kind": "fee"},
+                         {"label": "Components", "amount": 50.0, "kind": "parts"}])
+        q["parts"][0]["mark"] = "out of stock"
+    other_maker(project, "eurocircuits", "Eurocircuits", "EUR", euro)
+    first = job(project)["bom"][0]
+    capsys.readouterr()
+
+    assert cart(project, monkeypatch, "compare") == 0
+    out = capsys.readouterr().out
+    rows = {line.split()[0]: line for line in out.splitlines()
+            if line[:1].strip() and line.split()[0] in ("JLCPCB", "Eurocircuits", "AISLER")}
+    assert f"{jl_total:.2f} USD" in rows["JLCPCB"] and "3-4 days" in rows["JLCPCB"] and "passed" in rows["JLCPCB"]
+    assert "750.00 EUR" in rows["Eurocircuits"] and "825.00 USD" in rows["Eurocircuits"]
+    assert "10 working days" in rows["Eurocircuits"] and "not checked" in rows["Eurocircuits"]
+    assert "1 of" in rows["Eurocircuits"]
+    assert any(first["part"] in line and line.rstrip().endswith(": out of stock") for line in out.splitlines())
+    assert "no job – edakit cart prepare --maker aisler" in rows["AISLER"]
+    assert f"lowest board total: JLCPCB, {jl_total:.2f} USD" in out
+    md = (order_dir(project).parent / "compare.md").read_text()
+    assert "| Eurocircuits |" in md and "out of stock" in md and "nothing ordered" in md
+
+
+def test_compare_names_a_check_of_an_older_quote(project, monkeypatch, capsys):
+    """A check.json of another quote.json than the one in the folder is no check of this quote."""
+    released(project, fr.ordered)
+    assert cart(project, monkeypatch, "prepare") == 0
+    write_quote(project)
+    review(project)
+    assert cart(project, monkeypatch, "check") == 0
+    write_quote(project, lambda q: q.update(lead_time="5 days"), lambda page: page.replace("3-4 days", "5 days"))
+    capsys.readouterr()
+    assert cart(project, monkeypatch, "compare") == 0
+    row = next(line for line in capsys.readouterr().out.splitlines() if line.startswith("JLCPCB"))
+    assert "5 days" in row and "not checked (the quote changed)" in row
