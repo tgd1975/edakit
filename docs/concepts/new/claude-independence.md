@@ -4,12 +4,13 @@ Status 2026-11-01: decided. Asked for by the owner ("write a concept – Claude 
 and Llama, Mistral and Copilot"), where "Llama" meant running models oneself – "I mean the LLM self-hosting, not the LLM
 itself" –; decisions 1, 2 and 4 taken by the owner the same day in a decision round in Claude Code's form, the rest
 decided by Claude on the owner's word ("make a proposal") and confirmed by the owner the same day (the table at the
-end); OpenCode added by the owner the same day ("maybe OpenCode integration too?"); nothing built – the steps CI.0 to
-CI.7 start on the owner's word, listed in `TODO.md`. Written against main at `e4b82a0`. The findings on edakit come from
-its code, skills, agents, hooks, tests and evals at that commit; those on the other harnesses and models from their
-documentation and source, read on 2026-11-01 from the repositories the sites are built from – docs.github.com and
-code.visualstudio.com were not reachable from the session, their sources were –, each with its commit or date under
-"Sources". What rests only on search summaries is marked so.
+end); OpenCode added by the owner the same day ("maybe OpenCode integration too?"); the third item of the README's
+"Future work" on the owner's word the same day; nothing built – the steps CI.0 to CI.7 start on the owner's word, listed
+in `TODO.md`. Written against main at `e4b82a0`. The findings on edakit come from its code, skills, agents, hooks, tests
+and evals at that commit; those on the other harnesses and models from their documentation and source, read on
+2026-11-01 from the repositories the sites are built from – docs.github.com and code.visualstudio.com were not reachable
+from the session, their sources were –, each with its commit or date under "Sources". What rests only on search
+summaries is marked so.
 
 ## The short answer
 
