@@ -117,3 +117,18 @@ move to `docs/concepts/done/` with the concept.
 - **Findings against the code**, collected in each review file, were not fixed: they are sources (codes.toml,
   docstrings, skills) or need a decision.
 - **Chapters over 500 lines remain:** 4, 5, 7, 8, 10, 17 – the rule stays red for them.
+- **Chapter 13 speaks as "we"**, as it did before; "the owner" there became "we". It describes pytree once, linked to
+  its project page, and holds the other chapters' history in 13.7 (the days after the first board) and 13.8 (how the
+  chapters' details came about). Chapter 8's "the reference project published its four boards – main, smd, tht,
+  esp32" was the Christmas bell's: it moved to 13.6, the bell's section.
+- **RED of `tests/test_style.py`** now holds what is left: chapters over 500 lines (4, 5, 7, 8, 10, 17), sections over
+  80 lines in 10.7 (generated) and 11.4 (the agreements, quoted), dates in 8, 10 and 17 that statements rest on, and
+  the examples' decision logs and READMEs, which were not touched.
+
+## After the merge with main
+
+- **`.github/merge.py`** had learnt meanwhile to regenerate a conflict in generated output, naming
+  `docs/catalog/index.html`; since the split every page `docs/catalog/*.html` counts, `build.py` not.
+- **`TODO.md`** goes through the notes lane after the merge: TD-29 to TD-35 ticked with the merge, the review of this
+  file and the findings of the review files as one item for the owner, TD-79's mention of `docs/catalog/index.html`
+  left to the session that holds TD-79.
