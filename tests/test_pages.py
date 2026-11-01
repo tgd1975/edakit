@@ -83,3 +83,16 @@ def test_an_image_goes_onto_the_site(tmp_path):
     assert media == {"examples/coin-cell-led/docs/schematic.svg"}
     docs = mod.assemble(tmp_path / "pages") / "docs"
     assert (docs / "files" / "examples" / "coin-cell-led" / "docs" / "pcb_plan_main.png").is_file()
+
+
+def test_the_start_pages_links_to_the_site_land_on_its_pages():
+    """The README links its readers to the site, not to the Markdown on GitHub: every such link names a page the
+    site has (a page "x/" is x.md or x/index.md there)."""
+    import re
+    mod = pages()
+    have = {site for _, site, _ in mod.sources()} | {"catalog/index.html"}
+    readme = (ROOT / "README.md").read_text(encoding="utf-8")
+    links = re.findall(re.escape(mod.SITE) + r"([^)\s>#]*)", readme)
+    assert len(links) > 10
+    missing = [u for u in links if u and not ({u.rstrip("/") + ".md", u + "index.md", u + "index.html"} & have)]
+    assert missing == []

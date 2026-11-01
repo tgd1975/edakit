@@ -3,7 +3,8 @@
 # edakit
 
 **Circuit design as code.** edakit takes a circuit from an idea to a board ready to order. It is a plugin for Claude
-Code and a command line, and everything it works on is text in your repository.
+Code and a command line, and everything it works on is text in your repository. The documentation:
+<https://tgd1975.github.io/edakit/>.
 
 You bring the idea, what the board must do, and the decisions on money, purpose and looks. Claude and edakit bring the
 rest: the parts with their datasheets, the values, the rules, the simulation, the schematic and the PCB in EasyEDA Pro
@@ -11,23 +12,33 @@ or KiCad, and the manufacturing files. They take the order up to the cart at JLC
 Each maker's quote comes with its price, the parts it has in stock and its lead time, checked by edakit. You order, pay
 and hold the boards.
 
-The [walkthrough](handbook/17-walkthrough.md) shows it on a small board: 14 steps, six of them yours, seven decisions.
-Every step is checked by rules and reviewers, but that is no guarantee. The regulatory review is support, not legal
-advice. In today's words, edakit specializes an agent [harness](docs/architecture.md) for circuit design.
+The [walkthrough](https://tgd1975.github.io/edakit/handbook/17-walkthrough/) shows it on a small board: 14 steps, six of
+them yours, seven decisions. Every step is checked by rules and reviewers, but that is no guarantee. The regulatory
+review is support, not legal advice. In today's words, edakit specializes an agent
+[harness](https://tgd1975.github.io/edakit/architecture/) for circuit design.
 
-At least that is the vision, and we are close. [How it works](docs/how-it-works.md#state) says what has run live, what
-has not, and where it goes next.
+At least that is the vision, and we are close. [How it works](https://tgd1975.github.io/edakit/how-it-works/#state) says
+what has run live, what has not, and where it goes next.
 
-- **Makers.** A checked circuit and its drawing, or a board from it: start with the [quickstart](docs/quickstart.md).
-- **Engineers.** A rule of your own for edakit's checks: [adding a rule](docs/adding-a-rule.md).
-- **Developers.** Work on edakit itself: [working on edakit](docs/working-on-edakit.md).
+| The circuit, drawn by `edakit schematic draw` | The board, from its Gerber files |
+| --- | --- |
+| ![The walkthrough's schematic: a CR2032, a push button, a red LED and its resistor](examples/coin-cell-led/docs/schematic.svg) | ![The walkthrough's round board, top side](examples/coin-cell-led/docs/silk_main_top.png) |
+
+The walkthrough's example: a coin cell, a button and a red LED – every file of it is text in
+[examples/coin-cell-led](examples/coin-cell-led/).
+
+- **Makers.** A checked circuit and its drawing, or a board from it: start with the
+  [quickstart](https://tgd1975.github.io/edakit/quickstart/).
+- **Engineers.** A rule of your own for edakit's checks:
+  [adding a rule](https://tgd1975.github.io/edakit/adding-a-rule/).
+- **Developers.** Work on edakit itself: [working on edakit](https://tgd1975.github.io/edakit/working-on-edakit/).
 
 **What it needs.** Claude Code; uv and ngspice; for a board EasyEDA Pro desktop with Node 24, or KiCad 10. Tested on
 Linux; Windows and macOS are untested. An account at the maker you order from.
 
 **What it costs.** The checks, the simulation and the drawings run offline. Claude's part is paid in tokens: six
 typical tasks of the evals cost 0.55 USD together with Sonnet 5.5 and 1.48 USD with Opus 5.5
-([evals](evals/README.md)). The board itself is quoted by each maker side by side.
+([evals](https://tgd1975.github.io/edakit/evals/)). The board itself is quoted by each maker side by side.
 
 **What it is not.** No editor of its own: it draws in EasyEDA Pro or KiCad. Two copper layers. The simulation is DC
 operating points with a few transient and AC runs.
@@ -41,13 +52,14 @@ In Claude Code in the terminal:
 /plugin install edakit@edakit
 ```
 
-In VS Code, and to update: [handbook 2.3](handbook/02-setup.md#23-claude-code-the-plugin). Without Claude Code:
+In VS Code, and to update:
+[handbook 2.3](https://tgd1975.github.io/edakit/handbook/02-setup/#23-claude-code-the-plugin). Without Claude Code:
 `uvx --from git+https://github.com/tgd1975/edakit edakit <command>`. The rest of the tool chain is in
-[handbook 2](handbook/02-setup.md).
+[handbook 2](https://tgd1975.github.io/edakit/handbook/02-setup/).
 
 **Versions.** Every change to edakit comes as a version with its own number, such as 0.2.0. The
-[changelog](CHANGELOG.md) says what each one changed. When the middle number goes up, a project has to act, and the
-changelog says what to do. `edakit --version` names the version that runs.
+[changelog](https://tgd1975.github.io/edakit/changelog/) says what each one changed. When the middle number goes up, a
+project has to act, and the changelog says what to do. `edakit --version` names the version that runs.
 
 ## Try it in two minutes
 
@@ -59,15 +71,18 @@ uvx --from git+https://github.com/tgd1975/edakit edakit check
 ```
 
 It checks the walkthrough's circuit in a fraction of a second and shows a finding that was accepted, with its reason.
-The [quickstart](docs/quickstart.md) goes on from there: a finding explained, the simulation, the drawn schematic.
+The [quickstart](https://tgd1975.github.io/edakit/quickstart/) goes on from there: a finding explained, the simulation,
+the drawn schematic.
 
 ## Read on
 
-- [How it works](docs/how-it-works.md) – the steps, who does what, the words, the state and the future work.
-- [Projects](docs/projects/README.md) – the boards built with edakit, with their schematics and boards.
-- [The handbook](handbook/README.md) – the guides: the circuit, the board, troubleshooting.
-- [The reference](handbook/10-reference.md) – every key and every command; the [rule catalog](docs/catalog/index.html).
-- The documentation as a site: <https://tgd1975.github.io/edakit/>.
+- [How it works](https://tgd1975.github.io/edakit/how-it-works/) – the steps, who does what, the words, the state and
+  the future work.
+- [Projects](https://tgd1975.github.io/edakit/projects/) – the boards built with edakit, with their schematics and
+  boards.
+- [The handbook](https://tgd1975.github.io/edakit/handbook/) – the guides: the circuit, the board, troubleshooting.
+- [The reference](https://tgd1975.github.io/edakit/handbook/10-reference/) – every key and every command; the
+  [rule catalog](https://tgd1975.github.io/edakit/catalog/).
 
 ## What it runs, sends, fetches
 
