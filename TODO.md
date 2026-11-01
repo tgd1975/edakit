@@ -102,15 +102,12 @@ when a project must act); every merge that changes edakit a version of its own, 
 notes lane for concepts and TODO.md; the rulesets on main as text; the projects on the newest version, unpinned. Each
 step starts on the owner's word.
 
-- [ ] TD-45 - **V.1 and V.2** The number in one place (0.2.0), `edakit --version`, the manifest's `tools.edakit`; the
-      changelog from the merges since 2026-11-01, the fragments, `.github/merge.py`, `release.yml`, the checks `paths`,
-      `changes` and `version` – one branch, its merge is 0.2.0. `paths` reads the proposals' list from
-      `edakit/proposal.py`, which TD-42 writes: agreed with that step, the one merged second rebases.
 - [ ] TD-46 - **V.3** The notes lane: `.github/notes.py`, `paths` for `notes/*`.
 - [ ] TD-47 - **V.4** The rulesets as text in `.github/rulesets/`, applied with `gh api` on the owner's word once
-      TD-45 and TD-46 are on main, with CLAUDE.md, `docs/organisation.md`, the skills, README and handbook 2.3 in the
-      same branch. Checked then: the admin role as a bypass on a personal repository, auto-merge as the account that
-      switched it on, a `pull_request_target` run as the required check.
+      TD-46 is on main, the checks not strict, with CLAUDE.md (the notes lane, the protection) and the skills triage,
+      add-rule and add-feature (a fragment per change) in the same branch – README, handbook 2.3 and the working rule
+      for merging came with TD-45. Checked then: the admin role as a bypass on a personal repository, auto-merge as the
+      account that switched it on.
 - [ ] TD-48 - **V.5** Branches left lying around: 9 `claude/*` and 2 `ccr-*` on origin, the local ones and the
       worktrees – listed, then merged or deleted on the owner's word; other sessions' branches named with their session.
 - [ ] TD-49 - **V.6** 1.0.0 on the owner's word once D.2 is built (`merge.py <n> --major`).
@@ -157,6 +154,11 @@ sources, data and code untouched; a text that is generated or used elsewhere sta
 Done or dropped, newest first, each with its date and the commit that closed it. What closed before 2026-11-01 is
 taken from the history of this file; an item rewritten on its way is listed once, in its last form.
 
+- [x] TD-45 - **V.1 and V.2** edakit 0.2.0, the first version: the number in `edakit/__init__.py`, `edakit --version`
+  and the manifest's `tools.edakit`, the changelog from 2026-11-01 on, the fragments in `changes/`, `.github/merge.py`
+  (merges while main keeps its number – not strict), the checks `paths` and `version`, `release.yml` (tag v0.2.0 and the
+  GitHub release set); CLAUDE.md "A merge is a version", README, handbook 2.3, 10.5, 14.4, the glossary (#104, 1cb2d68).
+  [2026-11-01]
 - [x] TD-25 - **easyeda-mcp-pro 1.6.0 prepared:** branch `mcp-160`, the pin raised, both patches applied, the patched
   extension built to `~/.easyeda-mcp-pro/easyeda-bridge-extension-1.6.0.eext`; on the way 1.6.0's one break for
   edakit – the PCB lists refuse projectId "current" – met in `list_pcb_components` (branch `mcp-160`, not merged).
