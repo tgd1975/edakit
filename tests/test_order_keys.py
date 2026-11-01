@@ -5,6 +5,7 @@ a finding fails for [cart] maker and warns for every other maker."""
 
 import json
 import shutil
+from pathlib import Path
 
 import pytest
 
@@ -334,7 +335,8 @@ def test_the_former_placeholder_is_text_everywhere(project):
                     f"JLCJLCJLCJLC at (18.0, 3.0) on the top silkscreen – {m} prints it as it is; take it off "
                     '(mark = "remove", or a barcode = "qr" or "datamatrix" for traceability)')
                    for m in ("JLCPCB", "Eurocircuits")]
-    assert fr.findings(rows) == [("FILES.order", "warn")] * 3   # and 1.6 mm, which Eurocircuits does not make
+    assert fr.findings(rows) == [("FILES.order", "warn")] * 3 + [("SYNC.cpl", "warn")]   # and 1.6 mm, which
+    # Eurocircuits does not make; D1's footprint is not in its [cpl.turns]
 
 
 def test_a_value_the_form_does_not_offer(project):
@@ -533,6 +535,85 @@ def test_one_bom_with_mpn_serves_every_maker_that_takes_it():
     for m in takers:
         assert m.data["bom"]["columns"] == MPN_COLUMNS, m.key
     assert "MPN" not in MPN_COLUMNS and "Comment" not in MPN_COLUMNS
+
+
+def cpl_rows(path):
+    import csv
+    with open(path, newline="") as f:
+        return [(r["Designator"], r["Layer"], r["Rotation"]) for r in csv.DictReader(f)]
+
+
+def test_eurocircuits_turns_a_sot23_by_90():
+    """Live run 5.8 (2026-11-01): Eurocircuits' Assembly Editor drew Q1, EasyEDA's SOT-23-3_…-BR at 180°, turned by 90°
+    against its pads; U1 (SOIC-8, -BL), D1 (the LED) and the 0805s sat on theirs. Eurocircuits reads IEC 61188-7 –
+    pin 1 lower left –, the -BR footprint has pin 1 bottom right: Q1 is 270° there. JLCPCB draws EasyEDA's footprints.
+    The probe the same day drew the CPL so turned with Q1 on its pads (live_2026-11-01/turn_probe.md)."""
+    m = makers.load("eurocircuits")
+    probe = Path(__file__).parent / "fixtures" / "makers" / "eurocircuits" / "live_2026-11-01" / "cpl_main_eurocircuits.csv"
+    assert dict((ref, rot) for ref, _, rot in cpl_rows(probe))["Q1"] == "270"
+    assert m.zero == "IEC 61188-7"
+    assert {fp: m.turn(fp) for fp in ("SOT-23-3_L2.9-W1.6-P1.90-LS2.8-BR", "SOIC-8_L4.9-W3.9-P1.27-LS6.0-BL", "C0805",
+                                      "R0805", "C0603", "LED-SMD_L2.0-W1.3_APTD2012SF4C", "SMA_L4.3-W2.6-LS5.2-RD")} == {
+        "SOT-23-3_L2.9-W1.6-P1.90-LS2.8-BR": 90, "SOIC-8_L4.9-W3.9-P1.27-LS6.0-BL": 0, "C0805": 0, "R0805": 0,
+        "C0603": 0, "LED-SMD_L2.0-W1.3_APTD2012SF4C": 0, "SMA_L4.3-W2.6-LS5.2-RD": None}
+    assert (180 + m.turn("SOT-23-3_L2.9-W1.6-P1.90-LS2.8-BR")) % 360 == 270
+    j = makers.load("jlcpcb")
+    assert (j.zero, j.turn("SOT-23-3_L2.9-W1.6-P1.90-LS2.8-BR"), j.turn("anything")) == (None, 0, 0)
+    assert (m.upload("main")[-1], j.upload("main")[-1]) == ("cpl_main_eurocircuits.csv", "cpl_main.csv")
+
+
+def test_a_cpl_of_its_own_for_a_maker_with_another_zero(project, monkeypatch):
+    """A maker whose zero orientation is not the footprint's gets cpl_<b>_<maker>.csv, every part turned by its
+    footprint's [cpl.turns]; a footprint the profile does not list keeps its rotation and SYNC.cpl warns for that
+    maker – M-2 checks it in the maker's preview. cpl_<b>.csv stays as it was, the fab hash with it."""
+    from edakit.release import fab, gate
+    rows = run(project, lambda ex, p: toml(p, '[cart]\nmakers = ["jlcpcb", "eurocircuits"]'))
+    d = project.root / "build" / "fab" / "main"
+    assert cpl_rows(d / "cpl_main.csv") == cpl_rows(d / "cpl_main_eurocircuits.csv") == [
+        ("C2", "Top", "0"), ("D1", "Top", "180")]
+    mine = [(r["result"], r["actual"]) for r in rows if r["id"] == "SYNC.cpl" and r.get("maker") == "eurocircuits"]
+    assert mine == [("warn", "SMA_L4.3-W2.6-LS5.2-RD (D1): not in the profile's [cpl.turns]")]
+    assert gate.upload(project.config(), "main") == ["gerber_main.zip", "bom_main.csv", "cpl_main.csv",
+                                                     "bom_main_mpn.csv", "cpl_main_eurocircuits.csv"]
+    layers = fab.fab_layers(d, "main")
+    assert "cpl_main.csv" in layers and "cpl_main_eurocircuits.csv" not in layers
+
+    monkeypatch.setitem(makers.load("eurocircuits").data["cpl"]["turns"], "SMA_*", 90)
+    rows = run(project, lambda ex, p: toml(p, '[cart]\nmakers = ["jlcpcb", "eurocircuits"]'))
+    assert cpl_rows(d / "cpl_main_eurocircuits.csv") == [("C2", "Top", "0"), ("D1", "Top", "270")]
+    assert cpl_rows(d / "cpl_main.csv") == [("C2", "Top", "0"), ("D1", "Top", "180")]
+    mine = [(r["result"], r["actual"]) for r in rows if r["id"] == "SYNC.cpl" and r.get("maker") == "eurocircuits"]
+    assert mine == [("pass", "turned D1 180° → 270°")]
+    assert fab.fab_layers(d, "main") == layers
+
+    run(project, lambda ex, p: toml(p, '[cart]\nmakers = ["jlcpcb"]'))
+    assert not (d / "cpl_main_eurocircuits.csv").exists()
+
+
+def test_a_turned_part_on_the_bottom_keeps_its_rotation(project, monkeypatch):
+    """The maker's rule for the bottom is unread (Eurocircuits' pages leave it out): a part on the bottom whose footprint
+    has a turn keeps the footprint's rotation, and SYNC.cpl warns."""
+    from edakit.release import fab
+    toml(project, '[cart]\nmaker = "eurocircuits"\nmakers = ["eurocircuits"]')
+    monkeypatch.setitem(makers.load("eurocircuits").data["cpl"]["turns"], "SMA_*", 90)
+    cpl = [{"Designator": "C2", "Mid X": "20mm", "Mid Y": "9mm", "Layer": "B", "Rotation": 90},
+           {"Designator": "D1", "Mid X": "13mm", "Mid Y": "9mm", "Layer": "B", "Rotation": 180.0}]
+    data = {"C2": {"footprintName": "C0805"}, "D1": {"footprintName": "SMA_L4.3-W2.6-LS5.2-RD"}}
+    rows, d = fab.Rows(), project.root / "out"
+    d.mkdir()
+    fab.write_maker_cpls(project.config(), project.config().board(), cpl, data, d, rows)
+    assert cpl_rows(d / "cpl_main_eurocircuits.csv") == [("C2", "Bottom", "90"), ("D1", "Bottom", "180")]
+    assert [(r["result"], r["actual"]) for r in rows] == [
+        ("warn", "D1 (SMA_L4.3-W2.6-LS5.2-RD): on the bottom, not turned – the bottom rule of Eurocircuits is unread")]
+
+
+@pytest.mark.parametrize("cpl, msg", [
+    ({"zero": "IEC 61188-7", "turns": {"SOT-23*": 45}}, "cpl.turns must be a table of footprint pattern = degrees"),
+    ({"turns": {"SOT-23*": 90}}, "cpl.turns needs cpl.zero"),
+    ({"zero": "IEC 61188-7", "turn": {}}, "cpl: unknown key 'turn'"),
+])
+def test_a_profile_with_wrong_turns(cpl, msg):
+    assert any(msg in p for p in makers.problems("x", {"cpl": cpl}))
 
 
 def test_pcbway_has_a_placeholder_of_its_own(project):

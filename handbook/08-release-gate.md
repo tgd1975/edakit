@@ -76,8 +76,9 @@ The BOM generated from the graph equals EasyEDA's BOM per designator, and every 
 - BOM generated **from the graph** in JLCPCB format = EasyEDA's BOM per designator; every LCSC number in the parts database; parts with `bom: false` left out on purpose
 
 **`SYNC.cpl`** – pick and place = PCB (error; replaces F-3)  
-Every BOM part is in the pick-and-place file exactly once with the PCB's side and rotation, and only on the sides [release] assembly allows (Economic PCBA: one side, SMD only).
+Every BOM part is in the pick-and-place file exactly once with the PCB's side and rotation, and only on the sides [release] assembly allows (Economic PCBA: one side, SMD only). A maker of [cart] makers whose zero orientation of a part is not the footprint's ([cpl] zero of its profile – Eurocircuits: IEC 61188-7) gets cpl_<board>_<maker>.csv, every part turned by its footprint's entry in [cpl.turns]; a footprint the profile does not list, or a turned part on the bottom, keeps its rotation and warns.
 - pick and place: every BOM part exactly once, side and rotation = PCB; sides and SMD-only as `[release] assembly` says (Economic PCBA: one side, SMD only; two SMD sides need Standard PCBA)
+- per maker with a zero orientation of its own: `cpl_<board>_<maker>.csv`, each part turned by `[cpl.turns]` of the profile (fnmatch on EasyEDA's footprint name); a footprint not listed, or a turned part on the bottom (the maker's bottom rule unread): its rotation as it is, a warning for that maker – M-2 checks it in the maker's preview. Not in the fab hash: `cpl_<board>.csv` is, the turns are the profile's
 
 **`SYNC.odb`** – ODB++ = the released files (error, other_maker: warning; replaces F-7)  
 With a maker of [cart] makers that takes ODB++ (files = ["odb"] in its profile – AISLER): odb_<board>.zip, exported by EasyEDA through the patched tool easyeda_export_odb or on the KiCad tool chain by kicad-cli pcb export odb, holds to this run's files – every board layer (copper, solder mask, paste, silkscreen) rasterised as GEO.copper does – EasyEDA's RoundRect mask openings as their rectangle, as the ODB++ has them – and XOR'd with the Gerber layer of the same side: no spot above 0.01 mm² of points farther than one raster point (0.02 mm) from the other layer – an edge that far off is the ODB++'s coarser coordinates (kicad-cli: 0.1 µm against the Gerber's 1 nm) –, no layer in one and not in the other; the drill hits = the drill files (place to 1 µm, diameter, plated or not); the profile = the Gerber outline (0.05 mm); every BOM part exactly once at the place (0.01 mm), rotation (ODB++ clockwise, the CPL counter-clockwise) and side of the CPL, with the part number the maker matches by (its profile's bom.match – AISLER: the MPN of the parts entry, which the KiCad tool chain writes into every footprint as MPN and Manufacturer; no match given: LCSC or MPN); a part with bom: false as the maker's profile says – left out (dnp = "omit"), else listed for the skill to mark; a tooling hole of the KiCad tool chain (a footprint with property edakit = "tooling") only marked .no_pop; the nets of the pins as the graph's, compared as groups of pins. An export that failed or cannot be read fails. A failure for [cart] maker, a warning for another maker.
@@ -659,7 +660,11 @@ skill prints the job as a checklist, the owner fills the form and `quote.json`, 
 `bom_<board>_mpn.csv` and PARTS.fact/mpn; both took it, and the CPL in JLCPCB's columns, as edakit writes them. The
 file's header is the one Eurocircuits' import maps by itself – Designator, Quantity, Value, Package, Manufacturer,
 Manufacturer Part Number: a column named "MPN" it left unmapped and took "Comment" for the part number (live run
-5.8); PCBWay's engineers read the same file by eye.
+5.8); PCBWay's engineers read the same file by eye. The CPL's rotations are EasyEDA's, whose footprints JLCPCB's
+preview draws (`[cpl] zero = "footprint"`). Eurocircuits reads IEC 61188-7 – pin 1 lower left – and drew the SOT-23
+Q1 at 180° turned by 90° (5.8): its profile names that zero in `[cpl] zero` and gives in `[cpl.turns]` per footprint
+the degrees its rotation is ahead, and the gate writes `cpl_<board>_eurocircuits.csv` with them (SYNC.cpl). A
+footprint not listed keeps its rotation and warns: M-2 checks it in the Assembly Editor, and it gets its line.
 JLCPCB's form offers no order number any more – "Mark on PCB" is "Remove Mark" or a 2D barcode (`barcode`: `"qr"`,
 `"datamatrix"`; `serial_number`, 10.2) –, so `mark = "specify"` is not a value of its form, and its former placeholder
 `JLCJLCJLCJLC` is printed as text at every maker: FILES.order warns about it. PCBWay's placeholder `WayWayWay` is text to

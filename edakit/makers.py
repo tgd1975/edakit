@@ -11,7 +11,10 @@ maker takes and refuses:
                        nowhere (ORDER.files holds them by their hash only); upload: "after_cart" where the
                        files go up in the cart (PCBWay) – their names are read back with the cart line;
                        matching: "review" where the maker matches the BOM only in its review after the cart (PCBWay)
-    bom, cpl           the columns, and the key the maker matches parts by (bom.match: lcsc or mpn)
+    bom, cpl           the columns, and the key the maker matches parts by (bom.match: lcsc or mpn); cpl.zero the
+                       maker's zero orientation of a part when it is not the footprint's own ("IEC 61188-7" –
+                       Eurocircuits; JLCPCB's preview draws EasyEDA's footprints), cpl.turns per footprint the degrees
+                       from its zero to the maker's: such a maker gets cpl_<b>_<maker>.csv (SYNC.cpl)
     fields             per key: section, label, words (edakit's value -> the form's word), unit, values, more (the
                        form offers more than the profile lists: another value is not checked), when ({key = [values]}:
                        the form shows the field only while those keys have one of those values – a dialog behind an
@@ -36,6 +39,7 @@ every other one (result). Without [cart] the maker is JLCPCB and the makers are 
 
 from __future__ import annotations
 
+import fnmatch
 import re
 import tomllib
 from dataclasses import dataclass, field
@@ -49,6 +53,7 @@ UPLOAD = {"gerber": "gerber_{b}.zip", "bom": "bom_{b}.csv", "bom_mpn": "bom_{b}_
 PROFILE_KEYS = ("name", "recorded", "start", "seat", "currency", "catalogue", "fees", "files", "classes", "dnp",
                 "cart", "never", "ignore", "excludes", "bom", "cpl", "rules", "fields", "about", "sources", "unshown",
                 "upload", "matching")
+CPL_KEYS = ("columns", "unit", "rotation", "zero", "turns")
 FIELD_KEYS = ("section", "label", "words", "unit", "values", "more", "when", "checkout")
 RULE_KEYS = ("thicknesses_mm", "thicknesses_for", "remark_max", "placeholder", "placeholder_min_mm", "placeholder_gone",
              "former_placeholder",
@@ -105,6 +110,22 @@ class Maker:
     def matches_by(self):
         """The key the maker matches BOM parts by: "lcsc" or "mpn"; None when its parts come in another file (ODB++)."""
         return (self.data.get("bom") or {}).get("match")
+
+    @property
+    def zero(self):
+        """The maker's zero orientation of a part ([cpl] zero): None where it is the footprint's own, else its name
+        ("IEC 61188-7") – then the maker gets a CPL of its own, its parts turned by [cpl.turns]."""
+        z = (self.data.get("cpl") or {}).get("zero")
+        return None if z in (None, "footprint") else z
+
+    def turn(self, footprint):
+        """The degrees the maker's rotation of a part is ahead of the footprint's (its zero is the maker's turned that
+        far counter-clockwise): the first entry of [cpl.turns] whose pattern (fnmatch, case-sensitive) fits the
+        footprint's name; 0 for a maker without a zero of its own, None for a footprint its profile does not list."""
+        if not self.zero:
+            return 0
+        turns = (self.data.get("cpl") or {}).get("turns") or {}
+        return next((t for pat, t in turns.items() if fnmatch.fnmatchcase(footprint or "", pat)), None)
 
     def field(self, key):
         """The profile's entry for a key of [order]: a table, False (the maker has no such field), or None (not
@@ -182,8 +203,10 @@ class Maker:
         return rule.get(n) or (self.classes[0] if self.classes else None)
 
     def upload(self, board):
-        """The names of the files the maker takes for a board, in the order of the profile."""
-        return [UPLOAD[f].format(b=board) for f in self.files if f in UPLOAD]
+        """The names of the files the maker takes for a board, in the order of the profile – the CPL of a maker with a
+        zero orientation of its own is cpl_<b>_<maker>.csv."""
+        return [f"cpl_{board}_{self.key}.csv" if f == "cpl" and self.zero else UPLOAD[f].format(b=board)
+                for f in self.files if f in UPLOAD]
 
 
 def customs_parts(entry):
@@ -268,6 +291,13 @@ def problems(key, data):
             out.append(f"maker {key}: fields.{name}: section must be one of {', '.join(SECTIONS)}")
         if "words" in f and not (isinstance(f["words"], dict) and all(isinstance(v, str) for v in f["words"].values())):
             out.append(f"maker {key}: fields.{name}: words must be a table of edakit's value = the form's word")
+    cpl = data.get("cpl") or {}
+    out += [f"maker {key}: cpl: unknown key '{k}' (known: {', '.join(CPL_KEYS)})" for k in cpl if k not in CPL_KEYS]
+    if "turns" in cpl and not (isinstance(cpl["turns"], dict) and all(
+            isinstance(t, int) and not isinstance(t, bool) and t % 90 == 0 for t in cpl["turns"].values())):
+        out.append(f"maker {key}: cpl.turns must be a table of footprint pattern = degrees, a multiple of 90")
+    if "turns" in cpl and cpl.get("zero") in (None, "footprint"):
+        out.append(f"maker {key}: cpl.turns needs cpl.zero, the maker's zero orientation they turn to")
     for k in ("ignore",):
         if k in data and not (isinstance(data[k], dict) and all(isinstance(v, str) and v for v in data[k].values())):
             out.append(f"maker {key}: ignore must be a table of the page's field = the reason edakit does not set it")

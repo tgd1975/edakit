@@ -20,7 +20,9 @@ quote_page.txt), edakit cart check (check.md), the regulatory review at the orde
   record written. Found: the configurator quotes gross (20 % VAT of the ship-to country), the basket line net with
   the VAT apart (cart.json `vat`); after BOM and CPL the tick "Include Assembly Service" is empty again; the
   Assembly Editor marks Q1 (SOT-23 drawn turned by 90°), C3 and R3 "footprint does not match the board layout"
-  and the PCBA tab "Data conflicts" – M-2's, in the basket; four parts On Demand without a price.
+  and the PCBA tab "Data conflicts" – M-2's, in the basket; four parts On Demand without a price. A probe the same
+  day with `cpl_main_eurocircuits.csv` ([cpl.turns], Q1 at 270°) drew Q1 on its pads, "No issues detected"; C3 and
+  R3 stay marked – copper beside their pads (turn_probe.md).
 - 5.10 AISLER: SYNC.odb's two spots were its own rounding (fixed). The first try (aisler/live_2026-11-01/first_try.md)
   stopped at the parts: the ODB++ carried LCSC numbers only, and AISLER matches by MPN – one part of ten assigned.
   The second (run 20261101-084718, with MPN and Manufacturer in the footprints; job, quote, page text and check in
