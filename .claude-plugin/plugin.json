@@ -1,7 +1,7 @@
 {
   "name": "edakit",
-  "displayName": "edakit – EasyEDA Pro from a hardware graph",
-  "description": "From a JSON hardware graph to a released, manufacturable PCB with EasyEDA Pro: skills and agents for the workflow, the pinned easyeda-mcp-pro server, a hook that lets parallel sessions share EasyEDA, and the edakit command line (checks, ngspice simulation, schematic and PCB generation, Freerouting, release gate).",
+  "displayName": "edakit – circuit design as code",
+  "description": "Circuit design as code: the circuit as text in your repository, checked by rules and an ngspice simulation, drawn as schematic and PCB in EasyEDA Pro or KiCad, routed with Freerouting and released through a gate on the manufacturing files – skills, agents and the edakit command line.",
   "author": {
     "name": "tgd1975"
   },
