@@ -69,7 +69,10 @@ The skill asks before the LCSC cart whether an `[[extra]]` or bought part has a 
 ## Decisions (the owner, 2026-11-02)
 
 1. **Basket across projects:** built as `edakit order --with` (proposal 1). As recommended.
-2. **Reserve:** `[order] reserve`, default 0, rounded to the supplier's `moq` and `step` (proposal 2). As recommended.
+2. **Reserve:** as recommended – and already there when building step 1: `[project] spare_pct`, `spare` on a
+   component or `[[extra]]`, and `moq`/`step` in a parts entry's `order` (handbook 8.4), so no `[order] reserve`.
+   LCSC's BOM tool rounds every line to its own minimum on the upload (seen 2026-11-02: 100 Ω 10 → 50); edakit
+   need not know LCSC's minimums for the cart, only for the cost estimate.
 3. **LCSC cart by the skill:** the skill fills it and stops before the checkout, lines already there only reported
    (proposal 3). As recommended.
 4. **Part questions at the order:** left to the chat – a part change is a hardware change (skill hardware-change); no
@@ -79,8 +82,7 @@ The skill asks before the LCSC cart whether an `[[extra]]` or bought part has a 
 
 ## Order of work
 
-1. `edakit order --with` and `[order] reserve` (decisions 1, 2) – offline, tests on pytree's and the bell's carts of
-   2026-11-02.
+1. `edakit order --with` (decision 1) – built 2026-11-02, branch `order-basket`; the reserve needed nothing new.
 2. `edakit/suppliers/lcsc.toml`, `edakit order check`, the skill cart's LCSC part (decision 3) – a live run at the next
    parts order, nothing ordered.
 3. The combined shipment in the job and in the skill (decision 5) – handbook 8.4 and the skill's "Never" changed with

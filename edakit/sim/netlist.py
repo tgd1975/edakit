@@ -89,7 +89,8 @@ from ..circuit import capacitance, limits, relay_sets, switch_sets, values, volt
 from . import strip
 
 VT = 0.02585
-LED_N = 2.0
+LED_N = 2.0         # an LED's ideality without values.vf_vs_if (led_ideality)
+LED_N_RANGE = (1.0, 4.0)   # what a fit of vf_vs_if may give – outside it, points or rs_ohm are wrong (schema)
 BRIDGE_OHM = 0.05   # a 0 Ω bridge without r_max_ohm: the usual maximum of thick-film jumpers
 UVLO_V = 0.2        # undervoltage lockout: a regulator's output falls to 0 over this much below its vin_min
 DEAD_RAIL_V = 0.5   # a constant-current load falls to 0 below this voltage across it
@@ -169,10 +170,22 @@ def logic_r_out(r, scenario, des):
     return typ if typ is not None else (lo + hi) / 2
 
 
-def led_model(name, vf, i_test, rs):
+def led_ideality(curve, rs):
+    """The ideality N of an LED from the datasheet's IV curve, values.vf_vs_if [[A, V], …]: the slope of V − I·RS over
+    ln I through its points (least squares) divided by VT – LED_N without two points. The corner's vf at vf_at_a
+    keeps setting IS (led_model); the curve sets how VF falls towards small currents."""
+    pts = [(math.log(i), v - i * rs) for i, v in curve or [] if i > 0]
+    if len(pts) < 2:
+        return LED_N
+    mx, my = sum(x for x, _ in pts) / len(pts), sum(y for _, y in pts) / len(pts)
+    sxx = sum((x - mx) ** 2 for x, _ in pts)
+    return sum((x - mx) * (y - my) for x, y in pts) / sxx / VT if sxx else LED_N
+
+
+def led_model(name, vf, i_test, rs, n=LED_N):
     vd = vf - i_test * rs
-    i_s = i_test / (math.exp(vd / (LED_N * VT)) - 1)
-    return f".model {name} D(IS={i_s:.4e} N={LED_N} RS={rs} BV=5 IBV=10u CJO=20p)"
+    i_s = i_test / (math.exp(vd / (n * VT)) - 1)
+    return f".model {name} D(IS={i_s:.4e} N={n:.4g} RS={rs} BV=5 IBV=10u CJO=20p)"
 
 
 def led_roles(part):
@@ -385,7 +398,8 @@ class Netlist:
         corner = self.sc["corner"]
         vf = params[{"min": "vf_min_v", "max": "vf_max_v"}.get(corner, "vf_typ_v")]
         model = f"LED_{part.get('lcsc', des)}_{color or 'x'}_{corner}"
-        self.models[model] = led_model(model, vf, params["vf_at_a"], params.get("rs_ohm", 10))
+        rs = params.get("rs_ohm", 10)
+        self.models[model] = led_model(model, vf, params["vf_at_a"], rs, led_ideality(params.get("vf_vs_if"), rs))
         roles = self.roles(des)
         a, k = self.rn(des, anode_role), self.rn(des, cathode_role)
         name = f"D_{des}" + (f"_{color}" if color else "")

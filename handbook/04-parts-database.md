@@ -143,8 +143,8 @@ What `edakit part lint` holds an entry to and the engines read, per kind – gen
 | `inductor` | `i_max_a`, `i_sat_a` | `value_h`, `dcr_ohm` |
 | `fuse` | `v_max_v`, `i_max_a`, `i_hold_a`, `i_trip_a` | `r_min_ohm`, `r_max_ohm`, `i_hold_vs_temp` |
 | `diode` | `vr_max_v`, `if_max_a`, `ifsm_max_a` | `vf_v`, `vf_at_a`, `ir_a`, `ir_at_v` |
-| `led` | `vr_max_v`, `if_max_a` | `color`, `vf_typ_v`, `vf_min_v`, `vf_max_v`, `vf_at_a`, `rs_ohm` |
-| `led_rgb` | `vr_max_v`, `if_max_a` | `vf_typ_v`, `vf_min_v`, `vf_max_v`, `vf_at_a`, `rs_ohm` |
+| `led` | `vr_max_v`, `if_max_a` | `color`, `vf_typ_v`, `vf_min_v`, `vf_max_v`, `vf_at_a`, `rs_ohm`, `vf_vs_if` |
+| `led_rgb` | `vr_max_v`, `if_max_a` | `vf_typ_v`, `vf_min_v`, `vf_max_v`, `vf_at_a`, `rs_ohm`, `vf_vs_if` |
 | `npn` | `vce_max_v`, `veb_max_v`, `ic_max_a` | `hfe_min`, `hfe_max`, `vce_sat_v`, `icbo_a` |
 | `pnp` | `vce_max_v`, `veb_max_v`, `ic_max_a` | `hfe_min`, `hfe_max`, `vce_sat_v`, `icbo_a` |
 | `njfet` | `vds_max_v`, `vdg_max_v`, `vgs_max_v`, `ig_max_a`, `id_max_a` | `idss_a`, `vgs_off_v` |
@@ -227,7 +227,8 @@ entry's, the entry's before the default of the pin type. The sections below give
 - resistor `value_ohm` `0` is a bridge that joins its nets (3.3); `r_max_ohm` its maximum resistance from the
   datasheet, simulated instead of 0 Ω (50 mΩ without it).
 - LED `vf_typ_v`, `vf_min_v`, `vf_max_v`, `vf_at_a`, `rs_ohm` – an RGB LED one set per colour under `red`, `green`,
-  `blue`, limits too.
+  `blue`, limits too. `vf_vs_if`, `[[A, V], …]`: points of the datasheet's typical IV curve, at least two, currents and
+  volts rising – the simulation's ideality follows them (5.1), 2 without.
 - switch, connector, battery holder `i_max_a`: what the part carries as a whole – a USB-C receptacle's two ground
   contacts at 1.25 A each are 2.5 A. Fuse `i_hold_a`, `i_trip_a` with `values.i_hold_vs_temp` (`[[°C, A], …]`), which
   LIM.i reads at the lowest ambient of sim.json.

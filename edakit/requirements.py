@@ -525,9 +525,14 @@ class Result:
     state: str                  # pass, later, info, warn, fail (from the items and the binding), dropped
 
 
+MET = re.compile(r"requirements? met:([^;.]*)", re.I)   # the reviewer's line: "requirements met: R-4, R-5"
+
+
 def names(note, rid):
-    """The note of a manual check names the requirement: R-4, not R-40."""
-    return re.search(rf"(?<![\w-]){re.escape(rid)}(?!\w)", str(note or "")) is not None
+    """The note of a manual check names the requirement among those the review found met – in a clause "requirements
+    met: R-4, R-5", up to the next ";" or "." (the owner's decision on TD-85, 2026-11-02): R-4, not R-40, and not
+    "R-4 not met" elsewhere in the note."""
+    return any(re.search(rf"(?<![\w-]){re.escape(rid)}(?!\w)", m[1]) for m in MET.finditer(str(note or "")))
 
 
 def _rows(pattern, protocol_rows, stages_run):
@@ -559,9 +564,9 @@ def _signoff(sid, rid, signoff):
     elif not m.get("done_by"):
         what = "not signed for this state" if phase == "export" else "not signed yet"
     elif names(m.get("note"), rid):
-        return "pass", f"{by}, its note names {rid}"
+        return "pass", f"{by}, its note names {rid} met"
     else:
-        what = f"{by}, but its note does not name {rid}"
+        what = f"{by}, but its note does not name {rid} under \"requirements met:\""
     if phase == "export":
         return "fail", f"{what} (section 6)"
     return "later", f"{what} – {dict(PHASES).get(phase, phase)}"

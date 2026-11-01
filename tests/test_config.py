@@ -119,6 +119,19 @@ def test_keys_in_the_wrong_file_or_misspelt(tmp_path):
         assert line in str(e.value)
 
 
+@pytest.mark.parametrize("value, ok", [(None, True), ('"all"', True), ('"cart"', True), ('"some"', False)])
+def test_release_maker_files(project, value, ok):
+    """#153: [release] maker_files – "all" (default) or "cart"."""
+    f = project.root / "edakit.toml"
+    if value:
+        f.write_text(f.read_text().replace("smd_only = true }", f"smd_only = true }}\nmaker_files = {value}"))
+    if ok:
+        assert project.config().release.get("maker_files", "all") == (value or '"all"').strip('"')
+        return
+    with pytest.raises(ConfigError, match='maker_files must be "all"'):
+        project.config()
+
+
 def test_board_file_missing(tmp_path):
     (tmp_path / "edakit.toml").write_text('[project]\nname = "t"\n[boards.main]\n')
     b = load(tmp_path / "edakit.toml").board()

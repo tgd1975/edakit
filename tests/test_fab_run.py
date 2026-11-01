@@ -326,7 +326,8 @@ def findings(rows):
 
 CHECKS = ["SYNC.pcb", "GEO.copper", "GEO.drc", "SYNC.footprint", "GEO.width", "SYNC.plan", "GEO.mark", "GEO.hole",
           "GEO.loop", "GEO.spacing", "GEO.pour", "GEO.ring", "GEO.silk", "SYNC.bom", "PARTS.stock", "SYNC.cpl", "FILES.set",
-          "FILES.order"]       # FILES.order with the board file's [order]; [looks] adds GEO.silk rows
+          "SYNC.odb", "FILES.order"]   # FILES.order with the board file's [order]; [looks] adds GEO.silk rows; SYNC.odb
+#                                        information on every assembled board ([release] maker_files = "all", #153)
 
 
 def test_the_clean_export_passes_every_check(project):
@@ -794,7 +795,7 @@ FAULTS = [
     # GEO.pour
     ("a poured layer left bare", bare_bottom,
      [("GEO.pour", "warn", "BOTTOM: 1 % copper, largest copper-free circle Ø 19.0 mm at (13.2, 10.1) mm"),
-      ("GEO.pour", "warn", "BOTTOM: 466 mm² in x 0.5–29.5, y 0.5–19.5 mm (other side 7 % copper)")]),
+      ("GEO.pour", "warn", "BOTTOM: 491 mm² in x 0.5–29.5, y 0.5–19.5 mm (other side 7 % copper)")]),
     ("copper that touches no pad, via or hole", loose_copper,
      [("GEO.pour", "warn", "TOP: 1 piece without pad, via or hole: 16.2 mm² around (10.5, 4.5) mm")]),
     # GEO.ring
@@ -1029,7 +1030,7 @@ def test_copper_per_side_settings(project):
     by = {r["check"]: (r["result"], r["actual"]) for r in rows if r["id"] == "GEO.pour"}
     assert by["BOTTOM: no copper-free circle above 20 mm inside the pour outline (poured: GND)"][0] == "pass"
     assert by["BOTTOM: no copper-free piece above 500 mm² inside the pour outline (gaps from 0.75 mm)"] == \
-        ("pass", "BOTTOM: largest copper-free piece 466.0 mm²")
+        ("pass", "BOTTOM: largest copper-free piece 490.8 mm²")
     assert by["TOP: copper share at least 10 % ([copper] min_cover)"] == ("warn", "TOP: 6 % copper")
 
 
@@ -1280,7 +1281,8 @@ def test_the_acknowledgement_alone_leaves_the_other_kinds_passing(project):
 
 
 def test_every_check_has_a_fault():
-    assert {cid for _, _, e in FAULTS for cid, _, _ in e} == set(CHECKS)
+    """SYNC.odb's faults are in test_odb.py: here no maker of [cart] makers takes ODB++, and its row is information."""
+    assert {cid for _, _, e in FAULTS for cid, _, _ in e} == set(CHECKS) - {"SYNC.odb"}
 
 
 def test_the_order_form_of_the_clean_export(project):

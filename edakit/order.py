@@ -1,7 +1,7 @@
 """Who supplies what for `quantity` sets: the assembler's BOM, one cart per other supplier, the hand-assembly list –
 and check PARTS.supplier (every bought part has a supplier).
 
-    edakit order [--out DIR]          default <artifacts>/order/
+    edakit order [--out DIR] [--with CONFIG ...]    default <artifacts>/order/
 
     bom_<board>.csv        the assembler's BOM, the file SYNC.bom writes – none for a bought board (bought = true) or a
                            hand-wired one (wired = true)
@@ -20,6 +20,12 @@ spare, moq, step, unit_price, currency) – the list `edakit cost` prices.
 Pieces per cart line: ceil(per set x quantity x (1 + [project] spare_pct / 100)) + the components' or the item's
 `spare`, at least `moq`, a multiple of `step`. Own parts (`own` in the entry) are made, not bought: no cart.
 
+--with (several times) puts the carts of other projects – their edakit.toml, each with its own quantity and spares –
+into the same files: one line per supplier and code, the pieces summed, the comment naming each project with its
+pieces, part and designators ("pytree: 20 XL-504SURD: D18 D22 (10 + 10) | christmas-bell (tht): 5 …"); each other
+project's hand-assembly list is written beside as hand_assembly_<project>.md. One order for several projects
+(docs/concepts/new/parts-order.md, decision 1).
+
   PARTS.supplier  a part bought separately (bom: false) has an LCSC number – not a C99… EasyEDA library number – or `order` in its
        parts entry (warning)
 """
@@ -33,6 +39,7 @@ import sys
 from collections import defaultdict
 from pathlib import Path
 
+from . import config
 from .design import Design, natural_key
 from .stock import refs_text
 
@@ -127,14 +134,47 @@ def extra_pieces(cfg, e):
     return pieces(e["per_set"], cfg.quantity, cfg.spare_pct, e.get("spare", 0), e.get("moq", 1), e.get("step", 1))
 
 
+def label(cfg, others=()):
+    """The name a project goes by in a basket: its project name, with its boards where another config has the same."""
+    if any(o.project == cfg.project for o in others if o is not cfg):
+        return f"{cfg.project} ({', '.join(b.name for b in cfg.boards.values() if not b.unmade) or cfg.path.parent.name})"
+    return cfg.project
+
+
+def note(g):
+    """The comment of a cart line: part, designators, need + spare."""
+    return f"{g['item']}: {' '.join(g['designators']) or 'per set'} ({g['need']} + {g['qty'] - g['need']})"
+
+
+def basket(projects):
+    """[(label, {supplier: [line]})] -> {supplier: [line]}: one line per supplier and code (or item without one), the
+    pieces and the need summed, `parts` the projects' own lines – (label, line) – for the comment."""
+    merged = {}
+    for name, found in projects:
+        for sup, lines in found.items():
+            for g in lines:
+                key = (sup, g["code"] or g["item"])
+                m = merged.setdefault(key, {"supplier": sup, "code": g["code"], "item": g["item"], "designators": [],
+                                            "qty": 0, "need": 0, "parts": []})
+                m["qty"] += g["qty"]
+                m["need"] += g["need"]
+                m["designators"] += [f"{name}:{d}" for d in g["designators"]]
+                m["parts"].append((name, g))
+    out = defaultdict(list)
+    for m in merged.values():
+        out[m["supplier"]].append(m)
+    return dict(sorted(out.items()))
+
+
 def write_cart(path, supplier, lines):
     with open(path, "w", newline="", encoding="utf-8") as f:
         w = csv.writer(f)
         if supplier == "lcsc":
             w.writerow(LCSC_HEAD)
             for g in lines:
-                who = " ".join(g["designators"]) or "per set"
-                w.writerow([g["code"], g["qty"], f"{g['item']}: {who} ({g['need']} + {g['qty'] - g['need']})"])
+                text = (" | ".join(f"{name}: {x['qty']} {note(x)}" for name, x in g["parts"]) if g.get("parts")
+                        else note(g))
+                w.writerow([g["code"], g["qty"], text])
         else:
             w.writerow(OTHER_HEAD)
             for g in lines:
@@ -195,9 +235,20 @@ def main(cfg, args):
     out.mkdir(parents=True, exist_ok=True)
     try:
         found, lost = carts(cfg, design)
-    except OrderError as e:
+        others = []
+        for path in getattr(args, "with_", None) or []:
+            o = config.load(path)
+            others.append((o, Design.from_config(o)))
+    except (OrderError, config.ConfigError) as e:
         print(f"edakit order: {e}", file=sys.stderr)
         return 1
+    if others:
+        cfgs = [cfg] + [o for o, _ in others]
+        try:
+            found = basket([(label(cfg, cfgs), found)] + [(label(o, cfgs), carts(o, d)[0]) for o, d in others])
+        except OrderError as e:
+            print(f"edakit order: {e}", file=sys.stderr)
+            return 1
     for old in out.glob("cart_*.csv"):     # a supplier no line names any more leaves no cart behind
         old.unlink()
     for b in cfg.boards.values():
@@ -213,6 +264,13 @@ def main(cfg, args):
         print(f"{name}: {len(lines)} line{'s' if len(lines) != 1 else ''}, "
               + ", ".join(f"{g['code'] or g['item']} x {g['qty']}" for g in lines))
     (out / "hand_assembly.md").write_text(hand_assembly(cfg, design, lost), encoding="utf-8")
+    for o, d in others:
+        name = re.sub(r"[^A-Za-z0-9_-]+", "_", label(o, [cfg] + [x for x, _ in others])).strip("_")
+        (out / f"hand_assembly_{name}.md").write_text(hand_assembly(o, d, carts(o, d)[1]), encoding="utf-8")
+        n = len(bought_by_hand(d))
+        print(f"hand_assembly_{name}.md: {n} part{'s' if n != 1 else ''} by hand – {o.path}")
+        for x in carts(o, d)[1]:
+            print(f"WARNING {label(o, [cfg] + [y for y, _ in others])} {x}: no supplier")
     hand, extras = len(bought_by_hand(design)), len(cfg.extras)
     print(f"hand_assembly.md: {hand} part{'s' if hand != 1 else ''} by hand, {extras} item{'s' if extras != 1 else ''} "
           "off the board")

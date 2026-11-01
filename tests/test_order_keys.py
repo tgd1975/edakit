@@ -543,6 +543,14 @@ def test_the_bom_with_mpn_for_a_maker_that_takes_it(project):
                     ["C2", "1", "22uF", "C0805", "SAMSUNG(三星)", "CL21A226MAQNNNE"],
                     ["D1", "1", "SS34", "SMA_L4.3-W2.6-LS5.2-RD", "MDD(辰达半导体)", "SS34"]]
     run(project, lambda ex, p: toml(p, '[cart]\nmakers = ["jlcpcb"]'))
+    with open(d / "bom_main_mpn.csv", newline="") as f:             # [release] maker_files = "all": every assembled
+        assert list(csv.reader(f)) == rows                           # board, in the shipped profiles' columns (#153)
+
+    def cart_only(ex, p):
+        toml(p, '[cart]\nmakers = ["jlcpcb"]')
+        f = p.root / "edakit.toml"
+        f.write_text(f.read_text().replace("smd_only = true }", 'smd_only = true }\nmaker_files = "cart"'))
+    run(project, cart_only)
     assert not (d / "bom_main_mpn.csv").exists()
 
 

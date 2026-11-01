@@ -178,6 +178,8 @@ def build_parser():
 
     p = sub.add_parser("order", help="assembler's BOM, one cart per other supplier, hand-assembly list for all sets")
     p.add_argument("--out", help="folder for the files (default: <artifacts>/order)")
+    p.add_argument("--with", dest="with_", action="append", metavar="CONFIG",
+                   help="another project's edakit.toml whose carts go into the same files (several times)")
     _common(p)
 
     p = sub.add_parser("cart", help="the order at the maker: the form's fields, the job of the skill cart, its check, "

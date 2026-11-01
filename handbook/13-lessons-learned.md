@@ -312,3 +312,7 @@ cells behind a power switch – found these gaps; each was closed in edakit with
 - **Thermal spokes on KiCad.** KiCad's DRC wants two by default, where Freerouting left two GND pads room for one
   (the layout, 18.11). The KiCad project edakit writes asks for one: EasyEDA asks for none, and GEO.copper checks the
   connection.
+- **A square notch around each tooling hole.** The pours on KiCad kept the notch to the edge EasyEDA once needed (M-5,
+  note 7). The pour follows the outline now, and a rule area keeps each hole's keep circle free – KiCad fills up to it.
+- **An LED's ideality of 2.** D1's datasheet curve lay 20–25 mV above the model at 0.5 mA (M-1). `values.vf_vs_if`,
+  points read off the curve, sets the ideality now; without it the model stays as it was.

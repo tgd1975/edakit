@@ -98,6 +98,25 @@ def dc_bias_ok(curve):
     return volts[0] >= 0 and all(a < b for a, b in zip(volts, volts[1:])) and all(0 < p[1] <= RATIO_MAX for p in curve)
 
 
+def vf_curve_problem(curve, rs):
+    """An LED's values.vf_vs_if: [[A, V], …], at least two points, the currents above 0 and rising, the volts rising,
+    the ideality they give with rs_ohm (sim.netlist.led_ideality) within LED_N_RANGE -> text, or None."""
+    from .sim.netlist import LED_N_RANGE, led_ideality
+    form = ("values.vf_vs_if: [[A, V], …] – points read off the datasheet's IV curve, at least two, the currents above "
+            "0 and rising, the volts rising")
+    if not (isinstance(curve, list) and len(curve) >= 2 and all(
+            isinstance(p, list) and len(p) == 2 and all(is_number(x) for x in p) for p in curve)):
+        return f"{form}, not {curve!r}"
+    if curve[0][0] <= 0 or any(a[0] >= b[0] or a[1] >= b[1] for a, b in zip(curve, curve[1:])):
+        return f"{form}, not {curve!r}"
+    n = led_ideality(curve, rs)
+    lo, hi = LED_N_RANGE
+    if not lo <= n <= hi:
+        return (f"values.vf_vs_if: the curve gives an ideality of {n:.2f} with rs_ohm {rs:g} – outside {lo:g} … {hi:g}: "
+                "a point misread, or rs_ohm too large")
+    return None
+
+
 def _near(name, names):
     stem = name.split("_")[0]
     near = sorted(n for n in names if n.split("_")[0] == stem)
@@ -114,6 +133,12 @@ def problems(entry):
         return ["the form of before (ratings, params, vmax …) – edakit convert converts it"]
     for section in ("limits", "values"):
         out += field_problems(kind, section, entry.get(section), section)
+    vals = entry.get("values") or {}
+    for where, table in [("", vals)] + [(f"{c}.", vals[c]) for c in ("red", "green", "blue")
+                                        if isinstance(vals.get(c), dict)]:
+        if table.get("vf_vs_if") is not None and is_number(table.get("rs_ohm", 10)):
+            if text := vf_curve_problem(table["vf_vs_if"], table.get("rs_ohm", 10)):
+                out.append(text.replace("values.", f"values.{where}", 1))
     curve = (entry.get("values") or {}).get("dc_bias")
     if curve is not None and not dc_bias_ok(curve):
         out.append("values.dc_bias: [[V, ratio], …] – the maker's curve as the share of the capacitance left, at least "

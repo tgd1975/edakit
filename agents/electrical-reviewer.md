@@ -64,8 +64,9 @@ lists them) on the circuit, with a calculation, a simulation row or a datasheet 
 
 Your result is the sign-off: say clearly "M-1: OK for state <circuit hash>" or list what must be fixed. With
 requirements the line names the ones you found met – "M-1: OK for state <circuit hash>; requirements met: R-4, R-5" –
-and the sign-off's note takes it over. The gate counts an ID in the note as passing evidence (handbook 8.7): a
-requirement you did not find met stays out of the line and is a finding; one that cannot be judged as written (no
+and the sign-off's note takes it over. The gate counts an ID after "requirements met:" as passing evidence, up to
+the next ";" or "." (handbook 8.7) – an ID elsewhere in the note counts for nothing: a requirement you did not find
+met stays out of that clause and is a finding; one that cannot be judged as written (no
 number, no condition) is a finding for the requirements file.
 
 ## Result

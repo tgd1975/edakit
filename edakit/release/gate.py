@@ -701,8 +701,8 @@ def write_manifest(cfg, outdir, head, decision):
     superseded by it."""
     fab = outdir / "fab"
     files = {}
-    for b in cfg.made():
-        for name in upload(cfg, b):
+    for b in cfg.made():          # and the ODB++ and MPN BOM [release] maker_files writes for every assembled board (#153)
+        for name in dict.fromkeys([*upload(cfg, b), f"odb_{b}.zip", f"bom_{b}_mpn.csv"]):
             f = fab / b / name
             if f.exists():
                 files[str(f.relative_to(outdir))] = hashlib.sha256(f.read_bytes()).hexdigest()

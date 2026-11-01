@@ -307,6 +307,53 @@ def test_a_stamp_by_hand_records_no_change(project, monkeypatch, capsys):
     assert scripts.data_hash(project.config(), "project-library:main") is None
 
 
+# --- copper an easyeda script changed in the PCB: pcb:<b>, gone when the pours are filled again (#113) --------------
+NAEHTE = ts.entry("naehte", kind="easyeda", cmd=["python", "hardware/lib/naehte.py"],
+                  about="Seams: vias and a pour along the cuts", reads=["routing:main"],
+                  writes=["pcb:main", "hardware/naehte.json"])
+NAEHTE_PY = 'from pathlib import Path\nPath("hardware/naehte.json").write_text("[[10, 20]]")\n'
+KUNST_NAEHTE = ts.KUNST.replace("writes", 'reads  = ["hardware/naehte.json"]\nwrites')
+
+
+def pcb_change(project):
+    return json.loads((project.root / LOCK).read_text())["changed"]["pcb:main"]
+
+
+@pytest.mark.parametrize("action, code", [("pours", 0), ("all", 3)])
+def test_the_copper_of_an_easyeda_script_is_gone_when_the_pours_are_filled_again(project, monkeypatch, capsys, action,
+                                                                                 code):
+    """naehte places seams in the PCB after the pours and writes their via list, which kunst draws around: edakit
+    orders route all → naehte → kunst → silk apply, and records the change of pcb:main. route pours and route all fill
+    the pours anew and the seams are gone: naehte is outdated until it ran again, and kunst after it."""
+    bell(project, KUNST_NAEHTE + NAEHTE)
+    ss.write(project, "hardware/lib/naehte.py", NAEHTE_PY)
+    code_, out = ss.edakit(project, monkeypatch, capsys, "scripts")
+    assert "on command only: naehte (after edakit route all, before kunst)" in out.splitlines(), out
+    code_, out = ss.edakit(project, monkeypatch, capsys, "run", "kunst", "naehte")
+    assert code_ == 0, out
+    rec = pcb_change(project)
+    assert [line.split(" ran ")[0] for line in out.splitlines()[:3]] == [
+        "naehte", f"  pcb:main changed by naehte ({rec['at'][:16].replace('T', ' ')}) – gone when edakit route all or "
+                  "route pours fill the pours again: run it after them", "kunst"], out
+    assert rec["script"] == "naehte" and rec["from_before"] == [] and "gone" not in rec
+    assert scripts.data_hash(project.config(), "pcb:main") not in (None, scripts.ABSENT)
+    assert ss.check(project, capsys) == (0, [])             # the copper is no project library: nothing from before it
+
+    fake(monkeypatch, project, route, code=1)               # a step that failed fills nothing
+    assert ss.edakit(project, monkeypatch, capsys, "route", action) == (1, "")
+    fake(monkeypatch, project, route, code=code)
+    code_, out = ss.edakit(project, monkeypatch, capsys, "route", action)
+    at = pcb_change(project)["gone"]["at"][:16].replace("T", " ")
+    gone = f"pcb:main gone since edakit route {action} filled the pours ({at})"
+    assert code_ == code and out == f"{LOCK}: {gone} – edakit run naehte; commit the lock\n"
+    assert ss.check(project, capsys) == (1, [
+        f"ERROR   scripts  kunst outdated: after naehte, which is outdated – {ABOUT}",
+        f"WARNING scripts  naehte outdated: {gone} – Seams: vias and a pour along the cuts"])
+    assert ss.edakit(project, monkeypatch, capsys, "route", action) == (code, "")    # said once
+    assert ss.edakit(project, monkeypatch, capsys, "run", "naehte", "kunst")[0] == 0
+    assert "gone" not in pcb_change(project) and ss.check(project, capsys) == (0, [])
+
+
 # --- the steps run the outdated inputs they read first (decision 7) ------------------------------------------------
 @pytest.mark.parametrize("action", ["apply", "preview"])
 def test_silk_runs_the_art_first(project, monkeypatch, capsys, action):
