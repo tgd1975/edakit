@@ -13,9 +13,9 @@ Each maker's quote comes with its price, the parts it has in stock and its lead 
 and hold the boards.
 
 The [walkthrough](https://tgd1975.github.io/edakit/handbook/17-walkthrough/) shows it on a small board: 14 steps, six of
-them yours, seven decisions. Every step is checked by rules and reviewers, but that is no guarantee. The regulatory
-review is support, not legal advice. In today's words, edakit specializes an agent
-[harness](https://tgd1975.github.io/edakit/architecture/) for circuit design.
+them yours, seven decisions. Every step is checked by [rules](https://tgd1975.github.io/edakit/catalog/) and reviewers,
+but that is no guarantee. The regulatory review is support, not legal advice. In today's words, edakit specializes an
+agent [harness](https://tgd1975.github.io/edakit/architecture/) for circuit design.
 
 At least that is the vision, and we are close. [How it works](https://tgd1975.github.io/edakit/how-it-works/#state) says
 what has run live, what has not, and where it goes next.
@@ -81,8 +81,9 @@ the drawn schematic.
 - [Projects](https://tgd1975.github.io/edakit/projects/) – the boards built with edakit, with their schematics and
   boards.
 - [The handbook](https://tgd1975.github.io/edakit/handbook/) – the guides: the circuit, the board, troubleshooting.
-- [The reference](https://tgd1975.github.io/edakit/handbook/10-reference/) – every key and every command; the
-  [rule catalog](https://tgd1975.github.io/edakit/catalog/).
+- [The rule catalog](https://tgd1975.github.io/edakit/catalog/) – every check edakit runs: its rule, why it exists, what
+  to do and its sources.
+- [The reference](https://tgd1975.github.io/edakit/handbook/10-reference/) – every key and every command.
 
 ## What it runs, sends, fetches
 
