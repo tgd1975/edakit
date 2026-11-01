@@ -22,7 +22,7 @@ Two GND pours, top and bottom, created with `PCB_PrimitivePour.create`:
 
 After either, every rebuild throws "A previous native PCB copper rebuild ended without complete verification" ([L861](https://github.com/oaslananka/easyeda-mcp-pro/blob/9601584fde2658a3452372d0faa9abcf42075180/easyeda-bridge-extension/src/pcb-mutation-operations.ts#L861-L867)). A reconnect keeps the dispatcher, so only a restart of EasyEDA clears it.
 
-**Expected:** a net's fresh pours verify in one call; a refill verifies or fails without the lock – or the lock can be cleared once the PCB has been checked.
+**Expected:** a net's fresh pours verify in one call – one call per pour does, so a snapshot before each pour instead of one per batch might be enough; a refill verifies or fails without the lock – or the lock can be cleared once the PCB has been checked.
 
 **Workaround:** we create the pours anew before each fill and rebuild one pour per call (`pourIds: [id]`), which verifies.
 ````
