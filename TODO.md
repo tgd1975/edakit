@@ -29,10 +29,6 @@ to touch.
 
 ## For the owner
 
-- [ ] TD-69 - **Where CI.0 runs:** a machine with GitHub Copilot CLI logged in, Qwen Code, Mistral Vibe with a Mistral
-      API key, OpenCode, and Ollama and llama.cpp with a GPU for Qwen3-Coder-Next and Devstral Small 2 – this session's
-      cloud container has no GPU and no logins; which machine, and whether a Copilot plan and a Mistral key are at hand.
-      *(amazing-newton)*
 - [ ] TD-57 - **The real cost of the first order:** once an order the skill cart put into a maker's cart is paid,
       `/edakit:cart actual` on its order page or saved invoice – `edakit cart actual` (handbook 8.4, step 5) has run
       on recorded data only; the real cost, the project's fee table and the order record come from it. *(edakit-80)*
@@ -79,30 +75,6 @@ step starts on the owner's word.
       build.py`, `python -m edakit.catalog.handbook --write`) and go on. Found by edakit-35 on #135 and #136, two rounds
       lost.
 
-## Claude independence ([claude-independence.md](docs/concepts/new/claude-independence.md))
-
-Decided on 2026-11-01; nothing built. Each step starts on the owner's word, one per branch; CI.0 first – it decides what
-CI.1 and CI.4 contain. Copilot, Qwen Code, Mistral Vibe and OpenCode at once, self-hosted models through Ollama and
-llama.cpp.
-
-- [ ] TD-61 - **CI.0** Probe before anything is built: the plugin as it is in Copilot CLI, Qwen Code and Mistral Vibe at
-      once, and OpenCode with its files set by hand; add-led, fault-motors, a decision round and the hooks, each with a
-      hosted and a self-hosted model (Ollama, llama.cpp); what breaks is the list for CI.1 and CI.4.
-- [ ] TD-62 - **CI.1** The plugin portable, each change with its test: `edakit handbook` and `edakit root` for the 27
-      plugin paths, the MCP server's start, `lock.py` recognising EasyEDA's tools under every naming and
-      `EDAKIT_SESSION`, the question tool by function, the agents' tool names, new-project per `[project] assistants`.
-- [ ] TD-63 - **CI.2** `edakit agreements --write|--check` and `EDAKIT_CALL_LOG`.
-- [ ] TD-64 - **CI.3** The eval runner across harnesses (`copilot -p`, `qwen -p`, `vibe -p`, `opencode run`), the loop
-      case, the first matrix; supported is every case in two of three runs.
-- [ ] TD-65 - **CI.4** `edakit assistant vibe|opencode --write|--check`: Vibe's agents as TOML and the agreements in
-      `AGENTS.md`; OpenCode's skills, sub-agents, the EasyEDA server with `codemode: false` and a TypeScript plugin for
-      the claim and the agreements.
-- [ ] TD-66 - **CI.5** The browser for the skills cart and release: Chrome DevTools MCP (`--autoConnect`) or the
-      harness's own, beside Claude in Chrome.
-- [ ] TD-67 - **CI.6** new-project asks for the assistants; project-surveyor reports a harness's files a project brings.
-- [ ] TD-68 - **CI.7** The documentation: chapter 11's table of harnesses, the README's supported pairs, "the assistant"
-      in `docs/style.md` and the glossary, the first property of "edakit as a meta-harness".
-
 ## The documentation for its readers ([documentation.md](docs/concepts/new/documentation.md))
 
 Decided on 2026-10-31; D.1 (the style guide, the glossary and their tests) built the same day. D.2, D.7 and D.9 first,
@@ -144,6 +116,17 @@ sources, data and code untouched; a text that is generated or used elsewhere sta
 Done or dropped, newest first, each with its date and the commit that closed it. What closed before 2026-11-01 is
 taken from the history of this file; an item rewritten on its way is listed once, in its last form.
 
+- [x] TD-69 - **Where CI.0 runs:** which machine with the harnesses, a GPU for the self-hosted models, a Copilot
+      plan and a Mistral key – dropped: comes back with CI.0; a concept's steps come into this list only once it is
+      being built. [2026-11-01]
+- [x] TD-68 - **CI.7** dropped: comes back when claude-independence.md is built, its table keeps the step. [2026-11-01]
+- [x] TD-67 - **CI.6** dropped: comes back when claude-independence.md is built, its table keeps the step. [2026-11-01]
+- [x] TD-66 - **CI.5** dropped: comes back when claude-independence.md is built, its table keeps the step. [2026-11-01]
+- [x] TD-65 - **CI.4** dropped: comes back when claude-independence.md is built, its table keeps the step. [2026-11-01]
+- [x] TD-64 - **CI.3** dropped: comes back when claude-independence.md is built, its table keeps the step. [2026-11-01]
+- [x] TD-63 - **CI.2** dropped: comes back when claude-independence.md is built, its table keeps the step. [2026-11-01]
+- [x] TD-62 - **CI.1** dropped: comes back when claude-independence.md is built, its table keeps the step. [2026-11-01]
+- [x] TD-61 - **CI.0** dropped: comes back when claude-independence.md is built, its table keeps the step. [2026-11-01]
 - [x] TD-59 - **OK for #129, #130, #131:** given; #129 and #130 went as #135 and #136 (a generated handbook section
       fixed at its source), #131 as 0.4.2. [2026-11-01]
 - [x] TD-40 - **E-10, E-11 and E-13 taken up:** NO_POURS regions instead of the notch, the tooling holes stay while
