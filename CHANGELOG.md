@@ -7,6 +7,12 @@ written once, by `.github/merge.py`, from the fragments in [changes/](changes/RE
 [versioning.md](docs/concepts/new/versioning.md). Update with `claude plugin marketplace update edakit && claude plugin
 update edakit@edakit`, then `/reload-plugins` or a new session; `edakit --version` names the version that runs.
 
+## 0.4.0 – 2026-11-01
+
+- **When updating:** in EasyEDA Pro uninstall the old bridge extension, import `~/.easyeda-mcp-pro/easyeda-bridge-extension-1.6.0.eext` (built by `bridge-extension-patch.sh`, handbook 2.5), allow "External Interactions", restart EasyEDA and every MCP server – easyeda-mcp-pro is pinned to 1.6.0 now, and since 1.5.1 a server whose extension has another version refuses every write, export and `easyeda_api_call`.
+- The PCB's parts are read with the PCB focused and its project's exact UUID – 1.6.0 refuses projectId "current".
+- EasyEDA's BOM is no longer cleaned of designators listed twice – since 1.6.0 it lists each part once, and SYNC.bom reports a designator listed twice (TD-54).
+
 ## 0.3.3 – 2026-11-01
 
 - The proposals Action waits for its tests before a result and lists each proposal as one item in the pull request,

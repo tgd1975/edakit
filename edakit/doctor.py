@@ -28,7 +28,7 @@ from .eda import MCP_SERVER
 from .toolchain import is_kicad
 
 PROC = Path("/proc")
-DEFAULT_TIMEOUT_MS = 15000  # easyeda-mcp-pro 1.4.0 without BRIDGE_TIMEOUT_MS (src/config/env.ts:68)
+DEFAULT_TIMEOUT_MS = 15000  # easyeda-mcp-pro 1.6.0 without BRIDGE_TIMEOUT_MS (src/config/env.ts:69)
 ORIGINAL_DEPTH = 5          # levels the original bridge extension returns (normalizeValue(result, 5))
 PATCH_HINT = ("build the patched extension of the pinned server (bash edakit/easyeda/bridge-extension-patch.sh), "
               "uninstall the old one in EasyEDA, import, restart EasyEDA (handbook 2.5)")
@@ -208,7 +208,7 @@ def main(cfg, args):
         code, out = run("node", "-v")
         major = re.match(r"v(\d+)", out or "")
         line("OK" if major and major.group(1) == "24" else "FAIL", f"Node {out or 'missing'}",
-             "" if major and major.group(1) == "24" else "easyeda-mcp-pro 1.4.0 needs Node 24.x (nvm install 24)")
+             "" if major and major.group(1) == "24" else "easyeda-mcp-pro 1.6.0 needs Node 24.x (nvm install 24)")
         version = re.search(r'EASYEDA_MCP_VERSION:-([\d.]+)', MCP_SERVER.read_text()).group(1)
         runtime = os.environ.get("EASYEDA_MCP_RUNTIME_DIR") or os.path.expanduser(f"~/.easyeda-mcp-pro/runtime/{version}")
         installed = os.path.exists(os.path.join(runtime, "node_modules/easyeda-mcp-pro/dist/index.js"))

@@ -668,9 +668,13 @@ def reload_pcb(mcp):
 
 
 def list_pcb_components(mcp):
+    """The parts of the open PCB. easyeda-mcp-pro 1.6.0 lists them only with the PCB focused and the exact UUID of
+    its project – projectId "current" is refused (bridge pcb-read-operations.ts:135-185, readProjectScoped)."""
+    ensure_pcb_focus(mcp)
+    project = api(mcp, "DMT_Project.getCurrentProjectInfo")["uuid"]
     comps, offset = [], 0
     while True:
-        res = mcp.call("easyeda_pcb_components", projectId=PROJECT, limit=200, offset=offset)
+        res = mcp.call("easyeda_pcb_components", projectId=project, limit=200, offset=offset)
         comps += res["components"]
         offset += len(res["components"])
         if not res["components"] or offset >= res["total"]:

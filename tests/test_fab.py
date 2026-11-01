@@ -77,12 +77,13 @@ def test_copper_connectivity_from_gerber(tmp_path):
     assert cu.shorts == []
 
 
-def test_merge_bom_counts_every_designator_once():
+def test_merge_bom_joins_the_pages_and_keeps_a_designator_twice():
+    """Since 1.6.0 EasyEDA lists every part once (TD-54): a designator twice is a real duplicate, SYNC.bom's to see."""
     entries = [{"reference": "C1, C1", "lcsc": "C439782", "quantity": 2},
-               {"reference": "R1, R2, R1, R2", "lcsc": "C17630", "quantity": 4},
+               {"reference": "R1, R2", "lcsc": "C17630", "quantity": 2},
                {"reference": "R3", "lcsc": "C17630", "quantity": 1}]
     merged = {e["lcsc"]: e for e in fab.merge_bom(entries)}
-    assert merged["C439782"]["reference"] == "C1" and merged["C439782"]["quantity"] == 1
+    assert merged["C439782"]["reference"] == "C1, C1" and merged["C439782"]["quantity"] == 2
     assert merged["C17630"]["reference"] == "R1, R2, R3" and merged["C17630"]["quantity"] == 3
 
 
