@@ -29,6 +29,9 @@ to touch.
 
 ## For the owner
 
+- [ ] TD-44 - **The Claude GitHub app uninstalled:** <https://github.com/settings/installations> → Claude → Uninstall
+      – since 0.3.1 the proposals Action runs with its own token and no workflow fetches the app's token; the app
+      could still change workflows, Actions settings and webhooks. *(edakit-12)*
 - [ ] TD-58 - **OK for #121, easyeda-mcp-pro 1.6.0:** <https://github.com/tgd1975/edakit/pull/121> – TD-52 to TD-54,
       checked live; on the OK `merge.py 121` merges it as a minor version, then the branches of TD-37 to TD-39 follow.
       *(edakit-35)*
@@ -78,19 +81,6 @@ Nothing to do until there is an answer or a release; whichever session learns of
 - [ ] TD-36 - **EasyEDA, #45 to #51 and our comments to #36 and #38:** answer questions; when a release fixes one,
       check it live, take it up and say so in upstream/README.md. EasyEDA's first answer is often "update to the latest
       version".
-
-## The proposals pipeline ([proposals-pipeline.md](docs/concepts/new/proposals-pipeline.md))
-
-Decided on 2026-11-01: the owner's six checks held in four layers, the workflow's own token, the nine paths of the
-pipeline, what counts as dangerous, the queue, issues by others handed over with a sealed comment. Held by edakit-12.
-
-- [ ] TD-42 - **P.1 to P.5** The queue, the paths and the check of the commits, the workflows (Claude reads, a fixed
-      job publishes), the triage and propose skills, the documentation – one branch, onto main with the owner's OK;
-      starts on the owner's word.
-- [ ] TD-43 - **P.6** The setting "Allow GitHub Actions to create and approve pull requests" on, on the owner's word;
-      then two sealed test proposals by the owner – a harmless one, and one that asks to change triage-rule, which must
-      end rejected without a push.
-- [ ] TD-44 - **P.7** The Claude App uninstalled (github.com/settings/installations), once P.6 ran.
 
 ## Versions and branch protection ([versioning.md](docs/concepts/new/versioning.md))
 
@@ -144,6 +134,15 @@ sources, data and code untouched; a text that is generated or used elsewhere sta
 Done or dropped, newest first, each with its date and the commit that closed it. What closed before 2026-11-01 is
 taken from the history of this file; an item rewritten on its way is listed once, in its last form.
 
+- [x] TD-43 - **P.6, the live test of the proposals pipeline:** the setting for pull requests on; three sealed test
+      proposals – #108 broken seal: the workflow's question, no Claude run; #109 covered: rejected as LIM.range and
+      closed; #110 asks to change triage-rule: rejected at "Safe?", no commit –; a batch of six real ones (#112–#117)
+      triaged once each, #112, #114, #115 and #116 built into #122 by the workflow's token. Found and fixed: a
+      left-over commit (#103's 9aad156) conflicting only in the catalog page (#111, 0.3.2); a result written before
+      its commit and a placeholder left in the pull request (#125). [2026-11-01]
+- [x] TD-42 - **P.1 to P.5, the proposals pipeline:** Claude reads with the workflow's own token, a fixed job checks
+      the commit against PIPELINE before the push, the queue triages once and takes adopted issues of others (#105,
+      edakit 0.3.1). [2026-11-01]
 - [x] TD-51 - **The bridge extension 1.6.0 in EasyEDA:** imported by the owner; `edakit doctor` and the self-test:
       extension 1.6.0 = server 1.6.0. [2026-11-01]
 - [x] TD-46 - **V.3** The notes lane: `.github/notes.py` lands a session's edits of concepts and TODO.md on the newest
