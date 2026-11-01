@@ -692,8 +692,9 @@ def clear_sheet(mcp):
 
 
 def clear_orphan_attributes(mcp):
-    """Attribute texts whose part is gone. Deleting a part or a net flag through the API leaves its attributes
-    (designator, name, pin texts) on the page as loose texts. Parent id of a pin attribute is '<part>-e<n>'."""
+    """Attribute texts whose part is gone. Deleting a part or a net flag through the API once left its attributes
+    (designator, name, pin texts) on the page as loose texts; on 3.2.209 they go with it (E-10) – kept as a cheap
+    sweep for pages from before. Parent id of a pin attribute is '<part>-e<n>'."""
     comps = set(api(mcp, "SCH_PrimitiveComponent.getAllPrimitiveId") or [])
     comps |= set(api(mcp, "SCH_PrimitiveWire.getAllPrimitiveId") or [])
     ids = api(mcp, "SCH_PrimitiveAttribute.getAllPrimitiveId") or []

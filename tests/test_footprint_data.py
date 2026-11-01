@@ -498,13 +498,19 @@ class FakeEditors:
                                            for layer, c, pid in self.prims if c == cls]}
         if path.endswith(".delete"):
             self.prims = [p for p in self.prims if p[2] not in a[0]]
+            self.pins = [p for p in self.pins if p["state"].get("PrimitiveId") not in a[0]]
             return {"ok": True, "result": True}
         if path == "PCB_PrimitivePad.create":
             self.made.append({"state": {"PadNumber": a[1], "X": a[2], "Y": a[3], "Pad": a[5], "Hole": a[7]}})
             return {"ok": True, "result": {"primitiveId": f"pad{a[1]}"}}
+        if path == "SCH_PrimitivePin.modify":
+            for p in self.pins:
+                if p["state"]["PrimitiveId"] == a[0]:
+                    p["state"]["PinName"] = a[1]["pinName"]
+            return {"ok": True, "result": {"primitiveId": a[0]}}
         if path.endswith(".create"):
             if path == "SCH_PrimitivePin.create":
-                self.pins.append({"state": {"PinNumber": a[2], "PinName": a[3]}})
+                self.pins.append({"state": {"PinNumber": a[2], "PinName": a[3], "PrimitiveId": f"pin{a[2]}"}})
             return {"ok": True, "result": {"primitiveId": "x"}}
         if path == "PCB_PrimitivePad.getAll":
             return {"ok": True, "result": self.made}
@@ -535,6 +541,21 @@ def test_build_copy_rebuilds_the_copy_on_a_fake_easyeda(monkeypatch):
     wrong = [{**p, "X": p["X"] + 2} if p["PadNumber"] == "3" else p for p in back["pads"]]
     assert footprint.readback_differences(e, wrong, back["pins"]) == ["pad 3 at (452.0, -350.0) instead of (450.0, "
                                                                       "-350.0) mil"]
+
+
+def test_build_copy_modifies_the_pins_it_keeps(monkeypatch):
+    """E-11: SCH_PrimitivePin.modify is saved on 3.2.209 – a pin of the same number is modified and keeps its id, a
+    number the box no longer has is deleted, a new one created."""
+    monkeypatch.setattr(eda.time, "sleep", lambda s: None)
+    e = tdisplay_entry()
+    fake = FakeEditors()
+    fake.pins = [{"state": {"PinNumber": n, "PinName": "old", "PrimitiveId": f"keep{n}"}} for n in ("1", "2", "99")]
+    back = eda.build_copy(fake, "project-uuid", {"symbol": "sym", "footprint": "fp"}, footprint.build_ops(e))
+    paths = [c[0] for c in fake.calls if isinstance(c, tuple)]
+    assert ("SCH_PrimitivePin.delete", [["keep99"]]) in fake.calls
+    assert paths.count("SCH_PrimitivePin.modify") == 2 and paths.count("SCH_PrimitivePin.create") == 22
+    assert {p["state"]["PrimitiveId"] for p in fake.pins} >= {"keep1", "keep2"}
+    assert footprint.readback_differences(e, back["pads"], back["pins"]) == []
 
 
 def test_part_build_offline_shows_what_it_would_build(project, capsys):

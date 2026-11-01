@@ -776,7 +776,7 @@ def build_copy(mcp, project, copies, ops):
     component shape, marking and pin-soldering layers) and the data's drawn –, saved; with a symbol box the symbol's
     pins and body deleted and the box drawn, saved. Returns what the editors hold afterwards: {"pads": [the state of
     every pad], "pins": {number: name} or None}, for footprint.readback_differences. Parts placed in the PCB keep
-    their old copy until they are deleted and created again (9.4). The bell's tdisplay_device.py and the reference
+    their old copy until they are deleted and created again (9.4); the symbol's pins are modified in place (E-11). The bell's tdisplay_device.py and the reference
     project's led_footprints.py rebuild their copies with these calls; NOT RUN in this form against EasyEDA yet – the
     live run of step 3.6 (implementation plan) does it on a throwaway document first."""
     from .footprint import PRINT_CLASSES, PRINT_LAYERS
@@ -803,12 +803,23 @@ def build_copy(mcp, project, copies, ops):
         rect, made = ops["symbol"]
         tab = open_library_editor(mcp, "LIB_Symbol", copies["symbol"], project)
         try:
-            for cls in ("SCH_PrimitivePin", "SCH_PrimitiveRectangle", "SCH_PrimitivePolygon", "SCH_PrimitiveCircle"):
+            for cls in ("SCH_PrimitiveRectangle", "SCH_PrimitivePolygon", "SCH_PrimitiveCircle"):
                 if old := api(mcp, f"{cls}.getAllPrimitiveId") or []:
                     api(mcp, f"{cls}.delete", old)
             _create(mcp, "SCH_PrimitiveRectangle.create", rect)
-            for args in made:            # pins anew: SCH_PrimitivePin.modify is not saved (the bell, 2026-10-26)
-                _create(mcp, "SCH_PrimitivePin.create", args)
+            # a pin of the same number is modified – SCH_PrimitivePin.modify is saved on 3.2.209 (E-11), and the pin
+            # keeps its id –, a new number created, one the box no longer has deleted
+            have = {str(st.get("PinNumber")): st["PrimitiveId"]
+                    for st in map(state, api(mcp, "SCH_PrimitivePin.getAll") or [])}
+            want = {str(args[2]): args for args in made}
+            if gone := [pid for number, pid in have.items() if number not in want]:
+                api(mcp, "SCH_PrimitivePin.delete", gone)
+            for number, (x, y, _, name, rotation, length) in want.items():
+                if number in have:
+                    api(mcp, "SCH_PrimitivePin.modify", have[number],
+                        {"x": x, "y": y, "pinName": name, "rotation": rotation, "pinLength": length})
+                else:
+                    _create(mcp, "SCH_PrimitivePin.create", want[number])
             if not api(mcp, "SCH_Document.save"):
                 raise MCPError("the symbol editor did not save")
             pins = {str(p.get("PinNumber")): p.get("PinName") for p in map(state, api(mcp, "SCH_PrimitivePin.getAll")

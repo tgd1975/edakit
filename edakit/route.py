@@ -2202,13 +2202,12 @@ def fill(cfg, board, mcp, nets, keep_islands_on=None, regions=None):
 
 
 def pours(cfg, board, rules, mcp, data=None, routes=None, stitch_file=None, regions=None, planned=()):
-    """Pours anew and filled. Tooling holes (free pads) are taken out before filling and set again afterwards –
-    with a free pad in the PCB the fill fails. With stitching configured ([[pours]] stitch = "BOTTOM"),
+    """Pours anew and filled, the tooling holes (free pads) set again afterwards – they stay on the board while the
+    pours fill (E-13, 3.2.209). With stitching configured ([[pours]] stitch = "BOTTOM"),
     fill with islands first, stitch the loose islands to the other side with vias, then fill without islands.
     regions: the outlines of region_outlines for the nets on a shared layer; planned: the vias of the channels they
     hold (stitch_channels), set first – those not set already."""
     nets = sorted({p["net"] for p in board.pours})
-    pcb.remove_tooling(mcp)
     stitched = [p for p in board.pours if p.get("stitch")]
     if planned and stitch_file is not None:
         old = json.loads(stitch_file.read_text()) if stitch_file.exists() else []
