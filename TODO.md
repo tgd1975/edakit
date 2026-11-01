@@ -4,7 +4,7 @@ Open work that needs the owner's computer, a maker or the owner's word. The stat
 and plans the sections name; this list is what is left to do of them, in the order it can be done. No item is deleted.
 
 **Layout.** Every item, in every section, open or closed, is a line with a checkbox and an ID unique in this file,
-counted up and never reused – whoever adds an item takes the next free ID and counts it up here. Next free ID: TD-79.
+counted up and never reused – whoever adds an item takes the next free ID and counts it up here. Next free ID: TD-80.
 
 - Open: `- [ ] TD-<n> - **Title:** what and why.` – a step's own name after the dash (`- [ ] TD-31 - **D.4** …`).
 - Done: ticked, the commit that did it, the date at the end, moved to [Closed todos](#closed-todos), newest first –
@@ -89,6 +89,11 @@ step starts on the owner's word.
 - [ ] TD-49 - **V.6** 1.0.0 on the owner's word once D.2 is built (`merge.py <n> --major`).
 - [ ] TD-50 - **V.7** Later, on the owner's word: `edakit = ">=0.4"` under `[project]` in `edakit.toml`, noted by
       `edakit check` and the SessionStart hook when the running edakit does not meet it.
+- [ ] TD-79 - **merge.py and generated files:** when main moves during the checks and both sides regenerated a
+      generated file – `docs/catalog/index.html`, the handbook's generated sections –, `merge.py` stops at the conflict
+      and the session merges by hand; it could take main's side of a generated file, regenerate it (`docs/catalog/
+      build.py`, `python -m edakit.catalog.handbook --write`) and go on. Found by edakit-35 on #135 and #136, two rounds
+      lost.
 
 ## Claude independence ([claude-independence.md](docs/concepts/new/claude-independence.md))
 
@@ -147,26 +152,19 @@ sources, data and code untouched; a text that is generated or used elsewhere sta
       picks (needs the owner – the repository stays private); a later project's page once it has a result with edakit,
       nothing planned on the gallery; the style guide's project page and `test_style.py` follow.
 
-## Getting edakit known ([outreach.md](docs/concepts/new/outreach.md))
-
-K.2, K.3 and K.9 in implementation since 2026-11-01, as one branch `outreach-k2-k3-k9`, a commit each, one pull
-request. The concept's other steps stay in its table until the launch is implemented – a concept's steps come here
-only once they are built (the owner, 2026-11-01).
-
-- [ ] TD-71 - **K.2** Ready for Anthropic's plugin directory: the README section on what edakit runs, sends and fetches
-      (Freerouting, easyeda-mcp-pro, JLCPCB, datasheets, `gh`, Claude in Chrome, the settings new-project writes, the
-      two hooks); the texts of decision 5 in `plugin.json` and `marketplace.json`, `plugin.json` without a version
-      (versioning.md) – which settles the plugin's text of TD-34.
-- [ ] TD-72 - **K.3** The issue forms – bug with `edakit --version` and `edakit doctor`, question, "built with edakit" –
-      and the line on how issues are answered.
-- [ ] TD-78 - **K.9** "Released with edakit X.Y.Z" in the GitHub release of `edakit release publish`, on by default, a
-      key to turn it off (decision 3).
-
 ## Closed todos
 
 Done or dropped, newest first, each with its date and the commit that closed it. What closed before 2026-11-01 is
 taken from the history of this file; an item rewritten on its way is listed once, in its last form.
 
+- [x] TD-78 - **K.9** "Released with edakit X.Y.Z" as the last line of the notes of `edakit release publish`, linked to
+      that version; `[release] publish.credit = false` leaves it out – merged as edakit 0.4.8 (#154, 08a6951).
+      [2026-11-01]
+- [x] TD-72 - **K.3** The issue forms – bug, question, "built with edakit" with the label `gallery` – and "Questions
+      and bugs" in the README; merged as edakit 0.4.8 (#154, 08a6951). [2026-11-01]
+- [x] TD-71 - **K.2** The README's "What it runs, sends, fetches" and the texts of decision 5 in `plugin.json` and
+      `marketplace.json`, `plugin.json` without a version; merged as edakit 0.4.8 (#154, 08a6951) – the plugin's text
+      of TD-34 settled. [2026-11-01]
 - [x] TD-47 - **V.4** main protected: the rulesets main and tags and the merge settings as files in `.github/rulesets/`
   (#119), applied with `.github/rulesets.py apply` on the owner's word once everything in flight had landed; the marker
   tag `protected-2026-11-01` on 71f807f; the skills write a fragment per change (#120); main-updates dropped an hour

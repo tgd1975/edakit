@@ -4,9 +4,9 @@ Status 2026-11-01: decided – the owner took the three decisions the same day i
 form, each as recommended, and confirmed what Claude decided itself (the table at the end); a fifth the same evening,
 the plugin's text, and on the owner's word K.2, K.3 and K.9 as one branch and one pull request. K.1 built the same
 day on the owner's word: the repository's description, topics and homepage set with `gh api`, the social preview made
-(`outreach/social-preview.png`) and uploaded by the owner. K.2, K.3 and K.9 in implementation the same evening, the
-only steps in `TODO.md`: each further step starts on the owner's word and goes there once it is built – a concept's
-steps come into `TODO.md` only then (the owner). Written against main at `bef46c2`, checked against `4e7064a`
+(`outreach/social-preview.png`) and uploaded by the owner. K.2, K.3 and K.9 built the same evening and merged as
+edakit 0.4.8 (#154). Each further step starts on the owner's word and goes into `TODO.md` once it is built – a
+concept's steps come there only then (the owner). Written against main at `bef46c2`, checked against `4e7064a`
 (claude-independence.md decided meanwhile: one more occasion under K.8). Asked for by the owner: a concept for how
 edakit gets out to people – where to post, where to
 register and list it, for makers, users and developers alike –, at low effort, since the owner has put enough time
@@ -253,14 +253,14 @@ them.
 | Step | What | Who | Size | Waits for |
 | --- | --- | --- | --- | --- |
 | K.1 | The repository's front: description, topics (`easyeda`, `kicad`, `pcb`, `pcb-design`, `jlcpcb`, `electronics`, `hardware-as-code`, `claude-code`, `claude-code-plugin`, `ngspice`, `freerouting`), the site as homepage – with `gh api`; the social preview (1280 × 640) from the brand and the bell's board, uploaded by the owner. Done 2026-11-01: [outreach/social-preview.png](outreach/social-preview.png), the bell's board from its release of 2026-11-01 | Claude, the owner's click | S | – |
-| K.2 | Ready for the directory: the README section on what edakit runs, sends and fetches; the texts of decision 5 in `plugin.json` and `marketplace.json`, `plugin.json` without a version | Claude, a branch, a patch | S | – (or with D.2) |
-| K.3 | The issue forms: bug, question, "built with edakit"; the line on how issues are answered | Claude, a branch | S | – |
+| K.2 | Ready for the directory: the README section on what edakit runs, sends and fetches; the texts of decision 5 in `plugin.json` and `marketplace.json`, `plugin.json` without a version. Built 2026-11-01, edakit 0.4.8 (#154) | Claude, a branch, a patch | S | – (or with D.2) |
+| K.3 | The issue forms: bug, question, "built with edakit"; the line on how issues are answered. Built 2026-11-01, edakit 0.4.8 (#154) | Claude, a branch | S | – |
 | K.4 | The directory submission at claude.ai/directory/manage: the repository at its tag, the data-handling answers from the kit, new versions by webhook | the owner | 15 min | K.2 |
 | K.5 | The kit in `docs/concepts/new/outreach/`: the fact sheet (numbers from a fresh run, links, limits, the expected questions with the facts for each answer), the texts for Hackaday, Adafruit, r/ClaudeAI, the KiCad forum, OSHWLab, the line for awesome-claude-code, the pictures; notes for the Show HN, not its text | Claude | M | D.2, D.7, D.9 |
 | K.6 | The launch week: Monday 1.0.0 (V.6); Tuesday Show HN, on a weekday afternoon in Germany, morning on the US east coast; Wednesday r/ClaudeAI; Thursday Hackaday and Adafruit; the week after the KiCad forum and OSHWLab; awesome-claude-code in the same week (possible from 2026-11-08) | the owner | an afternoon, then 15 min a day | K.1 to K.5 |
 | K.7 | Two weeks later: the referrers read, the table per place into this concept, what worked named | Claude | S | K.6 |
 | K.8 | Then, per occasion: a project in the gallery posted where its crowd is; a release that changes how a project works, posted where K.7 found readers – among them another assistant supported ([claude-independence.md](claude-independence.md)), which opens the places of its users; no schedule | the owner, Claude's draft | S each | – |
-| K.9 | "Released with edakit" in the GitHub release of `edakit release publish`, with a key to turn it off | Claude, a branch, a patch | S | decision 3 |
+| K.9 | "Released with edakit" in the GitHub release of `edakit release publish`, with a key to turn it off. Built 2026-11-01, edakit 0.4.8 (#154) | Claude, a branch, a patch | S | decision 3 |
 
 K.2, K.3 and K.9 go as one branch, `outreach-k2-k3-k9`, a commit per step, one fragment and one pull request – one
 version, one OK, on the owner's word of 2026-11-01: they belong together, K.2 and K.3 both change the README, and three
