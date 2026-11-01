@@ -138,11 +138,13 @@ review are separate roles: the circuit designer hands the board over in writing 
 `edakit handover` and kept by the plan check SYNC.plan – the PCB designer works from that in a session of its own,
 and the session that designs does not review ([handbook 14.1](handbook/14-design.md#141-roles)).
 
-What a project teaches goes back with `/edakit:propose-rule`: a check, hint, block or part fact as an issue here,
-sealed with its SHA-256. An Action triages it – accepted and built into one pull request of rule proposals, rejected
-with the reason, or a question back ([handbook 14.4](handbook/14-design.md#144-from-a-finding-to-a-rule)). What a
-project had to build itself because edakit could not goes back with `/edakit:propose-feature`, triaged the same way and
-built into one pull request of feature proposals ([handbook 11.6](handbook/11-working-with-claude.md)).
+What a project teaches goes back with `/edakit:propose-rule`: a part fact, a check or hint, a domain setting, a block
+or the retirement of a check, as an issue here, sealed with its SHA-256. An Action triages it – accepted and built into
+one pull request of rule proposals, rejected with the reason, or a question back
+([handbook 14.4](handbook/14-design.md#144-from-a-finding-to-a-rule)). What a project had to build itself because
+edakit could not goes back with `/edakit:propose-feature`, triaged the same way and built into one pull request of
+feature proposals ([handbook 11.6](handbook/11-working-with-claude.md#116-when-edakit-falls-short-feature-proposals)).
+Issues by others are welcome too; the repository owner hands one to the Action with a sealed comment.
 
 ## Walkthrough: a coin cell, a button, an LED
 
