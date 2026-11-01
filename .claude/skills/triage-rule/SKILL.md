@@ -81,9 +81,11 @@ doubt between rejected and question: question – except for **Safe?**, which ne
 4. **`pr-line.md`**: the line for the pull request body – `Closes #12 – REQ.function (hole fits the lead)` –, the
    real projects it ran on, and what could not be run; `{commit}` and `{pr}` as in section 5.
 
-The publish job pushes only one commit on that branch, with `(#12)` in its message and none of the pipeline's paths
-touched; else it pushes nothing and posts **Rejected** itself. Closing the loop of add-rule – the origin's decision
-gets the code – is the project's: the comment says it, `/edakit:propose-rule` in the project does it.
+The publish job pushes only one commit on that branch, with `(#12)` in its subject and none of the pipeline's paths
+touched. A commit that touches them: it pushes nothing and posts **Rejected** itself. Any other fault – two commits, no
+`(#12)`: it pushes and posts nothing, the run shows red and the proposal waits for the next. Closing the loop of
+add-rule – the origin's decision gets the code – is the project's: the comment says it, `/edakit:propose-rule` in the
+project does it.
 
 ## 5. Comment
 

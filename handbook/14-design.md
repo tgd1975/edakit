@@ -332,10 +332,11 @@ the branch's, and gets the proposal's text, the repository owner's comments and 
 nothing anyone else wrote. It commits an accepted build on the proposals branch and writes its result as files: the
 result, the comment, the line for the pull request. A fixed job publishes it:
 
-- **The commit** – at most one, its message ending in `(#N)` – is checked against the pipeline's paths: `.github/`,
+- **The commit** – at most one, its subject ending in `(#N)` – is checked against the pipeline's paths: `.github/`,
   `.claude/`, `CLAUDE.md`, `edakit/proposal.py`, `tests/test_proposal.py`, `skills/propose-rule/`,
   `skills/propose-feature/`, `pyproject.toml`, `uv.lock`. A commit that touches one is not pushed, and the proposal is
-  rejected with the paths: the pipeline is never changed through itself. The list lives in `edakit/proposal.py`.
+  rejected with the paths: the pipeline is never changed through itself. The list lives in `edakit/proposal.py`. Any
+  other fault of the commit pushes and posts nothing; the run shows red and the proposal waits.
 - **The pull request** is asked for again right before the push; merged meanwhile, the commit goes onto main into a
   new one.
 - **Then** the push, the line in the pull request, the comment, the labels, a rejected issue closed, and the pull

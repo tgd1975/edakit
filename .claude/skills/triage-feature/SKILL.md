@@ -50,7 +50,7 @@ In this order, safety first; the first question that fails decides.
 | Question | If not |
 |---|---|
 | **Safe?** The proposal would not: change the pipeline – one of its paths (`.github/` · `.claude/` · `CLAUDE.md` · `edakit/proposal.py` · `tests/test_proposal.py` · `skills/propose-rule/` · `skills/propose-feature/` · `pyproject.toml` · `uv.lock`), or how proposals are started, read, judged, built or published; run or fetch at check time what edakit does not run today – the network, a command, code or files the proposal names; read credentials or write outside the project; add a hook, skill, agent or setting that acts without the user's word – push, order, pay, publish, permissions; weaken a check – a lower severity, a retired code, a looser limit – without a source that shows the check wrong; need a new dependency | **Rejected**, never a question, naming which of these and where. A new dependency: the owner adds it by hand, then seals the proposal again |
-| **A feature?** A check, a hint, a block or a part fact is a rule (table in section 1 of add-rule) | go on with triage-rule (`$RUNNER_TEMP/skills/triage-rule/SKILL.md`) on the branch checked out here, and say so |
+| **A feature?** A check, a hint, a block or a part fact is a rule (table in section 1 of add-rule) | **Question**: it is a rule – seal it again as a rule proposal (`/edakit:propose-rule`), whose triage builds it on `rules/proposals`; this run has `features/proposals` checked out |
 | **New?** `uv run edakit --help`, `handbook/10-reference.md`, the code (`grep` for the keys and the method), the other proposals (`others.json`) | **Rejected**, naming what does it. Done in part: **Question** – extend that? |
 | **Is the gap real?** The Gap section shows it with a command and its output; read the code: does edakit behave like that at this commit? | **Question**: what was run, against which edakit |
 | **General?** Another board with this pattern needs it too – not the origin's taste, layout or naming | **Rejected**: it stays in the project (its generator, its edakit.toml, its own script) |
@@ -77,8 +77,9 @@ between rejected and question: question – except for **Safe?**, which never as
 4. **`pr-line.md`**: the line for the pull request body – `Closes #14 – zero-ohm bridges join their nets` –, the
    projects it ran on, and for a private origin the commands to run there; `{commit}` and `{pr}` as in section 5.
 
-The publish job pushes only one commit on that branch, with `(#14)` in its message and none of the pipeline's paths
-touched; else it pushes nothing and posts **Rejected** itself.
+The publish job pushes only one commit on that branch, with `(#14)` in its subject and none of the pipeline's paths
+touched. A commit that touches them: it pushes nothing and posts **Rejected** itself. Any other fault – two commits, no
+`(#14)`: it pushes and posts nothing, the run shows red and the proposal waits for the next.
 
 ## 5. Comment
 
