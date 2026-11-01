@@ -695,6 +695,11 @@ DSN and in Freerouting either way:
 pour_inset_mm = 0.55               # in hardware/boards/<b>.toml, above the tables; tracks 0.4 mm (edge_clearance_um)
 ```
 
+Along a tab zone of `[order]` (`tab_zones`, 8.4) the pours keep `tab_copper_mm` + 0.05 mm from the edge instead – the
+distance the order check measures on the Gerber copper there, with room for its rounding –, the computed pours and the
+bare area of GEO.pour too; elsewhere `pour_inset_mm` holds as before. Tracks are not moved: one that runs along a tab
+zone is the layout's to move.
+
 **Pour-only nets.** On a board where ground is the pour between the tracks – all tracks on one side, say – a net with
 `pour_only = true` gets no tracks: the DSN leaves it out of the network, so its pads are pins without a net that
 Freerouting keeps clear of. `route check` computes the pour offline from the board file and the routes: the pour

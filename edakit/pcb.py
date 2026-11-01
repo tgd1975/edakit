@@ -1977,16 +1977,42 @@ def tooling(cfg, board, mcp):
         print(f"  {len(board.tooling)} tooling holes Ø {board.tooling_d} mm (NPTH), {old} old ones replaced")
 
 
+TAB_MARGIN_MM = 0.05   # the pour beyond tab_copper_mm from a tab zone: Gerber rounding stays inside the order check
+
+
+def tab_strips(board, poly):
+    """The pour polygon without a strip of tab_copper_mm + TAB_MARGIN_MM along every [order] tab zone of the board, so
+    the pour keeps the distance the order check (FILES.order) measures there; unchanged without tab zones."""
+    from shapely.geometry import Point
+    from shapely.ops import unary_union
+
+    from .release.order_sheet import zone_line
+    order = board.order or {}
+    if not order.get("tab_zones"):
+        return poly
+    ring, mm = outline_polygon(board).exterior, order["tab_copper_mm"] + TAB_MARGIN_MM
+    for a, b in order["tab_zones"]:
+        if max(Point(p).distance(ring) for p in (a, b)) > 0.05:
+            print(f"  ! tab zone {a} → {b} is off the outline – the pour keeps it from the outline nearest to it")
+    cut = poly.difference(unary_union([zone_line(ring, a, b).buffer(mm) for a, b in order["tab_zones"]]))
+    if cut.geom_type == "Polygon" and not cut.interiors:
+        return cut
+    pieces = sorted(getattr(cut, "geoms", [cut]), key=lambda p: -p.area)
+    print(f"  ! the tab zones split the pour – only its largest piece ({pieces[0].area:.0f} mm²) is poured")
+    return pieces[0]
+
+
 def pour_outline(board):
     """Pour polygon (plan mm): the outline, set in by pour_inset_mm of the board file – without it by the edge clearance
-    of the routing rules + 0.1 mm (EasyEDA itself keeps only about 0.26 mm) –, without the keep-out circle of every
-    mounting hole, with a notch around every tooling hole. EasyEDA takes a polygon with a hole only as its outer
-    contour, and copper must not lie under the tooling hole – so the notch reaches the edge."""
+    of the routing rules + 0.1 mm (EasyEDA itself keeps only about 0.26 mm) –, and along every [order] tab zone by
+    tab_copper_mm (tab_strips), without the keep-out circle of every mounting hole, with a notch around every tooling
+    hole. EasyEDA takes a polygon with a hole only as its outer contour, and copper must not lie under the tooling hole
+    – so the notch reaches the edge."""
     from shapely.geometry import Point, box
     edge = board.pour_inset_mm
     if edge is None:
         edge = float(board.routing.get("edge_clearance_um", 400)) / 1000 + 0.1
-    poly = outline_polygon(board).buffer(-edge, join_style="mitre")
+    poly = tab_strips(board, outline_polygon(board).buffer(-edge, join_style="mitre"))
     for h in board.holes:  # 'keep' = radius free of parts and copper (screw head, washer)
         cut = poly.difference(Point(h["x"], h["y"]).buffer(h["keep"]))
         if cut.geom_type == "Polygon" and not cut.interiors:
