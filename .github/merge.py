@@ -10,8 +10,8 @@ In a worktree of its own, so the session's checkout stays as it is:
    "edakit X.Y.Z"; a branch without fragments that changes nothing a project reads is merged without a version;
 3. pushed, the checks waited for (test, kicad, build, paths, version – about five minutes);
 4. merged with --match-head-commit while main still has the number it was numbered from – a push of TODO.md or a
-   concept meanwhile changes nothing; a version merged meanwhile does: then from 1 again, since two merges must never
-   share a number.
+   concept meanwhile changes nothing; a version merged meanwhile does, for a pull request that is a version: then from
+   1 again, since two merges must never share a number.
 
 The workflow release.yml then sets the tag v<number> and the GitHub release. --dry-run does 1 and 2 and shows the diff.
 Progress goes to stdout line by line, for a monitor.
@@ -138,6 +138,12 @@ def wait(sha, names):
     raise SystemExit(f"the checks on {sha[:7]} did not finish in {WAIT_S // 60} minutes")
 
 
+def again(n, main_n, now):
+    """Number once more before the merge? Only a version whose main has become another version meanwhile – a pull
+    request without a version merges onto any main, and a push of TODO.md or a concept leaves the number alone."""
+    return n is not None and now != main_n
+
+
 def main(argv=None):
     signal.signal(signal.SIGTERM, lambda *_: sys.exit(143))   # a stopped run still removes its worktree
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
@@ -167,7 +173,7 @@ def main(argv=None):
             wait(sha, required(tree))
             run("git", "fetch", "-q", "origin", "main", cwd=tree)
             now = v.number(v.show("origin/main", root=tree)(v.INIT))
-            if now != main_n:
+            if again(n, main_n, now):
                 say(f"main became {now} while the checks ran – numbered again")
                 continue
             r = run("gh", "pr", "merge", str(args.pr), "--merge", "--match-head-commit", sha,
