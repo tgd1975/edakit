@@ -4,7 +4,7 @@ Open work that needs the owner's computer, a maker or the owner's word. The stat
 and plans the sections name; this list is what is left to do of them, in the order it can be done. No item is deleted.
 
 **Layout.** Every item, in every section, open or closed, is a line with a checkbox and an ID unique in this file,
-counted up and never reused – whoever adds an item takes the next free ID and counts it up here. Next free ID: TD-79.
+counted up and never reused – whoever adds an item takes the next free ID and counts it up here. Next free ID: TD-80.
 
 - Open: `- [ ] TD-<n> - **Title:** what and why.` – a step's own name after the dash (`- [ ] TD-31 - **D.4** …`).
 - Done: ticked, the commit that did it, the date at the end, moved to [Closed todos](#closed-todos), newest first –
@@ -89,6 +89,11 @@ step starts on the owner's word.
 - [ ] TD-49 - **V.6** 1.0.0 on the owner's word once D.2 is built (`merge.py <n> --major`).
 - [ ] TD-50 - **V.7** Later, on the owner's word: `edakit = ">=0.4"` under `[project]` in `edakit.toml`, noted by
       `edakit check` and the SessionStart hook when the running edakit does not meet it.
+- [ ] TD-79 - **merge.py and generated files:** when main moves during the checks and both sides regenerated a
+      generated file – `docs/catalog/index.html`, the handbook's generated sections –, `merge.py` stops at the conflict
+      and the session merges by hand; it could take main's side of a generated file, regenerate it (`docs/catalog/
+      build.py`, `python -m edakit.catalog.handbook --write`) and go on. Found by edakit-35 on #135 and #136, two rounds
+      lost.
 
 ## Claude independence ([claude-independence.md](docs/concepts/new/claude-independence.md))
 
