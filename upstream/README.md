@@ -113,7 +113,7 @@ the maintainer asked once for the comment "I agree to the Contributor Permission
 the account that opened it – a consent in the owner's name, given by the owner. Gone since 2026-11-01: upstream's
 `caa931c` (#806) took the project back from PolyForm Noncommercial 1.0.0 to MIT and dropped the contributor permission;
 1.1.0 to 1.6.0 stay PolyForm Noncommercial, the next release will be the first under MIT. When the pin
-reaches it, the licence notes go with it: `README.md` (Status and limits), `handbook/02-setup.md` 2.8,
+reaches it, the licence notes go with it: `docs/how-it-works.md` (State), `handbook/02-setup.md` 2.8,
 `docs/concepts/new/outreach.md`, `docs/concepts/done/kicad-toolchain.md`.
 
 | # | Requirement | Local workaround – goes with the release | Upstream | Fork branch | Checked |
