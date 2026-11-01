@@ -4,7 +4,7 @@ Open work that needs the owner's computer, a maker or the owner's word. The stat
 and plans the sections name; this list is what is left to do of them, in the order it can be done. No item is deleted.
 
 **Layout.** Every item, in every section, open or closed, is a line with a checkbox and an ID unique in this file,
-counted up and never reused – whoever adds an item takes the next free ID and counts it up here. Next free ID: TD-70.
+counted up and never reused – whoever adds an item takes the next free ID and counts it up here. Next free ID: TD-79.
 
 - Open: `- [ ] TD-<n> - **Title:** what and why.` – a step's own name after the dash (`- [ ] TD-31 - **D.4** …`).
 - Done: ticked, the commit that did it, the date at the end, moved to [Closed todos](#closed-todos), newest first –
@@ -29,6 +29,9 @@ to touch.
 
 ## For the owner
 
+- [ ] TD-70 - **The social preview uploaded:** <https://github.com/tgd1975/edakit/settings> → General → Social preview
+      → Edit → Upload an image → `docs/concepts/new/outreach/social-preview.png` – GitHub has no API for it; the card
+      shows with every link to the repository (K.1 of outreach.md). *(edakit-ce)*
 - [ ] TD-69 - **Where CI.0 runs:** a machine with GitHub Copilot CLI logged in, Qwen Code, Mistral Vibe with a Mistral
       API key, OpenCode, and Ollama and llama.cpp with a GPU for Qwen3-Coder-Next and Devstral Small 2 – this session's
       cloud container has no GPU and no logins; which machine, and whether a Copilot plan and a Mistral key are at hand.
@@ -150,6 +153,29 @@ sources, data and code untouched; a text that is generated or used elsewhere sta
       bell's session draws them at its next gate run); pytree's page with the information and the pictures the owner
       picks (needs the owner – the repository stays private); a later project's page once it has a result with edakit,
       nothing planned on the gallery; the style guide's project page and `test_style.py` follow.
+
+## Getting edakit known ([outreach.md](docs/concepts/new/outreach.md))
+
+Decided on 2026-11-01; K.1 (description, topics, homepage) built the same day, its image waits for TD-70. The launch
+waits for D.2, D.7, D.9 and the bell built; each step starts on the owner's word, one per branch where it changes files.
+
+- [ ] TD-71 - **K.2** Ready for Anthropic's plugin directory: the README section on what edakit runs, sends and fetches
+      (Freerouting, easyeda-mcp-pro, JLCPCB, datasheets, `gh`, Claude in Chrome, the settings new-project writes, the
+      two hooks); `plugin.json` with `version` and the owner's description – a branch, a patch.
+- [ ] TD-72 - **K.3** The issue forms – bug with `edakit --version` and `edakit doctor`, question, "built with edakit" –
+      and the line on how issues are answered – a branch.
+- [ ] TD-73 - **K.4** The directory submission at <https://claude.ai/directory/manage>, the repository at its tag, the
+      data-handling answers from the kit, new versions by webhook – the owner, 15 min; waits for TD-71.
+- [ ] TD-74 - **K.5** The kit in `docs/concepts/new/outreach/`: the fact sheet with fresh numbers, the drafts for
+      Hackaday, Adafruit, r/ClaudeAI, the KiCad forum, OSHWLab and awesome-claude-code, notes for the Show HN – waits
+      for TD-29, TD-34 and TD-35.
+- [ ] TD-75 - **K.5, the bell in hand:** a photo of the built bell and ten seconds of it ringing, from the owner – the
+      header picture for Hackaday; the order is the bell's project's.
+- [ ] TD-76 - **K.6** The launch week: 1.0.0 (TD-49), Show HN in the owner's own words, r/ClaudeAI, Hackaday, Adafruit,
+      awesome-claude-code, the week after the KiCad forum and OSHWLab – the owner; waits for TD-71 to TD-75.
+- [ ] TD-77 - **K.7** Two weeks after the launch: the referrers and stars per place into outreach.md, what worked named.
+- [ ] TD-78 - **K.9** "Released with edakit X.Y.Z" in the GitHub release of `edakit release publish`, on by default, a
+      key to turn it off – a branch, a patch (decision 3).
 
 ## Closed todos
 
