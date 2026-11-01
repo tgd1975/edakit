@@ -54,10 +54,10 @@ change of the data. Parts already in the PCB keep their old copy – delete them
 `edakit check` holds the copy to the data (SYNC.footprint).
 
 Before the PCB is linked: `edakit schematic copy` + `layout`. After that `copy` refuses (the PCB would lose its
-schematic) and `layout` syncs parts in place. If parts were newly placed in the schematic, the DRC may show "Netlist
-Error – Import Changes" until the import view was opened once in the GUI. edakit compares schematic and PCB then:
-only when it says "EasyEDA waits for the import acknowledgement" (exit 3) request that click as the start skill
-describes (section 3); a list of parts or pads is fixed with `pcb parts --write` / `pcb nets --write` first.
+schematic) and `layout` syncs parts in place. A DRC item "Netlist Error – Import Changes": edakit compares schematic
+and PCB; a list of parts or pads is fixed with `pcb parts --write` / `pcb nets --write`; without one `route` and
+`silk` write the Channel IDs into the schematic parts and check again (E-2). Only when it still says "EasyEDA waits for
+the import acknowledgement" (exit 3) request that click as the start skill describes (section 3).
 
 ## Round
 
