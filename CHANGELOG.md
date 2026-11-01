@@ -7,6 +7,23 @@ written once, by `.github/merge.py`, from the fragments in [changes/](changes/RE
 [versioning.md](docs/concepts/new/versioning.md). Update with `claude plugin marketplace update edakit && claude plugin
 update edakit@edakit`, then `/reload-plugins` or a new session; `edakit --version` names the version that runs.
 
+## 0.4.9 – 2026-11-01
+
+- `route all|pours` fills one fresh pour per call instead of a net per call and stops when the bridge refuses: easyeda-mcp-pro 1.6.0 refuses every copper rebuild after one it could not verify – the second pour of a net in one call was such a case – until EasyEDA restarts; before, edakit went on with empty pours (M-10).
+
+## 0.4.8 – 2026-11-01
+
+- `edakit release publish` ends the release notes with "Released with edakit X.Y.Z" and the link to that version; `[release] publish.credit = false` leaves the line out (handbook 8.3).
+- The plugin's texts in `/plugin` say "circuit design as code", for EasyEDA Pro or KiCad; the README says what edakit runs, sends and fetches, and how to ask a question or report a bug.
+
+## 0.4.7 – 2026-11-01
+
+- `schematic create` and every rename through EasyEDA's API need the project tree of EasyEDA's left panel shown once after EasyEDA starts – EasyEDA renames only what that tree lists (E-17); edakit's message says so when a rename fails, the start skill asks for the click.
+
+## 0.4.6 – 2026-11-01
+
+- The DRC of `route all`, `silk apply` and the gate runs at once and reloads the PCB only when it reports Connection Errors, then runs once more (E-7) – `route all` no longer reloads before it unless `[routing] drc_rules = "write"`; the PCB tab's probe throwing on 3.2.209 counts as an inactive tab (E-3).
+
 ## 0.4.5 – 2026-11-01
 
 - `edakit route` stitches islands that no `pour_regions` entry holds (#112).

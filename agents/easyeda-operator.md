@@ -18,7 +18,7 @@ not commit**.
    the background with an end line (never wait with `pgrep -f`); their `[x.x min] step n/m` lines show where a run
    is. Routing only with `edakit route all` (exit 0 = DRC 0),
    never with EasyEDA's autorouter; then `edakit silk apply`. Auto-layout and pour fills keep running after the bridge
-   timeout – judge the end by stable numbers. DRC only after save and reload.
+   timeout – judge the end by stable numbers. A DRC with Connection Errors right after API changes: reload, run it once more.
 4. Crash or hang: skill `start`, section 4. Second crash in the same step: stop and report.
 5. If a click in the GUI is needed (e.g. "Import Changes"), stop, release EasyEDA and report exactly that click as the
    result. The main session asks the user (skill `start`, section 3). The click must be a plain OK.

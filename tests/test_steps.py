@@ -63,7 +63,7 @@ def test_silk_apply_with_its_check(project, monkeypatch, capsys):
     monkeypatch.setattr(silk, "silk_on_openings", lambda folder, layer, own: (0.0, Polygon()))
     monkeypatch.setattr(silk, "picture", lambda *a, **k: None)
     monkeypatch.setattr(silk.eda, "save_pcb", lambda mcp: None)
-    monkeypatch.setattr(silk.eda, "drc", lambda mcp: {})
+    monkeypatch.setattr(silk.eda, "drc", lambda mcp, out=None: [])
     monkeypatch.setattr(silk.pcb, "drc_report", lambda cfg, board, mcp, drc: 0)
     step = eda.Steps(silk.APPLY_STEPS)
     step("bridge and PCB")

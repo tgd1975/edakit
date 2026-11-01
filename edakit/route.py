@@ -2191,14 +2191,23 @@ def stitch_islands(rules, mcp, data, routes, net, layer_name, stitch_file):
 
 
 def fill(cfg, board, mcp, nets, keep_islands_on=None, regions=None):
+    """The pours of nets created anew (pcb.pour) and filled, one pour per call. easyeda-mcp-pro 1.6.0's bridge
+    refuses every further rebuild – until EasyEDA restarts – once one ended unverified ("readback-mismatch"): EasyEDA's
+    beta rebuildCopperRegion answers with another pour of the net when copper is already poured, and so does a call
+    for a whole net after its first pour. A fresh pour alone per call is verified (live on 3.2.209, M-10)."""
     pcb.pour(cfg, board, mcp, keep_islands_on, regions)
     ensure_pcb_focus(mcp)
-    for net in nets:
-        res = mcp.call("easyeda_pcb_rebuild_copper", confirmWrite=True, net=net, timeout=300)
-        # status 'readback-mismatch' is harmless: the bridge only compares the id the rebuild returned with the stored
-        # one; what counts is the number of filled areas per layer afterwards
-        for r in res.get("results") or [res]:
+    ids = [st["PrimitiveId"] for st in map(eda.state, api(mcp, "PCB_PrimitivePour.getAll") or [])
+           if st.get("Net") in nets]
+    for pid in ids:
+        ensure_pcb_focus(mcp)
+        res = mcp.call("easyeda_pcb_rebuild_copper", confirmWrite=True, pourIds=[pid], timeout=300)
+        for r in res.get("results") or []:
             print(f"    pour {r.get('pourId')}: {r.get('status')}", flush=True)
+        if res.get("success") is False:
+            raise SystemExit(f"pour {pid} not filled: {res.get('error') or 'the rebuild was not verified'} – the bridge "
+                             "refuses every further fill until EasyEDA restarts: save, restart EasyEDA, run again "
+                             "(handbook 12, M-10)")
 
 
 def pours(cfg, board, rules, mcp, data=None, routes=None, stitch_file=None, regions=None, planned=()):
@@ -2254,7 +2263,8 @@ def main(cfg, args):
         rules.hand = hand_soldered(load_graph(cfg.graph), board.name)
     P = paths(cfg, board)
     passes = args.passes or rules.passes
-    steps = {"all": ["read", "dsn", "route", "check", "apply", "pours", "reload", "drc"]}.get(args.action, [args.action])
+    reload = ["reload"] if drc_rules.mode(board) == "write" else []    # else only when the DRC asks (E-7)
+    steps = {"all": ["read", "dsn", "route", "check", "apply", "pours", *reload, "drc"]}.get(args.action, [args.action])
     if board.routing.get("widths") == "sim" and {"dsn", "route", "check", "diagnose"} & set(steps):
         sim_widths(cfg, board, rules)
     mcp = None
@@ -2384,7 +2394,7 @@ def main(cfg, args):
                 if code:
                     return code
             elif step == "drc":
-                found = eda.drc(mcp, P["drc"])
+                found = eda.drc_reloading(mcp, P["drc"], say=say)
                 P["netlist_diff"].unlink(missing_ok=True)
                 code = pcb.drc_report(cfg, board, mcp, found, P["netlist_diff"], say=say)
                 if code:

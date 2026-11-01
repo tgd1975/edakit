@@ -215,7 +215,7 @@ request and is applied after the merge, on the owner's word.
 | Ruleset | Target | Rules | Bypass |
 | --- | --- | --- | --- |
 | `main` | main | a pull request, no approval required (the owner cannot approve their own, and the sessions are the owner); the checks `test`, `kicad`, `build`, `paths` and `version` green, not strict; no force push; no deletion | nobody, the owner included |
-| `main-updates` | main | only the bypass may update the branch | the role Repository admin, only through a pull request: only the owner's account merges into main. The Actions may push branches and open pull requests, but never merge |
+| ~~`main-updates`~~ | main | only the bypass may update the branch – dropped on 2026-11-01, see below | the role Repository admin, only through a pull request |
 | `tags` | `v*` | no deletion, no update, no force push; creating stays open for the release workflow | nobody: a version once out is never moved |
 
 The repository's settings also delete head branches after a merge and offer only merge commits.
@@ -232,7 +232,14 @@ Squash and rebase merges are off, because the merge message carries the descript
 - **`main-updates`** closes the gap that [proposals-pipeline.md](../done/proposals-pipeline.md) found (its layer 1): today
   only the prompt keeps the Action from changing main. Whether GitHub accepts the admin role as a bypass on a personal
   repository is checked when the rules are applied. If it does not, this ruleset is left out and the working rule
-  stays as it is.
+  stays as it is. **Dropped on the owner's word on 2026-11-01**, an hour after it was applied. GitHub took the role,
+  but it applies a bypass only when the merge asks for it (`gh pr merge --admin`), and Claude Code's auto mode rightly
+  refuses that as a merge without review, so no session could merge at all. Claude had not checked how a bypass is
+  taken before proposing it. Its goal, that no Action ever merges into main, is held by the proposals pipeline
+  itself ([proposals-pipeline.md](../done/proposals-pipeline.md)): Claude runs there without a token that writes, its
+  fixed jobs never merge, and `paths` keeps the pipeline from being changed through itself. The rules that differ by
+  branch family belong in the checks, which run from main: CI can hold a pull request to what it may change, but it
+  cannot tell who merges it.
 - **In an emergency** the owner switches a ruleset off in the settings and on again afterwards. That is one click, and
   it shows in the ruleset's history.
 
@@ -248,8 +255,8 @@ The check holds each family of branches to its paths:
 
 The version's own lines (`edakit/__init__.py`, `.claude-plugin/marketplace.json`, `CHANGELOG.md`, `changes/`) lie
 outside the proposals' list, so `merge.py` can number a proposals pull request too. The proposals' list comes from
-[proposals-pipeline.md](../done/proposals-pipeline.md), section "The pipeline's paths". It lives once, in `edakit/proposal.py`
-with a test. The lane's paths are `LANE` in `.github/versions.py`.
+[proposals-pipeline.md](../done/proposals-pipeline.md), section "The pipeline's paths". It lives once, in
+`edakit/proposal.py` with a test. The lane's paths are `LANE` in `.github/versions.py`.
 
 A branch must not be able to loosen its own check. A workflow on `pull_request` runs the head's version of its file,
 so a branch that edits the check would pass it. So `paths` and `version` run on `pull_request_target`, from main's
@@ -363,7 +370,7 @@ What Claude decided itself, confirmed by the owner on 2026-11-01:
   numbers apart ("Not strict" above);
 - merge commits only;
 - no bypass on `main`;
-- the ruleset `main-updates`;
+- the ruleset `main-updates` – dropped on the owner's word the same day ("main-updates" above);
 - tags never moved;
 - head branches deleted after a merge;
 - one question for minor or patch: a new command, key, maker or skill is a patch like a rule, since a project need

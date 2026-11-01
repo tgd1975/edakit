@@ -21,7 +21,7 @@ Concept: `${CLAUDE_PLUGIN_ROOT}/handbook/08-release-gate.md`.
    once, and a sign-off with scope `layout` recorded before it would lapse (handbook 8.2).
 2. **With EasyEDA** (start skill, claim EasyEDA, reference schematic checked) – or on KiCad (`toolchain = "kicad"`,
    handbook 16: no start skill, no claim, `--eda` is the same flag): `edakit gate --easyeda 2>&1 | cat` in the
-   background (minutes). Adds S, L and F per board: read the PCB, save and reload, DRC, export Gerber and pick-and-place,
+   background (minutes). Adds S, L and F per board: read the PCB, save, DRC (reloaded on Connection Errors), export Gerber and pick-and-place,
    BOM from the graph, JLCPCB stock, copper connectivity from the Gerber files, holes against leads, outline, tooling
    holes, polarity sheet; then the project's checks with `at = "after F"`, on this run's manufacturing files. Files in
    `<reports>/<run>/fab/<board>/`.

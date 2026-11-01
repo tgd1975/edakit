@@ -40,6 +40,7 @@ WAIT_S = 45 * 60
 
 
 NAME = "merge"   # the prefix of the progress lines; .github/notes.py sets its own
+MERGE = ("--merge",)   # merge commits only; main has no bypass, so no flag takes one (.github/rulesets/)
 
 
 def say(*args):
@@ -176,7 +177,7 @@ def main(argv=None):
             if again(n, main_n, now):
                 say(f"main became {now} while the checks ran – numbered again")
                 continue
-            r = run("gh", "pr", "merge", str(args.pr), "--merge", "--match-head-commit", sha,
+            r = run("gh", "pr", "merge", str(args.pr), *MERGE, "--match-head-commit", sha,
                     "--subject", f"Merge branch '{branch}': {pr['title']}", "--body", "", check=False)
             if r.returncode:
                 say(f"merge refused: {(r.stderr or r.stdout).strip()} – again")

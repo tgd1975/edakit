@@ -4,9 +4,11 @@ Status 2026-11-01: decided – the owner took the three decisions the same day i
 form, each as recommended, and confirmed what Claude decided itself (the table at the end); a fifth the same evening,
 the plugin's text, and on the owner's word K.2, K.3 and K.9 as one branch and one pull request. K.1 built the same
 day on the owner's word: the repository's description, topics and homepage set with `gh api`, the social preview made
-(`outreach/social-preview.png`) and uploaded by the owner. Each further step starts on the owner's word, listed in
-`TODO.md`. Written against main at `bef46c2`, checked against `4e7064a` (claude-independence.md decided meanwhile: one
-more occasion under K.8). Asked for by the owner: a concept for how edakit gets out to people – where to post, where to
+(`outreach/social-preview.png`) and uploaded by the owner. K.2, K.3 and K.9 in implementation the same evening, the
+only steps in `TODO.md`: each further step starts on the owner's word and goes there once it is built – a concept's
+steps come into `TODO.md` only then (the owner). Written against main at `bef46c2`, checked against `4e7064a`
+(claude-independence.md decided meanwhile: one more occasion under K.8). Asked for by the owner: a concept for how
+edakit gets out to people – where to post, where to
 register and list it, for makers, users and developers alike –, at low effort, since the owner has put enough time
 into the project, and yet effective, since others should use edakit. Builds on [documentation.md](documentation.md)
 (the entry layer D.2, the "is it for me" numbers D.7, the gallery D.9) and [versioning.md](versioning.md) (1.0.0 once
@@ -115,8 +117,9 @@ A visitor arrives once. What they find decides, so these are the launch's condit
    - the skill new-project writes Claude Code settings into a project, after the user's OK;
    - it runs two hooks.
 
-   One section in the README says it all. `plugin.json` gets its `version` and the description without "JSON hardware
-   graph" (documentation.md, finding 7 – the owner's text).
+   One section in the README says it all. `plugin.json` gets the description without "JSON hardware graph"
+   (documentation.md, finding 7 – the owner's text, decision 5). It stays without a `version`, which the directory
+   only warns about: a version there would win over the marketplace entry and freeze updates (versioning.md).
 
    What the directory checks and edakit meets today:
    - a README of at least 40 words and a licence (MIT);
@@ -250,7 +253,7 @@ them.
 | Step | What | Who | Size | Waits for |
 | --- | --- | --- | --- | --- |
 | K.1 | The repository's front: description, topics (`easyeda`, `kicad`, `pcb`, `pcb-design`, `jlcpcb`, `electronics`, `hardware-as-code`, `claude-code`, `claude-code-plugin`, `ngspice`, `freerouting`), the site as homepage – with `gh api`; the social preview (1280 × 640) from the brand and the bell's board, uploaded by the owner. Done 2026-11-01: [outreach/social-preview.png](outreach/social-preview.png), the bell's board from its release of 2026-11-01 | Claude, the owner's click | S | – |
-| K.2 | Ready for the directory: the README section on what edakit runs, sends and fetches; `plugin.json` with `version`, and the texts of decision 5 in `plugin.json` and `marketplace.json` | Claude, a branch, a patch | S | – (or with D.2) |
+| K.2 | Ready for the directory: the README section on what edakit runs, sends and fetches; the texts of decision 5 in `plugin.json` and `marketplace.json`, `plugin.json` without a version | Claude, a branch, a patch | S | – (or with D.2) |
 | K.3 | The issue forms: bug, question, "built with edakit"; the line on how issues are answered | Claude, a branch | S | – |
 | K.4 | The directory submission at claude.ai/directory/manage: the repository at its tag, the data-handling answers from the kit, new versions by webhook | the owner | 15 min | K.2 |
 | K.5 | The kit in `docs/concepts/new/outreach/`: the fact sheet (numbers from a fresh run, links, limits, the expected questions with the facts for each answer), the texts for Hackaday, Adafruit, r/ClaudeAI, the KiCad forum, OSHWLab, the line for awesome-claude-code, the pictures; notes for the Show HN, not its text | Claude | M | D.2, D.7, D.9 |

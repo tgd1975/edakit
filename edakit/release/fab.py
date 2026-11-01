@@ -210,8 +210,8 @@ def collect(cfg, board, d, verbose=False):
                  if a.get("Key") == "Designator" and a.get("ParentPrimitiveId") in ids}
         (d / "pcb.json").write_text(json.dumps({"components": comps, "lines": lines, "strings": strings,
                                                 "designators": shown}, indent=1))
-        eda.reload_pcb(mcp)  # the DRC is reliable only on the saved, reloaded state
-        found = eda.drc(mcp)
+        eda.save_pcb(mcp)    # the project copy of the export is the saved state
+        found = eda.drc_reloading(mcp)   # reloaded only when it reports Connection Errors (E-7)
         (d / "drc.json").write_text(json.dumps(found, indent=1, ensure_ascii=False))
         if compare_rules:
             try:

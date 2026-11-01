@@ -84,10 +84,6 @@ when a project must act); every merge that changes edakit a version of its own, 
 notes lane for concepts and TODO.md; the rulesets on main as text; the projects on the newest version, unpinned. Each
 step starts on the owner's word.
 
-- [ ] TD-47 - **V.4** The rulesets as text in `.github/rulesets/`, applied with `gh api` on the owner's word, the
-      checks not strict, with CLAUDE.md (the protection) and the skills triage, add-rule and add-feature (a fragment per
-      change) in the same branch – README, handbook 2.3, the merging rule and the notes lane came with TD-45 and TD-46.
-      Checked then: the admin role as a bypass on a personal repository.
 - [ ] TD-48 - **V.5** Branches left lying around: 9 `claude/*` and 2 `ccr-*` on origin, the local ones and the
       worktrees – listed, then merged or deleted on the owner's word; other sessions' branches named with their session.
 - [ ] TD-49 - **V.6** 1.0.0 on the owner's word once D.2 is built (`merge.py <n> --major`).
@@ -153,34 +149,36 @@ sources, data and code untouched; a text that is generated or used elsewhere sta
 
 ## Getting edakit known ([outreach.md](docs/concepts/new/outreach.md))
 
-Decided on 2026-11-01; K.1 (description, topics, homepage, the social preview) done the same day. The launch
-waits for D.2, D.7, D.9 and the bell built; each step starts on the owner's word – K.2, K.3 and K.9 as one branch
-`outreach-k2-k3-k9`, a commit each, one pull request.
+K.2, K.3 and K.9 in implementation since 2026-11-01, as one branch `outreach-k2-k3-k9`, a commit each, one pull
+request. The concept's other steps stay in its table until the launch is implemented – a concept's steps come here
+only once they are built (the owner, 2026-11-01).
 
 - [ ] TD-71 - **K.2** Ready for Anthropic's plugin directory: the README section on what edakit runs, sends and fetches
       (Freerouting, easyeda-mcp-pro, JLCPCB, datasheets, `gh`, Claude in Chrome, the settings new-project writes, the
-      two hooks); `plugin.json` with `version`, the texts of decision 5 in `plugin.json` and `marketplace.json` –
-      which settles the plugin's text of TD-34.
+      two hooks); the texts of decision 5 in `plugin.json` and `marketplace.json`, `plugin.json` without a version
+      (versioning.md) – which settles the plugin's text of TD-34.
 - [ ] TD-72 - **K.3** The issue forms – bug with `edakit --version` and `edakit doctor`, question, "built with edakit" –
-      and the line on how issues are answered – a branch.
-- [ ] TD-73 - **K.4** The directory submission at <https://claude.ai/directory/manage>, the repository at its tag, the
-      data-handling answers from the kit, new versions by webhook – the owner, 15 min; waits for TD-71.
-- [ ] TD-74 - **K.5** The kit in `docs/concepts/new/outreach/`: the fact sheet with fresh numbers, the drafts for
-      Hackaday, Adafruit, r/ClaudeAI, the KiCad forum, OSHWLab and awesome-claude-code, notes for the Show HN – waits
-      for TD-29, TD-34 and TD-35.
-- [ ] TD-75 - **K.5, the bell in hand:** a photo of the built bell and ten seconds of it ringing, from the owner – the
-      header picture for Hackaday; the order is the bell's project's.
-- [ ] TD-76 - **K.6** The launch week: 1.0.0 (TD-49), Show HN in the owner's own words, r/ClaudeAI, Hackaday, Adafruit,
-      awesome-claude-code, the week after the KiCad forum and OSHWLab – the owner; waits for TD-71 to TD-75.
-- [ ] TD-77 - **K.7** Two weeks after the launch: the referrers and stars per place into outreach.md, what worked named.
+      and the line on how issues are answered.
 - [ ] TD-78 - **K.9** "Released with edakit X.Y.Z" in the GitHub release of `edakit release publish`, on by default, a
-      key to turn it off – a branch, a patch (decision 3).
+      key to turn it off (decision 3).
 
 ## Closed todos
 
 Done or dropped, newest first, each with its date and the commit that closed it. What closed before 2026-11-01 is
 taken from the history of this file; an item rewritten on its way is listed once, in its last form.
 
+- [x] TD-47 - **V.4** main protected: the rulesets main and tags and the merge settings as files in `.github/rulesets/`
+  (#119), applied with `.github/rulesets.py apply` on the owner's word once everything in flight had landed; the marker
+  tag `protected-2026-11-01` on 71f807f; the skills write a fragment per change (#120); main-updates dropped an hour
+  later on the owner's word – its bypass needs `--admin` on every merge, which auto mode refuses (#156). [2026-11-01]
+- [x] TD-77 - **K.7** dropped: the launch is not in implementation – the step stays in outreach.md's table until it
+      is (the owner: a concept's steps come here only once they are built). [2026-11-01]
+- [x] TD-76 - **K.6** dropped the same way: the launch week stays in outreach.md. [2026-11-01]
+- [x] TD-75 - **K.5, the bell in hand** dropped the same way: the photo and video stay in outreach.md (decision 1).
+      [2026-11-01]
+- [x] TD-74 - **K.5** dropped the same way: the kit stays in outreach.md. [2026-11-01]
+- [x] TD-73 - **K.4** dropped the same way: the directory submission stays in outreach.md; it comes back here once
+      K.2 is merged and the owner starts it. [2026-11-01]
 - [x] TD-70 - **The social preview uploaded:** by the owner from `docs/concepts/new/outreach/social-preview.png` –
       GitHub reports `usesCustomOpenGraphImage` true; K.1 of outreach.md complete (no commit, a setting). [2026-11-01]
 

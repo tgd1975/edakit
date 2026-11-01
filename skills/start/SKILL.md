@@ -30,7 +30,9 @@ bridge, no claim. `edakit doctor 2>&1 | cat` shows the line for kicad-cli (KiCad
 5. **Project open:** `easyeda_api_call` `DMT_Project.getCurrentProjectInfo` (`confirmWrite: true`, also for reads).
    Focus `tab_page1` = start page, every `DMT_*` returns null. edakit reopens the project by the UUID it remembered
    (`<artifacts>/easyeda_project.json`); one never opened it finds in EasyEDA's project folder (handbook 9.2), so a
-   project made by hand needs no first opening.
+   project made by hand needs no first opening. After every start of EasyEDA the project tree in its left panel must
+   have been shown once – until then every rename through the API answers false (`schematic create` fails): ask the
+   user for that click (E-17, handbook 9.2).
 6. **Claim EasyEDA** before a series of runs: `edakit lock claim --note "<what>"`, afterwards `edakit lock release`
    (also after an abort). The plugin hook claims automatically on the first EasyEDA MCP tool and refuses tools while
    another session holds it; edakit commands do the same. Library lookups (`easyeda_schematic_search_device`,
@@ -62,7 +64,7 @@ bridge, no claim. `edakit doctor 2>&1 | cat` shows the line for kicad-cli (KiCad
   `until grep -q "^END exit" $LOG || ! kill -0 $(cat $LOG.pid) 2>/dev/null; do sleep 15; done`.
 - **Route only with `edakit route all`** (Freerouting, exit 0 = DRC 0), never with EasyEDA's autorouter: it throws away
   its whole result when anything fails.
-- **DRC only after save and reload** (`edakit route reload`): right after API changes it reports false connection errors.
+- **DRC and Connection Errors:** right after API changes it once reported false ones; `route all`, `silk apply` and the gate then save, reload and run it once more themselves – by hand `edakit route reload`, then `edakit route drc`.
 - Auto-layout and pour fills keep running after the bridge timeout; judge the end by stable numbers
   (`edakit pcb autolayout` does that).
 - A canvas capture may show a stale state. If an image is byte-identical to the previous one, do not trust it.
