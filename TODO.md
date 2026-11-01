@@ -30,7 +30,7 @@ to touch.
 ## For the owner
 
 - [ ] TD-58 - **OK for #121, easyeda-mcp-pro 1.6.0:** <https://github.com/tgd1975/edakit/pull/121> – TD-52 to TD-54,
-      checked live; on the OK `merge.py 121` merges it as a minor version, then the branches of TD-38 and TD-39 follow.
+      checked live; on the OK `merge.py 121` merges it as a minor version, then the branches of TD-37 to TD-39 follow.
       *(edakit-35)*
 - [ ] TD-57 - **The real cost of the first order:** once an order the skill cart put into a maker's cart is paid,
       `/edakit:cart actual` on its order page or saved invoice – `edakit cart actual` (handbook 8.4, step 5) has run
@@ -52,7 +52,7 @@ At the owner's computer, in this order; each change checked live before it is bu
       page after page – once TD-52 is done.
 - [ ] TD-54 - **M-6, the BOM's duplicates:** checked live – listed once, the removal goes; in #121. does the BOM of a board-linked schematic still list parts twice on 1.6.0?
       If not, edakit's removal of the duplicates goes.
-- [ ] TD-37 - **E-2, the one click goes:** `pcb parts` writes the Channel ID (`otherProperty["Channel ID"]`) into the
+- [ ] TD-37 - **E-2, the one click goes:** built and checked live on branch `e2-channel-id`, after #121. `pcb parts` writes the Channel ID (`otherProperty["Channel ID"]`) into the
       schematic part as it does the UniqueId, the same value on the PCB part – live on 3.2.209 the DRC was clean without
       the import view; then exit 3 of `route`/`silk` and handbook 7 and 9.4 follow (`edakit/pcb.py` `sync_parts`).
 - [ ] TD-38 - **E-3 and E-7, the PCB tab and the DRC:** built and checked live on branch `e3-e7-drc`, after #121. `activate_pcb` (`edakit/eda.py`) takes the probe's error on
