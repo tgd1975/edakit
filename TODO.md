@@ -4,7 +4,7 @@ Open work that needs the owner's computer, a maker or the owner's word. The stat
 and plans the sections name; this list is what is left to do of them, in the order it can be done. No item is deleted.
 
 **Layout.** Every item, in every section, open or closed, is a line with a checkbox and an ID unique in this file,
-counted up and never reused – whoever adds an item takes the next free ID and counts it up here. Next free ID: TD-80.
+counted up and never reused – whoever adds an item takes the next free ID and counts it up here. Next free ID: TD-81.
 
 - Open: `- [ ] TD-<n> - **Title:** what and why.` – a step's own name after the dash (`- [ ] TD-31 - **D.4** …`).
 - Done: ticked, the commit that did it, the date at the end, moved to [Closed todos](#closed-todos), newest first –
@@ -33,10 +33,6 @@ to touch.
       API key, OpenCode, and Ollama and llama.cpp with a GPU for Qwen3-Coder-Next and Devstral Small 2 – this session's
       cloud container has no GPU and no logins; which machine, and whether a Copilot plan and a Mistral key are at hand.
       *(amazing-newton)*
-- [ ] TD-59 - **OK for #129, #130, #131:** <https://github.com/tgd1975/edakit/pull/129> (TD-37, no click on Import
-      Changes), <https://github.com/tgd1975/edakit/pull/130> (TD-38, the DRC reloads only on Connection Errors),
-      <https://github.com/tgd1975/edakit/pull/131> (TD-39, local projects through the API) – each checked live on 1.6.0;
-      on the OK `merge.py` merges them one after the other. *(edakit-35)*
 - [ ] TD-57 - **The real cost of the first order:** once an order the skill cart put into a maker's cart is paid,
       `/edakit:cart actual` on its order page or saved invoice – `edakit cart actual` (handbook 8.4, step 5) has run
       on recorded data only; the real cost, the project's fee table and the order record come from it. *(edakit-80)*
@@ -46,23 +42,11 @@ to touch.
 E-1 to E-16 on EasyEDA Pro and M-1 to M-9 on easyeda-mcp-pro, checked live on EasyEDA Pro 3.2.209 and posted on
 2026-11-01; what each asks and where it stands is in upstream/README.md – the items here say only what is left to do.
 
-### Live in EasyEDA – edakit's own work
+### To report
 
-At the owner's computer, in this order; each change checked live before it is built.
-
-- [ ] TD-52 - **The switch to 1.6.0:** on main as edakit 0.4.0 (#121), the self-test and the example's gate green; left:
-      the plugin updated in pytree and the bell and their servers restarted; handbook 2's "Tested with" in #131.
-- [ ] TD-37 - **E-2, the one click goes:** the Channel ID written into the schematic parts (`edakit/pcb.py`), built and
-      checked live – #129, waits for TD-59.
-- [ ] TD-38 - **E-3 and E-7, the PCB tab and the DRC:** the probe's error as "inactive", the reload only on Connection
-      Errors (`edakit/eda.py`, `route.py`), built and checked live – #130, waits for TD-59; a full routing run without
-      reload is the next project's.
-- [ ] TD-39 - **E-9, local projects through the API:** `getAllProjectsUuid` per project folder (`edakit/eda.py`), built
-      and checked live – #131, waits for TD-59.
-- [ ] TD-40 - **E-10, E-11 and E-13 taken up:** `edakit part build` modifies the symbol's pins instead of creating them
-      anew (`SCH_PrimitivePin.modify` is saved on 3.2.209); `clear_orphan_attributes` kept as a cheap check or dropped;
-      tooling holes stay on the board while the pours fill, and a hole in a pour becomes a `NO_POURS` region instead of
-      the notch – each checked live first.
+- [ ] TD-80 - **E-17 and M-10 upstream:** drafts in `upstream/` – E-17 to easyeda/easyeda-api-sdk (a rename through the
+      API depends on the project tree having been shown), M-10 to easyeda-mcp-pro (one unverified copper rebuild locks
+      every later one until EasyEDA restarts) –, short as the earlier ones, then the owner's word to post.
 
 ### Waiting for upstream
 
@@ -160,6 +144,18 @@ sources, data and code untouched; a text that is generated or used elsewhere sta
 Done or dropped, newest first, each with its date and the commit that closed it. What closed before 2026-11-01 is
 taken from the history of this file; an item rewritten on its way is listed once, in its last form.
 
+- [x] TD-59 - **OK for #129, #130, #131:** given; #129 and #130 went as #135 and #136 (a generated handbook section
+      fixed at its source), #131 as 0.4.2. [2026-11-01]
+- [x] TD-40 - **E-10, E-11 and E-13 taken up:** NO_POURS regions instead of the notch, the tooling holes stay while
+      the pours fill, pins modified in place, the orphan sweep kept – live on coin-cell-led; edakit 0.4.10 (#163).
+      [2026-11-01]
+- [x] TD-39 - **E-9, local projects through the API:** edakit 0.4.2 (#131). [2026-11-01]
+- [x] TD-38 - **E-3 and E-7, the PCB tab and the DRC:** edakit 0.4.6 (#136); a full routing run without reload is the
+      next project's. [2026-11-01]
+- [x] TD-37 - **E-2, the one click goes:** the Channel ID into the schematic parts, old ones fixed by `route drc` –
+      edakit 0.4.4 (#135). [2026-11-01]
+- [x] TD-52 - **The switch to 1.6.0:** edakit 0.4.0 (#121), "Tested with" in 0.4.2; on the way E-17 (0.4.7, #151) and
+      M-10 (0.4.9, #157) found and taken care of; pytree and the bell take the plugin with their next updates. [2026-11-01]
 - [x] TD-78 - **K.9** "Released with edakit X.Y.Z" as the last line of the notes of `edakit release publish`, linked to
       that version; `[release] publish.credit = false` leaves it out – merged as edakit 0.4.8 (#154, 08a6951).
       [2026-11-01]
