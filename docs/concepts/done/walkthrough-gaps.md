@@ -109,9 +109,12 @@ Found on the way:
 - **edakit's own silkscreen texts are known only to the clone that placed them.** `silk apply` removes the texts of
   its previous run by their IDs in `<artifacts>/silk_strings_<b>.json` – build output. In a fresh clone it found no
   record, left the earlier label and "+" on the board and placed a second "+" on the first (GEO.mark counted three
-  signs). Cleaned by hand in this run: the two old texts deleted, `silk apply` again.
+  signs). Cleaned by hand in this run: the two old texts deleted, `silk apply` again. Fixed the same day on the
+  owner's word: `silk apply` removes every free text and fill on the silkscreen layers and names what its record did
+  not (`silk.stale_print`) – live from a fresh clone, the label and "+" replaced, none doubled, DRC 0.
 - **`fab/<board>/current`** in every run with stage F – a copy of `cpl_easyeda.xlsx` that EasyEDA's pick-and-place
   export leaves under the project ID `current`; not in the manifest, not uploaded (the bell's runs have it too).
+  Fixed the same day on the owner's word: `fab.take_export` takes it as `cpl_easyeda.xlsx`.
 - **VBAT on the visible top**: Freerouting took it as a 14.5 mm diagonal from SW1 to BT1.1 across the open lower
   right – the pcb-reviewer's note on looks; left as it is (the owner's decision of 2026-11-01), the limits of
   `[looks]` warn should a re-route make it longer.
