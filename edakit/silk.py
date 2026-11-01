@@ -25,8 +25,10 @@ Board label: the board's title and revision (revision and [silk] board_label of 
 "{title} rev {revision}", also {project} and {board}) in the free spot nearest to a corner (board_label_corner, default
 "bottom-left" as seen from the printed side), not on pads, parts, labels, vias or the keep-outs of holes. It goes on the
 designators side unless board_label_side names the other one, and anywhere on the board unless board_label_region
-(a polygon in plan mm) gives the part it must lie in – the corner is then that region's. edakit remembers the strings
-it created and replaces them on the next run, so an old revision never stays on the board.
+(a polygon in plan mm) gives the part it must lie in – the corner is then that region's. Before it prints, every free
+text and fill on the silkscreen layers goes – all of it is silk apply's, the board file says what is printed –, so an
+old revision never stays on the board, also in a fresh clone; what the record of the last run (silk_strings_<board>.json,
+build output) did not name is said as it goes (stale_print).
 
 Artwork and texts ([[silk.art]]: svg, x, y, width_mm, rot, side; [[silk.texts]]: text, x, y, h_mm, rot, side,
 font) come first: filled shapes and strokes of the SVG become silkscreen fills, cut free of pads and
@@ -474,6 +476,22 @@ def picture(silk, openings, area, out, mirror=False, extra=(), texts=()):
 APPLY_STEPS = 8   # bridge and PCB (main), the five of apply, the two of check
 
 
+def stale_print(strings, fills, memo):
+    """What silk apply removes before it prints: every free text and fill on the silkscreen layers – all of it is silk
+    apply's, the board file says what is printed ([[silk.texts]], [[silk.art]], the board label, the labels it places);
+    the footprints' own print is no free text. strings, fills: the PCB's primitives (eda.state); memo: the record of the
+    last run, silk_strings_<board>.json – build output, so a fresh clone has none. ([text IDs], [fill IDs], what the
+    record did not name: "'+' at (40.3, 24.0) mm on the top", "a fill on the bottom")."""
+    names = {v + 2: side for side, v in SIDE.items()}
+    known = set(memo.get("strings", [])) | set(memo.get("fills", []))
+    texts = [s for s in strings if s.get("Layer") in names]
+    shapes = [f for f in fills if f.get("Layer") in names]
+    unknown = [f"'{s.get('Text')}' at ({mm(s.get('X', 0)):.1f}, {mm(s.get('Y', 0)):.1f}) mm on the {names[s['Layer']]}"
+               for s in texts if s.get("PrimitiveId") not in known]
+    unknown += [f"a fill on the {names[f['Layer']]}" for f in shapes if f.get("PrimitiveId") not in known]
+    return [s["PrimitiveId"] for s in texts], [f["PrimitiveId"] for f in shapes], unknown
+
+
 def apply(cfg, board, mcp, step=None):
     """step: eda.Steps of `silk apply` (APPLY_STEPS)."""
     step = step or (lambda _: None)
@@ -485,14 +503,16 @@ def apply(cfg, board, mcp, step=None):
     hide = {SIDE[x] for x in s.get("hide", [])} | {layer}  # the placed side is hidden first, then shown at its spot
     ensure_pcb_focus(mcp)
     memo = cfg.artifact(f"silk_strings_{board.name}.json")
-    if memo.exists():  # texts and fills edakit created in the last run
-        old = json.loads(memo.read_text())
-        old = {"strings": old} if isinstance(old, list) else old
-        for kind, cls in (("strings", "PCB_PrimitiveString"), ("fills", "PCB_PrimitiveFill")):
-            existing = {eda.state(t).get("PrimitiveId") for t in api(mcp, f"{cls}.getAll") or []}
-            gone = [p for p in old.get(kind, []) if p in existing]
-            if gone:
-                api(mcp, f"{cls}.delete", gone)
+    old = json.loads(memo.read_text()) if memo.exists() else {}   # texts and fills edakit created in the last run
+    old = {"strings": old} if isinstance(old, list) else old
+    texts, shapes, unknown = stale_print([eda.state(t) for t in api(mcp, "PCB_PrimitiveString.getAll") or []],
+                                         [eda.state(f) for f in api(mcp, "PCB_PrimitiveFill.getAll") or []], old)
+    for ids, cls in ((texts, "PCB_PrimitiveString"), (shapes, "PCB_PrimitiveFill")):
+        if ids:
+            api(mcp, f"{cls}.delete", ids)
+    if unknown:
+        print(f"  removed from the silkscreen, not in the record of the last run (a silk apply of another clone, or "
+              f"drawn in EasyEDA): {', '.join(unknown)}")
     comps = {c["PrimitiveId"]: c for c in map(eda.state, api(mcp, "PCB_PrimitiveComponent.getAll") or [])}
     fixed = fixed_labels(board)
     attrs = {}
