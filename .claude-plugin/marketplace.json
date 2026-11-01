@@ -3,23 +3,23 @@
   "owner": {
     "name": "tgd1975"
   },
-  "description": "edakit: EasyEDA Pro automation for Claude Code – hardware graph, checks, simulation, schematic, PCB, routing, release gate.",
+  "description": "edakit: circuit design as code for Claude Code – checks, simulation, schematic, PCB, release gate.",
   "plugins": [
     {
       "name": "edakit",
       "source": {
         "source": "github",
         "repo": "tgd1975/edakit",
-        "ref": "v0.4.7"
+        "ref": "v0.4.8"
       },
-      "description": "Skills, agents, MCP server, EasyEDA claim hook and the edakit CLI for graph-driven PCB design with EasyEDA Pro.",
+      "description": "Skills, agents, the EasyEDA MCP server and the edakit command line – EasyEDA Pro or KiCad.",
       "category": "hardware",
       "tags": [
         "easyeda",
         "pcb",
         "jlcpcb"
       ],
-      "version": "0.4.7"
+      "version": "0.4.8"
     }
   ]
 }

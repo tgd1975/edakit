@@ -1,0 +1,27 @@
+name: Question
+description: How to do something with edakit, or whether it fits your board.
+labels: [question]
+body:
+  - type: markdown
+    attributes:
+      value: >-
+        edakit is kept by one person with Claude, and answers come as time allows. The handbook may answer it at once:
+        https://tgd1975.github.io/edakit/
+  - type: textarea
+    id: question
+    attributes:
+      label: Your question
+    validations:
+      required: true
+  - type: dropdown
+    id: toolchain
+    attributes:
+      label: Tool chain
+      options:
+        - EasyEDA Pro
+        - KiCad 10
+        - not decided yet
+  - type: input
+    id: version
+    attributes:
+      label: edakit --version, if installed
