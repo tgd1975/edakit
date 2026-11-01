@@ -15,7 +15,7 @@ complete; nothing in them is legally guaranteed. Whoever sells or gives away the
 ## 15.1 The purpose decides
 
 `purpose` in the graph (3.1): `{"use": "private" | "gift" | "sale", "market": "EU", "notes": "what it is, who uses
-it"}`, and for a part that can transmit more than the EU allows, optionally, `radio` – how its firmware uses it:
+it"}`, optionally `country` – the member state it is used in (`"AT"`, 15.6) –, and for a part that can transmit more than the EU allows, optionally, `radio` – how its firmware uses it:
 `{"U1": {"bands_mhz": [[2412, 2472]], "notes": "Wi-Fi channels 1–13"}}` or `{"U1": "off"}`; LIM.band compares it with
 the EU bands. It is part of the circuit hash: a new purpose needs a new M-6. The skill new-project asks for it when the
 project is set up (2.7), before the first part is chosen.
@@ -46,6 +46,9 @@ project is set up (2.7), before the first part is chosen.
 
 Commonly missed: a CE mark on a module – genuine or not – never covers the product it is built into; whoever resells
 an imported power supply or cell is its importer.
+
+The national references in this chapter are Germany's – the example the map was written for. A board used in another
+member state names it in `purpose.country`, and the review takes that country's references (15.6).
 
 ## 15.3 What the review needs
 
@@ -110,3 +113,29 @@ quote it reviewed, the line that it is support and not legal advice, and as the 
 sign-off file – the release and its hashes stay as they are –, but ORDER.review makes the cart wait for it, and a new
 quote needs a new review because its hash changes. The order record keeps the verdict with the numbers and grades of the
 findings (8.4).
+
+## 15.6 National law
+
+The EU's directives reach a board through each member state's own act, and some duties exist only there – passing on
+a board built for oneself (Germany's EMVG § 6), the registers for WEEE, batteries and packaging. `purpose.country`
+in the graph (3.1) names the member state the board is used in, as ISO 3166-1 alpha-2: `country = "AT"`. It is
+optional, part of the purpose and so of the circuit hash – setting it needs a new M-6 –, and a code that is no member
+state of the EU (`"CH"`, `"at"`, `"AUT"`), or one with a `market` other than `"EU"`, is STRUCT.purpose.
+
+`edakit/national.toml` holds per member state the national reference of each topic – EMC, radio, product safety,
+product liability, SCIP, WEEE, batteries, packaging – with the URL of its primary source and the date it was checked
+against it: Germany (gesetze-im-internet.de) and Austria (RIS). The domains' review questions name them through
+placeholders (`{national.emc}`, `{national.radio}`, `{national.country}`, `{national.code}` – the country of
+`esp_wifi_set_country_code`), and `edakit domains --review regulatory` adds one line with every reference of the
+country and its source, `National law (AT, Austria – …): EMC: EMVV 2015 § 5 … <https://www.ris.bka.gv.at/…>; …` –
+the agent regulatory-reviewer's map of national law, as this chapter is for the EU's.
+
+| `purpose.country` | The questions name | The line |
+|---|---|---|
+| none | Germany's references, as before | none – this chapter's German references hold |
+| a member state in the table (`DE`, `AT`) | its references | its references and sources |
+| another member state (`FR`) | the EU rules – the EMC directive 2014/30/EU, RED 2014/53/EU … – as that country transposes them | `edakit has no national references for FR` – the review finds the transposition itself |
+
+A country is added to the table, not to the questions: one entry per topic with `name`, `url` and an optional `note`,
+checked against the primary source (`edakit/national.py`, `lint`, keeps every table complete). The table is a map for
+the review, support and not legal advice – nothing in it is legally guaranteed, without any claim to correctness.

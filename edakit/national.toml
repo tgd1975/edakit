@@ -1,0 +1,132 @@
+# National references of the regulatory review (proposal #94, handbook 15.6): per member state the national rule of
+# each topic – the short reference the domains' review questions name ({national.<topic>}) and the URL of its primary
+# source. A project names its country in purpose.country (graph, handbook 3.1); without it the questions name DE's
+# references, as they always did. A member state without a table here gets EU – the EU rule, which the review finds
+# the national transposition of. A map for the review, checked against the source on the date in `checked`; support,
+# not legal advice – nothing in it is legally guaranteed, without any claim to correctness.
+#
+# name: what the questions and the review line name; url: the primary source; note: what stands beside it, optional.
+# In EU, {country} is the member state's name.
+
+[EU]
+country = "the member state"
+checked = "2026-11-01"
+
+[EU.topics.emc]
+name = "the EMC directive 2014/30/EU, Art. 4, as {country} transposes it"
+url = "https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:32014L0030"
+
+[EU.topics.radio]
+name = "RED 2014/53/EU, Art. 7, as {country} transposes it"
+url = "https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:32014L0053"
+
+[EU.topics.product_safety]
+name = "Regulation (EU) 2023/988 (GPSR) and {country}'s act on its market surveillance"
+url = "https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:32023R0988"
+
+[EU.topics.product_liability]
+name = "the product liability directive 85/374/EEC, as {country} transposes it"
+url = "https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:31985L0374"
+note = "directive (EU) 2024/2853 for products placed on the market from 9 Dec 2026"
+
+[EU.topics.scip]
+name = "the waste framework directive 2008/98/EC, Art. 9(1)(i), as {country} transposes it"
+url = "https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:32008L0098"
+
+[EU.topics.weee]
+name = "the WEEE directive 2012/19/EU, as {country} transposes it"
+url = "https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:32012L0019"
+
+[EU.topics.batteries]
+name = "Regulation (EU) 2023/1542 and {country}'s act on producer responsibility"
+url = "https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:32023R1542"
+
+[EU.topics.packaging]
+name = "Regulation (EU) 2025/40 and {country}'s act on producer responsibility"
+url = "https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:32025R0040"
+
+# --- Germany: the references handbook 15 has always named ---------------------------------------------------------
+[DE]
+country = "Germany"
+checked = "2026-11-01"
+
+[DE.topics.emc]
+name = "EMVG § 6"
+url = "https://www.gesetze-im-internet.de/emvg_2016/__6.html"
+note = "putting into service and passing on, in substance, also for own use (§§ 3, 4)"
+
+[DE.topics.radio]
+name = "FuAG § 7"
+url = "https://www.gesetze-im-internet.de/fuag/__7.html"
+note = "putting into service and use; frequency use: BNetzA's general assignments (handbook 15.2)"
+
+[DE.topics.product_safety]
+name = "ProdSG"
+url = "https://www.gesetze-im-internet.de/prodsg_2021/"
+note = "beside Regulation (EU) 2023/988"
+
+[DE.topics.product_liability]
+name = "ProdHaftG"
+url = "https://www.gesetze-im-internet.de/prodhaftg/"
+
+[DE.topics.scip]
+name = "ChemG § 16f"
+url = "https://www.gesetze-im-internet.de/chemg/__16f.html"
+
+[DE.topics.weee]
+name = "ElektroG § 6"
+url = "https://www.gesetze-im-internet.de/elektrog_2015/__6.html"
+note = "registration with stiftung ear before the first sale"
+
+[DE.topics.batteries]
+name = "BattDG"
+url = "https://www.gesetze-im-internet.de/battdg/"
+note = "beside Regulation (EU) 2023/1542; registration with stiftung ear"
+
+[DE.topics.packaging]
+name = "VerpackDG"
+url = "https://www.gesetze-im-internet.de/verpackdg/"
+note = "beside Regulation (EU) 2025/40; registration in LUCID"
+
+# --- Austria: the origin's mapping (pytree, M-6 of 2026-11-01), checked against RIS ---------------------------------
+[AT]
+country = "Austria"
+checked = "2026-11-01"
+
+[AT.topics.emc]
+name = "EMVV 2015 § 5"
+url = "https://www.ris.bka.gv.at/Dokumente/Bundesnormen/NOR40179271/NOR40179271.html"
+note = "made available or put into service only if it complies; an ordinance under ETG 1992"
+
+[AT.topics.radio]
+name = "FMaG 2016 § 24"
+url = "https://www.ris.bka.gv.at/Dokumente/Bundesnormen/NOR40238348/NOR40238348.html"
+note = "putting into service and use; frequency use: TKG 2021 (§ 24(2))"
+
+[AT.topics.product_safety]
+name = "PSG 2004"
+url = "https://www.ris.bka.gv.at/GeltendeFassung.wxe?Abfrage=Bundesnormen&Gesetzesnummer=20004009"
+note = "beside Regulation (EU) 2023/988"
+
+[AT.topics.product_liability]
+name = "PHG"
+url = "https://www.ris.bka.gv.at/GeltendeFassung.wxe?Abfrage=Bundesnormen&Gesetzesnummer=10002864"
+
+[AT.topics.scip]
+name = "ChemG 1996 § 19 Abs. 5"
+url = "https://www.ris.bka.gv.at/Dokumente/Bundesnormen/NOR40228471/NOR40228471.html"
+
+[AT.topics.weee]
+name = "EAG-VO"
+url = "https://www.ris.bka.gv.at/GeltendeFassung.wxe?Abfrage=Bundesnormen&Gesetzesnummer=20004052"
+note = "with AWG 2002"
+
+[AT.topics.batteries]
+name = "Batterienverordnung"
+url = "https://www.ris.bka.gv.at/GeltendeFassung.wxe?Abfrage=Bundesnormen&Gesetzesnummer=20005815"
+note = "beside Regulation (EU) 2023/1542"
+
+[AT.topics.packaging]
+name = "VerpackVO 2014"
+url = "https://www.ris.bka.gv.at/GeltendeFassung.wxe?Abfrage=Bundesnormen&Gesetzesnummer=20008902"
+note = "beside Regulation (EU) 2025/40"
