@@ -282,18 +282,26 @@ domain setting. The loop is part of the workflow:
    SHA-256 of the text. The decision gets the issue (`edakit: #12`).
 5. **Triage.** The Action `proposals` of the edakit repository starts on every proposal of the repository owner
    and on the owner's answers, and runs the skill `triage-rule` in a session of its own (for a feature proposal
-   `triage-feature`, 11.6). Each run takes along every proposal still without a result and every question the owner
-   answered last, one after another, so proposals filed at the same time and answers given while a run waits are not
-   lost when GitHub cancels their waiting runs; an event that triages nothing – a comment on a proposal already
-   built – waits apart and cancels none. Correctly made:
-   `edakit proposal verify` – every section filled in, the checksum matches; a body edited by hand fails on purpose.
-   Does it make sense: new, the right kind, the sources hold, general rather than one project's choice, which engine
-   and which data – a fact before a new relation, a relation only where a program decides it (else a hint) –, clear
-   enough to build. The kinds: `fact` (a row of data: a part fact, a default, a table row), `relation` (a new code, a
-   hint too), `domain` (a severity, a required fact, a reviewer's question), `block`, `retire`; a proposal sealed
-   before the codes says `check`, `hint` or `part` and is read as relation or fact. The result is one of three, as a
-   comment on the issue: **Accepted**, **Rejected** with a reason a person can check, or **Question** with the
-   alternatives – everything between accepted and rejected is a question.
+   `triage-feature`, 11.6). The checks come in a fixed order, and the first that fails decides:
+   - **Who and the format**, fixed in the workflow before Claude starts: the proposal's author is the repository
+     owner, read again from GitHub, and `edakit proposal verify` passes – every section filled in, the checksum
+     matches; a body edited by hand fails on purpose. A broken proposal gets its **Question** from the workflow, with
+     what verify reports, and costs no Claude run.
+   - **Safe?** Claude's first judgement. **Rejected**, never asked back, is a proposal that would change the pipeline
+     – one of its paths (below), or how proposals are started, read, judged, built or published –, run or fetch at
+     check time what edakit does not run today, read credentials or write outside the project, add a hook, skill,
+     agent or setting that pushes, orders, pays, publishes or grants permissions unasked, weaken a check without a
+     source that shows the check wrong, or need a new dependency.
+   - **Plausible?** New, the sources hold, the gap real at this commit.
+   - **Acceptable?** The right kind, general rather than one project's choice, which engine and which data – a fact
+     before a new relation, a relation only where a program decides it (else a hint) –, graded by the purpose,
+     testable, one capability, clear enough to build.
+
+   The kinds: `fact` (a row of data: a part fact, a default, a table row), `relation` (a new code, a hint too),
+   `domain` (a severity, a required fact, a reviewer's question), `block`, `retire`; a proposal sealed before the
+   codes says `check`, `hint` or `part` and is read as relation or fact. The result is one of three, as a comment on
+   the issue: **Accepted**, **Rejected** with a reason a person can check, or **Question** with the alternatives –
+   everything between accepted and rejected is a question.
 6. **Build.** An accepted proposal is built with the skill `add-rule` (a skill of the repository, in
    `.claude/skills/`, not part of the plugin): a fact as a row with its source (a parts entry of the block library, a
    default, a table); a relation as a code in `codes.toml` (title, rule, why, fix, severity, sources) and its place in
@@ -306,15 +314,6 @@ domain setting. The loop is part of the workflow:
    the decision gets the code (`edakit: REQ.function`) or `edakit: rejected (#12)`. From the next plugin update on the
    rule runs on every project – every merge into `main` is a version of its own (2.3).
 
-Who may propose: only the repository owner – the Action does not start for anyone else, and GitHub's author field
-says who wrote an issue. The checksum adds that the text is the one that was sealed. The Action needs the Claude
-GitHub app on the repository and one of the secrets `CLAUDE_CODE_OAUTH_TOKEN` or `ANTHROPIC_API_KEY`
-(`/install-github-app` in the terminal Claude Code, or by hand: install github.com/apps/claude on the repository,
-`claude setup-token`, `gh secret set CLAUDE_CODE_OAUTH_TOKEN`). The step *Why Claude stopped* shows Claude's last
-message after every run – a run can end green without its comment. A token that no longer holds shows there as
-`401 Invalid bearer token`; with a new one, `gh workflow run proposals.yml` triages what is waiting. From the Action only public projects can be cloned for the run against real projects; the pull request
-names what could not be run, and that is run by hand before merging.
-
 REQ.missing (flyback diode) and REQ.missing:cc (USB-C termination) are the reference project's buzzer stage and USB-C
 input turned into rules; REQ.missing (I2C pull-ups), LVL.boot (strapping pins) and the MCU output currents of LIM come
 from CircuitSmith's rule catalog (14.6).
@@ -325,6 +324,55 @@ R-EXT and the OE pull-up a hundred times larger: the LEDs dim with R-EXT, and no
 load's `expect` would). The list is for reading, not a list of faults; a class of mistakes it shows again and again is
 a candidate. The reference circuits per domain (`tests/reference.py`) carry the seeded faults each domain must catch
 with exactly its codes.
+
+### The proposals Action
+
+Claude only reads. The triage runs with a token that cannot write, follows main's copies of the skills rather than
+the branch's, and gets the proposal's text, the repository owner's comments and the triage's earlier results –
+nothing anyone else wrote. It commits an accepted build on the proposals branch and writes its result as files: the
+result, the comment, the line for the pull request. A fixed job publishes it:
+
+- **The commit** – at most one, its subject ending in `(#N)` – is checked against the pipeline's paths: `.github/`,
+  `.claude/`, `CLAUDE.md`, `edakit/proposal.py`, `tests/test_proposal.py`, `skills/propose-rule/`,
+  `skills/propose-feature/`, `pyproject.toml`, `uv.lock`. A commit that touches one is not pushed, and the proposal is
+  rejected with the paths: the pipeline is never changed through itself. The list lives in `edakit/proposal.py`. Any
+  other fault of the commit pushes and posts nothing; the run shows red and the proposal waits.
+- **The pull request** is asked for again right before the push; merged meanwhile, the commit goes onto main into a
+  new one.
+- **Then** the push, the line in the pull request, the comment, the labels, a rejected issue closed, and the pull
+  request's tests started – what the workflow's token pushes starts no workflow by itself.
+- **No result** posts nothing: the run shows red, and the proposal stays waiting. The step *Why Claude stopped* shows
+  Claude's last message after every run. A token that no longer holds shows there as `401 Invalid bearer token`;
+  with a new one, `gh workflow run proposals.yml` triages what is waiting.
+
+**The queue.** The issue that started a run goes first, unless a triage answered it since its event; then every
+proposal still waiting – without a result, or with a question the owner answered since, in a comment or by sealing it
+again. At most eight per run, one after another, because accepted proposals share their branch; the rest waits for
+the next run. So proposals filed at the same time and answers given while a run waits are not lost when GitHub
+cancels their waiting runs, and an event that triages nothing – a comment on a proposal already built – waits apart
+and cancels none.
+
+**Who may propose.** Anyone may open an issue in the edakit repository, and one from outside is welcome; the Action
+acts only on the repository owner's. It starts on the owner's own sealed issues, and on an issue by someone else once
+the owner posts a sealed proposal there as a comment – written from the issue with `propose-rule` or
+`propose-feature` and posted with `gh issue comment N --body-file body.md`.
+
+The workflow labels such an issue `adopted`, and from then on the owner's answers there start the Action as on the
+owner's own issues. Claude reads the owner's newest sealed comment as the proposal, the owner's comments after it and
+the triage's results – never the issue's body or a comment by anyone else, so what its author edits later changes
+nothing. GitHub's author field says who wrote an issue or a comment; the checksum adds that the text is the one that
+was sealed.
+
+**Setup.** The Action runs with the workflow's own token – the Claude GitHub app is not needed – and needs one of the
+secrets `CLAUDE_CODE_OAUTH_TOKEN` or `ANTHROPIC_API_KEY` (`claude setup-token`, `gh secret set
+CLAUDE_CODE_OAUTH_TOKEN`) and the repository setting "Allow GitHub Actions to create and approve pull requests"
+(Settings, Actions, General). Its comments and pull requests come from `github-actions[bot]`.
+
+**Before a merge.** From the Action only public projects can be cloned for the run against real projects; the pull
+request names what could not be run, and that is run by hand before merging. A conflict in a generated file –
+`docs/catalog/index.html`, the handbook's generated sections – is not merged by hand: the file is written again by its
+script (`docs/catalog/build.py`, `python -m edakit.catalog.handbook --write`). A main that changed a workflow file is
+brought into the proposals branch by a session – the workflow's token may not push a workflow change.
 
 ## 14.5 Building blocks
 

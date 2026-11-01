@@ -3,6 +3,7 @@ name: Tests
 on:
   push:
   pull_request:
+  workflow_dispatch:     # the proposals workflow starts it for its branch – its own pushes start nothing
 
 jobs:
   test:

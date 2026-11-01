@@ -7,6 +7,13 @@ written once, by `.github/merge.py`, from the fragments in [changes/](changes/RE
 [versioning.md](docs/concepts/new/versioning.md). Update with `claude plugin marketplace update edakit && claude plugin
 update edakit@edakit`, then `/reload-plugins` or a new session; `edakit --version` names the version that runs.
 
+## 0.3.1 – 2026-11-01
+
+- The proposals Action judges with a token that cannot write, and a fixed job checks each build against the
+  pipeline's paths before anything is pushed: the pipeline never changes through itself. The queue triages a proposal
+  once even when several are filed together. Issues by others are welcome – the owner hands one over with a sealed
+  proposal as a comment (`propose-rule`, `propose-feature`) (TD-42, docs/concepts/new/proposals-pipeline.md).
+
 ## 0.3.0 – 2026-11-01
 
 - **When updating:** a project without `[project] requirements` writes its requirements file with `/edakit:requirements` and names it in `edakit.toml` before its next release – DOCS.file is open until then: `edakit check` passes, `edakit check --release` and the gate do not release (handbook 3.6, 8.7).
