@@ -100,8 +100,9 @@ sources, data and code untouched; a text that is generated or used elsewhere sta
 
 - [ ] TD-29 - **D.2** The entry layer: the README as the start page of one screen with the case for edakit (what you
       bring, what edakit brings, the walkthrough's count), `docs/quickstart.md` with its test, `docs/how-it-works.md`
-      with the pipeline drawing, a transcript, the state and the future work (two items); `test_plugin.py` pointed at
-      the page that lists skills and agents.
+      with the pipeline drawing and its loops back, the mechanism without a buzzword, a transcript, the state and the
+      future work (two items); the buzzword rule into `docs/style.md` and `tests/test_style.py`; `test_plugin.py`
+      pointed at the page that lists skills and agents.
 - [ ] TD-30 - **D.3** The site: the navigation as data, by reader and by station (The circuit, The board), short titles;
       `organisation.md` and the brand page on it; "Inside edakit" with its index and the source line; the footer and
       feedback lines; prototypes off the navigation.
@@ -109,7 +110,9 @@ sources, data and code untouched; a text that is generated or used elsewhere sta
       generated lists as the short kind.
 - [ ] TD-32 - **D.5** The chapters in place, condensed to a third fewer words with no statement lost, worst first – 8,
       3, 5, 7, 4, 10, then the rest –, the review for meaning after each; chapter 13 takes the history.
-- [ ] TD-33 - **D.6** The reader pages "Adding a rule" and "Working on edakit".
+- [ ] TD-33 - **D.6** The reader pages "Adding a rule" and "Working on edakit", and "edakit as a meta-harness"
+      (`docs/architecture.md`): the term defined by three properties, the layers, the loops and the files that set them,
+      what is bound to Claude Code, the rules for developers.
 - [ ] TD-34 - **D.7** The "is it for me" numbers from the evals; the findings on sources (the plugin's descriptions say
       "JSON hardware graph") to the owner.
 - [ ] TD-35 - **D.9** `docs/projects/`, the gallery: the index with a card per project – the examples' cards lead to
