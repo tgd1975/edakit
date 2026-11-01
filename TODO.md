@@ -4,7 +4,7 @@ Open work that needs the owner's computer, a maker or the owner's word. The stat
 and plans the sections name; this list is what is left to do of them, in the order it can be done. No item is deleted.
 
 **Layout.** Every item, in every section, open or closed, is a line with a checkbox and an ID unique in this file,
-counted up and never reused – whoever adds an item takes the next free ID and counts it up here. Next free ID: TD-81.
+counted up and never reused – whoever adds an item takes the next free ID and counts it up here. Next free ID: TD-84.
 
 - Open: `- [ ] TD-<n> - **Title:** what and why.` – a step's own name after the dash (`- [ ] TD-31 - **D.4** …`).
 - Done: ticked, the commit that did it, the date at the end, moved to [Closed todos](#closed-todos), newest first –
@@ -29,6 +29,13 @@ to touch.
 
 ## For the owner
 
+- [ ] TD-81 - **Review the documentation as built:** `docs/concepts/new/documentation-assumptions.md` and the chapters'
+      reviews in `docs/concepts/new/documentation-review/` (#174) – every judgement call of that evening, among them
+      the strict rule that kept the chapters from a third fewer words; then the concept moves to `done/`, and 1.0.0
+      (TD-49) is the owner's word. *(edakit, documentation session)*
+- [ ] TD-82 - **pytree's pictures:** pick what of the private repository may go onto `docs/projects/pytree.md` – the
+      page is text only, from its README and chapter 13; say too whether that much about the gift may stand before
+      Christmas. *(edakit, documentation session)*
 - [ ] TD-57 - **The real cost of the first order:** once an order the skill cart put into a maker's cart is paid,
       `/edakit:cart actual` on its order page or saved invoice – `edakit cart actual` (handbook 8.4, step 5) has run
       on recorded data only; the real cost, the project's fee table and the order record come from it. *(edakit-80)*
@@ -69,45 +76,30 @@ step starts on the owner's word.
 
 ## The documentation for its readers ([documentation.md](docs/concepts/new/documentation.md))
 
-Decided on 2026-10-31; D.1 (the style guide, the glossary and their tests) built the same day. D.2, D.7 and D.9 first,
-ahead of the other todos – outreach.md's launch and 1.0.0 wait for them (the owner, 2026-11-01); D.3 to D.6 not before
-the other todos in this list are done: the documentation describes what they leave behind.
+Built on 2026-11-01 (#174, edakit 0.4.14); what is left after the owner's review (TD-81):
 
-Each step starts on the owner's word, one per branch, under the concept's rules for what the automation reads –
-sources, data and code untouched; a text that is generated or used elsewhere stays; unsure, ask:
-
-- [ ] TD-29 - **D.2** The entry layer: the README as the start page of one screen with the case for edakit (what you
-      bring, what edakit brings, the walkthrough's count), `docs/quickstart.md` with its test, `docs/how-it-works.md`
-      with the pipeline drawing and its loops back, the mechanism without a buzzword, a transcript, the state and the
-      future work (three items); the buzzword rule into `docs/style.md` and `tests/test_style.py` ("harness" once at the
-      README's start, as a keyword); `test_plugin.py` pointed at the page that lists skills and agents; "What it runs,
-      sends, fetches" and the issues line stay on the start page below its first screen (outreach.md, K.2 and K.3), the
-      order at four makers in the case.
-- [ ] TD-30 - **D.3** The site: the navigation as data, by reader and by station (The circuit, The board), short titles;
-      `organisation.md` and the brand page on it; "Inside edakit" with its index and the source line; the footer and
-      feedback lines; prototypes off the navigation.
-- [ ] TD-31 - **D.4** The reference: 10.5 as entries with the generated synopsis; the catalog page split; the chapters'
-      generated lists as the short kind.
-- [ ] TD-32 - **D.5** The chapters in place, condensed to a third fewer words with no statement lost, worst first – 8,
-      3, 5, 7, 4, 10, then the rest –, the review for meaning after each; chapter 13 takes the history.
-- [ ] TD-33 - **D.6** The reader pages "Adding a rule" and "Working on edakit", and "edakit as a meta-harness"
-      (`docs/architecture.md`): the term defined by three properties, the layers, the loops and the files that set them,
-      what is bound to Claude Code, the rules for developers.
-- [ ] TD-34 - **D.7** The "is it for me" numbers from the evals, for the start page and outreach.md's fact sheet (K.5);
-      the plugin's descriptions were settled by K.2 (TD-71).
-- [ ] TD-35 - **D.9** `docs/projects/`, the gallery: the index with a card per project – the examples' cards lead to
-      chapters 17 and 18 –; the bell's page – what it is, the circuit with its drawn schematic and its blocks explained,
-      the board as made, what edakit found, its variants main, smd, tht and esp32 side by side, what it changed in
-      edakit – from the pictures of its current release (section 12 of the protocol; where the release has none, the
-      bell's session draws them at its next gate run); pytree's page with the information and the pictures the owner
-      picks (needs the owner – the repository stays private); a later project's page once it has a result with edakit,
-      nothing planned on the gallery; the style guide's project page and `test_style.py` follow.
+- [ ] TD-83 - **The findings of the chapters' reviews:** sources that cite a section for what it does not hold
+      (codes.toml, docstrings, skills), statements that look stale against the code – each listed under "Findings" in
+      `docs/concepts/new/documentation-review/` –, fixed through a branch each, sources on the owner's word.
 
 ## Closed todos
 
 Done or dropped, newest first, each with its date and the commit that closed it. What closed before 2026-11-01 is
 taken from the history of this file; an item rewritten on its way is listed once, in its last form.
 
+- [x] TD-35 - **D.9** The gallery: the index, the Christmas bell with its variants from release 20261101-142527,
+      pytree in text (its pictures: TD-82), the examples as cards (#174). [2026-11-01]
+- [x] TD-34 - **D.7** The cost line of the start page from the evals' baseline; a gate run's and a design's cost
+      unmeasured yet, outreach.md's fact sheet left to its revision (#174). [2026-11-01]
+- [x] TD-33 - **D.6** The reader pages: adding a rule, working on edakit, edakit as a meta-harness (#174). [2026-11-01]
+- [x] TD-32 - **D.5** Every chapter condensed in place and reviewed, chapter 13 the history; the third fewer words not
+      reached – the statements won, the owner decides on the rule (TD-81) (#174). [2026-11-01]
+- [x] TD-31 - **D.4** The short tables linked to the catalog, the catalog split into 35 pages, 10.5 one entry per
+      command with its generated synopsis (#174). [2026-11-01]
+- [x] TD-30 - **D.3** The navigation as data by reader, the sources as "Inside edakit", footer and feedback lines
+      (#174). [2026-11-01]
+- [x] TD-29 - **D.2** The entry layer: the start page, the quickstart with its test, How it works, the buzzword rule
+      (#174). [2026-11-01]
 - [x] TD-79 - **merge.py and generated files:** a conflict only in generated output – the catalog page, the handbook's
   generated sections – is resolved and regenerated, a conflict in anybody's text still stops the merge; with it the
   check version reads the merge base, so a branch behind main is no longer taken for wrongly numbered (#168).
