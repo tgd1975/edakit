@@ -211,7 +211,8 @@ jobs:
             git push --force-with-lease="$branch:$(git rev-parse -q --verify "origin/$branch" || true)" origin "HEAD:refs/heads/$branch"
             sha=$(git rev-parse --short HEAD)
             if [ "$branch" = rules/proposals ]; then title="Rule proposals"; else title="Feature proposals"; fi
-            line=$(sed -e "s/{commit}/$sha/g" "$R/pr-line.md" 2> /dev/null || echo "Closes #$N")
+            line=$(sed -e "s/{commit}/$sha/g" -e "s/{pr}/this pull request/g" "$R/pr-line.md" 2> /dev/null || echo "Closes #$N")
+            case "$line" in "- "*) ;; *) line="- $line" ;; esac          # one list item per proposal
             if [ -z "$pr" ]; then
               printf '%s accepted by the triage, one commit each.\n\n%s\n' "$title" "$line" > "$RUNNER_TEMP/pr.md"
               cat "$R/carried.md" >> "$RUNNER_TEMP/pr.md" 2> /dev/null || true
