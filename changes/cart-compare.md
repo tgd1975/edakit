@@ -1,2 +1,0 @@
-patch
-- `edakit cart compare` puts the quotes of every maker of `[cart] makers` side by side – the board total as quoted and in `[cost] currency`, the order total, the lines a maker marked or did not match, the lead time, whether `edakit cart check` passed on that very quote – names the lowest board total and writes `cart/compare.md` of the release; the skill cart can collect the quotes of several makers before one cart is filled (handbook 8.4).
