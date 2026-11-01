@@ -109,8 +109,8 @@ section 3).
 
 ```toml
 [place]                  # hardware/boards/main.toml
-U1 = { x = 29, y = 14.5, rot = 0, side = "top" }
-J1 = { x = 84, y = 12, rot = 90, side = "top" }
+U1 = { x = 29, y = 19.8, rot = 0, side = "top" }
+J1 = { x = 87.4, y = 12, rot = 90, side = "top" }
 
 [near]                   # the layout's own: fixed parts within near_mm of the host
 C2 = "U1"
@@ -309,8 +309,8 @@ down for its pads. Parts without a host stay with the auto-layout.
 
 ```text
 $ edakit pcb place
-  R1 = { x = 62.8, y = 21.9, rot = 90, side = "top", auto = true }   # next to U2: pad 1 1.3 mm from U2.15 (REXT)
-  C1 = { x = 59.9, y = 21.0, rot = 180, side = "top", auto = true }   # decoupling of U2 on 3V3: pad 1 1.5 mm from U2.16 (3V3)
+  R1 = { x = 60.5, y = 13.8, rot = 180, side = "top", auto = true }   # next to U2: pad 1 1.8 mm from U2.15 (REXT)
+  C1 = { x = 64.8, y = 10.7, rot = 0, side = "top", auto = true }   # decoupling of U2 on 3V3: pad 1 1.9 mm from U2.16 (3V3)
 ```
 
 `--write` adds the rows as new lines at the end of `[place]`; every other line and comment stays as it is. A later run
@@ -342,11 +342,11 @@ used: the same files give the same rows, and a second run changes nothing.
 
 ```text
 $ edakit pcb place --rest
-  R1 = { x = 62.8, y = 21.9, rot = 90, side = "top", auto = true }   # next to U2: pad 1 1.3 mm from U2.15 (REXT)
-  R2 = { x = 59.7, y = 18.9, rot = 270, side = "top", auto = true }   # by airline length: adds 0.0 mm on 3V3, LED_OE
-  D1 = { x = 20.9, y = 28.6, rot = 90, side = "top", auto = true }   # by airline length: adds 3.4 mm on +5V, VIN
-  J1 = { x = 19.9, y = 34.2, rot = 180, side = "top", auto = true }   # by airline length: adds 3.4 mm on VIN
-  improvement: no move or swap shortens the airline length (without GND) of 538.7 mm
+  R1 = { x = 60.5, y = 13.8, rot = 180, side = "top", auto = true }   # next to U2: pad 1 1.8 mm from U2.15 (REXT)
+  R2 = { x = 57.2, y = 15.7, rot = 0, side = "top", auto = true }   # by airline length: adds 0.0 mm on 3V3, LED_OE
+  D1 = { x = 23.5, y = 33.0, rot = 0, side = "top", auto = true }   # by airline length: adds 3.3 mm on +5V, VIN
+  J1 = { x = 24.7, y = 36.3, rot = 0, side = "top", auto = true }   # by airline length: adds 3.3 mm on VIN
+  improvement: no move or swap shortens the airline length (without GND) of 550.9 mm
   1 part next to its host, 3 by airline length – --write puts them into [place]
 ```
 
@@ -371,8 +371,8 @@ $ edakit pcb autolayout
    0.2 min: moving
    …
    1.4 min: stable
-  D1 = { x = 75.0, y = 12.0, rot = 0, side = "top", auto = true }
-  R2 = { x = 40.0, y = 30.0, rot = 0, side = "top", auto = true }
+  D1 = { x = 86.4, y = 18.3, rot = 270, side = "top", auto = true }
+  R2 = { x = 57.2, y = 15.7, rot = 0, side = "top", auto = true }
   2 rows written into hardware/boards/main.toml [place] with auto = true
 ```
 

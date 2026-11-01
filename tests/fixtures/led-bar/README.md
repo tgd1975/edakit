@@ -1,6 +1,8 @@
 # Test project: led-bar
 
-The data the tests build their faults into (it never ran through EasyEDA). The documented example is the
+The data the tests build their faults into. It ran through EasyEDA and KiCad once, in the live test of 2026-10-31: its
+placement plan fits the LCSC footprints of its parts, which the tests take as its geometry
+([fixtures/led-bar-footprints](../led-bar-footprints)). The documented example is the
 [Christmas bell](https://github.com/tgd1975/automatic_christmas_bell). Stages L and F need an export of the
 board, which this project does not have: [tests/test_fab_run.py](../../test_fab_run.py) cuts the project down to its
 input stage (J1, D1, C2) and writes that export for the test.
@@ -29,8 +31,8 @@ edakit gate       # P, G, E pass; NOT RELEASED: M-1/M-5 open, stages S/L/F need 
 ```
 
 With EasyEDA Pro (project "led-bar" created by hand once and open, bridge connected): `edakit schematic create --save`, then
-the steps of [handbook chapter 6–8](../../../handbook/README.md). The placement plan is a starting point: run `edakit pcb
-dump` once the parts are in the PCB and adjust positions after `edakit pcb plan`.
+the steps of [handbook chapter 6–8](../../../handbook/README.md). The placement plan holds on the LCSC footprints: `edakit pcb
+dump` once the parts are in the PCB, then `edakit pcb plan`.
 
 The parts entries were copied from a real project where each was checked against its datasheet; the Pico 2 and the
 TLC5916 entries got the generic behaviour models `mcu` and `cc_sink`.

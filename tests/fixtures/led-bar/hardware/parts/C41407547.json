@@ -474,7 +474,7 @@
     "source": "Raspberry Pi Pico 2 Datasheet, release 5 (build 2026-07-03, d4e0f1799616), chapter 1: RP2350A with 4 MB flash, micro-USB, SWD port and power supply – no transmitter"
   },
   "sources": [
-    "pin names from the EasyEDA symbol",
+    "pin names from the Raspberry Pi Pico 2 pinout (RP-008301-DS-1) and datasheet (RP-008299-DS); the EasyEDA symbol names the GP pins by all their functions, numbers TP2–TP6 like pins 2–6 and swaps SWCLK and SWDIO (symbol_differs)",
     "Raspberry Pi Pico 2 datasheet: VSYS 1.8-5.5 V, keep the external load on 3V3(OUT) below 300 mA",
     "GPIO v_max 3.63 V (IOVDD + 10 %), deliberately conservative",
     "core current 30 mA, regulator efficiency 85 %, GPIO output resistance 30 Ohm: assumptions",
@@ -491,5 +491,41 @@
     ],
     "open": []
   },
-  "notes": "Behaviour model 'mcu' with the module's buck-boost regulator (VSYS -> 3V3)."
+  "notes": "Behaviour model 'mcu' with the module's buck-boost regulator (VSYS -> 3V3).",
+  "symbol_differs": {
+    "1": "pin 1 is GP0 – Raspberry Pi Pico 2 pinout (RP-008301-DS-1); the symbol names it GP0_SPI0RX_I2C0SDA_UART0TX",
+    "2": "pin 2 is GP1 – Raspberry Pi Pico 2 pinout (RP-008301-DS-1); the symbol numbers test pad TP2 2 as well",
+    "3": "pin 3 is GND – Raspberry Pi Pico 2 pinout (RP-008301-DS-1); the symbol numbers test pad TP3 3 as well",
+    "4": "pin 4 is GP2 – Raspberry Pi Pico 2 pinout (RP-008301-DS-1); the symbol numbers test pad TP4 4 as well",
+    "5": "pin 5 is GP3 – Raspberry Pi Pico 2 pinout (RP-008301-DS-1); the symbol numbers test pad TP5 5 as well",
+    "6": "pin 6 is GP4 – Raspberry Pi Pico 2 pinout (RP-008301-DS-1); the symbol numbers test pad TP6 6 as well",
+    "7": "pin 7 is GP5 – Raspberry Pi Pico 2 pinout (RP-008301-DS-1); the symbol names it GP5_SPI0CSn_I2C0SCL_UART1RX",
+    "9": "pin 9 is GP6 – Raspberry Pi Pico 2 pinout (RP-008301-DS-1); the symbol names it GP6_SPI0SCK_I2C1SDA",
+    "10": "pin 10 is GP7 – Raspberry Pi Pico 2 pinout (RP-008301-DS-1); the symbol names it GP7_SPI0TX_I2C1SCL",
+    "11": "pin 11 is GP8 – Raspberry Pi Pico 2 pinout (RP-008301-DS-1); the symbol names it GP8_SPI1RX_I2C0SDA_UART1TX",
+    "12": "pin 12 is GP9 – Raspberry Pi Pico 2 pinout (RP-008301-DS-1); the symbol names it GP9_SPI1CSn_I2C0SCL_UART1RX",
+    "14": "pin 14 is GP10 – Raspberry Pi Pico 2 pinout (RP-008301-DS-1); the symbol names it GP10_SPI1SCK_I2C1SDA",
+    "15": "pin 15 is GP11 – Raspberry Pi Pico 2 pinout (RP-008301-DS-1); the symbol names it GP11_SPI1TX_I2C1SCL",
+    "16": "pin 16 is GP12 – Raspberry Pi Pico 2 pinout (RP-008301-DS-1); the symbol names it GP12_SPI1RX_I2C0SDA_UART0TX",
+    "17": "pin 17 is GP13 – Raspberry Pi Pico 2 pinout (RP-008301-DS-1); the symbol names it GP13_SPI1CSn_I2C0SCL_UART0RX",
+    "19": "pin 19 is GP14 – Raspberry Pi Pico 2 pinout (RP-008301-DS-1); the symbol names it GP14_SPI1SCK_I2C1SDA",
+    "20": "pin 20 is GP15 – Raspberry Pi Pico 2 pinout (RP-008301-DS-1); the symbol names it GP15_SPI1TX_I2C1SCL",
+    "21": "pin 21 is GP16 – Raspberry Pi Pico 2 pinout (RP-008301-DS-1); the symbol names it GP16_SPI0RX_UART0RX",
+    "22": "pin 22 is GP17 – Raspberry Pi Pico 2 pinout (RP-008301-DS-1); the symbol names it GP17_SPI0CSn_UART0TX",
+    "24": "pin 24 is GP18 – Raspberry Pi Pico 2 pinout (RP-008301-DS-1); the symbol names it GP18_SPI0SCK_I2C1SDA",
+    "25": "pin 25 is GP19 – Raspberry Pi Pico 2 pinout (RP-008301-DS-1); the symbol names it GP19_SPI0TX_I2C1SCL",
+    "26": "pin 26 is GP20 – Raspberry Pi Pico 2 pinout (RP-008301-DS-1); the symbol names it GP20_I2C0SDA",
+    "27": "pin 27 is GP21 – Raspberry Pi Pico 2 pinout (RP-008301-DS-1); the symbol names it GP21_I2C0SCL",
+    "31": "pin 31 is GP26_ADC0 – Raspberry Pi Pico 2 pinout (RP-008301-DS-1); the symbol names it GP26_ADC0_I2C1SDA",
+    "32": "pin 32 is GP27_ADC1 – Raspberry Pi Pico 2 pinout (RP-008301-DS-1); the symbol names it GP27_ADC1_I2C1SCL",
+    "33": "pin 33 is AGND – Raspberry Pi Pico 2 pinout (RP-008301-DS-1); the symbol names it GND_AGND",
+    "41": "SWCLK is the debug pad on the side of pins 1–20, seen from the top with USB up – Raspberry Pi Pico 2 pinout (RP-008301-DS-1); the symbol swaps SWCLK and SWDIO",
+    "43": "SWDIO is the debug pad on the side of pins 21–40, seen from the top with USB up – Raspberry Pi Pico 2 pinout (RP-008301-DS-1); the symbol swaps SWCLK and SWDIO",
+    "TP1": "test pad TP1 (GND (USB)) – Raspberry Pi Pico 2 datasheet (RP-008299-DS), section 3.1; the symbol names it TP1 only",
+    "TP2": "test pad TP2 (USB DM) – Raspberry Pi Pico 2 datasheet (RP-008299-DS), section 3.1; the symbol has no pin for it and gives its number to pin 2",
+    "TP3": "test pad TP3 (USB DP) – Raspberry Pi Pico 2 datasheet (RP-008299-DS), section 3.1; the symbol has no pin for it and gives its number to pin 3",
+    "TP4": "test pad TP4 (GPIO23/SMPS PS) – Raspberry Pi Pico 2 datasheet (RP-008299-DS), section 3.1; the symbol has no pin for it and gives its number to pin 4",
+    "TP5": "test pad TP5 (GPIO25/LED) – Raspberry Pi Pico 2 datasheet (RP-008299-DS), section 3.1; the symbol has no pin for it and gives its number to pin 5",
+    "TP6": "test pad TP6 (BOOTSEL) – Raspberry Pi Pico 2 datasheet (RP-008299-DS), section 3.1; the symbol has no pin for it and gives its number to pin 6"
+  }
 }
