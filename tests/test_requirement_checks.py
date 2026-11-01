@@ -696,28 +696,45 @@ def test_the_firmware_contract_drifts_with_the_requirements(project, monkeypatch
     assert "drift" in out and "state_sha256" in out
 
 
-# --- no key, no change ------------------------------------------------------------------------------------------------
+# --- the file is required (requirements decision 5, plan step 4.5) ---------------------------------------------------
 
-def test_without_the_key_nothing_changes(project, monkeypatch, capsys):
-    """A project without [project] requirements: the same files in the circuit hash, the same checks, the same
-    protocol – no section 11, no requirement in section 6, the circuit line as before."""
+def test_without_the_key_the_file_is_open(project, monkeypatch, capsys):
+    """A project without [project] requirements: DOCS.file is open, as a required sign-off is – edakit check reports
+    it and passes (the pre-commit hook lets a new project commit), --release and the gate do not release. Otherwise
+    nothing changes: the same files in the circuit hash, no section 11, no requirement in section 6."""
     cfg = project.config()
     parts = sorted((project.root / "hardware" / "parts").glob("*.json"))
     assert gate.state_files(cfg) == [cfg.graph, cfg.sim_config, *parts]
+    rep = engines_check(Design.from_config(cfg), cfg)
+    assert [c for c, _ in rep.pending if c.startswith("DOCS.")] == ["DOCS.file"]
+    assert not [c for c, _ in rep.errors + rep.warnings + rep.drafts if c.startswith("DOCS.")]
+    code, out, _ = check(project, capsys)
+    assert code == 0 and "DOCS.file" in out and "requirements:" not in out
+    assert cli.main(["check", "--release", "--config", str(project.root / "edakit.toml")]) == 1
+    capsys.readouterr()
     text = gate_run(project, monkeypatch)
-    assert "## 11" not in text and "- [ ] R-" not in text and "requirement" not in decision(text)
+    assert "## 11" not in text and "- [ ] R-" not in text
+    assert "NOT RELEASED" in decision(text)
+    assert "- [ ] edakit.toml: [project] requirements names no requirements file" in section(text, 5)
     assert "` (graph, parts database, simulation config) |" in text
-    assert "requirements:" not in capsys.readouterr().out
-    assert section(text, 10).startswith("The rules behind the findings\n\nNo code of the catalog failed or warned.")
+
+
+def test_with_the_key_the_file_check_passes(project, monkeypatch):
+    with_requirements(project)
+    cfg = project.config()
+    rep = engines_check(Design.from_config(cfg), cfg)
+    assert "DOCS.file" not in [c for c, _ in rep.pending]
+    prof = engines.profile(Design.from_config(cfg), cfg)
+    assert "DOCS.file" in gate.executed(prof, cfg)
 
 
 def test_with_the_key_the_requirement_checks_count_as_executed(project, monkeypatch):
     with_requirements(project)
     cfg = project.config()
     prof = engines.profile(Design.from_config(cfg), cfg)
-    assert gate.executed(prof, cfg)[-5:] == list(REQUIREMENT_CHECKS)
+    assert gate.executed(prof, cfg)[-6:] == ["DOCS.file", *REQUIREMENT_CHECKS]
     one = section(gate_run(project, monkeypatch), 1)
     assert "DOCS.evidence" in one
     # every code of stage G the profile has on, DOCS.ref to DOCS.draft among them (a code that only warns counts as
     # passed); DOCS.draft about the draft R-4 is information in the gate, no warning to accept
-    assert re.search(r"\| G Graph \| [^|]+ \| 36 \| 0 \| 0 \| 3 \| 0 \| passed \|", one)
+    assert re.search(r"\| G Graph \| [^|]+ \| 37 \| 0 \| 0 \| 3 \| 0 \| passed \|", one)

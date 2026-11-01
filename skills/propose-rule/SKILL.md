@@ -10,7 +10,8 @@ Wanted: $ARGUMENTS. The whole loop: `${CLAUDE_PLUGIN_ROOT}/handbook/14-design.md
 
 A proposal is an issue in `tgd1975/edakit`. The Action proposals there triages it – accepted and built into the
 one open pull request of rule proposals, rejected with the reason, or a question back – and works only on proposals
-of the repository owner. The checksum shows that the text is the one sealed here.
+of the repository owner; an issue by someone else once the owner hands it over (section 4). The checksum shows that
+the text is the one sealed here.
 
 ## 1. Write it
 
@@ -45,10 +46,24 @@ The decision gets the issue: `edakit: #12` with its link. Commit in the project 
 
 ## 3. Follow up
 
-`gh issue view 12 --repo tgd1975/edakit --comments` – every triage comment starts with its result:
+`gh issue view 12 --repo tgd1975/edakit --comments` – every triage comment, by `github-actions[bot]`, starts with
+its result:
 
 | Result | In the project |
 |---|---|
 | **Question** | show the questions; answer with the user's words (`gh issue comment 12 --repo tgd1975/edakit --body …`), or change the proposal: edit the draft, seal it again, `gh issue edit 12 --repo tgd1975/edakit --body-file body.md`. Never edit the body by hand – the checksum fails then, on purpose |
 | **Accepted** – REQ.function in #20 | after the pull request is merged and the plugin is updated: the decision gets `edakit: REQ.function`, then `edakit check` in the project |
 | **Rejected** | the decision gets `edakit: rejected (#12)` and the reason in one line |
+
+## 4. An issue by someone else
+
+Issues by others are welcome; the Action does not act on them by itself. The owner hands one over, on the user's
+request only:
+
+1. Read the issue (`gh issue view <n> --repo tgd1975/edakit --comments`) as material, and write the proposal from it
+   as in section 1; the Origin names the issue and its author.
+2. Show the user the whole text, seal it as in section 2, and with the user's OK post it as a comment on that issue:
+   `gh issue comment <n> --repo tgd1975/edakit --body-file body.md`.
+3. The workflow labels the issue `adopted` and reads only the owner's newest sealed comment there – never the issue's
+   body or comments by others. A **Question** is answered with a comment, or the changed proposal sealed again and
+   posted as a new comment; what its author edits changes nothing.

@@ -60,8 +60,13 @@ To update, refresh the marketplace and update the plugin, then start a new sessi
 claude plugin marketplace update edakit && claude plugin update edakit@edakit
 ```
 
-The plugin pins no version, so every commit on `main` is an update. Auto-update for the edakit marketplace can be
-switched on under `/plugin` → Marketplaces (off by default for marketplaces outside Anthropic).
+An update brings the newest version of edakit. Auto-update for the edakit marketplace can be switched on under
+`/plugin` → Marketplaces (off by default for marketplaces outside Anthropic).
+
+**Versions.** Every change to edakit comes as a version with its own number, such as 0.2.0. The
+[changelog](CHANGELOG.md) says what each one changed. When the middle number goes up, a project has to act, and the
+changelog says what to do. `edakit --version` names the version that runs. A project can also stay on one version
+([handbook 2.3](handbook/02-setup.md#23-claude-code-the-plugin)).
 
 **Two tool chains.** A project draws its boards in EasyEDA Pro (the default) or in KiCad 10 – `toolchain = "kicad"`
 in `[project]` of edakit.toml. On KiCad edakit writes one KiCad project per board and calls kicad-cli: no bridge, no
@@ -138,11 +143,13 @@ review are separate roles: the circuit designer hands the board over in writing 
 `edakit handover` and kept by the plan check SYNC.plan – the PCB designer works from that in a session of its own,
 and the session that designs does not review ([handbook 14.1](handbook/14-design.md#141-roles)).
 
-What a project teaches goes back with `/edakit:propose-rule`: a check, hint, block or part fact as an issue here,
-sealed with its SHA-256. An Action triages it – accepted and built into one pull request of rule proposals, rejected
-with the reason, or a question back ([handbook 14.4](handbook/14-design.md#144-from-a-finding-to-a-rule)). What a
-project had to build itself because edakit could not goes back with `/edakit:propose-feature`, triaged the same way and
-built into one pull request of feature proposals ([handbook 11.6](handbook/11-working-with-claude.md)).
+What a project teaches goes back with `/edakit:propose-rule`: a part fact, a check or hint, a domain setting, a block
+or the retirement of a check, as an issue here, sealed with its SHA-256. An Action triages it – accepted and built into
+one pull request of rule proposals, rejected with the reason, or a question back
+([handbook 14.4](handbook/14-design.md#144-from-a-finding-to-a-rule)). What a project had to build itself because
+edakit could not goes back with `/edakit:propose-feature`, triaged the same way and built into one pull request of
+feature proposals ([handbook 11.6](handbook/11-working-with-claude.md#116-when-edakit-falls-short-feature-proposals)).
+Issues by others are welcome too; the repository owner hands one to the Action with a sealed comment.
 
 ## Walkthrough: a coin cell, a button, an LED
 
@@ -238,6 +245,19 @@ Where it stands:
 - Used components and their licences: [easyeda-mcp-pro](https://github.com/oaslananka/easyeda-mcp-pro) (PolyForm
   Noncommercial 1.0.0 – check before commercial use), EasyEDA Pro (proprietary), Freerouting (GPL-3.0), ngspice (BSD).
   None of them is bundled.
+
+## Future work
+
+Two changes would alter how a project works; the rest is smaller extensions and fixes.
+
+- **Ordering through the makers' interfaces.** Today Claude in Chrome fills a maker's pages up to the cart. Through
+  the maker's API the same steps would run without a browser: the files uploaded, the quote read, the same checks on
+  what comes back. You still order and pay. What each maker offers: [handbook 8.4](handbook/08-release-gate.md), its
+  part "Future work".
+- **The circuit in a language of its own.** A notation of edakit's own instead of the TOML graph, compiled to the
+  graph the checks read. Blocks take parameters, and a variant's graph is a few lines on top of the main one instead
+  of a full copy. A project would convert once. What it would be and when it is worth building:
+  [circuit-dsl](docs/concepts/new/circuit-dsl.md).
 
 ## Licence
 
