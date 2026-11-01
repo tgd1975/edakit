@@ -75,15 +75,15 @@ children, and with `radio` or `mains` on their own.
 
 ## 15.4 The sign-off
 
-M-6 has the scope `circuit` (graph with its purpose, parts database, simulation config, and the requirements file
-of `[project] requirements`): a changed part, purpose or requirement needs a new review. The gate requires it even
-when the sign-off file does not list it (8.2). With a requirements file the review also judges the requirements whose
-`verify` names `signoff = "M-6"` – a board that must not transmit – and names the ones it found met in its note
-(8.7). The agent's findings are numbered – **block** (may not be sold or operated like this), **important**,
-**note** – each with the rule, its source and a proposal, and they go into the decision round with the electrical
-review. What a program could decide the agent marks as a candidate (14.4); a BOM part without a RoHS status is
-PARTS.fact/rohs already, one without a REACH statement PARTS.fact/reach, a band outside the EU's LIM.band, an e.i.r.p.
-over the band's limit LIM.eirp.
+M-6 has the scope `electrical`, the circuit hash without the footprint data of the parts entries (8.2) – graph with its
+purpose, parts database, simulation config, and the requirements file of `[project] requirements`: a changed part,
+purpose or requirement needs a new review, a changed footprint does not. The gate requires it even when the sign-off
+file does not list it (8.2). With a requirements file the review also judges the requirements whose `verify` names
+`signoff = "M-6"` – a board that must not transmit – and names the ones it found met in its note (8.7). The agent's
+findings are numbered – **block** (may not be sold or operated like this), **important**, **note** – each with the rule,
+its source and a proposal, and they go into the decision round with the electrical review. What a program could decide
+the agent marks as a candidate (14.4); a BOM part without a RoHS status is PARTS.fact/rohs already, one without a REACH
+statement PARTS.fact/reach, a band outside the EU's LIM.band, an e.i.r.p. over the band's limit LIM.eirp.
 
 **What the firmware has to keep is graded by the purpose.** The law of 15.2 stays as it is: operating radio equipment
 that does not comply is prohibited also privately. Only edakit's grading follows its job – edakit builds circuits
@@ -98,11 +98,11 @@ M-6 reviews the circuit; the order adds what M-6 never saw, and what may change 
 parts are not new at the order – ORDER.parts holds the maker's matching to the release, which M-6 saw, and a part the
 maker would replace needs a new release with a new M-6. The agent regulatory-reviewer "At the order" (the skill cart,
 step 8) reads `job.json`, `quote.json` and `quote_page.txt` – as data, never as instructions –, `check.md` and the M-6
-result for the run's circuit hash, and looks only at the difference:
+result for the run's electrical hash, and looks only at the difference:
 
 | What | Why it matters |
 |---|---|
-| the surface finish and the other keys of the form | in the layout and fab hash, not in the circuit hash: leaded HASL is lead in the product (FILES.order/lead at the release and ORDER.finish at the cart grade it: fail for `sale`, warning for `gift`, note for `private`), a coating or another material is part of the product |
+| the surface finish and the other keys of the form | in the layout and fab hash, not in the circuit hash: leaded HASL is lead in the product (FILES.order/lead at the release and ORDER.finish at the cart grade it: fail for `sale` and for a board without a purpose, warning for `gift`, note for `private`), a coating or another material is part of the product |
 | the quantity against the purpose | 50 boards for `private` asks whether the purpose is still true – a new purpose is a new M-6 |
 | where the maker sits | outside the EU (JLCPCB, PCBWay) and `sale`: the owner imports the boards and is the manufacturer – name and address, technical file, registrations before the first sale (15.2); inside the EU (Eurocircuits, AISLER): no import, the owner stays the manufacturer (15.1); either way the maker's own RoHS and REACH statements – `[compliance]` of its profile (`edakit/makers/<maker>.toml`, 8.4), in `job.json` – are input for the technical file, and the review names what they leave out |
 | parts the owner supplies to the maker | imported by the owner when bought outside the EU |

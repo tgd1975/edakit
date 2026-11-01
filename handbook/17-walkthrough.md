@@ -470,7 +470,7 @@ $ edakit gate
 [ 0.0 min] step 2/2: E simulation
 
 NOT RELEASED
-  - M-5 signed for fab f958da9ad4f8… – checked by stage F (section 6)
+  - M-5 signed for fab dbbe8aa2baf1… – checked by stage F (section 6)
   - stages not run: S (Schematic), L (Board), F (Manufacturing)
 requirements: 1 passed, 1 open after the export (section 11 of the protocol)
 ```
@@ -647,7 +647,7 @@ requirements: 1 passed, 1 open after the export (section 11 of the protocol)
 ```
 
 The offline `edakit gate` cannot compute the fab hash without stage F: from now on it says "M-5 signed for fab
-f958da9ad4f8… – checked by stage F" instead of naming M-5 open (8.2).
+dbbe8aa2baf1… – checked by stage F" instead of naming M-5 open (8.2).
 
 The run's folder holds what goes to JLCPCB – `fab/main/gerber_main.zip`, `bom_main.csv`, `cpl_main.csv`, the form's
 fields in `order.md` – and `fab/polarity_main.png` for M-2. A gate run is build output (`[release] archive`, default
@@ -657,8 +657,8 @@ lives inside edakit's repository and does not.
 
 The order goes up to JLCPCB's cart, and no further – nothing in edakit orders or pays (8.4):
 
-1. `edakit cart prepare` takes the current release and writes the job: the upload files with their SHA-256, every
-   field of the form from `[order]`, the BOM JLCPCB will match. It stops unless M-6 is signed for the run's circuit
+1. `edakit cart prepare` takes the current release and writes the job: the upload files with their SHA-256, every field
+   of the form from `[order]`, the BOM JLCPCB will match. It stops unless M-6 is signed for the run's electrical hash
    and `[cart]` names the country and the shipping method – JLCPCB as the only maker needs nothing else there.
 2. The skill cart (`/edakit:cart`) fills JLCPCB's pages in your browser with Claude in Chrome, reads every field back
    and writes what the page showed. `edakit cart check` holds that to the job and the release (ORDER.form to
@@ -668,9 +668,10 @@ The order goes up to JLCPCB's cart, and no further – nothing in edakit orders 
    where the maker sits –, and ORDER.review waits for its `Order: OK`. It is support, not legal advice: it claims no
    correctness, and nothing in it is legally guaranteed.
 4. Then the skill presses the cart button and writes the order record `hardware/orders/…`. Ordering and paying are
-   yours, after M-2 in JLCPCB's assembly preview – the list in section 6 of the protocol: D1's cathode. The five
-   holders come from `cart_lcsc.csv` at LCSC; once paid, `edakit cart actual` puts the real prices beside the estimate
-   and into the project's fee table.
+   yours, after M-2 in JLCPCB's assembly preview – the list in section 6 of the protocol: D1's cathode. Its "Confirm
+   Parts Placement" puts the order into production 72 hours after it is placed unless "Do not confirm automatically" is
+   ticked – your tick, at the form (8.4). The five holders come from `cart_lcsc.csv` at LCSC; once paid, `edakit cart
+   actual` puts the real prices beside the estimate and into the project's fee table.
 
 When the boards arrive, BT1 is soldered by hand (`hand_assembly.md`), and M-4 works through the acceptance list of the
 protocol:

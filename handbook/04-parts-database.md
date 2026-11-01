@@ -12,7 +12,7 @@ Examples: [the Christmas bell's parts](https://github.com/tgd1975/automatic_chri
 
 | Field | Content |
 |---|---|
-| `lcsc`, `mpn`, `manufacturer` | identification; `lcsc` equals the file name, `mpn` is what a component names in `part` – STRUCT.identity compares them, with the `kind` and the value parameters; with a maker that matches by MPN (Eurocircuits, `[cart]`) `mpn` and `manufacturer` are required for every assembled part (PARTS.fact/mpn) and go into `bom_<board>_mpn.csv` |
+| `lcsc`, `mpn`, `manufacturer` | identification; `lcsc` equals the file name, `mpn` is what a component names in `part` – STRUCT.identity compares them, with the `kind` and the value parameters; with a maker that matches by MPN (`bom.match = "mpn"` in its profile: PCBWay, Eurocircuits, AISLER; `[cart]`) `mpn` and `manufacturer` are required for every assembled part (PARTS.fact/mpn) and go into `bom_<board>_mpn.csv`, for AISLER into the components of the ODB++ (16.5) |
 | `order` | where a part bought separately is ordered, supplier → order code: `{"rs": "223-0562", "farnell": "…"}`; a value may be `{code, moq, step}` with the supplier's minimum and pack size, `{"lcsc": {"moq": 20, "step": 20}}` (the LCSC code defaults to `lcsc`). The first supplier is the default of `edakit order`; PARTS.supplier warns about a `bom: false` part with neither an LCSC number nor `order` – a `C99…` library number counts as none, LCSC does not sell it |
 | `kind` | `resistor`, `capacitor`, `crystal`, `inductor`, `fuse`, `diode`, `led`, `led_rgb`, `npn`, `pnp`, `pmos`, `nmos`, `njfet`, `pjfet`, `switch`, `dip_switch`, `button`, `potentiometer`, `battery_holder`, `buzzer`, `relay`, `connector`, `ic`, `module`, `motor`, `solenoid`, `speaker`, `heater`, `optocoupler`, `esd_array`, `led_strip` |
 | `package`, `footprint` | the footprint name must equal the EasyEDA footprint (SYNC.footprint compares it with the PCB) |
@@ -355,16 +355,18 @@ At LCSC and JLCPCB:
   BOM.
 - **Stock and price:** `https://wmsc.lcsc.com/ftps/wm/product/detail?productCode=Cxxxx` (stock, price breaks,
   parameters). LCSC's own search blocks automated requests (HTTP 403); jlcsearch is too thin for single parts.
-- **JLCPCB's assembly stock differs from LCSC's.** `edakit stock` asks JLCPCB's public catalogue
-  (`selectSmtComponentList`) and part page (`jlcpcb.com/partdetail/<C…>`) about every assembled part and writes a dated
-  snapshot, `hardware/stock.json`: listed, Basic/Extended/preferred, stock, MPN, PCBA type ("Economic and Standard" or
-  "Standard Only"), MSL, X-ray, machine or hand soldering, attrition (`lossNumber`), minimum (`leastPatchNumber`) and
-  price breaks. Check **PARTS.stock** reads it on every `edakit check`, offline: a part not listed (pre-order only),
-  short of stock for `quantity` boards – under Standard PCBA plus the attrition, max(n + attrition, minimum) –, under
-  another MPN than its entry, or "Standard Only" on an Economic order (`[release] assembly.pcba`) fails; MSL ≥ 5 (baked
-  for a fee and two days), stock within `stock_margin_pct` and another class than `jlc_class` warn; a snapshot older
-  than `stock_max_age_days` is pending. `edakit stock --lcsc C…` prints the same for candidates before they are in the
-  graph. At the export PARTS.stock asks the catalogue again.
+- **JLCPCB's assembly stock differs from LCSC's.** Where JLCPCB is among `[cart] makers`, `edakit stock` asks JLCPCB's
+  public catalogue (`selectSmtComponentList`) and part page (`jlcpcb.com/partdetail/<C…>`) about every assembled part
+  and writes a dated snapshot, `hardware/stock.json`: listed, Basic/Extended/preferred, stock, MPN, PCBA type ("Economic
+  and Standard" or "Standard Only"), MSL, X-ray, machine or hand soldering, attrition (`lossNumber`), minimum
+  (`leastPatchNumber`) and price breaks. Check **PARTS.stock** reads it on every `edakit check`, offline: a part not
+  listed (pre-order only), short of stock for `quantity` boards – under Standard PCBA plus the attrition, max(n +
+  attrition, minimum) –, under another MPN than its entry, or "Standard Only" on an Economic order (`[release]
+  assembly.pcba`) fails for JLCPCB as the planned maker and warns as another one; MSL ≥ 5 (baked for a fee and two
+  days), stock within `stock_margin_pct` and another class than `jlc_class` warn; a snapshot older than
+  `stock_max_age_days` is pending. `edakit stock --lcsc C…` prints the same for candidates before they are in the graph.
+  At the export PARTS.stock asks the catalogue again. Without JLCPCB among the makers `edakit stock` stops (exit 1),
+  PARTS.stock is a note, and ORDER.parts holds the maker's own matching to the release at the cart (8.4).
 - Report stock as a number with a date. "Few" is not information.
 
 ## 4.3 Signing off a part

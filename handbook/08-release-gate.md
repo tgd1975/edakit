@@ -172,7 +172,7 @@ project the layout review measured the LED side by hand at every round; the row 
 Plus FILES.sheet: a **polarity sheet** per board – every polarised part drawn from the Gerber data with copper,
 silkscreen, pad numbers, pin roles and nets, bottom parts mirrored as seen from below. A tile shows the part's pads and
 the signs GEO.mark pairs with the part, 3 mm around, also a "+" beyond the footprint. It is what the second check
-compares with the datasheet drawings, and what you compare with JLCPCB's assembly preview.
+compares with the datasheet drawings, and what you compare with the maker's assembly preview.
 
 **Seen red.** No EasyEDA run is needed to test stages L and F. `tests/test_fab_run.py` cuts the example down to its
 input stage (J1, D1, C2 on a 30 × 20 mm board) and writes the export for it: the files `edakit fab` collects, the
@@ -208,7 +208,8 @@ advisory = true             # the stand is adapted after delivery anyway (D-37)
   and F.
 - **What it gets:** its `cmd` runs in the project folder, with the gate's environment and `EDAKIT_RUN`, the absolute
   path of this run's folder `<reports>/<run>/` – its `sim.json` and `graph_checks.json`, after F `fab/<board>/` with
-  `gerber/`, `gerber_<board>.zip`, `bom_<board>.csv` and `cpl_<board>.csv`. `python` or `python3` as the first word
+  `gerber/`, `gerber_<board>.zip`, `bom_<board>.csv` and `cpl_<board>.csv`, and the files of the other makers of
+  `[cart] makers`. `python` or `python3` as the first word
   of a `[scripts]` check's `cmd` is edakit's own interpreter, so the check can import edakit; a `[[release.stages]]`
   runs as written (8.6). It may take 900 s; a `[[release.stages]]` sets its own with `timeout`.
 - **Its result:** stdout and stderr go to `stage_<id>.txt` in the run's folder. The last stdout line may be a JSON
@@ -255,9 +256,11 @@ Every run records three hashes in the protocol header, and a run with stage F a 
   of mask and silkscreen, the finish and the order-number mark, and the other keys that change it where they differ
   from edakit's default (10.2) –, which stage F writes to `fab/<board>/order.json`; with the method
   (`fab_method`, "raster 0.02 mm v1"), so that a new method shows. The manifest has it with the hash per board and
-  file (`fab_layers`). The remark and the tab zones stay out: the remark is free text to JLCPCB, and the tab zones
+  file (`fab_layers`). The remark and the tab zones stay out: the remark is free text to the maker, and the tab zones
   reach it only through the remark – neither changes the board as made. A board without `[order]` has no order
-  settings in the hash and keeps the fab hash it had.
+  settings in the hash and keeps the fab hash it had. The files only some makers take – `bom_<board>_mpn.csv`,
+  `cpl_<board>_<maker>.csv`, `odb_<board>.zip` – stay out too: they are written from the hashed files and the parts
+  entries, SYNC.cpl and SYNC.odb hold them to those, and the manifest has their SHA-256.
 
 The raw files differ on every export (a date comment, other aperture numbers, another order of objects), the layout
 hash changes with a comment in a board file and does not change when edakit's code, a router option or EasyEDA's pour
@@ -341,7 +344,7 @@ of section 6. A sign-off that is not signed, not in the file, or signed without 
 | Phase | When | Blocks the release |
 |---|---|---|
 | `export` | before the files are released (M-1 second datasheet check, M-6 regulatory review, M-5 layout review) | yes |
-| `order` | after uploading, before paying (M-2: JLCPCB's assembly preview, BOM tool, price) | no |
+| `order` | after uploading, before paying (M-2: the maker's assembly preview, its part matching, price) | no |
 | `acceptance` | after delivery (M-4: acceptance test of every board) | no |
 
 Scope `fab` suits what is checked on the manufacturing files: the layout review M-5 and the manufacturer's preview
@@ -448,8 +451,9 @@ acceptance)": one line per finding, with the check's words. It changes neither t
 the simulation's information is in section 7, that of the other stages in section 8.
 
 Result folder `<reports>/<YYYYMMDD-hhmmss>/`: `protocol.md`, `graph_checks.json`, `sim.json`, `schematic_<board>.json`,
-`stage_<id>.txt` per project check (8.1), `fab/<board>/` (Gerber ZIP, BOM, CPL, raw data, with `[order]` or `[cart]`
-the order form `order.md`, with `[order]` the order settings `order.json`), `fab/polarity_<board>.png`,
+`stage_<id>.txt` per project check (8.1), `fab/<board>/` (Gerber ZIP, BOM, CPL, raw data, the files of the other makers
+of `[cart] makers` – `bom_<board>_mpn.csv`, `cpl_<board>_<maker>.csv`, `odb_<board>.zip` –, with `[order]` or
+`[cart]` the order form `order.md`, with `[order]` the order settings `order.json`), `fab/polarity_<board>.png`,
 `pictures/` (section 12: `schematic_<board>`, `board_<board>_top`, `_bottom`, `_layers` and `_<layer>`, each `.svg` and `.png`),
 `fab/manifest.json` and `makers.json` – per maker of `[cart] makers` its role and the findings of its checks, which
 `edakit cart prepare` reads (8.4).
@@ -538,12 +542,16 @@ and esp32, twelve order files – as a draft with it.
 ## 8.4 Ordering at the manufacturer (up to the cart; the owner orders and pays)
 
 **The cost before the quote.** `edakit cost` estimates the order for `quantity` boards from the graph, the parts
-entries, the board files, the stock snapshot (4.2) and a dated fee table (`edakit/fees/jlcpcb.json`: JLCPCB's
-assembly fees with the page and the day they were read, bake, edge rails and PCB prices from real carts):
+entries, the board files, the stock snapshot (4.2) and a dated fee table (`edakit/fees/jlcpcb.json`: JLCPCB's assembly
+fees with the page and the day they were read, bake, edge rails and PCB prices from real carts). JLCPCB's profile is the
+only one that names a fee table: with PCBWay, Eurocircuits or AISLER as `[cart] maker`, `edakit cost` stops (exit 1, in
+the gate a note), and the job of an order at one of them carries no estimate. The estimate holds:
 
 - the class per board – `[release] assembly.pcba` or its sides, raised to Standard by parts on a second side
   (`side` in `[place]`; a part not placed sits on the first side of `assembly.sides`) and by "Standard Only" parts;
-- the PCB at its size (under Standard with 5 mm edge rails on the long edges) or the quoted `[cost] pcb_price`;
+- the PCB at its size (under Standard with 5 mm edge rails on the long edges) – the fee table's price for that size,
+  between two of its sizes by area, below the smallest at most that size's price (live run 5.7: 10.70 $ for a 60 × 28 mm
+  board that JLCPCB quoted at 5.10 $) –, or the quoted `[cost] pcb_price`, or the PCB line of a checked quote (below);
 - the fees line by line: Economic setup and stencil per order and 3.07 $ per Extended type; Standard setup and
   stencil per assembled side and 1.53 $ per type, Basic included, plus packing; SMT joints; joints JLCPCB solders by
   hand plus the labour per order; through-hole reflow joints; X-ray per placed part; the bake for MSL ≥ 5; a Standard
@@ -582,44 +590,47 @@ the maker before it builds. `[order]` of edakit.toml sets a key for every board,
 board; the later wins. Which maker builds the board is `[cart]` (10.1): JLCPCB without it. The maker's profile
 (`edakit/makers/<maker>.toml`) only translates – a value into the form's word – and holds the form's limits; `edakit
 cart fields` prints every field with the maker's word and where its value comes from. The form fields that depend on the
-board are among the keys: `finish`, `mark` (`"default"` – JLCPCB prints its number anywhere, `"specify"` – at the
-placeholder, `"remove"`, edakit's default on a board with `[looks]`), `remark`, the tab zones (`tab_zones`, stretches of
-the outline in plan mm, with `tab_copper_mm`) and the colours: `mask` (JLCPCB's "PCB Color": green, purple, red, yellow,
-blue, white or black) and `silkscreen`. The thickness is the board file's `thickness_mm`, the value the mechanical model
-takes (7.4). Without these keys edakit's defaults hold: 1.6 mm, green, white print. JLCPCB prints white on every mask
-but white, and black on white – `silkscreen` states the colour the artwork is drawn for, and FILES.order fails it on a
-mask that gets the other one, as it fails a thickness the form does not offer (FR-4, 2 layers: 0.4, 0.6, 0.8, 1.0, 1.2,
-1.6 or 2.0 mm). Every colour other than green takes two more days at JLCPCB (its quote form, read 2026-10-28); `edakit
-cost` prices the fee table's board – green, 1.6 mm, lead-free HASL – and names the settings of `[order]` that differ
-from it as not in the price. The board file is in the layout hash, so a changed remark, colour or thickness voids the
-sign-offs of scope `layout`; the settings that change the board as made – thickness, colours, finish and mark, and
-copper weight, vias, material and the other keys marked so in 10.2 where they differ from edakit's default – are in the
-fab hash as well (8.2), so the layout review M-5 of scope `fab` lapses with them too, while a new remark or tab zone
-leaves it standing. Every gate run then writes `fab/<board>/order.md` next to the upload files – every field of the
-planned maker's form in the order of its form, with the maker's word and where it comes from (edakit, `[looks]`,
-edakit.toml, board file, the Gerber files, `[project] quantity`, `[release] assembly`, `[tooling]`, the stock snapshot,
-`[cart]`): layers, size, quantity, thickness, the colours of mask and silkscreen, finish, the mark at the placeholder,
-the remark; PCBA type and side, tooling holes "Added by Customer" when the board has `[tooling]`, bake "Yes" when the
-stock snapshot gives a BOM part MSL ≥ 5; the upload files; the tab zones with their nearest copper and every outline
-stretch with no copper within `tab_copper_mm` (Gerber coordinates, what the maker sees); the parts bought separately
-with their supplier (`edakit order`) – and, with `[order]`, `fab/<board>/order.json` with the settings the fab hash
-takes; FILES.order checks the settings against the files, for every maker of `[cart] makers`. Fill the form from
-order.md of the released run – with M-5 of scope `fab` its settings are the ones the review signed – and write tab zones
-only on stretches it lists as free.
+board are among the keys: `finish`, `mark` (`"default"` – the maker's own way: PCBWay prints its number where it likes,
+JLCPCB and Eurocircuits print none; `"specify"` – at the maker's placeholder, PCBWay's; `"remove"`, edakit's default on
+a board with `[looks]`), `remark`, the tab zones (`tab_zones`, stretches of the outline in plan mm, with
+`tab_copper_mm`) and the colours: `mask` (JLCPCB's "PCB Color": green, purple, red, yellow, blue, white or black) and
+`silkscreen`. The thickness is the board file's `thickness_mm`, the value the mechanical model takes (7.4). Without
+these keys edakit's defaults hold: 1.6 mm, green, white print. JLCPCB prints white on every mask but white, and black on
+white – `silkscreen` states the colour the artwork is drawn for, and FILES.order fails it on a mask that gets the other
+one, as it fails a thickness the form does not offer (FR-4, 2 layers: 0.4, 0.6, 0.8, 1.0, 1.2, 1.6 or 2.0 mm). Every
+colour other than green takes two more days at JLCPCB (its quote form, read 2026-10-28); `edakit cost` prices the fee
+table's board – green, 1.6 mm, lead-free HASL – and names the settings of `[order]` that differ from it as not in the
+price. The board file is in the layout hash, so a changed remark, colour or thickness voids the sign-offs of scope
+`layout`; the settings that change the board as made – thickness, colours, finish and mark, and copper weight, vias,
+material and the other keys marked so in 10.2 where they differ from edakit's default – are in the fab hash as well
+(8.2), so the layout review M-5 of scope `fab` lapses with them too, while a new remark or tab zone leaves it standing.
+Every gate run then writes `fab/<board>/order.md` next to the upload files – every field of the planned maker's form in
+the order of its form, with the maker's word and where it comes from (edakit, `[looks]`, edakit.toml, board file, the
+Gerber files, `[project] quantity`, `[release] assembly`, `[tooling]`, the stock snapshot, `[cart]`): layers, size,
+quantity, thickness, the colours of mask and silkscreen, finish, the mark, the remark; PCBA type and side, tooling holes
+"Added by Customer" when the board has `[tooling]`, bake "Yes" when the stock snapshot gives a BOM part MSL ≥ 5; the
+upload files; the tab zones with their nearest copper and every outline stretch with no copper within `tab_copper_mm`
+(Gerber coordinates, what the maker sees); the parts bought separately with their supplier (`edakit order`) – and, with
+`[order]`, `fab/<board>/order.json` with the settings the fab hash takes; FILES.order checks the settings against the
+files, for every maker of `[cart] makers`. Fill the form from order.md of the released run – with M-5 of scope `fab` its
+settings are the ones the review signed – and write tab zones only on stretches it lists as free.
 
 **Up to the cart: `edakit cart` and the skill cart.** The form is filled from the release, not typed: edakit prepares
-the order and checks what comes back; Claude fills the maker's pages in the owner's browser (Claude in Chrome) and
-stops at the maker's cart button. Nothing orders or pays – no command, skill or API path does: the order, the payment
-and M-2 at the maker are the owner's (the user's decision of 2026-10-30).
+the order and checks what comes back; Claude fills the maker's pages in the owner's browser (Claude in Chrome), puts the
+board into the cart with the maker's cart button and stops there. Nothing orders or pays – no command, skill or API path
+does: the order, the payment and M-2 at the maker are the owner's (the user's decision of 2026-10-30).
 
-**State 2026-10-31:** built and tested offline on recorded data; nothing of it has run against a maker's page or
-EasyEDA yet. Ordering step 0 – each maker's form recorded in its profile –, the ODB++ export from EasyEDA and the first
-live runs of the skill cart are open (`TODO.md`). On the KiCad tool chain the ODB++ comes from `kicad-cli pcb export
-odb` (16.6).
+**State 2026-11-01:** ordering step 0 recorded the four forms in the owner's accounts (`recorded` in each profile), and
+the skill cart ran live at every maker up to the cart, nothing ordered – on a copy of the example blinker-555 released
+on the KiCad tool chain (`tests/fixtures/makers/LIVE.md`: 5.7 JLCPCB, 5.12 PCBWay, 5.8 Eurocircuits, 5.10 AISLER up to
+its price). No order has gone through it yet: step 5 below, `edakit cart actual`, has run on recorded data only.
+EasyEDA's own ODB++ export went through ordering step 0b on a probe board
+(`tests/fixtures/makers/aisler/step0b_2026-11-01.md`); on the KiCad tool chain the ODB++ comes from `kicad-cli pcb
+export odb` (16.6).
 
 1. `edakit cart prepare [--board B] [--maker M]` takes the current release and stops unless the maker's upload files
    are the release's (`release verify`, the same function), the circuit and layout hash are the run's, the order
-   settings are the run's `order.json`, M-6 is signed for the run's circuit hash, the run checked the maker (its
+   settings are the run's `order.json`, M-6 is signed for the run's electrical hash, the run checked the maker (its
    `makers.json`) and found nothing for it when it is not the planned maker, and `[cart] ship_to` and `shipping`
    name the country and the method. It writes `<reports>/<run>/fab/<board>/cart/<maker>/job.json`: run, hashes,
    purpose, board, maker (start page, cart button, the buttons never to touch, seat, currency, its own RoHS and
@@ -635,8 +646,9 @@ odb` (16.6).
 3. `edakit cart check` holds that to the job, the release and the page text: the codes ORDER.form to ORDER.review of the
    engine ORDER, listed at the end of this section (`edakit explain ORDER.form`).
 
-   Exit 0: everything passed; 2: a finding – nothing goes into the cart; 3: ORDER.form to ORDER.finish passed and the
-   review of the order is next. `check.md` and `check.json` in the order's folder hold the result.
+   Exit 0: everything passed, warnings and notes included – `check.md` lists them; 2: a check failed – nothing goes
+   into the cart; 3: ORDER.form to ORDER.finish passed and the review of the order is next. `check.md` and
+   `check.json` in the order's folder hold the result.
 4. Only then the skill presses the maker's cart button, reads the cart line back into `cart.json` and runs
    `edakit cart check --cart`: board and quantity of the job, the quote's price within the tolerance. It writes the
    order record `hardware/orders/<date>-<board>-<maker>.json` – versioned, outside every hash: run, hashes, board,
@@ -645,54 +657,63 @@ odb` (16.6).
    file (15.2).
 5. After the owner has paid: the skill reads the order page – or a saved order page or invoice, `--from FILE` (HTML or
    PDF; edakit reads its text itself) – into `actual.json`, and `edakit cart actual` checks ORDER.read on it and writes
-   `actual.md`: estimate, quote and actual line by line, per order shipping, VAT and coupon against `[cost]`. What
-   maps one to one goes into the project's fee table at once (the owner's decision of 2026-10-30) – `[cost] fees`,
-   else `hardware/fees/<maker>.json`, created by the first order: a fee per order or side its value, a fee per unit
-   whose count on the order is edakit's its value per unit in the tier the count falls in, the PCB price for the
-   size, quantity and board settings; a count that differs is named and nothing written; values before coupons,
-   each with the order number as its source and the order's date. `edakit cost` takes per fee the value with the
-   newest date, from the project's table or the shipped one; values from the owner's orders reach the shipped table
-   through `edakit proposal`. The order record gets the order number and the three totals, and
-   `edakit release current` shows them beside the release.
+   `actual.md`: estimate, quote and actual line by line, per order shipping, VAT and coupon against `[cost]`. What maps
+   one to one goes into the project's fee table at once (the owner's decision of 2026-10-30) – `[cost] fees` for the
+   planned maker, else `hardware/fees/<maker>.json`, created by the first order: a fee per order or side its value, a
+   fee per unit whose count on the order is edakit's its value per unit in the tier the count falls in, the PCB price
+   for the board's size where quantity and board settings are the ones the table prices (5 boards, 1.6 mm, green, white
+   print, lead-free HASL); a count that differs is named and nothing written; values before coupons, each with the order
+   number as its source and the order's date. A maker without a fee table – PCBWay, Eurocircuits, AISLER – gets the
+   order's lines as read in `hardware/fees/<maker>.json`: no fee model prices them yet. `edakit cost` takes per fee the
+   value with the newest date, from the project's table or the shipped one; values from the owner's orders reach the
+   shipped table through `edakit proposal`. The order record gets the order number and the three totals, and `edakit
+   release current` shows them beside the release.
 
 The board line of a checked quote is the PCB price `edakit cost` takes for the board while fab hash, quantity and maker
-are the quote's – read from `quote.json` of the current release, nothing written into edakit.toml; `[cost]
-pcb_price` still wins. Without Claude in Chrome, or without the files on the computer the browser runs on, the
-skill prints the job as a checklist, the owner fills the form and `quote.json`, and `edakit cart check` checks them.
+are the quote's – read from `quote.json` of the current release, nothing written into edakit.toml; `[cost] pcb_price`
+still wins. Without Claude in Chrome, or without the files on the computer the browser runs on, the skill prints the job
+as a checklist, the owner fills the form, `quote.json` and `quote_page.txt` – the page text, which ORDER.read holds
+every value to; `edakit cart check` stops without it –, and `edakit cart check` checks them.
 
 **Makers.** JLCPCB and PCBWay (China), Eurocircuits (Belgium) and AISLER (Netherlands) have a profile each in
 `edakit/makers/` (`[cart]`, 10.1); ordering step 0 read the four forms in the owner's accounts and recorded them
-(`recorded`, the notes in `tests/fixtures/makers/`). PCBWay and Eurocircuits match the BOM by manufacturer part number:
-`bom_<board>_mpn.csv` and PARTS.fact/mpn; both took it, and the CPL in JLCPCB's columns, as edakit writes them. The
-file's header is the one Eurocircuits' import maps by itself – Designator, Quantity, Value, Package, Manufacturer,
-Manufacturer Part Number: a column named "MPN" it left unmapped and took "Comment" for the part number (live run
-5.8); PCBWay's engineers read the same file by eye. The CPL's rotations are EasyEDA's, whose footprints JLCPCB's
-preview draws (`[cpl] zero = "footprint"`). Eurocircuits reads IEC 61188-7 – pin 1 lower left – and drew the SOT-23
-Q1 at 180° turned by 90° (5.8): its profile names that zero in `[cpl] zero` and gives in `[cpl.turns]` per footprint
-the degrees its rotation is ahead, and the gate writes `cpl_<board>_eurocircuits.csv` with them (SYNC.cpl). A
-footprint not listed keeps its rotation and warns: M-2 checks it in the Assembly Editor, and it gets its line.
-JLCPCB's form offers no order number any more – "Mark on PCB" is "Remove Mark" or a 2D barcode (`barcode`: `"qr"`,
-`"datamatrix"`; `serial_number`, 10.2) –, so `mark = "specify"` is not a value of its form, and its former placeholder
-`JLCJLCJLCJLC` is printed as text at every maker: FILES.order warns about it. PCBWay's placeholder `WayWayWay` is text to
-every other maker, and FILES.order finds it there. At PCBWay engineers review the files before payment and the
-assembly price comes with that review: the skill stops after the upload of the cart, submitting the files is the
-owner's. Three forms ask for a consent in the owner's name – JLCPCB's assembly terms (pre-checked), PCBWay's "Agree"
-on export control, Eurocircuits' Terms of Sales –: the skill stops and asks. The placement preview opens again from
-the cart at JLCPCB and Eurocircuits; PCBWay shows none; AISLER has no cart, and the skill stops before "Continue to
-Checkout". AISLER
-assembles from ODB++: `odb_<board>.zip` from EasyEDA through the patched MCP server and bridge (2.4, 2.5), on the KiCad
-tool chain from kicad-cli (16.6), held to the released files by SYNC.odb. Inside the EU there is no import; for `sale` the owner stays the manufacturer of the product
-(15.1). PARTS.stock and `edakit stock` ask JLCPCB's catalogue only where JLCPCB is among the makers; another maker's
-stock is what its matching shows, checked by ORDER.parts. Each profile also holds what the maker itself states about
-RoHS and REACH (`[compliance]`, read 2026-11-01, with the pages): JLCPCB's and PCBWay's boards are RoHS compliant only
-with a lead-free finish, JLCPCB's assembly terms do not promise lead-free solder, AISLER's statement leaves the placed
-parts out, Eurocircuits makes lead-free only. The job hands it to the regulatory review at the order (15.5).
+(`recorded`, the notes in `tests/fixtures/makers/`). edakit's default thickness of 1.6 mm is not one of Eurocircuits':
+it offers 1.55 mm, a thickness JLCPCB in turn does not offer, and FILES.order finds 1.6 mm there (live run 5.8 stopped
+at "Board thickness") – a board for Eurocircuits gets `thickness_mm = 1.55` in its board file. PCBWay, Eurocircuits and
+AISLER match the parts by manufacturer part number (PARTS.fact/mpn). PCBWay and Eurocircuits read it from
+`bom_<board>_mpn.csv`; both took it, and the CPL in JLCPCB's columns, as edakit writes them. The file's header is the
+one Eurocircuits' import maps by itself – Designator, Quantity, Value, Package, Manufacturer, Manufacturer Part Number:
+a column named "MPN" it left unmapped and took "Comment" for the part number (live run 5.8); PCBWay's engineers read the
+same file by eye. AISLER reads it from the components of the ODB++, by the property its BOM tab is told to use ("mpn",
+live run 5.10): the KiCad tool chain writes MPN and Manufacturer into every footprint (16.6), and SYNC.odb finds a
+component that does not carry its MPN. The CPL's rotations are EasyEDA's, whose footprints JLCPCB's preview draws
+(`[cpl] zero = "footprint"`). Eurocircuits reads IEC 61188-7 – pin 1 lower left – and drew the SOT-23 Q1 at 180° turned
+by 90° (5.8): its profile names that zero in `[cpl] zero` and gives in `[cpl.turns]` per footprint the degrees its
+rotation is ahead, and the gate writes `cpl_<board>_eurocircuits.csv` with them (SYNC.cpl). A footprint not listed keeps
+its rotation and warns: M-2 checks it in the Assembly Editor, and it gets its line. JLCPCB's form offers no order number
+any more – "Mark on PCB" is "Remove Mark" or a 2D barcode (`barcode`: `"qr"`, `"datamatrix"`; `serial_number`, 10.2) –,
+so `mark = "specify"` is not a value of its form, and its former placeholder `JLCJLCJLCJLC` is printed as text at every
+maker: FILES.order warns about it. PCBWay's placeholder `WayWayWay` is text to every other maker, and FILES.order finds
+it there. At PCBWay engineers review the files before payment and the assembly price comes with that review, and so does
+the part matching – ORDER.parts has no lines to hold there, and the parts PCBWay buys show on the order page: the skill
+stops after the upload of the cart, submitting the files is the owner's. Three forms ask for a consent in the owner's
+name – JLCPCB's assembly terms (pre-checked), PCBWay's "Agree" on export control, Eurocircuits' Terms of Sales –: the
+skill stops and asks. The placement preview opens again from the cart at JLCPCB and Eurocircuits; PCBWay shows none;
+AISLER has no cart, and the skill stops before "Continue to Checkout". AISLER assembles from ODB++: `odb_<board>.zip`
+from EasyEDA through the patched MCP server and bridge (2.4, 2.5), on the KiCad tool chain from kicad-cli (16.6), held
+to the released files by SYNC.odb. Eurocircuits and AISLER sit inside the EU: there is no import, and for `sale` the
+owner stays the manufacturer of the product (15.1). PARTS.stock and `edakit stock` ask JLCPCB's catalogue only where
+JLCPCB is among the makers; another maker's stock is what its matching shows, checked by ORDER.parts. Each profile also
+holds what the maker itself states about RoHS and REACH (`[compliance]`, read 2026-11-01, with the pages): JLCPCB's and
+PCBWay's boards are RoHS compliant only with a lead-free finish, JLCPCB's assembly terms do not promise lead-free
+solder, AISLER's statement leaves the placed parts out, Eurocircuits makes lead-free only. The job hands it to the
+regulatory review at the order (15.5).
 
 The MCP server cannot order. Lessons from the reference order:
 
-- Upload `gerber_<b>.zip`, `bom_<b>.csv`, `cpl_<b>.csv` of the current release only: `edakit release verify` on the
-  files you are about to upload, right before the upload – `edakit cart prepare` does it, and ORDER.files checks the
-  files again with what the page says it received.
+- Upload the maker's files of the current release only – at JLCPCB `gerber_<b>.zip`, `bom_<b>.csv`, `cpl_<b>.csv`, the
+  job lists them for every maker: `edakit release verify` on the files you are about to upload, right before the upload
+  – `edakit cart prepare` does it, and ORDER.files checks the files again with what the page says it received.
 - **Economic PCBA** assembles one side, SMD only; a second SMD side or certain parts (large battery holders, some
   modules – "Standard Only" on their JLCPCB part page) need Standard PCBA with a higher setup fee per side. Plan the
   board so the cheap option works (through-hole parts you solder yourself get `bom: false`); PARTS.stock fails a
@@ -707,18 +728,20 @@ The MCP server cannot order. Lessons from the reference order:
   classification may differ from the manufacturer's datasheet – PARTS.stock warns with JLCPCB's value from the stock
   snapshot.
 - **Tented vias** if a side is visible (open vias are holes and tin dots).
-- **Order number:** "specify a location" when a placeholder is printed (`mark = "specify"`; the reference cart still
-  said "Remove Mark") – JLCPCB reports the order number gone since May 2026 (FILES.order warns about the placeholder):
-  for traceability a 2D barcode or a serial number (`barcode`, `serial_number` in `[order]`), placed by JLCPCB where
-  there is room. A board with `[looks]` is ordered with "Remove Mark" unless `[order]` gives `mark`: the choice changes
-  the fab hash, so it is made in the files before the gate run and M-5, not at the form, where it would void M-5 (the
-  owner's decision of 2026-10-31). Without `[order]` the board has no order.json and the mark is in no hash – give the
-  board an `[order]` table.
+- **Order number:** JLCPCB prints none since May 2026 – "Remove Mark", or for traceability a 2D barcode or a serial
+  number (`barcode`, `serial_number` in `[order]`), placed by JLCPCB where there is room; its former placeholder on the
+  silkscreen would be printed as text (FILES.order warns). PCBWay still prints its number at a placeholder, "Specify a
+  location" (`mark = "specify"`, `WayWayWay` on the silkscreen). A board with `[looks]` is ordered with "Remove Mark"
+  unless `[order]` gives `mark`: the choice changes the fab hash, so it is made in the files before the gate run and
+  M-5, not at the form, where it would void M-5 (the owner's decision of 2026-10-31). Without `[order]` the board has no
+  order.json and the mark is in no hash – give the board an `[order]` table.
 - **Remarks** (max. 200 characters, FILES.order): where panel tabs may and may not go, no V-cut on visible edges. The
   reference remark was written by hand and wrong three times: tabs where a track ran 0.45 mm from the edge, then 202
   characters, then a "1.17 mm free" that a new pour 0.55 mm from the edge made false.
 - **M-2** in the assembly preview: rotation and polarity of every polarised part on both sides (compare with the
-  polarity sheet), no part missing in the BOM tool, then pay.
+  polarity sheet), no part missing in the BOM tool, then pay. At JLCPCB "Confirm Parts Placement" opens a dialog:
+  without its tick "Do not confirm automatically" the order goes into production 72 hours after it is placed, confirmed
+  or not (live run 5.7) – the tick is the owner's, given at the form.
 - If JLCPCB's DFM check reports something the layout review already accepted or an acceptance in the sign-off file names
   (e.g. an annular ring the fab confirmed, GEO.ring), it is in the checklist so nobody panics. GEO.ring holds rings and
   hole spacing to JLCPCB's table, so a via pair 0.47 mm apart is no finding there.

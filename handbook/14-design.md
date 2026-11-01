@@ -17,6 +17,7 @@ to a graph – and about the knowledge the checks are made of.
 | EasyEDA operator | agent `easyeda-operator` | runs one long EasyEDA step for the PCB designer and returns only the result |
 | PCB reviewer | agent `pcb-reviewer`, its own session | reads plan, hand-over, routing and the copper of every layer from the Gerber files, changes nothing, returns numbered findings with probability and cost – at the end of every layout round that changed placement, routing or pours, and on the gate run's files as the sign-off M-5 |
 | project reviewer | an agent of the project (`[agents.<name>]` in edakit.toml, 8.6), its own session | reviews with the project's own knowledge and changes nothing: in place of the edakit reviewer it replaces (`replaces`) – the reference project's pcb-pruefer reviews the rounds and signs M-5 –, or for a sign-off of its own (M-7) at its hook point; its sign-off counts only signed by it |
+| order | a session with the skill `cart`, in the decider's browser (Claude in Chrome) | fills the maker's form from the job of the release, reads every field, the part matching and the quote back for `edakit cart check`, puts the board into the cart and stops; consents, M-2 at the maker, ordering and paying are the decider's (8.4) |
 | decider | the user | answers the decision rounds: warnings, requirements, looks and operation, money, what becomes a check |
 
 No role checks its own work: a second opinion from the session that made the decisions repeats the decisions; the
@@ -63,7 +64,7 @@ What edakit knows about circuits is data in one catalog; the code reads it. Five
 | GEO | copper, holes, print, widths and distances on plan and Gerber files |
 | FILES | manufacturing files and sheets complete and consistent |
 | PARTS | parts entries complete, well-formed, verified, orderable |
-| ORDER | the order at the maker is the release: form, parts, quote, files, finish, review (8.4) |
+| ORDER | the order at the maker is the release: form, parts, quote, read, files, finish, review (8.4) |
 | DOCS | documents and requirements quote the design |
 | HINT | patterns that need judgement, as notes |
 
