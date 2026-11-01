@@ -204,7 +204,7 @@ RED = {
                                               "08-release-gate", "10-reference", "17-walkthrough")},
     "paragraphs": {"examples/coin-cell-led/docs/decisions.md", "examples/blinker-555/docs/decisions.md"},
     "references": set(),
-    "words": {"handbook/13-lessons-learned.md"},
+    "words": set(),
     "dates": {"examples/coin-cell-led/README.md", "examples/blinker-555/README.md"} | {f"handbook/{c}.md" for c in (
         "08-release-gate", "10-reference", "17-walkthrough")},
     "bold": set(),
