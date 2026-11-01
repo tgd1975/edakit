@@ -16,7 +16,7 @@ from edakit import engines, cli, requirements, scripts
 from edakit.design import Design
 from edakit.release import gate
 
-REQUIREMENT_CHECKS = ("DOCS.ref", "DOCS.need", "DOCS.evidence", "DOCS.draft")
+REQUIREMENT_CHECKS = ("DOCS.ref", "DOCS.need", "DOCS.evidence", "DOCS.draft", "DOCS.derived")
 
 
 def rewrite(project, old, new):
@@ -165,6 +165,78 @@ def test_g23_drafts_warn(project):
     assert [m.split(" – ")[0] for c, m in warnings if c == "DOCS.draft"] == ["N-2: a draft", "R-4: a draft"]
     assert warnings[0][1] == ('N-2: a draft – the user has not approved it (status "accepted", or "dropped" with a '
                               'reason)')
+
+
+DERIVED = "names nobody who stated it"
+
+
+@pytest.mark.parametrize("old, new, message", [
+    # the four of #98 in the Christmas bell: a source that names only design data, a datasheet or words
+    ('source = "README.md"\nfrom = ["N-1", "USB', 'source = "sim.json supplies; limits.vin_min_v of U1"\nfrom = ["N-1", "USB',
+     "R-1: names nobody who stated it – source names 'sim.json supplies; limits.vin_min_v of U1'"),
+    ('source = "README.md"\nfrom = ["N-1", "USB', 'source = "hardware/sim.json criteria; the LEDs\' limits"\nfrom = ["N-1", "USB',
+     "R-1: names nobody who stated it – source names \"hardware/sim.json criteria; the LEDs' limits\""),
+    ('source = "README.md"\nfrom = ["N-1", "USB', 'source = "parts entry of U2: the TLC5916 datasheet; hardware/parts/C2.json"\nfrom = ["N-1", "USB',
+     "R-1: names nobody who stated it – source names 'parts entry of U2: the TLC5916 datasheet; hardware/parts/C2.json'"),
+    ('source = "README.md"\nfrom = ["N-1", "USB', 'source = "locks.pins of the graph; the M-1 notes; R-2"\nfrom = ["N-1", "USB',
+     "R-1: names nobody who stated it – source names 'locks.pins of the graph; the M-1 notes; R-2'"),
+    # the source is judged by itself: a need in from does not clear a source of design data
+    ('source = "README.md"\nfrom = ["N-1", "USB', 'source = "edakit.toml"\nfrom = ["N-1", "USB',
+     "R-1: names nobody who stated it – source names 'edakit.toml'"),
+    # without source: from – a requirement or a manual check is nobody
+    ('from = ["N-1"]\nbinding = "must"\nverify = [{ rows = "PATH', 'from = ["R-1", "M-1"]\nbinding = "must"\nverify = [{ rows = "PATH',
+     "R-2: names nobody who stated it – no source, from names R-1, M-1"),
+    ('from = ["N-1"]\nbinding = "must"\nverify = [{ rows = "PATH', 'binding = "must"\nverify = [{ rows = "PATH',
+     "R-2: names nobody who stated it – no source, no from"),
+])
+def test_derived_a_requirement_names_who_stated_it(project, capsys, old, new, message):
+    """DOCS.derived (#98): a warning for an accepted requirement as for a draft, in edakit check and in the gate – no
+    error, edakit check exits 0."""
+    with_requirements(project)
+    rewrite(project, old, new)
+    errors, warnings = found(project)
+    assert errors == [] and [(c, m.split(":", 1)[0]) for c, m in warnings if c == "DOCS.derived"] == [
+        ("DOCS.derived", message.split(":")[0])]
+    assert ("DOCS.derived", message + ": design data, a datasheet or words, no need, decision, document or date") in warnings
+    code, out, _ = check(project, capsys)
+    assert code == 0 and "DOCS.derived – requirement names who stated it: 1 warning" in out
+    rewrite(project, 'status = "accepted"\n\n[[requirement]]\nid = "R-3"', 'status = "draft"\n\n[[requirement]]\nid = "R-3"')
+    assert [c for c, m in found(project)[1] if c == "DOCS.derived"] == ["DOCS.derived"]   # R-2 a draft: still a warning
+
+
+@pytest.mark.parametrize("source", [
+    "README.md", "README.md, the supply", "./README.md", "D-5 (C1 at 16 V); sim.json derating", "N-1", "the owner, 2026-11-01",
+    "docs/decisions.md", "hardware/../docs/decisions.md", "sim.json; docs/decisions.md.",
+])
+def test_derived_clears_a_source_that_names_who_stated_it(project, source):
+    """A decision or need, a file of the project that is not design data, a date: stated. Without source, from: a
+    need or decision, or an entry that is not an ID (R-3, R-4: from = ["N-2"], ["N-3"])."""
+    with_requirements(project)
+    (project.root / "docs").mkdir(exist_ok=True)
+    (project.root / "docs" / "decisions.md").write_text("# Decisions\n", encoding="utf-8")
+    rewrite(project, 'source = "README.md"\nfrom = ["N-1", "USB', f'source = "{source}"\nfrom = ["N-1", "USB')
+    rewrite(project, 'from = ["N-1"]\nbinding = "must"\nverify = [{ rows = "PATH', 'from = ["USB 2.0"]\nbinding = "must"\nverify = [{ rows = "PATH')
+    assert [m for c, m in found(project)[1] if c == "DOCS.derived"] == []
+
+
+def test_derived_reads_design_data_of_every_project_file_and_ignores_dropped(project):
+    """A variant's simulation config is design data in the main project's file too; a dropped requirement is history."""
+    with_requirements(project)
+    variant = project.root / "variants" / "v"
+    variant.mkdir(parents=True)
+    main = (project.root / "edakit.toml").read_text(encoding="utf-8")
+    (variant / "edakit.toml").write_text(main.replace('"hardware/', '"../../hardware/').replace(
+        'sim = "../../hardware/sim.json"', 'sim = "v_sim.toml"'), encoding="utf-8")
+    (variant / "v_sim.toml").write_text("", encoding="utf-8")
+    rewrite(project, 'source = "README.md"\nfrom = ["N-1", "USB', 'source = "variants/v/v_sim.toml"\nfrom = ["N-1", "USB')
+    assert [m.split(" – ")[0] for c, m in found(project)[1] if c == "DOCS.derived"] == ["R-1: names nobody who stated it"]
+    rewrite(project, 'binding = "must"\nverify = [{ rows = "LIM.i', 'binding = "must"\nstatus = "dropped"\nreason = "derived"\nverify = [{ rows = "LIM.i')
+    path = project.root / "hardware" / "requirements.toml"
+    path.write_text(path.read_text(encoding="utf-8").replace(
+        'J1 current from the supply" },\n          { accept = "on the USB port of a laptop: all eight LEDs on, the port stays on" }]\nstatus = "accepted"',
+        'J1 current from the supply" },\n          { accept = "on the USB port of a laptop: all eight LEDs on, the port stays on" }]'),
+        encoding="utf-8")
+    assert [c for c, m in found(project)[1] if c == "DOCS.derived"] == []
 
 
 def test_edakit_check_reports_and_explains_them(project, capsys):
@@ -641,9 +713,9 @@ def test_with_the_key_the_requirement_checks_count_as_executed(project, monkeypa
     with_requirements(project)
     cfg = project.config()
     prof = engines.profile(Design.from_config(cfg), cfg)
-    assert gate.executed(prof, cfg)[-4:] == list(REQUIREMENT_CHECKS)
+    assert gate.executed(prof, cfg)[-5:] == list(REQUIREMENT_CHECKS)
     one = section(gate_run(project, monkeypatch), 1)
     assert "DOCS.evidence" in one
     # every code of stage G the profile has on, DOCS.ref to DOCS.draft among them (a code that only warns counts as
     # passed); DOCS.draft about the draft R-4 is information in the gate, no warning to accept
-    assert re.search(r"\| G Graph \| [^|]+ \| 35 \| 0 \| 0 \| 3 \| 0 \| passed \|", one)
+    assert re.search(r"\| G Graph \| [^|]+ \| 36 \| 0 \| 0 \| 3 \| 0 \| passed \|", one)

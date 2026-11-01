@@ -1389,6 +1389,22 @@ sources = [
   "The user's decision of 2026-10-28, after step 1.6: a draft never blocks – errors and blocking start with status = \"accepted\"",
 ]
 
+[codes."DOCS.derived"]
+title = "requirement names who stated it"
+rule = "Every requirement of the requirements file that is not dropped names someone who stated it. A source that is given is judged by itself: it names a decision (D-…) or a need (N-…), a file of the project's repository that is not design data, or a date (YYYY-MM-DD: the user with a date). Only a requirement without source is judged by its from: a need or decision, or an entry that is not an ID – a standard the maker chose. Design data is what an edakit.toml of the repository names – graph, parts entries, simulation config, schematic and board files, sign-off file, requirements files, reports and artifacts; a requirement R-…, a manual check M-…, a datasheet, a commit or words count as nothing stated. A warning, for a draft as for an accepted requirement, in edakit check and in the gate."
+why = "Requirements are the pipeline's input: they say what the boards must do, and the design follows from them. A requirement whose only source is the design's own data says what edakit computes or checks already – a supply above the regulator's minimum input is LIM.range, an error on every board without any requirement. Such entries crowd out the maker's real inputs, each of them voids M-1 and M-6 when it changes, and the reviews must name them in their notes."
+fix = "Name who stated it, in their words – the need, the document, the decision, the user and the date – and keep the derived values as the requirement's evidence (verify rows); or drop the requirement when it only restates what edakit checks on every board (status = \"dropped\", reason = \"derived – edakit's catalog checks it\")."
+severity = "warning"
+details = [
+  "requirement names who stated it: a `source` that is given is judged by itself – a D-… or N-…, a file of the repository that is not design data (`git ls-files`, without it the files below `edakit.toml`), a date; without `source` the `from` – a N-… or D-…, or an entry that is not an ID. Design data: the files and folders every `edakit.toml` of the repository names. A warning for a draft too – finds e.g.: `source = \"sim.json supplies; limits.vin_min_v of U1\"`, `source = \"locks.pins of every graph; the M-1 notes\"`; telling a requirement derived but tied to a decision apart is the agent requirements-engineer's",
+]
+replaces = []
+sources = [
+  "edakit handbook 3.6 (need and requirement, source and from) and 10.4 (the file's keys)",
+  "Rule proposal #98 from tgd1975/automatic_christmas_bell: D-32, D-38 and D-39 in docs/decisions.md and docs/requirements-review.md (proposal E), read at 2aec3c5 – 4 of 20 requirements name only design data",
+  "The owner's decision of 2026-11-01 on #98: a given source is judged by itself, a missing one by from; stated is recognized, not design data guessed; a warning for a draft too",
+]
+
 [codes."HINT.datasheet"]
 title = "notes of the parts entries"
 rule = "A parts entry's own warnings – hints of the part, hint of a connected pin (an ESP32 pin of ADC2: no analog reads while Wi-Fi is on) – are shown for every part and pin of the graph they belong to."

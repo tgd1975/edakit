@@ -29,7 +29,7 @@ opinion** on the requirements file.
 - The last gate run, if there is one: `<reports>/<run>/protocol.md` – the rows of sections 3 and 7 (what a rows
   pattern can match), the acceptance list of section 6, the requirements of section 11.
 - The requirements file, if `[project] requirements` names it: `edakit req 2>&1 | cat`, and `edakit check 2>&1 | cat`
-  for DOCS.ref to DOCS.draft on the file.
+  for DOCS.ref to DOCS.derived on the file.
 - Offline you may also run `edakit sim --json /tmp/sim.json 2>&1 | cat` (every simulation row with `id`, `scenario`,
   `item` and `check` – what a rows pattern matches), `edakit explain <code>`, and `git log` on a document to see which of
   two is newer.

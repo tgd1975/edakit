@@ -414,6 +414,10 @@ Every requirement of the requirements file that is not dropped has evidence: at 
 **`DOCS.draft`** – draft not approved (warning, draft: warning; replaces G-23)  
 A need or requirement of the requirements file that is a draft – status draft, or no status – is a warning in edakit check until the user accepts it or drops it with a reason. In the gate it is information: a draft binds nothing yet – it never blocks the release and needs no acceptance; section 11 of the protocol lists a draft requirement with its evidence as evaluated.
 - draft not approved: a need or requirement with `status = "draft"`, or without `status`, is a warning until the user accepts or drops it; in the gate information – a draft never blocks the release and needs no acceptance (8.7) – finds e.g.: a requirement Claude wrote and nobody approved, which the release is not held to
+
+**`DOCS.derived`** – requirement names who stated it (warning)  
+Every requirement of the requirements file that is not dropped names someone who stated it. A source that is given is judged by itself: it names a decision (D-…) or a need (N-…), a file of the project's repository that is not design data, or a date (YYYY-MM-DD: the user with a date). Only a requirement without source is judged by its from: a need or decision, or an entry that is not an ID – a standard the maker chose. Design data is what an edakit.toml of the repository names – graph, parts entries, simulation config, schematic and board files, sign-off file, requirements files, reports and artifacts; a requirement R-…, a manual check M-…, a datasheet, a commit or words count as nothing stated. A warning, for a draft as for an accepted requirement, in edakit check and in the gate.
+- requirement names who stated it: a `source` that is given is judged by itself – a D-… or N-…, a file of the repository that is not design data (`git ls-files`, without it the files below `edakit.toml`), a date; without `source` the `from` – a N-… or D-…, or an entry that is not an ID. Design data: the files and folders every `edakit.toml` of the repository names. A warning for a draft too – finds e.g.: `source = "sim.json supplies; limits.vin_min_v of U1"`, `source = "locks.pins of every graph; the M-1 notes"`; telling a requirement derived but tied to a decision apart is the agent requirements-engineer's
 <!-- edakit:end -->
 
 **0 Ω bridges.** A resistor whose parts entry has `value_ohm: 0` is copper – the usual way to cross a track on a board
@@ -538,7 +542,10 @@ edakit req N-1    # the requirements a need leads to, with their evidence
 
 - **`edakit check`** (3.3) – and the gate's stage G – checks the file: every reference resolves (DOCS.ref), every
   accepted need has a requirement (DOCS.need), every requirement has evidence (DOCS.evidence), and a draft warns until
-  the user decides (DOCS.draft).
+  the user decides (DOCS.draft). A requirement names someone who stated it (DOCS.derived): its `source` a decision, a
+  need, a document of the project that is not design data, or a date – without `source` its `from` a need, a decision
+  or a standard; one that names only graph, parts entries, `sim.json`, the sign-off file or a datasheet is derived
+  from the design, not stated, and warns – for a draft as for an accepted requirement, in the gate too.
 - **A draft never blocks.** Every finding about a draft is a warning – a reference that does not resolve yet, no
   evidence yet –, so an unfinished file passes `edakit check` and the pre-commit hook; in the gate the findings are
   information. Errors and blocking start once the user has set `status = "accepted"`.
