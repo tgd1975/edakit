@@ -1,7 +1,8 @@
 # The parts order: LCSC's cart, several projects in one, shipped with the boards
 
-Status 2026-11-02: proposed after the first real order (pytree's tree and the bell's two THT variants, 2026-11-01/02);
-the decisions below are open. Concept only – nothing is built until the owner says so.
+Status 2026-11-02: decided the same day in a decision round in Claude Code's form – decisions 1 to 3 as recommended,
+5 against the recommendation (the skill enters the warehouse address), 4 decided by Claude and confirmed. Nothing built
+yet; each step starts on the owner's word.
 
 ## Why
 
@@ -52,25 +53,35 @@ never touched (the rule of 2026-10-30: nothing in the cart is changed or deleted
 ### 4. The combined shipment as a step the job names
 
 When the planned maker is JLCPCB and a basket has LCSC lines, `edakit cart prepare` adds to the job and to `order.md`:
-"ship to LCSC's warehouse – address in [the help article] – one checkout for all boards, then LCSC's checkout:
-Combine Orders". The address is the owner's to enter (no address, the rule of 2026-10-30); edakit prints it with the
-date it was read, and the skill checks after the owner's payment, on the order page, that the JLCPCB order shows the
-warehouse – read only.
+"ship to LCSC's warehouse – one checkout for all boards, then LCSC's checkout: Combine Orders", with the warehouse
+address from a profile key (`[combine]` of `lcsc.toml`, with the date and page it was read). The skill enters that
+address at JLCPCB's checkout and reads it back (decision 5) – the one exception to the rule of 2026-10-30 that the
+checkout stays closed: it chooses no payment method, no coupon, and presses nothing that orders or pays. Only LCSC's
+warehouse, never the owner's or anyone else's address. After the owner's payment it checks on the order page that the
+JLCPCB order shows the warehouse, and at LCSC's checkout ticks the JLCPCB order under "Combine Orders" – stopping
+before "Submit order".
 
 ### 5. A part question at the order
 
 The skill asks before the LCSC cart whether an `[[extra]]` or bought part has a better variant the owner named before
 (a project key `[order] prefer` with the reason) – or this stays a chat matter. Open, see decision 4.
 
-## Decisions
+## Decisions (the owner, 2026-11-02)
 
-1. **Basket across projects** (proposal 1): build `--with`, or keep a cart per project and merge by hand?
-   Recommendation: build it – it was the first thing needed.
-2. **Reserve** (proposal 2): `[order] reserve` with LCSC's minimum and step, or leave quantities exact?
-   Recommendation: build it, default 0.
-3. **LCSC cart by the skill** (proposal 3): the skill fills LCSC's cart and stops before the checkout, or edakit only
-   writes the file? Recommendation: fill it, same rules as at the maker.
-4. **Part questions at the order** (proposal 5): a key `[order] prefer`, or leave it to the chat?
-   Recommendation: leave it to the chat – a part change is a hardware change (skill hardware-change).
-5. **The warehouse address** (proposal 4): only printed for the owner, or entered by the skill at JLCPCB's checkout?
-   Recommendation: printed only – the checkout stays closed to the skill.
+1. **Basket across projects:** built as `edakit order --with` (proposal 1). As recommended.
+2. **Reserve:** `[order] reserve`, default 0, rounded to the supplier's `moq` and `step` (proposal 2). As recommended.
+3. **LCSC cart by the skill:** the skill fills it and stops before the checkout, lines already there only reported
+   (proposal 3). As recommended.
+4. **Part questions at the order:** left to the chat – a part change is a hardware change (skill hardware-change); no
+   `[order] prefer`, proposal 5 dropped. Decided by Claude, confirmed by the owner.
+5. **The warehouse address:** the skill enters it at JLCPCB's checkout (proposal 4) – against the recommendation to
+   print it only. The checkout opens for that address alone; payment, coupon and the order button stay the owner's.
+
+## Order of work
+
+1. `edakit order --with` and `[order] reserve` (decisions 1, 2) – offline, tests on pytree's and the bell's carts of
+   2026-11-02.
+2. `edakit/suppliers/lcsc.toml`, `edakit order check`, the skill cart's LCSC part (decision 3) – a live run at the next
+   parts order, nothing ordered.
+3. The combined shipment in the job and in the skill (decision 5) – handbook 8.4 and the skill's "Never" changed with
+   it.
