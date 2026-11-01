@@ -81,3 +81,9 @@ def test_merge_numbers_again_only_a_version_whose_main_moved():
     assert merge.again("0.3.1", "0.3.0", "0.3.1")
     assert not merge.again("0.3.1", "0.3.0", "0.3.0")
     assert not merge.again(None, "0.3.0", "0.3.1")      # no version: merges onto any main
+
+
+def test_the_scripts_merge_with_the_owners_bypass_of_main_updates():
+    # main-updates lets only the admin role update main, and GitHub takes the bypass only when the merge asks for it
+    assert merge.MERGE == ("--merge", "--admin")
+    assert "*m.MERGE" in (ROOT / ".github" / "notes.py").read_text()

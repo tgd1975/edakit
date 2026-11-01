@@ -135,7 +135,7 @@ def main(argv=None):
             pr = url.rstrip("/").rsplit("/", 1)[-1]
             m.say(f"pull request #{pr}")
         m.wait(commit, m.required(root))
-        r = m.run("gh", "pr", "merge", pr, "--merge", "--match-head-commit", commit, "--delete-branch",
+        r = m.run("gh", "pr", "merge", pr, *m.MERGE, "--match-head-commit", commit, "--delete-branch",
                   "--subject", f"Merge branch '{branch}': {args.message}", "--body", "", check=False)
         if r.returncode == 0:
             m.say(f"merged #{pr}")

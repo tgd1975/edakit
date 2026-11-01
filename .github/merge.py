@@ -40,6 +40,10 @@ WAIT_S = 45 * 60
 
 
 NAME = "merge"   # the prefix of the progress lines; .github/notes.py sets its own
+# --admin takes the owner's bypass of the ruleset main-updates (only the admin role updates main, only through a
+# pull request); the ruleset main has no bypass, so its checks hold all the same – and both scripts merge only once
+# they have seen them green (.github/rulesets/, docs/concepts/new/versioning.md)
+MERGE = ("--merge", "--admin")
 
 
 def say(*args):
@@ -176,7 +180,7 @@ def main(argv=None):
             if again(n, main_n, now):
                 say(f"main became {now} while the checks ran – numbered again")
                 continue
-            r = run("gh", "pr", "merge", str(args.pr), "--merge", "--match-head-commit", sha,
+            r = run("gh", "pr", "merge", str(args.pr), *MERGE, "--match-head-commit", sha,
                     "--subject", f"Merge branch '{branch}': {pr['title']}", "--body", "", check=False)
             if r.returncode:
                 say(f"merge refused: {(r.stderr or r.stdout).strip()} – again")

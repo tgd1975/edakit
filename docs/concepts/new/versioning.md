@@ -232,7 +232,9 @@ Squash and rebase merges are off, because the merge message carries the descript
 - **`main-updates`** closes the gap that [proposals-pipeline.md](../done/proposals-pipeline.md) found (its layer 1): today
   only the prompt keeps the Action from changing main. Whether GitHub accepts the admin role as a bypass on a personal
   repository is checked when the rules are applied. If it does not, this ruleset is left out and the working rule
-  stays as it is.
+  stays as it is. Applied on 2026-11-01, GitHub took the role, and it takes the bypass only when a merge asks for
+  it: `merge.py` and `notes.py` merge with `gh pr merge --admin`, once they have seen the checks green. The ruleset
+  `main` has no bypass, so its checks hold for that merge too.
 - **In an emergency** the owner switches a ruleset off in the settings and on again afterwards. That is one click, and
   it shows in the ruleset's history.
 
