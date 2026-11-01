@@ -9,7 +9,9 @@
 # into the cart. The placement opens again from the cart (Product Details, Part Placement): M-2 can wait for the cart.
 # Three things the skill watches: the finish preselected is "HASL(with lead)" and the PCBA type fell back to Standard
 # after a fresh upload – every field is set and read back; the assembly terms are pre-checked ("I agree to the Terms
-# and Conditions of JLCPCB assembly Service") – a consent the owner gives, not the skill.
+# and Conditions of JLCPCB assembly Service") – a consent the owner gives, not the skill. "Confirm Parts Placement" Yes
+# opens a dialog: without its tick "Do not confirm automatically" the order goes into production 72 hours after it is
+# placed, confirmed or not (live run 5.7) – the owner's tick, which the skill asks for.
 #
 # The order number is gone: "Mark on PCB" offers "Remove Mark" (preselected) and "2D barcode (Serial Number)" only, as
 # JLCPCB's help article of 2026-05-22 reported. edakit's mark = "default" and "remove" are both "Remove Mark";
@@ -31,7 +33,6 @@ never = ["Order", "Buy", "Checkout", "Pay", "Place Order", "Submit Order", "Secu
 # "Number Only" – a serial number without a barcode – is a third choice of the dialog that edakit's keys do not name
 excludes = [{ barcode = "none", serial_number = true }]
 
-# Fields the page shows that edakit does not set, each with its reason. The skill leaves them as JLCPCB sets them.
 [compliance]                           # what the maker itself states, read 2026-11-01 – the regulatory review at the order
                                        # cites it from the job (handbook 15.5)
 rohs = "PCB: lead-free HASL, ENIG and OSP are RoHS compliant, HASL(with lead) is not – it 'does not comply with RoHS environmental requirements'; a RoHS certificate of conformity to download (Soar Testing, one sample each – lead-free HASL and ENIG 2025-12-01, OSP 2026-07-23 –, Directive 2011/65/EU with (EU) 2015/863: 'based on a single evaluation of one sample … does not imply an assessment of the whole production'), none per order. PCBA: the assembly terms (5.4) solder with lead on a leaded finish and, on a lead-free board, 'follow up the compoments properties to determine whether to choose leaded or lead-free' – lead-free solder is not promised"
@@ -42,6 +43,7 @@ sources = [
   "https://jlcpcb.com/help/article/terms-and-conditions-of-jlcpcb-assembly-service, clause 5.4 (updated 2026-09-09, read 2026-11-01)",
 ]
 
+# Fields the page shows that edakit does not set, each with its reason. The skill leaves them as JLCPCB sets them.
 [ignore]
 "Product Type" = "Industrial/Consumer electronics, JLCPCB's default"
 "Deburring/Edge rounding" = "JLCPCB's default (Yes, $0.10)"
