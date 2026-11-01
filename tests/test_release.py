@@ -122,3 +122,15 @@ def test_manifests_without_status_read_as_before(project, capsys):
     # withdrawing the newest one must not make the older one current again
     assert release(cfg, "withdraw", NEW, "--reason", "x") == 0
     assert gate.current(cfg) is None and manifest(cfg, OLD)["superseded_by"] == NEW
+
+
+def test_the_files_of_every_maker_are_in_the_manifest(project, capsys):
+    """#153: the ODB++ and the MPN BOM written for every assembled board ([release] maker_files = "all") are in the
+    manifest, so that `release verify` vouches for them at a maker outside [cart] makers (AISLER, Eurocircuits)."""
+    cfg = project.config()
+    d = gate_run(cfg, NEW)
+    (d / "odb_main.zip").write_bytes(b"odb of the run")
+    (d / "bom_main_mpn.csv").write_text("Designator,Quantity\nC2,1\n")
+    gate.write_manifest(cfg, cfg.reports / NEW, head(NEW), "RELEASED")
+    assert {"fab/main/odb_main.zip", "fab/main/bom_main_mpn.csv"} <= set(manifest(cfg, NEW)["files"])
+    assert release(cfg, "verify", str(d / "odb_main.zip"), str(d / "bom_main_mpn.csv")) == 0

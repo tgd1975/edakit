@@ -161,7 +161,7 @@ def test_easyeda_script_changes_the_project_library(project):
     res = resolve(project, TDISPLAY.replace("project-library:esp32", "footprints:esp32"), board="esp32")
     assert [(f.rule, f.msg) for f in res.findings] == [
         (3, "tdisplay: writes footprints:esp32 – made by edakit pcb dump; an easyeda script changes the project "
-            "library in EasyEDA: project-library:esp32")]
+            "library in EasyEDA: project-library:esp32, or the copper in the PCB: pcb:esp32")]
 
 
 def test_after_orders_a_post_processing(project):
@@ -238,6 +238,15 @@ FAULTS = {
                                                      "x: writes footprints:tree – made by edakit pcb dump; an easyeda "
                                                      "script changes the project library in EasyEDA: "
                                                      "project-library:tree"),
+    "easyeda script writes the routing": (3, entry("x", kind="easyeda", **X, writes=["routing:tree"]),
+                                          "x: writes routing:tree – made by edakit route; an easyeda script changes the "
+                                          "project library in EasyEDA: project-library:tree, or the copper in the PCB: "
+                                          "pcb:tree"),
+    "script writes the copper in the PCB": (3, entry("x", kind="derive", **X, writes=["pcb:tree"]),
+                                            "x: writes pcb:tree – made by easyeda scripts"),
+    "two easyeda scripts change the copper": (4, entry("x", kind="easyeda", **X, writes=["pcb:tree"])
+                                              + entry("y", kind="easyeda", **X, writes=["pcb:tree"]),
+                                              "x, y: both change pcb:tree"),
     # rule 4: several writers of one file in a fixed order through after
     "two writers of one file": (4, entry("x", kind="input", **X, writes=["hardware/art/baum_vorne.svg"]),
                                 "baumgrafik, x: both write hardware/art/baum_vorne.svg"),
@@ -288,6 +297,34 @@ def test_after_against_the_data_is_a_cycle(project):
                               writes=["hardware/art/rahmen.svg"]), base=base, art=TREE_ART + ("hardware/art/rahmen.svg",))
     assert [(f.rule, f.msg) for f in res.findings] == [
         (7, "baumgrafik: in a cycle – baumgrafik –[hardware/art/baum_vorne.svg]→ rahmen –[after]→ baumgrafik")]
+
+
+# The seams of the origin (#113): vias and a pour placed in the PCB after the pours were filled, and the via list the
+# silkscreen art is drawn around
+NAEHTE = entry("naehte", kind="easyeda", cmd=["true"], about="Seams: vias and a pour along the cuts",
+               reads=["routing:tree"], writes=["pcb:tree", "hardware/naehte.json"])
+NAEHTKUNST = entry("naehtkunst", kind="input", cmd=["true"], about="Seam marks on the silkscreen, clear of the vias",
+                   reads=["hardware/naehte.json"], writes=["hardware/art/naehte.svg"])
+
+
+def test_an_easyeda_script_changes_the_copper_in_the_pcb(project):
+    """pcb:<b> is copper an easyeda script changed in the PCB: it runs on command after the routing it reads, and the
+    input that reads the file it writes beside runs after it – route all → naehte → naehtkunst → silk apply."""
+    res = tree(project, NAEHTE + NAEHTKUNST, art=TREE_ART + ("hardware/art/naehte.svg",))
+    assert res.findings == []
+    assert "naehte" not in res.order and before(res.order, "edakit route all", "naehtkunst", "edakit silk apply")
+    assert before(res.sequence, "edakit route all", "naehte", "naehtkunst", "edakit silk apply")
+    assert res.before["naehtkunst"] == ["naehte"]
+
+
+def test_an_easyeda_script_writes_a_file_only_beside_the_copper(project):
+    """A file of an easyeda script is the record of what it placed in the PCB; one that changes the project library
+    writes none."""
+    res = tree(project, entry("x", kind="easyeda", **X, writes=["project-library:tree", "build/x.json"],
+                              after=["led-footprints"]))
+    assert [(f.rule, f.msg) for f in res.findings] == [
+        (3, "x: writes build/x.json – an easyeda script changes the project library in EasyEDA: project-library:<b>, "
+            "or the copper in the PCB: pcb:<b> – and files only beside pcb:<b>")]
 
 
 def test_three_easyeda_scripts_without_after(project):
@@ -529,6 +566,7 @@ def test_release_is_the_current_release(project):
 def test_the_project_library_has_no_hash_offline(project):
     """It lives in EasyEDA only; an easyeda script changes it, and running the script is what tells edakit."""
     assert scripts.data_hash(project.config(), "project-library:main") is None
+    assert scripts.data_hash(project.config(), "pcb:main") is None          # the copper easyeda scripts changed, too
 
 
 @pytest.mark.parametrize("name, why", [("routing:tree", "no board tree in [boards] (main)"),

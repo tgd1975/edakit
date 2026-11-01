@@ -356,8 +356,23 @@ def test_fab_exports_odb_from_kicad_for_a_maker_that_takes_it(project, fake_cli,
         ("fail", "odb_main.zip: kicad-cli pcb export odb: exit 1 – ODB++ export failed")]
 
 
-def test_no_odb_from_kicad_without_a_maker_that_takes_it(project, fake_cli, monkeypatch):
+def test_odb_from_kicad_for_every_assembled_board(project, fake_cli):
+    """#153: [release] maker_files = "all" (default) – the ODB++ of an assembled board without AISLER in [cart]."""
     kicad_project(project)
+    cfg = with_cart(project, '[cart]\nmaker = "jlcpcb"')
+    board = cfg.board()
+    kb.write_parts(cfg, board)
+    d = project.root / "build" / "fab" / "main"
+    d.mkdir(parents=True)
+    kfab.collect(cfg, board, d)
+    assert (d / "odb_main.zip").exists() and not (d / fab.ODB_ERROR).exists()
+
+
+def test_no_odb_from_kicad_without_a_maker_that_takes_it(project, fake_cli, monkeypatch):
+    """[release] maker_files = "cart": no ODB++ without a maker of [cart] makers that takes it (#153)."""
+    kicad_project(project)
+    f = project.root / "edakit.toml"
+    f.write_text(f.read_text().replace("smd_only = true }", 'smd_only = true }\nmaker_files = "cart"'))
     cfg = with_cart(project, '[cart]\nmaker = "jlcpcb"')
     board = cfg.board()
     kb.write_parts(cfg, board)

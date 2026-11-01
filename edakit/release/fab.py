@@ -7,11 +7,13 @@
 Result in DIR/<board>/:
     gerber/ and gerber_<board>.zip   Gerber and drill files as EasyEDA exports them (upload the ZIP)
     bom_<board>.csv                  BOM in JLCPCB format, generated from the graph
-    odb_<board>.zip                  with a maker of [cart] makers that takes ODB++ (AISLER): EasyEDA's ODB++ export
-                                     (easyeda_export_odb) or kicad-cli's (KiCad tool chain), checked by SYNC.odb;
-                                     odb_error.txt when the export failed
-    bom_<board>_mpn.csv              with a maker of [cart] makers that matches by MPN (Eurocircuits): the same rows
-                                     with manufacturer and MPN of the parts entries, in the maker's columns
+    odb_<board>.zip                  with a maker of [cart] makers that takes ODB++ (AISLER), and with [release]
+                                     maker_files = "all" (default) for every board with an assembly side: EasyEDA's
+                                     ODB++ export (easyeda_export_odb) or kicad-cli's (KiCad tool chain), checked by
+                                     SYNC.odb; odb_error.txt when the export failed
+    bom_<board>_mpn.csv              with a maker of [cart] makers that matches by MPN (Eurocircuits), and with
+                                     maker_files = "all" for every board with an assembly side: the same rows with
+                                     manufacturer and MPN of the parts entries, in the maker's columns
     cpl_<board>.csv                  pick-and-place file in JLCPCB format (BOM parts only)
     cpl_<board>_<maker>.csv          with a maker of [cart] makers whose zero orientation is not the footprint's
                                      (Eurocircuits): the same rows, each part turned by [cpl.turns] of its profile
@@ -85,7 +87,8 @@ assembly preview at JLCPCB.
   SYNC.cpl  pick and place: every BOM part exactly once, side and rotation = PCB; sides/SMD as [release] assembly says;
             a maker with a zero orientation of its own ([cpl] zero) gets cpl_<b>_<maker>.csv, turned by [cpl.turns]
   FILES.set  Gerber set complete; outline and holes = plan (± 0.2 mm); tooling holes in the NPTH file, mask open, no copper
-  SYNC.odb  with a maker of [cart] makers that takes ODB++ (AISLER; fails for the planned maker, warns for another one):
+  SYNC.odb  with a maker of [cart] makers that takes ODB++ (AISLER; fails for the planned maker, warns for another one),
+       and with [release] maker_files = "all" on every board with an assembly side (information, as AISLER reads it):
        odb_<board>.zip, exported through the patched easyeda_export_odb, against this run's files – every layer
        (copper, mask, paste, silkscreen) rasterised as GEO.copper and XOR'd with its Gerber layer, no spot above
        SPOT_MM2 beyond an edge one raster point off (ODB_EDGE_STEPS: the ODB++'s coarser coordinates) and no layer
@@ -224,7 +227,7 @@ def collect(cfg, board, d, verbose=False):
         if not res.get("exported"):
             raise SystemExit(f"Gerber export failed: {res}")
         shutil.copy(res["artifact_path"], d / f"gerber_{board.name}.zip")
-        export_odb(cfg, mcp, board, d)        # a maker of [cart] makers that takes ODB++ (AISLER): SYNC.odb checks it
+        export_odb(cfg, mcp, board, d)        # an ODB++ taker, or every assembled board (maker_files): SYNC.odb checks it
         res = mcp.call("easyeda_export_pick_place", projectId="current", format="csv", timeout=120)
         if not res.get("exported"):
             raise SystemExit(f"pick-and-place export failed: {res}")
@@ -251,14 +254,36 @@ def odb_takers(cfg):
     return [m for m in makers.all_of(cfg) if "odb" in m.files]
 
 
+def assembled(cfg, design, board):
+    """A board with an assembly side: [release] assembly sides not empty and parts to place in its BOM."""
+    return bool(cfg.release.get("assembly", {}).get("sides", ["top", "bottom"])) and bool(bom_rows(design, board))
+
+
+def takers(cfg, design, board, kind):
+    """(the makers whose profile SYNC.odb or the file of kind – "odb", "bom_mpn" – follows, listed): those of [cart]
+    makers that take it (listed True); with [release] maker_files = "all" (the default) on a board with an assembly side,
+    else the shipped profiles that take it (AISLER for the ODB++, Eurocircuits and PCBWay for the MPN BOM; listed
+    False), so that a release can be quoted there as it is (#153); ([], True) otherwise."""
+    from .. import makers
+    mine = [m for m in makers.all_of(cfg) if kind in m.files]
+    if mine or cfg.release.get("maker_files", "all") != "all":
+        return mine, True
+    if design is None:
+        design = Design.from_config(cfg)
+    if not assembled(cfg, design, board):
+        return [], True
+    return [m for m in map(makers.load, makers.shipped()) if kind in m.files], False
+
+
 def export_odb(cfg, mcp, board, d):
-    """odb_<b>.zip through the patched MCP tool easyeda_export_odb (handbook 2.5) – only for a maker that takes ODB++;
-    a .tgz from EasyEDA is packed into a zip with the same files. A failed export leaves odb_error.txt for SYNC.odb."""
+    """odb_<b>.zip through the patched MCP tool easyeda_export_odb (handbook 2.5) – for a maker that takes ODB++, with
+    [release] maker_files = "all" for every board with an assembly side (takers); a .tgz from EasyEDA is packed into a
+    zip with the same files. A failed export leaves odb_error.txt for SYNC.odb."""
     from .. import eda
     target = d / f"odb_{board.name}.zip"
     target.unlink(missing_ok=True)
     (d / ODB_ERROR).unlink(missing_ok=True)
-    if not odb_takers(cfg):
+    if not takers(cfg, None, board, "odb")[0]:
         return
     try:
         res = mcp.call("easyeda_export_odb", projectId="current", timeout=300)   # inch whatever unit says (E-16)
@@ -381,15 +406,15 @@ def mpn_rows(design, bom):
 
 def write_mpn_bom(cfg, design, board, bom, d):
     """bom_<b>_mpn.csv for the makers of [cart] makers that take a BOM with MPN, in the columns of the first one's
-    profile; none without such a maker. Not in the fab hash: it adds nothing the maker builds from beyond the parts
-    entries, which are in the circuit hash."""
-    from .. import makers
-    takers = [m for m in makers.all_of(cfg) if "bom_mpn" in m.files]
+    profile – with [release] maker_files = "all" for every board with an assembly side, in the columns of the first
+    shipped profile that takes it (takers); none otherwise. Not in the fab hash: it adds nothing the maker builds from
+    beyond the parts entries, which are in the circuit hash."""
+    mpn = takers(cfg, design, board, "bom_mpn")[0]
     path = d / f"bom_{board.name}_mpn.csv"
-    if not takers:
+    if not mpn:
         path.unlink(missing_ok=True)
         return
-    columns = (takers[0].data.get("bom") or {}).get("columns") or MPN_COLUMNS
+    columns = (mpn[0].data.get("bom") or {}).get("columns") or MPN_COLUMNS
     with open(path, "w", newline="", encoding="utf-8") as f:
         w = csv.DictWriter(f, fieldnames=columns, extrasaction="ignore")
         w.writeheader()
@@ -1624,7 +1649,7 @@ def check_fab(cfg, board, design, d, rows):
     want = design.board_comps(board.name)
     bom = bom_rows(design, board)
     write_bom(bom, d / f"bom_{board.name}.csv")
-    write_mpn_bom(cfg, design, board, bom, d)          # a maker that matches by MPN (Eurocircuits)
+    write_mpn_bom(cfg, design, board, bom, d)          # a maker that matches by MPN (Eurocircuits), or maker_files
     ours = {ref: r["LCSC Part #"] for r in bom for ref in r["Designator"].split(",")}
     tool = "KiCad" if is_kicad(cfg) else "EasyEDA"
     listed = [(ref.strip(), e["lcsc"]) for e in json.loads((d / f"bom_{tool.lower()}.json").read_text())
@@ -1803,30 +1828,39 @@ def odb_roles(job):
     return out
 
 
+UNLISTED = "no maker of [cart] makers takes it"    # SYNC.odb of an ODB++ written for every assembled board (#153)
+
+
 def check_odb(cfg, board, design, d, rows):
     """SYNC.odb for a maker of [cart] makers that takes ODB++ (AISLER): every layer, the drill hits, the profile, the parts
     and the nets of odb_<b>.zip against this run's Gerber, drill, BOM and CPL files and the graph – fails for the
-    planned maker, warns for another one."""
+    planned maker, warns for another one. With [release] maker_files = "all" and no such maker, the ODB++ of a board with
+    an assembly side is held to the run as the shipped profile that takes it reads it (AISLER), a fault as information:
+    no maker of [cart] makers builds from it, the release does not depend on it."""
     from .. import makers, odb
-    takers = odb_takers(cfg)
-    if not takers:
+    found, listed = takers(cfg, design, board, "odb")
+    if not found:
         return
-    m = takers[0]
-    who = "" if m.key == makers.planned(cfg) else f"{m.name} (not the planned maker): "
+    m = found[0]
+    who = "" if m.key == makers.planned(cfg) else f"{m.name} (not the planned maker): " if listed else f"{UNLISTED}: "
+
+    title = f"ODB++ of this run for {m.name}" if listed else f"ODB++ of this run ({UNLISTED})"
 
     def add(check, ok, actual, expected, level=None):
-        rows.add("F", "SYNC.odb", board.name, check, ok, actual if ok or not who else who + str(actual), expected,
-                 level or makers.result(cfg, m.key, ok))
-        rows[-1]["maker"] = m.key
+        tag = who if listed or check != title else ""       # the title names it already
+        rows.add("F", "SYNC.odb", board.name, check, ok, actual if ok or not tag else tag + str(actual), expected,
+                 level or (makers.result(cfg, m.key, ok) if listed else "pass" if ok else "info"))
+        if listed:
+            rows[-1]["maker"] = m.key
     path = d / f"odb_{board.name}.zip"
     if not path.exists():
         why = (d / ODB_ERROR).read_text() if (d / ODB_ERROR).exists() else "not exported"
-        add(f"ODB++ of this run for {m.name}", False, f"{path.name}: {why}", "exported")
+        add(title, False, f"{path.name}: {why}", "exported")
         return
     try:
         job = odb.read(path)
     except odb.OdbError as e:
-        add(f"ODB++ of this run for {m.name}", False, str(e), "readable")
+        add(title, False, str(e), "readable")
         return
     g = d / "gerber"
     gerbers, drills = built_files(g)

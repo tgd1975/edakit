@@ -63,7 +63,8 @@ BOARD_FILE_KEYS = ("revision", "view", "outline", "holes", "tooling", "place", "
                    "looks", "thickness_mm")
 SCHEMATIC_KEYS = ("stub", "layout", "frame", "style")
 SCHEMATIC_STYLES = ("labels", "wires", "mixed")   # style: the drawing of `schematic draw` (schematic_draw)
-RELEASE_KEYS = ("layout_files", "state_files", "hash_ignore", "assembly", "stages", "archive", "publish")
+RELEASE_KEYS = ("layout_files", "state_files", "hash_ignore", "assembly", "stages", "archive", "publish", "maker_files")
+MAKER_FILES = ("all", "cart")    # [release] maker_files: the ODB++ and the MPN BOM of every assembled board, or only for [cart]
 PCBA = ("economic", "standard")  # [release] assembly.pcba: JLCPCB's classes – another maker's: its profile's classes
 ARCHIVE = ("none", "git")        # [release] archive: gate runs are build output (none) – or a released one is committed
 PUBLISH_KEYS = ("variants", "decisions", "credit")   # [release] publish: what edakit release publish takes
@@ -801,6 +802,10 @@ def _publish_values(release):
     """[release] archive: "none" or "git"; [release] publish: a table of variants (true or false), decisions (the
     path of the decision log) and credit (true or false)."""
     out = []
+    if release.get("maker_files", "all") not in MAKER_FILES:
+        out.append('[release] maker_files must be "all" (the ODB++ and the MPN BOM of every board with an assembly side, '
+                   'the default) or "cart" (only for a maker of [cart] makers that takes them), not '
+                   f'{release["maker_files"]!r}')
     if release.get("archive", "none") not in ARCHIVE:
         out.append('[release] archive must be "none" (gate runs are build output, the default) or "git" (a released '
                    f'run is committed), not {release["archive"]!r}')

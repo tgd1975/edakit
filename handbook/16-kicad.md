@@ -153,7 +153,8 @@ Stages P, G and E are unchanged. S, L and F read the same files, made from the K
   the PCB. `FlyingProbeTesting.json` is made from the pads of `pcb.json`; it stays out of the ZIP, which holds only the
   Gerber and drill files. SYNC.bom compares the BOM with the schematic's (`bom_kicad.json`), SYNC.cpl the CPL with
   kicad-cli's position file (`cpl_kicad.csv`).
-- **F, ODB++:** with a maker that takes ODB++ (AISLER), `odb_<board>.zip` comes from `pcb export odb`, and SYNC.odb
+- **F, ODB++:** with a maker that takes ODB++ (AISLER), and with `[release] maker_files = "all"` (the default) for every
+  board with an assembly side (8.4), `odb_<board>.zip` comes from `pcb export odb`, and SYNC.odb
   holds it to the run's files as it holds EasyEDA's. A failed export leaves kicad-cli's message in `odb_error.txt`,
   which SYNC.odb names. KiCad has no free pads, so a tooling hole is a footprint `TH<n>` (`board_only`, out of BOM and
   position file, `dnp`). Its ODB++ lists it as a component with the attribute `.no_pop`, and SYNC.odb lets it pass only
