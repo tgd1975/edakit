@@ -13,14 +13,16 @@
 # Live run 5.8 (2026-11-01, tests/fixtures/makers/eurocircuits/live_2026-11-01/): the BOM's import maps its columns
 # by their names – "Manufacturer Part Number" yes, "MPN" not, and "Comment" it took for the part number ([bom]
 # columns). The Assembly Editor marks a footprint whose pads differ from the board's ("does not match the board
-# layout") and the PCBA tab flags "Data conflicts": that is M-2's, in the basket.
+# layout") and the PCBA tab flags "Data conflicts": that is M-2's, in the basket. Q1 so marked was a rotation
+# ([cpl.turns]); C3 and R3, 0805s at 0° like C1 and R2 beside them, were parts Eurocircuits had identified under
+# another manufacturer's name ("Samsung Electro-Mechanics", "Uniroyal Elec") – its part record, not the CPL.
 
 name = "Eurocircuits"
 recorded = "2026-10-31"
 start = "https://be.eurocircuits.com/shop/assembly/configurator.aspx"   # signed in on this host, not www
 seat = "BE"                            # inside the EU: no import; for "sale" the owner stays the manufacturer (15.1)
 currency = "EUR"
-files = ["gerber", "bom_mpn", "cpl"]   # gerber_<b>.zip, bom_<b>_mpn.csv (MPN required), cpl_<b>.csv
+files = ["gerber", "bom_mpn", "cpl"]   # gerber_<b>.zip, bom_<b>_mpn.csv (MPN required), cpl_<b>_eurocircuits.csv
 classes = ["proto", "series"]          # the services "PCB proto" and the pools (STANDARD pool …) – Eurocircuits picks
 dnp = "omit"                           # a part not to place is left out of BOM and CPL
 cart = "Add to basket"                 # Summary; "Proceed to Summary – to Review the Offer or Save to Basket" is a hint
@@ -87,7 +89,22 @@ match = "mpn"                          # Eurocircuits identifies the BOM by manu
 [cpl]
 columns = ["Designator", "Mid X", "Mid Y", "Layer", "Rotation"]   # taken as JLCPCB's: R1 at 10 mm, 10 mm, 0°, Top
 unit = "mm"
-rotation = "as SYNC.cpl writes it; the Assembly Editor showed the 0805 at 0° along X, as JLCPCB's preview"
+zero = "IEC 61188-7"   # Eurocircuits' page "Defining Component Pin 1 and Zero-Point Rotation": pin 1 lower left,
+# the polarity of a two-pole part on the left, 90° counter-clockwise – EasyEDA's footprints are not all drawn so
+rotation = "cpl_<b>_eurocircuits.csv: SYNC.cpl turns each part by [cpl.turns]; the Assembly Editor showed the 0805 at 0° along X"
+
+# Per footprint (EasyEDA's name; * and [...] as in fnmatch): the degrees Eurocircuits' rotation of a part is ahead
+# of the footprint's – the footprint's zero is IEC's turned that far counter-clockwise.
+# The last part of an EasyEDA name says where pin 1 sits at 0° (-BL bottom left, -BR bottom right). Live run 5.8
+# drew every part on its pads but Q1, whose SOT-23 at 180° came out turned by 90°. A footprint not listed keeps its
+# rotation and SYNC.cpl warns: M-2 checks it in the Assembly Editor, then it gets its line here.
+[cpl.turns]
+"C[0-9][0-9][0-9][0-9]" = 0                # chips: pad 1 left, pads along X (5.8: C1, C2, C4 at 0°, 270°, 90°)
+"R[0-9][0-9][0-9][0-9]" = 0                # likewise (5.8: R1, R2 at 180°, 0°)
+"LED-SMD_L2.0-W1.3_APTD2012SF4C" = 0       # pad 1, the cathode, left: IEC's polarity on the left (5.8: D1)
+"SOIC-*-BL" = 0                            # pin 1 bottom left, the pins along X: IEC's lower left (5.8: U1)
+"SOT-23-3_*-BR" = 90                       # pin 1 bottom right, pins 1 and 2 on the right, 3 on the left: IEC's
+# (pin 1 lower left, pin 3 on top) turned 90° counter-clockwise (5.8: Q1 at 180°, drawn turned by 90°, is 270°)
 
 # The form's limits: no order-number placeholder.
 [rules]

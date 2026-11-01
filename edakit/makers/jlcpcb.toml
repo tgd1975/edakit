@@ -65,6 +65,7 @@ match = "lcsc"                    # JLCPCB matches the BOM by LCSC number
 [cpl]
 columns = ["Designator", "Mid X", "Mid Y", "Layer", "Rotation"]
 unit = "mm"
+zero = "footprint"                # the preview draws EasyEDA's footprints, JLCPCB's own library: no turns
 rotation = "as SYNC.cpl writes it: EasyEDA's rotation of the part, compared with the PCB; the preview showed an 0805 at 0° along X"
 
 [rules]                           # what FILES.order holds the board to

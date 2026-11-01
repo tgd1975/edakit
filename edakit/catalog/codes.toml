@@ -743,12 +743,13 @@ sources = [
 
 [codes."SYNC.cpl"]
 title = "pick and place = PCB"
-rule = "Every BOM part is in the pick-and-place file exactly once with the PCB's side and rotation, and only on the sides [release] assembly allows (Economic PCBA: one side, SMD only)."
-why = "A missing or doubled line is a missing or doubled part; a part on the wrong side needs Standard PCBA at a higher price."
-fix = "Move parts to the allowed side in the plan, or mark hand-soldered parts bom: false."
+rule = "Every BOM part is in the pick-and-place file exactly once with the PCB's side and rotation, and only on the sides [release] assembly allows (Economic PCBA: one side, SMD only). A maker of [cart] makers whose zero orientation of a part is not the footprint's ([cpl] zero of its profile – Eurocircuits: IEC 61188-7) gets cpl_<board>_<maker>.csv, every part turned by its footprint's entry in [cpl.turns]; a footprint the profile does not list, or a turned part on the bottom, keeps its rotation and warns."
+why = "A missing or doubled line is a missing or doubled part; a part on the wrong side needs Standard PCBA at a higher price. A maker that reads another zero orientation places a part turned (live run 5.8: Eurocircuits drew the SOT-23 Q1 turned by 90°)."
+fix = "Move parts to the allowed side in the plan, or mark hand-soldered parts bom: false. A footprint without a turn: check it in the maker's preview (M-2) and give it its line in [cpl.turns]."
 severity = "error"
 details = [
   "pick and place: every BOM part exactly once, side and rotation = PCB; sides and SMD-only as `[release] assembly` says (Economic PCBA: one side, SMD only; two SMD sides need Standard PCBA)",
+  "per maker with a zero orientation of its own: `cpl_<board>_<maker>.csv`, each part turned by `[cpl.turns]` of the profile (fnmatch on EasyEDA's footprint name); a footprint not listed, or a turned part on the bottom (the maker's bottom rule unread): its rotation as it is, a warning for that maker – M-2 checks it in the maker's preview. Not in the fab hash: `cpl_<board>.csv` is, the turns are the profile's",
 ]
 replaces = ["F-3"]
 sources = [

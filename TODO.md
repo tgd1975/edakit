@@ -62,10 +62,13 @@ run against a maker's page or EasyEDA yet.
       every check passed, into the basket, order record written, nothing ordered. Built on the way: the MPN BOM's
       header Eurocircuits maps (it took "Comment" for the part number), a cart line with its VAT apart, the
       configurator's fields in the profile (`tests/fixtures/makers/eurocircuits/live_2026-11-01/`).
-- [ ] **CPL rotations per maker:** Eurocircuits' Assembly Editor drew Q1 (SOT-23, rotation 180 as SYNC.cpl writes
-      it) turned by 90° against the board's pads – U1 and D1 sat right, C3 and R3 "do not match" (live run 5.8,
-      M-5 note 10). The maker's zero orientation per package in its profile, SYNC.cpl writing or checking per maker;
-      until then M-2 in the basket turns it.
+- [x] **CPL rotations per maker:** Eurocircuits' Assembly Editor drew Q1 (SOT-23, rotation 180 as SYNC.cpl writes
+      it) turned by 90° against the board's pads (live run 5.8, M-5 note 10). Now the profile names the maker's zero
+      orientation (`[cpl] zero`: Eurocircuits IEC 61188-7, pin 1 lower left; JLCPCB the footprint's) and the turn
+      per footprint (`[cpl.turns]`: EasyEDA's SOT-23-3_…-BR 90°, so Q1 is 270°; chips, the LED and SOIC-…-BL 0°);
+      the gate writes `cpl_<b>_eurocircuits.csv`, and SYNC.cpl warns for that maker about a footprint without a turn
+      or a turned part on the bottom. C3 and R3 were no rotation: Eurocircuits had identified them under another
+      manufacturer's name.
 - [x] **5.10:** AISLER live (2026-11-01): R1 and R2 swapped in the throwaway copy for YAGEO parts AISLER stocks,
       released again (M-1, M-5, M-6 by the agents), every part assigned, /checkout at Amazing Assembly, quantity 5,
       €348.03 net; ORDER.form to ORDER.review passed, stopped before "Continue to Checkout"
