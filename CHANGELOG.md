@@ -7,6 +7,10 @@ written once, by `.github/merge.py`, from the fragments in [changes/](changes/RE
 [versioning.md](docs/concepts/done/versioning.md). Update with `claude plugin marketplace update edakit && claude plugin
 update edakit@edakit`, then `/reload-plugins` or a new session; `edakit --version` names the version that runs.
 
+## 0.4.18 – 2026-11-02
+
+- The tests run in parallel (pytest-xdist in the group `dev`): `uv run --group dev pytest -q -n auto`. From the next version on, an update that moves only the dev tools is no version (`.github/versions.py`).
+
 ## 0.4.17 – 2026-11-02
 
 - edakit cart: a bare board at JLCPCB passes ORDER.form and ORDER.files – its quote page has no "Product Description" (now a checkout field without assembly, profile `fields.<key>.assembly`) and names no upload (`unshown_bare`: the cart line names the Gerber); "PCB Assembly" and "Stencil" are in the profile's ignore, and the job says "bare" instead of "5 assembled" (live run 2026-11-01).
