@@ -13,4 +13,5 @@ quote_page.txt), edakit cart check (check.md), the regulatory review at the orde
   submitted for review), order record written. Found: no part matching before the cart, files only after it, a cart
   line named by the board's size, a tick "change HASL to ENIG at our discretion".
 - 5.8 Eurocircuits: stopped, as the skill must, at "Board thickness" – 1.6 mm is not among Eurocircuits' thicknesses.
-- 5.10 AISLER: not run – the release's SYNC.odb warns that kicad-cli's ODB++ differs from the Gerber files in two spots.
+- 5.10 AISLER: SYNC.odb's two spots were its own rounding (fixed). The first try (aisler/live_2026-11-01/first_try.md)
+  stopped at the parts: the ODB++ carried LCSC numbers only, and AISLER matches by MPN – one part of ten assigned.
