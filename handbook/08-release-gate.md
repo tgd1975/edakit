@@ -1104,10 +1104,10 @@ section keeps its number, and a project without the key has none. From the tests
 (`tests/test_requirements.py`), offline:
 
 ```markdown
-- **R-1** must, accepted: With all eight LEDs on, the board draws at most 500 mA from J1 at 4.75 to 5.25 V. → open after the export – does not block the release
+- **R-1** must, accepted: Runs from the USB port of a laptop with all eight LEDs on. → open after the export – does not block the release
   - rows `LIM.i * J1 current from the supply` – 12 rows: 12 passed
   - accept: on the USB port of a laptop: all eight LEDs on, the port stays on – after delivery: M-4 not signed yet (section 6)
-- **R-4** must, draft: From power-up until the firmware drives LED_OE low, no LED carries more than 10 µA. → draft, not binding yet – no passing evidence
+- **R-4** must, draft: No LED lights up when the bar is plugged in, before the firmware runs. → draft, not binding yet – no passing evidence
   - rows `SIM.state * D? LED dark` – 48 rows: 48 passed
   - signoff M-1 – not signed for this state (section 6)
 ```

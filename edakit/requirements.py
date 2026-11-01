@@ -19,7 +19,7 @@ in the project's own documents. Two levels (handbook 3.6, 10.4):
       source          where it was found: a document, a decision (optional)
       status          draft | accepted | dropped – the agent drafts, only the user accepts; without the key a draft
       reason          why (required when dropped)
-    [[requirement]]   one testable sentence: quantity, limit, condition
+    [[requirement]]   one statement, as who stated it gave it (handbook 3.6)
       id              R-<n>
       text            the sentence
       source          where it was found, as for a need (optional)

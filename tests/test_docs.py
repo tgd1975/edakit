@@ -14,7 +14,7 @@ from edakit.sim import run as simrun
 SVG = "{http://www.w3.org/2000/svg}"
 LED_CURRENT = "sim:max SIM.state * D2 LED current*"
 BLOCK = f"<!--edakit {LED_CURRENT}-->9.45 mA<!--/edakit-->"
-R1 = "With all eight LEDs on, the board draws at most 500 mA from J1 at 4.75 to 5.25 V."   # R-1 of the example's file
+R1 = "Runs from the USB port of a laptop with all eight LEDs on."   # R-1 of the example's file
 
 
 @pytest.fixture(autouse=True)
@@ -164,10 +164,10 @@ def test_a_block_quotes_a_requirement_by_its_id(project, monkeypatch, capsys):
                              "Light: <!--edakit req:N-2-->The LEDs can be read in a lit room.<!--/edakit-->\n")
     assert cli.main(["docs"]) == 0
     reqs = project.root / "hardware" / "requirements.toml"
-    reqs.write_text(reqs.read_text().replace("at most 500 mA", "at most 400 mA"))
+    reqs.write_text(reqs.read_text().replace("all eight LEDs on.", "all eight LEDs lit."))
     capsys.readouterr()
     assert cli.main(["docs"]) == 2
-    assert (f"DOCS.quote  docs/values.md:1: req:R-1: written {R1}, now {R1.replace('500', '400')}"
+    assert (f"DOCS.quote  docs/values.md:1: req:R-1: written {R1}, now {R1.replace('LEDs on.', 'LEDs lit.')}"
             in capsys.readouterr().out)
 
 
@@ -178,8 +178,7 @@ def test_req_quotes_drafts_but_not_dropped_entries(project):
     cfg = project.config()
     src = docs.Sources(cfg, Design.from_config(cfg))
     assert src.text("req:N-1") == "The bar runs from a USB charger or from the USB port of a laptop."
-    assert src.text("req:R-4") == ("From power-up until the firmware drives LED_OE low, no LED carries more than "
-                                   "10 µA.")                                    # a draft
+    assert src.text("req:R-4") == "No LED lights up when the bar is plugged in, before the firmware runs."                                    # a draft
     for bad, why in (("req:R-9", "no need or requirement R-9 in hardware/requirements.toml"),
                      ("req:R4", "'R4' is no ID of a need or requirement"),
                      ("req:N-4", "N-4 is dropped: the TLC5916 and the Pico 2 want 5 V")):

@@ -238,7 +238,7 @@ written after it; without one: three significant digits and the unit of the sour
 must do, they quote the requirements file (3.6) by ID instead of copying the sentence:
 
 ```markdown
-- **R-1** <!--edakit req:R-1-->With all eight LEDs on, the board draws at most 500 mA from J1 at 4.75 to 5.25 V.<!--/edakit-->
+- **R-1** <!--edakit req:R-1-->Runs from the USB port of a laptop with all eight LEDs on.<!--/edakit-->
 ```
 
 The quote is the entry's `text`, a line break in it as a space – a block is one line. A draft is quoted as it
