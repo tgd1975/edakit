@@ -425,6 +425,17 @@ rules behind the findings", gives rule, reason, fix and sources of every check t
 catalog (chapter 14.2), so that the protocol can be read without this handbook. With `[project] requirements` a
 section 11, "Requirements", follows it (8.7).
 
+Section 12, "Pictures", shows the circuit and the board, each picture as SVG and PNG in the run's `pictures/`. Every
+run draws the schematic of every board but a bought one – the drawing of `edakit schematic draw` (6.5), its title
+block and style included –; a run with stage F draws each made board from its own Gerber and drill files: as made,
+top and bottom (the bottom seen from below, mirrored) in the colours of the run's order settings – solder mask,
+silkscreen, the finish on open copper (ENIG gold, a HASL silver), copper under the mask a shade of the mask, FR-4
+where the mask is open over no copper; without `[order]` edakit's defaults, green, white, HASL –, then every layer and
+drill file the maker builds from on its own, as the file draws it. The board's SVG is at scale, 1 mm on paper for
+1 mm of board; its PNG has 40 pixels a millimetre (at most 4000 on the longer side), the schematic's 300 dpi.
+Pictures are documentation: in no hash, and one that cannot be drawn is named in section 12 while the gate goes on.
+`pictures/pictures.json` lists them for `release publish` (8.3).
+
 Section 2 ends with the information of stages P and G – what `edakit check` prints as a note, such as GEO.hole before
 the first `pcb dump` or PARTS.stock without a stock snapshot – under "Information (does not block the release, needs no
 acceptance)": one line per finding, with the check's words. It changes neither the decision nor section 1's counts;
@@ -433,6 +444,7 @@ the simulation's information is in section 7, that of the other stages in sectio
 Result folder `<reports>/<YYYYMMDD-hhmmss>/`: `protocol.md`, `graph_checks.json`, `sim.json`, `schematic_<board>.json`,
 `stage_<id>.txt` per project check (8.1), `fab/<board>/` (Gerber ZIP, BOM, CPL, raw data, with `[order]` or `[cart]`
 the order form `order.md`, with `[order]` the order settings `order.json`), `fab/polarity_<board>.png`,
+`pictures/` (section 12: `schematic_<board>`, `board_<board>_top`, `_bottom` and `_<layer>`, each `.svg` and `.png`),
 `fab/manifest.json` and `makers.json` – per maker of `[cart] makers` its role and the findings of its checks, which
 `edakit cart prepare` reads (8.4).
 
@@ -491,15 +503,18 @@ edakit release publish --built 2026-10-31 # a board of that release has been bui
    `[cart] makers` the files of every maker. A file refused, or a project without a current release: exit 2, nothing
    staged, `gh` not called.
 3. **Staging** in `build/publish/<tag>/`: those files, `polarity_<b>.png`, the run's manifest as `manifest_<b>.json`,
-   the order form as `order_<b>.md` where the run has one (`[order]`, `[cart]`), and `SHA256SUMS` over all of them –
+   the order form as `order_<b>.md` where the run has one (`[order]`, `[cart]`), the run's pictures of circuit and
+   board as its `pictures/pictures.json` lists them (SVG and PNG, section 12 of the protocol), and `SHA256SUMS` over
+   all of them –
    the folder to upload to the maker from; publish names it at the end. `notes.md` beside them is the release's text.
 4. **The notes**, written by edakit: the commit; per board the gate run, the git state of its manifest, the fab hash,
    and whether the board changed since the previous release – by its fab layers in both manifests, what the maker
    builds from (the Gerber ZIP's own bytes change with every export, the fab hash does not), and where a manifest has
    none by the SHA-256 of the upload files in both `SHA256SUMS`; the decisions since the previous release – the
    headings `## D-…` of the decision log at HEAD that it lacked at that tag (`[release] publish.decisions`, without it
-   none); the purpose from the graph, with the note that the regulatory review M-6 is support, not legal advice; how
-   to order. Every link is absolute, into the commit – relative links do not work in release notes.
+   none); the purpose from the graph, with the note that the regulatory review M-6 is support, not legal advice; the
+   schematic and the board as made, top and bottom, of every board, shown from the release's own files; how to order.
+   Every link is absolute, into the commit or the release – relative links do not work in release notes.
 5. `gh release create <YYYY-MM-DD> --prerelease --target <HEAD>` with the staged files; a tag the remote has already
    gets `-2`, `-3`. The previous release is the newest one publish made (its title "Manufacturing files …"), drafts
    left out.

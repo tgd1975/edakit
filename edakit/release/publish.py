@@ -15,14 +15,16 @@ the files of a state that goes to the maker, the repository keeps what released 
    the upload files of every made board – JLCPCB's gerber_<b>.zip, bom_<b>.csv, cpl_<b>.csv, with [cart] makers the
    files of every maker. A file refused or a project without a current release: exit 2, nothing staged, gh not called.
 3. Staging in build/publish/<tag>/: those files, polarity_<b>.png, the run's manifest as manifest_<b>.json, the order
-   form as order_<b>.md where the run has one, SHA256SUMS over all of them – the folder to upload to the maker from –,
-   and notes.md, the release notes.
+   form as order_<b>.md where the run has one, the run's pictures of circuit and board (pictures.py: schematic_<b>,
+   board_<b>_… as SVG and PNG), SHA256SUMS over all of them – the folder to upload to the maker from –, and notes.md,
+   the release notes.
 4. The notes: the commit; per board the gate run, the git state of its manifest, the fab hash, and whether the board
    changed since the previous release – its fab layers against those of its manifest there (the Gerber ZIP's own
    bytes change with every export), without them the SHA-256 of its upload files against SHA256SUMS there; the
    decisions since the previous release ([release] publish.decisions: the headings "## D-…" of the decision log); the
-   purpose of the graph with the note that the regulatory review M-6 is support, not legal advice; how to order. Every
-   link is absolute, into the commit – relative links do not work in release notes.
+   purpose of the graph with the note that the regulatory review M-6 is support, not legal advice; the schematic and
+   the board as made of every board, shown from the release's own files; how to order. Every link is absolute, into
+   the commit or the release – relative links do not work in release notes.
 5. gh release create <tag> --prerelease --target <HEAD> with the files of the staging; a tag the remote has already
    gets -2, -3, …
 
@@ -48,7 +50,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 from .. import config as configmod
-from . import gate
+from . import gate, pictures
 
 STAGING = Path("build") / "publish"   # below the project: build/publish/<tag>/
 TITLE = "Manufacturing files"         # the title of every release publish makes – how the next one finds it
@@ -201,6 +203,7 @@ def collect(projs):
                     extra[f] = name
                 elif name.startswith("polarity_"):
                     print(f"  {name}: not in the run – not published")
+            extra.update({f: f.name for f in pictures.files_of(pcfg.reports / run, b)})
             boards.append(Board(b, folder, pcfg, run, manifest, files, extra))
     if refused:
         raise PublishError(f"not published – {len(refused)} refused: " + "; ".join(refused), code=2)
@@ -347,6 +350,11 @@ def notes(cfg, tag, head, repo, boards, projs, changes, prev, new, draft):
         fab = b.manifest.get("fab_sha256")
         L.append(f"| {b.label} | {b.run} | {commit(repo, b.manifest.get('git'))} | "
                  + (f"`{fab[:12]}…`" if fab else "–") + f" | {changes[b.label]} |")
+    shown = [(b, s) for b in boards for s in pictures.SHOWN if s.format(b=b.name) + ".png" in b.extra.values()]
+    if shown:
+        L += ["", "Pictures – SVG beside each PNG among the files, every layer of the board too:", ""]
+        L += [f"![{s.format(b=b.label).replace('_', ' ')}]({repo}/releases/download/{tag}/{s.format(b=b.name)}.png)"
+              for b, s in shown]
     log = options(cfg)["decisions"]
     if log and prev:
         L += ["", f"Decisions since {prev} ([{Path(log).as_posix()}]({link(cfg.root / log)})):", ""]
@@ -370,7 +378,9 @@ def notes(cfg, tag, head, repo, boards, projs, changes, prev, new, draft):
           "**To order:** per board its upload files – at JLCPCB `gerber_<board>.zip`, with assembly also "
           "`bom_<board>.csv` and `cpl_<board>.csv`; `order_<board>.md`, where there is one, lists every field of the "
           "order form with its value. `polarity_<board>.png` shows every polarised part with pad, role and net – for "
-          "the check of the maker's assembly preview (M-2) and for hand soldering. `manifest_<board>.json` is edakit's "
+          "the check of the maker's assembly preview (M-2) and for hand soldering. `schematic_<board>` and `board_<board>_…` "
+          "(SVG and PNG) are pictures of the circuit and of the board – as made and layer by layer –, documentation, "
+          "not for the maker. `manifest_<board>.json` is edakit's "
           "record of the gate run with the SHA-256 of its files; `SHA256SUMS` covers every file here "
           "(`sha256sum -c SHA256SUMS`).",
           ""]
