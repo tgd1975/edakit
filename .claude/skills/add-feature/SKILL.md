@@ -60,7 +60,7 @@ Every change in a project's report is either the gap closed or a regression – 
 ## 7. Finish
 
 ```bash
-uv run --group dev pytest -q
+uv run --group dev pytest -q -n auto
 uvx ruff check edakit tests
 cd tests/fixtures/led-bar && uv run --project ../../.. edakit check && uv run --project ../../.. edakit sim
 ```

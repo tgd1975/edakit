@@ -137,6 +137,68 @@ def test_version_passes_a_change_nothing_a_project_reads():
     assert ok and "no version" in description
 
 
+PYPROJECT = """[project]
+name = "edakit"
+dependencies = ["numpy>=1.26"]
+
+[dependency-groups]
+dev = ["pytest>={pytest}"]
+"""
+
+LOCK = """version = 1
+requires-python = ">=3.11"
+
+[[package]]
+name = "edakit"
+source = {{ editable = "." }}
+dependencies = [{{ name = "numpy" }}]
+
+[package.dev-dependencies]
+dev = [{{ name = "pytest" }}]
+
+[[package]]
+name = "numpy"
+version = "{numpy}"
+
+[[package]]
+name = "pytest"
+version = "{pytest}"
+dependencies = [{{ name = "pluggy" }}]
+
+[[package]]
+name = "pluggy"
+version = "1.6.0"
+"""
+
+
+def _deps(numpy="2.4.6", pytest="9.1.1", runtime='"numpy>=1.26"'):
+    return {**BASE, "pyproject.toml": PYPROJECT.format(pytest=pytest).replace('"numpy>=1.26"', runtime),
+            "uv.lock": LOCK.format(numpy=numpy, pytest=pytest)}
+
+
+def test_an_update_of_the_dev_tools_alone_is_no_version():
+    """Dependabot's weekly pytest: pyproject.toml's dev group and uv.lock moved, nothing edakit installs."""
+    ok, description, _ = v.check_version(list(v.DEPS), _reader(_deps()), _reader(_deps(pytest="9.2.0")), 12)
+    assert ok and "no version" in description
+
+
+@pytest.mark.parametrize("head", [_deps(numpy="2.5.0"), _deps(pytest="9.2.0", numpy="2.5.0"),
+                                  _deps(runtime='"numpy>=2"')], ids=["runtime", "both", "requirement"])
+def test_an_update_of_what_edakit_installs_is_a_version(head):
+    ok, description, details = v.check_version(list(v.DEPS), _reader(_deps()), _reader(head), 12)
+    assert not ok and "without a fragment" in description and set(details) & set(v.DEPS)
+
+
+def test_the_runtime_follows_the_dependencies_and_leaves_the_dev_group_out():
+    assert v.runtime(LOCK.format(numpy="2.4.6", pytest="9.1.1")) == (">=3.11", [("edakit", None),
+                                                                              ("numpy", "2.4.6")])
+
+
+def test_the_runtime_of_this_repository_is_edakits():
+    names = {n for n, _ in v.runtime((ROOT / "uv.lock").read_text())[1]}
+    assert {"edakit", "numpy", "scipy", "shapely"} <= names and "pytest" not in names
+
+
 def test_version_passes_a_numbered_pull_request():
     head = _files("0.2.1", "# Changelog\n\n## 0.2.1 – 2026-11-03\n\n- x\n\n" + LOG[LOG.index("## 0.2.0"):])
     ok, description, _ = v.check_version(["edakit/check.py", v.INIT, v.MARKETPLACE, v.CHANGELOG],

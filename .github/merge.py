@@ -64,12 +64,18 @@ def gh_json(*args):
 DEPENDABOT = "dependabot/"
 
 
+def reads(tree):
+    """What the branch changes that a project reads – an update of the dev tools alone is none."""
+    return v.project_reads(v.changed_files("origin/main", "HEAD", root=tree), v.show("origin/main", root=tree),
+                           v.show("HEAD", root=tree))
+
+
 def dependabot_fragment(tree, branch, title, pr):
     """Write the fragment of a Dependabot branch that changes what a project reads and has none – a dependency of
     edakit moved, nothing for a project to do: patch. Returns its name, or None."""
     if not branch.startswith(DEPENDABOT) or any(p.name != "README.md" for p in (tree / v.CHANGES).glob("*.md")):
         return None
-    if not v.needs_version(v.changed_files("origin/main", "HEAD", root=tree)):
+    if not reads(tree):
         return None
     name = branch.replace("/", "-") + ".md"
     (tree / v.CHANGES / name).write_text(f"patch\n- Dependencies: {title} (#{pr}).\n")
@@ -102,7 +108,7 @@ def prepare(tree, branch, major, title="", pr=0):
         say("a Dependabot branch without a fragment: patch, with the pull request's title")
     n = v.number_tree(tree, main_n, dt.date.today().isoformat(), major=major)
     if n is None:
-        stray = v.needs_version(v.changed_files("origin/main", "HEAD", root=tree))
+        stray = reads(tree)
         if stray:
             raise SystemExit("the branch changes edakit but has no fragment in changes/ – add changes/<branch>.md "
                              "(first line minor or patch, then the lines):\n  " + "\n  ".join(stray))
