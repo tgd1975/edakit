@@ -734,6 +734,22 @@ edakit cart check: a surface finish with lead (HASL that is not lead-free) in th
 edakit cart check: regulatory.md, the result of the agent regulatory-reviewer on the order, exists, names the SHA-256 of job.json and quote.json as they are now and ends with the line 'Order: OK'. Without it the check is open (exit 3); another hash, 'Order: not OK' or another last line fails.
 <!-- edakit:end -->
 
+**Future work: wishes to the makers.** Every maker is reached through its pages in the browser. Where a maker opens an
+interface of its own, edakit can do the same over it, without a browser. These are wishes, not tasks: nobody asks the
+makers for them (the owner's decision of 2026-11-01); one is built when a maker offers it.
+
+- **JLCPCB:** its official API, with an interface for the assembly. `edakit cart quote --api` would upload the Gerber
+  (`pcb/uploadGerber`), run the pre-review (`pcb/audit/get`) and price the board (`pcb/calculate`), and `edakit stock`
+  would read all parts in one call (`component/getComponentDetailByCode`); the keys from `JLCPCB_APP_ID`,
+  `JLCPCB_ACCESS_KEY`, `JLCPCB_SECRET_KEY` or the keyring.
+- **PCBWay:** its partner API (api-partner.pcbway.com, an API key, approval only): the quotation of the PCB and the
+  state of an order the owner placed; the assembly keeps its BOM quotation in the browser.
+- **AISLER:** an upload key, for the ODB++ without the browser.
+- **Beta LAYOUT:** access to `api.beta-layout.com`, which answers but has no documentation.
+
+The rules of this section stay as they are: no API path orders or pays (`pcb/create` is never called), and ORDER.form
+to ORDER.review hold what an interface returns as they hold the page (ordering concept, step 12).
+
 ## 8.5 Acceptance (M-4)
 
 After delivery every board gets a short acceptance test: visual check (polarity of every polarised part), supply

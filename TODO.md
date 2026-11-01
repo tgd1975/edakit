@@ -59,11 +59,6 @@ run against a maker's page or EasyEDA yet.
       (`tests/fixtures/makers/aisler/live_2026-11-01/price/`). Built on the way: SYNC.odb's edge tolerance, the MPN in
       every KiCad footprint, the profile's fields on AISLER's /checkout.
 
-### Needs the makers
-
-- [ ] **5.11:** ask JLCPCB (API access, an assembly interface for partners), PCBWay (partner API), AISLER (upload key,
-      ODB++ from EasyEDA for assembly) and Beta LAYOUT (API); build what is granted.
-
 ### Needs the owner's word
 
 - [ ] The check candidates of the review at the order (implementation plan, 5.5): lead graded by purpose already at
