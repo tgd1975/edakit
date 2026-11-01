@@ -1,16 +1,19 @@
 # 1 The approach: one source, generated EDA, a check at every hand-over
 
+For anyone who wants to know why edakit works as it does: after it you know the pipeline, its ten principles and what
+it cannot promise.
+
 ## The idea in one paragraph
 
-The circuit is written down once, as a **hardware graph** in TOML (or, in a project that has not converted, JSON):
-every part with its LCSC number, every net with its pins – by name or role, through the parts entries – and voltage
-range. Everything else is **generated** from it and **checked** against it – the rule
-checks, an ngspice simulation of every operating case, the schematic in EasyEDA Pro, the parts and nets of the PCB,
-the bill of materials, and in the end the Gerber files that go to the manufacturer. Nobody draws a wire by hand.
-A change starts in the graph and flows through the same pipeline again. A **release gate** runs every check on the
-files that will actually be uploaded and writes a test protocol; only a run that says RELEASED goes to the maker.
-A project without a PCB needs no EasyEDA at all: checks, simulation and a drawn schematic (6.5) work from the graph
-alone. A project can also draw its boards in KiCad 10 instead of EasyEDA; the rest stays the same (chapter 16).
+The circuit is written down once, as a **hardware graph** in TOML (JSON in a project not yet converted): every part
+with its LCSC number, every net with its pins – by name or role, through the parts entries – and voltage range.
+Everything else is **generated** from it and **checked** against it: rule checks, an ngspice simulation of every
+operating case, the schematic in EasyEDA Pro, the PCB's parts and nets, the BOM and the Gerber files. Nobody draws a
+wire by hand. A change starts in the graph and runs through the pipeline again. A **release gate** runs every check on
+the files to be uploaded and writes a test protocol; only a RELEASED run goes to the maker.
+
+A project without a PCB needs no EasyEDA: checks, simulation and a drawn schematic (6.5) work from the graph alone. A
+project that draws its boards in KiCad 10 keeps the rest the same (KiCad as the tool chain, chapter 16).
 
 ```text
  parts database ──► hardware graph ──► schematic ──► PCB ──► manufacturing files ──► JLCPCB ──► acceptance
@@ -22,63 +25,58 @@ alone. A project can also draw its boards in KiCad 10 instead of EasyEDA; the re
 
 ## Why not just draw it in EasyEDA?
 
-Because the drawing is not the design, and because Claude cannot see the drawing. Claude Code works on text, with
-tools. In a drawing, a wire that ends one grid step next to a pin looks connected and is not; a footprint that prints
-"+" at the cathode looks fine; a net label typed "VLED" instead of "V_LED" splits a net. All of these happened or
-nearly happened in the project this toolkit comes from, and each one was caught by a comparison against the graph,
-not by looking.
+The drawing is not the design, and Claude cannot see it: Claude Code works on text, with tools. In a drawing, a wire
+one grid step from a pin looks connected and is not; a footprint printing "+" at the cathode looks fine; a label typed
+"VLED" instead of "V_LED" splits a net. On a real project each happened or nearly did, and a comparison against the
+graph caught it, not looking.
 
 With the graph as the only source:
 
-- **Claude can reason about the circuit.** A JSON file with pins and nets is something a language model reads
-  reliably. Checks like "every input has a driver or a pull resistor", "every IC supply pin has a capacitor" or "a
-  reversed supply reaches only the anode of a blocking diode" are a few lines of Python over that file.
-- **Every artifact can be regenerated.** Schematic, PCB parts, nets, tracks, pours, silkscreen – all generated. That
-  is what makes the EasyEDA side safe to automate: anything broken is deleted and rebuilt, without asking.
+- **Claude can reason about the circuit.** A language model reads pins and nets reliably, and a check like "every IC
+  supply pin has a capacitor" is a few lines of Python over the file.
+- **Every artifact can be regenerated** – schematic, PCB parts, nets, tracks, pours, silkscreen. That makes EasyEDA
+  safe to automate: anything broken is deleted and rebuilt, without asking.
 - **Every hand-over has a comparison.** Graph ↔ schematic (SYNC.schematic), graph ↔ PCB pads (SYNC.pcb), plan ↔ PCB
-  (SYNC.plan), graph ↔ copper in the Gerber files (GEO.copper), graph ↔ BOM (SYNC.bom). An error has to slip past an
-  independent comparison to reach the manufacturer.
+  (SYNC.plan), graph ↔ Gerber copper (GEO.copper), graph ↔ BOM (SYNC.bom). An error has to slip past an independent
+  comparison to reach the manufacturer.
 - **Changes are cheap and complete.** Swapping a part is a line in the graph plus `create → layout → pcb parts →
-  route → gate`. Nothing is forgotten in a corner of the schematic.
+  route → gate`; nothing is forgotten in a corner of the schematic.
 
 ## Principles
 
-1. **One source.** The graph for parts, values and connections; the parts database for what the datasheets say; a
-   board file per board for placement and rules; the schematic file for the blocks – `edakit.toml` says where each of
-   them is. The schematic and the PCB are outputs.
+1. **One source.** The graph for parts, values and connections, the parts database for what the datasheets say, a
+   board file per board for placement and rules, the schematic file for the blocks; `edakit.toml` says where each is.
+   The schematic and the PCB are outputs.
 2. **Generated content may be deleted.** Everything in the EasyEDA project comes from scripts. When something is off,
    delete it and generate it again – no backups, no questions.
 3. **A check at every hand-over, and the last one on the real files.** The gate does not trust EasyEDA: connectivity
-   is recomputed from the exported Gerber copper, the BOM is generated from the graph, the stock is asked from
-   JLCPCB's catalogue where JLCPCB builds the board, and another maker's part matching is held to the release.
-4. **Every check was seen red once.** A check that never failed may not work. For every rule there is a negative test
-   that builds the fault into a copy and expects the check to find it.
-5. **Sign-offs belong to a state.** A manual check (a second datasheet review, the layout review) is recorded with
-   the hash of what it checked. Change the circuit or the layout and the sign-off no longer counts.
-6. **An independent agent's result is the sign-off.** Checks that need judgement – is this footprint's pin 1 really
-   pin 1, is this layout manufacturable and usable – are done by a separate agent in its own session. If it says OK,
-   it is signed; if not, the cause is fixed and it checks again. The human is asked for decisions, not for checklists.
-7. **Decisions are numbered.** D-12: written down with reason, date and alternatives, cited where they apply. A
-   later session (or a later you) knows why the 18-mil tracks are below the class width and that it was accepted.
-8. **Tooling over clicking.** When EasyEDA needs a click, first look for the API path (parts without the import dialog,
-   pad nets directly, own DSN instead of the DSN export). A dialog that remains must be a plain OK.
-9. **Every rule says why.** Each check has a catalog entry with its reason, what to do and its sources; a finding comes
-   with that explanation, and a review finding that a rule could have found becomes a check (chapter 14).
-10. **Roles hand over in writing.** The circuit designer and the PCB designer work in sessions of their own; what the
-    layout must know is in the graph (`layout`), not in a conversation, and a check holds the plan to it (14.1).
+   is recomputed from the exported Gerber copper, the BOM generated from the graph, the stock asked from JLCPCB's
+   catalogue where JLCPCB builds the board, and another maker's part matching held to the release.
+4. **Every check was seen red once.** A check that never failed may not work, so for every rule a negative test builds
+   the fault into a copy and expects the check to find it.
+5. **Sign-offs belong to a state.** A manual check – a second datasheet review, the layout review – is recorded with
+   the hash of what it checked; change the circuit or the layout and the sign-off no longer counts.
+6. **An independent agent's result is the sign-off.** A check that needs judgement – is pin 1 really pin 1, is the
+   layout manufacturable and usable – is done by a separate agent in its own session. If it says OK, it is signed;
+   if not, the cause is fixed and it checks again. You are asked for decisions, not for checklists.
+7. **Decisions are numbered.** D-12 is written down with reason, date and alternatives and cited where it applies, so
+   a later session knows why the 18-mil tracks are below the class width and that this was accepted.
+8. **Tooling over clicking.** When EasyEDA needs a click, look for the API path first – parts without the import
+   dialog, pad nets set directly, an own DSN instead of the DSN export. A dialog that remains must be a plain OK.
+9. **Every rule says why.** Each check has a catalog entry with its reason, what to do and its sources, and a finding
+   comes with it. A review finding that a rule could have found becomes a check (designing a circuit, chapter 14).
+10. **Roles hand over in writing.** The circuit designer and the PCB designer work in sessions of their own. What the
+    layout must know is in the graph (`layout`), not in a conversation, and a check holds the plan to it (roles, 14.1).
 
 ## What it achieved
 
-The reference project – a two-layer board with an MCU module, three LED driver ICs, about 30 LEDs, buttons, a DIP
-switch, a buzzer, a concave decorative outline, about 120 parts and 98 nets, assembled by JLCPCB on one side –
-went from the first graph to a released set of manufacturing files in five days (19–23 October 2026). A complete
-redesign of the power concept afterwards went through graph, schematic, PCB and routing within one more day. There was
-budget for one order and no prototype round, so the gate had to catch everything that would hit all boards alike.
+On a real project of about 120 parts, the first graph became released manufacturing files in five days; a redesign of
+the power concept went through graph, schematic, PCB and routing in one more day. With budget for one order and no
+prototype round, the gate had to catch everything that would hit all boards alike.
 
-Along the way the checks found, among others: a library footprint with "+" printed at the cathode pad (fixed by
-swapping the nets in the graph), holes too tight for the leads of two parts, a pin of the generated schematic that
-had drifted onto two nets, a 61-mm detour in a switching regulator's current loop, and – late, by the layout review
-agent – that the gate had released a run without anyone reviewing the layout. Each became a check.
+Its checks found a library footprint with "+" at the cathode pad, holes too tight for the leads of two parts, a
+generated schematic pin drifted onto two nets and a 61 mm detour in a switching regulator's current loop. The layout
+review agent found a run released without a layout review. Each became a check (lessons learned, chapter 13).
 
 What it does not give you: a guarantee. It gives you a check for every error class you know of, an explicit list of
 what is checked by judgement and by whom, and an acceptance test after delivery for what neither can see.

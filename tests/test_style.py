@@ -204,15 +204,14 @@ RED = {
                                               "08-release-gate", "10-reference", "17-walkthrough")},
     "paragraphs": {"examples/coin-cell-led/docs/decisions.md",
                    "examples/blinker-555/docs/decisions.md"} | {f"handbook/{c}.md" for c in (
-        "01-approach", "04-parts-database", "05-simulation", "07-pcb",
+        "04-parts-database", "05-simulation", "07-pcb",
         "08-release-gate")},
     "references": set(),
     "words": {f"handbook/{c}.md" for c in (
-        "01-approach", "04-parts-database", "07-pcb", "08-release-gate",
-        "09-easyeda-api", "12-troubleshooting", "13-lessons-learned")},
+        "04-parts-database", "07-pcb", "08-release-gate",
+        "13-lessons-learned")},
     "dates": {"examples/coin-cell-led/README.md", "examples/blinker-555/README.md"} | {f"handbook/{c}.md" for c in (
-        "01-approach", "04-parts-database", "07-pcb", "08-release-gate", "09-easyeda-api",
-        "10-reference", "17-walkthrough")},
+        "04-parts-database", "07-pcb", "08-release-gate", "10-reference", "17-walkthrough")},
     "bold": set(),
     "buzzwords": set(),
 }
