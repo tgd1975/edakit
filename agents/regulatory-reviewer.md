@@ -56,8 +56,9 @@ Say clearly "M-6: OK for state `<circuit hash>` and purpose `<use>`" or list wha
 With `[project] requirements`, judge also every requirement whose `verify` names `signoff = "M-6"` (`edakit req`
 lists them) – a board that must not transmit, a cell the user must be able to remove – and give the IDs of the ones
 you found met in the line the sign-off's note takes over: "M-6: OK for state `<circuit hash>` and purpose `<use>`;
-requirements met: R-6". The gate counts an ID in the note as passing evidence (handbook 8.7): a requirement you did
-not find met stays out of the line and is a finding.
+requirements met: R-6". The gate counts an ID after "requirements met:" as passing evidence, up to the next ";" or
+"." (handbook 8.7) – an ID elsewhere in the note counts for nothing: a requirement you did not find met stays out of
+that clause and is a finding.
 
 ## At the order
 

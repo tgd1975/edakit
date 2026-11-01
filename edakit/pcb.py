@@ -2003,38 +2003,16 @@ def tab_strips(board, poly):
     return pieces[0]
 
 
-def pour_outline(board, notches=True):
+def pour_outline(board):
     """Pour polygon (plan mm): the outline, set in by pour_inset_mm of the board file – without it by the edge clearance
     of the routing rules + 0.1 mm (EasyEDA itself keeps only about 0.26 mm) –, and along every [order] tab zone by
-    tab_copper_mm (tab_strips), without the keep-out circle of every mounting hole, with a notch around every tooling
-    hole. A polygon with a hole counts only by its outer contour, and copper must not lie under the tooling hole – so
-    the notch reaches the edge. notches=False: the outline without them – EasyEDA's pour keeps the holes free with
-    NO_POURS regions instead (keep_regions, E-13)."""
-    from shapely.geometry import Point, box
+    tab_copper_mm (tab_strips). The mounting and tooling holes are no notch of it: a NO_POURS region in EasyEDA
+    (keep_regions, E-13) and a rule area in KiCad (toolchain.kicad.board.keep_area) keep their circles free
+    (pour_keepouts)."""
     edge = board.pour_inset_mm
     if edge is None:
         edge = float(board.routing.get("edge_clearance_um", 400)) / 1000 + 0.1
     poly = tab_strips(board, outline_polygon(board).buffer(-edge, join_style="mitre"))
-    if not notches:
-        return [tuple(q) for q in list(poly.exterior.coords)[:-1]]
-    for h in board.holes:  # 'keep' = radius free of parts and copper (screw head, washer)
-        cut = poly.difference(Point(h["x"], h["y"]).buffer(h["keep"]))
-        if cut.geom_type == "Polygon" and not cut.interiors:
-            poly = cut
-        else:  # the circle lies inside: a notch to the edge, as for tooling holes
-            half = max(h["keep"], poly.exterior.distance(Point(h["x"], h["y"])) + 0.05)
-            cut = poly.difference(box(h["x"] - half, h["y"] - half, h["x"] + half, h["y"] + half))
-            if cut.geom_type == "Polygon" and not cut.interiors:
-                poly = cut
-            else:
-                print(f"  ! hole ({h['x']}, {h['y']}) is not near an edge – the pour keeps only EasyEDA's clearance")
-    for tx, ty in board.tooling:
-        half = max(board.tooling_keep, poly.exterior.distance(Point(tx, ty)) + 0.05)
-        cut = poly.difference(box(tx - half, ty - half, tx + half, ty + half))
-        if cut.geom_type == "Polygon" and not cut.interiors:
-            poly = cut
-        else:
-            print(f"  ! tooling hole ({tx}, {ty}) is not near an edge – the pour cannot leave it out")
     return [tuple(q) for q in list(poly.exterior.coords)[:-1]]
 
 
@@ -2097,7 +2075,7 @@ def pour(cfg, board, mcp, keep_islands_on=None, regions=None):
         api(mcp, "PCB_PrimitivePour.delete", old)
     if n := keep_regions(cfg, board, mcp):
         print(f"  {n} NO_POURS region(s) around the holes")
-    pts = [board.eda_point(*q) for q in pour_outline(board, notches=False)]
+    pts = [board.eda_point(*q) for q in pour_outline(board)]
     for spec in board.pours:
         for layer_name in spec.get("layers", ["TOP", "BOTTOM"]):
             shapes = (regions or {}).get((spec["net"], layer_name), [pts])

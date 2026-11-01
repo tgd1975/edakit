@@ -1507,9 +1507,9 @@ def bare_pieces(free, width, other=None):
 def check_copper_sides(board, design, d, rows):
     """GEO.pour: copper per layer from the Gerber files on the raster of GEO.copper, widened to the outline. Per layer the copper
     share of the board area (outline without mounting and NPTH holes) and the largest copper-free circle inside
-    the pour outline (pcb.pour_outline, as `pcb pour` pours): information on a layer without pour, a warning above
-    [copper] max_bare_mm on a layer the board file pours ([[pours]], default GND on both) – a pour EasyEDA left empty
-    where its net has no pad, or never filled. There every copper-free piece a pour could fill (bare_pieces: opened
+    the pour outline (pcb.pour_outline without the keep circles of the holes, as `pcb pour` pours): information on a
+    layer without pour, a warning above [copper] max_bare_mm on a layer the board file pours ([[pours]], default GND
+    on both) – a pour EasyEDA left empty where its net has no pad, or never filled. There every copper-free piece a pour could fill (bare_pieces: opened
     with a disc of 2 x clearance_mm + min_width_mm) above [copper] max_bare_mm2 warns too – a long strip, an island
     walled in by other nets, that the circle misses. A share below [copper] min_cover warns. On every layer a copper piece that
     touches no pad (FlyingProbeTesting.json), via or plated hole warns: an island left by a fill with islands kept.
@@ -1543,7 +1543,7 @@ def check_copper_sides(board, design, d, rows):
     drilled = area([], [(x, y, w / 2) for x, y, w, _ in gerber.parse_holes(g / gerber.FILES["npth"])]
                    + [(*board.eda_point(h["x"], h["y"]), h["d"] / 2) for h in board.holes])   # NPTH, mounting holes
     whole = area(outline) & ~drilled
-    inside = area(pour) & ~drilled
+    inside = area(pour, [(*board.eda_point(x, y), r) for x, y, r in pcb.pour_keepouts(board)]) & ~drilled  # NO_POURS
     probe = json.loads((g / gerber.FILES["probe"]).read_text())["pins"]
     anchors = {"T": [], "B": []}       # (x, y, r): pads of FlyingProbeTesting.json (all of them), plated holes and vias
     for row in probe["rows"]:

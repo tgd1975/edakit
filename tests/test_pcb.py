@@ -518,6 +518,20 @@ def test_place_keeps_the_paste_gap_next_to_a_host_and_by_airline_length(project,
     assert paste_pairs(cfg, geo) == [] and pcb.plan(cfg, cfg.board()) == []
 
 
+
+def test_plan_names_a_pad_within_the_keep_of_a_hand_soldered_joint(project):
+    """hand_solder_keep_mm in the plan, as `route check` holds it (the 555 blinker, walkthrough 2): J1 (bom = false)
+    is soldered by hand from the bottom, and R2 on the bottom beside its pin 1 keeps the clearance but not the 1 mm."""
+    assert project.comp(project.graph(), "J1")["bom"] is False
+    f = place_project(project, drop=("R2",), add='R2 = { x = 84.4, y = 13.0, rot = 0, side = "bottom" }\n')
+    cfg = project.config()
+    assert not any("hand_solder_keep_mm" in p for p in pcb.plan(cfg, cfg.board()))      # the key off: nothing held
+    f.write_text(re.sub(r"^(\[routing\].*\n)", r"\1hand_solder_keep_mm = 1\n", f.read_text(), count=1, flags=re.M))
+    cfg = project.config()
+    assert [p for p in pcb.plan(cfg, cfg.board()) if "hand_solder_keep_mm" in p] == [
+        "GEO.spacing J1.1 (VIN) – pad R2.2 (LED_OE) at (85.97, 13.00): 0.63 mm apart on BOTTOM, the solder side of J1, "
+        "below hand_solder_keep_mm 1"]
+
 # --- the auto-layout's positions into [place], the takeover of a board placed before (step 2.1) ---------------------
 
 # Recorded: easyeda_pcb_components of the Christmas bell's SMD board in its gate run 20261026-123018 (fab/smd/pcb.json),
@@ -1056,6 +1070,7 @@ def test_the_holes_are_kept_free_by_no_pours_regions_not_by_a_notch(project, mon
     made = [a for p, a in calls if p == "PCB_PrimitiveRegion.create"]
     assert [(a[0], a[2]) for a in made] == [(pcb.MULTI_LAYER, [7]), (pcb.MULTI_LAYER, [7])]
     assert len(json.loads(cfg.artifact("pcb", "main_keep_regions.json").read_text())) == 2
-    whole = Polygon(pcb.pour_outline(board, notches=False))
+    whole = Polygon(pcb.pour_outline(board))
     assert whole.contains(Point(3.0, 3.0)) and whole.contains(Point(20.0, 10.0))      # no notch any more
-    assert not Polygon(pcb.pour_outline(board)).contains(Point(3.0, 3.0))           # the notch where the others read it
+    area = route._pour_area(route.Rules(board))                       # the computed pour leaves the circles out
+    assert not area.contains(Point(3.0 * MIL, 3.0 * MIL)) and area.contains(Point(3.0 * MIL, 5.0 * MIL))

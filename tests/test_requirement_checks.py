@@ -372,14 +372,24 @@ SIGNED = {"done_by": "agent electrical-reviewer", "date": "2026-10-28"}
 
 
 @pytest.mark.parametrize("m1, state, what", [
-    ({**SIGNED, "note": "OK for state 1a2d…; R-1: LED_OE is held high by R2 until the firmware runs"}, "pass",
-     "signed by agent electrical-reviewer (2026-10-28), its note names R-1"),
-    ({**SIGNED, "note": "OK for state 1a2d…; R-12 holds"}, "fail",
-     "signed by agent electrical-reviewer (2026-10-28), but its note does not name R-1 (section 6)"),
+    ({**SIGNED, "note": "OK for state 1a2d…; requirements met: R-3, R-1. R2 holds LED_OE high until the firmware"},
+     "pass", "signed by agent electrical-reviewer (2026-10-28), its note names R-1 met"),
+    ({**SIGNED, "note": "OK for state 1a2d…; Requirement met: R-1"}, "pass",
+     "signed by agent electrical-reviewer (2026-10-28), its note names R-1 met"),
+    ({**SIGNED, "note": "OK for state 1a2d…; requirements met: R-12"}, "fail",
+     'signed by agent electrical-reviewer (2026-10-28), but its note does not name R-1 under "requirements met:" '
+     "(section 6)"),
+    ({**SIGNED, "note": "OK for state 1a2d…; requirements met: R-2; R-1 not met: LED_OE floats at reset"}, "fail",
+     'signed by agent electrical-reviewer (2026-10-28), but its note does not name R-1 under "requirements met:" '
+     "(section 6)"),     # TD-85: a mention elsewhere in the note is no evidence
+    ({**SIGNED, "note": "OK for state 1a2d…; R-1: LED_OE is held high by R2 until the firmware runs"}, "fail",
+     'signed by agent electrical-reviewer (2026-10-28), but its note does not name R-1 under "requirements met:" '
+     "(section 6)"),
     ({"done_by": None, "note": "R-1 holds"}, "fail", "not signed for this state (section 6)"),
 ])
 def test_signoff_evidence_is_signed_for_this_state_and_names_the_requirement(tmp_path, m1, state, what):
-    """The note of the manual check names the requirement's ID: the reviewer judged it and signed for this state."""
+    """The note of the manual check names the requirement's ID under "requirements met:": the reviewer judged it met
+    and signed for this state."""
     manual = [{"id": "M-1", "phase": "export", "scope": "circuit", **m1}]
     results, _ = evaluate(tmp_path, requirement("must", ("signoff", "M-1")), manual=manual)
     assert results[0].items[0][2:] == (state, what)
@@ -593,10 +603,10 @@ def test_a_requirement_passes_with_its_sign_off(project, monkeypatch):
     """M-1 signed for this circuit, its note naming R-4: the requirement passes, the reason is gone."""
     with_requirements(project)
     rewrite(project, 'status = "draft"', 'status = "accepted"')
-    sign(project, ("M-1", "OK for this state. R-4: R2 holds LED_OE high until the firmware drives it"))
+    sign(project, ("M-1", "OK for this state; requirements met: R-4. R2 holds LED_OE high until the firmware drives it"))
     text = gate_run(project, monkeypatch)
     assert "→ **FAILED**" not in section(text, 11)
-    assert "  - signoff M-1 – signed by agent (2026-10-28), its note names R-4\n" in section(text, 11)
+    assert "  - signoff M-1 – signed by agent (2026-10-28), its note names R-4 met\n" in section(text, 11)
     assert "requirement(s)" not in decision(text)
 
 

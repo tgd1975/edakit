@@ -67,9 +67,9 @@ On the manufacturing files of the gate run (Sources). Say clearly "M-5: OK for f
 the protocol header of the run whose files you reviewed; "layout hash" when the sign-off file gives M-5 the scope
 `layout`) or what must be fixed first. With `[project] requirements`, judge also every requirement whose `verify`
 names `signoff = "M-5"` (`edakit req` lists them) on the plan and the files; the line names the ones you found met –
-"M-5: OK for fab hash <hash>; requirements met: R-7" – and the sign-off's note takes it over. The gate counts an ID in
-the note as passing evidence (handbook 8.7): a requirement you did not find met stays out of the line and is a
-finding. Reviewing again after a change: `edakit fab diff <reviewed run> <new run>` lists the changed layers and
+"M-5: OK for fab hash <hash>; requirements met: R-7" – and the sign-off's note takes it over. The gate counts an ID
+after "requirements met:" as passing evidence, up to the next ";" or "." (handbook 8.7) – an ID elsewhere in the note
+counts for nothing: a requirement you did not find met stays out of that clause and is a finding. Reviewing again after a change: `edakit fab diff <reviewed run> <new run>` lists the changed layers and
 spots.
 
 ## Result

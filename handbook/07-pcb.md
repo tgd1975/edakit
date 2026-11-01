@@ -63,7 +63,8 @@ while the holes hold the board – the 555 blinker's battery holder covers one (
 
 edakit creates tooling holes as free pads without copper ring, so they land in the NPTH drill file. Two EasyEDA quirks:
 while a free pad is in the PCB, pour fills fail – edakit takes them out before every fill and puts them back; and a pour
-polygon with a hole is not filled – the pour gets a notch from the edge around each tooling hole instead.
+polygon with a hole is not filled – the pour follows the outline, and a `NO_POURS` region keeps the keep circle of each
+mounting and tooling hole free (E-13). On KiCad a rule area does the same, and KiCad fills right up to it.
 
 ## 7.3 Parts and nets without dialogs
 

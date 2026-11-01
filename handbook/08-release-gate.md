@@ -822,7 +822,7 @@ The list is section 6 of the protocol, "after delivery, per board":
 - [ ] A abnahme: Camera test of every board after delivery: each LED at its place – `uv run simulator/pico/pruefstand.py mitlesen`
 ```
 
-M-4 works through it and names the requirements it tested in its note; signed, it lets their acceptance steps pass, and
+M-4 works through it and names the requirements it found met in its note ("requirements met: R-4"); signed, it lets their acceptance steps pass, and
 the requirements whose evidence is such a check (8.7). A board of a published release that passed it drops the release's
 pre-release mark: `edakit release publish --built <tag>` (publishing, 8.3). The list
 "after uploading to the manufacturer, before paying" works the same way for M-2: the datasheet points with
@@ -1195,7 +1195,7 @@ After the stages, every requirement's evidence is evaluated against this run:
 | `verify` | passes when | otherwise |
 |---|---|---|
 | `rows` | at least one row of the protocol matches – a pattern over "ID scenario item check", matched as `accept` match (8.2), the rows of the simulation included – and none of them failed. An advisory finding of a project check did not pass; a warning, an acceptance or an open sign-off is no failure | no passing evidence; when no row matches because the pattern's stage did not run – S, L and F in the offline gate –, the protocol says so |
-| `signoff` | the manual check is signed for the current hash of its scope – only then does it count at all (8.2) – and its `note` names the requirement's ID, e.g. `"note": "OK for state 1a2d…; R-4: R2 holds LED_OE high until the firmware drives it"` (R-40 does not name R-4) | phase `export`: no passing evidence; a later phase (M-2, M-4): open after the export |
+| `signoff` | the manual check is signed for the current hash of its scope – only then does it count at all (8.2) – and its `note` names the requirement's ID in a clause "requirements met:", up to the next `;` or `.`, e.g. `"note": "OK for state 1a2d…; requirements met: R-4, R-5. R2 holds LED_OE high until the firmware drives it"` (R-40 does not name R-4, and "R-4 not met" elsewhere in the note is no evidence) | phase `export`: no passing evidence; a later phase (M-2, M-4): open after the export |
 | `accept` | M-4 is signed | open after delivery; the step is on the acceptance list of section 6 (8.5) |
 | `script` | the project's check (8.1) – a `[scripts]` name, the `id` of a `[[release.stages]]` – passed in this run: it ran, and no row of its stage failed; an advisory finding did not pass either. A check of phase `order` or `acceptance` counts like an `accept` step: M-2 or M-4 is signed | phase `export`: no passing evidence – also when the check did not run (one after F in the offline gate) or is not part of the run (entries that do not resolve: stage G says why); phase `order` or `acceptance`: open after the export, the check is a line of section 6 |
 
@@ -1247,7 +1247,8 @@ A requirement whose evidence is a project check – the rule watcher of the test
 **Signing for a requirement.** A reviewer whose check a requirement names in `verify` – the agent electrical-reviewer
 for `signoff = "M-1"`, regulatory-reviewer for `"M-6"`, pcb-reviewer for `"M-5"` – judges it and names the requirements
 it found met in the note it signs with; its result gives the line,
-`M-1: OK for state 1a2d…; requirements met: R-4, R-5`. An ID in the note is passing evidence, so a requirement the
-review did not find met stays out of the note and is a finding of the review. The sign-off file needs no other field.
+`M-1: OK for state 1a2d…; requirements met: R-4, R-5`. An ID in that clause is passing evidence – up to the next `;`
+or `.`, "requirement met:" too –, an ID elsewhere in the note is none, so a requirement the review did not find met
+stays out of the clause and is a finding of the review (the owner's decision on the 555 blinker's gap, 2026-11-02). The sign-off file needs no other field.
 Because the requirements files are in the circuit hash (8.2), a changed requirement voids M-1 and M-6, and the next
 signature names it again.
