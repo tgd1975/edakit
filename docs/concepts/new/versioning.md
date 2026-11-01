@@ -8,7 +8,9 @@ patch, and the rule for the rest kept simple. What Claude decided itself the own
 starts on the owner's word, listed in `TODO.md`. V.1 and V.2 (TD-45) built on the owner's word the same day, on the
 branch `versioning-v1`; building them made three things simpler, written in below: the check `changes` is part of
 `version`, the paths decide which merge is no version (no fragment `none`), and the working rule for merging went into
-CLAUDE.md with V.2 rather than V.4, so that no merge comes past `merge.py` while the rulesets wait. Written against
+CLAUDE.md with V.2 rather than V.4, so that no merge comes past `merge.py` while the rulesets wait. On the owner's
+word the reader's documentation came with V.2 too: README (Install, Versions), handbook 2.3, 10.5 (`--version`), 14.4
+and the glossary's "Version". Written against
 main at `d633a4b`. Asked for by the owner:
 edakit has reached the point where it should work with version numbers and branch protection from now on – a concept
 for both, and, since a concept could then no longer be committed straight to main, an elegant way for concepts to get
@@ -319,9 +321,9 @@ cache become text:
 | Step | What | Files | Size | Waits for |
 | --- | --- | --- | --- | --- |
 | V.1 | The number in one place (0.2.0); `edakit --version`; the manifest's `tools.edakit` with the commit; the marketplace entry with version and ref; `plugin.json` without; the test that holds them together | `edakit/__init__.py`, `pyproject.toml`, `edakit/cli.py`, `edakit/release/gate.py`, `.claude-plugin/`, `tests/test_version.py` | S | – |
-| V.2 | Changelog, fragments, merge: `CHANGELOG.md`, `changes/README.md` (the rule for the number), `.github/merge.py`, `.github/versions.py`, `release.yml`; the checks `paths` and `version` (on `pull_request_target`, their lists read from main); the working rule in CLAUDE.md – a fragment per branch, merging through `merge.py`. On one branch with V.1: its merge is 0.2.0, the first version, tagged by `release.yml` | `CHANGELOG.md`, `changes/`, `.github/`, `edakit/proposal.py` (the list, with the proposals concept) | M | V.1 |
+| V.2 | Changelog, fragments, merge: `CHANGELOG.md`, `changes/README.md` (the rule for the number), `.github/merge.py`, `.github/versions.py`, `release.yml`; the checks `paths` and `version` (on `pull_request_target`, their lists read from main); the working rule in CLAUDE.md – a fragment per branch, merging through `merge.py`; the reader's documentation: README (Install, Versions), handbook 2.3 (update, pin, `--version`), 10.5, 14.4, the glossary. On one branch with V.1: its merge is 0.2.0, the first version, tagged by `release.yml` | `CHANGELOG.md`, `changes/`, `.github/`, `edakit/proposal.py` (the list, with the proposals concept) | M | V.1 |
 | V.3 | The notes lane: `.github/notes.py`, `paths` for `notes/*` | `.github/` | M | V.2 |
-| V.4 | The rules as text, applied with `gh api` on the owner's word once V.2 and V.3 are on main (the required checks must exist), with the working rules that go with them: CLAUDE.md (the notes lane, the protection), `docs/organisation.md` (`changes/`, `CHANGELOG.md`, `.github/rulesets/`), the triage, add-rule and add-feature skills (a fragment per change), README (Install: update, pin) and handbook 2.3 | `.github/rulesets/`, CLAUDE.md, `docs/organisation.md`, `.claude/skills/`, README.md, handbook 2 | M | V.3 |
+| V.4 | The rules as text, applied with `gh api` on the owner's word once V.2 and V.3 are on main (the required checks must exist), with the working rules that go with them: CLAUDE.md (the notes lane, the protection), `docs/organisation.md` (`changes/`, `CHANGELOG.md`, `.github/rulesets/`), the triage, add-rule and add-feature skills (a fragment per change) | `.github/rulesets/`, CLAUDE.md, `docs/organisation.md`, `.claude/skills/` | M | V.3 |
 | V.5 | Branches left lying around: 9 `claude/*` and 2 `ccr-*` on origin, the local ones and worktrees – listed, then merged or deleted on the owner's word; other sessions' branches named with their session | – | S | – |
 | V.6 | 1.0.0: on the owner's word, once D.2 of documentation.md is built (`merge.py --major`) | – | S | D.2 |
 | V.7 | Later: `edakit = ">=0.4"` under `[project]` in `edakit.toml`. `edakit check` notes when the running edakit does not meet it, and the SessionStart hook says which edakit runs, so a project that needs a newer edakit says so | `edakit/config.py`, `edakit/agreements.py`, handbook 10 | M | V.2, the owner's word |

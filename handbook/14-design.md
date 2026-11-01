@@ -304,7 +304,7 @@ domain setting. The loop is part of the workflow:
    codes – also by hand in the repository, without an issue.
 7. **Back in the project.** `propose-rule` follows the issue: it answers questions with the user, and after the merge
    the decision gets the code (`edakit: REQ.function`) or `edakit: rejected (#12)`. From the next plugin update on the
-   rule runs on every project – the plugin pins no version, so every commit on `main` is an update.
+   rule runs on every project – every merge into `main` is a version of its own (2.3).
 
 Who may propose: only the repository owner – the Action does not start for anyone else, and GitHub's author field
 says who wrote an issue. The checksum adds that the text is the one that was sealed. The Action needs the Claude

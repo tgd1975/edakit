@@ -60,8 +60,13 @@ To update, refresh the marketplace and update the plugin, then start a new sessi
 claude plugin marketplace update edakit && claude plugin update edakit@edakit
 ```
 
-The plugin pins no version, so every commit on `main` is an update. Auto-update for the edakit marketplace can be
-switched on under `/plugin` → Marketplaces (off by default for marketplaces outside Anthropic).
+An update brings the newest version of edakit. Auto-update for the edakit marketplace can be switched on under
+`/plugin` → Marketplaces (off by default for marketplaces outside Anthropic).
+
+**Versions.** Every change to edakit comes as a version with its own number, such as 0.2.0. The
+[changelog](CHANGELOG.md) says what each one changed. When the middle number goes up, a project has to act, and the
+changelog says what to do. `edakit --version` names the version that runs. A project can also stay on one version
+([handbook 2.3](handbook/02-setup.md#23-claude-code-the-plugin)).
 
 **Two tool chains.** A project draws its boards in EasyEDA Pro (the default) or in KiCad 10 – `toolchain = "kicad"`
 in `[project]` of edakit.toml. On KiCad edakit writes one KiCad project per board and calls kicad-cli: no bridge, no
