@@ -274,20 +274,20 @@ where the reader looks, the file stays where the code looks. Section 6.5, the dr
 stations and its "read it when" column.
 
 **edakit as a meta-harness** (`docs/architecture.md`, for developers, decision 14). The one page that uses the word, and
-it defines it by three properties, each checkable in the repository: edakit is built on Claude Code's harness and
-specializes it; projects extend it with scripts and agents of their own (`[scripts.*]`, `[agents.*]` in edakit.toml)
-that the gate runs and whose sign-offs it requires; and it changes through its own use – a finding becomes a proposal,
-the Action builds it with Claude, the owner merges. Then: the three layers – Claude Code (the loop, tools, permissions,
-sub-agents, hooks), the plugin (skills, agents, hooks, the working agreements, the EasyEDA MCP server), the checking
-core (the command line, the catalog, the engines, the simulation, the gate), which works without Claude Code –; the five
-loops with the files that set them – the check loop (`skills/circuit-design/SKILL.md`, "Check loop"), the review loop
-(working agreement 4 in 11.4), the PCB round (`skills/pcb-round/SKILL.md`), the gate (`skills/release/SKILL.md`, chapter
-8), the loop across projects (`skills/propose-rule`, the triage skills, the Action proposals) –, each with its signal,
-its stop condition and its step back; what is bound to Claude Code (the formats of skills, hooks and agents,
-AskUserQuestion, Claude in Chrome) and what carries over (the command line and its checks, MCP, the skills as text); and
-the rules for developers that follow: a capability without a check is a prompt – every new step brings its check, seen
-red once; knowledge goes into data – catalog, domains, blocks, parts –, not into a skill's text; skills name handbook
-sections, which `tests/test_references.py` holds; the person gets decisions, not checklists.
+it defines it by three properties, each checkable in the repository: edakit is built on an agent harness – Claude Code
+first – and specializes it; projects extend it with scripts and agents of their own (`[scripts.*]`, `[agents.*]` in
+edakit.toml) that the gate runs and whose sign-offs it requires; and it changes through its own use – a finding becomes
+a proposal, the Action builds it with Claude, the owner merges. Then: the three layers – Claude Code (the loop, tools,
+permissions, sub-agents, hooks), the plugin (skills, agents, hooks, the working agreements, the EasyEDA MCP server), the
+checking core (the command line, the catalog, the engines, the simulation, the gate), which works without Claude Code –;
+the five loops with the files that set them – the check loop (`skills/circuit-design/SKILL.md`, "Check loop"), the
+review loop (working agreement 4 in 11.4), the PCB round (`skills/pcb-round/SKILL.md`), the gate
+(`skills/release/SKILL.md`, chapter 8), the loop across projects (`skills/propose-rule`, the triage skills, the Action
+proposals) –, each with its signal, its stop condition and its step back; what is bound to Claude Code (the formats of
+skills, hooks and agents, AskUserQuestion, Claude in Chrome) and what carries over (the command line and its checks,
+MCP, the skills as text); and the rules for developers that follow: a capability without a check is a prompt – every new
+step brings its check, seen red once; knowledge goes into data – catalog, domains, blocks, parts –, not into a skill's
+text; skills name handbook sections, which `tests/test_references.py` holds; the person gets decisions, not checklists.
 
 What changes inside a chapter (step D.5), one chapter per branch, the documentation review after each, under the rules
 above – every sentence checked first for being generated or used elsewhere, and the owner asked where that leaves a
@@ -372,13 +372,14 @@ help texts are code; each keeps its own words, and the documentation follows the
 | history | none | none – chapter 13 | none |
 | state | a status admonition, one line | the same | the same |
 
-**Words.** "You" for the reader, "Claude" for the session, "edakit" for the tool; "the plugin", "the command line", "the
-handbook", "the catalog", "the site" for its parts. "The owner" on the developer page only – edakit's owner, who decides
-–, "the user" nowhere in a reader page's own sentences. One word per thing, listed in the glossary and taken from the
-skills and the catalog: hand-over, sign-off, tool chain, parts entry, board file, gate run, placement plan. British
-spelling as written; "catalog" is edakit's own name, "catalogue" JLCPCB's. No superlatives, no "simply", no "just", no
-"the hard way". No buzzwords – "harness", "agentic", "AI-powered", "copilot" and their kind –: a reader page says what
-happens, not what it is called; the README names "harness" once at its start, as a keyword with the link to
+**Words.** "You" for the reader, "the assistant" for the session – Claude, Copilot or another harness, named where it is
+meant (decision 8 of claude-independence.md) –, "edakit" for the tool; "the plugin", "the command line", "the handbook",
+"the catalog", "the site" for its parts. "The owner" on the developer page only – edakit's owner, who decides –, "the
+user" nowhere in a reader page's own sentences. One word per thing, listed in the glossary and taken from the skills and
+the catalog: hand-over, sign-off, tool chain, parts entry, board file, gate run, placement plan. British spelling as
+written; "catalog" is edakit's own name, "catalogue" JLCPCB's. No superlatives, no "simply", no "just", no "the hard
+way". No buzzwords – "harness", "agentic", "AI-powered", "copilot" and their kind –: a reader page says what happens,
+not what it is called; the README names "harness" once at its start, as a keyword with the link to
 `docs/architecture.md`, which uses it, defined; no other reader page does. Numbers with their unit and a space (0.2 mm,
 5 V). Prose wrapped at 120 characters, as written.
 
@@ -526,7 +527,7 @@ recommendation.
 | 1 | The structure | C: the entry layer, the navigation by reader, the chapters trimmed in place under the rules for what the automation reads, the reference generated; files and numbers stay | A: a new structure with new files; B: the entry layer only | accepted |
 | 2 | The sources on the site | kept, as the last group "Inside edakit" with an index and a source line added by the site, the texts untouched | off the site, links to GitHub; as today | accepted |
 | 3 | The spelling | British as written; "catalog" edakit's own name, "catalogue" JLCPCB's; the exceptions in documentation unified, sources as they are | American | accepted |
-| 4 | The voice | "you" for the reader, "Claude" for the session; "the user" and "the owner" leave the reader pages' own sentences, quoted sources keep their words | as today | accepted |
+| 4 | The voice | "you" for the reader, "Claude" for the session; "the user" and "the owner" leave the reader pages' own sentences, quoted sources keep their words | as today | accepted; amended on 2026-11-01 by decision 8 of claude-independence.md: "the assistant" for the role, the harness by name where it is meant |
 | 5 | The history and the private projects | dates and the story leave the guides for chapter 13; "the reference project" described once – since decision 12 on its project page as pytree, which chapter 13 refers to by name – and named nowhere else; the example and the open designs are the examples; dates the automation relies on stay | stays inline, as today | accepted |
 | 6 | The README | one screen: what, for whom, needs, not, install, try it, next; the command block to the reference, the repository map to organisation.md, "Status and limits" to "How it works"; `test_plugin.py` follows | as today, with a shorter head | accepted |
 | 7 | The command reference | entries: the synopsis generated from the parser and held by a test, reads, writes and exit codes hand-written beneath; the help texts changed only in `cli.py` through a branch | the table as today; fully generated (loses reads and writes) | accepted |
@@ -536,7 +537,7 @@ recommendation.
 | 11 | The case for edakit (the owner's addition: "a big argument for edakit is that one needs relatively little knowledge to design a correct circuit and order the PCB, up to assembly – a selling point too"; where, the owner left to Claude) | on the start page, in its first lines, as a statement a reader can check – you bring the idea, what the board must do and the decisions on money, purpose and looks; edakit and Claude bring the rest – with the walkthrough's count (14 steps, six yours, seven decisions) and its limit in the same breath: not a guarantee, the regulatory review support, not legal advice; the evidence table on How it works; the quickstart ends with what the reader did not need | a slogan on the start page; the case nowhere, the facts alone | accepted, with the owner's addition: after the case one sentence that calls it the vision – "at least that is the vision, and we are close" – and links the state, so that no false expectation is raised |
 | 12 | A gallery of projects (the owner's addition: "a kind of gallery with project presentations – pytree, even though the repository is private: some information and pictures can go out; the bell; later the tiny jukebox, the pedal and the steering wheel, once converted") | `docs/projects/` in the entry layer: an index with a card per project and a page per project – what it is, the circuit with its drawn schematic and its blocks explained, the board as made, what edakit found, its variants, what it changed in edakit –, the pictures from the project's release; the bell and pytree, pytree with what the owner picks and its page the one description of the reference project; the examples as cards to their walkthroughs; a page once a project has a result with edakit | the projects in chapter 13 only; links on the start page only; a picture and three lines per project (Claude's first proposal) | accepted, with the owner's additions: schematic and board pictures and more explanation – "otherwise it would be very dry" –, a page per project since there are two, the bell's board variants shown ("not uninteresting"); which project converts next is "none of the gallery's business"; what Claude decided itself – `docs/projects/README.md` as the index, the examples as cards to chapters 17 and 18, the pictures from the release with its tag, a page once a project has a result with edakit, chapter 18 in "The board" – confirmed the same day |
 | 13 | Future work (the owner's addition: "two points are central: the ordering automation – it runs over the web pages today, I want to do it through APIs – and the switch to the DSL; these are disruptive, everything else is smaller extensions and fixes for now, not to be mentioned in future work") | two items, nothing else: ordering through the makers' interfaces instead of their pages in the browser – the same steps up to the cart and the same checks, ordering and paying still the reader's, as handbook 8.4 has it –, and the circuit in a language of edakit's own instead of the TOML graph (circuit-dsl.md); on How it works after the state, linked from the start page's vision line, in the README's "Future work" until D.2; the style guide's rule that future work lists disruptive changes only | a page of its own ("Roadmap"); every open item of `TODO.md` on the site | the owner's word on the content; the place placed by Claude and confirmed by the owner the same day; the README's "Future work" on the owner's OK of the same day |
-| 14 | The architecture and its word (the owner's addition: "harness is the buzzword of the day – marketing; describe it more strongly, and for the developer a section of its own on why it is a meta-harness, or something like it") | reader pages without the buzzword: the mechanism described – Claude proposes, checks that are not Claude check, reviewers in sessions of their own judge, the person decides – and the loops drawn on How it works; "edakit as a meta-harness" on a page of its own for developers, `docs/architecture.md` in "Develop edakit", the term defined by three properties – built on Claude Code's harness, extended by projects with scripts and agents the gate runs, changed by its own use through proposals the owner merges –, with the layers, the loops and the files that set them, what is bound to Claude Code and what carries over, and the rules for developers; the style guide's buzzword rule and its count | "A layer on Claude Code" or "A harness on a harness" as the title; a section of "Working on edakit" | accepted – title and place the owner's choice among the alternatives, what Claude decided itself confirmed the same day; amended by the owner the same day: "it does belong at the start and in the README as a keyword" – named once at the start of the README, linked to `docs/architecture.md` |
+| 14 | The architecture and its word (the owner's addition: "harness is the buzzword of the day – marketing; describe it more strongly, and for the developer a section of its own on why it is a meta-harness, or something like it") | reader pages without the buzzword: the mechanism described – Claude proposes, checks that are not Claude check, reviewers in sessions of their own judge, the person decides – and the loops drawn on How it works; "edakit as a meta-harness" on a page of its own for developers, `docs/architecture.md` in "Develop edakit", the term defined by three properties – built on Claude Code's harness, extended by projects with scripts and agents the gate runs, changed by its own use through proposals the owner merges –, with the layers, the loops and the files that set them, what is bound to Claude Code and what carries over, and the rules for developers; the style guide's buzzword rule and its count | "A layer on Claude Code" or "A harness on a harness" as the title; a section of "Working on edakit" | accepted – title and place the owner's choice among the alternatives, what Claude decided itself confirmed the same day; amended by the owner the same day: "it does belong at the start and in the README as a keyword" – named once at the start of the README, linked to `docs/architecture.md`; its first property reads "built on an agent harness, Claude Code first" since decision 8 of claude-independence.md |
 
 Decided by Claude and confirmed by the owner on 2026-10-31: MkDocs Material stays; chapter files and numbers stay;
 sources, data and code untouched, with the rules of the section "What the automation reads"; `tests/test_references.py`;

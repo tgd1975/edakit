@@ -1,14 +1,15 @@
-# Claude independence: edakit with Copilot, Qwen and Mistral, and with self-hosted models
+# Claude independence: edakit with Copilot, Qwen, Mistral and OpenCode, and with self-hosted models
 
-Status 2026-11-01: decided in part. Asked for by the owner ("write a concept – Claude independence; I want to open it
-for Qwen and Llama, Mistral and Copilot"), where "Llama" meant running models oneself – "I mean the LLM self-hosting,
-not the LLM itself" –; decisions 1, 2 and 4 taken by the owner the same day in a decision round in Claude Code's form,
-the rest decided by Claude on the owner's word ("make a proposal") and to be confirmed (the table at the end); nothing
-built. Written against main at `e4b82a0`. The findings on edakit come from its code, skills, agents, hooks, tests and
-evals at that commit; those on the other harnesses and models from their documentation and source, read on 2026-11-01
-from the repositories the sites are built from – docs.github.com and code.visualstudio.com were not reachable from the
-session, their sources were –, each with its commit or date under "Sources". What rests only on search summaries is
-marked so.
+Status 2026-11-01: decided. Asked for by the owner ("write a concept – Claude independence; I want to open it for Qwen
+and Llama, Mistral and Copilot"), where "Llama" meant running models oneself – "I mean the LLM self-hosting, not the LLM
+itself" –; decisions 1, 2 and 4 taken by the owner the same day in a decision round in Claude Code's form, the rest
+decided by Claude on the owner's word ("make a proposal") and confirmed by the owner the same day (the table at the
+end); OpenCode added by the owner the same day ("maybe OpenCode integration too?"); nothing built – the steps CI.0 to
+CI.7 start on the owner's word, listed in `TODO.md`. Written against main at `e4b82a0`. The findings on edakit come from
+its code, skills, agents, hooks, tests and evals at that commit; those on the other harnesses and models from their
+documentation and source, read on 2026-11-01 from the repositories the sites are built from – docs.github.com and
+code.visualstudio.com were not reachable from the session, their sources were –, each with its commit or date under
+"Sources". What rests only on search summaries is marked so.
 
 ## The short answer
 
@@ -26,17 +27,19 @@ imports a plugin's skills and MCP servers, not yet its agents and hooks. Agent S
 read by all of them.
 
 Proposed: **the plugin made portable once**, so that Copilot, Qwen Code and – for skills and MCP – Vibe take it from the
-same marketplace; **project files generated from the plugin** for what a harness does not take (Vibe's agents, and the
-working agreements where a harness has no session-start hook); a few things moved into the command line, where every
-harness reaches them; and **support measured, not claimed** – the evals run for every pair of harness and model, and the
-README names the pairs that pass.
+same marketplace; **project files generated from the plugin** for what a harness does not take (Vibe's agents, the
+working agreements where a harness has no session-start hook, and OpenCode, which takes no plugin but reads skills,
+Markdown sub-agents and TypeScript plugins); a few things moved into the command line, where every harness reaches them;
+and **support measured, not claimed** – the evals run for every pair of harness and model, and the README names the
+pairs that pass.
 
-Two findings set the expectations. **Self-hosting** works in all three harnesses – Copilot through the user's own key
+Two findings set the expectations. **Self-hosting** works in all four harnesses – Copilot through the user's own key
 with Ollama or any OpenAI-compatible endpoint, Qwen Code through an OpenAI-compatible base URL, Vibe through its
-llama.cpp provider –, so that a project's files can stay on the user's machine. And the open models are behind on long
-agentic work – in Qwen's own report its newest coding model scores 25.8 on Terminal-Bench 2.0 in Qwen Code against 37.1
-for Claude Sonnet 4.5; edakit's checks catch a wrong result, not a model that stops halfway. edakit's own development –
-the sessions in this repository, CLAUDE.md, the Action proposals – stays on Claude.
+llama.cpp provider, OpenCode through Ollama, llama.cpp, vLLM or LM Studio –, so that a project's files can stay on the
+user's machine. And the open models are behind on long agentic work – in Qwen's own report its newest coding model
+scores 25.8 on Terminal-Bench 2.0 in Qwen Code against 37.1 for Claude Sonnet 4.5; edakit's checks catch a wrong result,
+not a model that stops halfway. edakit's own development – the sessions in this repository, CLAUDE.md, the Action
+proposals – stays on Claude.
 
 ## What binds edakit to Claude today
 
@@ -103,8 +106,12 @@ multimodal models – support, not legal advice, nothing legally guaranteed, wit
 skills and MCP. One plugin, one marketplace, one source; each harness installs it its own way.
 
 **Project files, generated from the plugin** – for what a harness does not take from it: the working agreements as a
-marked section of `AGENTS.md` where there is no session-start hook (Vibe); sub-agents in Vibe's TOML; and, when a user
-asks for them, the skills into `.agents/skills` for OpenCode and Goose. `edakit assistant <name> --write` writes them,
+marked section of `AGENTS.md` where there is no session-start hook (Vibe); sub-agents in Vibe's TOML; and for OpenCode,
+which takes no plugin, the skills into `.agents/skills`, the sub-agents into `.opencode/agents/` with `mode: subagent`,
+the EasyEDA server in `opencode.json` with `codemode: false` – so that its tools stay single tools a hook sees, not
+calls inside Code Mode's one tool –, and a small TypeScript plugin in `.opencode/plugins/edakit/` that calls `edakit
+lock hook` before an EasyEDA tool (`ctx.tool.hook("execute.before")`) and adds the working agreements to the session
+(`ctx.session.hook("context")`), for OpenCode 2. Goose when a user asks. `edakit assistant <name> --write` writes them,
 `--check` reports drift, as `edakit graph json --check` does for the graph; `[project] assistants = ["claude",
 "copilot"]` in edakit.toml names a project's harnesses, new-project asks for them, and the check runs in the pre-commit
 hook and CI. A harness's configuration then is text in the project's repository, written from edakit's – the yardstick.
@@ -145,16 +152,16 @@ command appending its arguments, for the evals.
 ### Evals for every pair
 
 The cases and their graders stay. A runner `evals/run.py --harness H --model M` scaffolds as today, runs the harness
-headless – `copilot -p`, `qwen -p`, `vibe -p` – and grades: `regex` on the files and the last message; `tool_used` from
-`EDAKIT_CALL_LOG` instead of a transcript each harness writes differently; the judge with one fixed model, so that pairs
-compare. `claude plugin eval` stays the runner for Claude Code. One case is added because the loops are what edakit
-hands the model: a seeded fault fixed until `edakit gate` passes P, G and E – going back after a failed stage. A pair is
-**supported** when it passes every case in two of three runs; the README lists the supported pairs with the date and
-edakit's version, and a pair that passes the offline cases but not the loop as limited.
+headless – `copilot -p`, `qwen -p`, `vibe -p`, `opencode run` – and grades: `regex` on the files and the last message;
+`tool_used` from `EDAKIT_CALL_LOG` instead of a transcript each harness writes differently; the judge with one fixed
+model, so that pairs compare. `claude plugin eval` stays the runner for Claude Code. One case is added because the loops
+are what edakit hands the model: a seeded fault fixed until `edakit gate` passes P, G and E – going back after a failed
+stage. A pair is **supported** when it passes every case in two of three runs; the README lists the supported pairs with
+the date and edakit's version, and a pair that passes the offline cases but not the loop as limited.
 
 The first matrix: Copilot with Claude Sonnet and with a GPT model; Copilot and Qwen Code with Qwen3-Coder-Next
 self-hosted through Ollama; Vibe with Mistral Medium 3.5 through Mistral's API and with Devstral Small 2 self-hosted
-through llama.cpp.
+through llama.cpp; OpenCode with Qwen3-Coder-Next self-hosted through llama.cpp.
 
 ### What stays on Claude
 
@@ -166,11 +173,11 @@ are the same for every harness.
 
 | Step | What | Size | Waits for |
 | --- | --- | --- | --- |
-| CI.0 | Probe, before anything is built: the plugin as it is, in Copilot CLI, Qwen Code and Mistral Vibe at once (decision 1); add-led, fault-motors, a decision round and the hooks, each with a hosted and a self-hosted model; what breaks is the list for CI.1 and CI.4 | S | the confirmation |
+| CI.0 | Probe, before anything is built: the plugin as it is, in Copilot CLI, Qwen Code and Mistral Vibe at once (decision 1), and OpenCode with its files set by hand; add-led, fault-motors, a decision round and the hooks, each with a hosted and a self-hosted model; what breaks is the list for CI.1 and CI.4 | S | the confirmation |
 | CI.1 | The plugin portable: items 1 to 5, 7 and 8 above, each with its test; `edakit handbook`, `edakit root` | M | CI.0 |
 | CI.2 | `edakit agreements --write\|--check`, `EDAKIT_CALL_LOG` | S | – |
 | CI.3 | The eval runner across harnesses, the loop case, the first matrix | M | CI.1, CI.2 |
-| CI.4 | `edakit assistant vibe --write\|--check` – Vibe's agents as TOML, the agreements in `AGENTS.md` – alongside CI.1; OpenCode and Goose when a user asks | S–M | CI.0 |
+| CI.4 | `edakit assistant vibe\|opencode --write\|--check` – Vibe's agents as TOML and the agreements in `AGENTS.md`; OpenCode's skills, sub-agents, MCP entry and TypeScript plugin – alongside CI.1; Goose when a user asks | M | CI.0 |
 | CI.5 | The browser for cart and release (item 6) | S–M | CI.1 |
 | CI.6 | new-project asks for the assistants; project-surveyor reports a harness's files a project brings | S | CI.4 |
 | CI.7 | The documentation: chapter 11 with the table of harnesses, the README's supported pairs, the glossary's "assistant", the first property of "edakit as a meta-harness" (documentation.md, decision 14) | S–M | CI.3 |
@@ -185,8 +192,8 @@ are the same for every harness.
   evals show it, and a pair that fails is not listed.
 - **The claim.** Every harness in the table can stop a tool call before it runs – Claude Code, Copilot, Qwen Code, Vibe
   and Goose with a hook, OpenCode through a plugin –, so the claim can follow; where a hook does not see an MCP call
-  (OpenCode 2 routes MCP tools through one tool, `execute`, and whether its hooks see those calls is open), parallel
-  sessions can collide on EasyEDA. The edakit commands still claim. A documented limit.
+  (OpenCode 2 routes MCP tools through one tool, `execute`, unless a server sets `codemode: false` – the generated entry
+  does), parallel sessions can collide on EasyEDA. The edakit commands still claim. A documented limit.
 - **Data and cost.** A cloud harness sends the project's files to its provider; a local model keeps them on the machine
   and needs the hardware. The choice is the user's, and the documentation says what goes where.
 - **Licences.** edakit bundles no model; the model's licence is the user's matter, and what the documentation says about
@@ -196,22 +203,24 @@ are the same for every harness.
 ## Decisions
 
 Decisions 1, 2 and 4 taken by the owner on 2026-11-01 in a decision round in Claude Code's form; the rest decided by
-Claude on the owner's word – "we are writing a concept … details … make a proposal" – and to be confirmed.
+Claude on the owner's word – "we are writing a concept … details … make a proposal" – and confirmed by the owner the
+same day.
 
 | # | Question | Recommendation | Alternatives | Decision |
 | --- | --- | --- | --- | --- |
-| 1 | The order | Copilot (CLI and VS Code) – it takes the plugin, the owner works in VS Code, and it reaches local Qwen through the user's key –; then Qwen Code; then Mistral Vibe; OpenCode and Goose when a user asks | Qwen Code first, the closest to Claude Code; all at once | the owner's choice: all at once – Copilot, Qwen Code and Mistral Vibe in parallel; Copilot first was recommended and not taken |
+| 1 | The order | Copilot (CLI and VS Code) – it takes the plugin, the owner works in VS Code, and it reaches local Qwen through the user's key –; then Qwen Code; then Mistral Vibe; OpenCode and Goose when a user asks | Qwen Code first, the closest to Claude Code; all at once | the owner's choice: all at once – Copilot, Qwen Code and Mistral Vibe in parallel; Copilot first was recommended and not taken; OpenCode added by the owner the same day |
 | 2 | The approach | the plugin made portable, project files generated where a harness does not take it | a generated copy per harness; a separate plugin per harness | accepted |
-| 3 | Paths in the skills | `edakit handbook` and `edakit root` for every harness, Claude Code included – one plugin | keep `${CLAUDE_PLUGIN_ROOT}` and hope the others expand it | decided by Claude on the owner's word: `edakit handbook` and `edakit root` for every harness – to be confirmed |
+| 3 | Paths in the skills | `edakit handbook` and `edakit root` for every harness, Claude Code included – one plugin | keep `${CLAUDE_PLUGIN_ROOT}` and hope the others expand it | decided by Claude on the owner's word: `edakit handbook` and `edakit root` for every harness – confirmed |
 | 4 | "Llama" | read as Meta's model; the owner meant self-hosting – "I mean the LLM self-hosting, not the LLM itself" | – | self-hosting in scope, through Ollama and llama.cpp in all three harnesses, other runtimes through an OpenAI-compatible endpoint; Meta's Llama models not in scope |
-| 5 | "Supported" | every case in two of three runs | three of three; a table of results without a threshold | decided by Claude: every case in two of three runs – to be confirmed |
-| 6 | The claim | `lock.py` recognises EasyEDA's tools under every harness's naming | a matcher list per harness | decided by Claude: `lock.py` recognises EasyEDA's tools under every harness's naming – to be confirmed |
-| 7 | A project's harnesses | `[project] assistants` with generated, checked files | per person, untracked | decided by Claude: `[project] assistants` with generated, checked files – to be confirmed |
-| 8 | The words | "the assistant" for the role, the harness by name where it is meant – changes decision 4 of documentation.md and the first property of "edakit as a meta-harness" to "built on an agent harness, Claude Code first" | as today | decided by Claude: "the assistant" for the role, the harness by name – to be confirmed |
+| 5 | "Supported" | every case in two of three runs | three of three; a table of results without a threshold | decided by Claude: every case in two of three runs – confirmed |
+| 6 | The claim | `lock.py` recognises EasyEDA's tools under every harness's naming | a matcher list per harness | decided by Claude: `lock.py` recognises EasyEDA's tools under every harness's naming – confirmed |
+| 7 | A project's harnesses | `[project] assistants` with generated, checked files | per person, untracked | decided by Claude: `[project] assistants` with generated, checked files – confirmed |
+| 8 | The words | "the assistant" for the role, the harness by name where it is meant – changes decision 4 of documentation.md and the first property of "edakit as a meta-harness" to "built on an agent harness, Claude Code first" | as today | decided by Claude: "the assistant" for the role, the harness by name – confirmed |
 
-Decided by Claude besides, to be confirmed: "all at once" are the three harnesses the owner named – Copilot, Qwen Code,
-Mistral Vibe –, OpenCode and Goose when a user asks; Ollama and llama.cpp are the self-hosting runtimes the evals run
-first.
+Decided by Claude besides, and confirmed: "all at once" are the harnesses the owner named – Copilot, Qwen Code, Mistral
+Vibe, and OpenCode since the owner's addition –, Goose when a user asks; OpenCode through project files and a TypeScript
+plugin for OpenCode 2, the EasyEDA server with `codemode: false`; Ollama and llama.cpp are the self-hosting runtimes the
+evals run first.
 
 ## Sources
 
@@ -230,7 +239,7 @@ first.
   askUserQuestion.ts. OpenCode, github.com/anomalyco/opencode at `4f3156a`. Goose, github.com/aaif-goose/goose at
   `b23d21c`. Mistral Vibe, github.com/mistralai/mistral-vibe at `338ad4b`: README, CHANGELOG.md,
   vibe/core/plugins/_claude.py. Chrome DevTools MCP, github.com/ChromeDevTools/chrome-devtools-mcp (2026-10-30).
-- Models: meta-llama/llama-models – the Llama 4 USE_POLICY (its clause on the EU); SWE-bench,
-  data/leaderboards.json (2026-09-01); Qwen3-Coder-Next technical report (2026-02-03);
-  anthropic.com/news/claude-sonnet-5-5 (2026-09-28). Per search summaries only, not read: Mistral Medium 3.5 and the
-  Devstral models (mistral.ai, docs.mistral.ai), Qwen's licences, Meta's Muse models.
+- Models: meta-llama/llama-models – the Llama 4 USE_POLICY (its clause on the EU); SWE-bench, data/leaderboards.json
+  (2026-09-01); Qwen3-Coder-Next technical report (2026-02-03); anthropic.com/news/claude-sonnet-5-5 (2026-09-28). Per
+  search summaries only, not read: Mistral Medium 3.5 and the Devstral models (mistral.ai, docs.mistral.ai), Qwen's
+  licences, Meta's Muse models.
