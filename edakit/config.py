@@ -52,7 +52,7 @@ THICKNESS_MM = 1.6               # board thickness: the order (FILES.order) and 
 
 PROJECT_KEYS = ("name", "company", "quantity", "distributors", "lock", "agreements", "graph", "parts", "sim",
                 "sim_plugin", "schematic", "signoff", "artifacts", "reports", "datasheets", "stock", "stock_margin_pct",
-                "stock_max_age_days", "spare_pct", "requirements", "domains", "toolchain")
+                "stock_max_age_days", "spare_pct", "requirements", "domains", "toolchain", "edakit")
 TOOLCHAINS = ("easyeda", "kicad")   # [project] toolchain: the EDA tool the boards are drawn in (handbook 16)
 EASYEDA_BOARD_KEYS = ("template", "schematic", "pcb")   # [boards.<name>]: names of EasyEDA documents
 BOARD_KEYS = ("title", "template", "schematic", "pcb", "file", "bought", "wired")  # [boards.<name>] in edakit.toml
@@ -276,6 +276,7 @@ class Config:
     docs: list = field(default_factory=list)   # [docs] files: Markdown files whose value blocks edakit docs reads
     docs_decimal: str = "."                    # [docs] decimal: "." or "," in quoted numbers
     toolchain: str = "easyeda"                 # [project] toolchain: "easyeda" or "kicad" (edakit/toolchain)
+    edakit: str | None = None                  # [project] edakit: the edakit the project needs, ">=0.4" (STRUCT.edakit)
     order: dict = field(default_factory=dict)  # [order] of edakit.toml: the project's order keys for every board
     cart: dict | None = None                   # [cart] with its defaults (makers.cart); "given": the table is there
 
@@ -763,6 +764,12 @@ def _project_values(p):
     out = []
     if p.get("toolchain", "easyeda") not in TOOLCHAINS:
         out.append(f"[project] toolchain must be one of {', '.join(TOOLCHAINS)}, not {p['toolchain']!r}")
+    if "edakit" in p:
+        from .version import parse
+        try:
+            parse(p["edakit"])
+        except ValueError as e:
+            out.append(f"[project] edakit: {e}")
     for key in ("stock_margin_pct", "spare_pct"):
         if key in p:
             out += _number(f"[project] {key}", p[key])
@@ -1076,6 +1083,7 @@ def load(path=None) -> Config:
         docs=list(doc_files),
         docs_decimal=raw.get("docs", {}).get("decimal", "."),
         toolchain=p.get("toolchain", "easyeda"),
+        edakit=p.get("edakit"),
         order=project,
         cart=cart,
     )

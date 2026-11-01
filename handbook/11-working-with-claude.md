@@ -31,7 +31,7 @@ The toolkit is half code, half agreements about how Claude works, and the agreem
 | agent | `edakit:pcb-reviewer` | independent layout review (read-only EasyEDA tools); its result is the sign-off M-5 |
 | MCP | `easyeda` | easyeda-mcp-pro, pinned, safe defaults |
 | hook | PreToolUse on the easyeda tools | claims EasyEDA for the session, refuses when another session holds it |
-| hook | SessionStart | in an edakit project: the working agreements of 11.4 and the project's own scripts and agents (8.6), one line each, into the session's context; on KiCad a line on the tool chain, and the path of `bin/edakit` where `edakit` is not on the PATH |
+| hook | SessionStart | in an edakit project: the working agreements of 11.4 – their first line names the edakit that runs – and the project's own scripts and agents (8.6), one line each, into the session's context; a line when the running edakit does not meet `[project] edakit` (2.3); on KiCad a line on the tool chain, and the path of `bin/edakit` where `edakit` is not on the PATH |
 | bin | `edakit` | the command line on the Bash PATH |
 
 Skills trigger on their description, or you call them by name. The rules of one project – what you want from the

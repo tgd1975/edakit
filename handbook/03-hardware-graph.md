@@ -273,6 +273,7 @@ simulation's values in stage E as well (the simulation's checks, 5.3); the hints
 | [`STRUCT.purpose`](../docs/catalog/struct.html#STRUCT.purpose) | purpose stated | error; replaces G-1, G-25 |
 | [`STRUCT.lock`](../docs/catalog/struct.html#STRUCT.lock) | pins where the firmware expects them | error; replaces G-2 |
 | [`STRUCT.domain`](../docs/catalog/struct.html#STRUCT.domain) | suggested domains on | note |
+| [`STRUCT.edakit`](../docs/catalog/struct.html#STRUCT.edakit) | the edakit the project needs | note |
 | [`STRUCT.entry`](../docs/catalog/struct.html#STRUCT.entry) | graph pins = parts entry | error, symbol: error, declared: note, strip: warning; replaces P-1 |
 | [`STRUCT.identity`](../docs/catalog/struct.html#STRUCT.identity) | graph and entry name the same part | error; replaces P-6 |
 | [`STRUCT.prefix`](../docs/catalog/struct.html#STRUCT.prefix) | designator prefix fits the kind | warning; replaces P-6 |

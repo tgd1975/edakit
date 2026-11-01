@@ -62,6 +62,7 @@ board, the schematic or the checks (the earlier one-file form) is refused with a
 | `stock_max_age_days` | `14` | an older snapshot (or snapshot row) is pending in PARTS.stock – it blocks the release, not `edakit check` |
 | `spare_pct` | `0` | `edakit order`: spares on every cart line, in % of `quantity` sets (rounded up) |
 | `toolchain` | `easyeda` | the EDA tool the boards are drawn in: `easyeda` (EasyEDA Pro through the bridge) or `kicad` (KiCad 10, chapter 16) – below |
+| `edakit` | – | the edakit the project needs: comparisons such as `">=0.4"` or `">=0.4, <0.5"` (`>=`, `>`, `<=`, `<`, `==`), another form is an error; a running edakit that does not meet it is the note STRUCT.edakit of `edakit check`, and the SessionStart hook says so (2.3) |
 
 - `agreements` – the plugin hook adds them at session start; `false` turns them off, not the lines of the project's
   scripts and agents the hook adds after them (11.4).
