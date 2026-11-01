@@ -8,7 +8,7 @@ range. Everything else is **generated** from it and **checked** against it – t
 checks, an ngspice simulation of every operating case, the schematic in EasyEDA Pro, the parts and nets of the PCB,
 the bill of materials, and in the end the Gerber files that go to the manufacturer. Nobody draws a wire by hand.
 A change starts in the graph and flows through the same pipeline again. A **release gate** runs every check on the
-files that will actually be uploaded and writes a test protocol; only a run that says RELEASED goes to JLCPCB.
+files that will actually be uploaded and writes a test protocol; only a run that says RELEASED goes to the maker.
 A project without a PCB needs no EasyEDA at all: checks, simulation and a drawn schematic (6.5) work from the graph
 alone. A project can also draw its boards in KiCad 10 instead of EasyEDA; the rest stays the same (chapter 16).
 
@@ -50,7 +50,7 @@ With the graph as the only source:
    delete it and generate it again – no backups, no questions.
 3. **A check at every hand-over, and the last one on the real files.** The gate does not trust EasyEDA: connectivity
    is recomputed from the exported Gerber copper, the BOM is generated from the graph, the stock is asked from
-   JLCPCB's catalogue.
+   JLCPCB's catalogue where JLCPCB builds the board, and another maker's part matching is held to the release.
 4. **Every check was seen red once.** A check that never failed may not work. For every rule there is a negative test
    that builds the fault into a copy and expects the check to find it.
 5. **Sign-offs belong to a state.** A manual check (a second datasheet review, the layout review) is recorded with
@@ -103,3 +103,4 @@ what is checked by judgement and by whom, and an acceptance test after delivery 
 | [15 Regulatory review](15-regulatory.md) | the purpose, the EU rules, the review M-6 – support, not legal advice |
 | [16 KiCad as the tool chain](16-kicad.md) | a project that draws its boards in KiCad instead of EasyEDA |
 | [17 Walkthrough](17-walkthrough.md) | a coin cell, a button and an LED, from the idea to the delivered boards |
+| [18 Walkthrough 2: a 555 blinker on KiCad](18-walkthrough-kicad.md) | a 555 blinker drawn in KiCad, from the idea to RELEASED |

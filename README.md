@@ -16,7 +16,8 @@ You describe the circuit once – parts by LCSC number, nets with voltage ranges
 reasons are; edakit generates the resolved JSON beside it, so that a diff shows every connection as pin numbers.
 edakit checks it with rules, simulates every operating case with ngspice, generates the schematic in EasyEDA Pro,
 brings parts and nets into the PCB without dialogs, places the fixed parts from a plan, routes with Freerouting,
-pours, prints the silkscreen, and releases the Gerber, BOM and pick-and-place files for JLCPCB only after a gate has
+pours, prints the silkscreen, and releases the Gerber, BOM and pick-and-place files for the maker – JLCPCB, PCBWay,
+Eurocircuits or AISLER – only after a gate has
 checked them – against the graph, on the exported files themselves. Nobody draws a wire by hand; everything in the
 EasyEDA project is generated and can be regenerated.
 
@@ -109,7 +110,7 @@ edakit route all                # Freerouting -> EasyEDA, pours, reload, DRC
 edakit route diagnose           # why a connection stays open: walled in, blocked by other nets, or free – offline
 edakit silk apply               # designators where there is room, silkscreen check
 edakit lock                     # who holds EasyEDA; claim, release, yield between parallel sessions
-edakit gate --easyeda           # release gate: protocol, manifest, files for JLCPCB
+edakit gate --easyeda           # release gate: protocol, manifest, files for the makers
 edakit fab diff RUN_A RUN_B     # where the manufacturing files of two gate runs differ – raster, drills, BOM, CPL
 edakit release current|withdraw|verify   # the one run that may be uploaded; verify the files right before upload
 edakit release publish          # the order files of every board's current release as a GitHub release (gh)
@@ -201,9 +202,11 @@ Where it stands:
 - The regulatory review (M-6, [handbook 15](handbook/15-regulatory.md)) is support, not legal advice: it makes no
   claim to correctness, and nothing in it is legally guaranteed.
 - Ordering ([concept](docs/concepts/done/ordering.md), [handbook 8.4](handbook/08-release-gate.md)): edakit and the
-  skill cart put a released board into the maker's cart and stop there – nothing orders or pays. Built offline and
-  tested on recorded data; the makers' profiles (JLCPCB, PCBWay, Eurocircuits, AISLER) are recorded from their forms,
-  read in the owner's accounts up to the cart; the skill and EasyEDA's ODB++ export have not run live yet.
+  skill cart put a released board into the maker's cart and stop there – nothing orders or pays. The makers' profiles
+  (JLCPCB, PCBWay, Eurocircuits, AISLER) are recorded from their forms, read in the owner's accounts up to the cart,
+  and the skill ran live at all four up to the cart, nothing ordered, on a copy of the 555 blinker released on the
+  KiCad tool chain ([live runs](tests/fixtures/makers/LIVE.md)). EasyEDA's ODB++ export ran on a probe board; no order
+  has gone through `edakit cart actual` yet.
 - Text, run live in EasyEDA in throwaway projects ([concept](docs/concepts/done/design-as-text.md),
   [plan](docs/concepts/new/implementation-plan.md), steps 2.1 to 2.3 and 3.6, results under each live run):
   - the positions EasyEDA's auto-layout sets, written back into `[place]` as `auto = true` rows, and `pcb place
@@ -221,7 +224,8 @@ Where it stands:
   graph keeps working and hashing as before. A circuit language of edakit's own is deferred
   ([circuit-dsl](docs/concepts/new/circuit-dsl.md)).
 - The KiCad tool chain ([handbook 16](handbook/16-kicad.md)) is tested against a kicad-cli the tests fake and, in CI,
-  against KiCad 10's container; no board has gone through it to a release yet (16.8 lists what the first run checks).
+  against KiCad 10's container; the 555 blinker of [handbook 18](handbook/18-walkthrough-kicad.md) went through it to
+  a release (16.8).
 - Grown on one real project (EasyEDA Pro 3.2.206, easyeda-mcp-pro 1.4.0, Linux), made generic, then taken through a
   second one end to end (the Christmas bell). The offline
   parts (checks, simulation, DSN/Freerouting/check, Gerber analysis, the board and manufacturing checks) are verified

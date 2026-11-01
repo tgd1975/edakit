@@ -57,4 +57,10 @@ Start with `edakit doctor`.
 | `uv run …` exits 120 without output inside Claude Code | uv from snap cannot write to the file Claude Code hands it | `… 2>&1 \| cat` |
 | a wait loop never ends | `pgrep -f` matches its own shell | wait for an end line or the PID (chapter 11.3) |
 | EasyEDA crashed during a long run | V8 out of memory | restart, find the state, rerun the whole step; second crash: smaller blocks (start skill, section 4) |
-| JLCPCB BOM tool: part missing | not in the assembly catalogue / no stock | gate check PARTS.stock asks the catalogue before the upload |
+| JLCPCB BOM tool: part missing | not in the assembly catalogue / no stock | gate check PARTS.stock asks the catalogue before the upload; at another maker ORDER.parts holds its matching to the release |
+| `edakit cart prepare` stops | the files are not the release's, the circuit, layout or order settings changed since the run, M-6 is not signed for it, the run did not check the maker or has findings for it, `[cart] ship_to` or `shipping` missing | its message names which; a new gate run, or the key set (8.4) |
+| `edakit cart check` exits 2 | a check of ORDER.form to ORDER.review failed – a field, a part, a file or the finish not as the release says | `check.md` names the values; nothing goes into the cart until the page or the release is right |
+| `edakit cart check` exits 3 | ORDER.form to ORDER.finish passed, the regulatory review of the order is missing | the agent regulatory-reviewer "At the order", its result in `regulatory.md` (skill cart, step 8) |
+| The skill cart stops at a field | the form shows a field, label or value its profile does not have, or asks a consent, a CAPTCHA or a login | the owner gives the consent or signs in; a changed form goes into the profile, then `edakit cart prepare` again |
+| Eurocircuits: no 1.6 mm under "Board thickness" | Eurocircuits makes 1.55 mm | `thickness_mm = 1.55` in the board file; FILES.order finds 1.6 mm before the cart |
+| AISLER assigns no parts | its BOM tab matches by MPN, and the ODB++ carries none | the KiCad tool chain writes MPN and Manufacturer into the footprints; SYNC.odb names a component without its MPN |

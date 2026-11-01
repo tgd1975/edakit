@@ -77,8 +77,9 @@ in it),
 `state_files` (further files in the circuit hash), `hash_ignore` (`[]`: keys left out of the circuit hash at any depth
 of the graph and the parts entries, e.g. `["notes", "sources", "description", "verified", "datasheet"]` – only keys no
 check and no review reads; empty: the bytes are hashed, 8.2), `assembly` ({`sides` (both), `smd_only`, `paste_gap_mm`
-(0.4: SMD pads of different parts on an assembled side, GEO.spacing), `pcba` (`"economic"` or `"standard"`: the
-assembler's class of the order, PARTS.stock; default from `sides` – one side Economic, two Standard)}), `[[stages]]`
+(0.4: SMD pads of different parts on an assembled side, GEO.spacing), `pcba` (one of the planned maker's `classes`,
+JLCPCB's `"economic"` and `"standard"`: the assembler's class of the order, PARTS.stock; default from `sides` by the
+profile's `class_of_sides` – at JLCPCB one side Economic, two Standard –, else the maker's first class)}), `[[stages]]`
 ({`id`, `name`, `cmd`, `advisory`, `timeout`, `about`}: project checks of phase export before S, 8.1),
 `archive` (`"none"`: gate runs are build output, nothing of them is committed – what is ordered is published with
 `edakit release publish`; `"git"`: a released run is committed, `edakit release current` names one git does not track
@@ -90,11 +91,13 @@ not read, 8.3).
 ### [cost]
 
 Optional: the order estimate of `edakit cost` (8.4). Without the table the gate and every command are as before; with
-it the gate has an information row "estimated order cost" in stage P, and above `budget` a warning to accept.
+it the gate has an information row "estimated order cost" in stage P, and above `budget` a warning to accept; an
+estimate edakit cannot make – a rate missing, the project's fee table in another currency – fails, a planned maker
+without a fee table is information.
 
 | Key | Default | Meaning |
 |---|---|---|
-| `fees` | `hardware/fees/<maker>.json` over the shipped `edakit/fees/jlcpcb.json` | the project's own fee table in the same form (every value with `date` and `source`; `pcb.board` the board its PCB prices are for – thickness, mask, silkscreen, finish –, without it the defaults of `[order]`): per fee the value with the newest date wins, from this table or the shipped one of the planned maker; `edakit cart actual` writes the real costs of the project's orders into it (8.4) |
+| `fees` | `hardware/fees/<maker>.json` over the shipped `edakit/fees/jlcpcb.json` | the project's own fee table in the shipped table's form, every value with `date` and `source`, laid over the shipped table of the planned maker: per fee the value with the newest date wins, per PCB size the newest price where its `pcb.qty` is the shipped table's; the same currency as the shipped table; the board its PCB prices are for stays the shipped table's `pcb.board`. `edakit cart actual` writes the real costs of the project's orders into it (8.4). A maker without a shipped fee table is not priced, with or without it |
 | `budget` | – | the most the whole order may cost, in `currency`; above it `edakit cost` exits 2 and the gate warns |
 | `currency` | `"USD"` | the currency of the estimate |
 | `rates` | `{}` | the value of one unit of another currency in `currency`, e.g. `{ EUR = 1.15 }`; needed for the fee table's USD and for every `[[extra]]` in another currency |
@@ -116,21 +119,28 @@ every check runs as before.
 | Key | Default | Meaning |
 |---|---|---|
 | `maker` | `"jlcpcb"` | the maker the boards are planned for: its checks fail (PARTS.stock, FILES.order, PARTS.fact/mpn, SYNC.odb), its form is `order.md`, `[release] assembly.pcba` is one of its classes, `edakit cost` prices with its fee table |
-| `makers` | `[maker]` | every maker whose checks and files the gate runs and writes; a finding for a maker other than `maker` is a warning, and `edakit cart prepare` for that maker stops on it |
+| `makers` | `[maker]` | every maker whose checks and files the gate runs and writes; a finding for a maker other than `maker` is a warning, and `edakit cart prepare` for that maker stops on it – except FILES.manifest: an upload file of any of them missing fails |
 | `ship_to` | – | the country the order goes to, as the form names it; `edakit cart prepare` needs it |
-| `shipping` | `{}` | per maker, the name of its shipping method: `{ jlcpcb = "DHL Express" }` |
+| `shipping` | `{}` | per maker, the name of its shipping method: `{ jlcpcb = "DHL Express" }`; `edakit cart prepare` needs it for the maker |
 | `tolerance` | `0.10` | per price line, in the maker's currency, before ORDER.quote warns |
 | `profiles` | `{}` | a project's own maker profiles, `{ name = "hardware/makers/name.toml" }`, beside the shipped ones (`jlcpcb`, `pcbway`, `eurocircuits`, `aisler` in `edakit/makers/`) |
 
 A maker's profile holds no defaults of the board: its form's labels and words for edakit's keys (`fields`), the
-values it offers, its limits (`rules`: thicknesses, remark, placeholder, tooling holes per class), the files it takes,
-its assembly `classes`, whose parts catalogue PARTS.stock asks (`catalogue`), the one cart button the skill cart may
-press and the ones it must not touch, its seat and currency, its fee table. `recorded` is the day ordering step 0 read
-the form; `false` marks a profile whose words are not yet read off it, and FILES.order names it as information. A field
-with `more = true` lists only some of the form's values (a "More Options" not read): another value is not checked; a
-field with `when` shows only while another key has one of the values it names (a dialog behind an option). No
-credentials anywhere: the
-owner is logged in in their browser, edakit never sees an account.
+values it offers, its limits (`rules`: thicknesses, remark, placeholder, tooling holes per class), the files it takes
+(`files`), its assembly `classes`, whose parts catalogue PARTS.stock asks (`catalogue`), the one cart button the skill
+cart may press and the ones it must not touch (`cart`, `never`), its seat and currency, its fee table (`fees`). Beside
+them: the BOM's columns and the number the maker matches parts by (`bom`, `match` `"lcsc"` or `"mpn"`), its zero
+orientation and the turn per footprint of its own CPL (`cpl`: `zero`, `turns`), what it states about RoHS and REACH
+(`compliance`, 15.5), how a part not to place is marked (`dnp = "omit"`: left out of BOM and CPL, else the job lists
+it), the combinations its form refuses (`excludes`), the fields of the page edakit does not set, each with its reason
+(`ignore`), the uploads its pages name nowhere (`unshown`, ORDER.files holds them by their hash), files that go up in
+the cart (`upload = "after_cart"`, PCBWay) and a part matching only in its review after the cart (`matching =
+"review"`, PCBWay). `recorded` is the day ordering step 0 read the form; `false` marks a profile whose words are not
+yet read off it, and FILES.order names it as information. A field with `more = true` lists only some of the form's
+values (a "More Options" not read): another value is not checked; a field with `when` shows only while another key
+has one of the values it names (a dialog behind an option); a field with `checkout` is asked at checkout only – in
+order.md, not read back before the cart. A key the profile does not know is refused, in a project's own profile too.
+No credentials anywhere: the owner is logged in in their browser, edakit never sees an account.
 
 ### [[extra]]
 
@@ -278,34 +288,35 @@ where its value differs from the default; so a project that sets none of them ke
 
 | Key | Default | Values | Board |
 |---|---|---|---|
-| `material`, `tg` | `"FR-4"`, `"TG135"` | strings, the maker's words in its profile | ✓ |
+| `material`, `tg` | `"FR-4"`, `"TG135"` | strings, edakit's words, which each profile translates | ✓ |
 | `layers`, `size_mm` | – (derived) | only to check: the copper layers and `[w, h]` of the run's Gerber files (FILES.order, ± 0.1 mm) | – |
 | `quantity` | `[project] quantity` | PCBs ordered, a whole number | – |
 | `delivery` | `"single"` | `"single"`, `"panel_by_maker"` with `panel = {x, y, rails_mm}`; `"panel_by_customer"` fails FILES.order (edakit draws no panel) | ✓ |
 | `mask`, `silkscreen` | `"green"`, the print on the mask (`"white"`, on a white mask `"black"`) | mask `"green"`, `"purple"`, `"red"`, `"yellow"`, `"blue"`, `"white"`, `"black"`; silkscreen `"white"`, `"black"` – FILES.order fails a pair the maker does not print | ✓ |
-| `finish` | `"LeadFree HASL"` | the maker's words (JLCPCB: `"HASL(with lead)"`, `"LeadFree HASL"`, `"ENIG"`) | ✓ |
+| `finish` | `"LeadFree HASL"` | edakit's words `"HASL(with lead)"`, `"LeadFree HASL"`, `"ENIG"` – JLCPCB's own; each other profile translates them (PCBWay: "HASL lead free") | ✓ |
 | `copper_oz`, `inner_copper_oz` | `1`, `0.5` (inner: from 4 layers) | oz | ✓ |
 | `vias` | `"tented"` | `"untented"`, `"plugged"`, `"epoxy_filled"` | ✓ |
 | `outline_tolerance` | `"regular"` | `"precision"` | ✓ |
 | `gold_fingers`, `castellated`, `edge_plating` | `false` | true or false | ✓ |
 | `mark` | `"default"`; on a board with `[looks]` `"remove"` | `"specify"`: at the maker's placeholder (PCBWay: `WayWayWay`), `"remove"` – the maker's order number; JLCPCB prints none since May 2026 ("Remove Mark" for both `"default"` and `"remove"`, `"specify"` refused), and its former `JLCJLCJLCJLC` on a silkscreen warns | ✓ |
 | `barcode`, `serial_number` | `"none"`, `false` | `"qr"`, `"datamatrix"`; true or false – for traceability, printed by the maker where there is room (JLCPCB since May 2026) | ✓ |
-| `electrical_test`, `quality` | `"flying_probe"`, `"ipc2"` | the maker's words | – |
+| `electrical_test`, `quality` | `"flying_probe"`, `"ipc2"` | edakit's words, which each profile translates | – |
 | `confirm_production_file`, `paper_between` | `false` | true or false | – |
-| `packaging` | `"standard"` | the maker's words | – |
+| `packaging` | `"standard"` | edakit's words, which each profile translates (JLCPCB: "With JLCPCB logo") | – |
 | `remark` | `""` | text to the maker (JLCPCB: at most 200 ASCII characters) | – |
-| `tab_zones`, `tab_copper_mm` | `[]`, `1.0` | `{from = [x, y], to = [x, y]}`, two points on the outline in plan mm – the shorter stretch between them; no copper of either side within `tab_copper_mm` of it (FILES.order). Board file only | – |
+| `tab_zones`, `tab_copper_mm` | `[]`, `1.0` | `{from = [x, y], to = [x, y]}`, two points on the outline in plan mm – the shorter stretch between them; no copper of either side within `tab_copper_mm` of it (FILES.order). `tab_zones` in the board file only | – |
 | `pcba_quantity` | `quantity` | boards assembled, at most `quantity`; another number than `[project] quantity` warns (PARTS.stock counts that many sets) | – |
 | `confirm_placement` | `true` | edakit's choice: the maker shows its placement before it builds, a second look beside M-2 | – |
 | `photo_confirmation`, `depanel`, `function_test` | `false` | true or false | – |
 | `conformal_coating` | `false` | true or false | ✓ |
-| `pcba_packaging` | `"antistatic_bag"` | the maker's words | – |
-| `customs` | none | `{ category = "DIY", hs_code = "902300" }`: the shipment's customs description, the owner's – an entry of the maker's form (JLCPCB's "Product Description": `edakit cart fields` lists them, so does its profile); FILES.order fails one the form does not offer and names the key as information where the form asks it and the key is not set: the skill cart then asks the owner at the cart. Not in order.json – it describes the shipment, not the board | – |
+| `pcba_packaging` | `"antistatic_bag"` | edakit's words, which each profile translates | – |
+| `customs` | none | `{ category = "DIY", hs_code = "902300" }`: the shipment's customs description, the owner's – an entry of the maker's form (JLCPCB's "Product Description": its profile lists them, `fields.customs`); FILES.order fails one the form does not offer and names the key as information where the form asks it and the key is not set: the skill cart then asks the owner at the cart. Not in order.json – it describes the shipment, not the board | – |
 
 Not keys of `[order]`, but fields of the form all the same: the thickness (`thickness_mm` of the board file), the
 assembly class and side (`[release] assembly`, the class one of the maker's `classes`), the tooling holes
-(`[tooling]`: by the customer, else by the maker), bake (the stock snapshot, MSL ≥ 5), the parts not to place
-(`bom: false`), the country and shipping method (`[cart]`). `edakit cart fields` prints them all with their source.
+(`[tooling]`: by the customer, else by the maker), bake (the stock snapshot, MSL ≥ 5), the country and shipping method
+(`[cart]`). `edakit cart fields` prints them all with their source. The parts not to place (`bom: false`) are no field:
+the job lists them for a maker whose files still hold them (AISLER's ODB++), the skill marks them on its page.
 
 ## 10.3 The schematic file
 
@@ -380,8 +391,8 @@ scripts that write what they read first, when those are outdated or never ran, a
 |---|---|---|---|
 | `edakit cart fields [--board B] [--maker M]` | – | `[order]` of edakit.toml and the board file, `thickness_mm`, `[release] assembly`, `[tooling]`, the stock snapshot, `[cart]`, the maker's profile; the Gerber files of the current release (else the newest run) for layers and size | – (prints every field of the maker's form: its label, the maker's word, where it comes from, edakit's key and value) |
 | `edakit cart prepare [--board B] [--maker M]` | – | the current release (manifest, `makers.json`, the board's upload files and `order.json`), the circuit and layout hash now, the sign-off file (M-6), `[cart]`, the maker's profile, the estimate | `<reports>/<run>/fab/<board>/cart/<maker>/job.json`; exit 1 with the reason when the order cannot be placed against the release (8.4) |
-| `edakit cart check [--board B] [--maker M] [--cart]` | – | `job.json`, `quote.json`, `quote_page.txt`, `regulatory.md`, with `--cart` `cart.json` of the order's folder; the manifest | `check.md`, `check.json`; with `--cart` and every check passed the order record `hardware/orders/<date>-<board>-<maker>.json`. Exit 0 passed, 2 a finding (ORDER.form to ORDER.review), 3 ORDER.form to ORDER.finish passed and the review of the order (ORDER.review) is open |
-| `edakit cart actual [--board B] [--maker M] [--from FILE]` | – | `job.json`, `quote.json`, `actual.json` and `actual_page.txt` of the order's folder – with `--from` a saved order page or invoice (HTML; PDF with pdftotext) whose text edakit reads itself; `[cost]`, the fee table | `actual.md`; the project's fee table (`[cost] fees`, else `hardware/fees/<maker>.json`) with what maps one to one; the order number and the totals in the order record. Exit 2 when ORDER.read fails – nothing written |
+| `edakit cart check [--board B] [--maker M] [--cart]` | – | `job.json`, `quote.json`, `quote_page.txt`, `regulatory.md`, with `--cart` `cart.json` of the order's folder; the manifest | `check.md`, `check.json`; with `--cart` and every check passed the order record `hardware/orders/<date>-<board>-<maker>.json`. Exit 0 passed, warnings and notes included (in `check.md`), 2 a check of ORDER.form to ORDER.review failed, 3 ORDER.form to ORDER.finish passed and the review of the order (ORDER.review) is open |
+| `edakit cart actual [--board B] [--maker M] [--from FILE]` | – | `job.json`, `quote.json`, `actual.json` and `actual_page.txt` of the order's folder – with `--from` a saved order page or invoice (HTML; PDF with pdftotext) whose text edakit reads itself; `[cost]`, the fee table | `actual.md`; the project's fee table (`[cost] fees`, else `hardware/fees/<maker>.json`) with what maps one to one; the order number and the totals in the order record. Exit 2 when ORDER.read fails – the fee table stays as it is, and `actual.md` says why |
 | `edakit check [--release] [--coverage] [--json F]` | – | graph, parts (pins, identity STRUCT.identity), pin table; if there: footprint geometry and library footprints (GEO.hole, GEO.formed), library symbols (STRUCT.entry), the footprint data of parts entries with the footprint geometry (PARTS.footprint, SYNC.footprint); `[scripts]`, `[[release.stages]]` and `sim_plugin` with the board files' `[[silk.art]]`, `hardware/scripts.lock` and what the scripts read (8.6); `[agents]` and the agent files (8.6); with `[project] requirements` the requirements files and the sign-off file's manual checks (DOCS.ref, DOCS.need, DOCS.evidence, DOCS.draft; a file missing or not valid: exit 1); `<artifacts>/sim/result.json` while its inputs are unchanged – the cables' currents of the coverage report (3.3), no simulation of its own | – (`--json`: the findings); exit 1 on errors, with `--release` also on pending findings (3.3) |
 | `edakit rules [CODE …]` | – | the catalog `edakit/catalog/codes.toml`: engines and codes; an old check ID (G-4) the codes that replace it (10.7; no project needed) | – |
 | `edakit explain CODE …` | – | the catalog: rule, why, fix, sources and severity of a code; an old check ID names its codes (no project needed) | – |
@@ -405,7 +416,7 @@ scripts that write what they read first, when those are outdated or never ran, a
 | `edakit part datasheet [--connector C …] [--name N]` | – | graph, parts, sim config, board file (4.5) | `hardware/datasheet/<N>.json` and `.md`; without `--connector` every datasheet renewed |
 | `edakit stock [--board B] [--refresh]` | – | graph, parts, the snapshot; JLCPCB's catalogue and part pages (network) – only with JLCPCB among `[cart] makers` (exit 1 otherwise) | `hardware/stock.json` (`[project] stock`): the parts missing, unread or older than `stock_max_age_days`, with `--refresh` all |
 | `edakit stock --lcsc C…` | – | JLCPCB's catalogue and part pages (no project needed) | – (prints listed, class, stock, MSL, PCBA type, X-ray, attrition) |
-| `edakit cost [--board B] [--json F]` | – | graph, parts, board files (outline, sides, `[order]`: `quantity` PCBs, `pcba_quantity` assembled), the stock snapshot, the fee table of the planned maker with the project's own over it (newest value per fee), the PCB price of a checked quote of the current release, `[cost]`, `[[extra]]` | `<artifacts>/cost.json` (the change since the last estimate is printed; `not_in_price` per board whose `[order]` differs from the fee table's board, 8.4); exit 2 above `budget`, exit 1 for a maker without a fee table |
+| `edakit cost [--board B] [--json F]` | – | graph, parts, board files (outline, sides, `[order]`: `quantity` PCBs, `pcba_quantity` assembled), the stock snapshot, the fee table of the planned maker with the project's own over it (newest value per fee), the PCB price of a checked quote of the current release, `[cost]`, `[[extra]]` | `<artifacts>/cost.json` (the change since the last estimate is printed; `not_in_price` per board whose `[order]` differs from the fee table's board, 8.4); exit 2 above `budget`, exit 1 for a maker without a fee table; with `--board` that board alone – no order total, no `cost.json`, no budget check |
 | `edakit order [--out DIR]` | – | graph, parts (`order`), board files (side), `[[extra]]`, `spare_pct` | `<artifacts>/order/` or DIR: `bom_<board>.csv` (the SYNC.bom BOM; none for a bought or hand-wired board), `cart_<supplier>.csv`, `hand_assembly.md` |
 | `edakit part own PATH [--name N]` | – | the board's project at PATH: its datasheet, state, git, gate runs | `hardware/parts/<N>.json` |
 | `edakit sim [--json F] [--keep DIR]` | – | graph, parts, sim config, plugin; with `copper` `route/<board>.ses`, `route/<board>_board.json` and the board file's pours | `<artifacts>/sim/net_currents.json`, `<artifacts>/sim/result.json` (the whole result with the hash of its inputs, 6.6 – with `cable_currents`, the highest current through a wire of each cable); with `--keep` each netlist and ngspice log, for a transient run its waveforms (`<run>.dat`) |
@@ -436,12 +447,12 @@ scripts that write what they read first, when those are outdated or never ran, a
 | `edakit silk preview` | – | board file, the last Gerber export (`gerber_<board>/`) | `silk_preview_<board>_<side>.png`: artwork, texts and the fixed designators of `[silk.place]` (exit 2 when one is in the way, 7.7) |
 | `edakit export [--board]` | ✓ read | schematic, PCB, project file | `<artifacts>/export/`; with a maker that takes ODB++ also `odb_<board>.zip` (`easyeda_export_odb`, 2.5; on KiCad kicad-cli, 16.5) |
 | `edakit gate [--easyeda \| --eda]` | – / ✓ | everything; with `[project] requirements` the requirements files (8.7 – a file missing or not valid: exit 1 before a run) | `<reports>/<run>/`, with `stage_<id>.txt` the output of each project check that ran (8.1); a RELEASED run supersedes the earlier ones in their `fab/manifest.json` (8.3) |
-| `edakit release current` | – | the manifests under `reports`; the real cost of its orders (`cart/<maker>/actual.json`); with `[release] archive = "git"` what git tracks of the run | – (with an order's real cost: estimate, quote and actual beside the release; with `archive = "git"` and a run git does not track yet "not in git yet: git add -f …") |
+| `edakit release current` | – | the manifests under `reports`; the real cost of its orders (`cart/<maker>/actual.json`); with `[release] archive = "git"` what git tracks of the run | – (with an order's real cost: estimate, quote and actual beside the release; with `archive = "git"` and a run git does not track yet "not in git yet: git add -f …"). Exit 2 without a current release |
 | `edakit release withdraw RUN --reason TEXT` | – | the run's manifest | its `fab/manifest.json`: `status`, `withdrawn` {reason, by, date} |
 | `edakit release verify FILE…\|DIR…` | – | the files (a folder: its `.zip` and `.csv` files), the manifests | – |
 | `edakit release publish [--draft] [--dry-run] [--tag T]` | – (gh, git) | git (a clean tree, HEAD on its remote branch – not with `--draft`); per project and variant below it the current release, its upload files (`release verify`), polarity sheet, manifest and order form; the graph's purpose; with `[release] publish.decisions` the decision log at HEAD and at the previous release's tag; through `gh` the repository's tags and the previous release's `SHA256SUMS` and manifests | `build/publish/<tag>/`: the files, `SHA256SUMS`, `notes.md`; the GitHub release `<tag>` (default today, `-2` … when the remote has it) as a pre-release on HEAD – `--draft` a draft without tag, `--dry-run` nothing uploaded. Exit 2: a file refused or a project without a current release, nothing staged (8.3) |
 | `edakit release publish --built TAG` | – (gh) | – | the release TAG no longer a pre-release: a board of it has been built and works (M-4) |
-| `edakit fab --board B --out DIR [--offline]` | ✓ / – | PCB, exports, `route/<board>_board.json` (GEO.spacing), `silk_strings_<board>.json` and `silk_footprints_<board>/` (GEO.silk), the stock snapshot (`order.md`), with `[routing] drc_rules` the rule set of EasyEDA's DRC (GEO.drc) | `DIR/<board>/`, with `[order]` or `[cart]` also `order.md`, with `[order]` `order.json` (the settings in the fab hash), with `[routing] drc_rules` also `drc_rules.json`; with a maker of `[cart] makers` that matches by MPN `bom_<board>_mpn.csv`, with one that takes ODB++ `odb_<board>.zip` (SYNC.odb) |
+| `edakit fab --board B --out DIR [--offline]` | ✓ / – | PCB, exports, `route/<board>_board.json` (GEO.spacing), `silk_strings_<board>.json` and `silk_footprints_<board>/` (GEO.silk), the stock snapshot (`order.md`), with `[routing] drc_rules` the rule set of EasyEDA's DRC (GEO.drc) | `DIR/<board>/`, with `[order]` or `[cart]` also `order.md`, with `[order]` `order.json` (the settings in the fab hash), with `[routing] drc_rules` also `drc_rules.json`; with a maker of `[cart] makers` whose profile takes the MPN BOM `bom_<board>_mpn.csv`, with one whose `[cpl] zero` is its own `cpl_<board>_<maker>.csv` (SYNC.cpl), with one that takes ODB++ `odb_<board>.zip` (SYNC.odb) |
 | `edakit fab diff RUN_A RUN_B [--board B]` | – | `fab/<board>/` of two gate runs: Gerber layers, drill files, BOM, CPL, the order settings (`order.json`) | – |
 | `edakit lock [status\|claim\|release\|yield CHAT\|hook] [--note] [--auto]` | – | – (hook: tool name and, for `easyeda_api_call`, its `path`; library lookups of `READ_ONLY_TOOLS`/`READ_ONLY_API` pass without a claim, 11.2) | `~/.local/state/edakit/easyeda-lock.json` |
 | `edakit proposal template [--feature]\|seal FILE [--out F]\|verify FILE` | – | a rule or feature proposal (no project needed) | seal: the issue body with its SHA-256 |

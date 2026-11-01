@@ -193,7 +193,9 @@ Confirmed on a real project, the 555 blinker of chapter 18 (KiCad 10.0.6):
   SOIC-8, oval and rectangular pads, the library's silkscreen – a holder's outline and its poles; a through-hole part
   on the bottom, mirrored as EasyEDA mirrors it, its poles where the drawing has them;
 - a pin the schematic marks no-connect gets KiCad's net on its pad (16.3), and a pad one thermal spoke (16.5);
-- the gate `--eda` end to end with every sign-off up to RELEASED, and `export` with `kicad_main.zip`.
+- the gate `--eda` end to end with every sign-off up to RELEASED, and `export` with `kicad_main.zip`;
+- a copy of that release in the carts of JLCPCB, PCBWay and Eurocircuits and up to AISLER's price, nothing ordered
+  (the live runs of the skill cart, 2026-11-01, `tests/fixtures/makers/LIVE.md`, 8.4).
 
 Open – the led-bar example as a KiCad project looked at in KiCad, the placer on both tool chains, the Christmas bell
 (the steps are in the concept, "Live test"); polygon pads, which the blinker's footprints do not have; the square

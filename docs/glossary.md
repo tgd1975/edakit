@@ -87,6 +87,12 @@ The part of edakit that decides one kind of relation. LIM compares quantities wi
 artifact with the graph. There are thirteen.
 Handbook: [14.2 The catalog: engines, codes, data and domains](../handbook/14-design.md#142-the-catalog-engines-codes-data-and-domains).
 
+### Fee table
+
+What `edakit cost` prices an assembly order with: JLCPCB's fees and PCB prices, each with its date and source. A
+project's own orders lay their values over it in `hardware/fees/<maker>.json`.
+Handbook: [8.4 Ordering at the manufacturer (up to the cart; the owner orders and pays)](../handbook/08-release-gate.md#84-ordering-at-the-manufacturer-up-to-the-cart-the-owner-orders-and-pays).
+
 ### Finding
 
 What a check reports at one place. It has a code, a stage, a place, a text, a fix and a severity.
@@ -141,6 +147,12 @@ Knowledge that needs judgement, such as whether a button needs a hardware deboun
 notes. They never block.
 Handbook: [14.3 Hints](../handbook/14-design.md#143-hints).
 
+### Job
+
+What `edakit cart prepare` writes for one order: the release's upload files with their SHA-256, every field of the
+maker's form and the expected parts. The skill cart fills the form from it. `edakit cart check` holds the page to it.
+Handbook: [8.4 Ordering at the manufacturer (up to the cart; the owner orders and pays)](../handbook/08-release-gate.md#84-ordering-at-the-manufacturer-up-to-the-cart-the-owner-orders-and-pays).
+
 ### Maker
 
 The manufacturer that builds the board: JLCPCB, PCBWay, Eurocircuits or AISLER. Its profile in `edakit/makers/`
@@ -163,6 +175,12 @@ Handbook: [2.1 What talks to what](../handbook/02-setup.md#21-what-talks-to-what
 
 What someone wants, in their own words, numbered `N-…` in the requirements file.
 Handbook: [3.6 Requirements](../handbook/03-hardware-graph.md#36-requirements).
+
+### Order record
+
+What stays of an order in the repository: `hardware/orders/<date>-<board>-<maker>.json`, written once the board is in
+the maker's cart. It names the run, its hashes and the regulatory verdict, later the order number and the real cost.
+Handbook: [8.4 Ordering at the manufacturer (up to the cart; the owner orders and pays)](../handbook/08-release-gate.md#84-ordering-at-the-manufacturer-up-to-the-cart-the-owner-orders-and-pays).
 
 ### Own part
 
@@ -187,6 +205,12 @@ Handbook: [4 The parts database](../handbook/04-parts-database.md),
 The table `[place]` of the board file and the tables beside it. It says where each part sits, turned how and on which
 side. SYNC.plan holds the board to it.
 Handbook: [7.4 The placement plan](../handbook/07-pcb.md#74-the-placement-plan).
+
+### Planned maker
+
+The maker a board is planned for: `[cart] maker`, JLCPCB without it. Its checks fail. Those of the other makers of
+`[cart] makers` warn.
+Handbook: [8.4 Ordering at the manufacturer (up to the cart; the owner orders and pays)](../handbook/08-release-gate.md#84-ordering-at-the-manufacturer-up-to-the-cart-the-owner-orders-and-pays).
 
 ### Project scripts and agents
 
@@ -269,6 +293,12 @@ and the hand-over. The board is the schematic in the EDA program, the PCB, the m
 circuit is a result on its own, for a hand-wired build or a drawing in a document.
 Handbook: [6.5 Drawn without EasyEDA](../handbook/06-schematic.md#65-drawn-without-easyeda),
 [14.1 Roles](../handbook/14-design.md#141-roles).
+
+### Stock snapshot
+
+`hardware/stock.json`, written by `edakit stock`: what JLCPCB's catalogue said about each assembled part, with its
+date. PARTS.stock and `edakit cost` read it offline.
+Handbook: [4.2 Finding parts](../handbook/04-parts-database.md#42-finding-parts).
 
 ### Tool chain
 
