@@ -150,16 +150,15 @@ def place(mcp, comps, devices, positions):
             print(f"  ! {d}: skipped (no device for {key})")
             continue
         x, y = positions[d]
-        # addIntoBom: false fails for library parts ("Invalid device") – create normally, then modify
-        bom = comps[d].get("bom", True) if not comps[d].get("lcsc") else True
+        # the bridge drops addIntoBom on create (upstream M-9) – create normally, then modify
         ops.append({"operationId": f"place-{d}", "action": "create", "primitiveKind": "component",
-                    "deviceItem": devices[key], "x": x, "y": y, "addIntoBom": bom})
+                    "deviceItem": devices[key], "x": x, "y": y})
         todo.append(d)
     ids = batch_write(mcp, ops)
     placed = {d: {"id": ids[f"place-{d}"], "ref": d} for d in todo if ids.get(f"place-{d}")}
     batch_write(mcp, [{"operationId": f"ref-{d}", "action": "modify", "primitiveId": p["id"],
                        "property": {"designator": d}} for d, p in placed.items()])
-    hand = [d for d in placed if comps[d].get("lcsc") and comps[d].get("bom") is False]
+    hand = [d for d in placed if comps[d].get("bom") is False]
     for n, d in enumerate(hand):  # hand-soldered parts: on the PCB, not in the BOM
         if n % 20 == 0:
             ensure_focus(mcp)

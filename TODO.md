@@ -60,9 +60,11 @@ owner's rules there: no click because of the API, no self-extended MCP server, t
       anew (`SCH_PrimitivePin.modify` is saved on 3.2.209); `clear_orphan_attributes` kept as a cheap check or dropped;
       tooling holes stay on the board while the pours fill, and a hole in a pour becomes a `NO_POURS` region instead of
       the notch – each checked live first.
-- [ ] TD-41 - **M-9 (was E-15):** `easyeda_schematic_batch_write` with `addIntoBom: false` reproduced on 1.6.0 –
-      "Invalid device" comes from `needDevice()` in the bridge; then an issue and a pull request from the fork, on the
-      owner's word.
+- [ ] TD-41 - **M-9 (was E-15):** reproduced on 2026-11-01 (3.2.209, bridge 1.4.0, code unchanged on 1.6.0): not
+      "Invalid device" – the bridge drops `mirror`, `addIntoBom` and `addIntoPcb` of a placed part and reports
+      `applied`. Fork branch `fix/place-component-flags` pushed, tests green; left: post the issue and the pull request
+      (`upstream/issue-8-place-component-flags.md`, `pr-8-…`) – the owner's OK, Claude's posting was held by the
+      permission check.
 
 ## The documentation for its readers ([documentation.md](docs/concepts/new/documentation.md))
 
