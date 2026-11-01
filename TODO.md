@@ -70,11 +70,8 @@ run against a maker's page or EasyEDA yet.
 ## Live runs of design as text (2.1–2.4, 3.6 of the [implementation plan](docs/concepts/new/implementation-plan.md))
 
 Ran on 2026-10-31 in throwaway projects, the footprint checked by the owner in EasyEDA, the throwaway projects and
-the probe's Custom Config removed; the results are under each live run of the plan. Left from them:
-
-- [ ] **The bell's T-Display on the data path** (the bell's repository, its session – the owner hands it the prompt):
-      the dry run's footprint data without `"symbol"`, `tdisplay_device.py symbol` stays an easyeda script; the esp32
-      variant's circuit and layout hashes change once (M-1 anew, M-6 stays on the electrical hash).
+the probe's Custom Config removed; the results are under each live run of the plan. The bell's T-Display on the data
+path is done in the bell (2026-11-01, branch `edakit-current`, its D-30).
 
 Built on 2026-10-31 from them: `[routing] drc_rules = "write"`; M-6 on the electrical hash; the way back into the PCB
 after `part build`; the waits after `openProject`, `symbol_differs` in `schematic create`, the panel guard of
@@ -95,12 +92,8 @@ Built and decided on 2026-10-31; what is left runs live.
 
 L.1 to L.8 built on 2026-10-31.
 
-- [ ] **L.9, on the owner's word, in the bell's session and not during an order:** `edakit graph convert` in the main
-      configuration and the three variants, the sign-offs carried over; the bell's mentions of `graph.json`
-      (`hardware/README.md`, `docs/decisions.md`, a comment in the esp32 firmware) name the generated file; the four
-      round trips of the sketch once more, `edakit graph json` against the former `graph.json`. Scripts that read
-      `graph` show as outdated once after the conversion (`edakit run` or `edakit scripts stamp`), and the firmware
-      contract wants `edakit firmware` again.
+L.9 done in the bell on 2026-11-01 (its branch `edakit-current`, edakit bc44fa7): the five boards converted, the
+sign-offs rehashed, the mentions of `graph.json` renamed, all five RELEASED.
 
 ## KiCad tool chain ([kicad-toolchain.md](docs/concepts/done/kicad-toolchain.md))
 
