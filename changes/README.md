@@ -25,4 +25,5 @@ check `version` of a pull request says which case it is (`.github/versions.py`).
 
 Dependabot (`.github/dependabot.yml`) writes no fragment: for its branches `dependabot/…` that change `uv.lock` or
 `pyproject.toml`, `merge.py` writes it – `patch`, with the pull request's title. A new major of a dependency is not
-proposed; it comes by hand, with a fragment of its own.
+proposed; it comes by hand, with a fragment of its own. An update that moves only the dev tools – the group `dev` in `pyproject.toml`,
+what it pulls into `uv.lock` – is no version: nothing edakit installs has changed.
