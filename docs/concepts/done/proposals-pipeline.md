@@ -12,7 +12,9 @@ changed through itself. Aligned before it was written, on the owner's word: with
 day (702a4f4, 7a20a13, a7a1337), merged the proposals pull requests #89, #96, #101 and #102 and handed the pipeline
 over; and with edakit-a3, whose concept `versioning.md` proposes the rulesets on main and a required check of the paths
 per branch family – this concept names the paths the proposals branches never touch and leaves the rulesets to it.
-Written against main at `557dc01`.
+Written against main at `557dc01`. Extended the same evening on the owner's word: texts by others wrapped by a fixed
+step, the owner's commands `review`, `accept` and `reject` (decisions 7 to 9, section "Texts by others wrapped",
+branch `proposals-wrap`, by edakit-60).
 
 ## The short answer
 
@@ -227,11 +229,54 @@ recommendation. Decisions 3 and 4 were asked as one question.
 | 4 | What counts as dangerous | the six kinds of "Safe?", each rejected | each a question; fewer kinds | accepted |
 | 5 | The queue | the trigger unless a triage answered it since its event; sealing again counts as an answer | the trigger only while it is waiting, with cases for sealing again and reopening | accepted |
 | 6 | Issues by others (the owner's addition: "issues by others are not wrong or unwanted – the pipeline only does not act on them by itself; I start it by hand, perhaps with a comment that starts the pipeline") | welcome; the owner hands one over with a sealed proposal as a comment there, and the pipeline reads only that comment | a plain command `/triage` that reads the issue's text as it stood at the comment; filed again as the owner's own issue | accepted |
+| 7 | Where texts by others are wrapped and the commands hold (the evening's extension, section below) | on issues by others only – "wrapped again" read as: the issue first, then every later text by others on it; the owner's own proposals stay as they are | on every issue, the commands on the owner's own proposals too | accepted |
+| 8 | A text by others edited after it was wrapped | wrapped again under a new number that names the one it replaces – else an answer given by an edit never reaches Claude | edits ignored: only the text as it was created counts | accepted |
+| 9 | What Claude decided for the extension, asked as one question for confirmation | the list below | – | accepted |
 
 Decided by Claude: the chain of at most eight calls and Claude's result as files – both named in the question of
 decision 1 and accepted with it; the list and the check in `edakit/proposal.py`, read from main, and GraphQL for the
 body's last edit – technical; the rulesets left to `versioning.md`, which takes the list of paths from here; the test
 proposals of P.6 are asked for when P.6 is due.
+
+Decision 9, confirmed by the owner: "go" is no fourth command – a wrapped text waits for the next `review`, `accept` or
+`reject`; a command is a comment of the owner that starts with the word, the rest the owner's note or the reason, and
+any other comment of the owner on an issue by someone else starts nothing, an answer to a question too (in this decision
+6 changes); `review` judges – **Safe?** first, then plausible and acceptable –, names the kind, what `accept` would
+build and numbered questions, and builds nothing; `accept` builds, also without a review, with **Safe?** and the
+pipeline's paths as before; `reject` closes at once, without Claude and without a comment; wrapped as plain text in a
+code block, sealed with its SHA-256, numbered Wrapped 1, 2, …, cut over 60,000 characters – counted as UTF-8 bytes, so
+that the comment stays within GitHub's limit however it counts; `wrap.yml` the one workflow others start – no Claude, no
+secret, a flood rare and stopped by locking the issue; decision 6's sealed comment starts the triage as before.
+Technical: the commands read by `edakit/proposal.py` (the job's `if` lets in what starts with the word, so "reviewed"
+runs the queue job and starts nothing), `reject` in `wrap.yml` so that it never waits behind a triage, both proposals
+branches prepared for `accept`, a concurrency group per issue for the numbers; results and wrapped texts count only from
+the workflow's bot – a GitHub user holds the login `claude`, under which gh also shows the Claude app's comments, so a
+comment of that user could have passed for a result until then.
+
+## Texts by others wrapped
+
+Asked for by the owner the same evening, after the pipeline was built: for safety and cost CI runs only the owner's
+requests directly; texts by others are posted again by a Python script as a sealed comment and wait for the owner's
+judgement. The owner answers mostly with `review` (Claude judges the change request – good, feasible, does it fit),
+`accept` (it may be built) or `reject`; rarely with something else, or a question to the author directly – asking
+back is normally Claude's, in the review, as it is. Every comment not by the owner is wrapped again and waits for the
+owner's go; the wrapped texts carry a running number within the issue, and the first lists the commands below it. No
+other session held the pipeline that evening, so there was nothing to align.
+
+- **The Action wrap** (`.github/workflows/wrap.yml`) runs on every issue someone else opens, every comment or edit by
+  anyone but the owner there, and by hand for an issue. `python3 -m edakit.proposal wrap` posts each text that is not
+  wrapped as it stands now – the issue's title and body, each comment – as plain text in a code block whose fence is
+  longer than any run of backticks in it, with its number and as the last line `edakit-wrapped v1 <n> <source>
+  sha256:<hex>`. A concurrency group per issue keeps the numbers in order, and a run catches up what a cancelled one
+  left.
+- **The commands** – `review` and `accept` start the job queue of `proposals.yml` (its `if` and the concurrency group,
+  held equal by the test); the owner's `reject` is closed by the Action wrap. The label `adopted` marks an issue the
+  owner started, so that the queue finds it again.
+- **What Claude reads** on a command is `python3 -m edakit.proposal input` in mode `review` or `accept`: the wrapped
+  texts before the command whose seal still holds, the owner's comments and the triage's results. The skill
+  `triage-request` decides the kind; `review` answers **Review**, `accept` builds on the proposals branch of the kind
+  it switches to. The check of the commit and the publish stay as they are; the publish labels the kind the triage
+  found.
 
 ## Sources
 
@@ -243,3 +288,4 @@ proposals of P.6 are asked for when P.6 is due.
 - `.github/workflows/proposals.yml` at `557dc01`; `.claude/skills/triage-rule/SKILL.md`,
   `.claude/skills/triage-feature/SKILL.md`; `edakit/proposal.py`.
 - The messages of edakit-93 and edakit-a3, 2026-11-01.
+- The owner's request and the decision round of decisions 7 to 9, in the session edakit-60, the evening of 2026-11-01.

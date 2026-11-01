@@ -102,4 +102,6 @@ commit goes and `{pr}` where the pull request goes; the job puts in the short ha
   → `edakit: REQ.function` once {pr} is merged.
 - **Rejected** – the reason with its evidence. The publish job closes the issue.
 - **Question** – numbered questions, each with the alternatives and a recommendation. The owner answers in a comment
-  or seals the proposal again – on an issue by someone else, a newly sealed comment; both start the next run.
+  or seals the proposal again; both start the next run. On an issue by someone else a newly sealed comment
+  starts it, or the command `review` or `accept` with the answer after it (triage-request) – any other
+  comment of the owner there starts nothing.

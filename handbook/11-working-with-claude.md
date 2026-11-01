@@ -236,5 +236,6 @@ brings the gap back the way a rule comes (from a finding to a rule, 14.4), with 
    the gap closed there; the project runs them against the branch before the merge. After it the project's workaround
    goes and the decision gets `edakit: #14 built`.
 
-A gap someone else reports in an issue is welcome too: edakit's repository owner hands it over with a sealed proposal
-as a comment there, as for rules (14.4).
+A gap someone else reports in an issue is welcome too: the Action `wrap` wraps its texts, and edakit's repository
+owner answers with `review`, `accept` or `reject` – or hands it over with a sealed proposal as a comment there, as
+for rules (14.4).
