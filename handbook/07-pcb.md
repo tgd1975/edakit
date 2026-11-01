@@ -95,7 +95,11 @@ an hour with both datasheet drawings and was first described as a turn when it i
 The same matching of a board footprint against itself is GEO.formed (3.3): when the project's footprint moves holes away
 from the library's – leads formed for the board, a part fitted by hand – `edakit check` fails if a turn of 90°, 180° or
 270° lays the formed holes onto themselves with a pin in another net's hole. Offset the leads so that none does: two in
-opposite directions, one only, or by different amounts.
+opposite directions, one only, or by different amounts. That keeps the right bend from fitting turned, not every wrong
+one: a row turned by 180° is a row again, so the same offsets at the mirrored legs – the bend of a solderer who holds
+the part turned and bends by position – go in turned. That counter-bend is a note of GEO.formed naming its legs and
+where each pin lands; no pattern of one row avoids it. Name the reference lead in the assembly instruction (the longest
+lead or the flat into the hole with the polarity sign, then bend) and accept `GEO.formed/counter` with it.
 
 A new project comes with one empty default board (Board1 = Schematic1 + PCB1). The first `edakit schematic layout`
 renames it to the board of edakit.toml (board name, `schematic`, `pcb`) and fills the schematic from the graph; any
