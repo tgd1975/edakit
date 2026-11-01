@@ -29,9 +29,6 @@ to touch.
 
 ## For the owner
 
-- [ ] TD-70 - **The social preview uploaded:** <https://github.com/tgd1975/edakit/settings> → General → Social preview
-      → Edit → Upload an image → `docs/concepts/new/outreach/social-preview.png` – GitHub has no API for it; the card
-      shows with every link to the repository (K.1 of outreach.md). *(edakit-ce)*
 - [ ] TD-69 - **Where CI.0 runs:** a machine with GitHub Copilot CLI logged in, Qwen Code, Mistral Vibe with a Mistral
       API key, OpenCode, and Ollama and llama.cpp with a GPU for Qwen3-Coder-Next and Devstral Small 2 – this session's
       cloud container has no GPU and no logins; which machine, and whether a Copilot plan and a Mistral key are at hand.
@@ -156,7 +153,7 @@ sources, data and code untouched; a text that is generated or used elsewhere sta
 
 ## Getting edakit known ([outreach.md](docs/concepts/new/outreach.md))
 
-Decided on 2026-11-01; K.1 (description, topics, homepage) built the same day, its image waits for TD-70. The launch
+Decided on 2026-11-01; K.1 (description, topics, homepage, the social preview) done the same day. The launch
 waits for D.2, D.7, D.9 and the bell built; each step starts on the owner's word, one per branch where it changes files.
 
 - [ ] TD-71 - **K.2** Ready for Anthropic's plugin directory: the README section on what edakit runs, sends and fetches
@@ -181,6 +178,9 @@ waits for D.2, D.7, D.9 and the bell built; each step starts on the owner's word
 
 Done or dropped, newest first, each with its date and the commit that closed it. What closed before 2026-11-01 is
 taken from the history of this file; an item rewritten on its way is listed once, in its last form.
+
+- [x] TD-70 - **The social preview uploaded:** by the owner from `docs/concepts/new/outreach/social-preview.png` –
+      GitHub reports `usesCustomOpenGraphImage` true; K.1 of outreach.md complete (no commit, a setting). [2026-11-01]
 
 - [x] TD-60 - **OK for #138:** given; the rule proposal #103 (GEO.pour, bare area per side) merged as edakit
       0.4.3 (3cc88ba), #103 closed. [2026-11-01]
