@@ -111,9 +111,9 @@ the other todos in this list are done: the documentation describes what they lea
 Each step starts on the owner's word, one per branch, under the concept's rules for what the automation reads –
 sources, data and code untouched; a text that is generated or used elsewhere stays; unsure, ask:
 
-- [ ] **D.2** The entry layer: the README as the start page of one screen, `docs/quickstart.md` with its test,
-      `docs/how-it-works.md` with the pipeline drawing and a transcript; `test_plugin.py` pointed at the page that
-      lists skills and agents.
+- [ ] **D.2** The entry layer: the README as the start page of one screen with the case for edakit (what you bring, what
+      edakit brings, the walkthrough's count), `docs/quickstart.md` with its test, `docs/how-it-works.md` with the
+      pipeline drawing and a transcript; `test_plugin.py` pointed at the page that lists skills and agents.
 - [ ] **D.3** The site: the navigation as data, by reader and by station (The circuit, The board), short titles;
       `organisation.md` and the brand page on it; "Inside edakit" with its index and the source line; the footer and
       feedback lines; prototypes off the navigation.

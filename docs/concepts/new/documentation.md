@@ -2,7 +2,8 @@
 
 Status 2026-10-31: decided – the eight decisions and what Claude decided itself accepted by the owner the same day, and
 a ninth and a tenth added by the owner the same evening (the circuit alone as a station; condensing as a rule, with its
-measure), in a decision round in Claude Code's form (the table at the end); D.1 built the same evening (`docs/style.md`,
+measure); an eleventh on 2026-11-01, the case for edakit on the start page, placed by Claude on the owner's word, in a
+decision round in Claude Code's form (the table at the end); D.1 built the same evening (`docs/style.md`,
 `docs/glossary.md`, `tests/test_style.py`, `tests/test_references.py`); each step D.2 to D.7 starts on the owner's word,
 one per branch, listed in `TODO.md`. Written against main at `8fba5f2`. Asked for by the owner: the pages are
 comprehensive but confusing, so unreadable – a concept for how the documentation should look, be organised and be
@@ -48,7 +49,7 @@ head: who the readers are and how the documentation is written.
 
 | Reader | Comes with | Wants to know | Finds today |
 | --- | --- | --- | --- |
-| The newcomer – has seen the name, has five minutes | a browser | what it is, whether it is for them, what it needs, what it costs, how to try it | a README of 2,300 words whose second sentence uses "sign-off" and whose third paragraph "hardware graph"; the requirements spread over the README, 2.2 and 16.2; the cost nowhere; the first run in chapter 17, 713 lines |
+| The newcomer – has seen the name, has five minutes | a browser | what it is, whether it is for them, how much they must know, what it needs, what it costs, how to try it | a README of 2,300 words whose second sentence uses "sign-off" and whose third paragraph "hardware graph"; the requirements spread over the README, 2.2 and 16.2; the cost nowhere; the first run in chapter 17, 713 lines |
 | The maker – wants a circuit, or a board | Claude Code, an idea, little EDA routine; EasyEDA Pro or KiCad only for a board | set up, describe a circuit, run the checks, read a finding, draw the schematic – a result on its own: a hand-wired build, a perfboard, a drawing for a document – and, from there or not at all, a board and an order; what Claude does, what they decide | chapters 2 to 8, 11, 12 and 16 – 5,000 lines; the handbook's reading path "first time" is 1 → 2 → 17 → the bell → 3 → 6 → 7 → 8, about 50,000 words before the first graph of their own; that the circuit alone is a result is one sentence in chapter 1, 6.5 inside the EasyEDA chapter and 4.5 inside the parts chapter |
 | The engineer – wants to add a rule | electronics, maybe no Claude Code | what a rule is made of, how a check, hint, block or part fact is added and tested, how it is proposed | 14.2 to 14.4 inside the maker's chapter, the skill add-rule in `.claude/skills/` (not on the site), the skill propose-rule, `docs/organisation.md` (not on the site) |
 | The developer – works on edakit | Python, git | how the repository is organised, the rules of a session, the concepts and their state, the tests, the site | `docs/organisation.md`, CLAUDE.md (neither on the site), 22 concept pages in path order, the READMEs under `tests/` |
@@ -89,6 +90,13 @@ Measured on main at `8fba5f2`, the site built locally (`python3 docs/pages.py`, 
   stages P, G and E and leaves out of S, L and F. That is a product of its own – for a hand-wired build, a perfboard, a
   drawing for a document, or before anyone decides on a PCB – and the site says so in one sentence of chapter 1, in
   section 6.5 of the EasyEDA chapter and in 4.5 of the parts chapter.
+- **The case is not made.** The README says what edakit does; nowhere does the site say what the reader must bring and
+  what they need not know, and the walkthrough has the numbers: of its 14 steps the person acts in six – answers the
+  interview, says what the board must do, decides on what the checks found, creates the EasyEDA project, orders and
+  pays, holds the boards –; of its seven decisions two are taste (D-5 who uses it, D-6 round), two money and purpose
+  (D-1, D-4 the holder soldered by hand), three trade-offs presented with numbers (D-2 the red LED, D-3 no reverse
+  protection, D-7 the cell's current). The forward voltages, a coin cell's pulse rating, what a reversed cell reaches,
+  the footprints, the Gerber files and the order form came from edakit and Claude.
 - **No glossary.** Sign-off (143 mentions), M-1 to M-6 (201), stage, hand-over, claim, domain, engine, code, hint,
   block, gate run, release: each is explained where it is introduced, and a reader who arrives at chapter 8 by search
   has not been there.
@@ -164,27 +172,35 @@ The sources stay on the site, at its end, as "Inside edakit", untouched.
 
 ### The entry layer
 
-- **Start** (`README.md`, the site's index): one screen. One sentence what edakit is; three lines for whom – the maker
-  (a circuit, or a board from it), the engineer, the developer – each with its link; what it needs (Claude Code; EasyEDA
-  Pro desktop or KiCad 10; uv, ngspice; tested on Linux, Windows and macOS untested; a JLCPCB account for stock and
-  ordering); what it is not (no editor of its own, two copper layers, DC operating points and a few transient runs);
-  install in three lines; "try it in two minutes" – `uvx --from git+https://github.com/tgd1975/edakit edakit check` in
-  `examples/coin-cell-led`, which takes 0.2 s and shows an accepted finding with its reason –; then the quickstart, the
-  guides, the reference. The command block moves to the reference, the repository map to `docs/organisation.md`, "Status
-  and limits" to "How it works". The test that wants every skill and agent in the README (`test_plugin.py`) is pointed
-  at the page that lists them – the test changes with the page, on the same branch.
+- **Start** (`README.md`, the site's index): one screen. One sentence what edakit is; then the case, in three sentences
+  a reader can check: you bring the idea, what the board must do, and the decisions on money, purpose and looks; edakit
+  and Claude bring the rest – parts with their datasheets, the values, the rules, the simulation, the EDA tool, the
+  maker's constraints, the manufacturing files and the order form up to the cart; you order, pay and hold the boards.
+  The walkthrough is the evidence, linked: 14 steps, six of them yours, seven decisions. Its limit in the same breath: a
+  check for every known error class and reviews by agents, not a guarantee (chapter 1); the regulatory review support,
+  not legal advice. Three lines for whom – the maker (a circuit, or a board from it), the engineer, the developer – each
+  with its link; what it needs (Claude Code; EasyEDA Pro desktop or KiCad 10; uv, ngspice; tested on Linux, Windows and
+  macOS untested; a JLCPCB account for stock and ordering); what it is not (no editor of its own, two copper layers, DC
+  operating points and a few transient runs); install in three lines; "try it in two minutes" – `uvx --from
+  git+https://github.com/tgd1975/edakit edakit check` in `examples/coin-cell-led`, which takes 0.2 s and shows an
+  accepted finding with its reason –; then the quickstart, the guides, the reference. The command block moves to the
+  reference, the repository map to `docs/organisation.md`, "Status and limits" to "How it works". The test that wants
+  every skill and agent in the README (`test_plugin.py`) is pointed at the page that lists them – the test changes with
+  the page, on the same branch.
 - **Quickstart** (`docs/quickstart.md`): the first project to the first finding and the first drawn schematic, in about
   fifteen minutes, without EasyEDA – install the plugin, a project from the example or from `/edakit:new-project`, a
   graph of four parts, `edakit check`, one finding read with `edakit explain`, `edakit sim`, `edakit schematic draw`,
   and where the EasyEDA or KiCad part begins (chapter 17 takes it from there). The quickstart is the circuit station and
-  says so at its end: this is a result on its own; for a board, go on to "The board". Every output from a real run, held
-  by a test like chapter 17's (`tests/test_walkthrough.py`).
+  says so at its end: this is a result on its own; for a board, go on to "The board" – and it names what the reader did
+  not need on the way: no datasheet read, no value computed, every finding came with its reason. Every output from a
+  real run, held by a test like chapter 17's (`tests/test_walkthrough.py`).
 - **How it works** (`docs/how-it-works.md`, two screens): the pipeline as a drawing in the brand's colours instead of
   the ASCII line, with the cut between the two stations – the circuit: graph, checks, simulation, drawing, hand-over;
   the board: schematic, PCB, files, order –; the ten words – graph, parts entry, stage, code, finding, sign-off, gate
-  run, release, domain, block, hand-over –, one paragraph each; what Claude does and what the person decides, the
-  decision round shown once as a shortened transcript; what is text and what still exists only in EasyEDA – the README's
-  "Status and limits", kept current as it is today.
+  run, release, domain, block, hand-over –, one paragraph each; what Claude does and what the person decides – the table
+  of 17.1's "Who" column, step by step, with the count that backs the start page's case, and chapter 1's "what it does
+  not give you" –, the decision round shown once as a shortened transcript; what is text and what still exists only in
+  EasyEDA – the README's "Status and limits", kept current as it is today.
 - **Glossary** (`docs/glossary.md`): every term in one or two sentences, with the chapter that treats it, in the words
   the skills and the catalog use – the two stations and the hand-wired board among them. The first use on an entry page
   links to it.
@@ -307,7 +323,9 @@ reads").
 
 **A page.** Its first paragraph says for whom and what they can do after it; the shortest path comes first, the details
 after, the reasons at the end; a status admonition at the top where something is offline only or planned; headings of at
-most five words in the navigation. Regulatory content says once that it is support, not legal advice (CLAUDE.md).
+most five words in the navigation. Regulatory content says once that it is support, not legal advice (CLAUDE.md). The
+case for edakit is made once, on the start page, as a statement a reader can check against the walkthrough – the count
+of steps and decisions –, never by an adjective.
 
 **Pictures.** One per guide page where a picture is faster than a paragraph – the pipeline, a drawn schematic, a
 placement plan, a gate protocol –, SVG in the brand's colours; where edakit draws it (`schematic draw`, `pcb plan`)
@@ -328,7 +346,9 @@ documentation review's (`docs/organisation.md`).
    result is chapter 17.
 2. **"Is it for me"** – said once, plainly, on the start page: what it needs, what it costs (a gate run, a decision
    round, a circuit design in tokens – the evals' runs give numbers), what it is not, the licences of what it combines
-   (the README has them, at the end).
+   (the README has them, at the end) – and the case: what you bring, what edakit and Claude bring, with the
+   walkthrough's count; the one argument the site does not make today, and the owner's: "one needs relatively little
+   knowledge to design a correct circuit and order the board, up to assembly".
 3. **A session shown.** Nothing on the site shows what working with it looks like: what Claude asks in a decision round,
    what the person answers, what is written where. One shortened transcript on "How it works", from a real session, held
    by the review to the skill it shows.
@@ -430,6 +450,7 @@ recommendation.
 | 8 | "What changed" from the merge commits on the site | not built until a reader asks: the commit messages are written for the owner | built with D.3 | accepted |
 | 9 | The circuit alone as a station (the owner's addition: "we can also make only a circuit SVG – maybe that is the maker anyway") | two groups, "The circuit" and "The board", instead of "Use it"; chapter 14 to the circuit; the quickstart is the station and says so; the pipeline drawing shows the cut | one group with the station on its index page only; a sentence in the maker's row only | accepted |
 | 10 | Condensing as a rule (the owner's addition: "it would be advisable to condense the texts – a style question") | the same statements in a third fewer words per chapter, no chapter over 500 lines, no paragraph over 120 words, no statement lost – the review's list proves it, and where a chapter does not give the third the statements win | the rules without a number; a target per chapter set at its branch | accepted |
+| 11 | The case for edakit (the owner's addition: "a big argument for edakit is that one needs relatively little knowledge to design a correct circuit and order the PCB, up to assembly – a selling point too"; where, the owner left to Claude) | on the start page, in its first lines, as a statement a reader can check – you bring the idea, what the board must do and the decisions on money, purpose and looks; edakit and Claude bring the rest – with the walkthrough's count (14 steps, six yours, seven decisions) and its limit in the same breath: not a guarantee, the regulatory review support, not legal advice; the evidence table on How it works; the quickstart ends with what the reader did not need | a slogan on the start page; the case nowhere, the facts alone | placed by Claude, to be confirmed |
 
 Decided by Claude and confirmed by the owner on 2026-10-31: MkDocs Material stays; chapter files and numbers stay;
 sources, data and code untouched, with the rules of the section "What the automation reads"; `tests/test_references.py`;
