@@ -13,6 +13,19 @@ its own beside the main clone, named for it (`../edakit-w4`, branch `wired-w4`),
 holds what; the main clone belongs to whoever has it checked out, and its uncommitted changes are not anyone else's
 to touch.
 
+## For the owner
+
+What only the owner can do – an account, a payment, an OK, hardware in hand, a click in Claude Code –, one line each
+(`- [ ] **What:** command or link – why. *(session)*`), ticked off at once; the session that wrote a line deletes it
+once ticked. The items further down that wait for the owner stay where their step is.
+
+- [ ] **Update the edakit plugin:** in Claude Code `/plugin` → edakit → Update, then `/reload-plugins` or a restart in
+  every running session – installed is 868e942 of 31.10.; `/reload-plugins` alone only reloads that one. Why: the
+  bell's hook and Makefile use the plugin, and 868e942 knows neither W.2–W.4 nor the electrical hash M-6 now hangs on.
+  *(edakit-be, automatic-christmas-bell-b3)*
+- [ ] **Read the circuit-language sketch in peace:** `docs/concepts/new/circuit-language.md` (the bell as a language
+  and as TOML), six open decisions. No date, nothing waits on it. *(edakit-29)*
+
 ## Ordering at the manufacturer (phase 5, [ordering.md](docs/concepts/done/ordering.md))
 
 Built offline and tested on recorded data on 2026-10-30, merged into main the same day: the order form as keys, the
