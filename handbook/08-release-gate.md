@@ -1247,8 +1247,10 @@ A requirement whose evidence is a project check – the rule watcher of the test
 **Signing for a requirement.** A reviewer whose check a requirement names in `verify` – the agent electrical-reviewer
 for `signoff = "M-1"`, regulatory-reviewer for `"M-6"`, pcb-reviewer for `"M-5"` – judges it and names the requirements
 it found met in the note it signs with; its result gives the line,
-`M-1: OK for state 1a2d…; requirements met: R-4, R-5`. An ID in that clause is passing evidence – up to the next `;`
-or `.`, "requirement met:" too –, an ID elsewhere in the note is none, so a requirement the review did not find met
-stays out of the clause and is a finding of the review (the owner's decision on the 555 blinker's gap, 2026-11-02). The sign-off file needs no other field.
-Because the requirements files are in the circuit hash (8.2), a changed requirement voids M-1 and M-6, and the next
-signature names it again.
+`M-1: OK for state 1a2d…; requirements met: R-4, R-5`. Only an ID in that clause, up to the next `;` or `.`, is
+passing evidence; a requirement the review did not find met stays out of it and is a finding of the review. The
+sign-off file needs no other field.
+
+An ID elsewhere in the note – "R-4 not met" – is no evidence (the owner's decision of 2026-11-02, a gap of the 555
+blinker). Because the requirements files are in the circuit hash (8.2), a changed requirement voids M-1 and M-6, and
+the next signature names it again.
