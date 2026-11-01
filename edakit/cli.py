@@ -23,6 +23,7 @@
     edakit order [--out DIR]         the assembler's BOM, a cart per other supplier, the hand-assembly list (PARTS.supplier)
     edakit cart fields|prepare|check|actual   the order at the maker: its form from [order], the job of the skill
                                      cart, ORDER.form to ORDER.review on what it brought back, the real cost (never orders, never pays)
+    edakit cart compare              the quotes of every maker of [cart] makers side by side: price, parts, lead time, check
     edakit sim                       stage E: ngspice operating points of all scenarios (offline, seconds)
     edakit docs [--write]            values quoted in documents and schematic notes: DOCS.quote for stale ones, --write fills in
     edakit firmware [--check]        the board's firmware contract as JSON from the graph; --check: drift (opt-in)
@@ -180,8 +181,8 @@ def build_parser():
     _common(p)
 
     p = sub.add_parser("cart", help="the order at the maker: the form's fields, the job of the skill cart, its check, "
-                                    "the real cost – up to the maker's cart, never further")
-    p.add_argument("action", choices=["fields", "prepare", "check", "actual"])
+                                    "the real cost, the makers' quotes compared – up to the maker's cart, never further")
+    p.add_argument("action", choices=["fields", "prepare", "check", "actual", "compare"])
     p.add_argument("--board", help="the board (needed with several made boards)")
     p.add_argument("--maker", help="a maker of [cart] makers (default: [cart] maker, jlcpcb without [cart])")
     p.add_argument("--cart", action="store_true", help="check: the cart line after the cart button (cart.json)")

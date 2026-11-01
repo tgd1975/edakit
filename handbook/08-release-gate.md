@@ -653,6 +653,13 @@ export odb` (16.6).
    Exit 0: everything passed, warnings and notes included – `check.md` lists them; 2: a check failed – nothing goes
    into the cart; 3: ORDER.form to ORDER.finish passed and the review of the order is next. `check.md` and
    `check.json` in the order's folder hold the result.
+
+   With several makers in `[cart] makers`, steps 1 to 3 run at each, and `edakit cart compare [--board B]` puts their
+   quotes side by side: the board total as quoted and in `[cost] currency` through `[cost] rates`, the order total
+   where the page showed one, the lines a maker marked or did not match (ORDER.parts), the lead time as read, and
+   whether `edakit cart check` passed on that very quote – a check of an older `quote.json` does not count. It names
+   the lowest board total and writes `cart/compare.md` of the run; whose cart the skill fills is then the owner's
+   choice on numbers. It reads the order folders only: nothing is asked of a maker, nothing ordered.
 4. Only then the skill presses the maker's cart button, reads the cart line back into `cart.json` and runs
    `edakit cart check --cart`: board and quantity of the job, the quote's price within the tolerance – at AISLER,
    which has no cart, the line of the saved project on its page `/checkout` (name, quantity, net price, VAT apart),

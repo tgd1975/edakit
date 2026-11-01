@@ -160,6 +160,7 @@ edakit release publish          # the order files of every board's current relea
 edakit cart fields              # every field of the maker's order form from [order], with where it comes from
 edakit cart prepare|check       # the job of the skill cart from the release; ORDER.form to ORDER.review on what it brought back
 edakit cart actual              # the real cost of the order: against estimate and quote, into the fee table
+edakit cart compare             # every maker's quote side by side: price, parts in stock, lead time, checked
 ```
 
 In Claude Code the skills do the orchestration: `/edakit:new-project`, `/edakit:requirements`,
