@@ -86,6 +86,13 @@ on the page, a mail to the owner) is taken out of `[cart] makers` by the owner.
     before it and say so. Tell the owner the result, and that M-2 at
     the maker, ordering and paying are theirs.
 
+**AISLER** (the owner's word of 2026-11-01): after the upload, in the BOM tab set "Auto assign parts using" to the
+job's `match` (`mpn`); an MPN AISLER lists more than once (another manufacturer, "Partner Stock") stays unassigned –
+assign the line with the job's MPN and the release's manufacturer, never another part; exclude the job's `dnp`; then
+"Calculate prices". The PCB and service fields and the quantity are on the project's page `/checkout` (its address:
+the project's address with `/checkout`): open it by that address – never by the buttons "Checkout" or "Checkout
+now" –, set and read back the fields and the price there, and stop before "Continue to Checkout".
+
 Rules: one field at a time, read back after each; a field you cannot find, or a value the form does not offer, stops
 with the field's name – no guessing, no nearby option; a dialog the job does not explain (DFM warning, part
 replacement) is reported, not answered.

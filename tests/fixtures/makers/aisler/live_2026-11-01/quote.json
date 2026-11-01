@@ -1,0 +1,148 @@
+{
+ "maker": "aisler",
+ "read": "2026-11-01T09:20:00+01:00",
+ "fields": [
+  {
+   "label": "Dimension / Size",
+   "value": "60mm x 28mm"
+  },
+  {
+   "label": "Layer Count",
+   "value": "2"
+  },
+  {
+   "label": "Minimal Drill Diameter",
+   "value": "0.3mm"
+  },
+  {
+   "label": "Elongated Hole Count",
+   "value": "2"
+  },
+  {
+   "label": "Castellated Hole Count",
+   "value": "0"
+  },
+  {
+   "label": "Sides",
+   "value": "Single-sided (top)"
+  },
+  {
+   "label": "Service",
+   "value": "Amazing Assembly"
+  },
+  {
+   "label": "PCB Thickness",
+   "value": "1.6mm"
+  },
+  {
+   "label": "Surface Finish",
+   "value": "HASL Lead Free"
+  },
+  {
+   "label": "Copper Thickness of outer layers",
+   "value": "35 µm"
+  },
+  {
+   "label": "PCB Color",
+   "value": "Green"
+  },
+  {
+   "label": "Silkscreen",
+   "value": "White"
+  },
+  {
+   "label": "Quantity",
+   "value": "5"
+  }
+ ],
+ "files": [
+  {
+   "name": "odb_main.zip"
+  }
+ ],
+ "parts": [
+  {
+   "part": "CC0805KRX7R9BB104",
+   "designators": [
+    "C1"
+   ],
+   "mark": ""
+  },
+  {
+   "part": "CL21B105KBFNNNE",
+   "designators": [
+    "C2",
+    "C4"
+   ],
+   "mark": ""
+  },
+  {
+   "part": "CL21B103KBANNNC",
+   "designators": [
+    "C3"
+   ],
+   "mark": ""
+  },
+  {
+   "part": "APTD2012LSURCK",
+   "designators": [
+    "D1"
+   ],
+   "mark": ""
+  },
+  {
+   "part": "AO3415A",
+   "designators": [
+    "Q1"
+   ],
+   "mark": ""
+  },
+  {
+   "part": "0805W8F7503T5E",
+   "designators": [
+    "R1"
+   ],
+   "mark": "Out of Stock"
+  },
+  {
+   "part": "0805W8F2000T5E",
+   "designators": [
+    "R2"
+   ],
+   "mark": "Out of Stock"
+  },
+  {
+   "part": "0805W8F1002T5E",
+   "designators": [
+    "R3"
+   ],
+   "mark": ""
+  },
+  {
+   "part": "LMC555CMX/NOPB",
+   "designators": [
+    "U1"
+   ],
+   "mark": ""
+  }
+ ],
+ "dnp": [
+  "BT1",
+  "SW1"
+ ],
+ "prices": [
+  {
+   "label": "BOM Price, 5",
+   "amount": 175.24,
+   "kind": "parts"
+  }
+ ],
+ "currency": "EUR",
+ "lead_time": "",
+ "notes": [
+  "/checkout opened by its address (the owner's word of 2026-11-01): Amazing Assembly selected, the configuration read, quantity 5; 'We cannot offer any prices as one or more requirements are unmet' – no Net Total; 'Continue to Checkout' not touched",
+  "C1, Q1, R3: the exact MPN listed more than once (Yageo / Partner Stock; AOS, UMW; Royal ohm) – picked the line of the release's manufacturer",
+  "'The quantity seems to be unavailable.' – R1, R2 out of stock",
+  "Checkout now, starting at just €17.36 – not touched"
+ ]
+}

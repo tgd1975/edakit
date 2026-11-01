@@ -1,0 +1,265 @@
+{
+ "made": "2026-11-01T08:59:04+01:00",
+ "run": "20261101-084718",
+ "fab_sha256": "7fbe6aa780adad6dae87d7393d7297690f9e46e081762511231a3a494f8a26b5",
+ "state_sha256": "b85dd8d8a978fd3160d7efee4d7919456fe41bec9903f0b0d2a3c3d6407937f3",
+ "layout_sha256": "6701738364d59b296932fb0e9bbbfd1b830158157966d7633ab666b78cea1bbc",
+ "purpose": {
+  "use": "private",
+  "market": "EU",
+  "notes": "The example of the edakit handbook, chapter 18: built for oneself."
+ },
+ "board": "main",
+ "title": "555 blinker",
+ "project": "blinker-555",
+ "maker": {
+  "key": "aisler",
+  "name": "AISLER",
+  "profile": "/home/tobias/Dokumente/Projekte/edakit-aisler/edakit/makers/aisler.toml",
+  "recorded": "2026-10-31",
+  "start": "https://aisler.net/en/products/assembly",
+  "cart": null,
+  "never": [
+   "Submit order",
+   "Order",
+   "Buy",
+   "Checkout",
+   "Checkout now",
+   "Continue to Checkout",
+   "Pay",
+   "Place order",
+   "Confirm order"
+  ],
+  "ignore": {
+   "Stackup & Design Rules": "a line AISLER derives (2L 1.6mm 35um var.)",
+   "Blitz Service": "the owner's choice at checkout",
+   "Dimension / Size": "the project's overview, read from the ODB++ (SYNC.odb holds its profile to the Gerber outline)",
+   "Layer Count": "the project's overview, read from the ODB++",
+   "Minimal Drill Diameter": "the project's overview, read from the ODB++ (SYNC.odb holds its holes to the drill files)",
+   "Elongated Hole Count": "the project's overview, read from the ODB++",
+   "Castellated Hole Count": "the project's overview, read from the ODB++",
+   "Estimated Dispatch": "/checkout: AISLER's date for the quantity, read with the price"
+  },
+  "unshown": [],
+  "upload": "before_cart",
+  "matching": "page",
+  "seat": "NL",
+  "currency": "EUR",
+  "role": "other"
+ },
+ "quantity": 5,
+ "pcba_quantity": 5,
+ "files": [
+  {
+   "name": "odb_main.zip",
+   "path": "/tmp/claude-1000/-home-tobias-Dokumente-Projekte-edakit/797aadb4-7ef0-466c-9354-d5c9eb7a5ab8/scratchpad/live/blinker-555/build/release/20261101-084718/fab/main/odb_main.zip",
+   "size": 44914,
+   "sha256": "d75f0d24f0acce8f880201628d8345b8abad7eae93f7aec699d7fdef7780204c"
+  }
+ ],
+ "fields": [
+  {
+   "key": "thickness_mm",
+   "section": "PCB",
+   "label": "PCB Thickness",
+   "value": "1.6mm",
+   "raw": 1.6,
+   "from": "edakit",
+   "note": ""
+  },
+  {
+   "key": "finish",
+   "section": "PCB",
+   "label": "Surface Finish",
+   "value": "HASL Lead Free",
+   "raw": "LeadFree HASL",
+   "from": "edakit",
+   "note": ""
+  },
+  {
+   "key": "mask",
+   "section": "PCB",
+   "label": "PCB Color",
+   "value": "Green",
+   "raw": "green",
+   "from": "edakit",
+   "note": ""
+  },
+  {
+   "key": "silkscreen",
+   "section": "PCB",
+   "label": "Silkscreen",
+   "value": "White",
+   "raw": "white",
+   "from": "edakit",
+   "note": ""
+  },
+  {
+   "key": "copper_oz",
+   "section": "PCB",
+   "label": "Copper Thickness of outer layers",
+   "value": "35 µm",
+   "raw": 1,
+   "from": "edakit",
+   "note": ""
+  },
+  {
+   "key": "pcba",
+   "section": "PCBA",
+   "label": "Service",
+   "value": "Amazing Assembly",
+   "raw": "assembly",
+   "from": "the first assembly class of AISLER",
+   "note": ""
+  },
+  {
+   "key": "sides",
+   "section": "PCBA",
+   "label": "Sides",
+   "value": "Single-sided (top)",
+   "raw": "top",
+   "from": "[release] assembly.sides",
+   "note": ""
+  },
+  {
+   "key": "quantity",
+   "section": "PCB",
+   "label": "Quantity",
+   "value": "5",
+   "raw": 5,
+   "from": "[project] quantity",
+   "note": ""
+  },
+  {
+   "key": "ship_to",
+   "section": "Shipping",
+   "label": "Ship to",
+   "value": "AT",
+   "raw": "AT",
+   "from": "[cart] ship_to",
+   "note": "",
+   "read": true,
+   "checkout": true
+  },
+  {
+   "key": "shipping",
+   "section": "Shipping",
+   "label": "Shipping",
+   "value": "Standard",
+   "raw": "Standard",
+   "from": "[cart] shipping",
+   "note": "",
+   "read": true,
+   "checkout": true
+  }
+ ],
+ "bom": [
+  {
+   "part": "CC0805KRX7R9BB104",
+   "designators": [
+    "C1"
+   ],
+   "comment": "100nF"
+  },
+  {
+   "part": "CL21B105KBFNNNE",
+   "designators": [
+    "C2",
+    "C4"
+   ],
+   "comment": "1uF"
+  },
+  {
+   "part": "CL21B103KBANNNC",
+   "designators": [
+    "C3"
+   ],
+   "comment": "10nF"
+  },
+  {
+   "part": "APTD2012LSURCK",
+   "designators": [
+    "D1"
+   ],
+   "comment": "red"
+  },
+  {
+   "part": "AO3415A",
+   "designators": [
+    "Q1"
+   ],
+   "comment": "AO3415A"
+  },
+  {
+   "part": "0805W8F7503T5E",
+   "designators": [
+    "R1"
+   ],
+   "comment": "750k"
+  },
+  {
+   "part": "0805W8F2000T5E",
+   "designators": [
+    "R2"
+   ],
+   "comment": "200"
+  },
+  {
+   "part": "0805W8F1002T5E",
+   "designators": [
+    "R3"
+   ],
+   "comment": "10k"
+  },
+  {
+   "part": "LMC555CMX/NOPB",
+   "designators": [
+    "U1"
+   ],
+   "comment": "LMC555CMX/NOPB"
+  }
+ ],
+ "match": "mpn",
+ "bom_file": "bom_main_mpn.csv",
+ "dnp": [
+  "BT1",
+  "SW1"
+ ],
+ "estimate": null,
+ "estimate_why": "AISLER has no fee table",
+ "compliance": {
+  "C1710": {
+   "rohs": true,
+   "source": "LCSC product data C1710 (RoHS), read 2026-10-31"
+  },
+  "C17414": null,
+  "C17540": {
+   "rohs": true,
+   "source": "LCSC product data C17540 (RoHS), read 2026-10-31"
+  },
+  "C17817": {
+   "rohs": true,
+   "source": "LCSC product data C17817 (RoHS), read 2026-10-31"
+  },
+  "C28323": {
+   "rohs": true,
+   "source": "Samsung MLCC catalogue November 2015, p. 2 ('all our MLCCs are produced in accordance with EU ROHS and REACH Directive'); LCSC product data C28323 (isEnvironment), read 2026-10-31"
+  },
+  "C49678": null,
+  "C90760": {
+   "rohs": true,
+   "source": "TI SNAS558M package option addendum, p. 19: LMC555CMX/NOPB 'Green (RoHS & no Sb/Br)'"
+  },
+  "C133233": {
+   "rohs": true,
+   "source": "LCSC product data C133233 (RoHS), read 2026-10-31"
+  },
+  "C5366382": {
+   "rohs": true,
+   "source": "Kingbright DSAO7910 Rev V.5A p. 1: 'RoHS compliant', 'Halogen-free'"
+  }
+ },
+ "ship_to": "AT",
+ "shipping": "Standard",
+ "tolerance": 0.1
+}

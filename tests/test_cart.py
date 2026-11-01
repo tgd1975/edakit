@@ -6,6 +6,7 @@ the example's export of test_fab_run, released, and a quote and page text as the
 import json
 import shutil
 import zipfile
+from pathlib import Path
 
 import pytest
 
@@ -436,3 +437,15 @@ def test_the_customs_description_in_the_job(project, monkeypatch, capsys):
     assert cart(project, monkeypatch, "prepare") == 0
     f = next(f for f in job(project)["fields"] if f["key"] == "customs")
     assert (f["value"], f["read"]) == ("–", True)
+
+
+def test_aisler_as_the_live_run_read_it():
+    """Live run 5.10 (2026-11-01, tests/fixtures/makers/aisler/live_2026-11-01): with the parts' MPN in the ODB++
+    AISLER assigned every part of the release by "mpn"; the form of /checkout and the Assembly tab are the job's
+    fields, the project overview is in the profile's ignore – ORDER.form passes; R1 and R2 out of stock at AISLER stop
+    the order at ORDER.parts, as they must."""
+    from edakit import cart as c
+    d = Path(__file__).parent / "fixtures" / "makers" / "aisler" / "live_2026-11-01"
+    job, quote = (json.loads((d / f).read_text()) for f in ("job.json", "quote.json"))
+    assert job["match"] == "mpn" and c.b1(job, quote)[0] == []
+    assert c.b2(job, quote)[0] == ["0805W8F7503T5E R1: Out of Stock", "0805W8F2000T5E R2: Out of Stock"]
