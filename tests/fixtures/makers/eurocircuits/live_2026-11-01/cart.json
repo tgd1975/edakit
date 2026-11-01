@@ -1,0 +1,5 @@
+{"name": "gerber_main", "quantity": 5, "price": 272.30, "vat": 54.46, "currency": "EUR",
+ "basket": "B5490623", "type": "PCBA", "status": "Ready to checkout", "service": "PCB Proto", "assembly_quantity": 5,
+ "delivery": "6 Working days", "lines": {"PCB unit price": 13.71, "PCB price": 68.55, "Assembly price": 183.90,
+ "Component price": "19.85 Incomplete", "Net price": 272.30, "VAT %": 20.0, "VAT": 54.46},
+ "bom": "# parts defined: 9, # parts not defined: 0"}

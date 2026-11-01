@@ -133,12 +133,12 @@ def bom_of(d, board, m, design):
         with open(path, newline="", encoding="utf-8-sig") as f:
             for r in csv.DictReader(f):
                 refs = [x.strip() for x in re.split(r"[,\s]+", r.get("Designator", "")) if x.strip()]
-                part = r.get("MPN") if match == "mpn" else r.get("LCSC Part #")
+                part = r.get("Manufacturer Part Number") if match == "mpn" else r.get("LCSC Part #")
                 if match == "mpn" and not part:
                     lcsc = r.get("LCSC Part #") or (design.part(refs[0]) or {}).get("lcsc")
                     part = (design.parts.get(lcsc) or {}).get("mpn")
                 out.append({"part": part or "", "designators": sorted(refs, key=natural_key),
-                            "comment": r.get("Comment", "")})
+                            "comment": r.get("Value", r.get("Comment", ""))})
     return out, match, path.name
 
 
@@ -505,7 +505,8 @@ def b7(out):
 def check_cart(job, quote, cart):
     """With --cart: the cart line names the job's board (its name, a file's, or – where the maker names a line by its
     specification, PCBWay's "2 Layers Size 60x28mm 1.6mm" – its size) and quantity, and the quote's price within
-    [cart] tolerance."""
+    [cart] tolerance – the line's price, or with its VAT where the line shows it apart (vat; Eurocircuits quotes
+    gross and shows the basket line net)."""
     tol, lines = float(job.get("tolerance", makers.TOLERANCE)), board_lines(quote)
     subtotal = round(sum(float(p["amount"]) for p in lines), 2)
     names = [job["board"]] + [Path(f["name"]).stem for f in job["files"]]
@@ -516,9 +517,11 @@ def check_cart(job, quote, cart):
         bad.append(f"the cart line {cart.get('name')!r} names neither the board nor a file of the job")
     if cart.get("quantity") != job["quantity"]:
         bad.append(f"quantity {cart.get('quantity')} in the cart, {job['quantity']} in the job")
-    price = cart.get("price")
-    if price is None or abs(float(price) - subtotal) > tol * max(1, len(lines)) + 1e-9:
-        bad.append(f"price {price} in the cart, {subtotal:.2f} in the quote")
+    price, vat = cart.get("price"), cart.get("vat")
+    seen = [] if price is None else [float(price)] + ([float(price) + float(vat)] if vat is not None else [])
+    if all(abs(p - subtotal) > tol * max(1, len(lines)) + 1e-9 for p in seen):
+        apart = f" (VAT {vat} apart)" if vat is not None else ""
+        bad.append(f"price {price}{apart} in the cart, {subtotal:.2f} in the quote")
     return bad, f"{cart.get('name')}: {cart.get('quantity')} at {price} {cart.get('currency', '')}".rstrip()
 
 

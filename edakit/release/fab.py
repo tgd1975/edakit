@@ -355,7 +355,9 @@ def write_bom(bom, path):
         w.writerows(bom)
 
 
-MPN_COLUMNS = ["Designator", "Quantity", "Manufacturer", "MPN", "Comment"]
+# The header Eurocircuits' import maps by itself (ordering step 0, live run 5.8): "MPN" it leaves unmapped and takes
+# "Comment" for the part number. PCBWay's engineers read the file by eye – one file serves every maker of [cart].
+MPN_COLUMNS = ["Designator", "Quantity", "Value", "Package", "Manufacturer", "Manufacturer Part Number"]
 
 
 def mpn_rows(design, bom):
@@ -365,8 +367,8 @@ def mpn_rows(design, bom):
     for r in bom:
         entry = design.parts.get(r["LCSC Part #"]) or {}
         out.append({"Designator": r["Designator"], "Quantity": len(r["Designator"].split(",")),
-                    "Manufacturer": entry.get("manufacturer", ""), "MPN": entry.get("mpn", ""),
-                    "Comment": r["Comment"], "Footprint": r["Footprint"], "LCSC Part #": r["LCSC Part #"]})
+                    "Value": r["Comment"], "Package": r["Footprint"], "Manufacturer": entry.get("manufacturer", ""),
+                    "Manufacturer Part Number": entry.get("mpn", ""), "LCSC Part #": r["LCSC Part #"]})
     return out
 
 

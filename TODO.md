@@ -45,8 +45,14 @@ run against a maker's page or EasyEDA yet.
       the skill cart sets it, or asks the owner without it (handbook 10.2).
 - [x] **5.7, 5.12:** the skill cart live at JLCPCB and PCBWay (2026-11-01, the 555 blinker, a copy of the example):
       every check passed, into the cart, order record written, nothing ordered.
-- [ ] **5.8:** Eurocircuits live – stopped, as it must, at "Board thickness": 1.6 mm is not among Eurocircuits'
-      thicknesses (1.55 is its standard). Again with a board of a thickness it makes, or the owner's word on 1.55.
+- [x] **5.8:** the skill cart live at Eurocircuits (2026-11-01, the blinker's copy at 1.55 mm on the owner's word):
+      every check passed, into the basket, order record written, nothing ordered. Built on the way: the MPN BOM's
+      header Eurocircuits maps (it took "Comment" for the part number), a cart line with its VAT apart, the
+      configurator's fields in the profile (`tests/fixtures/makers/eurocircuits/live_2026-11-01/`).
+- [ ] **CPL rotations per maker:** Eurocircuits' Assembly Editor drew Q1 (SOT-23, rotation 180 as SYNC.cpl writes
+      it) turned by 90° against the board's pads – U1 and D1 sat right, C3 and R3 "do not match" (live run 5.8,
+      M-5 note 10). The maker's zero orientation per package in its profile, SYNC.cpl writing or checking per maker;
+      until then M-2 in the basket turns it.
 - [x] **5.10:** AISLER live (2026-11-01): R1 and R2 swapped in the throwaway copy for YAGEO parts AISLER stocks,
       released again (M-1, M-5, M-6 by the agents), every part assigned, /checkout at Amazing Assembly, quantity 5,
       €348.03 net; ORDER.form to ORDER.review passed, stopped before "Continue to Checkout"

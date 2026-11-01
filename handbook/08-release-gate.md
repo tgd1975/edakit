@@ -656,7 +656,10 @@ skill prints the job as a checklist, the owner fills the form and `quote.json`, 
 **Makers.** JLCPCB and PCBWay (China), Eurocircuits (Belgium) and AISLER (Netherlands) have a profile each in
 `edakit/makers/` (`[cart]`, 10.1); ordering step 0 read the four forms in the owner's accounts and recorded them
 (`recorded`, the notes in `tests/fixtures/makers/`). PCBWay and Eurocircuits match the BOM by manufacturer part number:
-`bom_<board>_mpn.csv` and PARTS.fact/mpn; both took it, and the CPL in JLCPCB's columns, as edakit writes them.
+`bom_<board>_mpn.csv` and PARTS.fact/mpn; both took it, and the CPL in JLCPCB's columns, as edakit writes them. The
+file's header is the one Eurocircuits' import maps by itself – Designator, Quantity, Value, Package, Manufacturer,
+Manufacturer Part Number: a column named "MPN" it left unmapped and took "Comment" for the part number (live run
+5.8); PCBWay's engineers read the same file by eye.
 JLCPCB's form offers no order number any more – "Mark on PCB" is "Remove Mark" or a 2D barcode (`barcode`: `"qr"`,
 `"datamatrix"`; `serial_number`, 10.2) –, so `mark = "specify"` is not a value of its form, and its former placeholder
 `JLCJLCJLCJLC` is printed as text at every maker: FILES.order warns about it. PCBWay's placeholder `WayWayWay` is text to

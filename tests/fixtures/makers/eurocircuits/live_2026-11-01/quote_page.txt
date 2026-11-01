@@ -1,0 +1,263 @@
+Eurocircuits configurator, be.eurocircuits.com/shop/assembly/configurator.aspx – read on 2026-11-01 by the skill cart
+(live run 5.8). Page text as the browser tool returned it, per tab; input values and tick states, which the page text
+leaves out, in the last section as read on the screen.
+
+== After the upload of gerber_main.zip (dialog)
+Measured values warning
+The following values determined by the analysis have been applied:
+- PCB width (X) - 60.00 mm
+- PCB height (Y) - 28.00 mm
+OK
+
+== PCB Visualizer
+Data Set: Customer - Basic PCB Analysis
+Uploaded File(s)
+gerber_main.zip
+PCB Data
+bom_main_mpn.csv
+BOM File/Data
+cpl_main.csv
+CPL Data
+Unit
+mm Inch
+Select a Service
+PCB proto
+STANDARD pool
+DEFINED IMPEDANCE pool
+RF pool
+IMS pool
+SEMI-FLEX pool
+HDI pool
+Number of layers
+24 More Options
+Measured:2
+PCB size
+X
+mm
+Measured: 60.00 mm X 28.00 mm
+Delivery format
+Single PCB Panel
+Stencils
+Top stencil
+Yes No
+Bottom stencil
+Yes No
+Material
+Base material
+FR-4 Improved More Options
+Board thickness
+1.55 mm More Options
+Material Tg
+145-150 ºC More Options
+Outer layer copper foil
+18 µm (end +/-35 µm) More Options
+Blind/Buried via runs
+0
+PCB Definition
+Top soldermask
+Green More Options
+Bottom soldermask
+Green More Options
+Top legend
+White None More Options
+Bottom legend
+White None More Options
+Surface finish
+Any lead-free finishHAL Lead-free More Options
+Bare Board Testing
+Yes
+Technology
+Outer layer trackwidth (OL-TW)
+0.150 mm0.175 mm0.200 mm0.250 mm More Options
+Outer layer isolation distance (OL-TT-TP-PP)
+0.150 mm0.175 mm0.200 mm0.250 mm More Options
+Outer layer annular ring (OAR)
+0.125 mm0.150 mm0.200 mm More Options
+Smallest final hole
+0.45 mm0.25 mm More Options
+Holes <= may be reduced
+0.65 mm0.60 mm0.55 mm0.50 mm0.45 mm More Options
+Hole density
+< 1000/dm²< 1500/dm²< 2000/dm²> 2000/dm²
+Component pad pitch
+0.50 mm< 0.50 mm
+Technology class
+Advanced options
+Peelable mask
+NoTopBottom
+Carbon contacts
+No More Options
+UL marking
+Yes No
+Specific marking
+Yes No
+Milling
+No>= 2.00 mm>= 1.90 mm>= 1.80 mm More Options
+Specific hole tolerances
+Yes No
+Specific dimension tolerances
+Yes No
+PTH on the board edge
+Yes No
+Round-edge plating
+Yes No
+Press-fit holes
+Yes No
+Depth routing
+Yes No
+Chamfered holes
+Yes No
+Copper up to board edge
+Yes No
+Edge connector gold surface mm²
+Edge connector bevelling
+NoStandardSpecial 30 degreesSpecial 20 degrees More Options
+Top heatsink paste
+100 µm200 µmNo
+Bottom heatsink paste
+100 µm200 µmNo
+Package quantity
+Standard1510
+Via filling/Hole plugging
+NoResin
+Wire bonding
+NoTopBottomBoth
+High-Voltage board
+Yes No
+PCB proto service
+PCB quantity
+PCB(s)
+Do not assemble all PCBs
+Total lead time Proposed (6 working days)
+Board surface / Order surface 0.17 dm² / 0.84 dm²
+Est. shipment date
+09-11-2026
+Prices
+Gross*
+Single PCB
+€ 16.45
+Total boards
+€ 82.26
+Components
+(Incomplete)
+€ 23.82
+Assembly
+€ 220.68
+Total
+€ 326.76
+* The gross prices include 20 % VAT.
+Alternatives
+PCB quantity
+5 10
+6 WD
+Net Gross*
+€ 13.71 € 16.45
+€ 68.55 € 82.26
+
+== PCBA Visualizer
+bom_main_mpn.csv
+BOM File/Data
+cpl_main.csv
+CPL Data
+9 Identified parts
+0 eC-stock parts
+9 On Demand
+0 Generic parts
+0 Reserved Stock
+0 Parts Pre-Order
+0 Unidentified
+0 Suggested
+0 Obsolete
+0 NRND
+Supplied by
+9 Assembler
+0 Customer
+0 Not placed
+0 Mixed supply
+Special assembly requirements
+No Yes
+Automotive required
+Yes No
+MPN | Description | Availability | Ref des | Supplied by | Quantity | Price
+CC0805KRX7R9BB104 | Ceramic Capacitors | 0.1µF ±10% 50V Ceramic Capacitor X7R 0805 (2012 Metric) 0.079" L x 0.049" W (2.00mm x 1.25mm) | On Demand SMD | C1 | Assembler Yageo | Qty per PCB 1 Order qty 5 | € 1.35
+CL21B105KBFNNNE | Ceramic Capacitors | 1µF ±10% 50V Ceramic Capacitor X7R 0805 (2012 Metric) | On Demand SMD | C2, C4 | Assembler Samsung | Qty per PCB 2 Order qty 10 | No info
+CL21B103KBANNNC | Ceramic Capacitors | 10000pF ±10% 50V Ceramic Capacitor X7R 0805 (2012 Metric) | On Demand SMD | C3 | Assembler Samsung Electro-Mechanics | Qty per PCB 1 Order qty 5 | € 1
+APTD2012LSURCK | Led | Red 630nm LED Indication - Discrete 1.75V 0805 (2012 Metric) | On Demand SMD | D1 | Assembler Kingbright | Qty per PCB 1 Order qty 5 | € 2.36
+AO3415A | Transistor | P-Channel 20V 5A (Ta) 1.5W (Ta) Surface Mount SOT-23-3L | On Demand SMD | Q1 | Assembler Alpha & Omega Semiconductor | Qty per PCB 1 Order qty 5 | € 4.75
+0805W8F7503T5E | Resistors | 750kΩ ±1% ±100ppm/℃ 0.125W 0805 Chip Resistor - Surface Mount ROHS | On Demand SMD | R1 | Assembler UNI-ROYAL | Qty per PCB 1 Order qty 5 | No info
+0805W8F2000T5E | Resistors | 125mW Thick Film Resistors ±1% 200Ω 0805 Chip Resistor - Surface Mount ROHS | On Demand SMD | R2 | Assembler Royal Ohm | Qty per PCB 1 Order qty 5 | No info
+0805W8F1002T5E | Resistors | Chip Resistor - Surface Mount 10KOhms ±1% 1/8W 0805 RoHS | On Demand SMD | R3 | Assembler Uniroyal Elec | Qty per PCB 1 Order qty 5 | No info
+LMC555CMX/NOPB | Integrated Circuits (ICs) | 555 Type, Timer/Oscillator (Single) IC 3MHz 8-SOIC (0.154", 3.90mm Width) | On Demand SMD | U1 | Assembler Texas Instruments | Qty per PCB 1 Order qty 5 | € 10.39
+Assembly
+PCB quantity
+Do not assemble all PCBs
+Total lead time Proposed (6 working days)
+Based on 5 / 9 parts
+Incomplete component price because
+4 Part(s) with no price info
+Tab flag (on hover): There are Data conflicts - Please review and solve.
+
+== Assembly Editor (CPL), before Apply
+Component placements (showing all) - Source: cpl_main.csv
+10 components.
+Reference designator | X | Y | Rotation | Side | Identified part | Type | status (Selected component)
+C1 | 41.600 | 20.000 | 0 | Top | CC0805KRX7R9BB104 - Yageo | SMD | - Polarized: No - No issues detected.
+C2 | 41.700 | 9.200 | 270 | Top | CL21B105KBFNNNE - Samsung | SMD | - Polarized: No - No issues detected.
+C3 | 46.600 | 20.000 | 0 | Top | CL21B103KBANNNC - Samsung Electro-Mechanics | SMD | - Polarized: No - The component footprint does not match the board layout
+C4 | 40.000 | 14.800 | 90 | Top | CL21B105KBFNNNE - Samsung | SMD | - Polarized: No - No issues detected.
+D1 | 56.500 | 24.000 | 0 | Top | APTD2012LSURCK - Kingbright | SMD | - Polarized: Yes - No issues detected. - No data available to check pin 1 location.
+Q1 | 53.700 | 12.000 | 180 | Top | AO3415A - Alpha & Omega Semiconductor | SMD | - Polarized: Yes - The component footprint does not match the board layout - No data available to check pin 1 location.
+R1 | 44.400 | 10.300 | 180 | Top | 0805W8F7503T5E - UNI-ROYAL | SMD | - Polarized: No - No issues detected.
+R2 | 52.400 | 24.000 | 0 | Top | 0805W8F2000T5E - Royal Ohm | SMD | - Polarized: No - No issues detected.
+R3 | 55.000 | 6.000 | 0 | Top | 0805W8F1002T5E - Uniroyal Elec | SMD | - Polarized: No - The component footprint does not match the board layout
+U1 | 44.400 | 14.800 | 0 | Top | LMC555CMX/NOPB - Texas Instruments | SMD | - Polarized: Yes - No issues detected. - No data available to check pin 1 location.
+Cancel Apply
+
+== Summary
+Item Quantity Total lead time Unit price VAT Gross Add to cart
+PCB 5 € 13.71 € 13.71 (20%) € 82.26 [ticked]
+Assembly 5 Proposed (6 working days) € 36.78 € 36.78 (20%) € 220.68 [ticked]
+Components (Incomplete) - € 19.85 € 3.97 (20%) € 23.82 [ticked]
+PCB Name * gerber_main
+Purchase reference:
+Project reference:
+Article reference:
+SMS notification: Austria +43
+Check this box to Accept the Eurocircuits Terms of Sales *
+Add to basket Launch inquiry
+Check this box if you Require Pre-Production Approval
+PCB proto service
+Prices
+Gross*
+Items
+€ 326.76
+Express transport
+-
+Total (Incomplete)
+€ 326.76
+* The gross prices include 20 % VAT.
+Est. shipment date **
+09-11-2026
+Total lead time **
+Proposed (6 working days)
+** Based upon component availability at the end of the PCB production
+
+== Input values and tick states (the page text leaves them out; read on the screen)
+PCB size 60.00 x 28.00 mm
+PCB quantity 5
+Technology class 6C
+Edge connector gold surface mm² 0
+Selected buttons: Select a Service PCB proto; Unit mm; Number of layers 2; Delivery format Single PCB; Top stencil No;
+Bottom stencil No; Base material FR-4 Improved; Board thickness 1.55 mm; Material Tg 145-150 ºC; Outer layer copper foil
+18 µm (end +/-35 µm); Top soldermask Green; Bottom soldermask Green; Top legend White; Bottom legend White; Surface finish
+HAL Lead-free; Bare Board Testing Yes; Outer layer trackwidth (OL-TW) 0.150 mm; Outer layer isolation distance
+(OL-TT-TP-PP) 0.150 mm; Outer layer annular ring (OAR) 0.125 mm; Smallest final hole 0.25 mm; Holes <= may be reduced
+0.45 mm; Hole density < 1000/dm²; Component pad pitch 0.50 mm; Peelable mask No; Carbon contacts No; UL marking No;
+Specific marking No; Milling No; Specific hole tolerances No; Specific dimension tolerances No; PTH on the board edge No;
+Round-edge plating No; Press-fit holes No; Depth routing No; Chamfered holes No; Copper up to board edge No; Edge
+connector bevelling No; Top heatsink paste No; Bottom heatsink paste No; Package quantity Standard; Via filling/Hole plugging No;
+Wire bonding No; High-Voltage board No; Special assembly requirements No; Automotive required No
+Do not assemble all PCBs: not ticked
+Check to Include Assembly Service: ticked
+Require Pre-Production Approval: ticked (by Eurocircuits)
+Accept the Eurocircuits Terms of Sales: not ticked
