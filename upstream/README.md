@@ -25,11 +25,12 @@ we want instead and where it stands. Nothing here is posted without the owner's 
    (`npm view easyeda-mcp-pro version`) against the pin `EASYEDA_MCP_VERSION` in `edakit/easyeda/mcp-server.sh`, its
    `CHANGELOG.md` since the pin, and the source on `upstream/main` where the fix would sit. Issues and pull requests,
    open and closed: `gh search issues --repo oaslananka/easyeda-mcp-pro "<topic>"`.
-2. EasyEDA Pro (how it takes reports below, under "EasyEDA Pro – its extension API"): the newest version on its [update record](https://pro.easyeda.com/page/update-record) against the
+2. EasyEDA Pro: the newest version on its [update record](https://pro.easyeda.com/page/update-record) against the
    installed one (`ls /opt/apps/easyeda-pro/resources/app/assets/pro-versions`), the issues of
    [easyeda/easyeda-api-sdk](https://github.com/easyeda/easyeda-api-sdk/issues), open and closed – mostly in Chinese;
    EasyEDA's first answer is "update to the latest version" –, and the API types
-   (`npm view @jlceda/pro-api-types version`). An E-… is checked live on the newest version before it is reported.
+   (`npm view @jlceda/pro-api-types version`). An E-… is checked live on the newest version before it is reported,
+   each call in it against the docs first (below, "How EasyEDA takes reports").
 3. The fork's branches rebased onto `upstream/main`, their tests green.
 4. The column "Checked" takes the version checked against.
 
