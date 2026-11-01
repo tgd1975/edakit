@@ -347,9 +347,10 @@ def connectivity(text):
     return out
 
 
-def test_the_schematic_connects_every_pin_as_the_graph(project):
-    from edakit.toolchain.kicad import schematic as ks
-    cfg = kicad_project(project)
+def test_the_schematic_connects_every_pin_as_the_graph(project, monkeypatch):
+    from edakit.toolchain.kicad import cli, schematic as ks
+    monkeypatch.setattr(cli, "netlist", lambda sch, out, verbose=False: ({}, {}))    # write_parts reads the
+    cfg = kicad_project(project)                                                      # schematic's no-connect nets
     board, design = cfg.board(), Design.from_config(cfg)
     path, problems = ks.write(cfg, board)
     assert problems == [] and path.exists()
