@@ -7,6 +7,10 @@ written once, by `.github/merge.py`, from the fragments in [changes/](changes/RE
 [versioning.md](docs/concepts/done/versioning.md). Update with `claude plugin marketplace update edakit && claude plugin
 update edakit@edakit`, then `/reload-plugins` or a new session; `edakit --version` names the version that runs.
 
+## 0.4.16 – 2026-11-01
+
+- Issues by others in the edakit repository: the Action wrap posts every text by others on them again – plain text, numbered within the issue, sealed –, and the repository owner answers with `review`, `accept` or `reject`; the skills propose-rule and propose-feature name the commands (handbook 14.4).
+
 ## 0.4.15 – 2026-11-01
 
 - The walkthroughs end with their story: what the coin-cell board and the 555 blinker changed in edakit is chapter 13's
