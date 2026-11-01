@@ -1,5 +1,9 @@
 # Getting edakit known: for whom, where it is shown, what it costs the owner
 
+**To be revised** (the owner, 2026-11-01); to take up then: the order at four makers as something to show – the same
+released files quoted at JLCPCB, PCBWay, Eurocircuits and AISLER, each maker's price, parts stock and lead time read off
+its own form and checked by edakit, nothing ordered.
+
 Status 2026-11-01: decided – the owner took the three decisions the same day in a decision round in Claude Code's
 form, each as recommended, and confirmed what Claude decided itself (the table at the end); a fifth the same evening,
 the plugin's text, and on the owner's word K.2, K.3 and K.9 as one branch and one pull request. K.1 built the same
