@@ -17,7 +17,7 @@ rule, why it exists and its sources. The manual checks of the release keep their
 | | Step | Who | How | Writes | Checked by |
 |---|---|---|---|---|---|
 | 1 | Set up | you answer, Claude writes | `/edakit:new-project` | `edakit.toml`, the graph with its `purpose`, `sim.json`, `signoff.json`, the decision log | – |
-| 2 | What it must do | you and Claude | `/edakit:requirements` | `hardware/requirements.toml` | DOCS.ref to DOCS.draft |
+| 2 | What it must do | you and Claude | `/edakit:requirements` | `hardware/requirements.toml` | DOCS.ref to DOCS.derived |
 | 3 | Parts | Claude: the skill part-search or the agent part-selector | `edakit part search`, `part import`, `part fetch` | `hardware/parts/*.json` | STRUCT.entry, STRUCT.identity, PARTS.verified |
 | 4 | Circuit | Claude as the circuit designer | `/edakit:circuit-design`, `edakit block add` | `hardware/graph.json`, `hardware/sim.json` | `edakit check`, `edakit sim` |
 | 5 | What the checks found | Claude proposes, you decide | – | graph, sim.json, decisions D-2, D-3 | the same |

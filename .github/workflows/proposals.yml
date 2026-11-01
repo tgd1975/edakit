@@ -4,9 +4,10 @@ name: Proposals
 # repository skill triage-rule into the one open pull request from rules/proposals, feature proposals (Kind feature,
 # skill propose-feature) by triage-feature into the one from features/proposals – accepted and built, rejected with
 # the reason, or a question. Only proposals and answers of the repository owner start it, or the owner by hand
-# (gh workflow run proposals.yml). Every run triages the proposal that started it and every other one still waiting,
-# one after another, because accepted proposals share their branch: GitHub keeps one run waiting and cancels the one
-# before it, so proposals filed together would lose their runs. Needs the Claude GitHub app and one of the secrets
+# (gh workflow run proposals.yml). Every run triages the proposal that started it and every other one still waiting –
+# without a result, or with a question the owner answered last –, one after another, because accepted proposals share
+# their branch: GitHub keeps one run waiting and cancels the one before it, so proposals filed together and answers
+# given while a run waits would lose their runs (#94). Needs the Claude GitHub app and one of the secrets
 # CLAUDE_CODE_OAUTH_TOKEN or ANTHROPIC_API_KEY (claude: /install-github-app). Handbook 14.4 and 11.6.
 
 on:
@@ -50,7 +51,8 @@ jobs:
           gh label create accepted --color 0e8a16 --description "built into the proposals pull request" --force
           gh label create rejected --color b60205 --description "rejected with the reason" --force
       - name: Queue
-        # the issue that started the run, then the open proposals of the owner without a result, oldest first
+        # the issue that started the run, then the open proposals of the owner without a result or whose question the
+        # owner answered last, oldest first
         id: queue
         env:
           GH_TOKEN: ${{ github.token }}
@@ -58,8 +60,10 @@ jobs:
           OWNER: ${{ github.repository_owner }}
           N: ${{ github.event.issue.number }}
         run: |
-          waiting=$(gh issue list --author "$OWNER" --state open --limit 500 --json number,body,labels --jq '[.[]
-            | select((.body | contains("edakit-proposal v")) and all(.labels[]; .name | IN("accepted", "rejected", "needs-info") | not))
+          waiting=$(gh issue list --author "$OWNER" --state open --limit 500 --json number,body,labels,comments --jq '[.[]
+            | [.labels[].name] as $l
+            | select((.body | contains("edakit-proposal v")) and ($l | any(IN("accepted", "rejected")) | not)
+                and (($l | index("needs-info")) == null or (.comments | last | .author.login) == env.OWNER))
             | .number]')
           echo "proposals=$(jq -c --argjson n "${N:-null}" '[$n | numbers] + (. - [$n] | sort)' <<< "$waiting")" >> "$GITHUB_OUTPUT"
 

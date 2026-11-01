@@ -27,7 +27,7 @@ The working rules for sessions in this repository are in [CLAUDE.md](../CLAUDE.m
 | [docs/catalog/](catalog/build.py) | Generated | The catalog as one page (`index.html`, `circuits/*.svg`), written by `docs/catalog/build.py` from the catalog – never edited by hand |
 | [docs/pages.py](pages.py) | Code | Assembles the site |
 | [CLAUDE.md](../CLAUDE.md) | Source | The working rules for sessions in this repository |
-| [TODO.md](../TODO.md) | Source | Open work that needs the owner's computer, a maker or the owner's word; an item is ticked off with the commit that does it |
+| [TODO.md](../TODO.md) | Source | Open work that needs the owner's computer, a maker or the owner's word, at the top what only the owner can do ("For the owner"); an item is ticked off with the commit that does it |
 | [skills/](../skills/), [agents/](../agents/) | Source | The plugin's skills and agents: prompts that steer Claude in a project |
 | `.claude/` | Source | The skills of this repository (add-rule, add-feature, triage-rule, triage-feature) |
 | `.claude-plugin/` | Source | Plugin and marketplace manifests |

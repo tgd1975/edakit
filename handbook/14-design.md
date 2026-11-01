@@ -281,8 +281,9 @@ domain setting. The loop is part of the workflow:
    SHA-256 of the text. The decision gets the issue (`edakit: #12`).
 5. **Triage.** The Action `proposals` of the edakit repository starts on every proposal of the repository owner
    and on the owner's answers, and runs the skill `triage-rule` in a session of its own (for a feature proposal
-   `triage-feature`, 11.6). Each run takes along every proposal still without a result, one after another, so
-   proposals filed at the same time are not lost when GitHub cancels their waiting runs. Correctly made:
+   `triage-feature`, 11.6). Each run takes along every proposal still without a result and every question the owner
+   answered last, one after another, so proposals filed at the same time and answers given while a run waits are not
+   lost when GitHub cancels their waiting runs. Correctly made:
    `edakit proposal verify` – every section filled in, the checksum matches; a body edited by hand fails on purpose.
    Does it make sense: new, the right kind, the sources hold, general rather than one project's choice, which engine
    and which data – a fact before a new relation, a relation only where a program decides it (else a hint) –, clear

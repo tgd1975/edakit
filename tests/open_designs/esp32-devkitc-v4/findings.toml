@@ -103,3 +103,131 @@ what = "The auto-program transistors' bases, driven through 10 kΩ by the bridge
 what = "Header nets no simulated element touches judged as nan against their declared range (LIM.declared, 174 rows)."
 [[fixed]]
 what = "The schema did not know icc_a and i_a, the values the behaviours logic and current read (PARTS.schema)."
+
+# PARTS.fact/reach (#95): the design is sold, and the transcription took no supplier REACH statements.
+
+[[check]]
+code = "PARTS.fact"
+grade = "reach"
+place = "C105167"
+judged = "lacks"
+why = "A board that is sold names the SVHCs above 0.1 % (REACH Art. 33); the transcription took no supplier REACH statement for this part."
+
+[[check]]
+code = "PARTS.fact"
+grade = "reach"
+place = "C124187"
+judged = "lacks"
+why = "A board that is sold names the SVHCs above 0.1 % (REACH Art. 33); the transcription took no supplier REACH statement for this part."
+
+[[check]]
+code = "PARTS.fact"
+grade = "reach"
+place = "C140692"
+judged = "lacks"
+why = "A board that is sold names the SVHCs above 0.1 % (REACH Art. 33); the transcription took no supplier REACH statement for this part."
+
+[[check]]
+code = "PARTS.fact"
+grade = "reach"
+place = "C17414"
+judged = "lacks"
+why = "A board that is sold names the SVHCs above 0.1 % (REACH Art. 33); the transcription took no supplier REACH statement for this part."
+
+[[check]]
+code = "PARTS.fact"
+grade = "reach"
+place = "C17477"
+judged = "lacks"
+why = "A board that is sold names the SVHCs above 0.1 % (REACH Art. 33); the transcription took no supplier REACH statement for this part."
+
+[[check]]
+code = "PARTS.fact"
+grade = "reach"
+place = "C17552"
+judged = "lacks"
+why = "A board that is sold names the SVHCs above 0.1 % (REACH Art. 33); the transcription took no supplier REACH statement for this part."
+
+[[check]]
+code = "PARTS.fact"
+grade = "reach"
+place = "C17604"
+judged = "lacks"
+why = "A board that is sold names the SVHCs above 0.1 % (REACH Art. 33); the transcription took no supplier REACH statement for this part."
+
+[[check]]
+code = "PARTS.fact"
+grade = "reach"
+place = "C2150"
+judged = "lacks"
+why = "A board that is sold names the SVHCs above 0.1 % (REACH Art. 33); the transcription took no supplier REACH statement for this part."
+
+[[check]]
+code = "PARTS.fact"
+grade = "reach"
+place = "C22465879"
+judged = "lacks"
+why = "A board that is sold names the SVHCs above 0.1 % (REACH Art. 33); the transcription took no supplier REACH statement for this part."
+
+[[check]]
+code = "PARTS.fact"
+grade = "reach"
+place = "C26011"
+judged = "lacks"
+why = "A board that is sold names the SVHCs above 0.1 % (REACH Art. 33); the transcription took no supplier REACH statement for this part."
+
+[[check]]
+code = "PARTS.fact"
+grade = "reach"
+place = "C29277"
+judged = "lacks"
+why = "A board that is sold names the SVHCs above 0.1 % (REACH Art. 33); the transcription took no supplier REACH statement for this part."
+
+[[check]]
+code = "PARTS.fact"
+grade = "reach"
+place = "C318884"
+judged = "lacks"
+why = "A board that is sold names the SVHCs above 0.1 % (REACH Art. 33); the transcription took no supplier REACH statement for this part."
+
+[[check]]
+code = "PARTS.fact"
+grade = "reach"
+place = "C393940"
+judged = "lacks"
+why = "A board that is sold names the SVHCs above 0.1 % (REACH Art. 33); the transcription took no supplier REACH statement for this part."
+
+[[check]]
+code = "PARTS.fact"
+grade = "reach"
+place = "C49678"
+judged = "lacks"
+why = "A board that is sold names the SVHCs above 0.1 % (REACH Art. 33); the transcription took no supplier REACH statement for this part."
+
+[[check]]
+code = "PARTS.fact"
+grade = "reach"
+place = "C503587"
+judged = "lacks"
+why = "A board that is sold names the SVHCs above 0.1 % (REACH Art. 33); the transcription took no supplier REACH statement for this part."
+
+[[check]]
+code = "PARTS.fact"
+grade = "reach"
+place = "C5274290"
+judged = "lacks"
+why = "A board that is sold names the SVHCs above 0.1 % (REACH Art. 33); the transcription took no supplier REACH statement for this part."
+
+[[check]]
+code = "PARTS.fact"
+grade = "reach"
+place = "C6186"
+judged = "lacks"
+why = "A board that is sold names the SVHCs above 0.1 % (REACH Art. 33); the transcription took no supplier REACH statement for this part."
+
+[[check]]
+code = "PARTS.fact"
+grade = "reach"
+place = "C84256"
+judged = "lacks"
+why = "A board that is sold names the SVHCs above 0.1 % (REACH Art. 33); the transcription took no supplier REACH statement for this part."

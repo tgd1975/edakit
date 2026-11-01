@@ -325,7 +325,7 @@ stand one below the other), `[layout.notes]` ({block title = [lines]}), `[layout
 
 `hardware/requirements.toml`, named in `[project] requirements`: what the circuit must do (3.6) – only the circuit,
 what firmware and mechanics must do stays in the project's own documents. `edakit req` lists it, `edakit check`
-checks it (DOCS.ref to DOCS.draft, 3.3), the gate evaluates every requirement's evidence (8.7), and the circuit hash
+checks it (DOCS.ref to DOCS.derived, 3.3), the gate evaluates every requirement's evidence (8.7), and the circuit hash
 covers it byte for byte (8.2). A key edakit does not know is an error, as in edakit.toml. From the example of the tests
 ([tests/test_requirements.py](../tests/test_requirements.py), for the circuit of led-bar):
 

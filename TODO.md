@@ -13,6 +13,19 @@ its own beside the main clone, named for it (`../edakit-w4`, branch `wired-w4`),
 holds what; the main clone belongs to whoever has it checked out, and its uncommitted changes are not anyone else's
 to touch.
 
+## For the owner
+
+What only the owner can do – an account, a payment, an OK, hardware in hand, a click in Claude Code –, one line each
+(`- [ ] **What:** command or link – why. *(session)*`), ticked off at once; the session that wrote a line deletes it
+once ticked. The items further down that wait for the owner stay where their step is.
+
+- [ ] **Update the edakit plugin:** in Claude Code `/plugin` → edakit → Update, then `/reload-plugins` or a restart in
+  every running session – installed is 868e942 of 31.10.; `/reload-plugins` alone only reloads that one. Why: the
+  bell's hook and Makefile use the plugin, and 868e942 knows neither W.2–W.4 nor the electrical hash M-6 now hangs on.
+  *(edakit-be, automatic-christmas-bell-b3)*
+- [ ] **Read the circuit-language sketch in peace:** `docs/concepts/new/circuit-language.md` (the bell as a language
+  and as TOML), six open decisions. No date, nothing waits on it. *(edakit-29)*
+
 ## Ordering at the manufacturer (phase 5, [ordering.md](docs/concepts/done/ordering.md))
 
 Built offline and tested on recorded data on 2026-10-30, merged into main the same day: the order form as keys, the
@@ -59,11 +72,6 @@ run against a maker's page or EasyEDA yet.
       (`tests/fixtures/makers/aisler/live_2026-11-01/price/`). Built on the way: SYNC.odb's edge tolerance, the MPN in
       every KiCad footprint, the profile's fields on AISLER's /checkout.
 
-### Needs the makers
-
-- [ ] **5.11:** ask JLCPCB (API access, an assembly interface for partners), PCBWay (partner API), AISLER (upload key,
-      ODB++ from EasyEDA for assembly) and Beta LAYOUT (API); build what is granted.
-
 ### Needs the owner's word
 
 - [ ] The check candidates of the review at the order (implementation plan, 5.5): lead graded by purpose already at
@@ -81,11 +89,11 @@ owner's rules there: no click because of the API, no self-extended MCP server, t
       checked again, the self-test, one gate run of the example; M-6: `scope: "all_pages"` of
       `easyeda_schematic_components` instead of focusing page after page, and the BOM's duplicates. Then the pin raised
       in `mcp-server.sh`.
-- [ ] **M-1 to M-4 upstream, posted on 2026-11-01** (#792/#793, #794/#795, #796/#797, #798/#799): review comments
-      answered on the fork's branches, rebased when `main` moves; the comment "I agree to the Contributor Permission v1
-      in CONTRIBUTOR-LICENSING.md", when the maintainer asks for it, from the owner.
-- [ ] **M-5 and M-7 upstream, posted on 2026-11-01** (#800/#802, #801/#803): follow them like M-1 to M-4; M-6 not posted – #539 has met it as far
-      as EasyEDA's API lets it (upstream/README.md).
+- [ ] **The six issues with their pull requests at easyeda-mcp-pro, posted on 2026-11-01** – #792/#793 (stale sweep),
+      #794/#795 (schematic PDF), #796/#797 (return depth), #798/#799 (ODB++), #800/#802 (createProject), #801/#803
+      (pick-and-place as CSV): follow them, answer review comments on the fork's branches, rebase when `main` moves;
+      the comment "I agree to the Contributor Permission v1 in CONTRIBUTOR-LICENSING.md", when the maintainer asks for
+      it, from the owner. M-6 not posted – #539 has met it as far as EasyEDA's API lets it (upstream/README.md).
 - [ ] **On the owner's word – post:** E-1 to E-16 at easyeda/easyeda-api-sdk after the live check above – to #33, #34, #36, #38 and #39 as comments. Before
       each the check of "The latest state".
 - [ ] **When a release brings M-2 to M-4:** pin raised, the original extension, `bridge-extension-patch.sh` and

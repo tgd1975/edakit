@@ -34,9 +34,10 @@ A key edakit does not know is an error, as in edakit.toml. edakit req prints ver
 
 With the key, the file is part of the circuit (handbook 3.6, 8.7):
   edakit check   DOCS.ref every reference resolves (from, the IDs in verify), DOCS.need every accepted need has a requirement,
-                 DOCS.evidence every requirement has evidence, DOCS.draft drafts warn – also in the gate's stage G. A draft never
-                 blocks: every finding about it is a warning (rep.drafts), in the gate information; errors start
-                 once the user has set status = "accepted"
+                 DOCS.evidence every requirement has evidence, DOCS.draft drafts warn, DOCS.derived a requirement names
+                 who stated it – also in the gate's stage G. A draft never blocks: every finding about it is a warning
+                 (rep.drafts), in the gate information; errors start once the user has set status = "accepted".
+                 DOCS.derived is a warning for a draft as for an accepted requirement, in the gate too
   edakit gate    evaluates each requirement's evidence against its run (evaluate): rows – at least one protocol row
                  matches and none failed; signoff – the manual check is signed for the current hash of its scope and
                  its note names the requirement's ID; accept – M-4 is signed, the step is on the acceptance list of
@@ -55,7 +56,9 @@ Exit codes: 0 = listed, 1 = error (no key, a file missing or not valid, an ID no
 from __future__ import annotations
 
 import json
+import os
 import re
+import subprocess
 import sys
 import tomllib
 from collections import Counter
@@ -70,7 +73,7 @@ STATUS = ("draft", "accepted", "dropped")
 BINDING = ("must", "should", "may")
 VERIFY = ("rows", "signoff", "script", "accept")
 ENTRY_ID = re.compile(r"[NR]-[1-9]\d*")
-CHECKS = ("DOCS.ref", "DOCS.need", "DOCS.evidence", "DOCS.draft")   # run with [project] requirements only: edakit check, the gate's stage G
+CHECKS = ("DOCS.ref", "DOCS.need", "DOCS.evidence", "DOCS.draft", "DOCS.derived")   # run with [project] requirements only: edakit check, the gate's stage G
 SIGNOFF_ID = re.compile(r"M-[1-9]\d*")      # a manual check of the sign-off file
 CHECK_ID = re.compile(r"[A-Z]+\.[a-z][a-z0-9_]*")      # a code of the catalog, as a rows pattern may start with it
 ACCEPTANCE = "M-4"                          # the manual check that works through the acceptance list (section 6)
@@ -365,7 +368,8 @@ def check(rep, cfg):
     """DOCS.ref to DOCS.draft on the files of [project] requirements, into rep (checks.Report): every reference resolves – a need
     or requirement in from (N-…, R-…), a manual check in from (M-…), the IDs in verify –, a from that names a dropped
     entry warns (DOCS.ref); every accepted need is in from of a requirement that is not dropped (DOCS.need); every requirement
-    has evidence (DOCS.evidence); a draft warns (DOCS.draft). A draft never blocks: every finding about one goes into rep.drafts – a
+    has evidence (DOCS.evidence); a draft warns (DOCS.draft); a requirement names who stated it (DOCS.derived – a warning,
+    for a draft too, see Stated). A draft never blocks: every finding about one goes into rep.drafts – a
     warning in edakit check, information in the gate –, and what would be an error says so (DRAFT). A dropped entry is
     history: it is not checked. Messages start with the entry's ID. RequirementsError for a file that is missing or not
     valid – edakit check and the gate stop on it before they get here."""
@@ -401,8 +405,109 @@ def check(rep, cfg):
     for r in reqs:
         if not r.verify:
             found(r, "DOCS.evidence", f"{r.id}: no evidence – verify names nothing that tests it")
+    stated = Stated(cfg) if reqs else None
+    rep.warnings += [("DOCS.derived", f"{r.id}: {derived(r)}") for r in reqs if not stated.requirement(r)]
     rep.drafts += [("DOCS.draft", f'{e.id}: a draft – the user has not approved it (status "accepted", or "dropped" with '
                             "a reason)") for e in live if e.status == "draft"]
+
+
+# --- DOCS.derived: a requirement names who stated it -----------------------------------------------------------------
+
+DECISION_OR_NEED = re.compile(r"(?<![\w-])[DN]-[1-9]\d*(?![\w-])")   # a decision D-… of the project, a need N-…
+DATE = re.compile(r"(?<!\d)\d{4}-\d{2}-\d{2}(?!\d)")                  # the user with a date
+FILE_WORD = re.compile(r"[\w.\-/]*\w\.[A-Za-z0-9]+")                     # a word that looks like a file: README.md
+
+
+class Stated:
+    """Whether a requirement names someone who stated it (DOCS.derived; the owner's decision of 2026-11-01 on #98). A
+    source that is given is judged by itself; only a requirement without source is judged by its from. Stated is:
+
+      source  a decision D-… or a need N-…; a file of the project's repository that is not design data; a date
+              YYYY-MM-DD (the user with a date)
+      from    a need N-… or decision D-…, or an entry that is not an ID – a standard the maker chose
+
+    Design data is what an edakit.toml of the repository names: the files of the circuit and the layout hash, the
+    schematic file, the sign-off file, the requirements files, the folders of the parts, the reports and the artifacts,
+    edakit.toml itself – of every edakit.toml, so that a variant's sim.json is design data in the main project's file
+    too. Nothing else counts: a requirement R-… (a chain ends in someone), a manual check M-…, a datasheet, a commit,
+    words such as "the LEDs' limits". The repository's files are git's (git ls-files), outside a repository the files
+    below edakit.toml."""
+
+    def __init__(self, cfg):
+        self.cfg = cfg
+        self.top, files = _files(cfg.root)
+        design = _design_data(cfg, self.top, [self.top / f for f in files if Path(f).name == "edakit.toml"])
+        self.files = {f for f in files if not any(f == d or f.startswith(d + "/") for d in design)}
+
+    def file(self, word, base):
+        """A file of the repository that is not design data, named by the word – a path from the requirements file,
+        from edakit.toml or from the repository's top, or the end of one (README.md, docs/decisions.md)."""
+        for start in (base, self.cfg.root, self.top):
+            p = Path(os.path.normpath(start.resolve() / word))
+            if p.is_relative_to(self.top) and p.relative_to(self.top).as_posix() in self.files:
+                return True
+        word = word.removeprefix("./")
+        return any(f == word or f.endswith("/" + word) for f in self.files)
+
+    def source(self, e):
+        text = e.source
+        return bool(DECISION_OR_NEED.search(text) or DATE.search(text) or
+                    any(self.file(w.rstrip(".-"), e.file.parent) for w in FILE_WORD.findall(text)))
+
+    def requirement(self, e):
+        if e.source.strip():
+            return self.source(e)
+        return any(DECISION_OR_NEED.fullmatch(r) or not REFERENCE.fullmatch(r) for r in e.from_)
+
+
+REFERENCE = re.compile(r"[A-Z]-[1-9]\d*")      # an ID in from: N-…, R-…, M-…, D-…
+
+
+def derived(e):
+    """The message of DOCS.derived, after the requirement's ID."""
+    where = f"source names {e.source!r}" if e.source.strip() else (
+        f"no source, from names {', '.join(e.from_)}" if e.from_ else "no source, no from")
+    return (f"names nobody who stated it – {where}: design data, a datasheet or words, no need, decision, document "
+            "or date")
+
+
+def _files(root):
+    """(the repository's top, its files relative to the top as git lists them) – outside a repository edakit.toml's
+    folder and the files below it."""
+    root = Path(root).resolve()
+    try:
+        top = subprocess.run(["git", "-C", str(root), "rev-parse", "--show-toplevel"], capture_output=True, text=True,
+                             check=True).stdout.strip()
+        out = subprocess.run(["git", "-C", top, "ls-files", "-z"], capture_output=True, text=True, check=True).stdout
+        return Path(top).resolve(), [f for f in out.split("\0") if f]
+    except (OSError, subprocess.CalledProcessError):
+        return root, sorted(p.relative_to(root).as_posix() for p in root.rglob("*")
+                            if p.is_file() and ".git" not in p.relative_to(root).parts)
+
+
+def _design_data(cfg, top, project_files):
+    """The design data of this project and of every edakit.toml of the repository, relative to its top (see Stated):
+    files and folders."""
+    from . import config
+    from .release.gate import layout_files, state_files
+    cfgs = [cfg]
+    for p in project_files:
+        if p.resolve() != cfg.path.resolve():
+            try:
+                cfgs.append(config.load(p))
+            except Exception:       # noqa: BLE001 – a project file that does not load names nothing here
+                pass
+    out = set()
+    for c in cfgs:
+        try:
+            paths = [*state_files(c), *layout_files(c)]
+        except Exception:           # noqa: BLE001 – a project not complete yet: what its edakit.toml names directly
+            paths = [c.graph, c.sim_config, *c.requirements]
+        for p in [*paths, c.path, c.schematic_file, c.signoff, c.parts, c.reports, c.artifacts]:
+            p = Path(p).resolve()
+            if p.is_relative_to(top):
+                out.add(p.relative_to(top).as_posix())
+    return out
 
 
 # --- the gate: each requirement's evidence against the run (handbook 8.7) ---------------------------------------------

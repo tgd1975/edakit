@@ -48,7 +48,7 @@ What people said – the candidates come from here:
 - The graph (`[project] graph`, TOML or JSON): `purpose` (use, market, notes – who uses the board) and the `notes`
   that cite the owner's decisions; in the reverse case its parts, lifted to the device's boundary (above).
 - The requirements file, if `[project] requirements` names it: `edakit req 2>&1 | cat`, and `edakit check 2>&1 | cat`
-  for DOCS.ref to DOCS.draft on the file.
+  for DOCS.ref to DOCS.derived on the file.
 
 Sources of evidence only – read after the candidates exist, to find what tests each one; never the origin of a
 candidate:

@@ -1,6 +1,6 @@
-"""PARTS: parts entries complete – the facts the project's profile requires of each kind and graph type (domains,
-[facts]), and of the right form where a fact has one (concept rules-at-scale.md, sections 4 and 5). A missing fact is
-PARTS.fact with the fact's last name as its grade (PARTS.fact/radio): its severity is the profile's.
+"""PARTS: parts entries complete – the facts the project's profile requires of each kind and graph type, and of every
+part for the graph's purpose.use (domains, [facts]), and of the right form where a fact has one (concept
+rules-at-scale.md, sections 4 and 5). A missing fact is PARTS.fact with the fact's last name as its grade (PARTS.fact/radio): its severity is the profile's.
 """
 
 from __future__ import annotations
@@ -39,12 +39,17 @@ def run(ctx):
         need = list(prof.facts["kind"].get(entry.get("kind"), [])) if prof else []
         for t in {d.comps[x].get("type") for x in dess} - {None}:
             need += [f for f in (prof.facts["type"].get(t, []) if prof else []) if f not in need]
+        need += [f for f in (prof.facts["purpose"].get(prof.purpose, []) if prof else []) if f not in need]
         on = tuple(("component", x) for x in dess)
         for fact in need:
-            if get(entry, fact) is None:
+            if get(entry, fact) in (None, "", [], {}):
                 text = (f"{key} {entry.get('mpn', '')} ({', '.join(dess)}) states no radio – compliance.radio in its "
                         "parts entry: its bands and power, or \"none\" when it does not transmit; the regulatory review "
                         "(M-6) reads it" if fact == "compliance.radio" else
+                        f"{key} {entry.get('mpn', '')} ({', '.join(dess)}) states no SVHC – compliance.reach in its "
+                        "parts entry: the supplier's REACH statement, or \"none above 0.1 %\" with its source; a board "
+                        f"{'given away' if prof.purpose == 'gift' else 'that is sold'} is placed on the market, and REACH "
+                        "Art. 33 asks to name a substance of very high concern above 0.1 %" if fact == "compliance.reach" else
                         f"{key} {entry.get('mpn', '')} ({', '.join(dess)}) states no {fact}")
                 out.append(Finding("PARTS.fact", "P", key, text, "[facts] of the profile's domains",
                                    "fill it in from the datasheet", grade=fact.rsplit(".", 1)[-1], on=on))

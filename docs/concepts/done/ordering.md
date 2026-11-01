@@ -628,8 +628,8 @@ this has no `[cart]`: its maker is JLCPCB, its checks run as today, and `edakit 
   without a browser – the assembly keeps its BOM quotation by hand. The official KiCad plug-in sends Gerber, BOM and
   pick-and-place to PCBWay: how it uploads (an open endpoint or a key) is a lead for an upload without the browser,
   read in step 0 from its source.
-- The user asks JLCPCB (API access, an assembly interface for partners), PCBWay (partner API), AISLER (upload key,
-  ODB++ from EasyEDA for assembly) and Beta LAYOUT (API) in parallel to the first steps.
+- Nobody asks the makers for these: they are wishes, built when a maker offers one (the owner's decision of
+  2026-11-01; handbook 8.4, "Future work").
 
 ### 13. What stays
 
