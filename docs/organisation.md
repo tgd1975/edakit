@@ -32,9 +32,9 @@ The working rules for sessions in this repository are in [CLAUDE.md](../CLAUDE.m
 | [changes/](../changes/README.md) | Source | The fragments: one file per branch, what it changes for a project and whether a project must act (`minor`) or not (`patch`); empty on main but for its README |
 | [TODO.md](../TODO.md) | Source | Open work that needs the owner's computer, a maker or the owner's word, at the top what only the owner can do ("For the owner"); an item is ticked off with the commit that does it |
 | [skills/](../skills/), [agents/](../agents/) | Source | The plugin's skills and agents: prompts that steer Claude in a project |
-| `.claude/` | Source | The skills of this repository (add-rule, add-feature, triage-rule, triage-feature) |
+| `.claude/` | Source | The skills of this repository (add-rule, add-feature, triage-rule, triage-feature, triage-request) |
 | `.claude-plugin/` | Source | Plugin and marketplace manifests |
-| `.github/` | Source | The workflows: tests, the site, proposals, the checks of a pull request, versions; `merge.py` and `versions.py`, which number a version, and `notes.py`, the notes lane for concepts and TODO.md; the protection of main as text, `rulesets/` and `rulesets.py` (docs/concepts/done/versioning.md) |
+| `.github/` | Source | The workflows: tests, the site, proposals and the wrapping of texts by others on issues, the checks of a pull request, versions; `merge.py` and `versions.py`, which number a version, and `notes.py`, the notes lane for concepts and TODO.md; the protection of main as text, `rulesets/` and `rulesets.py` (docs/concepts/done/versioning.md) |
 | [evals/](../evals/README.md) | Source | Tasks and graders for `claude plugin eval` |
 | [upstream/](../upstream/README.md) | Source | What edakit needs from EasyEDA Pro and easyeda-mcp-pro – the requirements, their state upstream, drafts of issues and pull requests, posted only on the owner's word |
 | [edakit/](../edakit/) (without the folders below), [bin/](../bin/), [hooks/](../hooks/hooks.json) | Code | The Python package and command line, the plugin's command and hooks |

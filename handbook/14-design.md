@@ -310,9 +310,10 @@ with exactly its codes.
 ### The proposals Action
 
 Claude only reads. The triage runs with a token that cannot write and follows main's copies of the skills rather than
-the branch's. It gets the proposal's text, the repository owner's comments and the triage's earlier results – nothing
-anyone else wrote. It commits an accepted build on the proposals branch and writes its result as files: the result,
-the comment, the line for the pull request. A fixed job publishes it:
+the branch's. It gets the proposal's text, the repository owner's comments and the triage's earlier results – of what
+anyone else wrote only what the Action `wrap` wrapped before a command of the repository owner (below). It commits an
+accepted build on the proposals branch and writes its result as files: the result, the comment, the line for the pull
+request. A fixed job publishes it:
 
 - **The commit** – at most one, its subject ending in `(#N)` – is checked against the pipeline's paths: `.github/`,
   `.claude/`, `CLAUDE.md`, `edakit/proposal.py`, `tests/test_proposal.py`, `skills/propose-rule/`,
@@ -329,20 +330,16 @@ the comment, the line for the pull request. A fixed job publishes it:
 
 **The queue.** The issue that started a run goes first, unless a triage answered it since its event. Then comes every
 proposal still waiting – without a result, or with a question the repository owner answered since, in a comment or by
-sealing it again. At most eight go per run, one after another, because accepted proposals share their branch; the rest
-waits for the next run. So proposals filed at the same time and answers given while a run waits are not lost when
-GitHub cancels their waiting runs. An event that triages nothing – a comment on a proposal already built – waits apart
-and cancels none.
+sealing it again; on an issue by someone else, a command of the repository owner with no result after it.
 
-**Who may propose.** Anyone may open an issue in the edakit repository, and one from outside is welcome; the Action
-acts only on the repository owner's. It starts on their own sealed issues, and on an issue by someone else once they
-post a sealed proposal there as a comment – written from the issue with `propose-rule` or `propose-feature` and posted
-with `gh issue comment N --body-file body.md`.
+At most eight go per run, one after another, because accepted proposals share their branch; the rest waits for the next
+run. So proposals filed at the same time and answers given while a run waits are not lost when GitHub cancels their
+waiting runs. An event that triages nothing – a comment on a proposal already built – waits apart and cancels none.
 
-The workflow labels such an issue `adopted`, and from then on the repository owner's answers there start the Action as
-on their own issues. Claude reads their newest sealed comment as the proposal, their comments after it and the
-triage's results – never the issue's body or a comment by anyone else, so what its author edits later changes nothing.
-GitHub's author field says who wrote an issue or a comment; the checksum adds that the text is the one that was sealed.
+**Who may propose.** Anyone may open an issue in the edakit repository, and one from outside is welcome; Claude acts
+only on the repository owner's word. Their own sealed issues start the Action by themselves, an issue by someone else
+waits for their command (below). GitHub's author field says who wrote an issue or a comment; the checksum adds that
+the text is the one that was sealed.
 
 **Setup.** The Action runs with the workflow's own token – the Claude GitHub app is not needed. It needs one of the
 secrets `CLAUDE_CODE_OAUTH_TOKEN` or `ANTHROPIC_API_KEY` (`claude setup-token`, `gh secret set
@@ -354,6 +351,33 @@ request names what could not be run, and that is run by hand before merging. A c
 the pages in `docs/catalog/`, the handbook's generated sections – is not merged by hand: the file is written again by its
 script (`docs/catalog/build.py`, `python -m edakit.catalog.handbook --write`). A main that changed a workflow file is
 brought into the proposals branch by a session – the workflow's token may not push a workflow change.
+
+### Issues by others
+
+On an issue someone else opened, the Action `wrap` wraps every text the repository owner did not write – the issue's
+title and body, every comment. It is a fixed Python step without Claude and without a secret, the one workflow anyone
+can start.
+
+Each text becomes a comment of the workflow: the text as plain text in a code block, so that no link, image or mention
+in it renders, numbered within the issue (Wrapped 1, 2, …), its last line the seal – the SHA-256 of the text. An edited
+text is wrapped again under a new number that names the one it replaces. The first wrapped text lists the commands; the
+repository owner answers with a comment that starts with one of them:
+
+| Command | What happens |
+| --- | --- |
+| `review` | the skill `triage-request` judges the request – **Safe?** first, then plausible and acceptable – and answers **Review**: its kind, what `accept` would build, numbered questions for the author or the repository owner, and a recommendation; nothing is built |
+| `accept` | `triage-request` builds it with `add-rule` or `add-feature` into the pull request of its kind: **Accepted** – or **Rejected** when **Safe?** fails, **Question** when building shows what is unclear |
+| `reject` | the Action `wrap` closes the issue as not planned and labels it `rejected`, at once and without Claude |
+
+The rest of the comment is the repository owner's note to Claude, for `reject` the reason. Claude reads the wrapped
+texts that came before the command, the repository owner's comments and the triage's results – never a text by
+someone else as its author wrote it; a wrapped text whose seal no longer matches is left out. A later text by someone
+else, the author's answer to a question too, is wrapped and waits for the next command. Any other comment of the
+repository owner starts nothing. The workflow labels an issue the repository owner started `adopted`.
+
+The repository owner can also hand such an issue over with a sealed proposal as a comment, written from the issue with
+`propose-rule` or `propose-feature` and posted with `gh issue comment N --body-file body.md`. The triage then reads
+their newest sealed comment as the proposal, their comments and the triage's results, as on their own issues.
 
 ## 14.5 Building blocks
 
