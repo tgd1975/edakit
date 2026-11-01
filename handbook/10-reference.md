@@ -829,16 +829,18 @@ Estimate the order: PCB, PCBA fees, parts, extras, shipping, VAT; drivers, budge
 ### edakit order
 
 <!-- edakit:generated command order -->
-`edakit order [--out OUT]`
+`edakit order [--out OUT] [--with CONFIG]`
 
 Assembler's BOM, one cart per other supplier, hand-assembly list for all sets.
 <!-- edakit:end -->
 
-`edakit order [--out DIR]` – EasyEDA: no
+`edakit order [--out DIR] [--with CONFIG …]` – EasyEDA: no
 
-- **Reads:** graph, parts (`order`), board files (side), `[[extra]]`, `spare_pct`
+- **Reads:** graph, parts (`order`), board files (side), `[[extra]]`, `spare_pct`; with `--with` the same of each
+  other project's edakit.toml
 - **Writes:** `<artifacts>/order/` or DIR: `bom_<board>.csv` (the SYNC.bom BOM; none for a bought or hand-wired board),
-  `cart_<supplier>.csv`, `hand_assembly.md`
+  `cart_<supplier>.csv`, `hand_assembly.md`; with `--with` the carts of all projects in the same files and
+  `hand_assembly_<project>.md` for each other project
 
 ### edakit cart
 

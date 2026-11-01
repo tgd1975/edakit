@@ -200,3 +200,33 @@ def test_a_supplier_name_becomes_a_file_name(project, monkeypatch):
     append_toml(project, '[[extra]]\nitem = "washer DIN 9021 M10"\nsupplier = "hardware store"\nper_set = 20')
     order(project, monkeypatch)
     assert read_csv(out_dir(project) / "cart_hardware_store.csv")[1] == ["", "100", "washer DIN 9021 M10", ""]
+
+
+def test_one_basket_for_several_projects(project, monkeypatch, capsys):
+    """--with: the carts of another project go into the same files – one line per code, the pieces summed, the comment
+    naming each project; two configs of one EasyEDA project are told apart by their boards (the bell's variants,
+    2026-11-02, docs/concepts/new/parts-order.md decision 1)."""
+    assert order(project, monkeypatch) == 0
+    alone = {r[0]: int(r[1]) for r in read_csv(out_dir(project) / "cart_lcsc.csv")[1:]}
+    assert order(project, monkeypatch, "--with", str(project.root / "edakit.toml")) == 0
+    rows = read_csv(out_dir(project) / "cart_lcsc.csv")
+    assert rows[0] == ["LCSC Part Number", "Quantity", "Comment"]
+    both = {r[0]: int(r[1]) for r in rows[1:]}
+    assert both == {code: 2 * n for code, n in alone.items()}
+    comment = next(r[2] for r in rows[1:] if r[0] == "C131337")
+    assert comment.count(" | ") == 1 and comment.startswith("led-bar (") and "J1" in comment
+    out = capsys.readouterr().out
+    assert "hand_assembly_led-bar_main.md" in out and any(p.name == "hand_assembly_led-bar_main.md"
+                                                    for p in out_dir(project).iterdir())
+
+
+def test_the_basket_sums_by_code():
+    from edakit import order as o
+    a = {"lcsc": [{"code": "C1", "item": "LED", "designators": ["D1"], "qty": 20, "need": 10}]}
+    b = {"lcsc": [{"code": "C1", "item": "LED", "designators": ["D2", "D3"], "qty": 10, "need": 10},
+                  {"code": "C2", "item": "R", "designators": ["R1"], "qty": 5, "need": 5}],
+         "berrybase": [{"code": "X", "item": "Modul", "designators": ["U1"], "qty": 5, "need": 5}]}
+    got = o.basket([("tree", a), ("bell", b)])
+    assert list(got) == ["berrybase", "lcsc"]
+    c1 = next(g for g in got["lcsc"] if g["code"] == "C1")
+    assert (c1["qty"], c1["need"], [n for n, _ in c1["parts"]]) == (30, 20, ["tree", "bell"])

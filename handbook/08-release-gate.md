@@ -570,6 +570,14 @@ bought board (`bought = true`, 4.5) gets no BOM: its parts are in the carts and 
 marked bought; `edakit cost` prices no PCB and no assembly for it. A hand-wired board (`wired = true`) the same way,
 marked "hand-wired, no PCB".
 
+One order for several projects: `edakit order --with ../other/edakit.toml [--with …]` puts the carts of the other
+projects – each with its own `quantity` and spares – into the same files. A line per supplier and code, the pieces
+summed, the comment naming each project with its pieces and designators (`pytree: 10 XL-504SURD: D18 D22 (10 + 0) |
+christmas-bell (tht): 5 …`); two configs of one EasyEDA project, the variants of a board, are told apart by their
+boards. Each other project's hand-assembly list is written beside as `hand_assembly_<project>.md`. LCSC's BOM tool
+rounds every line up to its own minimum and pack size on the upload; `moq` and `step` in `order` give them to edakit
+where the cost estimate should know them.
+
 ### The order form as data
 
 Every question a maker's form asks has an answer in the project – a key of `[order]` with edakit's default (10.2) – and
