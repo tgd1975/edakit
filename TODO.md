@@ -4,7 +4,7 @@ Open work that needs the owner's computer, a maker or the owner's word. The stat
 and plans the sections name; this list is what is left to do of them, in the order it can be done. No item is deleted.
 
 **Layout.** Every item, in every section, open or closed, is a line with a checkbox and an ID unique in this file,
-counted up and never reused – whoever adds an item takes the next free ID and counts it up here. Next free ID: TD-84.
+counted up and never reused – whoever adds an item takes the next free ID and counts it up here. Next free ID: TD-85.
 
 - Open: `- [ ] TD-<n> - **Title:** what and why.` – a step's own name after the dash (`- [ ] TD-31 - **D.4** …`).
 - Done: ticked, the commit that did it, the date at the end, moved to [Closed todos](#closed-todos), newest first –
@@ -42,14 +42,8 @@ to touch.
 
 ## What edakit needs from EasyEDA Pro and easyeda-mcp-pro ([upstream/README.md](upstream/README.md))
 
-E-1 to E-16 on EasyEDA Pro and M-1 to M-9 on easyeda-mcp-pro, checked live on EasyEDA Pro 3.2.209 and posted on
+E-1 to E-17 on EasyEDA Pro and M-1 to M-10 on easyeda-mcp-pro, checked live on EasyEDA Pro 3.2.209 and posted on
 2026-11-01; what each asks and where it stands is in upstream/README.md – the items here say only what is left to do.
-
-### To report
-
-- [ ] TD-80 - **E-17 and M-10 upstream:** drafts in `upstream/` – E-17 to easyeda/easyeda-api-sdk (a rename through the
-      API depends on the project tree having been shown), M-10 to easyeda-mcp-pro (one unverified copper rebuild locks
-      every later one until EasyEDA restarts) –, short as the earlier ones, then the owner's word to post.
 
 ### Waiting for upstream
 
@@ -61,7 +55,10 @@ Nothing to do until there is an answer or a release; whichever session learns of
       removed, handbook 2.4, 2.5 and 9.1 follow; with M-9 `place` in `edakit/schematic.py` passes `addIntoBom` on
       create again, handbook 9.3; M-1's `BRIDGE_TIMEOUT_MS`, M-5's name check and M-7's xlsx reading checked whether
       they can go – upstream's `maxDepth` and `easyeda_export_odb` against edakit's calls first.
-- [ ] TD-36 - **EasyEDA, #45 to #51 and our comments to #36 and #38:** answer questions; when a release fixes one,
+- [ ] TD-84 - **easyeda-mcp-pro, #818 and #819** (M-10, a net's pours in one call): answer review comments, rebase the
+      fork's `fix/rebuild-copper-batch-reconcile` when `main` moves. When a release brings it: `fill` in
+      `edakit/route.py` may rebuild a net's pours in one call again, handbook 7, 9 and 12 follow.
+- [ ] TD-36 - **EasyEDA, #45 to #52 and our comments to #36 and #38:** answer questions; when a release fixes one,
       check it live, take it up and say so in upstream/README.md. EasyEDA's first answer is often "update to the latest
       version".
 
@@ -87,6 +84,9 @@ Built on 2026-11-01 (#174, edakit 0.4.14); what is left after the owner's review
 Done or dropped, newest first, each with its date and the commit that closed it. What closed before 2026-11-01 is
 taken from the history of this file; an item rewritten on its way is listed once, in its last form.
 
+- [x] TD-80 - **E-17 and M-10 upstream:** posted on the owner's word – E-17 as easyeda-api-sdk #52, M-10 as
+  easyeda-mcp-pro #818 with the fix #819 from the fork's `fix/rebuild-copper-batch-reconcile`, only a net's pours in
+  one call – a refill left out on the owner's word (#172). *(edakit-ce)* [2026-11-01]
 - [x] TD-35 - **D.9** The gallery: the index, the Christmas bell with its variants from release 20261101-142527,
       pytree in text (its pictures: TD-82), the examples as cards (#174). [2026-11-01]
 - [x] TD-34 - **D.7** The cost line of the start page from the evals' baseline; a gate run's and a design's cost
