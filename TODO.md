@@ -81,11 +81,11 @@ owner's rules there: no click because of the API, no self-extended MCP server, t
       checked again, the self-test, one gate run of the example; M-6: `scope: "all_pages"` of
       `easyeda_schematic_components` instead of focusing page after page, and the BOM's duplicates. Then the pin raised
       in `mcp-server.sh`.
-- [ ] **M-1 to M-4 upstream, posted on 2026-11-01** (#792/#793, #794/#795, #796/#797, #798/#799): review comments
-      answered on the fork's branches, rebased when `main` moves; the comment "I agree to the Contributor Permission v1
-      in CONTRIBUTOR-LICENSING.md", when the maintainer asks for it, from the owner.
-- [ ] **M-5 and M-7 upstream, posted on 2026-11-01** (#800/#802, #801/#803): follow them like M-1 to M-4; M-6 not posted – #539 has met it as far
-      as EasyEDA's API lets it (upstream/README.md).
+- [ ] **The six issues with their pull requests at easyeda-mcp-pro, posted on 2026-11-01** – #792/#793 (stale sweep),
+      #794/#795 (schematic PDF), #796/#797 (return depth), #798/#799 (ODB++), #800/#802 (createProject), #801/#803
+      (pick-and-place as CSV): follow them, answer review comments on the fork's branches, rebase when `main` moves;
+      the comment "I agree to the Contributor Permission v1 in CONTRIBUTOR-LICENSING.md", when the maintainer asks for
+      it, from the owner. M-6 not posted – #539 has met it as far as EasyEDA's API lets it (upstream/README.md).
 - [ ] **On the owner's word – post:** E-1 to E-16 at easyeda/easyeda-api-sdk after the live check above – to #33, #34, #36, #38 and #39 as comments. Before
       each the check of "The latest state".
 - [ ] **When a release brings M-2 to M-4:** pin raised, the original extension, `bridge-extension-patch.sh` and
