@@ -1,0 +1,377 @@
+{
+ "made": "2026-11-01T23:43:34+01:00",
+ "run": "20261101-005606",
+ "fab_sha256": "197fe0823b350717ee6c19290d51c9b5f04c69e08018daeac0b1d4c503a066b6",
+ "state_sha256": "79642329a8cc23eaabbeb0d885ff8184f94e73c32d62eaf0676b2d8dfee9ae96",
+ "layout_sha256": "0eb7c961a9cd801789d35503c50b50b7d9803c2b2a3aa0efe85c8e99995ff9f3",
+ "purpose": {
+  "use": "private",
+  "market": "EU",
+  "notes": "Automatic Christmas bell, THT variant, for the owner's home, built and used by the owner – not sold or given away (D-16). Powered from a USB port or power bank through the Nano's USB; no battery holder, no mains, no radio."
+ },
+ "board": "tht",
+ "title": "Christmas bell THT",
+ "project": "christmas-bell",
+ "maker": {
+  "key": "jlcpcb",
+  "name": "JLCPCB",
+  "profile": "~/edakit-cart-bare/edakit/makers/jlcpcb.toml",
+  "recorded": "2026-10-31",
+  "start": "https://cart.jlcpcb.com/quote",
+  "cart": "Save to Cart",
+  "never": [
+   "Order",
+   "Buy",
+   "Checkout",
+   "Pay",
+   "Place order",
+   "Submit order",
+   "Secure Checkout"
+  ],
+  "ignore": {
+   "Product Type": "Industrial/Consumer electronics, JLCPCB's default",
+   "Deburring/Edge rounding": "JLCPCB's default (Yes, $0.10)",
+   "Different Design": "one design per board",
+   "Via Plating Method": "Not Specified, JLCPCB's default",
+   "Min via hole size/diameter": "JLCPCB's default (0.3mm/(0.4/0.45mm)); edakit's routing keeps to it",
+   "Blind Slots": "not used",
+   "UL Marking": "not used",
+   "Humidity Indicator Card": "not used",
+   "4-Wire Kelvin Test": "not used",
+   "Silkscreen Technology": "Ink-jet Printing Silkscreen, JLCPCB's default",
+   "Inspection Report": "not used",
+   "PCB Build Time": "the owner's choice (the cheapest is preselected)",
+   "Edge Rails/Fiducials": "Standard PCBA's label of the tooling holes: the skill sets it as tooling",
+   "Stencil Storage": "not used",
+   "Fixture Storage": "not used",
+   "Parts Selection": "By Customer (Self-Service): edakit's BOM names the parts",
+   "Board Cleaning": "not used",
+   "Special stencil": "not used",
+   "Solder Paste": "JLCPCB's default (High temp.)",
+   "Flying Probe Test": "the assembled board's test: not used",
+   "Nitrogen reflow soldering": "JLCPCB's default",
+   "Assembly remark": "not used",
+   "I agree to the Terms and Conditions of JLCPCB assembly Service": "pre-checked by JLCPCB; a consent the owner gives",
+   "Remark": "Quote & Order's remark: not used",
+   "PCB Assembly": "the switch of the assembly: on with a BOM (the skill switches it on), off for a bare board",
+   "Stencil": "not ordered: the assembly brings its own, a bare board needs none"
+  },
+  "unshown": [
+   "bom",
+   "cpl",
+   "gerber"
+  ],
+  "upload": "before_cart",
+  "matching": "page",
+  "seat": "CN",
+  "currency": "USD",
+  "compliance": {
+   "rohs": "PCB: lead-free HASL, ENIG and OSP are RoHS compliant, HASL(with lead) is not – it 'does not comply with RoHS environmental requirements'; a RoHS certificate of conformity to download (Soar Testing, one sample each – lead-free HASL and ENIG 2025-12-01, OSP 2026-07-23 –, Directive 2011/65/EU with (EU) 2015/863: 'based on a single evaluation of one sample … does not imply an assessment of the whole production'), none per order. PCBA: the assembly terms (5.4) solder with lead on a leaded finish and, on a lead-free board, 'follow up the compoments properties to determine whether to choose leaded or lead-free' – lead-free solder is not promised",
+   "reach": "PCB: a lab report to download (Beide, B-R02279E3167, 2026-03-20) on one sample 'Printed Circuit Board', its finish not named: 'the concentration of each of the 253 SVHC is <0.1%(w/w)' (the certifications page says 247). PCBA: nothing found",
+   "sources": [
+    "https://jlcpcb.com/help/article/jlcpcb-surface-finish (updated 2026-10-21, read 2026-11-01)",
+    "https://jlcpcb.com/certifications (read 2026-11-01): https://rs.jlcpcb.com/static/file/certifications/rohs-certificate-of-conformity.pdf, https://rs.jlcpcb.com/static/file/reach-svhc-compliance.pdf",
+    "https://jlcpcb.com/help/article/terms-and-conditions-of-jlcpcb-assembly-service, clause 5.4 (updated 2026-09-09, read 2026-11-01)"
+   ]
+  },
+  "role": "planned"
+ },
+ "quantity": 5,
+ "pcba_quantity": 5,
+ "files": [
+  {
+   "name": "gerber_tht.zip",
+   "path": "~/automatic_christmas_bell/variants/tht/build/release/20261101-005606/fab/tht/gerber_tht.zip",
+   "size": 107012,
+   "sha256": "41dac7ef83712c34dcac4ea8cf39023908a502fe87d6691464c1e4df31053029"
+  },
+  {
+   "name": "bom_tht.csv",
+   "path": "~/automatic_christmas_bell/variants/tht/build/release/20261101-005606/fab/tht/bom_tht.csv",
+   "size": 42,
+   "sha256": "b14cf8ca35d1f2bc505d60f0ce1176d80393ca0f95c268c15e8ff7171f8d34c6"
+  },
+  {
+   "name": "cpl_tht.csv",
+   "path": "~/automatic_christmas_bell/variants/tht/build/release/20261101-005606/fab/tht/cpl_tht.csv",
+   "size": 39,
+   "sha256": "751724d980d268073e5a6f052a4ad931701e530152065f5be04ba76cac805843"
+  }
+ ],
+ "fields": [
+  {
+   "key": "material",
+   "section": "PCB",
+   "label": "Base Material",
+   "value": "FR-4",
+   "raw": "FR-4",
+   "from": "edakit",
+   "note": ""
+  },
+  {
+   "key": "layers",
+   "section": "PCB",
+   "label": "Layers",
+   "value": "2",
+   "raw": 2,
+   "from": "Gerber files",
+   "note": ""
+  },
+  {
+   "key": "size_mm",
+   "section": "PCB",
+   "label": "Dimensions",
+   "value": "85.00 x 56.00 mm",
+   "raw": [
+    85.0,
+    56.0
+   ],
+   "from": "Gerber outline",
+   "note": ""
+  },
+  {
+   "key": "quantity",
+   "section": "PCB",
+   "label": "PCB Qty",
+   "value": "5",
+   "raw": 5,
+   "from": "[project] quantity",
+   "note": ""
+  },
+  {
+   "key": "delivery",
+   "section": "PCB",
+   "label": "Delivery Format",
+   "value": "Single PCB",
+   "raw": "single",
+   "from": "edakit",
+   "note": ""
+  },
+  {
+   "key": "thickness_mm",
+   "section": "PCB",
+   "label": "PCB Thickness",
+   "value": "1.6 mm",
+   "raw": 1.6,
+   "from": "edakit",
+   "note": ""
+  },
+  {
+   "key": "mask",
+   "section": "PCB",
+   "label": "PCB Color",
+   "value": "Green",
+   "raw": "green",
+   "from": "edakit",
+   "note": ""
+  },
+  {
+   "key": "silkscreen",
+   "section": "PCB",
+   "label": "Silkscreen",
+   "value": "White",
+   "raw": "white",
+   "from": "edakit",
+   "note": ""
+  },
+  {
+   "key": "finish",
+   "section": "PCB",
+   "label": "Surface Finish",
+   "value": "LeadFree HASL",
+   "raw": "LeadFree HASL",
+   "from": "edakit",
+   "note": ""
+  },
+  {
+   "key": "tg",
+   "section": "PCB",
+   "label": "Material Type",
+   "value": "FR4 TG135",
+   "raw": "TG135",
+   "from": "edakit",
+   "note": ""
+  },
+  {
+   "key": "copper_oz",
+   "section": "PCB",
+   "label": "Outer Copper Weight",
+   "value": "1 oz",
+   "raw": 1,
+   "from": "edakit",
+   "note": ""
+  },
+  {
+   "key": "vias",
+   "section": "PCB",
+   "label": "Via Covering",
+   "value": "Tented",
+   "raw": "tented",
+   "from": "edakit",
+   "note": ""
+  },
+  {
+   "key": "outline_tolerance",
+   "section": "PCB",
+   "label": "Board Outline Tolerance",
+   "value": "±0.2mm(Regular)",
+   "raw": "regular",
+   "from": "edakit",
+   "note": ""
+  },
+  {
+   "key": "gold_fingers",
+   "section": "PCB",
+   "label": "Gold Fingers",
+   "value": "No",
+   "raw": false,
+   "from": "edakit",
+   "note": ""
+  },
+  {
+   "key": "castellated",
+   "section": "PCB",
+   "label": "Castellated Holes",
+   "value": "No",
+   "raw": false,
+   "from": "edakit",
+   "note": ""
+  },
+  {
+   "key": "edge_plating",
+   "section": "PCB",
+   "label": "Edge Plating",
+   "value": "No",
+   "raw": false,
+   "from": "edakit",
+   "note": ""
+  },
+  {
+   "key": "mark",
+   "section": "PCB",
+   "label": "Mark on PCB",
+   "value": "Remove Mark",
+   "raw": "remove",
+   "from": "edakit.toml",
+   "note": ""
+  },
+  {
+   "key": "electrical_test",
+   "section": "PCB",
+   "label": "Electrical Test",
+   "value": "Flying Probe Fully Test",
+   "raw": "flying_probe",
+   "from": "edakit",
+   "note": ""
+  },
+  {
+   "key": "quality",
+   "section": "PCB",
+   "label": "Appearance Quality",
+   "value": "IPC Class 2 Standard",
+   "raw": "ipc2",
+   "from": "edakit",
+   "note": ""
+  },
+  {
+   "key": "confirm_production_file",
+   "section": "PCB",
+   "label": "Confirm Production file",
+   "value": "No",
+   "raw": false,
+   "from": "edakit",
+   "note": ""
+  },
+  {
+   "key": "paper_between",
+   "section": "PCB",
+   "label": "Paper between PCBs",
+   "value": "No",
+   "raw": false,
+   "from": "edakit",
+   "note": ""
+  },
+  {
+   "key": "packaging",
+   "section": "PCB",
+   "label": "Package Box",
+   "value": "With JLCPCB logo",
+   "raw": "standard",
+   "from": "edakit",
+   "note": ""
+  },
+  {
+   "key": "remark",
+   "section": "PCB",
+   "label": "PCB Remark",
+   "value": "",
+   "raw": "",
+   "from": "edakit",
+   "note": ""
+  },
+  {
+   "key": "customs",
+   "section": "Shipping",
+   "label": "Product Description",
+   "value": "Reserch\\Education\\DIY\\Entertainment / DIY - HS Code 902300",
+   "raw": {
+    "category": "DIY",
+    "hs_code": "902300"
+   },
+   "from": "edakit.toml",
+   "note": "",
+   "read": true,
+   "checkout": true
+  },
+  {
+   "key": "ship_to",
+   "section": "Shipping",
+   "label": "Ship to",
+   "value": "Austria",
+   "raw": "Austria",
+   "from": "[cart] ship_to",
+   "note": "",
+   "read": true,
+   "checkout": true
+  },
+  {
+   "key": "shipping",
+   "section": "Shipping",
+   "label": "Shipping Method",
+   "value": "DHL Express",
+   "raw": "DHL Express",
+   "from": "[cart] shipping",
+   "note": ""
+  }
+ ],
+ "bom": [],
+ "match": "lcsc",
+ "bom_file": "bom_tht.csv",
+ "dnp": [],
+ "estimate": {
+  "currency": "USD",
+  "class": "standard",
+  "pcb": 10.7,
+  "pcb_how": "at most the price of the smallest size in the fee table, 110 × 100 mm – [cost] pcb_price",
+  "pcb_size_mm": [
+   85.0,
+   66.0
+  ],
+  "not_in_price": {},
+  "fees": [],
+  "fees_total": 0,
+  "parts_total": 0,
+  "unpriced": 0,
+  "total": 10.7,
+  "fee_table": "2026-10-27",
+  "budget": null,
+  "budget_currency": "EUR",
+  "rate": 0.8951
+ },
+ "estimate_why": "",
+ "budget": null,
+ "compliance": {},
+ "ship_to": "Austria",
+ "shipping": "DHL Express",
+ "tolerance": 0.1
+}

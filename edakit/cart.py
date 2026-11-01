@@ -245,7 +245,8 @@ def prepare(cfg, args):
         "maker": {"key": m.key, "name": m.name, "profile": str(m.path), "recorded": m.recorded, "start":
                   m.data.get("start"), "cart": m.data.get("cart"),
                   "never": list({w.casefold(): w for w in reversed([*NEVER, *m.data.get("never", [])])}.values())[::-1],
-                  "ignore": m.data.get("ignore", {}), "unshown": m.data.get("unshown", []),
+                  "ignore": m.data.get("ignore", {}),
+                  "unshown": [*m.data.get("unshown", []), *([] if bom else m.data.get("unshown_bare", []))],
                   "upload": m.data.get("upload", "before_cart"), "matching": m.data.get("matching", "page"),
                   "seat": m.seat, "currency": m.currency, "compliance": m.data.get("compliance"),
                   "role": "planned" if m.key == makers.planned(cfg) else "other"},
@@ -268,7 +269,7 @@ def prepare(cfg, args):
 def show_job(cfg, job, out):
     m = job["maker"]
     print(f"job for board {job['board']} at {m['name']} – run {job['run']}, fab {str(job['fab_sha256'])[:12]}…, "
-          f"{job['quantity']} PCBs, {job['pcba_quantity']} assembled")
+          f"{job['quantity']} PCBs, " + (f"{job['pcba_quantity']} assembled" if job.get("bom") else "bare"))
     print(f"  folder   {cfg.relative(out)}  (job.json sha256 {sha_of(out / JOB)[:16]}…)")
     print(f"  start    {m['start'] or '– (the profile names no start page: ordering step 0)'}")
     for f in job["files"]:
@@ -793,7 +794,8 @@ def actual_cost(cfg, args):
     L = [f"# Real cost – board {job['board']} at {m.name}, order {actual.get('order_number')} ({actual.get('date')})\n",
          f"Written by edakit cart actual from {ACTUAL} and {'--from ' + Path(args.source).name if args.source else ACTUAL_PAGE}"
          f" (ORDER.read: {'; '.join(bad) if bad else b4_text}). Run {job['run']}, fab {str(job['fab_sha256'])[:12]}…, "
-         f"{job['quantity']} PCBs, {job['pcba_quantity']} assembled. Amounts in {cur}.\n",
+         f"{job['quantity']} PCBs, " + (f"{job['pcba_quantity']} assembled" if job.get("bom") else "bare")
+         + f". Amounts in {cur}.\n",
          "| Line | Estimate | Quote | Actual | Actual − estimate |", "|---|---:|---:|---:|---:|"]
     for kind, label, est in kinds:
         a, q = total(actual.get("lines"), kind), total((quote or {}).get("prices"), kind)

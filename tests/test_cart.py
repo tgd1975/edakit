@@ -193,8 +193,8 @@ def test_a_quote_as_the_job_passes_and_waits_for_the_review(prepared, monkeypatc
 @pytest.mark.parametrize("change, page_change, expected", [
     (lambda q: next(f for f in q["fields"] if f["label"] == "Mark on PCB").update(value="2D barcode (Serial Number)"),
      None, ("ORDER.form", "fail", "Mark on PCB: the page '2D barcode (Serial Number)', the job 'Remove Mark'")),
-    (lambda q: q["fields"].append({"label": "Stencil", "value": "No"}), None,
-     ("ORDER.form", "fail", "Stencil: a field neither in the job nor in the profile's ignore – the maker added a question")),
+    (lambda q: q["fields"].append({"label": "Engraving", "value": "No"}), None,
+     ("ORDER.form", "fail", "Engraving: a field neither in the job nor in the profile's ignore – the maker added a question")),
     (lambda q: q["fields"].pop(0), None, ("ORDER.form", "fail", "Base Material: not read back")),
     (lambda q: q["parts"][1].update(mark="replaced: C123"), None, ("ORDER.parts", "fail", "C8678 D1: replaced: C123")),
     (lambda q: q["parts"].pop(0), None, ("ORDER.parts", "fail", "C45783 C2: not in the maker's matching")),
@@ -633,3 +633,29 @@ def test_compare_names_a_check_of_an_older_quote(project, monkeypatch, capsys):
     assert cart(project, monkeypatch, "compare") == 0
     row = next(line for line in capsys.readouterr().out.splitlines() if line.startswith("JLCPCB"))
     assert "5 days" in row and "not checked (the quote changed)" in row
+
+
+def test_a_bare_board_at_jlcpcb_as_the_live_run_read_it():
+    """Live run of 2026-11-01 (tests/fixtures/makers/jlcpcb/bare_2026-11-01, the bell's THT variant): a bare board goes
+    from JLCPCB's quote page straight to "SAVE TO CART" – no Quote & Order, so no "Product Description" (the job
+    asks it at checkout) and no upload's name on the page (unshown_bare: the cart line names the Gerber,
+    gerber_tht_Y11); "PCB Assembly" and "Stencil" are off and in the profile's ignore."""
+    from edakit import cart as c
+    d = Path(__file__).parent / "fixtures" / "makers" / "jlcpcb" / "bare_2026-11-01"
+    job, quote, line = (json.loads((d / f).read_text()) for f in ("job.json", "quote.json", "cart.json"))
+    customs = next(f for f in job["fields"] if f["key"] == "customs")
+    assert job["bom"] == [] and customs.get("checkout") and customs.get("read")
+    assert c.b1(job, quote)[0] == [] and c.b4(quote, (d / "quote_page.txt").read_text())[0] == []
+    assert c.uploads_shown(job, quote["files"]) == [] and "gerber" in job["maker"]["unshown"]
+    assert c.check_cart(job, quote, line)[0] == []
+    ignore = {c.norm(k) for k in makers.load("jlcpcb").data["ignore"]}
+    assert {c.norm("PCB Assembly"), c.norm("Stencil")} <= ignore
+
+
+def test_a_field_asked_only_with_assembly():
+    """fields.<key>.assembly: true or false, nothing else."""
+    assert makers.problems("x", {"fields": {"customs": {"assembly": True}}}) == []
+    assert makers.problems("x", {"fields": {"customs": {"assembly": "yes"}}}) == [
+        "maker x: fields.customs: assembly must be true or false"]
+    assert makers.problems("x", {"unshown_bare": ["gerber"]}) == []
+    assert makers.problems("x", {"unshown_bare": ["schematic"]})[0].startswith("maker x: unshown_bare: unknown file")
