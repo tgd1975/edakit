@@ -1,6 +1,6 @@
 name: Release
 
-# A version of edakit (docs/concepts/new/versioning.md): when the number in edakit/__init__.py on main has no tag yet,
+# A version of edakit (docs/concepts/done/versioning.md): when the number in edakit/__init__.py on main has no tag yet,
 # the tag v<number> on that commit and the GitHub release with its changelog section – the marketplace entry's ref
 # exists from then on. The number is written by .github/merge.py before the merge; this workflow never writes to main.
 # A push that changes edakit since the last tag without a new number fails here: it came past merge.py.

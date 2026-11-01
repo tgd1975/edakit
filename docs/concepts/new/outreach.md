@@ -15,7 +15,7 @@ concept's steps come there only then (the owner). Written against main at `bef46
 edakit gets out to people – where to post, where to
 register and list it, for makers, users and developers alike –, at low effort, since the owner has put enough time
 into the project, and yet effective, since others should use edakit. Builds on [documentation.md](documentation.md)
-(the entry layer D.2, the "is it for me" numbers D.7, the gallery D.9) and [versioning.md](versioning.md) (1.0.0 once
+(the entry layer D.2, the "is it for me" numbers D.7, the gallery D.9) and [versioning.md](../done/versioning.md) (1.0.0 once
 D.2 is built, V.6). The rules of the channels named here were read on 2026-11-01 from their own pages (Sources).
 
 ## The short answer

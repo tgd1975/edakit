@@ -1,4 +1,4 @@
-"""edakit's versions (docs/concepts/new/versioning.md): one number in edakit/__init__.py, the marketplace entry and the
+"""edakit's versions (docs/concepts/done/versioning.md): one number in edakit/__init__.py, the marketplace entry and the
 changelog held to it, the fragments that make the next one, the checks paths and version of a pull request
 (.github/versions.py), and the string `edakit --version` and the gate manifest print (edakit/version.py)."""
 

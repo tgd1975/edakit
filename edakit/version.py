@@ -1,7 +1,7 @@
 """edakit's version as one string, for `edakit --version` and the gate manifest's tools.edakit.
 
 The number is `__version__` in edakit/__init__.py, written by .github/merge.py at every merge that changes edakit
-(docs/concepts/new/versioning.md). Run from a git checkout away from that number's tag, the commit is added –
+(docs/concepts/done/versioning.md). Run from a git checkout away from that number's tag, the commit is added –
 0.2.0+g1a2b3c4 –, so a manifest names the edakit that released a board even when it was not a version. The plugin's
 cache and an install by uvx have no .git: there the number alone.
 """
