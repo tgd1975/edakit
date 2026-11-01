@@ -248,7 +248,7 @@ Where it stands:
 
 ## Future work
 
-Two changes would alter how a project works; the rest is smaller extensions and fixes.
+Three changes would alter how a project works; the rest is smaller extensions and fixes.
 
 - **Ordering through the makers' interfaces.** Today Claude in Chrome fills a maker's pages up to the cart. Through
   the maker's API the same steps would run without a browser: the files uploaded, the quote read, the same checks on
@@ -258,6 +258,10 @@ Two changes would alter how a project works; the rest is smaller extensions and 
   graph the checks read. Blocks take parameters, and a variant's graph is a few lines on top of the main one instead
   of a full copy. A project would convert once. What it would be and when it is worth building:
   [circuit-dsl](docs/concepts/new/circuit-dsl.md).
+- **Claude independence.** Today the plugin runs in Claude Code. Made portable, it would also run in GitHub
+  Copilot, Qwen Code and Mistral Vibe, and OpenCode would get the files it reads. The model could run on your own
+  machine, through Ollama or llama.cpp. A pair of assistant and model is named here only once the evals show it
+  works. What it takes: [claude-independence](docs/concepts/new/claude-independence.md).
 
 ## Licence
 
