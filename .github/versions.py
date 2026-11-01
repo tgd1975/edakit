@@ -22,6 +22,7 @@ import json
 import re
 import subprocess
 import sys
+import tomllib
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -36,7 +37,8 @@ HEADING = re.compile(r"^## (\d+\.\d+\.\d+) – (\d{4}-\d{2}-\d{2})$", re.M)
 KINDS = ("patch", "minor", "major")
 
 # What a project never reads: a merge that changes only these is no version. Everything else – edakit/, skills/,
-# agents/, hooks/, bin/, handbook/, .claude-plugin/, pyproject.toml, uv.lock and whatever is new – is a version.
+# agents/, hooks/, bin/, handbook/, .claude-plugin/, pyproject.toml, uv.lock and whatever is new – is a version;
+# pyproject.toml and uv.lock not when only the dev tools moved (dev_only).
 NO_VERSION = ("tests/", ".github/", "evals/", "docs/", "examples/", "upstream/", ".claude/", "changes/",
               "CHANGELOG.md", "TODO.md", "CLAUDE.md", "README.md", "LICENSE", ".gitignore")
 
@@ -51,6 +53,60 @@ def under(path, prefixes):
 
 def needs_version(paths):
     return [p for p in paths if not under(p, NO_VERSION)]
+
+
+# --- the dev tools: pytest and the like move without a version -------------------------------------------------
+
+DEPS = ("pyproject.toml", "uv.lock")
+
+
+def runtime(lock_text):
+    """What edakit installs from uv.lock: requires-python and the (name, version) of every package edakit's own
+    entry depends on, transitively, extras included – the dev groups left out."""
+    lock = tomllib.loads(lock_text or "")
+    packages = lock.get("package", [])
+    by_name = {}
+    for p in packages:
+        by_name.setdefault(p["name"], []).append(p)
+    todo = [p for p in packages if p.get("source", {}).get("editable") == "." or p.get("source", {}).get("virtual")
+            == "."]
+    seen, out = set(), set()
+    while todo:
+        p = todo.pop()
+        key = (p["name"], p.get("version"))
+        if key in seen:
+            continue
+        seen.add(key)
+        out.add(key)
+        deps = list(p.get("dependencies", []))
+        for extras in p.get("optional-dependencies", {}).values():
+            deps += extras
+        for d in deps:
+            todo += [q for q in by_name.get(d["name"], []) if d.get("version") in (None, q.get("version"))]
+    return lock.get("requires-python"), sorted(out, key=str)
+
+
+def dev_only(base, head):
+    """True when pyproject.toml and uv.lock differ between base and head only in the dev groups – base and head are
+    callables path -> text (None when the file is missing)."""
+    def project(text):
+        data = tomllib.loads(text or "")
+        data.pop("dependency-groups", None)
+        return data
+    try:
+        return (project(base("pyproject.toml")) == project(head("pyproject.toml"))
+                and runtime(base("uv.lock")) == runtime(head("uv.lock")))
+    except (tomllib.TOMLDecodeError, KeyError, TypeError):
+        return False
+
+
+def project_reads(changed, base, head):
+    """The changed paths a project reads: needs_version, without pyproject.toml and uv.lock when only the dev tools
+    moved."""
+    needs = needs_version(changed)
+    if set(DEPS) & set(needs) and dev_only(base, head):
+        needs = [p for p in needs if p not in DEPS]
+    return needs
 
 
 # --- the number -------------------------------------------------------------------------------------------------
@@ -179,7 +235,7 @@ def check_version(changed, base, head, pr):
             fragment(p[len(CHANGES):], head(p))
         except ValueError as e:
             return False, "a fragment is malformed", [str(e)]
-    needs = needs_version(changed)
+    needs = project_reads(changed, base, head)
     if fragments:
         return False, f"not numbered yet – set when merging: python3 .github/merge.py {pr}", fragments
     main_n, head_n = number(base(INIT)), number(head(INIT))
@@ -245,7 +301,7 @@ def main(argv):
         print(lines)
         return 0
     if argv[:1] == ["unnumbered"] and len(argv) == 3:
-        stray = needs_version(changed_files(argv[1], argv[2], root=ROOT))
+        stray = project_reads(changed_files(argv[1], argv[2], root=ROOT), show(argv[1]), show(argv[2]))
         if stray:
             print(f"changed since {argv[1]} without a version – merge through .github/merge.py:", *stray, sep="\n  ")
             return 1

@@ -1,12 +1,16 @@
 # Dependabot: one pull request per source and week with all its updates. It goes onto main like every pull request,
 # on the owner's OK through .github/merge.py; an update of uv.lock or pyproject.toml is a version of its own, and
-# merge.py writes its fragment (patch), since Dependabot brings none.
+# merge.py writes its fragment (patch), since Dependabot brings none; one of the dev tools alone (pytest) is no
+# version (.github/versions.py, dev_only). A release is proposed once it is a week old: a hijacked one is mostly
+# pulled within days.
 version: 2
 updates:
   - package-ecosystem: github-actions
     directory: /
     schedule:
       interval: weekly
+    cooldown:
+      default-days: 7
     groups:
       actions:
         patterns: ["*"]
@@ -15,6 +19,8 @@ updates:
     directory: /
     schedule:
       interval: weekly
+    cooldown:
+      default-days: 7
     groups:
       python:
         patterns: ["*"]

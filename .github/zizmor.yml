@@ -1,0 +1,21 @@
+# zizmor, the check of the workflows (step Workflows of tests.yml): what it reports is red, except what this file
+# lets through – each with its reason. An exception for a single line sits on that line as `# zizmor: ignore[…]`.
+rules:
+  # Every action by its commit SHA, the version as a comment – a tag can be moved to other code, a SHA cannot
+  # (the owner's decision of 2026-11-02). Dependabot updates both.
+  unpinned-uses:
+    config:
+      policies:
+        "*": hash-pin
+  # The proposals pipeline (proposals.yml, proposal.yml, wrap.yml) changes only from its own session on the owner's
+  # word (CLAUDE.md, Proposals): its findings wait there. Its triggers are guarded by the job queue and wrap's own if.
+  dangerous-triggers:
+    ignore: [proposals.yml, wrap.yml]
+  secrets-inherit:
+    ignore: [proposals.yml]
+  self-repository:
+    ignore: [proposals.yml]
+  artipacked:
+    ignore: [proposal.yml]
+  template-injection:
+    ignore: [proposal.yml]

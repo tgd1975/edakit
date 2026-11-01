@@ -19,9 +19,10 @@ concurrency:
 jobs:
   tag:
     runs-on: ubuntu-24.04
+    timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v4
-        with:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:   # zizmor: ignore[artipacked] – git push of the tag needs the credentials
           fetch-depth: 0   # the tags
       - name: Tag and GitHub release
         env:
