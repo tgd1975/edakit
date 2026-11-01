@@ -1,0 +1,48 @@
+name: Built with edakit
+description: A board or a circuit you made with edakit – for the gallery of projects.
+labels: [gallery]
+body:
+  - type: markdown
+    attributes:
+      value: >-
+        Thanks for showing it. The gallery gives a project a page of its own – what it is, the circuit, the board as
+        made, what edakit found – written from the pictures of its release (edakit release publish).
+  - type: input
+    id: name
+    attributes:
+      label: Project
+      placeholder: A Christmas bell that rings by itself
+    validations:
+      required: true
+  - type: input
+    id: link
+    attributes:
+      label: Link
+      description: The repository, or its release from edakit release publish.
+      placeholder: https://github.com/you/your-project/releases/tag/2026-11-01
+    validations:
+      required: true
+  - type: textarea
+    id: what
+    attributes:
+      label: What it does
+      description: A few sentences – for whom, what the board does, where it stands (released, ordered, built).
+    validations:
+      required: true
+  - type: dropdown
+    id: toolchain
+    attributes:
+      label: Tool chain
+      options:
+        - EasyEDA Pro
+        - KiCad 10
+        - the circuit only, no board yet
+    validations:
+      required: true
+  - type: checkboxes
+    id: consent
+    attributes:
+      label: The gallery
+      options:
+        - label: edakit's gallery may show this project's name, the pictures of its release and the link.
+          required: true

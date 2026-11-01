@@ -1,0 +1,54 @@
+name: Bug
+description: edakit did something wrong, stopped with an error, or a check reported what is not so.
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: >-
+        edakit is kept by one person with Claude, and answers come as time allows. The output asked for below makes
+        the answer faster. Leave out anything secret – tokens, passwords, a private repository's contents.
+  - type: input
+    id: version
+    attributes:
+      label: edakit --version
+      placeholder: edakit 0.4.6
+    validations:
+      required: true
+  - type: dropdown
+    id: toolchain
+    attributes:
+      label: Tool chain
+      options:
+        - EasyEDA Pro
+        - KiCad 10
+        - none – offline commands only
+    validations:
+      required: true
+  - type: input
+    id: system
+    attributes:
+      label: System
+      description: Tested on Linux; Windows and macOS are untested.
+      placeholder: Ubuntu 24.04, Claude Code 2.x
+    validations:
+      required: true
+  - type: textarea
+    id: doctor
+    attributes:
+      label: edakit doctor
+      description: Its output, in the project where it went wrong.
+      render: text
+  - type: textarea
+    id: did
+    attributes:
+      label: What you did
+      description: The command or the skill, and what you asked Claude.
+    validations:
+      required: true
+  - type: textarea
+    id: happened
+    attributes:
+      label: What happened, and what you expected
+      description: The output or the finding with its code, shortened where it is long.
+    validations:
+      required: true
