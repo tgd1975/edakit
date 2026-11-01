@@ -30,7 +30,8 @@ A requirements file covers the circuit only; what firmware and mechanics must do
 - **Everything else goes through a branch**, and onto main only with the owner's OK.
 - **No branch is left lying around.** When a piece of work is done, list the unmerged branches – local, origin,
   worktrees, and the clones of other sessions, read only. Merge what is finished, rebased and with the tests green, or
-  say why a branch stays: waiting for a decision, unfinished, someone else's.
+  say why a branch of your own stays: waiting for a decision, unfinished. Someone else's branch is one line naming the
+  session that holds it – its decisions and OKs are that session's to ask, never an item for the owner in your reply.
 
 ## EasyEDA Pro and easyeda-mcp-pro
 
