@@ -2191,24 +2191,32 @@ def stitch_islands(rules, mcp, data, routes, net, layer_name, stitch_file):
 
 
 def fill(cfg, board, mcp, nets, keep_islands_on=None, regions=None):
+    """The pours of nets created anew (pcb.pour) and filled, one pour per call. easyeda-mcp-pro 1.6.0's bridge
+    refuses every further rebuild – until EasyEDA restarts – once one ended unverified ("readback-mismatch"): EasyEDA's
+    beta rebuildCopperRegion answers with another pour of the net when copper is already poured, and so does a call
+    for a whole net after its first pour. A fresh pour alone per call is verified (live on 3.2.209, M-10)."""
     pcb.pour(cfg, board, mcp, keep_islands_on, regions)
     ensure_pcb_focus(mcp)
-    for net in nets:
-        res = mcp.call("easyeda_pcb_rebuild_copper", confirmWrite=True, net=net, timeout=300)
-        # status 'readback-mismatch' is harmless: the bridge only compares the id the rebuild returned with the stored
-        # one; what counts is the number of filled areas per layer afterwards
-        for r in res.get("results") or [res]:
+    ids = [st["PrimitiveId"] for st in map(eda.state, api(mcp, "PCB_PrimitivePour.getAll") or [])
+           if st.get("Net") in nets]
+    for pid in ids:
+        ensure_pcb_focus(mcp)
+        res = mcp.call("easyeda_pcb_rebuild_copper", confirmWrite=True, pourIds=[pid], timeout=300)
+        for r in res.get("results") or []:
             print(f"    pour {r.get('pourId')}: {r.get('status')}", flush=True)
+        if res.get("success") is False:
+            raise SystemExit(f"pour {pid} not filled: {res.get('error') or 'the rebuild was not verified'} – the bridge "
+                             "refuses every further fill until EasyEDA restarts: save, restart EasyEDA, run again "
+                             "(handbook 12, M-10)")
 
 
 def pours(cfg, board, rules, mcp, data=None, routes=None, stitch_file=None, regions=None, planned=()):
-    """Pours anew and filled. Tooling holes (free pads) are taken out before filling and set again afterwards –
-    with a free pad in the PCB the fill fails. With stitching configured ([[pours]] stitch = "BOTTOM"),
+    """Pours anew and filled, the tooling holes (free pads) set again afterwards – they stay on the board while the
+    pours fill (E-13, 3.2.209). With stitching configured ([[pours]] stitch = "BOTTOM"),
     fill with islands first, stitch the loose islands to the other side with vias, then fill without islands.
     regions: the outlines of region_outlines for the nets on a shared layer; planned: the vias of the channels they
     hold (stitch_channels), set first – those not set already."""
     nets = sorted({p["net"] for p in board.pours})
-    pcb.remove_tooling(mcp)
     stitched = [p for p in board.pours if p.get("stitch")]
     if planned and stitch_file is not None:
         old = json.loads(stitch_file.read_text()) if stitch_file.exists() else []

@@ -682,7 +682,8 @@ wrong.
 ## 7.6 Pours
 
 `[[pours]]` of the board file: net, layers, `plane` (with `fanout`, 7.5), `stitch`, `pour_only`. Filled with
-`easyeda_pcb_rebuild_copper` per net (status `readback-mismatch` is harmless for the fill). EasyEDA drops every piece of
+`easyeda_pcb_rebuild_copper`, one fresh pour per call – after an unverified rebuild (`readback-mismatch`) the bridge of
+easyeda-mcp-pro 1.6.0 refuses every further one until EasyEDA restarts, and `route` stops with that (M-10). EasyEDA drops every piece of
 a pour that touches no pad of its net: where the pour net has no pad, that side stays bare – it looks the same as a pour
 that was never filled. The gate measures it in the Gerber files (GEO.pour): a copper-free circle above `[copper]
 max_bare_mm` (5 mm) inside the pour outline of a poured layer warns, so does a copper-free piece there above
