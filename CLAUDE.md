@@ -69,7 +69,7 @@ Never loosen the job's `if` or the queue's `--author`, never leave the check to 
 inside Claude's run has spent the tokens already –, and do not suggest another trigger or a condition others can meet
 without being asked.
 
-The owner's decision of 2026-11-01 (`docs/concepts/new/proposals-pipeline.md`):
+The owner's decision of 2026-11-01 (`docs/concepts/done/proposals-pipeline.md`):
 
 - **One further start:** a comment by the owner carrying the seal, on an issue by someone else – the workflow labels
   it `adopted`, and Claude reads only the owner's comments and the triage's results there. A condition only the
