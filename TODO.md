@@ -65,16 +65,6 @@ run against a maker's page or EasyEDA yet.
       BOM part without `compliance.rohs` on a board for sale; the maker's RoHS and REACH statements in its profile.
       Each becomes a rule only with the skill add-rule, on the owner's word.
 
-## Walkthrough gaps ([walkthrough-gaps.md](docs/concepts/done/walkthrough-gaps.md))
-
-Built and decided on 2026-10-31; what is left runs live.
-
-- [ ] **The example at its next `edakit gate --easyeda`:** a new fab hash – C4 puts `mark = "remove"` into order.json
-      of a `[looks]` board –, so M-5 once more; on the way look at A4 (`route all` on the round board without
-      Freerouting's "geometry is degenerate"), B1 (protocol L: the vias' ring 0.15 mm, not 1.000), A5 (BT1's "+" on
-      the polarity sheet), B3 (GEO.silk grade body on BT1's cell) and B7 (the BOM from the board's schematic with the
-      other tabs closed).
-
 ## The documentation for its readers ([documentation.md](docs/concepts/new/documentation.md))
 
 Decided on 2026-10-31; D.1 (the style guide, the glossary and their tests) built the same day. D.2 to D.7 not before
