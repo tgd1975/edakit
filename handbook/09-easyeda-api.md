@@ -2,7 +2,8 @@
 
 Everything here was found the hard way, on EasyEDA Pro 3.2.206 (Linux) with easyeda-mcp-pro 1.4.0, between
 19 and 26 October 2026. edakit works around each point; this chapter explains why the code looks the way it does and
-helps when you call the API directly.
+helps when you call the API directly. What edakit wants instead, and how far upstream has got, is kept in
+[upstream/README.md](../upstream/README.md).
 
 Calls go through the MCP tool `easyeda_api_call` with `path` (e.g. `PCB_PrimitiveLine.create`) and `args` (a list).
 List the available methods with `easyeda_api_inventory` and a `filter`.

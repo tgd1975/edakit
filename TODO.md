@@ -58,12 +58,25 @@ run against a maker's page or EasyEDA yet.
 
 ### Needs the owner's word
 
-- [ ] Post the upstream issue and pull request for the ODB++ export ([issue](upstream/issue-5-odb-export.md),
-      [pull request](upstream/pr-4-odb-export.md)); the branch of the fork is not built yet.
 - [ ] The check candidates of the review at the order (implementation plan, 5.5): lead graded by purpose already at
       the release (F-6); a line of the page text that addresses the assistant as a finding of `edakit cart check`; a
       BOM part without `compliance.rohs` on a board for sale; the maker's RoHS and REACH statements in its profile.
       Each becomes a rule only with the skill add-rule, on the owner's word.
+
+## What edakit needs from EasyEDA Pro and easyeda-mcp-pro ([upstream/README.md](upstream/README.md))
+
+The requirements E-1 to E-16 on EasyEDA Pro and M-1 to M-8 on easyeda-mcp-pro, gathered on 2026-11-01 under the
+owner's rules there: no click because of the API, no self-extended MCP server, the latest state checked first.
+
+- [ ] **On the owner's computer – the newest versions live:** EasyEDA Pro 3.2.209 (3.2.206 is installed) and
+      easyeda-mcp-pro 1.6.0 (the pin is 1.4.0) with the patched extension of the same version; E-1 to E-4 and E-7
+      checked again, the self-test, one gate run of the example. Then the pin raised in `mcp-server.sh`.
+- [ ] **On the owner's word – post:** M-1 to M-3 (issue, then the fork's branch and its pull request), M-4 once its
+      branch `feat/odb-export` is built, M-5 and M-7 as issues, M-6 as a comment on #539; E-1 to E-16 at
+      easyeda/easyeda-api-sdk after the live check above – to #33, #34, #36, #38 and #39 as comments. Before each the
+      check of "The latest state".
+- [ ] **When a release brings M-2 to M-4:** pin raised, the original extension, `bridge-extension-patch.sh` and
+      `odb-tool-patch.mjs` removed, handbook 2.4, 2.5 and 9.1 follow.
 
 ## The documentation for its readers ([documentation.md](docs/concepts/new/documentation.md))
 
