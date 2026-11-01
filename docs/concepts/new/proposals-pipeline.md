@@ -1,14 +1,15 @@
 # The proposals pipeline: checked before it acts, never changed through itself
 
 Status 2026-11-01: decided – the five decisions accepted by the owner the same day in a decision round in Claude Code's
-form (the table at the end); the steps start on the owner's word. Asked for by the owner after a review of the pipeline:
-the pipeline can change anything, so every incoming issue is analysed closely – is it from an authorised person (today
-the owner alone), is it correctly formatted, is it plausible, is it acceptable, is it dangerous, does it change this
-pipeline. The last is an absolute no-go: the pipeline must never be changed through itself. Aligned before it was
-written, on the owner's word: with edakit-93, which built the fixes of the day (702a4f4, 7a20a13, a7a1337), merged the
-proposals pull requests #89, #96, #101 and #102 and handed the pipeline over; and with edakit-a3, whose concept
-`versioning.md` proposes the rulesets on main and a required check of the paths per branch family – this concept names
-the paths the proposals branches never touch and leaves the rulesets to it. Written against main at `557dc01`.
+form, and a sixth on the owner's addition: issues by others are welcome, and the owner hands one to the pipeline with a
+sealed comment (the table at the end); the steps start on the owner's word. Asked for by the owner after a review of the
+pipeline: the pipeline can change anything, so every incoming issue is analysed closely – is it from an authorised
+person (today the owner alone), is it correctly formatted, is it plausible, is it acceptable, is it dangerous, does it
+change this pipeline. The last is an absolute no-go: the pipeline must never be changed through itself. Aligned before
+it was written, on the owner's word: with edakit-93, which built the fixes of the day (702a4f4, 7a20a13, a7a1337),
+merged the proposals pull requests #89, #96, #101 and #102 and handed the pipeline over; and with edakit-a3, whose
+concept `versioning.md` proposes the rulesets on main and a required check of the paths per branch family – this concept
+names the paths the proposals branches never touch and leaves the rulesets to it. Written against main at `557dc01`.
 
 ## The short answer
 
@@ -19,7 +20,8 @@ splits the pipeline into four layers: GitHub keeps main for the owner; fixed ste
 format and give Claude only the owner's text and main's rules; Claude judges in the owner's order and only reads; a
 fixed job after Claude checks the commits against the pipeline's paths before anything is pushed. Four faults of the
 day go with it: a proposal triaged twice, a commit lost when a pull request is merged during a build, a run that ends
-green without a result, an answer lost when it is given by sealing again.
+green without a result, an answer lost when it is given by sealing again. Issues by others stay welcome; the owner
+hands one to the pipeline with a sealed comment, and only that comment reaches Claude.
 
 ## The state today
 
@@ -150,6 +152,22 @@ list lives once, in `edakit/proposal.py`, pinned by a test; layer 4 and the chec
 - `gh issue list --author` stays as `CLAUDE.md` names it. The logic moves into `edakit/proposal.py` with its tests; a
   test holds the concurrency group equal to the job's `if`.
 
+### Issues by others
+
+An issue by someone else is welcome – the pipeline only does not act on it by itself. The owner hands it over with a
+sealed proposal as a comment there: the owner's session writes the proposal from the issue with propose-rule or
+propose-feature, seals it and posts it (`gh issue comment N --body-file body.md`).
+
+- **The start.** Beside today's conditions, the job's `if` lets in a comment by the owner that carries the seal, on any
+  issue that is not a pull request – a condition only the owner meets. The workflow labels the issue `adopted`; from
+  then on the owner's answers there start the pipeline as on the owner's own issues.
+- **What Claude reads** is the owner's newest sealed comment as the proposal, the owner's comments after it and the
+  triage's results – never the body of the issue or a comment by anyone else. What its author edits later changes
+  nothing.
+- **The queue** lists, beside the owner's own proposals, the open issues labelled `adopted` whose newest sealed comment
+  by the owner has no result after it.
+- **The result** is a comment on that issue, and the pull request closes it like any other.
+
 ### One proposal after another
 
 Claude reads and a fixed job writes: two jobs per proposal, and the next triage starts after the publish of the one
@@ -161,11 +179,11 @@ run; the rest stays waiting for the next run.
 
 | Step | What | Size | Waits for |
 | --- | --- | --- | --- |
-| P.1 | The queue in `edakit/proposal.py` with tests: the trigger only if unanswered since its event, sealing again as an answer; the test that holds the concurrency group equal to the `if` | S | the decisions |
-| P.2 | The pipeline's paths and the check of the commits in `edakit/proposal.py`, with tests; the file with the owner's text only | S | the decisions |
-| P.3 | `proposals.yml` and the reusable `proposal.yml`: the queue, the chain, the triage (the reading token, verify, the skills from main, the branch, Claude), the publish (the check, the pull request asked again, push, comment, labels, the tests started); `workflow_dispatch` for `tests.yml` | M | P.1, P.2 |
-| P.4 | The triage skills: the checks in the owner's order, "Safe?" first; three files instead of push, comment and labels. add-rule and add-feature: the line on pushing | S | P.3 |
-| P.5 | Handbook 14.4 (the checks, the layers, what happens before a merge), 11.6, 10 (`verify FILE\|-`); `README.md` (the kinds of a rule proposal, the link to 11.6); the section Proposals of `CLAUDE.md`; `docs/organisation.md` | S | P.4 |
+| P.1 | The queue in `edakit/proposal.py` with tests: the trigger only if unanswered since its event, sealing again as an answer, the adopted issues of others; the test that holds the concurrency group equal to the `if` | S | the decisions |
+| P.2 | The pipeline's paths and the check of the commits in `edakit/proposal.py`, with tests; the file with the owner's text only – on an adopted issue the owner's sealed comment | S | the decisions |
+| P.3 | `proposals.yml` and the reusable `proposal.yml`: the queue, the chain, the start by the owner's sealed comment and the label `adopted`, the triage (the reading token, verify, the skills from main, the branch, Claude), the publish (the check, the pull request asked again, push, comment, labels, the tests started); `workflow_dispatch` for `tests.yml` | M | P.1, P.2 |
+| P.4 | The triage skills: the checks in the owner's order, "Safe?" first; three files instead of push, comment and labels; an adopted issue read from the owner's comment. propose-rule and propose-feature: a proposal from an issue by someone else, posted there as a comment. add-rule and add-feature: the line on pushing | S | P.3 |
+| P.5 | Handbook 14.4 (the checks, the layers, what happens before a merge, issues by others welcome), 11.6, 10 (`verify FILE\|-`); `README.md` (the kinds of a rule proposal, the link to 11.6); the section Proposals of `CLAUDE.md` (the owner's sealed comment on an issue by someone else, decision 6); `docs/organisation.md` | S | P.4 |
 | P.6 | The setting for pull requests, on the owner's word; then live: two sealed test proposals by the owner – a harmless one, and one that asks to change triage-rule, which must end rejected without a push | S | P.5, the owner |
 | P.7 | The Claude App uninstalled | – | P.6, the owner |
 
@@ -205,6 +223,7 @@ recommendation. Decisions 3 and 4 were asked as one question.
 | 3 | The pipeline's paths | the nine above | also `hooks/` and `.claude-plugin/` – what runs in projects without being asked; fewer | accepted |
 | 4 | What counts as dangerous | the six kinds of "Safe?", each rejected | each a question; fewer kinds | accepted |
 | 5 | The queue | the trigger unless a triage answered it since its event; sealing again counts as an answer | the trigger only while it is waiting, with cases for sealing again and reopening | accepted |
+| 6 | Issues by others (the owner's addition: "issues by others are not wrong or unwanted – the pipeline only does not act on them by itself; I start it by hand, perhaps with a comment that starts the pipeline") | welcome; the owner hands one over with a sealed proposal as a comment there, and the pipeline reads only that comment | a plain command `/triage` that reads the issue's text as it stood at the comment; filed again as the owner's own issue | accepted |
 
 Decided by Claude: the chain of at most eight calls and Claude's result as files – both named in the question of
 decision 1 and accepted with it; the list and the check in `edakit/proposal.py`, read from main, and GraphQL for the
