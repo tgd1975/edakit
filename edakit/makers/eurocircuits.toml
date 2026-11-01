@@ -154,6 +154,7 @@ words = { false = "No" }
 # class, the sides and the tooling follow from the data Eurocircuits analyses; the tg and the copper are its standard
 # (in ignore above); shipping is chosen at checkout.
 [fields]
+customs = false                        # seated in the EU: no customs declaration
 tg = false
 copper_oz = false
 inner_copper_oz = false

@@ -214,6 +214,7 @@ checkout = true
 
 # No such field on PCBWay's form: the keys are left out of its job.
 [fields]
+customs = false                        # the form asks none; PCBWay declares the shipment at checkout, the owner's
 outline_tolerance = false
 barcode = false
 electrical_test = false

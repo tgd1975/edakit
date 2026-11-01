@@ -564,3 +564,52 @@ def test_jlcpcbs_mark_and_barcode(project):
     assert "| Printing | 2D barcode & Number | board file |" in text
     rows = run(project, lambda ex, p: fr.ordered(ex, p, {"serial_number": True}))
     assert ("fail", "no combination JLCPCB's form refuses") in {(r, c) for r, c, _ in f6(rows)}
+
+
+# --- the customs description ----------------------------------------------------------------------------------------
+
+DIY = {"category": "DIY", "hs_code": "902300"}
+
+
+@pytest.mark.parametrize("customs, msg", [
+    ("902300", r"order.customs must be \{ category = "),
+    ({"category": "DIY"}, r"order.customs must be \{ category = "),
+    ({"category": "DIY", "hs_code": "90-23"}, r"order.customs.hs_code must be the HS code's digits, 4 to 10, not '90-23'"),
+    ({"category": "DIY", "hs_code": "902300", "value": 30}, r"order.customs: unknown key 'value'"),
+])
+def test_customs_of_the_wrong_kind_is_an_error(customs, msg):
+    with pytest.raises(ConfigError, match=msg):
+        _board("b", {}, {"order": {"customs": customs}})
+
+
+def test_customs_is_no_setting_of_the_board(project):
+    """The customs description tells the shipment, not the board: it is not in order.json, and the fab hash stays."""
+    d, h = fh.exported(project, fh.ordered())
+    d, same = fh.exported(project, fh.ordered(customs=DIY))
+    assert same == h and "customs" not in json.loads((d / "order.json").read_text())
+
+
+def test_jlcpcbs_product_description(project):
+    """JLCPCB's Quote & Order asks a customs category with its HS code (a cascader, ordering step 0): [order] customs
+    picks its entry, order.md shows it in JLCPCB's words, FILES.order holds it to the entries the form offers – one it
+    does not offer fails and names the entries of the same HS code; without the key FILES.order names it, the owner's
+    choice at the cart. A maker that asks nothing (Eurocircuits) has no such field."""
+    rows = run(project, lambda ex, p: fr.ordered(ex, p, {"customs": DIY}))
+    assert fr.findings(rows) == []
+    assert ("| Product Description | Reserch\\Education\\DIY\\Entertainment / DIY - HS Code 902300 | board file |"
+            in sheet(project))
+    rows = run(project, lambda ex, p: fr.ordered(ex, p, {"customs": {"category": "Blinker", "hs_code": "847330"}}))
+    assert ("fail", "Product Description: a value JLCPCB's form offers",
+            "customs = Blinker, HS 847330 (board file) – JLCPCB offers no such entry; with HS 847330: PC(Personal "
+            "Computer), Mouse, Keyboard, SSD(Solid State Disk), Reader, Development Board") in f6(rows)
+    rows = run(project, lambda ex, p: fr.ordered(ex, p))
+    assert ("info", "Product Description: the customs category with its HS code",
+            "not set ([order] customs) – JLCPCB's form asks it before the cart; the owner chooses it there") in f6(rows)
+    assert fr.findings(rows) == []
+    assert "| Product Description | – |" in sheet(project)
+
+    def euro(ex, p):
+        fr.ordered(ex, p, {"customs": DIY})
+        toml(p, '[cart]\nmaker = "eurocircuits"\nmakers = ["eurocircuits"]')
+    run(project, euro)
+    assert "Product Description" not in sheet(project)

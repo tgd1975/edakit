@@ -48,6 +48,11 @@ on the page, a mail to the owner) is taken out of `[cart] makers` by the owner.
   (export control), Eurocircuits' "Accept the Eurocircuits Terms of Sales" – is never ticked, unticked or pressed by
   you: stop, name it with its text, and go on only when the owner has given it in the browser or told you in the chat.
 
+- **The customs description is the owner's.** A maker that asks what the shipment is (JLCPCB's "Product
+  Description" on Quote & Order, category and HS code): the job's field has the entry of `[order] customs` – set it
+  and read it back. Without the key the field is one to read only: stop, show the owner the form's entries and set
+  the one they name; say that `customs = { category, hs_code }` in `[order]` keeps it for the next order.
+
 ## Steps
 
 1. **Start.** Open the job's `start` page in a new tab. Look at the cart first: a line of this job already there (same

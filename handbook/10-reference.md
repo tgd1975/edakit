@@ -300,6 +300,7 @@ where its value differs from the default; so a project that sets none of them ke
 | `photo_confirmation`, `depanel`, `function_test` | `false` | true or false | – |
 | `conformal_coating` | `false` | true or false | ✓ |
 | `pcba_packaging` | `"antistatic_bag"` | the maker's words | – |
+| `customs` | none | `{ category = "DIY", hs_code = "902300" }`: the shipment's customs description, the owner's – an entry of the maker's form (JLCPCB's "Product Description": `edakit cart fields` lists them, so does its profile); FILES.order fails one the form does not offer and names the key as information where the form asks it and the key is not set: the skill cart then asks the owner at the cart. Not in order.json – it describes the shipment, not the board | – |
 
 Not keys of `[order]`, but fields of the form all the same: the thickness (`thickness_mm` of the board file), the
 assembly class and side (`[release] assembly`, the class one of the maker's `classes`), the tooling holes

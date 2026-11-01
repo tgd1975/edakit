@@ -378,7 +378,7 @@ def test_order_colour_keys():
                         "order.mask must be one of green, purple, red, yellow, blue, white, black, not 'orange'"),
                        ({"mask": "Black"}, "order.mask must be one of green, purple"),
                        ({"silkscreen": "yellow"}, "order.silkscreen must be one of white, black, not 'yellow'"),
-                       ({"colour": "black"}, r"order: unknown key 'colour' \(known: .*mask, silkscreen\)")):
+                       ({"colour": "black"}, r"order: unknown key 'colour' \(known: .*mask, silkscreen, customs\)")):
         with pytest.raises(ConfigError, match=msg):
             _board("b", {}, {"order": order})
 

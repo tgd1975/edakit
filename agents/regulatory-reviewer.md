@@ -76,7 +76,7 @@ Look only at the difference – what the order adds or changes against what M-6 
 | where the maker sits (`seat`) | outside the EU (JLCPCB, PCBWay) and `sale`: the owner imports the boards and is the manufacturer of the product – name and address on the product, technical file, registrations before the first sale (handbook 15.2). Inside the EU: no import; for `sale` the owner stays the manufacturer (15.1), and the maker's declarations (AISLER's RoHS and REACH) are input for the technical file |
 | parts the owner supplies to the maker | imported by the owner when bought outside the EU |
 | items with duties of their own in the matching – a cell, a power supply | batteries regulation, the supply's own conformity, transport of lithium cells |
-| declarations the form asks for (customs description and value) | what the shipment is declared as |
+| declarations the form asks for (customs description and value; `[order] customs` where the project sets it) | what the shipment is declared as |
 
 Grade as for M-6 – **block**, **important**, **note**, each with the rule and its source. A difference that changes
 the circuit – another part, another purpose – is not settled at the order: a **block** "new M-6 needed", and the

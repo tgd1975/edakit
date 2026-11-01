@@ -65,3 +65,4 @@ mark = false
 barcode = false
 serial_number = false
 remark = false
+customs = false                        # seated in the EU: no customs declaration

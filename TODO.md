@@ -41,10 +41,10 @@ run against a maker's page or EasyEDA yet.
       clockwise). No component layers: KiCad as the converter for AISLER, or no AISLER. Seen on 2026-10-31: AISLER
       takes kicad-cli's ODB++ of led-bar with every part, offers edakit's properties as BOM columns ("edakit", "lcsc",
       MPN), leaves the tooling holes out; D1 (SS34) needed a part by hand, the LEDs were matched by value only.
-- [ ] **JLCPCB's customs "Product Description" as a key of `[order]`** (the owner's decision of 2026-11-01): a key –
-      the category with its HS code, outside the fab hash – that the skill cart sets and FILES.order names when it is
-      missing at a maker that asks for it (JLCPCB's Quote & Order, a cascader of category and HS code; the list in
-      `tests/fixtures/makers/jlcpcb/step0_2026-10-31.md`). Built with the skill add-feature.
+- [x] **JLCPCB's customs "Product Description" as a key of `[order]`** (the owner's decision of 2026-11-01), built
+      on 2026-11-01: `customs = { category, hs_code }`, outside order.json and the fab hash; JLCPCB's profile lists
+      the 62 entries with an HS code, FILES.order fails one it does not offer and names a missing key as information;
+      the skill cart sets it, or asks the owner without it (handbook 10.2).
 - [x] **5.7, 5.12:** the skill cart live at JLCPCB and PCBWay (2026-11-01, the 555 blinker, a copy of the example):
       every check passed, into the cart, order record written, nothing ordered.
 - [ ] **5.8:** Eurocircuits live – stopped, as it must, at "Board thickness": 1.6 mm is not among Eurocircuits'

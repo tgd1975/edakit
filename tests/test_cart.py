@@ -415,3 +415,24 @@ def test_a_cart_line_named_by_its_size():
     assert c.check_cart(job, quote, {"name": "2 Layers Size 60x28mm 1.6mm", "quantity": 5, "price": 35.5})[0] == []
     assert c.check_cart(job, quote, {"name": "2 Layers Size 50x28mm 1.6mm", "quantity": 5, "price": 35.5})[0] == [
         "the cart line '2 Layers Size 50x28mm 1.6mm' names neither the board nor a file of the job"]
+
+
+def test_the_customs_description_in_the_job(project, monkeypatch, capsys):
+    """[order] customs: the job carries JLCPCB's "Product Description" in its words, to set and read back – another
+    entry on the page fails ORDER.form. Without the key the field is one the skill only reads: the owner chooses it."""
+    released(project, lambda ex, p: fr.ordered(ex, p, {"customs": {"category": "DIY", "hs_code": "902300"}}))
+    assert cart(project, monkeypatch, "prepare") == 0
+    f = next(f for f in job(project)["fields"] if f["key"] == "customs")
+    assert (f["label"], f["value"], f.get("read")) == (
+        "Product Description", "Reserch\\Education\\DIY\\Entertainment / DIY - HS Code 902300", None)
+    assert "Product Description: Reserch\\Education\\DIY\\Entertainment / DIY - HS Code 902300" in capsys.readouterr().out
+    write_quote(project, lambda q: next(x for x in q["fields"] if x["label"] == "Product Description").update(
+        value="Reserch\\Education\\DIY\\Entertainment / Development Board - HS Code 847330"))
+    assert cart(project, monkeypatch, "check") == 2
+    assert "Product Description: the page" in results(project)["ORDER.form"][1]
+
+    shutil.rmtree(project.config().reports)
+    released(project, fr.ordered)
+    assert cart(project, monkeypatch, "prepare") == 0
+    f = next(f for f in job(project)["fields"] if f["key"] == "customs")
+    assert (f["value"], f["read"]) == ("–", True)

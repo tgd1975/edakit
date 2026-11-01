@@ -583,8 +583,9 @@ def ordered(ex, project, order=None, placeholder=False, h_mm=1.0):
     h_mm."""
     unordered(ex, project)
     order = {"mark": "remove", "remark": REMARK, **(order or {})}
-    text = "\n[order]\n" + "".join(f"{k} = {json.dumps(v, ensure_ascii=False)}\n" for k, v in order.items()
-                                   if k != "tab_zones")
+    value = lambda v: ("{ " + ", ".join(f"{k} = {json.dumps(x, ensure_ascii=False)}" for k, x in v.items()) + " }"  # noqa: E731
+                       if isinstance(v, dict) else json.dumps(v, ensure_ascii=False))
+    text = "\n[order]\n" + "".join(f"{k} = {value(v)}\n" for k, v in order.items() if k != "tab_zones")
     if "tab_zones" in order:
         text += "tab_zones = [" + ", ".join(f"{{ from = {list(a)}, to = {list(b)} }}" for a, b in order["tab_zones"]) + "]\n"
     if placeholder:
