@@ -83,8 +83,11 @@ of the project histories that pytree-27 left in the owner's TODO list.
 ## easyeda-mcp-pro
 
 An issue first, then the fork's branch and its pull request with "Fixes #<issue>" – M-1 to M-4 so posted on
-2026-11-01, the texts as in the drafts; the issue drafts follow the
-repository's issue forms field by field, the pull request drafts its template. On the first substantial pull request
+2026-11-01, the texts as in the drafts. **Short, as a person writes them:** an issue says the environment, what
+happens, what is expected and the workaround; a pull request its Summary, Risk and Validation – the template asks no
+more of a first contribution, the maintainer fills its checklists himself. The pattern: #468 and #527 there, under
+1000 characters each; the owner found the first, long texts too long and machine-like (2026-11-01). The same for reports to
+EasyEDA. On the first substantial pull request
 the maintainer asks once for the comment "I agree to the Contributor Permission v1 in CONTRIBUTOR-LICENSING.md" from
 the account that opened it – a consent in the owner's name, given by the owner.
 

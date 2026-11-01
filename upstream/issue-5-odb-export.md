@@ -1,4 +1,7 @@
-# Issue 5 – form "Feature Request"
+# Issue #798 – as posted
+
+Posted on 2026-11-01 (https://github.com/oaslananka/easyeda-mcp-pro/issues/798), shortened the same day on the owner's word to the length of the short contributions
+there (#468, #527).
 
 ### Title
 
@@ -6,53 +9,16 @@
 export: ODB++ export (PCB_ManufactureData.getOpenDatabaseDoublePlusFile) as a tool
 ```
 
-**Area:** `area:manufacturing-export`
-**Risk Class:** `No special risk`
+### Body
 
-### Problem Statement
+````markdown
+Some assemblers take ODB++ instead of Gerber – AISLER assembles only from ODB++ or native design files. EasyEDA Pro exports ODB++ (File > Export > ODB++) and its API has `PCB_ManufactureData.getOpenDatabaseDoublePlusFile` (BETA), but the server has no tool for it, and `easyeda_api_call` can't return a file.
 
-```markdown
-Some assemblers do not take Gerber for assembly: AISLER assembles from ODB++ or native design files only. EasyEDA Pro
-exports ODB++ itself (File > Export > ODB++, "ODB++ v8.0"), and its extension API has
-`PCB_ManufactureData.getOpenDatabaseDoublePlusFile(fileName?, unit?, otherData?, layers?, objects?)` (BETA) → `File`,
-with plated and non-plated drill holes, the drill table and the flying-probe file as `otherData`.
+**Proposal:** a tool `easyeda_export_odb` next to `easyeda_export_gerbers`, through a new bridge method `export.odb`. What we saw trying it on EasyEDA Pro 3.2.206 with a local stand-in:
 
-easyeda-mcp-pro has no tool for it, and no way around one: no export tool passes a parameter an extension could use for
-ODB++, and `easyeda_api_call` returns its result through `normalizeValue`, which carries no file, while the export
-tools return theirs through `normalizeBinaryResult` (base64).
-```
+- the archive holds the component layers with package, pins and part number;
+- the API writes inch only (its `unit` type admits `ESYS_Unit.INCH`), the dialog writes mm;
+- without a file name EasyEDA names the archive `undefined`.
 
-### Proposed Solution
-
-```markdown
-A tool `easyeda_export_odb` beside `easyeda_export_gerbers`: input `projectId`, `filePath?`, `platedHoles`,
-`nonPlatedHoles` (default `true`); a new bridge method `export.odb`, in which the extension calls
-`PCB_ManufactureData.getOpenDatabaseDoublePlusFile(fileName, 'inch', otherData)` and returns the file through
-`normalizeBinaryResult`; the server writes it with `writeExportPayload` once its magic bytes show a tgz or zip archive.
-No `unit` input: the API's type admits `ESYS_Unit.INCH` only.
-```
-
-### Alternatives Considered
-
-```markdown
-Exporting by hand (File > Export > ODB++) – a click for every release of a board. Patching the built server and
-extension locally, as we do today – brittle, and every user needs a modified extension.
-```
-
-### Acceptance Criteria
-
-```markdown
-- [ ] `easyeda_export_odb` writes the ODB++ archive EasyEDA exports, named with its extension.
-- [ ] A payload that is no archive is refused, nothing written; a missing handler gives a clear error.
-- [ ] Tests cover the tool and the extension handler (file name, inch and the drill options passed through).
-```
-
-### Additional Context
-
-```markdown
-Found while adding AISLER as a maker in edakit (https://github.com/tgd1975/edakit, docs/concepts/done/ordering.md),
-where a check holds the ODB++ to the released Gerber, drill and pick-and-place files. Tried on EasyEDA Pro 3.2.206
-with a local stand-in of this tool: the archive holds `comp_+_top` and `comp_+_bot` with package, pins and the part
-number, turns clockwise, and equals the export from File > Export > ODB++ but for the unit – the dialog writes mm,
-the API inch. Without a file name EasyEDA names the archive `undefined`, so the tool passes one.
-```
+Implementation in #799.
+````
