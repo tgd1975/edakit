@@ -81,7 +81,7 @@ or from a clone `uv run --project /path/to/edakit edakit <command>`.
 After the install `mcp-server.sh` adds the tool `easyeda_export_odb` to the installed server, once
 (`odb-tool-patch.mjs`, idempotent): the ODB++ export for a maker that assembles from it (AISLER, 8.4, SYNC.odb). It
 calls the bridge method `board.exportGerbers` with `format: "odb"`, so the server's method registry stays as it is;
-the patched extension (2.5) answers it. Upstream: issue and pull request drafts in `upstream/` (#5).
+the patched extension (2.5) answers it. Upstream: M-4 in [upstream/README.md](../upstream/README.md).
 
 **Pinned, not npx:** the tool set and the extension must match, and npx does not pass SIGTERM on – an orphaned server
 then blocks the bridge port. Update deliberately: raise `EASYEDA_MCP_VERSION`, rebuild the patched extension (2.5),

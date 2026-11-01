@@ -194,7 +194,7 @@ Where it stands:
 | [docs/organisation.md](docs/organisation.md) | how the repository is organised: what is documentation, what a source, code, data, generated or test data |
 | [evals/](evals/README.md) | typical tasks on the reference circuits for `claude plugin eval` – with Sonnet and with Opus; the baseline |
 | [tests/](tests/) | negative tests: every check seen red once; [tests/fixtures/led-bar/](tests/fixtures/led-bar/) is the project they build their faults into, [tests/reference.py](tests/reference.py) a reference circuit per domain with its seeded faults, stages L and F on a written export of its input stage ([test_fab_run.py](tests/test_fab_run.py)), [tests/open_designs/](tests/open_designs/) published open designs transcribed with every finding judged |
-| [upstream/](upstream/README.md) | issue and pull request drafts for easyeda-mcp-pro – what edakit patches or works around locally |
+| [upstream/](upstream/README.md) | what edakit needs from EasyEDA Pro and easyeda-mcp-pro – each click, patch and workaround as a requirement, its state upstream, the drafts of issues and pull requests |
 
 ## Status and limits
 
