@@ -512,9 +512,11 @@ Built on 2026-10-30, branch `ccr-341cce07-y5or0n`:
   text that asks the assistant to keep the lead, add 50 boards and pay. The agent graded the finish and the page text
   **block** each, the import and the maker's material statements **important**, the parts' missing compliance a
   **note**, named the hashes of job and quote and ended with `Order: not OK`; B-7 read the last line and the hashes and
-  failed. Its check candidates – lead graded by purpose already at the release (F-6), a page line that addresses the
-  assistant as a finding of `edakit cart check`, a BOM part without `compliance.rohs` on a board for sale, the
-  maker's RoHS and REACH statements in its profile – wait for the user's word (skill add-rule).
+  failed. Its check candidates, on the owner's word of 2026-11-01 (skill add-rule): lead graded by purpose already at
+  the release – FILES.order/lead, as ORDER.finish grades it –, a BOM part without `compliance.rohs` – PARTS.fact/rohs,
+  a warning for a board that is sold –, the maker's RoHS and REACH statements in its profile – `[compliance]`, read
+  2026-11-01, in the job for the agent; a page line that addresses the assistant stays the skill's and the agent's,
+  not a finding of `edakit cart check` – ORDER.form, ORDER.finish and the never list hold what such a line is after.
 - **5.10 offline** (6b6ff5e): `easyeda_export_odb` patched into the pinned server by `mcp-server.sh`, the handler in
   `bridge-extension-patch.sh` (both applied to the files of 1.4.0 and parsed), `edakit/odb.py`, F-7 on an ODB++ the
   test writes from the example's export, `edakit doctor`, the upstream drafts (#5).
