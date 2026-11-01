@@ -39,8 +39,11 @@ ROUNDS = 5
 WAIT_S = 45 * 60
 
 
+NAME = "merge"   # the prefix of the progress lines; .github/notes.py sets its own
+
+
 def say(*args):
-    print(f"[merge {dt.datetime.now():%H:%M:%S}]", *args, flush=True)
+    print(f"[{NAME} {dt.datetime.now():%H:%M:%S}]", *args, flush=True)
 
 
 def run(*cmd, cwd=ROOT, check=True):

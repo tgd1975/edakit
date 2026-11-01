@@ -106,10 +106,14 @@ def _reader(files):
     return lambda path: files.get(path)
 
 
+# a marketplace file of its own, not the repository's: that one carries whatever number main has, which may be the
+# one a case below expects to find inconsistent
+MARKET = json.dumps({"name": "edakit", "plugins": [{"name": "edakit", "source": "./"}]})
+
+
 def _files(number, log, ref=True, fragments=None):
-    market = (ROOT / v.MARKETPLACE).read_text()
     files = {v.INIT: f'__version__ = "{number}"\n',
-             v.MARKETPLACE: v.set_marketplace(market, number) if ref else market, v.CHANGELOG: log}
+             v.MARKETPLACE: v.set_marketplace(MARKET, number if ref else "0.0.1"), v.CHANGELOG: log}
     files.update({f"changes/{k}": t for k, t in (fragments or {}).items()})
     return files
 

@@ -14,7 +14,8 @@ and the glossary's "Version". Written against
 main at `d633a4b`. Asked for by the owner:
 edakit has reached the point where it should work with version numbers and branch protection from now on – a concept
 for both, and, since a concept could then no longer be committed straight to main, an elegant way for concepts to get
-there all the same.
+there all the same. V.3 (TD-46) built the same day: `.github/notes.py`, which merges by itself instead of
+GitHub's auto-merge.
 
 ## The short answer
 
@@ -37,7 +38,7 @@ GitHub account. GitHub cannot tell a session from the owner, so the protection g
 Actions. It does not lock out the sessions, and the owner's OK for code stays a working rule.
 
 Concepts and the todo list keep their speed through the **notes lane**. A pull request from a branch `notes/<topic>`
-that changes only `docs/concepts/` and `TODO.md` merges itself once its checks are green, with no OK needed, as today,
+that changes only `docs/concepts/` and `TODO.md` is merged as soon as its checks are green, with no OK needed, as today,
 and it is no version. A required check makes sure nothing else slips through that lane. One command lands a session's
 edits there from any worktree and any branch, with the checkout left alone. The concept is on main about five minutes
 later.
@@ -214,7 +215,7 @@ everything else. A change to it goes through a pull request and is applied after
 | `main-updates` | main | only the bypass may update the branch | the role Repository admin, only through a pull request: only the owner's account merges into main. The Actions may push branches and open pull requests, but never merge |
 | `tags` | `v*` | no deletion, no update, no force push; creating stays open for the release workflow | nobody: a version once out is never moved |
 
-The repository's settings also allow auto-merge, delete head branches after a merge, and offer only merge commits.
+The repository's settings also delete head branches after a merge and offer only merge commits.
 Squash and rebase merges are off, because the merge message carries the description, as the history shows
 (`merge.py` takes it as `--subject "Merge branch 'cpl-turn': …"`).
 
@@ -227,8 +228,8 @@ Squash and rebase merges are off, because the merge message carries the descript
   skipped by its `if` as successful, so a required check never blocks a pull request it does not concern.
 - **`main-updates`** closes the gap that [proposals-pipeline.md](proposals-pipeline.md) found (its layer 1): today
   only the prompt keeps the Action from changing main. Whether GitHub accepts the admin role as a bypass on a personal
-  repository, and whether a merge by auto-merge counts as the account that switched it on, is checked when the rules
-  are applied. If either fails, this ruleset is left out and the working rule stays as it is.
+  repository is checked when the rules are applied. If it does not, this ruleset is left out and the working rule
+  stays as it is.
 - **In an emergency** the owner switches a ruleset off in the settings and on again afterwards. That is one click, and
   it shows in the ruleset's history.
 
@@ -278,13 +279,13 @@ would end up merging the tick of TD-12.
 
 **The notes lane:**
 
-- A pull request from `notes/<topic>` that changes only `docs/concepts/**` and `TODO.md` merges itself once its checks
-  are green. The session switches on auto-merge, and no OK is needed, as today. It needs no fragment and is no
-  version.
+- A pull request from `notes/<topic>` that changes only `docs/concepts/**` and `TODO.md` is merged by `notes.py` as
+  soon as its checks are green. No OK is needed, as today. It needs no fragment and is no version.
 - The required check `paths` (above) fails a `notes/` pull request that touches anything else, so no code reaches
   main through the lane, not even a change to the check itself.
-- Auto-merge runs as the account that switched it on, which is the owner's. So the push to main starts Pages, as
-  today.
+- `notes.py` merges from the owner's account, so the push to main starts Pages, as today. GitHub's auto-merge is not
+  used: it needs a setting, and before the rulesets it would merge before the checks ran (changed while building
+  TD-46).
 - A concept is on main about five minutes after the push, which is the time `test` takes, and on the site after that.
 
 **One command**, `.github/notes.py "<message>" <files…>`, from any worktree on any branch:
@@ -296,11 +297,13 @@ would end up merging the tick of TD-12.
 3. It applies those edits with a three-way merge onto the newest main, in a temporary index. The checkout, its branch
    and its other changes stay as they are. If two sessions changed the same lines, it stops and names them. The
    session pulls and runs it again.
-4. It pushes the commit to `notes/<topic>`, opens the pull request and switches on auto-merge. Then it waits until the
-   pull request is merged, and ends with the merge or with a conflict it names. A session runs it in the background.
-5. It puts the files in the checkout back to its commit. They come back with main: the main clone gets them with
-   `git pull --ff-only`, a code branch with its next rebase. Git refuses to fast-forward over a working tree that holds
-   the same edit uncommitted (tried on 2026-11-01). The edits left in place would block the main clone's next pull.
+4. It pushes the commit to `notes/<topic>`, opens the pull request, waits for the checks and merges it. If main has
+   moved into a conflict in the meantime, it starts again from step 2 on the newest main. It ends with the merge or
+   with a conflict it names. A session runs it in the background.
+5. It puts the files in the checkout back to its commit, unless they were edited again in the meantime. They come back
+   with main: the main clone on main is fast-forwarded by the script, and a code branch gets them with its next
+   rebase. Git refuses to fast-forward over a working tree that holds the same edit uncommitted (tried on
+   2026-11-01). The edits left in place would block the main clone's next pull.
 
 Moving a concept from `new/` to `done/` changes links in the handbook or the README. That lies outside the lane and
 becomes an ordinary pull request with the owner's OK, which fits, since moving a concept means it is settled. The lane

@@ -22,7 +22,10 @@ A requirements file covers the circuit only; what firmware and mechanics must do
 
 - **A concept goes on main.** A concept the owner asks for goes into `docs/concepts/new/` next to the others, not onto
   a branch of its own – the owner follows the repository on GitHub, and a branch is not "in the repository". A concept
-  written against an older main is checked against the current one first.
+  written against an older main is checked against the current one first. It gets there through the notes lane, and
+  so does every change of TODO.md, a ticked todo included: `python3 .github/notes.py "<message>" <files…>`, from any
+  worktree on any branch, in the background – it lands the session's own edits on the newest main without an OK and
+  is merged in about five minutes (`docs/concepts/new/versioning.md`).
 - **A concept moves on once it is settled.** Decided and built in edakit – what is left being live runs, probes at a
   maker or a project taking it over, each kept in `TODO.md` or the implementation plan –, it moves to
   `docs/concepts/done/`; one the owner rejects moves to `docs/concepts/discarded/`, with the decision in its status
@@ -34,7 +37,7 @@ A requirements file covers the circuit only; what firmware and mechanics must do
   project must act when it updates, with what to do, `patch` otherwise – a new rule, a new feature, a fix. The major
   number is the owner's. Such a branch goes onto main as a pull request through `python3 .github/merge.py <n>`, never
   by a local merge: the script numbers it, waits for the checks and merges, and `release.yml` sets the tag. Concepts
-  and TODO.md still go straight to main until the notes lane is built (TD-46).
+  and TODO.md go through the notes lane and are no version.
 - **No branch is left lying around.** When a piece of work is done, list the unmerged branches – local, origin,
   worktrees, and the clones of other sessions, read only. Merge what is finished, rebased and with the tests green, or
   say why a branch of your own stays: waiting for a decision, unfinished. Someone else's branch is one line naming the
