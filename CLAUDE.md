@@ -25,13 +25,13 @@ A requirements file covers the circuit only; what firmware and mechanics must do
   written against an older main is checked against the current one first. It gets there through the notes lane, and
   so does every change of TODO.md, a ticked todo included: `python3 .github/notes.py "<message>" <files…>`, from any
   worktree on any branch, in the background – it lands the session's own edits on the newest main without an OK and
-  is merged in about five minutes (`docs/concepts/new/versioning.md`).
+  is merged in about five minutes (`docs/concepts/done/versioning.md`).
 - **A concept moves on once it is settled.** Decided and built in edakit – what is left being live runs, probes at a
   maker or a project taking it over, each kept in `TODO.md` or the implementation plan –, it moves to
   `docs/concepts/done/`; one the owner rejects moves to `docs/concepts/discarded/`, with the decision in its status
   line. `docs/concepts/new/` holds only what is open, and every link and path that names a moved file follows it.
 - **Everything else goes through a branch**, and onto main only with the owner's OK.
-- **A merge is a version** (`docs/concepts/new/versioning.md`). A branch that changes what a project reads – anything
+- **A merge is a version** (`docs/concepts/done/versioning.md`). A branch that changes what a project reads – anything
   outside `NO_VERSION` of `.github/versions.py`: tests, CI, `evals/`, `docs/`, `examples/`, `upstream/`, `.claude/`,
   TODO.md, CLAUDE.md, README.md – carries a fragment `changes/<branch>.md` (`changes/README.md`): `minor` when a
   project must act when it updates, with what to do, `patch` otherwise – a new rule, a new feature, a fix. The major

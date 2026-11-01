@@ -1,4 +1,4 @@
-"""The protection of main as text (.github/rulesets/, .github/rulesets.py, docs/concepts/new/versioning.md): the
+"""The protection of main as text (.github/rulesets/, .github/rulesets.py, docs/concepts/done/versioning.md): the
 checks main requires are the ones merge.py waits for, nobody may bypass main or move a version's tag, only the
 admin role merges, and the comparison with GitHub ignores what GitHub adds."""
 

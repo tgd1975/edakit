@@ -1,4 +1,4 @@
-"""Land concepts and TODO.md on main through the notes lane (docs/concepts/new/versioning.md) – no OK needed.
+"""Land concepts and TODO.md on main through the notes lane (docs/concepts/done/versioning.md) – no OK needed.
 
     python3 .github/notes.py "<message>" <file>…
 
@@ -128,7 +128,7 @@ def main(argv=None):
         git(root, "push", "-q", "--force", "origin", f"{commit}:refs/heads/{branch}")
         m.say(f"round {round_}: {branch} at {commit[:7]}")
         if pr is None:
-            body = ("The notes lane (docs/concepts/new/versioning.md): only docs/concepts/ and TODO.md, merged by "
+            body = ("The notes lane (docs/concepts/done/versioning.md): only docs/concepts/ and TODO.md, merged by "
                     ".github/notes.py once the checks are green – no version." + FOOTER)
             url = m.run("gh", "pr", "create", "--base", "main", "--head", branch, "--title", args.message,
                         "--body", body).stdout.strip()

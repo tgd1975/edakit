@@ -1,22 +1,24 @@
 # Versions and branch protection: what a version of edakit is, how main is protected, how a concept still gets there
 
-Status 2026-11-01: decided. The owner took the four decisions the same day in a decision round in Claude Code's form
-(the table at the end): 0.2.0 first, with 1.0 once the documentation's entry layer is built; the notes lane; every merge
-a version of its own; the projects on the newest version, unpinned. The owner then added three points: a changelog from
-now on; the major number is the owner's to release, minor and patch are Claude's; a new rule is a patch, and the rule
-for the rest kept simple. What Claude decided itself the owner confirmed the same day. Each step starts on the owner's
-word, listed in `TODO.md`. V.1 and V.2 (TD-45) built on the owner's word the same day, on the branch `versioning-v1`;
-building them made three things simpler, written in below: the check `changes` is part of `version`, the paths decide
-which merge is no version (no fragment `none`), and the working rule for merging went into CLAUDE.md with V.2 rather
-than V.4, so that no merge comes past `merge.py` while the rulesets wait. On the owner's word the reader's documentation
-came with V.2 too: README (Install, Versions), handbook 2.3, 10.5 (`--version`), 14.4 and the glossary's "Version".
-Written against main at `d633a4b`. Asked for by the owner: edakit has reached the point where it should work with
-version numbers and branch protection from now on – a concept for both, and, since a concept could then no longer be
-committed straight to main, an elegant way for concepts to get there all the same. V.3 (TD-46) built the same day:
-`.github/notes.py`, which merges by itself instead of GitHub's auto-merge. V.4 (TD-47) built the same day: the rulesets
-and the settings as files with `.github/rulesets.py`, `merge.py` no longer numbering again a pull request without a
-version; the line in the four repository skills that writes a fragment per change, one per proposal, follows in a pull
-request of its own once the batch of proposals being triaged is through.
+Status 2026-11-01: decided and built; moved to `docs/concepts/done/` the same day – what is left is in `TODO.md`: TD-48
+(branches left lying around), TD-49 (1.0.0 after D.2), TD-50 (the key `edakit` in `edakit.toml`, later) and TD-79
+(`merge.py` and generated files). Decided. The owner took the four decisions the same day in a decision round in Claude
+Code's form (the table at the end): 0.2.0 first, with 1.0 once the documentation's entry layer is built; the notes lane;
+every merge a version of its own; the projects on the newest version, unpinned. The owner then added three points: a
+changelog from now on; the major number is the owner's to release, minor and patch are Claude's; a new rule is a patch,
+and the rule for the rest kept simple. What Claude decided itself the owner confirmed the same day. Each step starts on
+the owner's word, listed in `TODO.md`. V.1 and V.2 (TD-45) built on the owner's word the same day, on the branch
+`versioning-v1`; building them made three things simpler, written in below: the check `changes` is part of `version`,
+the paths decide which merge is no version (no fragment `none`), and the working rule for merging went into CLAUDE.md
+with V.2 rather than V.4, so that no merge comes past `merge.py` while the rulesets wait. On the owner's word the
+reader's documentation came with V.2 too: README (Install, Versions), handbook 2.3, 10.5 (`--version`), 14.4 and the
+glossary's "Version". Written against main at `d633a4b`. Asked for by the owner: edakit has reached the point where it
+should work with version numbers and branch protection from now on – a concept for both, and, since a concept could then
+no longer be committed straight to main, an elegant way for concepts to get there all the same. V.3 (TD-46) built the
+same day: `.github/notes.py`, which merges by itself instead of GitHub's auto-merge. V.4 (TD-47) built the same day: the
+rulesets and the settings as files with `.github/rulesets.py`, `merge.py` no longer numbering again a pull request
+without a version; the line in the four repository skills that writes a fragment per change, one per proposal, follows
+in a pull request of its own once the batch of proposals being triaged is through.
 
 ## The short answer
 
@@ -86,7 +88,7 @@ Three numbers, major.minor.patch, starting at 0.2.0:
 
 | Number | Set by | When | Examples |
 | --- | --- | --- | --- |
-| **Major** | the owner | when the owner releases one; Claude may propose it, never set it | 1.0.0 once step D.2 of [documentation.md](documentation.md), the entry layer (start page, quickstart, how it works), is built |
+| **Major** | the owner | when the owner releases one; Claude may propose it, never set it | 1.0.0 once step D.2 of [documentation.md](../new/documentation.md), the entry layer (start page, quickstart, how it works), is built |
 | **Minor** | Claude | a project must change one of its files or sign again when it updates | a key, file format, command or exit code removed or changed in meaning; a hash computed differently (sign-offs void); a retired code that waivers name; a new seal format |
 | **Patch** | Claude | everything else | a new rule (check, hint, block, parts fact), a severity raised; a new command, key, maker or skill; a fix; the handbook; a prompt's wording |
 | – | the paths | a merge that changes nothing a project reads, the notes lane among them: no version, no fragment | `tests/`, `.github/`, `evals/`, `docs/`, `examples/`, `upstream/`, `.claude/`, `TODO.md`, `CLAUDE.md`, `README.md` |
@@ -175,7 +177,7 @@ proposed (below). So with the owner's OK, a session merges through `.github/merg
 The workflow `release.yml` runs on every push to main. When the package's number has no tag yet, it sets the tag
 `v0.2.6` on that merge commit and opens the GitHub release with the changelog section as its text. A merge without a
 version (nothing a project reads) leaves the number alone, and the workflow does nothing. A branch that the proposals
-workflow pushes with its own token starts no checks ([proposals-pipeline.md](../done/proposals-pipeline.md) gives it that
+workflow pushes with its own token starts no checks ([proposals-pipeline.md](proposals-pipeline.md) gives it that
 token). `merge.py`'s push of the numbered commit comes from the owner's account and does start them, so a proposals pull
 request gets its checks at the merge.
 
@@ -229,14 +231,14 @@ Squash and rebase merges are off, because the merge message carries the descript
   through its checks again. This was found while building TD-45, and it replaces the strict rule the owner confirmed.
 - **Skipped counts as passed.** `paths` and `version` run only where they apply. GitHub counts a job
   skipped by its `if` as successful, so a required check never blocks a pull request it does not concern.
-- **`main-updates`** closes the gap that [proposals-pipeline.md](../done/proposals-pipeline.md) found (its layer 1): today
+- **`main-updates`** closes the gap that [proposals-pipeline.md](proposals-pipeline.md) found (its layer 1): today
   only the prompt keeps the Action from changing main. Whether GitHub accepts the admin role as a bypass on a personal
   repository is checked when the rules are applied. If it does not, this ruleset is left out and the working rule
   stays as it is. **Dropped on the owner's word on 2026-11-01**, an hour after it was applied. GitHub took the role,
   but it applies a bypass only when the merge asks for it (`gh pr merge --admin`), and Claude Code's auto mode rightly
   refuses that as a merge without review, so no session could merge at all. Claude had not checked how a bypass is
   taken before proposing it. Its goal, that no Action ever merges into main, is held by the proposals pipeline
-  itself ([proposals-pipeline.md](../done/proposals-pipeline.md)): Claude runs there without a token that writes, its
+  itself ([proposals-pipeline.md](proposals-pipeline.md)): Claude runs there without a token that writes, its
   fixed jobs never merge, and `paths` keeps the pipeline from being changed through itself. The rules that differ by
   branch family belong in the checks, which run from main: CI can hold a pull request to what it may change, but it
   cannot tell who merges it.
@@ -255,7 +257,7 @@ The check holds each family of branches to its paths:
 
 The version's own lines (`edakit/__init__.py`, `.claude-plugin/marketplace.json`, `CHANGELOG.md`, `changes/`) lie
 outside the proposals' list, so `merge.py` can number a proposals pull request too. The proposals' list comes from
-[proposals-pipeline.md](../done/proposals-pipeline.md), section "The pipeline's paths". It lives once, in
+[proposals-pipeline.md](proposals-pipeline.md), section "The pipeline's paths". It lives once, in
 `edakit/proposal.py` with a test. The lane's paths are `LANE` in `.github/versions.py`.
 
 A branch must not be able to loosen its own check. A workflow on `pull_request` runs the head's version of its file,

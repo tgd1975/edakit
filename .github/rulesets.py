@@ -1,4 +1,4 @@
-"""The protection of main as text (docs/concepts/new/versioning.md): the rulesets in .github/rulesets/*.json and the
+"""The protection of main as text (docs/concepts/done/versioning.md): the rulesets in .github/rulesets/*.json and the
 repository's merge settings in .github/rulesets/settings.json, held against what GitHub has.
 
     python3 .github/rulesets.py           what differs between the files and GitHub – exit 1 if anything does

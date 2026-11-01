@@ -1,6 +1,6 @@
 """The versions of edakit: the number, the fragments that make one, the changelog, and the checks of a pull request.
 
-Every merge that changes edakit is a version of its own (docs/concepts/new/versioning.md). The number is
+Every merge that changes edakit is a version of its own (docs/concepts/done/versioning.md). The number is
 `__version__` in edakit/__init__.py; the marketplace entry carries it and points at its tag; CHANGELOG.md has a
 section for it. A branch says in changes/<branch>.md whether a project must act when it updates (`minor`) or not
 (`patch`); .github/merge.py turns the fragments into the number and the section, and the major number is the owner's.

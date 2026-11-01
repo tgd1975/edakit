@@ -1,4 +1,4 @@
-"""The notes lane's command (.github/notes.py, docs/concepts/new/versioning.md): a session's edits of concepts and
+"""The notes lane's command (.github/notes.py, docs/concepts/done/versioning.md): a session's edits of concepts and
 TODO.md as one commit on the newest main – the diff, not the file, so what another session landed meanwhile stays –,
 nothing outside the lane, and the checkout given back afterwards. On real git repositories: an origin and two clones,
 as two sessions."""

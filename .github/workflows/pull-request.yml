@@ -1,6 +1,6 @@
 name: Pull request
 
-# The checks paths and version of a pull request into main (docs/concepts/new/versioning.md). On pull_request_target
+# The checks paths and version of a pull request into main (docs/concepts/done/versioning.md). On pull_request_target
 # they run main's workflow and main's .github/versions.py, so a branch cannot loosen its own check; they read the
 # pull request's changed files and, for version, its number, marketplace entry, changelog and fragments with git
 # show – never checking out or running its code – and write the result as a commit status on the pull request's

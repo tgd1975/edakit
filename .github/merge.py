@@ -1,4 +1,4 @@
-"""Merge a pull request into main as a version of its own (docs/concepts/new/versioning.md) – on the owner's OK.
+"""Merge a pull request into main as a version of its own (docs/concepts/done/versioning.md) – on the owner's OK.
 
     python3 .github/merge.py <pr> [--major] [--dry-run]
 
