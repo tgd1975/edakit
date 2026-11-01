@@ -6,6 +6,7 @@ the regulatory review's alone."""
 
 import pytest
 
+from helpers import open_points
 from test_radio import GRADES, found, purpose, run
 
 BOM = ["C17414", "C17604", "C2297", "C318884", "C41407547", "C45783", "C49678", "C8678", "C90107"]   # without J1's
@@ -35,7 +36,7 @@ def test_a_bom_part_without_a_rohs_status(project, use, where):
     assert keys(sum(found(run(project), "PARTS.fact").values(), [])) == []    # the example states it
     unstated(project)
     rep = run(project)
-    assert rep.errors == [] and rep.pending == []
+    assert rep.errors == [] and open_points(rep) == []
     assert keys(found(rep, "PARTS.fact")[where]) == BOM                      # J1 (bom: false) is not asked
     assert "C2297 KT-0805G (D2, D3, D4, D5, D6, D7, D8, D9) states no RoHS status – compliance.rohs in its parts " \
            "entry: true, false or the exemption" in " ".join(found(rep, "PARTS.fact")[where])

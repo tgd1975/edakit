@@ -221,9 +221,9 @@ def test_the_requirements_inventory_has_an_eval():
     assert "`requirements-inventory`" in (ROOT / "evals" / "README.md").read_text(encoding="utf-8")
 
 
-def test_a_new_project_may_have_a_requirements_file():
+def test_a_new_project_has_a_requirements_file():
     files = section(ROOT / "skills" / "new-project" / "SKILL.md", "3. Files")
-    assert "hardware/requirements.toml" in files and "optional" in files and "skill requirements" in files
+    assert "hardware/requirements.toml" in files and "docs.file" in files and "skill requirements" in files
 
 
 # The interview of the setup (concept project-setup): each topic and the keys its answer sets.
