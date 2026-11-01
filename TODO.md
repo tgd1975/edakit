@@ -29,9 +29,6 @@ to touch.
 
 ## For the owner
 
-- [ ] TD-44 - **The Claude GitHub app uninstalled:** <https://github.com/settings/installations> → Claude → Uninstall
-      – since 0.3.1 the proposals Action runs with its own token and no workflow fetches the app's token; the app
-      could still change workflows, Actions settings and webhooks. *(edakit-12)*
 - [ ] TD-58 - **OK for #121, easyeda-mcp-pro 1.6.0:** <https://github.com/tgd1975/edakit/pull/121> – TD-52 to TD-54,
       checked live; on the OK `merge.py 121` merges it as a minor version, then the branches of TD-37 to TD-39 follow.
       *(edakit-35)*
@@ -134,6 +131,9 @@ sources, data and code untouched; a text that is generated or used elsewhere sta
 Done or dropped, newest first, each with its date and the commit that closed it. What closed before 2026-11-01 is
 taken from the history of this file; an item rewritten on its way is listed once, in its last form.
 
+- [x] TD-44 - **The Claude GitHub app uninstalled:** dropped on the owner's word – the app is Claude Code on the web's
+      access to the repositories; the proposals Action no longer fetches its token (0.3.1), and main's ruleset (TD-47)
+      keeps it off main. [2026-11-01]
 - [x] TD-43 - **P.6, the live test of the proposals pipeline:** the setting for pull requests on; three sealed test
       proposals – #108 broken seal: the workflow's question, no Claude run; #109 covered: rejected as LIM.range and
       closed; #110 asks to change triage-rule: rejected at "Safe?", no commit –; a batch of six real ones (#112–#117)
