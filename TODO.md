@@ -5,7 +5,7 @@ Open work that needs the owner's computer, a maker or the owner's word. The stat
 name; this list is what is left to do of them, in the order it can be done. No item is deleted.
 
 **Layout.** Every item, in every section, open or closed, is a line with a checkbox and an ID unique in this file,
-counted up and never reused – whoever adds an item takes the next free ID and counts it up here. Next free ID: TD-36.
+counted up and never reused – whoever adds an item takes the next free ID and counts it up here. Next free ID: TD-42.
 
 - Open: `- [ ] TD-<n> - **Title:** what and why.` – a step's own name after the dash (`- [ ] TD-31 - **D.4** …`).
 - Done: ticked, the commit that did it, the date at the end, moved to [Closed todos](#closed-todos), newest first –
@@ -27,24 +27,42 @@ to touch.
 
 ## What edakit needs from EasyEDA Pro and easyeda-mcp-pro ([upstream/README.md](upstream/README.md))
 
-The requirements E-1 to E-16 on EasyEDA Pro and M-1 to M-8 on easyeda-mcp-pro, gathered on 2026-11-01 under the
+The requirements E-1 to E-16 on EasyEDA Pro and M-1 to M-9 on easyeda-mcp-pro, gathered on 2026-11-01 under the
 owner's rules there: no click because of the API, no self-extended MCP server, the latest state checked first.
 
-- [ ] TD-25 - **On the owner's computer – the newest versions live:** EasyEDA Pro 3.2.209 (3.2.206 is installed) and
-      easyeda-mcp-pro 1.6.0 (the pin is 1.4.0) with the patched extension of the same version; E-1 to E-4 and E-7
-      checked again, the self-test, one gate run of the example; M-6: `scope: "all_pages"` of
-      `easyeda_schematic_components` instead of focusing page after page, and the BOM's duplicates. Then the pin raised
-      in `mcp-server.sh`.
+- [ ] TD-25 - **On the owner's computer – the newest versions live:** EasyEDA Pro 3.2.209 is installed and E-1 to E-16
+      are checked on it (2026-11-01, upstream/README.md). Left: easyeda-mcp-pro 1.6.0 (the pin is 1.4.0) with the
+      patched extension of the same version – every session's server restarts with it, since 1.5.1 a server refuses
+      writes from an extension of another version; the self-test, one gate run of the example; M-6: `scope: "all_pages"`
+      of `easyeda_schematic_components` instead of focusing page after page, and the BOM's duplicates. Then the pin
+      raised in `mcp-server.sh`.
 - [ ] TD-26 - **The six issues with their pull requests at easyeda-mcp-pro, posted on 2026-11-01** – #792/#793 (stale
       sweep), #794/#795 (schematic PDF), #796/#797 (return depth), #798/#799 (ODB++), #800/#802 (createProject),
       #801/#803 (pick-and-place as CSV): follow them, answer review comments on the fork's branches, rebase when `main`
       moves; the comment "I agree to the Contributor Permission v1 in CONTRIBUTOR-LICENSING.md", when the maintainer
       asks for it, from the owner. M-6 not posted – #539 has met it as far as EasyEDA's API lets it
       (upstream/README.md).
-- [ ] TD-27 - **On the owner's word – post:** E-1 to E-16 at easyeda/easyeda-api-sdk after the live check above – to
-      #33, #34, #36, #38 and #39 as comments. Before each the check of "The latest state".
 - [ ] TD-28 - **When a release brings M-2 to M-4:** pin raised, the original extension, `bridge-extension-patch.sh` and
       `odb-tool-patch.mjs` removed, handbook 2.4, 2.5 and 9.1 follow.
+- [ ] TD-36 - **Follow the reports at EasyEDA:** #45 to #51 and our comments to #36 and #38 – answer questions; when a
+      release fixes one, check it live, take it up and say so in upstream/README.md. EasyEDA's first answer is often
+      "update to the latest version".
+- [ ] TD-37 - **E-2, the one click goes:** `pcb parts` writes the Channel ID (`otherProperty["Channel ID"]`) into the
+      schematic part as it does the UniqueId, the same value on the PCB part – live on 3.2.209 the DRC was clean without
+      the import view; then exit 3 of `route`/`silk` and handbook 7 and 9.4 follow (`edakit/pcb.py` `sync_parts`).
+- [ ] TD-38 - **E-3 and E-7, the PCB tab and the DRC:** `ensure_pcb_active` (`edakit/eda.py`) takes the probe's error on
+      3.2.209 as "inactive"; save, close and reopen before the DRC only as the fallback when it reports Connection
+      Errors – a live routing run confirms it, also on a PCB never reloaded.
+- [ ] TD-39 - **E-9, local projects through the API:** `local_project_uuid` (`edakit/eda.py`) asks
+      `DMT_Project.getAllProjectsUuid(<project folder>)` (folders from `DMT_Team.getAllTeamsInfo`) instead of reading
+      `config.json` and the `.eprj2` files.
+- [ ] TD-40 - **E-10, E-11 and E-13 taken up:** `edakit part build` modifies the symbol's pins instead of creating them
+      anew (`SCH_PrimitivePin.modify` is saved on 3.2.209); `clear_orphan_attributes` kept as a cheap check or dropped;
+      tooling holes stay on the board while the pours fill, and a hole in a pour becomes a `NO_POURS` region instead of
+      the notch – each checked live first.
+- [ ] TD-41 - **M-9 (was E-15):** `easyeda_schematic_batch_write` with `addIntoBom: false` reproduced on 1.6.0 –
+      "Invalid device" comes from `needDevice()` in the bridge; then an issue and a pull request from the fork, on the
+      owner's word.
 
 ## The documentation for its readers ([documentation.md](docs/concepts/new/documentation.md))
 
@@ -77,6 +95,10 @@ sources, data and code untouched; a text that is generated or used elsewhere sta
 Done or dropped, newest first, each with its date and the commit that closed it. What closed before 2026-11-01 is
 taken from the history of this file; an item rewritten on its way is listed once, in its last form.
 
+- [x] TD-27 - **On the owner's word – post:** E-1 to E-16 checked live on EasyEDA Pro 3.2.209 and against the JSDoc of
+  its types, then posted: #45 to #51 at easyeda/easyeda-api-sdk and comments to #36 and #38; E-3 watched, E-2's Channel
+  ID, E-7 to E-10 and E-13 ours, documented or met, E-14 by design, E-15 moved to M-9 (5d2ee55). *(edakit-e4)*
+  [2026-11-01]
 - [x] TD-2 - **Read the circuit-language sketch in peace:** read by the owner; the sketch itself was closed on
   2026-10-31 (bd227e3) and lives on in circuit-language-plan.md and circuit-dsl.md (6df3b09). *(edakit-29)* [2026-11-01]
 - [x] TD-1 - **Update the edakit plugin:** the owner updated it to 8c6652c and reloaded (aec84ee).
