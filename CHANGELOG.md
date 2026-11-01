@@ -7,6 +7,10 @@ written once, by `.github/merge.py`, from the fragments in [changes/](changes/RE
 [versioning.md](docs/concepts/new/versioning.md). Update with `claude plugin marketplace update edakit && claude plugin
 update edakit@edakit`, then `/reload-plugins` or a new session; `edakit --version` names the version that runs.
 
+## 0.4.9 – 2026-11-01
+
+- `route all|pours` fills one fresh pour per call instead of a net per call and stops when the bridge refuses: easyeda-mcp-pro 1.6.0 refuses every copper rebuild after one it could not verify – the second pour of a net in one call was such a case – until EasyEDA restarts; before, edakit went on with empty pours (M-10).
+
 ## 0.4.8 – 2026-11-01
 
 - `edakit release publish` ends the release notes with "Released with edakit X.Y.Z" and the link to that version; `[release] publish.credit = false` leaves the line out (handbook 8.3).
