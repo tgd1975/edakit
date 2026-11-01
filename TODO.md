@@ -4,7 +4,7 @@ Open work that needs the owner's computer, a maker or the owner's word. The stat
 and plans the sections name; this list is what is left to do of them, in the order it can be done. No item is deleted.
 
 **Layout.** Every item, in every section, open or closed, is a line with a checkbox and an ID unique in this file,
-counted up and never reused – whoever adds an item takes the next free ID and counts it up here. Next free ID: TD-90.
+counted up and never reused – whoever adds an item takes the next free ID and counts it up here. Next free ID: TD-91.
 
 - Open: `- [ ] TD-<n> - **Title:** what and why.` – a step's own name after the dash (`- [ ] TD-31 - **D.4** …`).
 - Done: ticked, the commit that did it, the date at the end, moved to [Closed todos](#closed-todos), newest first –
@@ -29,6 +29,10 @@ to touch.
 
 ## For the owner
 
+- [ ] TD-90 - **OK for #184:** https://github.com/tgd1975/edakit/pull/184 – issues by others: `wrap.yml` wraps
+      their texts, sealed and numbered, and the owner's comment starting with `review`, `accept` or `reject` is the
+      only answer that starts anything there (decisions 7 to 9 of `docs/concepts/done/proposals-pipeline.md`); with
+      the OK the session merges it with `python3 .github/merge.py 184`. *(edakit-60)*
 - [ ] TD-81 - **Review the documentation as built:** `docs/concepts/new/documentation-assumptions.md` and the chapters'
       reviews in `docs/concepts/new/documentation-review/` (#174) – every judgement call of that evening, among them
       the strict rule that kept the chapters from a third fewer words; then the concept moves to `done/`, and 1.0.0
