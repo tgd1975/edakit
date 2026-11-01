@@ -143,6 +143,8 @@ def zone_line(ring, a, b):
     da, db = sorted((ring.project(Point(a)), ring.project(Point(b))))
     if db - da <= ring.length / 2:
         return substring(ring, da, db)
+    if da <= 0:                                 # a stretch that ends at the ring's first point: one piece
+        return substring(ring, db, ring.length)
     return linemerge([substring(ring, db, ring.length), substring(ring, 0, da)])
 
 

@@ -30,7 +30,7 @@ text and fill on the silkscreen layers goes – all of it is silk apply's, the b
 old revision never stays on the board, also in a fresh clone; what the record of the last run (silk_strings_<board>.json,
 build output) did not name is said as it goes (stale_print).
 
-Artwork and texts ([[silk.art]]: svg, x, y, width_mm, rot, side; [[silk.texts]]: text, x, y, h_mm, rot, side,
+Artwork and texts ([[silk.art]]: svg, x, y, width_mm, rot, side, fit; [[silk.texts]]: text, x, y, h_mm, rot, side,
 font) come first: filled shapes and strokes of the SVG become silkscreen fills, cut free of pads and
 solder-mask openings (+0.15 mm) and of strokes thinner than JLCPCB can print (0.15 mm). Designators and the board label
 then keep clear of them. `edakit silk preview` draws the artwork onto the last Gerber export offline.
@@ -349,6 +349,18 @@ def svg_geometry(path):
     return unary_union(shapes)
 
 
+def svg_frame(path):
+    """The frame of an SVG – its viewBox – in the coordinates of svg_geometry (y up), or None without a viewBox."""
+    from svgelements import SVG, Matrix
+    svg = SVG.parse(str(path), reify=True)
+    vb = svg.viewbox
+    if vb is None:
+        return None
+    m = Matrix(svg.viewbox_transform)
+    xs, ys = zip(*(m.point_in_matrix_space((x, y)) for x in (vb.x, vb.x + vb.width) for y in (vb.y, vb.y + vb.height)))
+    return float(min(xs)), -float(max(ys)), float(max(xs)), -float(min(ys))
+
+
 def art_shapes(cfg, board, side):
     """All artwork of one side in EasyEDA coordinates (mm, seen from the top), as one geometry."""
     out = art_items(cfg, board, side)
@@ -358,14 +370,24 @@ def art_shapes(cfg, board, side):
 def art_items(cfg, board, side):
     """Each artwork item of one side in EasyEDA coordinates (mm, seen from the top). An item is scaled to width_mm,
     centred on its plan position (x, y), turned by rot (counter-clockwise as seen from its side) and mirrored on the
-    bottom – EasyEDA mirrors texts there, not graphics."""
+    bottom – EasyEDA mirrors texts there, not graphics. What is scaled and centred is the bounds of the drawn shapes
+    (fit = "content", the default) or the SVG's viewBox (fit = "viewbox"): art drawn in a frame keeps its place in it."""
     from shapely.affinity import rotate, scale, translate
+    from .config import ConfigError
     out = []
     for item in board.silk.get("art", []):
         if item.get("side", board.silk.get("designators", "top")) != side:
             continue
-        g = svg_geometry(cfg.resolve(item["svg"]))
-        x0, y0, x1, y1 = g.bounds
+        path = cfg.resolve(item["svg"])
+        g = svg_geometry(path)
+        if item.get("fit", "content") == "viewbox":
+            frame = svg_frame(path)
+            if frame is None:
+                raise ConfigError(f'board {board.name}: {item["svg"]}: fit = "viewbox" needs a viewBox on its <svg> '
+                                  'element – the frame the art is drawn in; without one, fit = "content"')
+            x0, y0, x1, y1 = frame
+        else:
+            x0, y0, x1, y1 = g.bounds
         f = float(item["width_mm"]) / (x1 - x0)
         g = scale(translate(g, -(x0 + x1) / 2, -(y0 + y1) / 2), f, f, origin=(0, 0))
         g = rotate(g, float(item.get("rot", 0)), origin=(0, 0))

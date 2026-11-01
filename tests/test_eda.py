@@ -443,6 +443,40 @@ def test_a_template_that_kept_its_name_is_left_alone(cfg, capsys):
     assert mcp.renames == [] and capsys.readouterr().out == ""
 
 
+class FakeTitleBlock:
+    """The bridge for label_sheet: the page active, a frame on it; EasyEDA Pro 3.2.209 refuses a title block item
+    without boolean showTitle and showValue (INVALID_TITLE_BLOCK_ITEM, #116)."""
+
+    def __init__(self):
+        self.items = None
+
+    def call(self, tool, timeout=130, **args):
+        if tool == "easyeda_schematic_sheet_info":
+            return {"sheet": {"uuid": "page"}}
+        path, a = args["path"], args["args"]
+        if path == "SCH_PrimitiveComponent.getAll":
+            return {"ok": True, "result": ["frame"]}
+        if path == "DMT_Schematic.modifySchematicPageTitleBlock":
+            for name, item in a[1].items():
+                if not (isinstance(item.get("showTitle"), bool) and isinstance(item.get("showValue"), bool)):
+                    return {"ok": False, "error": {"code": "INVALID_TITLE_BLOCK_ITEM", "item": name}}
+            self.items = a[1]
+            return {"ok": True, "result": True}
+        if path == "DMT_Schematic.modifySchematicPageName":
+            return {"ok": True, "result": True}
+        raise AssertionError(path)
+
+
+def test_the_title_block_items_carry_boolean_visibility(cfg):
+    mcp = FakeTitleBlock()
+    eda.label_sheet(mcp, cfg, "page", "main", 3, {"Page Size": "A3", "Width": 1654, "Height": 1170})
+    shown = {k: (v["showTitle"], v["showValue"]) for k, v in mcp.items.items()}
+    assert shown == {"Company": (True, True), "Version": (True, True), "Drawn": (True, True),
+                     "Reviewed": (True, True), "Page Size": (True, True), "Width": (False, False),
+                     "Height": (False, False)}
+    assert mcp.items["Version"]["value"] == "graph v3" and mcp.items["Width"]["value"] == "1654"
+
+
 class FakePcbList:
     """easyeda_pcb_components as easyeda-mcp-pro 1.6.0 answers it: only for the focused PCB and the exact UUID of its
     project (readProjectScoped) – "current" is refused. EasyEDA has switched to the schematic on its own."""

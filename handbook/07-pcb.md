@@ -700,6 +700,11 @@ DSN and in Freerouting either way:
 pour_inset_mm = 0.55               # in hardware/boards/<b>.toml, above the tables; tracks 0.4 mm (edge_clearance_um)
 ```
 
+Along a tab zone of `[order]` (`tab_zones`, 8.4) the pours keep `tab_copper_mm` + 0.05 mm from the edge instead – the
+distance the order check measures on the Gerber copper there, with room for its rounding –, the computed pours and the
+bare area of GEO.pour too; elsewhere `pour_inset_mm` holds as before. Tracks are not moved: one that runs along a tab
+zone is the layout's to move.
+
 **Pour-only nets.** On a board where ground is the pour between the tracks – all tracks on one side, say – a net with
 `pour_only = true` gets no tracks: the DSN leaves it out of the network, so its pads are pins without a net that
 Freerouting keeps clear of. `route check` computes the pour offline from the board file and the routes: the pour
@@ -744,6 +749,16 @@ the outline of another is an error naming the place – `GND_B BOTTOM: its pour 
 of GND` – and nothing is poured; `route check` reports it as a finding first, and `route all` tries another routing.
 A pour-only net on a shared layer is connected by what it claims, not by the whole outline, and the preview draws the
 outlines dashed. A plane takes the whole layer, so with `pour_regions` it needs a layer of its own.
+
+**Stitch on a shared layer.** A piece that holds no copper of any pour net – a channel between tracks of other nets
+– is claimed by no net, so it lies in no outline and stays bare, and the fill with islands of `stitch` never reaches
+it. With `stitch` naming the shared layer on an entry of a net there (`stitch = "TOP"` on V_LED's TOP entry, say),
+that net also takes the pieces nobody claims, in claim order, each larger than `pour_min_piece_mm2`: `route pours`
+computes a via of the net for each where it has room – inside the piece, inside the net's computed pour on the other
+side (the pieces holding its copper there), `routing.clearance_mil` from foreign copper on both layers, out of the
+hole keep-outs –, sets it before the first fill, writes it to `route/<b>_stitch.json` with the other stitching vias
+and adds the piece to the net's outline. A piece without room stays bare; a second run sets no via twice. `pcb pour`
+alone pours the same outlines without setting vias; KiCad (16) fills such a piece and drops it as an island.
 
 Without `pour_regions`, the computed pour of a pour-only net assumes the layer to itself: when another net pours on
 the same layer, `route check` says so. The gate's GEO.copper (connectivity) and GEO.pour (bare areas, loose copper) on
@@ -830,7 +845,11 @@ board_label_region = [[0, 0], [60, 0], [60, 34], [0, 34]]  # the lower 34 mm, in
 
 **Artwork and labels** come first: `[[silk.art]]` places an SVG (filled shapes and strokes, scaled to
 `width_mm`, centred at `x`, `y` in plan mm) and `[[silk.texts]]` free texts – "START" at a button, "GND 5V
-SIG" at a connector. edakit cuts the artwork free of pads and solder-mask openings (+0.15 mm), drops everything thinner
+SIG" at a connector. With `fit = "viewbox"` the SVG's viewBox – the frame it is drawn in – is what is scaled to
+`width_mm` and centred, not the bounds of what is drawn: art drawn in a frame the size of the board (`width_mm` the
+board's width, `x`, `y` its centre) prints where it was drawn and stays there when a shape near the frame's edge comes
+or goes. Without `fit` (`"content"`) a new star at the top moves and rescales all of it; an SVG without a viewBox
+cannot use `"viewbox"`. edakit cuts the artwork free of pads and solder-mask openings (+0.15 mm), drops everything thinner
 than 0.15 mm (JLCPCB does not print it) and mirrors graphics on the bottom side (EasyEDA does that only for texts).
 Designators and the board label keep clear of artwork and texts. `edakit silk preview` draws them onto the last Gerber
 export offline (`<artifacts>/silk_preview_<board>_<side>.png`), so a design can be tuned without EasyEDA. Draw motifs in
