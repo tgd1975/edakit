@@ -2,20 +2,20 @@
 
 Status 2026-10-31: decided – the eight decisions and what Claude decided itself accepted by the owner the same day, and
 a ninth and a tenth added by the owner the same evening (the circuit alone as a station; condensing as a rule, with its
-measure); an eleventh and a twelfth on 2026-11-01 – the case for edakit on the start page, and a gallery of the projects
-built with edakit –, both asked for by the owner and placed by Claude, to be confirmed, in a decision round in Claude
-Code's form (the table at the end); D.1 built the same evening (`docs/style.md`, `docs/glossary.md`,
-`tests/test_style.py`, `tests/test_references.py`); each step D.2 to D.7 starts on the owner's word, one per branch,
-listed in `TODO.md`. Written against main at `8fba5f2`. Asked for by the owner: the pages are comprehensive but
-confusing, so unreadable – a concept for how the documentation should look, be organised and be written, who its readers
-are, the language and its style, what is missing for it to be understood, everything needed so that others use edakit.
-With one condition the owner set while it was written: everything `docs/organisation.md` does not list as documentation
-– skills, agents, CLAUDE.md, the catalog's and the domains' texts, the manifests, the concepts – is data the automation
-reads; a change there may break something elsewhere or shift a meaning, so this concept leaves it alone and says where
-documentation itself is read by the automation; and a rule for every change: when unsure, ask – or check whether the
-text is generated or used elsewhere, which says to leave it as it is. The findings come from the site built from main
-(`docs/pages.py`, MkDocs), the Markdown measured – words, sentence lengths, headings, cross-references, the words that
-go unexplained – and the code and tests that read the documentation.
+measure); an eleventh and a twelfth on 2026-11-01 – the case for edakit on the start page, confirmed by the owner with
+the vision line added, and a gallery of the projects built with edakit, placed by Claude and to be confirmed, in a
+decision round in Claude Code's form (the table at the end); D.1 built the same evening (`docs/style.md`,
+`docs/glossary.md`, `tests/test_style.py`, `tests/test_references.py`); each step D.2 to D.7 starts on the owner's word,
+one per branch, listed in `TODO.md`. Written against main at `8fba5f2`. Asked for by the owner: the pages are
+comprehensive but confusing, so unreadable – a concept for how the documentation should look, be organised and be
+written, who its readers are, the language and its style, what is missing for it to be understood, everything needed so
+that others use edakit. With one condition the owner set while it was written: everything `docs/organisation.md` does
+not list as documentation – skills, agents, CLAUDE.md, the catalog's and the domains' texts, the manifests, the concepts
+– is data the automation reads; a change there may break something elsewhere or shift a meaning, so this concept leaves
+it alone and says where documentation itself is read by the automation; and a rule for every change: when unsure, ask –
+or check whether the text is generated or used elsewhere, which says to leave it as it is. The findings come from the
+site built from main (`docs/pages.py`, MkDocs), the Markdown measured – words, sentence lengths, headings,
+cross-references, the words that go unexplained – and the code and tests that read the documentation.
 
 ## The short answer
 
@@ -182,10 +182,13 @@ The sources stay on the site, at its end, as "Inside edakit", untouched.
   maker's constraints, the manufacturing files and the order form up to the cart; you order, pay and hold the boards.
   The walkthrough is the evidence, linked: 14 steps, six of them yours, seven decisions. Its limit in the same breath: a
   check for every known error class and reviews by agents, not a guarantee (chapter 1); the regulatory review support,
-  not legal advice. Three lines for whom – the maker (a circuit, or a board from it), the engineer, the developer – each
-  with its link; what it needs (Claude Code; EasyEDA Pro desktop or KiCad 10; uv, ngspice; tested on Linux, Windows and
-  macOS untested; a JLCPCB account for stock and ordering); what it is not (no editor of its own, two copper layers, DC
-  operating points and a few transient runs); install in three lines; "try it in two minutes" – `uvx --from
+  not legal advice. Then the expectation set right, in one sentence that calls it the vision – "at least that is the
+  vision, and we are close", the owner's words – and links the state: what is built offline only or has not run live
+  yet, with its date (today's "Status and limits", then on How it works), so that the reader sees how close. Three lines
+  for whom – the maker (a circuit, or a board from it), the engineer, the developer – each with its link; what it needs
+  (Claude Code; EasyEDA Pro desktop or KiCad 10; uv, ngspice; tested on Linux, Windows and macOS untested; a JLCPCB
+  account for stock and ordering); what it is not (no editor of its own, two copper layers, DC operating points and a
+  few transient runs); install in three lines; "try it in two minutes" – `uvx --from
   git+https://github.com/tgd1975/edakit edakit check` in `examples/coin-cell-led`, which takes 0.2 s and shows an
   accepted finding with its reason –; then the quickstart, the guides, the reference. The command block moves to the
   reference, the repository map to `docs/organisation.md`, "Status and limits" to "How it works". The test that wants
@@ -338,7 +341,8 @@ reads").
 after, the reasons at the end; a status admonition at the top where something is offline only or planned; headings of at
 most five words in the navigation. Regulatory content says once that it is support, not legal advice (CLAUDE.md). The
 case for edakit is made once, on the start page, as a statement a reader can check against the walkthrough – the count
-of steps and decisions –, never by an adjective.
+of steps and decisions –, never by an adjective; the sentence after it calls it the vision and links the state – the one
+wink the site allows itself, and no false expectation: what has not run live says so, dated.
 
 **Pictures.** One per guide page where a picture is faster than a paragraph – the pipeline, a drawn schematic, a
 placement plan, a gate protocol –, SVG in the brand's colours; where edakit draws it (`schematic draw`, `pcb plan`)
@@ -464,7 +468,7 @@ recommendation.
 | 8 | "What changed" from the merge commits on the site | not built until a reader asks: the commit messages are written for the owner | built with D.3 | accepted |
 | 9 | The circuit alone as a station (the owner's addition: "we can also make only a circuit SVG – maybe that is the maker anyway") | two groups, "The circuit" and "The board", instead of "Use it"; chapter 14 to the circuit; the quickstart is the station and says so; the pipeline drawing shows the cut | one group with the station on its index page only; a sentence in the maker's row only | accepted |
 | 10 | Condensing as a rule (the owner's addition: "it would be advisable to condense the texts – a style question") | the same statements in a third fewer words per chapter, no chapter over 500 lines, no paragraph over 120 words, no statement lost – the review's list proves it, and where a chapter does not give the third the statements win | the rules without a number; a target per chapter set at its branch | accepted |
-| 11 | The case for edakit (the owner's addition: "a big argument for edakit is that one needs relatively little knowledge to design a correct circuit and order the PCB, up to assembly – a selling point too"; where, the owner left to Claude) | on the start page, in its first lines, as a statement a reader can check – you bring the idea, what the board must do and the decisions on money, purpose and looks; edakit and Claude bring the rest – with the walkthrough's count (14 steps, six yours, seven decisions) and its limit in the same breath: not a guarantee, the regulatory review support, not legal advice; the evidence table on How it works; the quickstart ends with what the reader did not need | a slogan on the start page; the case nowhere, the facts alone | placed by Claude, to be confirmed |
+| 11 | The case for edakit (the owner's addition: "a big argument for edakit is that one needs relatively little knowledge to design a correct circuit and order the PCB, up to assembly – a selling point too"; where, the owner left to Claude) | on the start page, in its first lines, as a statement a reader can check – you bring the idea, what the board must do and the decisions on money, purpose and looks; edakit and Claude bring the rest – with the walkthrough's count (14 steps, six yours, seven decisions) and its limit in the same breath: not a guarantee, the regulatory review support, not legal advice; the evidence table on How it works; the quickstart ends with what the reader did not need | a slogan on the start page; the case nowhere, the facts alone | accepted, with the owner's addition: after the case one sentence that calls it the vision – "at least that is the vision, and we are close" – and links the state, so that no false expectation is raised |
 | 12 | A gallery of projects (the owner's addition: "a kind of gallery with project presentations – pytree, even though the repository is private: some information and pictures can go out; the bell; later the tiny jukebox, the pedal and the steering wheel, once converted") | `docs/projects.md` in the entry layer: a picture, three lines and the link per project; the example and the bell now, pytree with what the owner picks, the others as they convert; pytree's entry the one description of the reference project | the projects in chapter 13 only; links on the start page only | placed by Claude, to be confirmed |
 
 Decided by Claude and confirmed by the owner on 2026-10-31: MkDocs Material stays; chapter files and numbers stay;
