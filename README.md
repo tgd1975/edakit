@@ -281,7 +281,7 @@ Where it stands:
   switching spikes and fast edges are left to the acceptance test.
 - The MCP server cannot order, by design.
 - Used components and their licences: [easyeda-mcp-pro](https://github.com/oaslananka/easyeda-mcp-pro) (PolyForm
-  Noncommercial 1.0.0 in the pinned 1.6.0 – check before commercial use; upstream went back to MIT on 2026-11-01,
+  Noncommercial 1.0.0 in the pinned 1.6.0 – check before commercial use; upstream went back to MIT after 1.6.0,
   from its next release on), EasyEDA Pro (proprietary), Freerouting (GPL-3.0), ngspice (BSD). None of them is
   bundled.
 
