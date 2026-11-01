@@ -223,7 +223,7 @@ def test_the_requirements_inventory_has_an_eval():
 
 def test_a_new_project_has_a_requirements_file():
     files = section(ROOT / "skills" / "new-project" / "SKILL.md", "3. Files")
-    assert "hardware/requirements.toml" in files and "DOCS.file" in files and "skill requirements" in files
+    assert "hardware/requirements.toml" in files and "docs.file" in files and "skill requirements" in files
 
 
 # The interview of the setup (concept project-setup): each topic and the keys its answer sets.
