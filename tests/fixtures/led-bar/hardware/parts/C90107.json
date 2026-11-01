@@ -135,5 +135,9 @@
     ],
     "open": []
   },
-  "notes": "Behaviour model 'cc_sink'; roles oe_n (pin 13) and vdd (pin 16) for the simulation."
+  "notes": "Behaviour model 'cc_sink'; roles oe_n (pin 13) and vdd (pin 16) for the simulation.",
+  "compliance": {
+    "rohs": true,
+    "source": "LCSC product data C90107 (isEnvironment), read 2026-11-01"
+  }
 }

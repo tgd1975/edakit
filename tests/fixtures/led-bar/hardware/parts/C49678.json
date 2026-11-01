@@ -43,5 +43,9 @@
       "CC0805KRX7R9BB104: 0805, K = ±10 %, X7R, 9 = 50 V, 104 = 100 nF"
     ],
     "open": []
+  },
+  "compliance": {
+    "rohs": true,
+    "source": "LCSC product data C49678 (isEnvironment), read 2026-11-01"
   }
 }

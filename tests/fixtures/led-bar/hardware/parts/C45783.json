@@ -46,5 +46,9 @@
       "DC bias loss at 5 V – affects buffering, not safety"
     ]
   },
-  "notes": "X5R 22 µF/0805: capacitance at 5 V DC bias is much lower (about 30-50 %)."
+  "notes": "X5R 22 µF/0805: capacitance at 5 V DC bias is much lower (about 30-50 %).",
+  "compliance": {
+    "rohs": true,
+    "source": "LCSC product data C45783 (isEnvironment), read 2026-11-01"
+  }
 }

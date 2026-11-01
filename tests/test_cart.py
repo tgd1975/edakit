@@ -129,7 +129,7 @@ def test_prepare_writes_the_job_of_the_current_release(project, monkeypatch, cap
     assert {f["label"]: f["value"] for f in j["fields"]}["Mark on PCB"] == "Remove Mark"   # no order number since May 2026
     assert [(p["part"], p["designators"]) for p in j["bom"]] == [("C45783", ["C2"]), ("C8678", ["D1"])]
     assert j["dnp"] == [] and j["purpose"]["use"] == "private" and j["estimate"]["currency"] == "USD"
-    assert "C8678" in j["compliance"]
+    assert "C8678" in j["compliance"] and j["maker"]["compliance"]["rohs"]   # the maker's own statement too
     assert "Save to Cart" in j["maker"]["cart"] and "Pay" in j["maker"]["never"]
     assert "job for board main at JLCPCB" in out and 'press only "Save to Cart"' in out
 

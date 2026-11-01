@@ -13,6 +13,8 @@ Result in DIR/<board>/:
     bom_<board>_mpn.csv              with a maker of [cart] makers that matches by MPN (Eurocircuits): the same rows
                                      with manufacturer and MPN of the parts entries, in the maker's columns
     cpl_<board>.csv                  pick-and-place file in JLCPCB format (BOM parts only)
+    cpl_<board>_<maker>.csv          with a maker of [cart] makers whose zero orientation is not the footprint's
+                                     (Eurocircuits): the same rows, each part turned by [cpl.turns] of its profile
     jlc_parts.json                   JLCPCB assembly catalogue entry per LCSC number of the BOM (PARTS.stock)
     pcb.json, drc.json, bom_easyeda.json, cpl_easyeda.xlsx   raw data from EasyEDA (for --offline)
     order.md                         with [order] (board file or edakit.toml) or [cart]: the order form of this
@@ -80,7 +82,8 @@ assembly preview at JLCPCB.
        another one, does not run without it): every BOM part listed in JLCPCB's assembly catalogue with stock for
        `quantity` boards, under the MPN of its parts entry; another class than the entry's jlc_class warns (check
        PARTS.stock reads the same offline, from the stock snapshot)
-  SYNC.cpl  pick and place: every BOM part exactly once, side and rotation = PCB; sides/SMD as [release] assembly says
+  SYNC.cpl  pick and place: every BOM part exactly once, side and rotation = PCB; sides/SMD as [release] assembly says;
+            a maker with a zero orientation of its own ([cpl] zero) gets cpl_<b>_<maker>.csv, turned by [cpl.turns]
   FILES.set  Gerber set complete; outline and holes = plan (± 0.2 mm); tooling holes in the NPTH file, mask open, no copper
   SYNC.odb  with a maker of [cart] makers that takes ODB++ (AISLER; fails for the planned maker, warns for another one):
        odb_<board>.zip, exported through the patched easyeda_export_odb, against this run's files – every layer
@@ -92,7 +95,8 @@ assembly preview at JLCPCB.
   FILES.order  with [order] or [cart], per maker of [cart] makers (fails for the planned maker, warns for another one):
        every field a value of the maker's form, the remark, thickness_mm and the colours of mask and silkscreen as its
        form has them, mark = its placeholder on the silkscreen – JLCPCB's placeholder at a maker without one –, its
-       tooling holes; for every maker layers and size where set, the quantities, no copper near the edge in a tab zone
+       tooling holes; for every maker layers and size where set, the quantities, no copper near the edge in a tab zone,
+       a finish with lead graded by purpose
        (order_sheet.py); without both, an Economic board's own tooling holes warn – no order.md tells the maker
 Last stdout line: JSON list of rows {stage, id, item, check, actual, expected, result}. Exit 0 / 2 / 1.
 
@@ -1651,6 +1655,7 @@ def check_cpl(cfg, board, design, d, ours, rows):
         w.writerow(["Designator", "Mid X", "Mid Y", "Layer", "Rotation"])
         for r in sorted((r for r in cpl if r["Designator"] in ours), key=lambda r: natural_key(r["Designator"])):
             w.writerow([r["Designator"], r["Mid X"], r["Mid Y"], "Top" if r["Layer"] == "T" else "Bottom", r["Rotation"]])
+    write_maker_cpls(cfg, board, [r for r in cpl if r["Designator"] in ours], data, d, rows)
     assembly = cfg.release.get("assembly", {})
     mix = Counter((r["Layer"], "SMD" if r.get("SMD") == "Yes" else "THT") for r in cpl if r["Designator"] in ours)
     allowed = {("T" if s == "top" else "B", k) for s in assembly.get("sides", ["top", "bottom"])
@@ -1665,6 +1670,42 @@ def check_cpl(cfg, board, design, d, ours, rows):
     if not lost:
         check_outline(board, g, rows)
         check_tooling(board, g, rows)
+
+
+def write_maker_cpls(cfg, board, cpl, data, d, rows):
+    """cpl_<b>_<maker>.csv for every maker of [cart] makers whose zero orientation of a part is not the footprint's
+    ([cpl] zero of its profile – Eurocircuits: IEC 61188-7): each part's rotation turned by its footprint's entry in
+    [cpl.turns], and a SYNC.cpl row for that maker. A footprint the profile does not list, and a turned part on the
+    bottom – the maker's rule for the bottom is unread –, keep the footprint's rotation and warn: M-2 checks them in
+    the maker's preview. Not in the fab hash, as bom_<b>_mpn.csv: cpl_<b>.csv is, the turns are the profile's."""
+    from .. import makers
+    for m in makers.all_of(cfg):
+        if not m.zero or "cpl" not in m.files:
+            continue
+        turned, unknown, bottom, out = [], {}, [], []
+        for r in sorted(cpl, key=lambda r: natural_key(r["Designator"])):
+            ref, rot = r["Designator"], float(r["Rotation"])
+            fp = (data.get(ref) or {}).get("footprintName") or "?"
+            t = m.turn(fp)
+            if t is None:
+                unknown.setdefault(fp, []).append(ref)
+            elif t and r["Layer"] != "T":
+                bottom.append(f"{ref} ({fp})")
+            elif t:
+                turned.append(f"{ref} {rot:g}° → {(rot + t) % 360:g}°")
+                rot = (rot + t) % 360
+            out.append([ref, r["Mid X"], r["Mid Y"], "Top" if r["Layer"] == "T" else "Bottom", f"{rot:g}"])
+        with open(d / f"cpl_{board.name}_{m.key}.csv", "w", newline="", encoding="utf-8") as f:
+            w = csv.writer(f)
+            w.writerow(["Designator", "Mid X", "Mid Y", "Layer", "Rotation"])
+            w.writerows(out)
+        bad = [f"{fp} ({', '.join(refs)}): not in the profile's [cpl.turns]" for fp, refs in sorted(unknown.items())]
+        bad += [f"{b}: on the bottom, not turned – the bottom rule of {m.name} is unread" for b in bottom]
+        rows.add("F", "SYNC.cpl", board.name, f"cpl_{board.name}_{m.key}.csv: every part turned to {m.name}'s zero "
+                 f"orientation ({m.zero}) by its footprint's [cpl.turns]", not bad,
+                 "; ".join(bad + ([f"turned {', '.join(turned)}"] if turned else []))
+                 or f"{len(out)} parts, none to turn", "every footprint listed", "pass" if not bad else "warn")
+        rows[-1]["maker"] = m.key
 
 
 # --- SYNC.odb: the ODB++ export against the run's files ----------------------------------------------------------------------

@@ -53,5 +53,9 @@
       "50 mA, 12 V, 100 mOhm"
     ],
     "open": []
+  },
+  "compliance": {
+    "rohs": true,
+    "source": "LCSC product data C318884 (isEnvironment), read 2026-11-01"
   }
 }

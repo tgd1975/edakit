@@ -626,7 +626,8 @@
  "spice": {},
  "compliance": {
   "radio": "none",
-  "source": "Raspberry Pi Pico 2 Datasheet, release 5 (build 03/07/2026, d4e0f1799616), RP-008299-DS-3: RP2350 with flash, crystal, buck-boost SMPS and micro-USB (1, 4.4) – no radio on the board (the wireless variant is the Pico W / Pico 2 W) – read 2026-10-31"
+  "source": "Raspberry Pi Pico 2 Datasheet, release 5 (build 03/07/2026, d4e0f1799616), RP-008299-DS-3: RP2350 with flash, crystal, buck-boost SMPS and micro-USB (1, 4.4) – no radio on the board (the wireless variant is the Pico W / Pico 2 W) – read 2026-10-31; RoHS: LCSC product data C41407547 (isEnvironment), read 2026-11-01",
+  "rohs": true
  },
  "sources": [
   "pin names: from the Pico 2 datasheet (figure 2 pinout, 3.1) as in the example project's entry (tests/fixtures/led-bar) – the EasyEDA symbol of C41407547 names pins 2–6 TP2–TP6 instead of GP1, GND, GP2, GP3, GP4 and pin 41 SWDIO, 43 SWCLK, against the datasheet (figure 2: SWCLK next to pin 20, SWDIO next to pin 21) and the footprint (pad 41 next to pad 20)",

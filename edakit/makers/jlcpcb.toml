@@ -32,6 +32,16 @@ never = ["Order", "Buy", "Checkout", "Pay", "Place Order", "Submit Order", "Secu
 excludes = [{ barcode = "none", serial_number = true }]
 
 # Fields the page shows that edakit does not set, each with its reason. The skill leaves them as JLCPCB sets them.
+[compliance]                           # what the maker itself states, read 2026-11-01 – the regulatory review at the order
+                                       # cites it from the job (handbook 15.5)
+rohs = "PCB: lead-free HASL, ENIG and OSP are RoHS compliant, HASL(with lead) is not – it 'does not comply with RoHS environmental requirements'; a RoHS certificate of conformity to download (Soar Testing, one sample each – lead-free HASL and ENIG 2025-12-01, OSP 2026-07-23 –, Directive 2011/65/EU with (EU) 2015/863: 'based on a single evaluation of one sample … does not imply an assessment of the whole production'), none per order. PCBA: the assembly terms (5.4) solder with lead on a leaded finish and, on a lead-free board, 'follow up the compoments properties to determine whether to choose leaded or lead-free' – lead-free solder is not promised"
+reach = "PCB: a lab report to download (Beide, B-R02279E3167, 2026-03-20) on one sample 'Printed Circuit Board', its finish not named: 'the concentration of each of the 253 SVHC is <0.1%(w/w)' (the certifications page says 247). PCBA: nothing found"
+sources = [
+  "https://jlcpcb.com/help/article/jlcpcb-surface-finish (updated 2026-10-21, read 2026-11-01)",
+  "https://jlcpcb.com/certifications (read 2026-11-01): https://rs.jlcpcb.com/static/file/certifications/rohs-certificate-of-conformity.pdf, https://rs.jlcpcb.com/static/file/reach-svhc-compliance.pdf",
+  "https://jlcpcb.com/help/article/terms-and-conditions-of-jlcpcb-assembly-service, clause 5.4 (updated 2026-09-09, read 2026-11-01)",
+]
+
 [ignore]
 "Product Type" = "Industrial/Consumer electronics, JLCPCB's default"
 "Deburring/Edge rounding" = "JLCPCB's default (Yes, $0.10)"
@@ -65,6 +75,7 @@ match = "lcsc"                    # JLCPCB matches the BOM by LCSC number
 [cpl]
 columns = ["Designator", "Mid X", "Mid Y", "Layer", "Rotation"]
 unit = "mm"
+zero = "footprint"                # the preview draws EasyEDA's footprints, JLCPCB's own library: no turns
 rotation = "as SYNC.cpl writes it: EasyEDA's rotation of the part, compared with the PCB; the preview showed an 0805 at 0° along X"
 
 [rules]                           # what FILES.order holds the board to

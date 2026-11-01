@@ -283,7 +283,8 @@ domain setting. The loop is part of the workflow:
    and on the owner's answers, and runs the skill `triage-rule` in a session of its own (for a feature proposal
    `triage-feature`, 11.6). Each run takes along every proposal still without a result and every question the owner
    answered last, one after another, so proposals filed at the same time and answers given while a run waits are not
-   lost when GitHub cancels their waiting runs. Correctly made:
+   lost when GitHub cancels their waiting runs; an event that triages nothing – a comment on a proposal already
+   built – waits apart and cancels none. Correctly made:
    `edakit proposal verify` – every section filled in, the checksum matches; a body edited by hand fails on purpose.
    Does it make sense: new, the right kind, the sources hold, general rather than one project's choice, which engine
    and which data – a fact before a new relation, a relation only where a program decides it (else a hint) –, clear
@@ -308,9 +309,9 @@ Who may propose: only the repository owner – the Action does not start for any
 says who wrote an issue. The checksum adds that the text is the one that was sealed. The Action needs the Claude
 GitHub app on the repository and one of the secrets `CLAUDE_CODE_OAUTH_TOKEN` or `ANTHROPIC_API_KEY`
 (`/install-github-app` in the terminal Claude Code, or by hand: install github.com/apps/claude on the repository,
-`claude setup-token`, `gh secret set CLAUDE_CODE_OAUTH_TOKEN`). A token that no longer holds shows in the step *Why
-Claude stopped* as `401 Invalid bearer token`; with a new one, `gh workflow run proposals.yml` triages what is
-waiting. From the Action only public projects can be cloned for the run against real projects; the pull request
+`claude setup-token`, `gh secret set CLAUDE_CODE_OAUTH_TOKEN`). The step *Why Claude stopped* shows Claude's last
+message after every run – a run can end green without its comment. A token that no longer holds shows there as
+`401 Invalid bearer token`; with a new one, `gh workflow run proposals.yml` triages what is waiting. From the Action only public projects can be cloned for the run against real projects; the pull request
 names what could not be run, and that is run by hand before merging.
 
 REQ.missing (flyback diode) and REQ.missing:cc (USB-C termination) are the reference project's buzzer stage and USB-C

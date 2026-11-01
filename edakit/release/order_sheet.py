@@ -32,7 +32,9 @@ and check FILES.order (order settings = board, per maker). Both when the board h
        Independent of the maker: layers and size_mm, where set, are those of the Gerber files; panel_by_customer fails
        – the run's Gerber is one board; pcba_quantity is at most quantity, and another number than [project] quantity
        warns (PARTS.stock counts that many sets); copper within tab_copper_mm of a declared tab zone fails – measured
-       on the Gerber copper of both sides against the Gerber outline. The free outline stretches are information.
+       on the Gerber copper of both sides against the Gerber outline; a finish with lead (HASL not lead-free) fails
+       for purpose.use sale or no purpose (RoHS), warns for gift (REACH Art. 33) and is information for private,
+       grade lead – as ORDER.finish grades it at the cart. The free outline stretches are information.
        Without [order] and [cart] (no order.md): [tooling] holes on an assembled board of a class the planned maker asks
        tooling holes for (tooling_min – JLCPCB: Economic) warn, grade tooling – no file tells the maker they are the
        customer's, and the form stays at "Added by JLCPCB".
@@ -514,6 +516,16 @@ def check_derived(cfg, board, o, g, rows):
                  f"{cfg.quantity} sets", f"{cfg.quantity}", "warn")
 
 
+def check_lead(design, board, o, rows):
+    """Grade lead: the finish is in the fab hash, so a leaded one is in the board as released – graded by purpose as
+    ORDER.finish grades it at the cart (cart.lead), the same for every maker."""
+    from ..cart import lead
+    level, text = lead([o["finish"]], design.graph.get("purpose"))
+    rows.add("F", "FILES.order", board.name, "finish without lead, graded by purpose ([order] finish, purpose.use)",
+             level == "pass", text, "a lead-free finish: LeadFree HASL or ENIG",
+             level if level in ("warn", "info") else None)
+
+
 def check_tabs(board, o, g, rows):
     """Copper against the declared tab zones; returns (polygon, free stretches, [(zone text, distance)]) or None."""
     from shapely.geometry import Point
@@ -677,6 +689,7 @@ def check(cfg, board, design, d, rows, bom):
             check_tooling(c, pcba)
     tabs = check_tabs(board, o, d / "gerber", rows)
     check_derived(cfg, board, o, d / "gerber", rows)
+    check_lead(design, board, o, rows)
     fields = form(cfg, design, board, d, planned, o, bom, placeholders(board, data, planned)[0])
     (d / "order.md").write_text(sheet(cfg, design, board, planned, o, fields, bom, tabs), encoding="utf-8")
     pcba = makers.pcba(cfg)

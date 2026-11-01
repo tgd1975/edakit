@@ -7,8 +7,9 @@ name: Proposals
 # (gh workflow run proposals.yml). Every run triages the proposal that started it and every other one still waiting –
 # without a result, or with a question the owner answered last –, one after another, because accepted proposals share
 # their branch: GitHub keeps one run waiting and cancels the one before it, so proposals filed together and answers
-# given while a run waits would lose their runs (#94). Needs the Claude GitHub app and one of the secrets
-# CLAUDE_CODE_OAUTH_TOKEN or ANTHROPIC_API_KEY (claude: /install-github-app). Handbook 14.4 and 11.6.
+# given while a run waits would lose their runs (#94), and an event that triages nothing waits apart (#100). Needs the
+# Claude GitHub app and one of the secrets CLAUDE_CODE_OAUTH_TOKEN or ANTHROPIC_API_KEY (claude: /install-github-app).
+# Handbook 14.4 and 11.6.
 
 on:
   issues:
@@ -18,7 +19,18 @@ on:
   workflow_dispatch:
 
 concurrency:
-  group: proposals
+  # only a run the job queue lets through waits in the group – the same condition as its if; any other event gets a
+  # group of its own, else a comment on a proposal already built cancels the run of one just filed (#100)
+  group: >-
+    ${{ (github.event.sender.login == github.repository_owner &&
+    (github.event_name == 'workflow_dispatch' ||
+    (!github.event.issue.pull_request &&
+    github.event.issue.user.login == github.repository_owner &&
+    contains(github.event.issue.body, 'edakit-proposal v') &&
+    (github.event.action == 'opened' || github.event.action == 'reopened' ||
+    (github.event.action == 'edited' && github.event.changes.body && !contains(github.event.issue.labels.*.name, 'accepted')) ||
+    (github.event_name == 'issue_comment' && contains(github.event.issue.labels.*.name, 'needs-info')))))
+    ) && 'proposals' || format('proposals-not-{0}', github.run_id) }}
   cancel-in-progress: false
 
 jobs:
@@ -118,8 +130,9 @@ jobs:
             --model claude-opus-5-5
             --allowedTools "Bash,Read,Write,Edit,Glob,Grep,WebFetch,WebSearch"
       - name: Why Claude stopped
-        # the action hides Claude's output; on a failure its last message (an API error, a limit) is what helps
-        if: failure() && steps.claude.outputs.execution_file != ''
+        # the action hides Claude's output; its last message (an API error, a limit) is what helps – after every run,
+        # since a run can end green without its comment (#94)
+        if: always() && steps.claude.outputs.execution_file != ''
         env:
           F: ${{ steps.claude.outputs.execution_file }}
         run: jq -r '(if type == "array" then .[] else . end) | select(.type? == "result") | .result // empty' "$F" | head -40
