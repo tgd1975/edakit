@@ -35,7 +35,7 @@ Before each stage – each project check, and with `--easyeda` each board of sta
 | *project checks* | e.g. K – the board fits its stand | `[scripts.<name>]` of kind `check`, phase `export`, and `[[release.stages]]` – see below |
 | S – Schematic | EasyEDA schematic = graph | SYNC.schematic per board |
 | L – Board | PCB = graph and plan, every part in the plan, copper from the Gerber files, the circuit's hand-over kept, pads apart, silkscreen as printed, hand-soldered joints clear, the visible side's print as the board file puts it | SYNC.pcb, SYNC.footprint, SYNC.plan, GEO |
-| F – Manufacturing | BOM, stock, pick and place, Gerber set, order settings per maker; with a maker that takes ODB++ the ODB++ against the released files | SYNC.bom, PARTS.stock, SYNC.cpl, SYNC.odb, FILES |
+| F – Manufacturing | BOM, stock, pick and place, Gerber set, order settings per maker; the ODB++ of an assembled board against the released files (`[release] maker_files`) | SYNC.bom, PARTS.stock, SYNC.cpl, SYNC.odb, FILES |
 | *project checks after F* | e.g. a check of this run's Gerber files | `[scripts.<name>]` with `at = "after F"` – see below |
 
 A bought board on a cable (`bought = true`) or a hand-wired one (`wired = true`, 4.5) is in stages P, G and E like any
@@ -66,7 +66,7 @@ and `SYNC.agents` in G; the rest in L. Their codes, generated from the catalog:
 | [`SYNC.plan`](../docs/catalog/sync.html#SYNC.plan) | board = placement plan | error; replaces L-7, L-12, L-20 |
 | [`SYNC.bom`](../docs/catalog/sync.html#SYNC.bom) | BOM = graph | error; replaces F-1 |
 | [`SYNC.cpl`](../docs/catalog/sync.html#SYNC.cpl) | pick and place = PCB | error; replaces F-3 |
-| [`SYNC.odb`](../docs/catalog/sync.html#SYNC.odb) | ODB++ = the released files | error, other_maker: warning; replaces F-7 |
+| [`SYNC.odb`](../docs/catalog/sync.html#SYNC.odb) | ODB++ = the released files | error, other_maker: warning, unlisted: note; replaces F-7 |
 | [`SYNC.source`](../docs/catalog/sync.html#SYNC.source) | own part = its source | error, margin: warning, stale: pending, unchecked: note; replaces P-3 |
 | [`SYNC.scripts`](../docs/catalog/sync.html#SYNC.scripts) | project scripts current | error, margin: warning, unchecked: note |
 | [`SYNC.agents`](../docs/catalog/sync.html#SYNC.agents) | project agents complete | error |
@@ -719,6 +719,13 @@ KiCad tool chain from `kicad-cli pcb export odb` (16.6), held to the released fi
 sit inside the EU: there is no import, and for `sale` you stay the manufacturer of the product (15.1). PARTS.stock and
 `edakit stock` ask JLCPCB's catalogue only where JLCPCB is among the makers; another maker's stock is what its matching
 shows, checked by ORDER.parts.
+
+With `[release] maker_files = "all"` (the default) every board with an assembly side gets `odb_<board>.zip` and
+`bom_<board>_mpn.csv`, whatever `[cart] makers` says: a board released for JLCPCB can be quoted at AISLER, Eurocircuits
+or PCBWay from the release, without EasyEDA and a new gate run. While no maker of `[cart] makers` takes ODB++, SYNC.odb
+reads it as AISLER's profile does and reports a fault as a note – a failed export blocks no release. Neither file is in
+the fab hash: a sign-off with scope `fab` stays valid. `cart prepare` still asks for the maker in `[cart] makers` and a
+new gate run, since its checks run only for those. `"cart"` writes both files only for such a maker.
 
 Each profile also holds what the maker itself states about RoHS and REACH (`[compliance]`, read 2026-11-01, with the
 pages): JLCPCB's and PCBWay's boards are RoHS compliant only with a lead-free finish, JLCPCB's assembly terms do not

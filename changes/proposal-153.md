@@ -1,0 +1,3 @@
+minor
+- Every board with an assembly side gets `odb_<board>.zip` and `bom_<board>_mpn.csv` in stage F, whatever the makers of `[cart] makers` – a release can be quoted at AISLER, Eurocircuits or PCBWay as it is; SYNC.odb holds that ODB++ to the run as a note, neither file enters the fab hash, both are in the manifest for `edakit release verify` (`[release] maker_files`, #153).
+- **When updating:** nothing has to change, and no sign-off lapses; the next gate run makes one more EasyEDA export per assembled board and shows a SYNC.odb note on a bridge without the ODB++ patch (`edakit doctor`, handbook 2.5). To keep the behaviour of before, set `[release] maker_files = "cart"`.

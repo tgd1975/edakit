@@ -326,7 +326,8 @@ def findings(rows):
 
 CHECKS = ["SYNC.pcb", "GEO.copper", "GEO.drc", "SYNC.footprint", "GEO.width", "SYNC.plan", "GEO.mark", "GEO.hole",
           "GEO.loop", "GEO.spacing", "GEO.pour", "GEO.ring", "GEO.silk", "SYNC.bom", "PARTS.stock", "SYNC.cpl", "FILES.set",
-          "FILES.order"]       # FILES.order with the board file's [order]; [looks] adds GEO.silk rows
+          "SYNC.odb", "FILES.order"]   # FILES.order with the board file's [order]; [looks] adds GEO.silk rows; SYNC.odb
+#                                        information on every assembled board ([release] maker_files = "all", #153)
 
 
 def test_the_clean_export_passes_every_check(project):
@@ -1280,7 +1281,8 @@ def test_the_acknowledgement_alone_leaves_the_other_kinds_passing(project):
 
 
 def test_every_check_has_a_fault():
-    assert {cid for _, _, e in FAULTS for cid, _, _ in e} == set(CHECKS)
+    """SYNC.odb's faults are in test_odb.py: here no maker of [cart] makers takes ODB++, and its row is information."""
+    assert {cid for _, _, e in FAULTS for cid, _, _ in e} == set(CHECKS) - {"SYNC.odb"}
 
 
 def test_the_order_form_of_the_clean_export(project):

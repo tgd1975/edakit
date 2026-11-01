@@ -130,6 +130,9 @@ def run(project, change=None, cart='[cart]\nmaker = "aisler"', fault=None, odb_f
     return fab.run(cfg, cfg.board(), out, offline=True)
 
 
+NO_TAKER = "ODB++ of this run (no maker of [cart] makers takes it)"
+
+
 def f7(rows):
     return [(r["result"], r["check"], r["actual"]) for r in rows if r["id"] == "SYNC.odb"]
 
@@ -223,7 +226,7 @@ def test_a_second_maker_warns_and_an_export_that_failed_is_named(project):
     rows = run(project, odb_file=False)
     assert f7(rows) == [("fail", "ODB++ of this run for AISLER", "odb_main.zip: not exported")]
     rows = run(project, cart='[cart]\nmaker = "jlcpcb"', odb_file=False)
-    assert f7(rows) == []                                   # no maker that takes ODB++: no SYNC.odb
+    assert f7(rows) == [("info", NO_TAKER, "odb_main.zip: not exported")]   # no maker that takes ODB++: information (#153)
 
 
 def test_a_part_left_in_against_the_makers_dnp_fails(project, tmp_path):
@@ -369,3 +372,77 @@ def test_the_export_takes_the_answer_of_the_upstream_tool(project, tmp_path):
     fab.export_odb(cfg, MCP({"project_id": "current", "exported": True}), cfg.board(), d)
     assert not (d / "odb_main.zip").exists()
     assert "no file in its answer" in (d / fab.ODB_ERROR).read_text()
+
+
+def test_every_assembled_board_gets_its_odb_and_mpn_bom_whatever_the_makers(project):
+    """#153: [release] maker_files = "all" (the default) – stage F writes the ODB++ and bom_<b>_mpn.csv of a board with
+    an assembly side even when no maker of [cart] makers takes them, so that the release can be quoted at AISLER or
+    Eurocircuits as it is. SYNC.odb holds the ODB++ to the run as information: a fault does not block the release."""
+    jlc = '[cart]\nmaker = "jlcpcb"'
+    rows = run(project, cart=jlc)
+    got = f7(rows)
+    assert [r for r, _, _ in got] == ["pass", "pass", "pass", "pass", "info", "pass"], got
+    assert fr.findings(rows) == []
+    with open(project.root / "build" / "fab" / "main" / "bom_main_mpn.csv", encoding="utf-8") as f:
+        head = f.readline().strip()
+    assert head == ",".join(fab.MPN_COLUMNS)
+    bad = [x for x in f7(run(project, lambda j: j["holes"].pop(0), cart=jlc)) if x[0] != "pass"]
+    assert [r for r, _, _ in bad] == ["info", "info"] and bad[0][2].startswith("no maker of [cart] makers takes it: ")
+    assert f7(run(project, cart=jlc, odb_file=False)) == [("info", NO_TAKER, "odb_main.zip: not exported")]
+
+
+def test_maker_files_cart_keeps_the_files_to_the_makers_of_cart(project):
+    """[release] maker_files = "cart": the ODB++ and the MPN BOM only for a maker of [cart] makers, as before #153."""
+    f = project.root / "edakit.toml"
+    f.write_text(f.read_text().replace("smd_only = true }", 'smd_only = true }\nmaker_files = "cart"'))
+    rows = run(project, cart='[cart]\nmaker = "jlcpcb"')
+    assert f7(rows) == []
+    assert not (project.root / "build" / "fab" / "main" / "bom_main_mpn.csv").exists()
+
+
+def test_the_files_of_every_maker_leave_the_fab_hash_alone(project):
+    """Neither the ODB++ nor bom_<b>_mpn.csv enters the fab hash: a sign-off with scope 'fab' stays valid."""
+    run(project, cart='[cart]\nmaker = "jlcpcb"')
+    d = project.root / "build" / "fab" / "main"
+    assert (d / "odb_main.zip").exists() and (d / "bom_main_mpn.csv").exists()
+    before = fab.fab_hash({"main": fab.fab_layers(d, "main")})
+    (d / "odb_main.zip").unlink()
+    (d / "bom_main_mpn.csv").unlink()
+    assert fab.fab_hash({"main": fab.fab_layers(d, "main")}) == before
+
+
+@pytest.mark.parametrize("extra, called", [
+    ("", True),                                                             # maker_files = "all": every assembled board
+    ('\nmaker_files = "cart"', False),                                      # only for a maker of [cart] makers
+])
+def test_the_export_asks_easyeda_for_the_odb_of_an_assembled_board(project, tmp_path, extra, called):
+    f = project.root / "edakit.toml"
+    f.write_text(f.read_text() + extra + '\n[cart]\nmaker = "jlcpcb"\n')
+    cfg = project.config()
+    d = tmp_path / "main"
+    d.mkdir()
+    calls = []
+
+    class MCP:
+        def call(self, tool, **kw):
+            calls.append(tool)
+            return {"exported": False, "error": "no tool"}
+    fab.export_odb(cfg, MCP(), cfg.board(), d)
+    assert calls == (["easyeda_export_odb"] if called else [])
+    assert (d / fab.ODB_ERROR).exists() == called
+
+
+def test_a_board_without_an_assembly_side_gets_no_odb(project, tmp_path):
+    """Only boards with an assembly side: a bare board is ordered from its Gerber files."""
+    f = project.root / "edakit.toml"
+    f.write_text(f.read_text().replace('assembly = { sides = ["top"], smd_only = true }', "assembly = { sides = [] }")
+                 + '\n[cart]\nmaker = "jlcpcb"\n')
+    cfg = project.config()
+
+    class MCP:
+        def call(self, tool, **kw):
+            raise AssertionError(tool)
+    d = tmp_path / "main"
+    d.mkdir()
+    fab.export_odb(cfg, MCP(), cfg.board(), d)
+    assert not any(d.iterdir())

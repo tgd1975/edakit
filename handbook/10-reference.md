@@ -123,6 +123,11 @@ the outputs of a part with behaviour `logic` (3.1, 5.1).
   `classes`, JLCPCB's `"economic"` and `"standard"`; by default from `sides` by the profile's `class_of_sides` (at
   JLCPCB one side Economic, two Standard), else the maker's first class.
 - `[[stages]]` – `{id, name, cmd, advisory, timeout, about}`: project checks of phase export before S (8.1).
+- `maker_files` (`"all"`) – `"all"`: stage F writes `odb_<board>.zip` and `bom_<board>_mpn.csv` for every board with an
+  assembly side (`assembly` `sides` not empty, parts to place), whatever the makers of `[cart] makers` – the release
+  can be quoted or ordered at AISLER, Eurocircuits or PCBWay as it is; SYNC.odb holds the ODB++ to the run as a note
+  while no maker of `[cart] makers` takes it, and neither file is in the fab hash. `"cart"`: only for a maker of
+  `[cart] makers` that takes them. One more EasyEDA export per assembled board in every gate run (8.4).
 - `archive` – `"none"`: gate runs are build output, nothing of them is committed, and what is ordered is published
   with `edakit release publish`; `"git"`: a released run is committed, and `edakit release current` names one git
   does not track yet (8.3).
@@ -1211,7 +1216,8 @@ Stages L and F for one board; diff: where the manufacturing files of two runs di
 - **Writes:** `DIR/<board>/`, with `[order]` or `[cart]` also `order.md`, with `[order]` `order.json` (the settings in
   the fab hash), with `[routing] drc_rules` also `drc_rules.json`; with a maker of `[cart] makers` whose profile takes
   the MPN BOM `bom_<board>_mpn.csv`, with one whose `[cpl] zero` is its own `cpl_<board>_<maker>.csv` (SYNC.cpl), with
-  one that takes ODB++ `odb_<board>.zip` (SYNC.odb)
+  one that takes ODB++ `odb_<board>.zip` (SYNC.odb); with `[release] maker_files = "all"` (default) the MPN BOM and
+  the ODB++ of every board with an assembly side
 
 `edakit fab diff RUN_A RUN_B [--board B]` – EasyEDA: no
 
