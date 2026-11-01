@@ -5,7 +5,7 @@ Open work that needs the owner's computer, a maker or the owner's word. The stat
 name; this list is what is left to do of them, in the order it can be done. No item is deleted.
 
 **Layout.** Every item, in every section, open or closed, is a line with a checkbox and an ID unique in this file,
-counted up and never reused – whoever adds an item takes the next free ID and counts it up here. Next free ID: TD-42.
+counted up and never reused – whoever adds an item takes the next free ID and counts it up here. Next free ID: TD-45.
 
 - Open: `- [ ] TD-<n> - **Title:** what and why.` – a step's own name after the dash (`- [ ] TD-31 - **D.4** …`).
 - Done: ticked, the commit that did it, the date at the end, moved to [Closed todos](#closed-todos), newest first –
@@ -61,6 +61,19 @@ owner's rules there: no click because of the API, no self-extended MCP server, t
       anew (`SCH_PrimitivePin.modify` is saved on 3.2.209); `clear_orphan_attributes` kept as a cheap check or dropped;
       tooling holes stay on the board while the pours fill, and a hole in a pour becomes a `NO_POURS` region instead of
       the notch – each checked live first.
+
+## The proposals pipeline ([proposals-pipeline.md](docs/concepts/new/proposals-pipeline.md))
+
+Decided on 2026-11-01: the owner's six checks held in four layers, the workflow's own token, the nine paths of the
+pipeline, what counts as dangerous, the queue, issues by others handed over with a sealed comment. Held by edakit-12.
+
+- [ ] TD-42 - **P.1 to P.5** The queue, the paths and the check of the commits, the workflows (Claude reads, a fixed
+      job publishes), the triage and propose skills, the documentation – one branch, onto main with the owner's OK;
+      starts on the owner's word.
+- [ ] TD-43 - **P.6** The setting "Allow GitHub Actions to create and approve pull requests" on, on the owner's word;
+      then two sealed test proposals by the owner – a harmless one, and one that asks to change triage-rule, which must
+      end rejected without a push.
+- [ ] TD-44 - **P.7** The Claude App uninstalled (github.com/settings/installations), once P.6 ran.
 
 ## The documentation for its readers ([documentation.md](docs/concepts/new/documentation.md))
 
