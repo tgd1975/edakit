@@ -4,7 +4,7 @@ Open work that needs the owner's computer, a maker or the owner's word. The stat
 and plans the sections name; this list is what is left to do of them, in the order it can be done. No item is deleted.
 
 **Layout.** Every item, in every section, open or closed, is a line with a checkbox and an ID unique in this file,
-counted up and never reused – whoever adds an item takes the next free ID and counts it up here. Next free ID: TD-90.
+counted up and never reused – whoever adds an item takes the next free ID and counts it up here. Next free ID: TD-91.
 
 - Open: `- [ ] TD-<n> - **Title:** what and why.` – a step's own name after the dash (`- [ ] TD-31 - **D.4** …`).
 - Done: ticked, the commit that did it, the date at the end, moved to [Closed todos](#closed-todos), newest first –
@@ -98,6 +98,9 @@ Noted in the walkthrough's last section until 2026-11-01; each is edakit's to bu
 Done or dropped, newest first, each with its date and the commit that closed it. What closed before 2026-11-01 is
 taken from the history of this file; an item rewritten on its way is listed once, in its last form.
 
+- [x] TD-90 - **OK for #184:** given; merged as edakit 0.4.16 (#184, feac91e) – issues by others: `wrap.yml` wraps
+  their texts, sealed and numbered, the owner answers with `review`, `accept` or `reject`; `wrap.yml` run by hand on
+  #153 posted nothing, as it should on the owner's own issue. *(edakit-60)* [2026-11-01]
 - [x] TD-80 - **E-17 and M-10 upstream:** posted on the owner's word – E-17 as easyeda-api-sdk #52, M-10 as
   easyeda-mcp-pro #818 with the fix #819 from the fork's `fix/rebuild-copper-batch-reconcile`, only a net's pours in
   one call – a refill left out on the owner's word (#172). *(edakit-ce)* [2026-11-01]

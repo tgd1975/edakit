@@ -1,7 +1,7 @@
 # Pull request #819 – as posted (M-10)
 
 Posted on 2026-11-01 (https://github.com/oaslananka/easyeda-mcp-pro/pull/819) for #818 on the owner's word, from the fork's
-`fix/rebuild-copper-batch-reconcile` (`0094ca5`, rebased onto `upstream/main` `cde4a39` before posting).
+`fix/rebuild-copper-batch-reconcile` (`0094ca5`, rebased onto `upstream/main` `cde4a39` before posting). The same evening `b56afb9` raised the `dispatcher.js` byte budget the check extension-integrity had failed on (241,702 > 241,000), and the Risk line says so.
 
 ### Title
 
@@ -20,7 +20,7 @@ Fixes #818
 
 ## Risk
 
-Low – `easyeda-bridge-extension/src/pcb-mutation-operations.ts` only, the reconciliation path. Revert to roll back.
+Low – `easyeda-bridge-extension/src/pcb-mutation-operations.ts` only, the reconciliation path, and the `dispatcher.js` byte budget raised from 241,000 to 242,000 (now 241,702; the `.eext` stays at 202,319 of 204,000). Revert to roll back.
 
 ## Validation
 

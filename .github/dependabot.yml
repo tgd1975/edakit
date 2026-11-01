@@ -1,0 +1,24 @@
+# Dependabot: one pull request per source and week with all its updates. It goes onto main like every pull request,
+# on the owner's OK through .github/merge.py; an update of uv.lock or pyproject.toml is a version of its own, and
+# merge.py writes its fragment (patch), since Dependabot brings none.
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      actions:
+        patterns: ["*"]
+
+  - package-ecosystem: uv
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      python:
+        patterns: ["*"]
+    ignore:
+      # a new major of numpy, scipy, shapely … reaches every project at its next update: only on purpose, by hand
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]

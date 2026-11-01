@@ -80,6 +80,18 @@ ol.sources, ul.sources { margin: 0; padding-left: 1.2rem; font-size: 0.85rem; }
 .filter input { font: inherit; padding: 0.35rem 0.6rem; border: 1px solid var(--line); border-radius: 4px;
   background: var(--surface); color: var(--ink); min-width: 16rem; }
 .filter input:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.ecards { display: grid; grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr)); gap: .75rem; margin: .5rem 0 1.5rem; }
+.ecard { display: flex; flex-direction: column; gap: .35rem; padding: .8rem .9rem; border: 1px solid var(--line);
+  border-radius: 8px; background: var(--surface); color: var(--ink); text-decoration: none; }
+.ecard:hover, .ecard:focus-visible { border-color: var(--accent); }
+.ehead { display: flex; align-items: baseline; gap: .4rem; font-weight: 600; }
+.ehead code { font-size: 1.05rem; color: var(--accent); }
+.ecount { margin-left: auto; font-size: 1.3rem; font-weight: 700; }
+.edecides { font-size: .92rem; }
+.esev { font-size: .8rem; color: var(--muted); }
+details.group { border-top: 1px solid var(--line); padding: .4rem 0; }
+details.group > summary { cursor: pointer; padding: .3rem 0; font-weight: 600; }
+details.group table { margin-top: .4rem; }
 .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(22rem, 1fr)); gap: 1rem; }
 .card, .table-card, article.circuit { background: var(--surface); border: 1px solid var(--line); border-radius: 6px;
   padding: 0.9rem 1rem; }
@@ -112,6 +124,17 @@ const q = document.getElementById('q');
 if (q) q.addEventListener('input', () => {
   const s = q.value.trim().toLowerCase();
   document.querySelectorAll('[data-text]').forEach(a => { a.hidden = s && !a.dataset.text.includes(s); });
-  document.querySelectorAll('.group').forEach(g => { g.hidden = s && !g.querySelector('[data-text]:not([hidden])'); });
+  document.querySelectorAll('.group').forEach(g => {
+    g.hidden = s && !g.querySelector('[data-text]:not([hidden])');
+    if (g.tagName === 'DETAILS') g.open = !!s && !g.hidden;
+  });
 });
+function openTarget() {
+  const id = decodeURIComponent(location.hash.slice(1));
+  const el = id && document.getElementById(id);
+  const d = el && el.closest('details');
+  if (d) { d.open = true; el.scrollIntoView(); }
+}
+window.addEventListener('hashchange', openTarget);
+openTarget();
 </script></body></html>

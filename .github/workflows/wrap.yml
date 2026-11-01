@@ -1,0 +1,72 @@
+name: Wrap
+
+# Texts by others on an issue someone else opened – its title and body, every comment by anyone but the repository
+# owner – wrapped by a fixed step, without Claude (docs/concepts/done/proposals-pipeline.md, decisions 7 to 9;
+# handbook 14.4): plain text in a code block, numbered within the issue, sealed with its SHA-256 and posted as a
+# comment by the workflow; an edited text is wrapped again under a new number, and the first of an issue lists the
+# owner's commands. Claude reads only wrapped texts, and only those a command of the owner came after (proposals.yml).
+# The owner's reject closes the issue here, at once. The one workflow anyone can start: it reads the issue and
+# comments – no secret, no Claude, main's code; what the workflow's token posts starts no workflow.
+
+on:
+  issues:
+    types: [opened, edited]
+  issue_comment:
+    types: [created, edited]
+  workflow_dispatch:
+    inputs:
+      issue:
+        description: the issue whose texts by others are wrapped, if a run was missed
+        type: number
+        required: true
+
+concurrency:
+  # one issue at a time, so that the numbers follow on; a run that waited wraps what the one it replaced would have
+  group: wrap-${{ github.event.issue.number || inputs.issue }}
+  cancel-in-progress: false
+
+jobs:
+  wrap:
+    # an issue someone else opened (not a pull request): what they or anyone else but the owner wrote, and the owner's
+    # comment that starts with reject
+    if: >-
+      ${{ github.event_name == 'workflow_dispatch' ||
+      (!github.event.issue.pull_request && github.event.issue.user.login != github.repository_owner &&
+      (github.event.sender.login != github.repository_owner ||
+      (github.event_name == 'issue_comment' && github.event.action == 'created' &&
+      startsWith(github.event.comment.body, 'reject')))) }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      issues: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+      OWNER: ${{ github.repository_owner }}
+      N: ${{ github.event.issue.number || inputs.issue }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: edakit
+          persist-credentials: false
+      - name: Wrap
+        # every text by someone else not wrapped as it stands now, numbered on, oldest first – a run that missed one
+        # is caught up by the next
+        run: |
+          gh issue view "$N" --json number,title,author,body,createdAt,state,labels,comments > "$RUNNER_TEMP/issue.json"
+          python3 -m edakit.proposal wrap "$RUNNER_TEMP/issue.json" "$RUNNER_TEMP/wrap"
+          i=1
+          while [ -f "$RUNNER_TEMP/wrap/$i.md" ]; do
+            gh issue comment "$N" --body-file "$RUNNER_TEMP/wrap/$i.md"; i=$((i + 1))
+          done
+      - name: Reject
+        # the owner's newest command is reject: closed as not planned and labelled, without Claude and without a comment
+        # – the owner's is the reason
+        run: |
+          if [ "$(python3 -m edakit.proposal start "$RUNNER_TEMP/issue.json")" = reject ] &&
+             [ "$(jq -r .state "$RUNNER_TEMP/issue.json")" = OPEN ]; then
+            gh issue edit "$N" --add-label rejected
+            gh issue edit "$N" --remove-label needs-info || true
+            gh issue close "$N" --reason "not planned"
+          fi

@@ -63,18 +63,28 @@ workaround goes into that list in the same commit.
 
 The Action proposals runs Claude on the owner's own credentials (`CLAUDE_CODE_OAUTH_TOKEN` or `ANTHROPIC_API_KEY`):
 every run is paid by the owner, so nobody else may start one or flood it with proposals. The job `queue` of
-`.github/workflows/proposals.yml` lets only the owner's own sealed issues, the owner's sealed comments and the owner's
-answers through, before any Claude step runs, and its queue lists only the owner's issues (`--author`) and those the
-owner adopted; the triage skills stop once more at an issue by anyone else that the owner did not adopt. Keep both.
-Never loosen the job's `if` or the queue's `--author`, never leave the check to the prompt or a skill alone – a check
-inside Claude's run has spent the tokens already –, and do not suggest another trigger or a condition others can meet
-without being asked.
+`.github/workflows/proposals.yml` lets only the owner's own sealed issues, the owner's answers on them, and on an issue
+by someone else the owner's sealed comments and commands `review` and `accept` through, before any Claude step runs,
+and its queue lists only the owner's issues (`--author`) and those the owner adopted; the triage skills stop once more
+at an issue by anyone else that the owner did not adopt. Keep both. Never loosen the job's `if` or the queue's
+`--author`, never leave the check to the prompt or a skill alone – a check inside Claude's run has spent the tokens
+already –, and do not suggest another trigger or a condition others can meet without being asked.
 
-The owner's decision of 2026-11-01 (`docs/concepts/done/proposals-pipeline.md`):
+The one workflow others start is `.github/workflows/wrap.yml`, on the owner's word: it wraps their texts with a fixed
+Python step and closes an issue on the owner's `reject` – no Claude, no secret, only `contents: read` and `issues:
+write`. Keep it so; a test holds it.
+
+The owner's decisions of 2026-11-01 (`docs/concepts/done/proposals-pipeline.md`):
 
 - **One further start:** a comment by the owner carrying the seal, on an issue by someone else – the workflow labels
   it `adopted`, and Claude reads only the owner's comments and the triage's results there. A condition only the
   owner meets.
+- **Texts by others are wrapped, the owner answers with a command** (decisions 7 to 9): on an issue by someone else
+  every text the owner did not write is posted again by `wrap.yml` – plain text in a code block, numbered within the
+  issue, sealed; an edited one again under a new number. The owner's comment that starts with `review` (a judgement,
+  no build), `accept` (the build) or `reject` (closed at once, without Claude) is the only answer that starts
+  anything there; Claude reads only the wrapped texts that came before the command. Wrapping and commands hold on
+  issues by others only.
 - **Claude only reads.** In the pipeline its token cannot write; it commits locally and writes its result as files.
 - **A fixed job checks the commit** against the pipeline's paths before anything is pushed – the list lives once, in
   `edakit/proposal.py`.
@@ -83,8 +93,8 @@ The owner's decision of 2026-11-01 (`docs/concepts/done/proposals-pipeline.md`):
   word.
 
 Proposals come from projects only when the owner asks (plugin skills `skills/propose-rule` and
-`skills/propose-feature`); the triage (`.claude/skills/triage-rule`, `triage-feature`) builds accepted ones into one
-pull request each, and the owner merges. Never file an issue or a proposal on your own, and do not suggest dropping
+`skills/propose-feature`); the triage (`.claude/skills/triage-rule`, `triage-feature`, for requests by others
+`triage-request`) builds accepted ones into one pull request each, and the owner merges. Never file an issue or a proposal on your own, and do not suggest dropping
 the pull request as the last gate.
 
 ## Decisions
