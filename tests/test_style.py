@@ -200,18 +200,17 @@ RED = {
     "sentences": set(),
     "sections": {f"handbook/{c}.md" for c in ("03-hardware-graph", "04-parts-database", "05-simulation", "07-pcb",
                                               "08-release-gate", "10-reference", "11-working-with-claude",
-                                              "14-design", "17-walkthrough")},
+                                              "17-walkthrough")},
     "chapters": {f"handbook/{c}.md" for c in ("04-parts-database", "05-simulation", "07-pcb",
                                               "08-release-gate", "10-reference", "17-walkthrough")},
     "paragraphs": {"examples/coin-cell-led/docs/decisions.md",
                    "examples/blinker-555/docs/decisions.md"} | {f"handbook/{c}.md" for c in (
         "01-approach", "03-hardware-graph", "04-parts-database", "05-simulation", "07-pcb",
-        "08-release-gate", "10-reference", "14-design", "17-walkthrough")},
+        "08-release-gate", "10-reference", "17-walkthrough")},
     "references": set(),
     "words": {f"handbook/{c}.md" for c in (
         "01-approach", "03-hardware-graph", "04-parts-database", "07-pcb", "08-release-gate",
-        "09-easyeda-api", "10-reference", "12-troubleshooting", "13-lessons-learned",
-        "14-design")},
+        "09-easyeda-api", "10-reference", "12-troubleshooting", "13-lessons-learned")},
     "dates": {"examples/coin-cell-led/README.md", "examples/blinker-555/README.md"} | {f"handbook/{c}.md" for c in (
         "01-approach", "03-hardware-graph", "04-parts-database", "07-pcb", "08-release-gate", "09-easyeda-api",
         "10-reference", "17-walkthrough")},
