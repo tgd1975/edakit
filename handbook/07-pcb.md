@@ -798,8 +798,11 @@ GEO.silk), a free text not.
 It also prints the **board label** – title and revision, `"{title} rev {revision}"` by default – at the free spot
 nearest to the bottom-left corner of the printed side (`board_label_corner`), clear of pads, parts, labels, vias and the
 keep-outs of mounting and tooling holes. The revision comes from `revision` in the board file; without it there is no
-label. edakit remembers the texts it created (`<artifacts>/silk_strings_<board>.json`) and replaces them on the next
-run, so a board never carries two revisions.
+label. Before it prints, `silk apply` removes every free text and fill on the silkscreen layers: all of it is its own,
+the board file says what is printed, and the footprints' print is no free text. So a board never carries two
+revisions, also after a fresh clone. What the record of its last run (`<artifacts>/silk_strings_<board>.json`, build
+output) did not name – a run from another clone, a text drawn in EasyEDA by hand – it lists as it removes it: a text
+belongs in `[[silk.texts]]` of the board file.
 
 The label goes on the `designators` side unless `board_label_side = "bottom"` (or `"top"`) names the other one. There it
 keeps clear of that side's mask openings and print (+0.15 mm), the boxes of its parts, its artwork and texts, vias and
