@@ -39,9 +39,6 @@ to touch.
 - [ ] TD-57 - **The real cost of the first order:** once an order the skill cart put into a maker's cart is paid,
       `/edakit:cart actual` on its order page or saved invoice – `edakit cart actual` (handbook 8.4, step 5) has run
       on recorded data only; the real cost, the project's fee table and the order record come from it. *(edakit-80)*
-- [ ] TD-92 - **OK for #194:** `python3 .github/merge.py 194` – what the 555 blinker left open (TD-85, TD-87 to
-      TD-89), TD-85 as decided on 2026-11-02: only IDs after "requirements met:" count; a minor version, checks green
-      but version. *(edakit-6a)*
 
 ## What edakit needs from EasyEDA Pro and easyeda-mcp-pro ([upstream/README.md](upstream/README.md))
 
@@ -82,23 +79,20 @@ Built on 2026-11-01 (#174, edakit 0.4.14); what is left after the owner's review
       (codes.toml, docstrings, skills), statements that look stale against the code – each listed under "Findings" in
       `docs/concepts/new/documentation-review/` –, fixed through a branch each, sources on the owner's word.
 
-## What the 555 blinker left open (walkthrough 2; its gaps in [handbook 13.10](handbook/13-lessons-learned.md))
-
-Noted in the walkthrough's last section until 2026-11-01; each is edakit's to build or decide.
-
-- [ ] TD-85 - **A sign-off note as evidence:** a note counts every mention of a requirement's ID as passing evidence,
-      also "R-4 not met" (M-1, note 9) – documented in handbook 8.7 and tested; changing it is the owner's decision.
-- [ ] TD-87 - **`pcb plan` and `hand_solder_keep_mm`:** the plan does not hold pads to it; `route check` does.
-- [ ] TD-88 - **Pours around a tooling hole on KiCad:** they keep EasyEDA's square notch where KiCad could fill around
-      the hole (M-5, note 7).
-- [ ] TD-89 - **The LED model's ideality:** fixed at 2; a datasheet's IV curve gives D1 20–25 mV more at 0.5 mA than
-      the model (M-1).
-
 ## Closed todos
 
 Done or dropped, newest first, each with its date and the commit that closed it. What closed before 2026-11-01 is
 taken from the history of this file; an item rewritten on its way is listed once, in its last form.
 
+- [x] TD-92 - **OK for #194:** given; merged as edakit 0.6.0 (#194, 78ae7d7). *(edakit-6a)* [2026-11-02]
+- [x] TD-89 - **The LED model's ideality:** `values.vf_vs_if`, points of the datasheet's IV curve, sets it; 2 without,
+  `edakit part lint` holds the points to their form (#194, 78ae7d7). [2026-11-02]
+- [x] TD-88 - **Pours around a tooling hole on KiCad:** the pour follows the outline, a rule area keeps each hole's keep
+  circle free; GEO.pour and route's computed pours measure that area on both tool chains (#194, 78ae7d7). [2026-11-02]
+- [x] TD-87 - **`pcb plan` and `hand_solder_keep_mm`:** held since 3187f9f; the test came with #194 (78ae7d7).
+  [2026-11-02]
+- [x] TD-85 - **A sign-off note as evidence:** the owner's decision – only an ID after "requirements met:" counts; built
+  with the agents, skills and handbook 8.7, edakit 0.6.0 (#194, 78ae7d7). [2026-11-02]
 - [x] TD-91 - **OK for #186, the feature proposals #153 and #113:** given, merged as edakit 0.5.0 (05cd313);
       #153 and #113 closed. [2026-11-02]
 - [x] TD-86 - **Messages on KiCad:** closed by 27b86b3 before the item was written – on KiCad the gate's stages S and F
