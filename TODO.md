@@ -20,7 +20,7 @@ What only the owner can do – an account, a payment, an OK, hardware in hand, a
 it once ticked. Every line has an ID that is counted up and never reused; next free ID: TD-3. The items further down
 that wait for the owner stay where their step is.
 
-- [ ] TD-1 **Update the edakit plugin:** in Claude Code `/plugin` → edakit → Update, then `/reload-plugins` or a restart in
+- [x] TD-1 **Update the edakit plugin:** in Claude Code `/plugin` → edakit → Update, then `/reload-plugins` or a restart in
   every running session – installed is 868e942 of 31.10.; `/reload-plugins` alone only reloads that one. Why: the
   bell's hook and Makefile use the plugin, and 868e942 knows neither W.2–W.4 nor the electrical hash M-6 now hangs on.
   *(edakit-be, automatic-christmas-bell-b3)*
