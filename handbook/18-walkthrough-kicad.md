@@ -18,7 +18,7 @@ What it shows that chapter 17 does not:
 5. **The graph as TOML from the start** (the graph's format, 3.1).
 
 > **State 2026-10-31:** the outputs are from real runs with KiCad 10.0.6, ngspice 47 and Freerouting 2.4.1, shortened
-> where a `…` stands. Every gap the run found was closed in edakit on its way (what this example changed, 18.13).
+> where a `…` stands. Every gap the run found was closed in edakit on its way (gaps closed, 13.10).
 
 ## 18.1 The steps at a glance
 
@@ -184,7 +184,7 @@ SIM.state – the circuit does what the scenario expects: 1 error
 
 Three of these were edakit's: a load's `expect` knew no battery holder, U1 with SW1 open counted as supplied below
 its range instead of switched off, and LED_K was told to take a pull-up although nothing reads it – D1 is the
-discharge pin's load. All three were fixed before going on (what this example changed, 18.13); what stayed was the
+discharge pin's load. All three were fixed before going on (gaps closed, 13.10); what stayed was the
 circuit's.
 
 ## 18.6 What the checks found
@@ -212,7 +212,7 @@ block `reverse-pmos` brings an AO3401A, specified from VGS −2.5 V; Q1 is an AO
 
 Its first run showed VDD at −0.84 V – behind a blocking Q1 the net hung on 1 pA of leakage and the simulator's
 1 TΩ shunt. A CMOS IC has a diode from its ground to its supply that holds such a node. The behaviour `logic` has it
-now (18.13), and VDD sits at −0.15 V, D1 dark, 4 pA from the cells.
+now (13.10), and VDD sits at −0.15 V, D1 dark, 4 pA from the cells.
 
 **The blink rate (D-5).** No check, a computation: with the thresholds at 1/3 and 2/3 of VDD each half period is
 ln 2 · R1 · C2, independent of the supply, so T = 1.386 · R1 · C2. The spread is the work: R1 ±1 %, C2 ±10 % (X7R;
@@ -369,7 +369,7 @@ $ edakit route all
 [ 0.4 min]   DRC: no findings
 ```
 
-It took three tries, each closing a gap of the KiCad chain or of the real footprints (18.13). The first `route check`
+It took three tries, each closing a gap of the KiCad chain or of the real footprints (13.10). The first `route check`
 found C1 on two of U1's pads: the library's box of the SOIC-8 ended inside its row of pads, and neither `pcb place` nor
 `pcb plan` saw the overlap. The second found two SMD pads within 1 mm of BT1's pins. The third try's DRC found SW1's
 three free pins on a net "unconnected-(SW1-Pad3)" in KiCad's schematic and on none in the PCB.
@@ -399,7 +399,7 @@ footprint beyond the body and so beyond the outline; GEO.silk's warning on it is
 The layout review M-5 – the agent pcb-reviewer, on a gate run's files – found nothing that blocks and made six notes
 (D-10). You chose to build two: tooling holes of your own, which JLCPCB would otherwise drill where it likes, likely on
 the empty left of the visible top, with `[looks] visible = "top"` and a remark for the order form. Routed once more,
-Freerouting left two GND pads room for one thermal spoke, which KiCad's DRC counted as starved (18.13). The rest are for
+Freerouting left two GND pads room for one thermal spoke, which KiCad's DRC counted as starved (13.10). The rest are for
 the hand assembly: SW1 before BT1, a dab of glue under the holder's free end, and at M-2 D1's cathode by the chamfer of
 its outline:
 
@@ -420,7 +420,7 @@ remark = "2 tooling holes added by customer."
 netlist and ERC, stage L on `pcb.json` read from the file and KiCad's DRC, stage F on kicad-cli's Gerber, drill and
 position files (the gate on KiCad, 16.6).
 
-It took five runs. The first warned about the knob's print and a rounding at BT1's body (18.13); the next waited for
+It took five runs. The first warned about the knob's print and a rounding at BT1's body (13.10); the next waited for
 M-1 and M-6, then for M-5 on their files; the review's tooling holes gave a new fab hash and M-5 once more. The last:
 
 ```text
@@ -461,40 +461,3 @@ JLCPCB's assembly preview with `polarity_main.png` – U1's pin 1, Q1, D1's cath
 The hand assembly comes first: SW1, then BT1, its pins trimmed, a dab of glue under its free end (D-10). Then M-4 works
 through the protocol's acceptance list: BT1 the right way round, D1 blinking while SW1 is on and dark once it is off,
 and R-2's count – 48 to 72 flashes in 60 s from a lab supply at 3.2 V and at 2.0 V.
-
-## 18.13 What this example changed in edakit
-
-The first real board through the KiCad tool chain, and the first on cells behind a power switch, found these gaps;
-each was closed in edakit with its test:
-
-- **A load's budget on a battery holder.** `expect` in a load named sources and nets only; `{"BT1": {"i_max_a": …}}`
-  was SIM.config. It holds the current from the holder's cells now (LIM.i) – R-3's 1 µA and R-4's budget.
-- **A part switched off.** LIM.range held U1 at 0 V with SW1 open to its 1.5 V minimum. A supply within 0.5 V of
-  ground – where the model's own loads are off too – is a row of information, "unpowered"; a part at 1.0 V is still
-  below its range, and one at −0.9 V reversed.
-- **An LED on an open-drain output.** LVL.undefined/open_drain wanted a pull-up on LED_K. A net that holds nothing but
-  the outputs and LED cathodes is their load; nothing reads it.
-- **A floating node behind a blocking MOSFET** (cells upside down, 18.6). The behaviour `logic` has a substrate diode
-  from its ground to each supply pin; with the cells reversed and nothing to block them it carries the amps a real IC
-  would.
-- **A cell upside down delivered "charging" current.** A cell state below 0 V is counted in its own sense now.
-- **The library footprint's box.** EasyEDA's BBox of the SOIC-8 of C90760 ends at 126 mil while its pads reach
-  137.8 mil: the box `part import` caches covers every pad now.
-- **KiCad's nets of no-connect pins.** KiCad nets a pin its schematic marks no-connect as "unconnected-(SW1-Pad3)",
-  and its parity check wanted those nets on the pads. `pcb apply` takes them from KiCad's netlist export; read back
-  they are no net, as the graph has it.
-- **A body as large as its footprint.** BT1's `body.box` from the drawing (53.00 mm) and its library box (53.04 mm)
-  differ by a rounding, and the footprint's own outline on the edge was a GEO.silk warning. 0.05 mm are rounding now.
-- **One output resistance for every corner.** U1's discharge pin at its 1.5 V maximum hid R-4's real current (the
-  reviews, 18.8); `r_out_ohm` takes a range now.
-- **A tooling hole under a part fitted by hand.** `pcb plan` held BT1 to the keep-out of a tooling hole; a part with
-  `bom: false` is not there while the tooling holes hold the board.
-- **Thermal spokes on KiCad.** KiCad's DRC wants two by default, where Freerouting left two GND pads room for one
-  (18.11). The KiCad project edakit writes asks for one: EasyEDA asks for none, and GEO.copper checks the connection.
-
-Open, noted for later: a sign-off note counts every mention of a requirement's ID as passing evidence, also "R-4 not
-met" (M-1, note 9) – the rule is documented (requirements, 8.7) and tested, and changing it is a decision about edakit.
-Messages of `route all` still say "nothing written to EasyEDA" on KiCad, and stage S of the protocol "EasyEDA schematic
-= graph". `pcb plan` does not hold pads to `hand_solder_keep_mm`; `route check` does. The pours of the KiCad tool chain
-keep EasyEDA's square notch around a tooling hole, where KiCad could fill around it (M-5, note 7). The LED model fixes
-its ideality at 2, and a datasheet's IV curve gives D1 20–25 mV more at 0.5 mA than the model (M-1).
