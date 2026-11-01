@@ -7,6 +7,18 @@ written once, by `.github/merge.py`, from the fragments in [changes/](changes/RE
 [versioning.md](docs/concepts/done/versioning.md). Update with `claude plugin marketplace update edakit && claude plugin
 update edakit@edakit`, then `/reload-plugins` or a new session; `edakit --version` names the version that runs.
 
+## 0.6.0 – 2026-11-02
+
+- **When updating:** a sign-off's note is passing evidence for a requirement only where it names the ID after
+  "requirements met:" (up to the next `;` or `.`) – an ID elsewhere in the note, "R-4 not met" too, counts for nothing
+  (handbook 8.7). The reviewer agents have written that clause since requirements came; a note of another form gets it
+  in the sign-off file – `edakit gate` lists a requirement whose note no longer names it.
+- KiCad: the pours follow the outline, and a rule area keeps each mounting and tooling hole's keep circle free – no
+  square notch to the edge any more (`pcb pour`, `route pours`); GEO.pour and the computed pours of `route check`
+  measure the area the pours really fill, without the notch, on EasyEDA too.
+- An LED's `values.vf_vs_if`, `[[A, V], …]` read off the datasheet's IV curve, sets the simulation's ideality (2
+  without); `edakit part lint` holds the points to their form.
+
 ## 0.5.0 – 2026-11-02
 
 - An `easyeda` script may change the copper in the PCB: `writes = ["pcb:<b>", <files>]` – vias and a pour placed after the pours, with the list of what it placed beside. It runs after what it reads (`routing:<b>`: after `route all`) and before the scripts that read its files; `edakit run` records the change, and `route all` and `route pours` mark it gone in `hardware/scripts.lock`, so the script is outdated until it ran again. EasyEDA's DRC checks this copper, `route check` does not (handbook 8.6, #113).
