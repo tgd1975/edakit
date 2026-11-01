@@ -17,7 +17,8 @@ GLOSSARY = ROOT / "docs" / "glossary.md"
 ENTRY = ("README.md", "docs/glossary.md")             # the entry layer; D.2 adds the quickstart and "How it works"
 HISTORY = ("handbook/13-lessons-learned.md",)       # the history of edakit: its dates are its content
 DATED = ("handbook/15-regulatory.md",               # the state of the law the regulatory review relies on
-         "examples/coin-cell-led/docs/decisions.md")  # a decision log: each decision with its day
+         "examples/coin-cell-led/docs/decisions.md",  # a decision log: each decision with its day
+         "examples/blinker-555/docs/decisions.md")
 QUOTED = ("11.4",)                                  # the working agreements: the hook reads them, their words stay
 SECTION_LINES = 80
 CHAPTER_LINES = 500                        # a chapter of the handbook
@@ -30,12 +31,13 @@ STATUS = re.compile(r"^\s*(?:\*\*)?(?:State|Status)\b|^\s*!!!")
 
 def documentation():
     """The pages of kind documentation (docs/organisation.md): the README, the handbook, docs/ outside concepts/ and
-    catalog/, the Markdown of the walkthrough's example."""
+    catalog/, the Markdown of the two walkthroughs' examples."""
     pages = [ROOT / "README.md", *sorted((ROOT / "handbook").glob("*.md"))]
     pages += [p for p in sorted((ROOT / "docs").rglob("*.md"))
               if not p.relative_to(ROOT / "docs").as_posix().startswith(("concepts/", "catalog/"))]
-    example = ROOT / "examples" / "coin-cell-led"    # its build/ is gate output, ignored by git
-    pages += sorted(p for p in example.rglob("*.md") if "build" not in p.relative_to(example).parts)
+    for name in ("coin-cell-led", "blinker-555"):
+        example = ROOT / "examples" / name           # its build/ is gate output, ignored by git
+        pages += sorted(p for p in example.rglob("*.md") if "build" not in p.relative_to(example).parts)
     return [p.relative_to(ROOT).as_posix() for p in pages]
 
 
@@ -186,7 +188,8 @@ RED = {
                                               "14-design", "17-walkthrough")},
     "chapters": {f"handbook/{c}.md" for c in ("03-hardware-graph", "04-parts-database", "05-simulation", "07-pcb",
                                               "08-release-gate", "10-reference", "17-walkthrough")},
-    "paragraphs": {"README.md", "examples/coin-cell-led/docs/decisions.md"} | {f"handbook/{c}.md" for c in (
+    "paragraphs": {"README.md", "examples/coin-cell-led/docs/decisions.md",
+                   "examples/blinker-555/docs/decisions.md"} | {f"handbook/{c}.md" for c in (
         "01-approach", "02-setup", "03-hardware-graph", "04-parts-database", "05-simulation", "06-schematic", "07-pcb",
         "08-release-gate", "10-reference", "14-design", "15-regulatory", "16-kicad", "17-walkthrough")},
     "references": set(),
@@ -194,7 +197,7 @@ RED = {
         "01-approach", "03-hardware-graph", "04-parts-database", "06-schematic", "07-pcb", "08-release-gate",
         "09-easyeda-api", "10-reference", "11-working-with-claude", "12-troubleshooting", "13-lessons-learned",
         "14-design", "15-regulatory")},
-    "dates": {"examples/coin-cell-led/README.md"} | {f"handbook/{c}.md" for c in (
+    "dates": {"examples/coin-cell-led/README.md", "examples/blinker-555/README.md"} | {f"handbook/{c}.md" for c in (
         "01-approach", "03-hardware-graph", "04-parts-database", "07-pcb", "08-release-gate", "09-easyeda-api",
         "10-reference", "16-kicad", "17-walkthrough")},
     "bold": {"README.md"},

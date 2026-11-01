@@ -20,9 +20,10 @@ The working rules for sessions in this repository are in [CLAUDE.md](../CLAUDE.m
 | Path | Kind | Content |
 |---|---|---|
 | [README.md](../README.md) | Documentation | The start page – also of the site |
-| [handbook/](../handbook/README.md) | Documentation | The handbook, chapters 1 to 17 |
+| [handbook/](../handbook/README.md) | Documentation | The handbook, chapters 1 to 18 |
 | [docs/](.) | Documentation | Documentation beside the handbook – today [brand/](brand/README.md) (logo, colours, type), the [style guide](style.md), the [glossary](glossary.md) and this page – all of `docs/` except `concepts/`, `catalog/` and `pages.py` |
 | [examples/coin-cell-led/](../examples/coin-cell-led/README.md) | Documentation | The project of the walkthrough (handbook 17): its README and `docs/decisions.md` are documentation, its `edakit.toml` and `hardware/` project data the tests hold to the chapter |
+| [examples/blinker-555/](../examples/blinker-555/README.md) | Documentation | The project of walkthrough 2 (handbook 18): its README and `docs/decisions.md` are documentation, its `edakit.toml` and `hardware/` project data the tests hold to the chapter |
 | [docs/concepts/](concepts/) | Source | Concepts – documents with a short life: `new/` what is open, `done/` what is settled and built, `discarded/` what the owner rejected; how a concept moves is in CLAUDE.md |
 | [docs/catalog/](catalog/build.py) | Generated | The catalog as one page (`index.html`, `circuits/*.svg`), written by `docs/catalog/build.py` from the catalog – never edited by hand |
 | [docs/pages.py](pages.py) | Code | Assembles the site |
@@ -53,9 +54,9 @@ on the site makes it readable there, not documentation: concepts, skills, agents
 
 ## A review of the documentation
 
-- **Changes:** the files of kind documentation above – `README.md`, `handbook/`, `docs/` without `concepts/`,
-  `catalog/` and `pages.py`, the Markdown of `examples/coin-cell-led/` – outside generated sections and quote blocks.
-  A new document in `docs/` is documentation unless it is listed here as something else.
+- **Changes:** the files of kind documentation above – `README.md`, `handbook/`, `docs/` without `concepts/`, `catalog/`
+  and `pages.py`, the Markdown of `examples/coin-cell-led/` and `examples/blinker-555/` – outside generated sections and
+  quote blocks. A new document in `docs/` is documentation unless it is listed here as something else.
 - **Reads:** everything else, the code above all: a claim that can be checked is checked against it. What is wrong in
   a source, in data or in a generated section goes to the owner as a finding with its path and line – a generated
   section is fixed in its source, through the skill add-rule or add-feature, on the owner's word.
