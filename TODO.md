@@ -30,51 +30,8 @@ once ticked. The items further down that wait for the owner stay where their ste
 
 Built offline and tested on recorded data on 2026-10-30, merged into main the same day: the order form as keys, the
 makers' profiles (JLCPCB, PCBWay, Eurocircuits, AISLER), the checks per maker, `edakit cart fields|prepare|check|
-actual` with B-1 to B-7, the order record, the skill cart, the review at the order, ODB++ with F-7. Nothing of it has
-run against a maker's page or EasyEDA yet.
-
-### Needs the owner's computer – a session attached to it, Claude in Chrome, the makers' accounts
-
-- [x] **Step 0 (5.0) and the live runs – branch `makers-step0` merged (dcc0dfb):** the four profiles
-      recorded from the forms (2026-10-31), JLCPCB's order number gone (`former_placeholder`, `mark = "specify"`
-      refused; the bell needs `mark = "remove"` or a barcode before its next order), the skill cart stopping at every
-      consent in the owner's name, and what the live runs found fixed in `edakit cart` (numbers, uploads a page does
-      not show or takes after the cart, matching in the maker's review, checkout fields, a cart line named by size).
-      Evidence in `tests/fixtures/makers/` (LIVE.md); full suite green. B6 checked on 2026-11-01: Economic takes a
-      round board on two customer tooling holes, no rails, no panel fee (`tests/fixtures/makers/jlcpcb/b6_2026-11-01/`).
-- [x] **PCBWay:** the files go up after "Save to Cart" (Gerber, BOM, centroid in Altium's mil format, assembly
-      drawings; "Submit the File Now" starts the review); the assembly price shows online but without components until
-      the review; one `bom_<b>_mpn.csv` serves PCBWay and Eurocircuits – both took it.
-- [x] **Eurocircuits, AISLER, the cart:** Eurocircuits "Add to basket" on its Summary page; AISLER has no cart – the
-      skill stops before "Continue to Checkout".
-- [x] **Step 0b (5.0)** (2026-11-01, a probe board in EasyEDA, branch `makers-step0b`): EasyEDA's ODB++ – through
-      `easyeda_export_odb` and by hand – has component layers with package, pins and the MPN as device name, turns
-      clockwise as F-7 assumes, and keeps a part with `bom: false` in it without a mark (the skill marks it). SYNC.odb
-      drew EasyEDA's RoundRect mask openings as obrounds – fixed for SYNC.odb, the fab hash unchanged; both exports pass
-      it now. Record `tests/fixtures/makers/aisler/step0b_2026-11-01.md`.
-- [x] **JLCPCB's customs "Product Description" as a key of `[order]`** (the owner's decision of 2026-11-01), built
-      on 2026-11-01: `customs = { category, hs_code }`, outside order.json and the fab hash; JLCPCB's profile lists
-      the 62 entries with an HS code, FILES.order fails one it does not offer and names a missing key as information;
-      the skill cart sets it, or asks the owner without it (handbook 10.2).
-- [x] **5.7, 5.12:** the skill cart live at JLCPCB and PCBWay (2026-11-01, the 555 blinker, a copy of the example):
-      every check passed, into the cart, order record written, nothing ordered.
-- [x] **5.8:** the skill cart live at Eurocircuits (2026-11-01, the blinker's copy at 1.55 mm on the owner's word):
-      every check passed, into the basket, order record written, nothing ordered. Built on the way: the MPN BOM's
-      header Eurocircuits maps (it took "Comment" for the part number), a cart line with its VAT apart, the
-      configurator's fields in the profile (`tests/fixtures/makers/eurocircuits/live_2026-11-01/`).
-- [x] **CPL rotations per maker:** Eurocircuits' Assembly Editor drew Q1 (SOT-23, rotation 180 as SYNC.cpl writes
-      it) turned by 90° against the board's pads (live run 5.8, M-5 note 10). Now the profile names the maker's zero
-      orientation (`[cpl] zero`: Eurocircuits IEC 61188-7, pin 1 lower left; JLCPCB the footprint's) and the turn
-      per footprint (`[cpl.turns]`: EasyEDA's SOT-23-3_…-BR 90°, so Q1 is 270°; chips, the LED and SOIC-…-BL 0°);
-      the gate writes `cpl_<b>_eurocircuits.csv`, and SYNC.cpl warns for that maker about a footprint without a turn
-      or a turned part on the bottom. Probe the same day: Eurocircuits drew Q1 at 270° on its pads ("No issues
-      detected"); C3 and R3 stay "does not match" – copper beside their pads, no rotation
-      (`tests/fixtures/makers/eurocircuits/live_2026-11-01/turn_probe.md`).
-- [x] **5.10:** AISLER live (2026-11-01): R1 and R2 swapped in the throwaway copy for YAGEO parts AISLER stocks,
-      released again (M-1, M-5, M-6 by the agents), every part assigned, /checkout at Amazing Assembly, quantity 5,
-      €348.03 net; ORDER.form to ORDER.review passed, stopped before "Continue to Checkout"
-      (`tests/fixtures/makers/aisler/live_2026-11-01/price/`). Built on the way: SYNC.odb's edge tolerance, the MPN in
-      every KiCad footprint, the profile's fields on AISLER's /checkout.
+actual` with B-1 to B-7, the order record, the skill cart, the review at the order, ODB++ with F-7. Run live at the
+four makers on 2026-10-31 and 2026-11-01, into the cart and nothing ordered ([LIVE.md](tests/fixtures/makers/LIVE.md)).
 
 ### Needs the owner's word
 
