@@ -186,7 +186,7 @@ RED = {
     "sections": {f"handbook/{c}.md" for c in ("03-hardware-graph", "04-parts-database", "05-simulation", "07-pcb",
                                               "08-release-gate", "10-reference", "11-working-with-claude",
                                               "14-design", "17-walkthrough")},
-    "chapters": {f"handbook/{c}.md" for c in ("03-hardware-graph", "04-parts-database", "05-simulation", "07-pcb",
+    "chapters": {f"handbook/{c}.md" for c in ("04-parts-database", "05-simulation", "07-pcb",
                                               "08-release-gate", "10-reference", "17-walkthrough")},
     "paragraphs": {"README.md", "examples/coin-cell-led/docs/decisions.md",
                    "examples/blinker-555/docs/decisions.md"} | {f"handbook/{c}.md" for c in (

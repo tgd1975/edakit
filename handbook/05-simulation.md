@@ -468,27 +468,17 @@ engines judge them as they judge the declared ranges of the graph – LIM agains
 (derated, chapter 14.2), LVL against the thresholds; their codes are in 3.3, with what stage E adds. Every row of the
 protocol carries its code, the scenario and the item. The codes of the simulation itself, generated from the catalog:
 
-<!-- edakit:generated codes SIM -->
-**`SIM.config`** – simulation config readable (error, off: note; replaces E-1, E-3)  
-The simulation config names existing parts, nets and boards, and every value has the form the config needs; a part whose thresholds are ratios has one supply pin to take them of.
+<!-- edakit:generated table SIM -->
+| Code | Title | Severity |
+| --- | --- | --- |
+| [`SIM.config`](../docs/catalog/sim.html#SIM.config) | simulation config readable | error, off: note; replaces E-1, E-3 |
+| [`SIM.converge`](../docs/catalog/sim.html#SIM.converge) | every scenario converges | error; replaces E-1 |
+| [`SIM.state`](../docs/catalog/sim.html#SIM.state) | the circuit does what the scenario expects | error, cc: warning; replaces E-3 |
+| [`SIM.driver`](../docs/catalog/sim.html#SIM.driver) | every LED has a known driver | error; replaces E-4 |
+| [`SIM.response`](../docs/catalog/sim.html#SIM.response) | frequency response as expected | warning, gain: warning, corner: warning |
+| [`SIM.copper`](../docs/catalog/sim.html#SIM.copper) | copper annotated | note; replaces E-1 |
 
-**`SIM.converge`** – every scenario converges (error; replaces E-1)  
-The operating point of every scenario converges, every transient run reaches its end.
-- the operating point converges, a transient run runs to its end; a net of `copper` that stays one node is noted (info) with the reason
-
-**`SIM.state`** – the circuit does what the scenario expects (error, cc: warning; replaces E-3)  
-In every scenario the circuit reaches the state its load expects: LEDs on or dark, each LED of a driver channel at its share of the set current and parallel LEDs sharing it, a regulator's output at its set voltage, a blocking diode blocking, the board drawing at least a supply's minimum load, an LED the right way round, each LED in the string of a constant-current LED driver at its share of the set current or dark while the driver's dim pin is low (grade cc), and what the project plugin checks. A boost converter its enable switches off has no set voltage to reach: its output – what its inductor and diode pass from the input – is a row of information, and what hangs on it is judged at that level.
-- function: current from every source (≤ `i_max_a`; ≥ `i_min_a` with every MCU at its `i_core_min_a` – 5.1), no source and no cell fed backwards (≤ `i_back_max_a`, `i_charge_max_a`, 1 mA by default), regulator outputs within tolerance, input above `vin_min_v`, LDO junction temperature – an MCU module's own LDO too, with the core current it carries (5.3) – against the same limit as LIM.t's, MCU supply voltage and load on its regulator, MCU inputs at a defined level (≤ VIL or ≥ VIH – a 3.3 V signal into a 5 V AVR is the classic case), every part with an operating supply range inside it, every input pin with thresholds at a defined level and the high level of every MCU output reaching the VIH of the inputs on its net (5.3), MCU outputs only on pins that can drive (an output on an input-only pin is reported and not driven), LED driver output headroom and junction temperature, every LED on or dark as the load says (driver channels: ≥ 80 % of its share of the set current, also for an LED behind 0 Ω bridges or one resistor; parallel LEDs share within a ratio – 5.3), relays pull in (`v_operate_v`) and release (`v_release_v`) as the load says, an own board supplied inside the range it was simulated for (`vin_min_v` … `vin_max_v`, 4.5), diodes that must block (`expect_blocking`), every net inside its declared range `v` (a net of `copper`: its lowest and highest pin), plus the plugin's checks
-
-**`SIM.driver`** – every LED has a known driver (error; replaces E-4)  
-Every LED – each colour of an RGB LED – has a state the simulation checks in every scenario: its cathode on a driver output (directly, behind 0 Ω bridges or a balancing resistor), or the load lists it in leds_on. An LED a multiplexing driver scans (behaviour matrix_driver, pins on both its nets) has no DC state: a row of information.
-- LED has a known driver: in every scenario every LED – each colour of an RGB LED – has a state SIM.state checks, its cathode on a driver output (directly, behind 0 Ω bridges or one resistor) or the load's `leds_on`; an LED with neither, or one the netlist left out because its parts entry lacks a role it reads (anode, cathode and their colours, 4.1), fails as "LED without a known driver"
-
-**`SIM.response`** – frequency response as expected (warning, gain: warning, corner: warning)  
-Every expectation of an AC run of the simulation config (ac) holds: the gain from its input to its output at the frequencies named (grade gain), and the lower and upper −3 dB corners within their ranges (grade corner). The gain is 20·log10 |V(output) / V(source)| for 1 V AC behind the run's source_ohm or its source model – a pickup (R and L in series, C across), a piezo disc (behind its capacitance), an electret capsule (a current of 1 V / RL into its load resistor), named by a row of catalog/tables/audio_sources.toml with the maker's values or given as numbers –, a cable's capacitance per metre between its wires and its wire on ground, linearised around a DC scenario; a corner is where the gain falls 3.01 dB below its largest value in the sweep. Runs only where sim.json names an expectation, only with the domain audio or guitar on.
-
-**`SIM.copper`** – copper annotated (note; replaces E-1)  
-A net listed for copper is simulated with its routed copper; where it is not, it stays one ideal node.
+Rule, why, fix and sources of each: `edakit explain CODE`, or the code on its page of the catalog.
 <!-- edakit:end -->
 
 **Power.** What a part dissipates at the operating point of every scenario is held to the `p_max_w` of its entry,

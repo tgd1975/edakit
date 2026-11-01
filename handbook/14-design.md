@@ -144,102 +144,43 @@ needs a hardware debounce, whether a connector is touched by people. These are *
 the kinds of parts in the graph or by a pattern, shown by `edakit check` as notes, never blocking. Generated from the
 catalog:
 
-<!-- edakit:generated codes HINT -->
-**`HINT.datasheet`** – notes of the parts entries (note)  
-A parts entry's own warnings – hints of the part, hint of a connected pin (an ESP32 pin of ADC2: no analog reads while Wi-Fi is on) – are shown for every part and pin of the graph they belong to.
+<!-- edakit:generated table HINT -->
+| Code | Title | Severity |
+| --- | --- | --- |
+| [`HINT.datasheet`](../docs/catalog/hint.html#HINT.datasheet) | notes of the parts entries | note |
+| [`HINT.bulk`](../docs/catalog/hint.html#HINT.bulk) | bulk capacitor at the power input | note; replaces H-1 |
+| [`HINT.gate`](../docs/catalog/hint.html#HINT.gate) | MOSFET gate resistor | note; replaces H-2 |
+| [`HINT.debounce`](../docs/catalog/hint.html#HINT.debounce) | debounce buttons and switches | note; replaces H-3 |
+| [`HINT.inductive`](../docs/catalog/hint.html#HINT.inductive) | inductive load off the board | note; replaces H-4 |
+| [`HINT.switcher`](../docs/catalog/hint.html#HINT.switcher) | switching regulator layout | note; replaces H-5 |
+| [`HINT.lithium`](../docs/catalog/hint.html#HINT.lithium) | lithium cells need protection | note; replaces H-6 |
+| [`HINT.esd`](../docs/catalog/hint.html#HINT.esd) | ESD at external connectors | note; replaces H-7 |
+| [`HINT.two_supplies`](../docs/catalog/hint.html#HINT.two_supplies) | two supplies on one net | note; replaces H-8 |
+| [`HINT.readback`](../docs/catalog/hint.html#HINT.readback) | read-back of a serial output | note; replaces H-9 |
+| [`HINT.motor_supply`](../docs/catalog/hint.html#HINT.motor_supply) | motor supply: bulk capacitor and returned energy | note |
+| [`HINT.heater`](../docs/catalog/hint.html#HINT.heater) | a heater needs a second interruption | note |
+| [`HINT.audio_ground`](../docs/catalog/hint.html#HINT.audio_ground) | audio: ground loops and shared returns | note |
+| [`HINT.class_d`](../docs/catalog/hint.html#HINT.class_d) | filterless class-D output on a cable | note |
+| [`HINT.audio_switching`](../docs/catalog/hint.html#HINT.audio_switching) | switching in the audio band | note |
+| [`HINT.signal_ceramic`](../docs/catalog/hint.html#HINT.signal_ceramic) | class-2 ceramic in a signal path | note |
+| [`HINT.jack_battery`](../docs/catalog/hint.html#HINT.jack_battery) | battery switched by the input jack | note |
+| [`HINT.pedal_supply`](../docs/catalog/hint.html#HINT.pedal_supply) | a pedal's supply among others | note |
+| [`HINT.string_ground`](../docs/catalog/hint.html#HINT.string_ground) | the player on the amplifier's ground | note |
+| [`HINT.jack_supply`](../docs/catalog/hint.html#HINT.jack_supply) | a supply on a jack contact | note |
+| [`HINT.relay_load`](../docs/catalog/hint.html#HINT.relay_load) | relay contacts switching a load off the board | note |
+| [`HINT.flicker`](../docs/catalog/hint.html#HINT.flicker) | LED flicker from PWM | note |
+| [`HINT.boost_enable`](../docs/catalog/hint.html#HINT.boost_enable) | a boost converter switched off by its enable | note |
+| [`HINT.usb_budget`](../docs/catalog/hint.html#HINT.usb_budget) | the current a USB port gives | note |
+| [`HINT.usb_inrush`](../docs/catalog/hint.html#HINT.usb_inrush) | more than 10 µF on USB VBUS | note |
+| [`HINT.power_path`](../docs/catalog/hint.html#HINT.power_path) | a load on the charging cell | note |
+| [`HINT.charge_termination`](../docs/catalog/hint.html#HINT.charge_termination) | a charger's end of charge is not simulated | note |
+| [`HINT.protection_timing`](../docs/catalog/hint.html#HINT.protection_timing) | a cell protection's release and delays are not simulated | note |
+| [`HINT.pd_negotiation`](../docs/catalog/hint.html#HINT.pd_negotiation) | a USB PD sink's negotiation is not simulated | note |
+| [`HINT.input_polarity`](../docs/catalog/hint.html#HINT.input_polarity) | a power input without a polarity check | note |
+| [`HINT.thermal_copper`](../docs/catalog/hint.html#HINT.thermal_copper) | thermal resistance needs its copper | note |
+| [`HINT.cable_line`](../docs/catalog/hint.html#HINT.cable_line) | a signal line on a cable | note |
 
-**`HINT.bulk`** – bulk capacitor at the power input (note; replaces H-1)  
-Bulk capacitor at the power input: consider it where it applies.
-
-**`HINT.gate`** – MOSFET gate resistor (note; replaces H-2)  
-MOSFET gate resistor: consider it where it applies.
-
-**`HINT.debounce`** – debounce buttons and switches (note; replaces H-3)  
-Debounce buttons and switches: consider it where it applies.
-
-**`HINT.inductive`** – inductive load off the board (note; replaces H-4)  
-Inductive load off the board: consider it where it applies.
-
-**`HINT.switcher`** – switching regulator layout (note; replaces H-5)  
-Switching regulator layout: consider it where it applies.
-
-**`HINT.lithium`** – lithium cells need protection (note; replaces H-6)  
-Lithium cells need protection: consider it where it applies.
-
-**`HINT.esd`** – ESD at external connectors (note; replaces H-7)  
-ESD at external connectors: consider it where it applies.
-
-**`HINT.two_supplies`** – two supplies on one net (note; replaces H-8)  
-Two supplies on one net: consider it where it applies.
-
-**`HINT.readback`** – read-back of a serial output (note; replaces H-9)  
-Read-back of a serial output: consider it where it applies.
-
-**`HINT.motor_supply`** – motor supply: bulk capacitor and returned energy (note)  
-A motor on the board: consider the bulk capacitor at its driver's motor supply and where its returned energy goes.
-
-**`HINT.heater`** – a heater needs a second interruption (note)  
-A heater on the board: consider a second, independent way to switch it off.
-
-**`HINT.audio_ground`** – audio: ground loops and shared returns (note)  
-A speaker or an analog path on the board: consider where its ground returns and what shares it.
-
-**`HINT.class_d`** – filterless class-D output on a cable (note)  
-A bridge-tied output reaches a connector: consider a filter at the output.
-
-**`HINT.audio_switching`** – switching in the audio band (note)  
-A switching regulator, a charge pump or a PWM net on a board with an audio path: consider what it puts into the audio band.
-
-**`HINT.signal_ceramic`** – class-2 ceramic in a signal path (note)  
-A class-2 ceramic capacitor (X5R, X7R, Y5V …) on a net with an analog pin: consider whether it sits in the signal path.
-
-**`HINT.jack_battery`** – battery switched by the input jack (note)  
-A battery on a board with an instrument input: consider how it is switched off.
-
-**`HINT.pedal_supply`** – a pedal's supply among others (note)  
-An instrument board with a supply input: consider the other pedals and amplifiers on the same supply and ground.
-
-**`HINT.string_ground`** – the player on the amplifier's ground (note)  
-An instrument input: consider what ties the player to ground.
-
-**`HINT.jack_supply`** – a supply on a jack contact (note)  
-A jack whose tip, ring or a switch contact carries a supply (roles tip, ring, sleeve, tip_switch, ring_switch, sleeve_switch): consider what happens while a plug goes in and comes out.
-
-**`HINT.relay_load`** – relay contacts switching a load off the board (note)  
-A relay whose contacts (common, no, nc) reach a connector or run through a cable: consider the load they switch.
-
-**`HINT.flicker`** – LED flicker from PWM (note)  
-A net with pwm_hz lights LEDs: consider whether its frequency flickers.
-
-**`HINT.boost_enable`** – a boost converter switched off by its enable (note)  
-A boost converter whose enable an MCU drives: consider what its output does with EN low.
-
-**`HINT.usb_budget`** – the current a USB port gives (note)  
-A USB receptacle that powers the board: consider what the port gives – 100 mA before the device is configured, 500 mA after (USB 2.0), 900 mA on USB 3.2 single lane, 1.5 A or 3 A only where a Type-C source advertises it on CC and the board reads the advertisement.
-
-**`HINT.usb_inrush`** – more than 10 µF on USB VBUS (note)  
-A USB receptacle whose VBUS net carries more than 10 µF directly (the capacitors' value_f): consider a soft start or less capacitance ahead of it – USB 2.0 allows a device 10 µF at attach; HINT.bulk asks for a bulk capacitor at the same input, and the two meet here.
-
-**`HINT.power_path`** – a load on the charging cell (note)  
-A charger (behaviour charger) whose battery pin feeds a load – an IC's supply pin, an LED, a motor – with nothing between that the input switches off: consider a power path. The graph shows one as a MOSFET whose gate the charger's input holds (AN1149's P-MOSFET), or as a diode onto a rail the input feeds as well; a charger with a system output of its own keeps the load off its battery pin. The cell's protection IC and a divider into an input are no load.
-
-**`HINT.charge_termination`** – a charger's end of charge is not simulated (note)  
-A linear charger (behaviour charger): consider the end of its charge cycle – the termination, the recharge and the status outputs that follow them; the simulation charges while the cell is below the float voltage and never terminates.
-
-**`HINT.protection_timing`** – a cell protection's release and delays are not simulated (note)  
-A cell protection IC (behaviour protection): consider its release voltages and its detection delays – the simulation switches the cell off and on at the detection thresholds, the moment the cell crosses them.
-
-**`HINT.pd_negotiation`** – a USB PD sink's negotiation is not simulated (note)  
-A USB PD sink (behaviour pd_sink): consider the board at 5 V before the negotiation and at the requested voltage after it, and what PG and the CC lines do – the simulation takes VBUS at the voltage a scenario's source gives.
-
-**`HINT.input_polarity`** – a power input without a polarity check (note)  
-A supply connector the graph does not mark as reversible: consider whether it can be plugged the wrong way round. Not a battery holder – PATH.reverse checks every one as a source that may be reversed.
-
-**`HINT.thermal_copper`** – thermal resistance needs its copper (note)  
-A part whose temperature rests on rth_ja_k_per_w: consider whether the layout gives the copper that figure assumes.
-
-**`HINT.cable_line`** – a signal line on a cable (note)  
-A signal net runs through a cable: consider what the cable's length and the world at its end do to it.
+Rule, why, fix and sources of each: `edakit explain CODE`, or the code on its page of the catalog.
 <!-- edakit:end -->
 
 The designer handles each one and writes down how, in the graph (a JSON graph has the same keys,

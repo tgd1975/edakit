@@ -4,7 +4,9 @@ codes of each stage, the parts schema, the check IDs of before with the codes th
     python -m edakit.catalog.handbook [--write]
 
 A generated section sits between `<!-- edakit:generated KIND ARGS -->` and `<!-- edakit:end -->` in a chapter of
-handbook/; KIND is codes (ARGS: engine prefixes), kinds (the parts schema) or replaced (the map of before). Without
+handbook/; KIND is table (ARGS: engine prefixes – code, title and severity, each code linked to its engine's page of
+the catalog), codes (the same with the rule and its details), kinds (the parts schema) or replaced (the map of
+before). Without
 --write the command lists the sections that differ from the catalog; tests/test_catalog.py holds the handbook to it.
 """
 
@@ -38,6 +40,23 @@ def codes_section(prefixes):
     return "\n".join(out)
 
 
+def page_of(name):
+    """The catalog page of a code's engine, relative to a chapter of handbook/ (docs/catalog/build.py writes it)."""
+    return f"../docs/catalog/{name.split('.')[0].lower()}.html"
+
+
+def table_section(prefixes):
+    """The short kind: each code of the engines with these prefixes as a row – code, title, severity –, the code
+    linked to the catalog page; rule, why, fix and sources are there and in edakit explain."""
+    out = ["| Code | Title | Severity |", "| --- | --- | --- |"]
+    for name, e in codes().items():
+        if name.split(".")[0] in prefixes:
+            old = f"; replaces {', '.join(e['replaces'])}" if e.get("replaces") else ""
+            out.append(f"| [`{name}`]({page_of(name)}#{name}) | {e['title']} | {severity(e)}{old} |")
+    out += ["", "Rule, why, fix and sources of each: `edakit explain CODE`, or the code on its page of the catalog."]
+    return "\n".join(out)
+
+
 def kinds_section():
     """Per kind its limits and values; the names every kind may give, the units, the words."""
     from ..schema import kinds
@@ -65,6 +84,8 @@ def replaced_section():
 
 
 def render(kind, args):
+    if kind == "table":
+        return table_section(args.split())
     if kind == "codes":
         return codes_section(args.split())
     if kind == "kinds":
