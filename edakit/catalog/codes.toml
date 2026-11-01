@@ -121,9 +121,9 @@ sources = [
 
 [codes."STRUCT.purpose"]
 title = "purpose stated"
-rule = "The graph states purpose.use – private, gift or sale – and purpose.radio, where given, is \"off\" or the bands (and power) the firmware keeps, each within the part's own bands."
+rule = "The graph states purpose.use – private, gift or sale –, purpose.radio, where given, is \"off\" or the bands (and power) the firmware keeps, each within the part's own bands, and purpose.country, where given, is the ISO 3166-1 alpha-2 code of a member state of the EU (handbook 15.6)."
 why = "Severities follow the purpose (the profile), and the regulatory review (M-6) starts there."
-fix = "Write purpose.use; correct purpose.radio to {\"U1\": \"off\"} or {\"U1\": {\"bands_mhz\": [[from, to]], \"max_dbm\": …}}."
+fix = "Write purpose.use; correct purpose.radio to {\"U1\": \"off\"} or {\"U1\": {\"bands_mhz\": [[from, to]], \"max_dbm\": …}}; purpose.country as \"AT\"."
 severity = "error"
 replaces = ["G-1", "G-25"]
 sources = [

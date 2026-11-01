@@ -13,7 +13,8 @@ without any claim to correctness; nothing in it is legally guaranteed.
 ## Sources
 
 - The purpose in the graph: `purpose` with `use` (`private` – built for oneself, `gift` – given away, `sale` – sold,
-  also in small series), `market`, `notes`, and `radio` – how the firmware uses the radio of a part: `"off"`, or the
+  also in small series), `market`, `country` – the member state it is used in, whose national law applies –, `notes`,
+  and `radio` – how the firmware uses the radio of a part: `"off"`, or the
   bands (and the power) it keeps, optional; `edakit check` compares them with the EU bands (LIM.band). It decides what
   applies. Without it, that is your first finding – ask for it and call nothing else fine.
 - The hardware graph (edakit.toml `[project] graph`, TOML or JSON): every component, modules that transmit, supply
@@ -38,7 +39,12 @@ without any claim to correctness; nothing in it is legally guaranteed.
 
 `edakit domains --review regulatory 2>&1 | cat` prints the questions of the domains the project has on (edakit/domains,
 `[review]`): the scope of private, gift or sale, radio, substances, batteries, supply, a product that is sold,
-children. Go through every one of them; what a question names as a check, read its findings first.
+children. Go through every one of them; what a question names as a check, read its findings first. With
+`purpose.country` the output ends with a line `National law (<code>, …)`: the national references of that member
+state with their sources (handbook 15.6) – your map of national law in place of the German references of handbook
+15; check each against its source too. Where it says edakit has no national references for the country, find the
+transposition of each EU rule yourself and name it with its source. Without `purpose.country`, handbook 15's German
+references stand as before.
 
 Name gold plating as such: a duty that does not apply to this purpose is not a finding.
 

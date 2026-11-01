@@ -25,7 +25,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 sys.path[:0] = [str(ROOT), str(ROOT / "tests")]
 
-from edakit import catalog, profile  # noqa: E402
+from edakit import catalog, national, profile  # noqa: E402
 from edakit.schema import kinds  # noqa: E402
 
 OUT = Path(__file__).resolve().parent
@@ -190,8 +190,8 @@ def domains_section():
             rows.append(("Facts required", md("; ".join(facts))))
         if (f.get("hints") or {}).get("apply"):
             rows.append(("Hints", " ".join(f'<a href="#{h}"><code>{h}</code></a>' for h in f["hints"]["apply"])))
-        review = "".join(f"<li><strong>{escape(r)}:</strong> {md(q)}</li>" for r, qs in (f.get("review") or {}).items()
-                         for q in qs)
+        review = "".join(f"<li><strong>{escape(r)}:</strong> {md(national.fill(q))}</li>"   # without purpose.country
+                         for r, qs in (f.get("review") or {}).items() for q in qs)
         body = "".join(f"<dt>{k}</dt><dd>{v}</dd>" for k, v in rows)
         out.append(f'<article class="card" id="domain-{name}"><h3><code>{name}</code></h3><dl>{body}</dl>'
                    + (f'<p class="meta">Reviewers\' questions</p><ul class="review">{review}</ul>' if review else "")

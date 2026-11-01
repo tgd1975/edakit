@@ -124,7 +124,7 @@ def test_without_order_settings_edakits_defaults(plain):
 
 def test_every_layer_the_maker_builds_from_on_its_own(plain):
     run, shots, _ = plain
-    layers = {s.name.removeprefix("board_main_"): s.caption for s in shots[2:]}
+    layers = {s.name.removeprefix("board_main_"): s.caption for s in shots[3:]}
     assert list(layers) == ["silk_top", "mask_top", "paste_top", "copper_top", "copper_bottom", "paste_bottom",
                             "mask_bottom", "silk_bottom", "outline", "drill_npth_through", "drill_pth_through",
                             "drill_pth_through_via"]
@@ -136,11 +136,60 @@ def test_every_layer_the_maker_builds_from_on_its_own(plain):
     assert near(colour(img, view, *clear), pictures.BACKGROUND)
 
 
+def test_all_layers_over_each_other_as_the_easyeda_editor_shows_them(plain):
+    """Bottom silkscreen, bottom copper, top copper – each showing what lies under it –, through-hole pads, top
+    silkscreen and holes on black, seen from above (#99)."""
+    from shapely.ops import unary_union
+    run, shots, notes = plain
+    assert notes == []
+    assert [s.name for s in shots[:3]] == ["board_main_top", "board_main_bottom", "board_main_layers"]
+    assert shots[2].caption == "main, all layers from above"
+    pics = run / "pictures"
+    assert (pics / "board_main_layers.svg").read_text().startswith("<?xml")
+    g = run / "fab" / "main" / "gerber"
+    view = pictures.board_view(g, "top")
+    img = Image.open(pics / "board_main_layers.png")
+    assert img.size == view.size
+    ed = pictures.EDITOR
+    top = gerber.shape(gerber.parse_gerber(g / "Gerber_TopLayer.GTL"))
+    bottom = gerber.shape(gerber.parse_gerber(g / "Gerber_BottomLayer.GBL"))
+    silk = unary_union([gerber.shape(gerber.parse_gerber(g / f)) for f in
+                        ("Gerber_TopSilkscreenLayer.GTO", "Gerber_BottomSilkscreenLayer.GBO")])
+    drilled = pictures.holes(sorted(g.glob("Drill_*")))
+    pads = pictures.through_hole_pads(g)
+    others = unary_union([silk, drilled, pads]).buffer(0.2)
+
+    def inside(geom, avoid=others):
+        p = geom.difference(avoid).buffer(-0.1).representative_point()
+        return p.x, p.y
+    base = ed["background"]
+    blue = pictures.mix(base, *ed["copper bottom"])
+    assert near(colour(img, view, *inside(bottom.difference(top.buffer(0.2)))), blue)
+    assert near(colour(img, view, *inside(top.difference(bottom.buffer(0.2)))), pictures.mix(base, *ed["copper top"]))
+    assert near(colour(img, view, *inside((top & bottom).buffer(-0.1))), pictures.mix(blue, *ed["copper top"]))
+    assert near(colour(img, view, *inside(pads, unary_union([silk, drilled]).buffer(0.05))), ed["pad"])
+    assert near(img.convert("RGB").getpixel((1, 1)), base)
+
+
+def test_through_hole_pads_are_the_plated_holes_open_in_the_mask(plain):
+    """Two through-hole pads on led-bar's KiCad export (Drill_PTH_Through); the 28 vias are tented, no pads."""
+    from shapely.geometry import Point
+    run, _, _ = plain
+    g = run / "fab" / "main" / "gerber"
+    pads = pictures.polygons(pictures.through_hole_pads(g))
+    pth = [Point(x, y) for x, y, *_ in gerber.parse_drills(g / "Drill_PTH_Through.DRL")]
+    vias = [Point(x, y) for x, y, *_ in gerber.parse_drills(g / "Drill_PTH_Through_Via.DRL")]
+    assert len(pads) == len(pth) == 2
+    assert all(any(p.intersects(h) for p in pads) for h in pth)
+    assert not any(p.intersects(v) for p in pads for v in vias)
+
+
 def test_the_protocol_shows_the_board_pictures_after_stage_f(plain):
     _, shots, _ = plain
     lines = "\n".join(pictures.section({"main": {"shots": shots, "notes": []}}, with_board=True))
     assert "![main, top](pictures/board_main_top.png)" in lines
     assert "![main, bottom, seen from below](pictures/board_main_bottom.png)" in lines
+    assert "![main, all layers from above](pictures/board_main_layers.png)" in lines
     assert "[copper, top](pictures/board_main_copper_top.png) ([SVG](pictures/board_main_copper_top.svg))" in lines
     assert "with stage F" not in lines
 
@@ -154,9 +203,10 @@ def test_a_picture_that_cannot_be_drawn_is_named_and_the_run_goes_on(tmp_path, m
     monkeypatch.setattr(pictures, "area", broken)
     monkeypatch.setattr(pictures, "holes", broken)
     shots, notes = pictures.board_pictures(run, "main")
-    assert notes[:3] == ["board_main_top: not drawn – ValueError: no outline",
+    assert notes[:4] == ["board_main_top: not drawn – ValueError: no outline",
                          "board_main_bottom: not drawn – ValueError: no outline",
+                         "board_main_layers: not drawn – ValueError: no outline",
                          "board_main_silk_top: not drawn – ValueError: no outline"]
-    assert len(notes) == 14 and shots == []
+    assert len(notes) == 15 and shots == []
     lines = "\n".join(pictures.section({"main": {"shots": shots, "notes": notes}}, with_board=True))
     assert "- board_main_top: not drawn – ValueError: no outline" in lines

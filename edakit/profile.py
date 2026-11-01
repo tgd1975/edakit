@@ -5,7 +5,8 @@ docs/concepts/done/rules-at-scale.md, section 5).
 
 A domain is a file of edakit/domains/: the findings it switches on ([switch] on: a code, or code:topic for part of
 one), the severities it sets (per purpose too), the facts it requires per kind or graph type, the hints it applies,
-the questions it gives the reviewers. core is always on; what no other domain switches on is core's. A project names
+the questions it gives the reviewers – their {national.…} placeholders filled for the graph's purpose.country
+(edakit/national.py). core is always on; what no other domain switches on is core's. A project names
 its domains in edakit.toml, [project] domains = ["usb", "radio"]. Without the key, every domain the graph suggests is
 on (suggested_by: a pin role, a value, a radio of a part in the graph) – a project that names its domains and leaves
 one out the graph suggests gets a note STRUCT.domain, no silent gap. Severities of several domains: the strictest
@@ -18,6 +19,7 @@ import tomllib
 from functools import lru_cache
 from pathlib import Path
 
+from . import national
 from .findings import Finding, Profile
 from .radio import radios
 
@@ -72,7 +74,7 @@ def suggested(design):
 class ProjectProfile(Profile):
     """The profile of a project: core and its domains – severities, switches, facts, hints, review questions."""
 
-    def __init__(self, enabled, purpose=None, notes=()):
+    def __init__(self, enabled, purpose=None, notes=(), country=None):
         files = [domains()[n] for n in ["core", *enabled]]
         severity, by_purpose = {}, {}
         for f in files:
@@ -93,7 +95,9 @@ class ProjectProfile(Profile):
                 for k, facts in ((f.get("facts") or {}).get(by) or {}).items():
                     self.facts[by].setdefault(k, []).extend(x for x in facts if x not in self.facts[by].get(k, []))
             self.facts["bom"] += [x for x in (f.get("facts") or {}).get("bom", []) if x not in self.facts["bom"]]
-        self.review = {r: [q for f in files for q in (f.get("review") or {}).get(r, [])] for r in REVIEWERS}
+        self.country = country
+        self.review = {r: [national.fill(q, country) for f in files for q in (f.get("review") or {}).get(r, [])]
+                       for r in REVIEWERS}
         self.notes = list(notes)
 
     def on(self, f):
@@ -121,12 +125,13 @@ def build(design, cfg=None):
                      ", but [project] domains does not name it – its findings are not reported", "edakit/domains",
                      f"add \"{n}\" to [project] domains, or accept STRUCT.domain {n} with the reason")
              for n in hint if n not in enabled]
-    return ProjectProfile(enabled, (design.graph.get("purpose") or {}).get("use"), notes)
+    purpose = design.graph.get("purpose") or {}
+    return ProjectProfile(enabled, purpose.get("use"), notes, national.country(purpose))
 
 
 def lint():
     """Problems of the domain files: every switch, severity and hint names a code (code:topic, code/grade) of the
-    catalog and a severity it knows, every fact a kind of the parts schema, every review a reviewer. -> [text]"""
+    catalog and a severity it knows, every fact a kind of the parts schema, every review a reviewer, every {national.…} placeholder a topic of edakit/national.toml. -> [text]"""
     from . import catalog
     from .schema import kinds
     out = []
@@ -164,6 +169,8 @@ def lint():
         for r in f.get("review") or {}:
             if r not in REVIEWERS:
                 out.append(f"{at}: review.{r} – one of {', '.join(REVIEWERS)}")
+    out += national.lint([(f"domains/{n}.toml", q) for n, f in domains().items()
+                          for qs in (f.get("review") or {}).values() for q in qs])
     return out
 
 
@@ -178,6 +185,8 @@ def main(cfg, args):
         print(f"Questions for the {args.review} review from the domains core, {', '.join(prof.enabled) or '–'}:")
         for i, q in enumerate(questions, 1):
             print(f"{i}. {q}")
+        if args.review == "regulatory" and prof.country:
+            print("\n" + national.line(prof.country))
         return 0
     declared = cfg.domains is not None
     print(f"core – {domains()['core']['domain']['about']} (always on)")
