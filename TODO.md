@@ -71,10 +71,11 @@ owner's rules there: no click because of the API, no self-extended MCP server, t
 - [ ] **On the owner's computer – the newest versions live:** EasyEDA Pro 3.2.209 (3.2.206 is installed) and
       easyeda-mcp-pro 1.6.0 (the pin is 1.4.0) with the patched extension of the same version; E-1 to E-4 and E-7
       checked again, the self-test, one gate run of the example. Then the pin raised in `mcp-server.sh`.
-- [ ] **On the owner's word – post:** M-1 to M-3 (issue, then the fork's branch and its pull request), M-4 once its
-      branch `feat/odb-export` is built, M-5 and M-7 as issues, M-6 as a comment on #539; E-1 to E-16 at
-      easyeda/easyeda-api-sdk after the live check above – to #33, #34, #36, #38 and #39 as comments. Before each the
-      check of "The latest state".
+- [ ] **M-4's branch `feat/odb-export` built in the fork**, tested like M-1 to M-3 – then M-1 to M-4 are posted
+      together (the owner's decision of 2026-11-01), each an issue, then the fork's branch and its pull request.
+- [ ] **On the owner's word – post:** M-1 to M-4 as above, M-5 and M-7 as issues, M-6 as a comment on #539; E-1 to
+      E-16 at easyeda/easyeda-api-sdk after the live check above – to #33, #34, #36, #38 and #39 as comments. Before
+      each the check of "The latest state".
 - [ ] **When a release brings M-2 to M-4:** pin raised, the original extension, `bridge-extension-patch.sh` and
       `odb-tool-patch.mjs` removed, handbook 2.4, 2.5 and 9.1 follow.
 
