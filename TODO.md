@@ -29,6 +29,12 @@ to touch.
 
 ## For the owner
 
+- [ ] TD-51 - **The bridge extension 1.6.0 in EasyEDA:** in EasyEDA *Settings → Extensions → Extension Manager*
+      uninstall "MCP Pro Bridge (depth 12, schematic PDF, ODB++)", import
+      `~/.easyeda-mcp-pro/easyeda-bridge-extension-1.6.0.eext`, allow "External Interactions", restart EasyEDA – the
+      extension for easyeda-mcp-pro 1.6.0 (E-4). Only while no session works in EasyEDA and right before TD-52: until
+      then edakit on main reads the PCB's parts with projectId "current", which the 1.6.0 extension refuses.
+      *(edakit-e4)*
 - [ ] TD-57 - **The real cost of the first order:** once an order the skill cart put into a maker's cart is paid,
       `/edakit:cart actual` on its order page or saved invoice – `edakit cart actual` (handbook 8.4, step 5) has run
       on recorded data only; the real cost, the project's fee table and the order record come from it. *(edakit-80)*
@@ -42,13 +48,9 @@ E-1 to E-16 on EasyEDA Pro and M-1 to M-9 on easyeda-mcp-pro, checked live on Ea
 
 At the owner's computer, in this order; each change checked live before it is built.
 
-- [ ] TD-25 - **easyeda-mcp-pro 1.6.0 prepared:** on a branch, `EASYEDA_MCP_VERSION` in `edakit/easyeda/mcp-server.sh`
-      from 1.4.0 to 1.6.0, both patches applied to 1.6.0 (their anchors are still there), the patched bridge extension
-      built. Not merged yet: since 1.5.1 a server refuses writes from an extension of another version.
-- [ ] TD-51 - **The bridge extension 1.6.0 in EasyEDA:** the old one uninstalled, the patched 1.6.0 imported, "External
-      interaction" allowed, EasyEDA restarted – the owner's clicks (E-4); goes to "For the owner" once TD-25 is done.
-- [ ] TD-52 - **The switch to 1.6.0:** right after TD-51, TD-25's branch merged, every edakit session's server
-      restarted, the self-test and one gate run of the example green.
+- [ ] TD-52 - **The switch to 1.6.0:** right after TD-51, branch `mcp-160` merged, the plugin updated in every project
+      that uses EasyEDA (pytree, the bell) and every edakit session's server restarted, the self-test and one gate run
+      of the example green; then handbook 2's "Tested with" names 1.6.0.
 - [ ] TD-53 - **M-6, all pages at once:** `easyeda_schematic_components` with `scope: "all_pages"` instead of focusing
       page after page – once TD-52 is done.
 - [ ] TD-54 - **M-6, the BOM's duplicates:** does the BOM of a board-linked schematic still list parts twice on 1.6.0?
@@ -152,6 +154,10 @@ sources, data and code untouched; a text that is generated or used elsewhere sta
 Done or dropped, newest first, each with its date and the commit that closed it. What closed before 2026-11-01 is
 taken from the history of this file; an item rewritten on its way is listed once, in its last form.
 
+- [x] TD-25 - **easyeda-mcp-pro 1.6.0 prepared:** branch `mcp-160`, the pin raised, both patches applied, the patched
+  extension built to `~/.easyeda-mcp-pro/easyeda-bridge-extension-1.6.0.eext`; on the way 1.6.0's one break for
+  edakit – the PCB lists refuse projectId "current" – met in `list_pcb_components` (branch `mcp-160`, not merged).
+  *(edakit-e4)* [2026-11-01]
 - [x] TD-55 - **4.4** The tree moved to edakit before its order instead (its EK-5 lifted EK-1), in pytree: D-50 to
   D-54, merged on its main with pytree#34 – `hardware/boards/tree.toml` written by its script `baumplan`, its scripts
   under `[scripts]` (`review_paket.py` only reads the release), `elektrotechniker` and `pcb-pruefer` deleted rather
