@@ -1,0 +1,84 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 400" width="960" height="400" font-family="IBM Plex Sans, Helvetica, Arial, sans-serif" role="img" aria-labelledby="t d">
+  <title id="t">How edakit works</title>
+  <desc id="d">Two stations. The circuit: hardware graph, checks, simulation, drawing, hand-over. The board: schematic, PCB, release gate with the manufacturing files, order. Loops: the check loop back to the graph, the review loop, the PCB round, the gate going back to the stage that failed. You decide what the circuit must do, the decisions on money, purpose and looks, and you order and pay.</desc>
+  <style>
+    .bg { fill: #f4f6f6; } .station { fill: #ffffff; stroke: #d5dcdc; }
+    .box { fill: #ffffff; stroke: #0e6c6a; stroke-width: 1.6; } .you { fill: #fbeee2; stroke: #b8691f; stroke-width: 1.4; }
+    .ink { fill: #1d2626; } .muted { fill: #5d6b6b; } .accent { fill: #0e6c6a; } .copper { fill: #b8691f; }
+    .arrow { stroke: #0e6c6a; stroke-width: 1.6; fill: none; } .loop { stroke: #b8691f; stroke-width: 1.4; fill: none; }
+    .dash { stroke: #b8691f; stroke-width: 1.2; stroke-dasharray: 4 3; fill: none; }
+    @media (prefers-color-scheme: dark) {
+      .bg { fill: #111717; } .station { fill: #182020; stroke: #2c3838; }
+      .box { fill: #182020; stroke: #5cc4c0; } .you { fill: #2a2118; stroke: #e0954f; }
+      .ink { fill: #e3eaea; } .muted { fill: #97a6a6; } .accent { fill: #5cc4c0; } .copper { fill: #e0954f; }
+      .arrow { stroke: #5cc4c0; } .loop { stroke: #e0954f; } .dash { stroke: #e0954f; }
+    }
+  </style>
+  <defs>
+    <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="accent"/></marker>
+    <marker id="l" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="copper"/></marker>
+  </defs>
+  <rect class="bg" x="0" y="0" width="960" height="400" rx="10"/>
+
+  <!-- you -->
+  <rect class="you" x="20" y="16" width="920" height="46" rx="8"/>
+  <text class="copper" x="36" y="44" font-size="15" font-weight="600">You</text>
+  <text class="ink" x="80" y="44" font-size="13.5">say what the circuit must do · decide on money, purpose and looks · create the EasyEDA project · order, pay and hold the boards</text>
+
+  <!-- stations -->
+  <rect class="station" x="20" y="84" width="520" height="210" rx="10"/>
+  <text class="accent" x="36" y="108" font-size="15" font-weight="600">The circuit – a result on its own</text>
+  <rect class="station" x="556" y="84" width="384" height="210" rx="10"/>
+  <text class="accent" x="572" y="108" font-size="15" font-weight="600">The board</text>
+
+  <!-- circuit boxes: x 36, 136, 236, 336, 436 (w 88) -->
+  <g font-size="13" text-anchor="middle">
+    <rect class="box" x="36" y="130" width="88" height="52" rx="6"/><text class="ink" x="80" y="152">hardware</text><text class="ink" x="80" y="169">graph</text>
+    <rect class="box" x="136" y="130" width="88" height="52" rx="6"/><text class="ink" x="180" y="152">checks</text><text class="muted" x="180" y="169" font-size="11.5">P, G</text>
+    <rect class="box" x="236" y="130" width="88" height="52" rx="6"/><text class="ink" x="280" y="152">simulation</text><text class="muted" x="280" y="169" font-size="11.5">E · ngspice</text>
+    <rect class="box" x="336" y="130" width="88" height="52" rx="6"/><text class="ink" x="380" y="152">drawn</text><text class="ink" x="380" y="169">schematic</text>
+    <rect class="box" x="436" y="130" width="88" height="52" rx="6"/><text class="ink" x="480" y="152">hand-over</text><text class="muted" x="480" y="169" font-size="11.5">reviews</text>
+  </g>
+  <g>
+    <line class="arrow" x1="124" y1="156" x2="135" y2="156" marker-end="url(#a)"/>
+    <line class="arrow" x1="224" y1="156" x2="235" y2="156" marker-end="url(#a)"/>
+    <line class="arrow" x1="324" y1="156" x2="335" y2="156" marker-end="url(#a)"/>
+    <line class="arrow" x1="424" y1="156" x2="435" y2="156" marker-end="url(#a)"/>
+    <line class="arrow" x1="524" y1="156" x2="571" y2="156" marker-end="url(#a)"/>
+  </g>
+
+  <!-- board boxes: x 572, 664, 756, 848 (w 80) -->
+  <g font-size="13" text-anchor="middle">
+    <rect class="box" x="572" y="130" width="80" height="52" rx="6"/><text class="ink" x="612" y="152">schematic</text><text class="muted" x="612" y="169" font-size="11.5">S</text>
+    <rect class="box" x="664" y="130" width="80" height="52" rx="6"/><text class="ink" x="704" y="152">PCB</text><text class="muted" x="704" y="169" font-size="11.5">L</text>
+    <rect class="box" x="756" y="130" width="80" height="52" rx="6"/><text class="ink" x="796" y="152">gate,</text><text class="ink" x="796" y="169">files</text>
+    <rect class="box" x="848" y="130" width="80" height="52" rx="6"/><text class="ink" x="888" y="152">order</text><text class="muted" x="888" y="169" font-size="11.5">4 makers</text>
+  </g>
+  <g>
+    <line class="arrow" x1="652" y1="156" x2="663" y2="156" marker-end="url(#a)"/>
+    <line class="arrow" x1="744" y1="156" x2="755" y2="156" marker-end="url(#a)"/>
+    <line class="arrow" x1="836" y1="156" x2="847" y2="156" marker-end="url(#a)"/>
+  </g>
+
+  <!-- loops -->
+  <path class="loop" d="M180,182 C180,214 80,214 80,186" marker-end="url(#l)"/>
+  <text class="copper" x="186" y="200" font-size="11.5">check loop</text>
+  <path class="loop" d="M280,182 C280,240 80,240 80,186" marker-end="url(#l)"/>
+  <text class="copper" x="286" y="200" font-size="11.5">a case fails</text>
+  <path class="loop" d="M480,182 C480,272 80,272 80,186" marker-end="url(#l)"/>
+  <text class="copper" x="486" y="200" font-size="11.5">review</text><text class="copper" x="486" y="214" font-size="11.5">loop</text>
+  <path class="loop" d="M688,182 C688,214 720,214 720,186" marker-end="url(#l)"/>
+  <text class="copper" x="704" y="228" font-size="11.5" text-anchor="middle">PCB round</text>
+  <path class="loop" d="M796,182 C796,262 612,262 612,186" marker-end="url(#l)"/>
+  <text class="copper" x="704" y="276" font-size="11.5" text-anchor="middle">back to the stage that failed</text>
+
+  <!-- you into the steps -->
+  <path class="dash" d="M80,62 L80,128" marker-end="url(#l)"/>
+  <path class="dash" d="M180,62 L180,128" marker-end="url(#l)"/>
+  <path class="dash" d="M888,62 L888,128" marker-end="url(#l)"/>
+
+  <!-- legend -->
+  <text class="muted" x="20" y="322" font-size="12">Teal: the steps, each checked by edakit, not by Claude.  Copper: where it goes back – a finding, a failed scenario, a</text>
+  <text class="muted" x="20" y="340" font-size="12">reviewer's finding, a failed DRC, a stage of the gate that did not pass. Dashed: where you decide. Letters: the stages of</text>
+  <text class="muted" x="20" y="358" font-size="12">the release gate – P parts, G graph, E simulation, S schematic, L layout, F manufacturing files.</text>
+</svg>

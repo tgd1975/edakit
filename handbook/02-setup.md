@@ -48,8 +48,21 @@ asks kicad-cli for its version (the KiCad setup, 16.2).
 
 The VS Code extension has no `/plugin`: run `claude plugin marketplace add tgd1975/edakit` and
 `claude plugin install edakit@edakit` in a terminal. With only the extension installed, `claude` is
-`~/.vscode/extensions/anthropic.claude-code-<version>-linux-x64/resources/native-binary/claude`. How to update: the
-README, section Install.
+`~/.vscode/extensions/anthropic.claude-code-<version>-linux-x64/resources/native-binary/claude`.
+
+To update, refresh the marketplace and update the plugin, then start a new session (VS Code: a new Claude session or
+*Developer: Reload Window*):
+
+```text
+/plugin marketplace update edakit
+```
+
+```bash
+claude plugin marketplace update edakit && claude plugin update edakit@edakit
+```
+
+An update brings the newest version of edakit. Auto-update for the edakit marketplace can be switched on under
+`/plugin` → Marketplaces (off by default for marketplaces outside Anthropic).
 
 The plugin brings the skills (`/edakit:start`, `/edakit:hardware-change`, …), the agents, the MCP server `easyeda`
 (tools `mcp__plugin_edakit_easyeda__*`), the EasyEDA claim hook and the command `edakit` on the Bash PATH. Its session

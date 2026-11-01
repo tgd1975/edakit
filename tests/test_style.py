@@ -1,7 +1,8 @@
 """The countable rules of the style guide (docs/style.md, "What the test counts") on the documentation as
 docs/organisation.md lists it: the entry pages' sentences, sections without a subheading, chapters over 500 lines and
 paragraphs over 120 words, bare cross-references, "the user" and "the reference project" in a page's own sentences,
-dates outside the history, bold terms the glossary does not have. It reads documentation only.
+dates outside the history, bold terms the glossary does not have, buzzwords outside docs/architecture.md and the
+README's one "harness". It reads documentation only.
 
 A page that does not meet a rule today stands in RED: its test is expected to fail and fails once the page meets the
 rule, so that the page leaves RED (steps D.2 and D.5 of docs/concepts/new/documentation.md). A new page meets every
@@ -14,7 +15,7 @@ import pytest
 
 ROOT = Path(__file__).resolve().parents[1]
 GLOSSARY = ROOT / "docs" / "glossary.md"
-ENTRY = ("README.md", "docs/glossary.md")             # the entry layer; D.2 adds the quickstart and "How it works"
+ENTRY = ("README.md", "docs/glossary.md", "docs/quickstart.md", "docs/how-it-works.md")   # the entry layer
 HISTORY = ("handbook/13-lessons-learned.md",)       # the history of edakit: its dates are its content
 DATED = ("handbook/15-regulatory.md",               # the state of the law the regulatory review relies on
          "examples/coin-cell-led/docs/decisions.md",  # a decision log: each decision with its day
@@ -26,6 +27,8 @@ PARAGRAPH_WORDS = 120
 ENTRY_MEAN, ENTRY_MAX = 20, 35
 MONTHS = "January|February|March|April|May|June|July|August|September|October|November|December"
 DATE = re.compile(rf"\b20\d\d-\d\d-\d\d\b|\b(?:\d{{1,2}}(?:–\d{{1,2}})? )?(?:{MONTHS}) 20\d\d\b")
+BUZZ = re.compile(r"\b(?:[Hh]arness(?:es)?|[Aa]gentic|AI-powered|copilots?)\b")   # "GitHub Copilot" is a name
+BUZZ_PAGE = "docs/architecture.md"          # the one page that uses "harness", defined
 STATUS = re.compile(r"^\s*(?:\*\*)?(?:State|Status)\b|^\s*!!!")
 
 
@@ -168,6 +171,17 @@ def bold_terms(page, text):
     return out
 
 
+def buzzwords(page, text):
+    """A buzzword in a page's own sentences: none outside docs/architecture.md, "harness" once in the README."""
+    if page == BUZZ_PAGE:
+        return []
+    t = own(text)
+    found = [f"line {t.count(chr(10), 0, m.start()) + 1}: {m.group(0)}" for m in BUZZ.finditer(t)]
+    if page == "README.md" and len(found) == 1 and "arness" in found[0]:
+        return []
+    return found
+
+
 RULES = {                                            # rule: (check, the pages it holds)
     "sentences": (long_sentences, lambda pages: [p for p in pages if p in ENTRY]),
     "sections": (long_sections, lambda pages: pages),
@@ -177,30 +191,32 @@ RULES = {                                            # rule: (check, the pages i
     "words": (words_from_inside, lambda pages: pages),
     "dates": (dates, lambda pages: pages),
     "bold": (bold_terms, lambda pages: [p for p in pages if p in ENTRY]),
+    "buzzwords": (buzzwords, lambda pages: pages),
 }
 
 # Today's pages that do not meet a rule yet – measured on main when D.1 was built. D.2 rewrites the README, D.5 the
 # chapters; a page that meets its rule fails here until it leaves the list.
 RED = {
-    "sentences": {"README.md"},
+    "sentences": set(),
     "sections": {f"handbook/{c}.md" for c in ("03-hardware-graph", "04-parts-database", "05-simulation", "07-pcb",
                                               "08-release-gate", "10-reference", "11-working-with-claude",
                                               "14-design", "17-walkthrough")},
     "chapters": {f"handbook/{c}.md" for c in ("04-parts-database", "05-simulation", "07-pcb",
                                               "08-release-gate", "10-reference", "17-walkthrough")},
-    "paragraphs": {"README.md", "examples/coin-cell-led/docs/decisions.md",
+    "paragraphs": {"examples/coin-cell-led/docs/decisions.md",
                    "examples/blinker-555/docs/decisions.md"} | {f"handbook/{c}.md" for c in (
         "01-approach", "03-hardware-graph", "04-parts-database", "05-simulation", "07-pcb",
         "08-release-gate", "10-reference", "14-design", "17-walkthrough")},
     "references": set(),
-    "words": {"README.md"} | {f"handbook/{c}.md" for c in (
+    "words": {f"handbook/{c}.md" for c in (
         "01-approach", "03-hardware-graph", "04-parts-database", "07-pcb", "08-release-gate",
         "09-easyeda-api", "10-reference", "12-troubleshooting", "13-lessons-learned",
         "14-design")},
     "dates": {"examples/coin-cell-led/README.md", "examples/blinker-555/README.md"} | {f"handbook/{c}.md" for c in (
         "01-approach", "03-hardware-graph", "04-parts-database", "07-pcb", "08-release-gate", "09-easyeda-api",
         "10-reference", "17-walkthrough")},
-    "bold": {"README.md"},
+    "bold": set(),
+    "buzzwords": set(),
 }
 
 
@@ -237,6 +253,8 @@ def test_the_rules_find_what_they_count():
     assert dates("x", "Found on 2026-10-31.\n**State 2026-10-30:** built.\nIn October 2026.") == [
         "line 1: 2026-10-31", "line 3: October 2026"]
     assert bold_terms("x", "A **sign-off** and a **wobble** here. **Volume.** The title.") == ["wobble"]
+    assert buzzwords("x", "An agentic harness. GitHub Copilot is a name.") == ["line 1: agentic", "line 1: harness"]
+    assert buzzwords("README.md", "A harness.") == [] and buzzwords("docs/architecture.md", "A harness, harnesses.") == []
 
 
 def test_the_glossary_links_land_on_a_section():
