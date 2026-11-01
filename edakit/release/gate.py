@@ -505,8 +505,8 @@ def executed(prof, cfg):
     graph = ("STRUCT.", "LIM.", "LVL.", "REQ.", "PATH.", "PARTS.")
     beyond = ["SYNC.source", "GEO.hole", "GEO.formed"]
     beyond += ["SYNC.footprint"] if has_footprint_data(cfg) else []
-    beyond += ["DOCS.ref", "DOCS.need", "DOCS.evidence", "DOCS.draft"] if cfg.requirements else []
-    from .. import makers
+    from .. import makers, requirements
+    beyond += list(requirements.CHECKS) if cfg.requirements else []
     skip = {"STRUCT.domain"} | (set() if has_footprint_data(cfg) else {"PARTS.footprint"})
     if not makers.with_catalogue(cfg, "jlcpcb"):
         skip.add("PARTS.stock")       # no maker of [cart] makers orders from JLCPCB's catalogue: it does not run

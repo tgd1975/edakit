@@ -76,7 +76,7 @@ profile says: `${CLAUDE_PLUGIN_ROOT}/skills/part-search/distributors/<name>.md` 
   `hot_loop`, the pin roles of its hot loop from the datasheet's layout section (REQ.missing); a pin `hint` or part `hints` for
   what the datasheet warns about (shown by `edakit check`).
 - `compliance` for the regulatory review (M-6, handbook 15): `rohs` (true, false or the exemption), `reach` (the
-  supplier's SVHC statement), for a part that transmits `radio` (`bands_mhz`; `max_dbm`, the conducted power at the
+  supplier's SVHC statement – PARTS.fact/reach asks every part of a board given away or sold for it), for a part that transmits `radio` (`bands_mhz`; `max_dbm`, the conducted power at the
   RF port as the datasheet states it; `antenna_dbi`, the gain of its antenna in the product – a module's datasheet
   or certificate; `eirp_dbm` where a certificate states the e.i.r.p.; `doc` = URL of the EU declaration of
   conformity – LIM.eirp compares the e.i.r.p. with the band's limit), `"radio": "none"` for a module or microcontroller

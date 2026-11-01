@@ -36,13 +36,20 @@ def give_radio(project, **radio):
 
 
 def purpose(project, use):
-    """purpose.use of the example's graph; None: no purpose at all."""
+    """purpose.use of the example's graph; None: no purpose at all. A gift or a sale asks every part for its SVHC
+    (PARTS.fact/reach, #95, tests/test_reach.py): stated here, so that only the radio is open."""
     g = project.graph()
     if use is None:
         del g["graph"]["purpose"]
     else:
         g["graph"]["purpose"]["use"] = use
     project.save_graph(g)
+    if use in ("gift", "sale"):
+        d = Design.from_config(project.config())
+        for key in sorted({d.entry_key(x) for x in d.comps} - {None}):
+            part = project.part(key)
+            part.setdefault("compliance", {}).setdefault("reach", "none above 0.1 % (the maker's REACH declaration)")
+            project.save_part(key, part)
 
 
 def state_use(project, **use):
@@ -312,7 +319,7 @@ P11_PICO = ("C41407547 Raspberry Pi Pico 2 (U1) states no radio – compliance.r
 
 def no_statement(project):
     part = project.part("C41407547")
-    del part["compliance"]
+    del part["compliance"]["radio"]
     project.save_part("C41407547", part)
 
 

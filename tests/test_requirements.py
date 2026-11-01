@@ -40,7 +40,7 @@ reason = "the TLC5916 and the Pico 2 want 5 V: a cell needs a boost converter, w
 [[requirement]]
 id = "R-1"
 text = "With all eight LEDs on, the board draws at most 500 mA from J1 at 4.75 to 5.25 V."
-source = "sim.json: the note of source J1"
+source = "README.md"
 from = ["N-1", "USB 2.0: 500 mA per port"]
 binding = "must"
 verify = [{ rows = "LIM.i * J1 current from the supply" },
@@ -162,7 +162,7 @@ def test_the_example_reads_without_problems(project):
     assert [e.id for e in entries] == ["N-1", "N-2", "N-3", "N-4", "R-1", "R-2", "R-3", "R-4"]
     r1 = next(e for e in entries if e.id == "R-1")
     assert r1.kind == "requirement" and r1.binding == "must" and r1.status == "accepted"
-    assert r1.from_ == ["N-1", "USB 2.0: 500 mA per port"] and r1.source == "sim.json: the note of source J1"
+    assert r1.from_ == ["N-1", "USB 2.0: 500 mA per port"] and r1.source == "README.md"
     assert r1.verify == [("rows", "LIM.i * J1 current from the supply"),
                          ("accept", "on the USB port of a laptop: all eight LEDs on, the port stays on")]
     n4 = next(e for e in entries if e.id == "N-4")
@@ -173,10 +173,10 @@ def test_a_requirement_names_where_it_was_found(project, capsys):
     """source on a requirement: where it was found, as on a need; from stays where it comes from."""
     toml = with_requirements(project)
     assert req(toml) == 0
-    assert re.search(r"R-1 +accepted +must +With all eight LEDs on.*\n +source: sim.json: the note of source J1\n"
+    assert re.search(r"R-1 +accepted +must +With all eight LEDs on.*\n +source: README.md\n"
                      r" +from: N-1, USB 2.0: 500 mA per port\n", capsys.readouterr().out)
     assert req(toml, "R-1") == 0
-    assert re.search(r"\n  source +sim.json: the note of source J1\n  from +N-1 ", capsys.readouterr().out)
+    assert re.search(r"\n  source +README.md\n  from +N-1 ", capsys.readouterr().out)
 
 
 def test_a_missing_status_is_a_draft(project, tmp_path, capsys):

@@ -1103,7 +1103,8 @@ entries that do not resolve are fixed first.
 
 With `[project] requirements` (3.6) the gate holds the circuit to what it must do. A file the key names that is
 missing or not valid stops the gate before its first stage (exit 1, no run folder), as it stops `edakit check`. Stage
-G runs DOCS.ref to DOCS.draft on the file (3.3); a finding about a draft is information there. After the stages, every
+G runs DOCS.ref to DOCS.derived on the file (3.3); a finding about a draft is information there – but DOCS.derived,
+a warning for a draft too. After the stages, every
 requirement's evidence is evaluated against this run:
 
 | `verify` | passes when | otherwise |
