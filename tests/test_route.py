@@ -325,7 +325,7 @@ def regions(tmp_path, monkeypatch):
         cfg = config.load(tmp_path / "edakit.toml")
         board = cfg.board()
         data = {"pcb": "main", "components": [], "outlines": [[mm(0, 0), mm(40, 0), mm(40, 20), mm(0, 20)]],
-                "pads": [pad(f"C{i}", "2", net, *xy) for i, (net, xy) in enumerate(
+                "pads": [pad(f"C{i}", "2", net, *xy, *layer) for i, (net, xy, *layer) in enumerate(
                     [("GND", p) for p in LEFT] + [("GND_B", p) for p in RIGHT] + list(pads), 1)]
                 + [pad("TP1", "1", "SIG", *mm(20, 19)), pad("TP2", "1", "SIG", *mm(20, 1))]}
         P = route.paths(cfg, board)
@@ -392,6 +392,28 @@ def test_regions_without_the_key_or_on_a_layer_of_its_own_nothing_changes(region
     _, made = regions("pours", alone)
     bottom = [p for net, layer, *_, p in made if layer == 2]
     assert len(bottom) == 1 and len(bottom[0].exterior.coords) == 5 and bottom[0].area == pytest.approx(39 * 19)
+
+
+# stitch on a shared layer (#112): SIG3 on TOP walls off a pocket at SIG's track inside GND's half – no pad of a pour
+# net in it, so no net claims it. GND pours BOTTOM too and holds a through-hole pad there
+CHANNEL = {"SIG3": {"wires": [("TOP", 10, [mm(20, 12.5), mm(12, 12.5), mm(12, 7.5), mm(20, 7.5)])], "vias": []}}
+STITCHED = REGIONS.replace('pour_only = true\n[[pours]]\nnet = "GND_B"', 'pour_only = true\nstitch = "TOP"\n'
+                           '[[pours]]\nnet = "GND_B"') + '[[pours]]\nnet = "GND"\nlayers = ["BOTTOM"]\npour_only = true\n'
+THT = [("GND", mm(3, 10), 12)]
+
+
+def test_regions_stitch_reaches_a_pocket_no_net_claims(regions, tmp_path):
+    _, made = regions("pours", STITCHED.replace('stitch = "TOP"\n', ""), pads=THT, routes=CHANNEL)
+    gnd_top = [p for net, layer, *_, p in made if (net, layer) == ("GND", 1)]
+    assert not any(any(holds(p, [mm(16, 10)])) for p in gnd_top)                    # without stitch: nobody's
+    _, made = regions("pours", STITCHED, pads=THT, routes=CHANNEL)
+    gnd_top = [p for net, layer, *_, p in made if (net, layer) == ("GND", 1)]
+    assert any(any(holds(p, [mm(16, 10)])) for p in gnd_top)                        # GND's outline holds the pocket
+    stitch = tmp_path / "build" / "edakit" / "route" / "main_stitch.json"
+    [(net, x, y)] = json.loads(stitch.read_text())                                  # one via, planned offline
+    assert net == "GND" and 12.5 < x / MIL < 19.5 and 8 < y / MIL < 12               # in the pocket, clear of SIG3
+    regions("pours", STITCHED, pads=THT, routes=CHANNEL)                             # a second run: no second via
+    assert len(json.loads(stitch.read_text())) == 1
 
 
 APART = REGIONS.replace('net = "GND_B"\nlayers = ["TOP"]', 'net = "GND_B"\nlayers = ["BOTTOM"]')

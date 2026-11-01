@@ -985,7 +985,7 @@ def pour_pieces(rules, data, routes, segs=None, regions=None):
     copper = _layer_copper(rules, data, routes, segs)
     claims = {}
     if rules.regions:
-        claims = (regions or _regions(rules, outline, copper))["claims"]
+        claims = (regions or _regions(rules, outline, copper, _via_keep(rules, data)))["claims"]
     out = {}
     for net, specs in sorted(rules.pour_only.items()):
         for layer, clearance, width in specs:
@@ -1001,15 +1001,73 @@ def pour_regions(rules, data, routes, segs=None):
     others as islands) and have more than pour_min_piece_mm2 outside that copper grown by the clearance (EasyEDA leaves
     smaller ones empty). Its outlines: the pieces without their holes, grown by REGION_GROW_MM, simplified, within the
     pour outline and without the outlines of the nets before it. A piece of one net inside the outline of another needs
-    an outline with a hole, which EasyEDA does not fill: a problem naming the place.
-    -> {"claims": {(net, layer): [piece]}, "outlines": {(net, layer): [polygon]}, "problems": [text]}, in mil."""
+    an outline with a hole, which EasyEDA does not fill: a problem naming the place. A net stitched on the shared layer
+    ([[pours]] stitch = that layer) also takes the pieces no net claims there (stitch_channels), each with a via.
+    -> {"claims": {(net, layer): [piece]}, "outlines": {(net, layer): [polygon]}, "problems": [text],
+    "stitch": [(net, x, y)]}, in mil."""
     if not rules.regions:
-        return {"claims": {}, "outlines": {}, "problems": []}
+        return {"claims": {}, "outlines": {}, "problems": [], "stitch": []}
     segs = segments(rules, routes, data) if segs is None else segs
-    return _regions(rules, _pour_area(rules), _layer_copper(rules, data, routes, segs))
+    return _regions(rules, _pour_area(rules), _layer_copper(rules, data, routes, segs), _via_keep(rules, data))
 
 
-def _regions(rules, outline, copper):
+def _via_keep(rules, data):
+    """Where no stitching via may go: the keep-outs around mounting and tooling holes."""
+    return unary_union(circles(hole_keeps(rules, data) + tooling_keeps(rules)))
+
+
+def _other_pour(rules, outline, copper, claims, net, layer):
+    """The pour of net on layer as computed offline, only its pieces that hold the net's copper there (EasyEDA drops
+    the others as islands): its claims on a shared layer, else the whole outline without foreign copper."""
+    if (net, layer) in claims:
+        return unary_union(claims[(net, layer)])
+    specs = [p for p in rules.board.pours if p["net"] == net and layer in p.get("layers", ["TOP", "BOTTOM"])]
+    if not specs:
+        return Polygon()
+    own = unary_union([g for n, g in copper[layer] if n == net])
+    pieces = _computed(outline, copper[layer], net, specs[0].get("clearance_mm", POUR_CLEARANCE_MM) * MIL_PER_MM,
+                       specs[0].get("min_width_mm", POUR_MIN_WIDTH_MM) * MIL_PER_MM)
+    return unary_union([g for g in pieces if g.intersects(own)])
+
+
+def stitch_channels(rules, outline, copper, claims, keep=None):
+    """pour_regions with stitch: the pieces of a shared layer that no net claims – channels between tracks of other
+    nets with no copper of a pour net inside – go to a net stitched on that layer ([[pours]] stitch = "TOP"), in claim
+    order, if larger than pour_min_piece_mm2 and with room for a via of the net where the other layer pours it: the via
+    keeps the routing clearance to foreign copper on both layers and stays out of the hole keep-outs. Adds the pieces to
+    claims, -> the vias [(net, x, y)] in mil."""
+    from shapely.ops import polylabel
+    r, vias = rules.via[1] / 2, []
+    foreign = {lay: {} for lay in copper}
+    for layer, nets in rules.regions.items():
+        for net, clearance, width in nets:
+            if not any(p["net"] == net and p.get("stitch") == layer and layer in p.get("layers", ["TOP", "BOTTOM"])
+                       for p in rules.board.pours):
+                continue
+            other = "BOTTOM" if layer == "TOP" else "TOP"
+            target = _other_pour(rules, outline, copper, claims, net, other)
+            if target.is_empty:
+                continue
+            for lay in (layer, other):
+                foreign[lay].setdefault(net, unary_union([g for n, g in copper[lay] if n != net]).buffer(r + rules.clear))
+            free = outline.buffer(-r).difference(foreign[layer][net]).difference(foreign[other][net]).intersection(target)
+            if keep is not None and not keep.is_empty:
+                free = free.difference(keep.buffer(r))
+            own = unary_union([g for n, g in copper[layer] if n == net])
+            taken = unary_union([g for k, gs in claims.items() if k[1] == layer for g in gs])
+            for g in _computed(outline, copper[layer], net, clearance, width, taken):
+                if g.intersects(own) or g.area <= rules.min_piece:
+                    continue
+                room = [p for p in _polygons(g.intersection(free)) if p.area >= 1]
+                if not room:
+                    continue
+                pt = polylabel(max(room, key=lambda p: p.area), tolerance=1)
+                vias.append((net, round(pt.x, 2), round(pt.y, 2)))
+                claims[(net, layer)].append(g)
+    return vias
+
+
+def _regions(rules, outline, copper, keep=None):
     claims, outlines, problems = {}, {}, []
     grow, tolerance = REGION_GROW_MM * MIL_PER_MM, REGION_SIMPLIFY_MM * MIL_PER_MM
     for layer, nets in rules.regions.items():
@@ -1020,6 +1078,8 @@ def _regions(rules, outline, copper):
             pieces = _computed(outline, copper[layer], net, clearance, width, unary_union(taken) if taken else None)
             claims[(net, layer)] = [g for g in pieces if g.intersects(own) and g.difference(near).area > rules.min_piece]
             taken += claims[(net, layer)]
+    stitch = stitch_channels(rules, outline, copper, claims, keep)
+    for layer, nets in rules.regions.items():
         done = Polygon()
         for net, _, _ in nets:
             mine = claims[(net, layer)]
@@ -1036,13 +1096,14 @@ def _regions(rules, outline, copper):
             area = hull.buffer(grow).simplify(tolerance).intersection(outline).difference(done) if mine else Polygon()
             outlines[(net, layer)] = [Polygon(p.exterior) for p in _polygons(area) if any(p.intersects(g) for g in mine)]
             done = done.union(area)
-    return {"claims": claims, "outlines": outlines, "problems": problems}
+    return {"claims": claims, "outlines": outlines, "problems": problems, "stitch": stitch}
 
 
-def region_outlines(cfg, board, rules=None):
+def region_outlines(cfg, board, rules=None, vias=None):
     """pour_regions: the outlines `pcb pour` gives the nets on a shared layer, in EasyEDA mm, from the board file and
     the SES of the last routing -> {(net, layer): [[(x, y), …], …]}; None when no layer is shared. Stops when one is
-    missing or a net's pour lies inside another's."""
+    missing or a net's pour lies inside another's. vias: a list that gets the stitching vias of the channels the
+    outlines hold (stitch_channels), (net, x, y) in mil – `route pours` sets them before it fills."""
     rules = rules or Rules(board)
     if not rules.regions:
         return None
@@ -1056,6 +1117,8 @@ def region_outlines(cfg, board, rules=None):
     r = pour_regions(rules, json.loads(P["board"].read_text()), read_ses(P["ses"], rules))
     if r["problems"]:
         raise SystemExit("\n".join(r["problems"]) + "\nnothing poured")
+    if vias is not None:
+        vias += r["stitch"]
     for (net, layer), polys in r["outlines"].items():
         print(f"  pour region {net} {layer}: {len(polys)} outline{'s' * (len(polys) != 1)}", flush=True)
     return {k: [[(x / MIL_PER_MM, y / MIL_PER_MM) for x, y in list(p.exterior.coords)[:-1]] for p in polys]
@@ -2138,14 +2201,24 @@ def fill(cfg, board, mcp, nets, keep_islands_on=None, regions=None):
             print(f"    pour {r.get('pourId')}: {r.get('status')}", flush=True)
 
 
-def pours(cfg, board, rules, mcp, data=None, routes=None, stitch_file=None, regions=None):
+def pours(cfg, board, rules, mcp, data=None, routes=None, stitch_file=None, regions=None, planned=()):
     """Pours anew and filled. Tooling holes (free pads) are taken out before filling and set again afterwards –
     with a free pad in the PCB the fill fails. With stitching configured ([[pours]] stitch = "BOTTOM"),
     fill with islands first, stitch the loose islands to the other side with vias, then fill without islands.
-    regions: the outlines of region_outlines for the nets on a shared layer."""
+    regions: the outlines of region_outlines for the nets on a shared layer; planned: the vias of the channels they
+    hold (stitch_channels), set first – those not set already."""
     nets = sorted({p["net"] for p in board.pours})
     pcb.remove_tooling(mcp)
     stitched = [p for p in board.pours if p.get("stitch")]
+    if planned and stitch_file is not None:
+        old = json.loads(stitch_file.read_text()) if stitch_file.exists() else []
+        new = [v for v in planned if not any(n == v[0] and math.dist((x, y), v[1:]) < 1 for n, x, y in old)]
+        ensure_pcb_focus(mcp)
+        for n, x, y in new:
+            if not api(mcp, "PCB_PrimitiveVia.create", n, x, y, rules.via[2], rules.via[1], 0, "", None, False):
+                raise SystemExit(f"via {n} ({x}, {y}) not created")
+        stitch_file.write_text(json.dumps(old + [list(v) for v in new]))
+        say(f"stitch of channels no net claims: {len(new)} vias set, {len(planned) - len(new)} there already")
     if data is not None and stitched:
         for spec in stitched:
             fill(cfg, board, mcp, [spec["net"]], keep_islands_on=spec["stitch"], regions=regions)
@@ -2287,10 +2360,11 @@ def main(cfg, args):
                 kicad_cli.fill_zones(kicad_board.paths(cfg, board)["pcb"], args.verbose)
                 say(f"pours: {n} zones written and filled by kicad-cli")
             elif step == "pours":
-                regions = region_outlines(cfg, board, rules)  # before anything is written
+                planned = []
+                regions = region_outlines(cfg, board, rules, planned)  # before anything is written
                 data = json.loads(P["board"].read_text()) if P["board"].exists() else None
                 routes = read_ses(P["ses"], rules) if P["ses"].exists() else {}
-                pours(cfg, board, rules, mcp, data, routes, P["stitch"], regions)
+                pours(cfg, board, rules, mcp, data, routes, P["stitch"], regions, planned)
             elif step == "reload" and kc:
                 say("nothing to reload: the KiCad PCB is a file")
             elif step == "reload" and drc_rules.mode(board) == "write":

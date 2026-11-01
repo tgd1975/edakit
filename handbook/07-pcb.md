@@ -740,6 +740,16 @@ of GND` – and nothing is poured; `route check` reports it as a finding first, 
 A pour-only net on a shared layer is connected by what it claims, not by the whole outline, and the preview draws the
 outlines dashed. A plane takes the whole layer, so with `pour_regions` it needs a layer of its own.
 
+**Stitch on a shared layer.** A piece that holds no copper of any pour net – a channel between tracks of other nets
+– is claimed by no net, so it lies in no outline and stays bare, and the fill with islands of `stitch` never reaches
+it. With `stitch` naming the shared layer on an entry of a net there (`stitch = "TOP"` on V_LED's TOP entry, say),
+that net also takes the pieces nobody claims, in claim order, each larger than `pour_min_piece_mm2`: `route pours`
+computes a via of the net for each where it has room – inside the piece, inside the net's computed pour on the other
+side (the pieces holding its copper there), `routing.clearance_mil` from foreign copper on both layers, out of the
+hole keep-outs –, sets it before the first fill, writes it to `route/<b>_stitch.json` with the other stitching vias
+and adds the piece to the net's outline. A piece without room stays bare; a second run sets no via twice. `pcb pour`
+alone pours the same outlines without setting vias; KiCad (16) fills such a piece and drops it as an island.
+
 Without `pour_regions`, the computed pour of a pour-only net assumes the layer to itself: when another net pours on
 the same layer, `route check` says so. The gate's GEO.copper (connectivity) and GEO.pour (bare areas, loose copper) on
 the Gerber copper have the last word either way.
