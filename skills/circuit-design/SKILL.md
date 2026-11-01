@@ -30,7 +30,8 @@ for**: built for oneself, given away or sold, and where – it decides which rul
 asked already (skill new-project: the graph's `purpose`, `[project] quantity`, `[release] assembly`) stands – a change
 is the user's decision. Default what you can; ask the rest in **one** decision round (skill decision-round), not one
 question after the other. The purpose goes into the graph's `[purpose]`: `use = "private"` (or `"gift"`, `"sale"`),
-`market = "EU"`, `notes = "what it is, who uses it"`. A part that can transmit more than the EU allows – an ESP32's
+`market = "EU"`, `country = "AT"` – the member state it is used in, whose national law the review names (handbook
+15.6) –, `notes = "what it is, who uses it"`. A part that can transmit more than the EU allows – an ESP32's
 Wi-Fi channel 14, a LoRa chip's 902–928 MHz – can get its use there too, what the firmware will keep: `radio.U1 =
 {bands_mhz = [[2412, 2472]], notes = "Wi-Fi channels 1–13"}` or `radio.U1 = "off"` (a JSON graph has the same keys,
 `"purpose": {"radio": {"U1": "off"}}`). Without it LIM.band tells what the firmware must keep – information, for a

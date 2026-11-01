@@ -7,6 +7,9 @@ of the protocol and published with the release (publish.py).
     board_<board>_bottom.svg|png     and finish in the colours of the run's order settings (order.json; without them
                                      edakit's defaults: green, white, HASL), copper under the mask a shade of it; the
                                      bottom seen from below, mirrored – with stage F
+    board_<board>_layers.svg|png     the copper layers and silkscreens over each other, seen from above, in the colours
+                                     of the EasyEDA editor (EDITOR): the bottom under the top and showing through it,
+                                     through-hole pads, holes and outline – with stage F
     board_<board>_<layer>.svg|png    every Gerber layer and drill file the maker builds from on its own, as the file
                                      draws it (seen from above), the board's outline faint – with stage F
     pictures.json                    {board: [{name, caption}]} – what the protocol and publish show
@@ -44,6 +47,9 @@ BACKGROUND = "#ffffff"   # around the board and through its holes
 EDGE = "#7a7a7a"         # the board's edge
 LAYER = {"copper": COPPER, "mask": "#2e7d4f", "silk": "#202020", "paste": "#808080", "outline": "#000000",
          "drill": "#000000", None: "#404040"}
+EDITOR = {"background": "#000000", "silk bottom": ("#66cc33", 0.9), "copper bottom": ("#0000ff", 0.55),
+          "copper top": ("#ff0000", 0.8), "pad": "#a0a0a0", "silk top": "#ffcc00", "hole": "#141414",
+          "outline": "#cc00cc"}  # the layers picture: the EasyEDA editor's colours, (colour, opacity) bottom to top
 STACK = {("silk", "top"): 0, ("mask", "top"): 1, ("paste", "top"): 2, ("copper", "top"): 3, ("copper", "bottom"): 5,
          ("paste", "bottom"): 6, ("mask", "bottom"): 7, ("silk", "bottom"): 8, "outline": 9}   # inner copper: 4
 
@@ -150,6 +156,31 @@ def as_made(g, side):
             (silk, silk_c), (holes(built_files(g)[1]), BACKGROUND)]
 
 
+def through_hole_pads(g):
+    """The through-hole pads as an area: the pieces of top copper open in the top mask that hold a plated hole (a drill
+    file without NPTH in its name) – a tented via is no pad."""
+    from shapely.geometry import Point
+    from shapely.ops import unary_union
+    found = layers(g)
+    centres = [Point(x0, y0) for f in built_files(g)[1] if "NPTH" not in f.name.upper()
+               for x0, y0, *_ in gerber.parse_drills(f)]
+    pieces = polygons(area(found.get(("copper", "top"))) & area(found.get(("mask", "top"))))
+    return unary_union([p for p in pieces if any(p.intersects(c) for c in centres)])
+
+
+def all_layers(g):
+    """[(area, colour[, opacity])] of the layers picture, bottom first, as the EasyEDA editor shows the board from
+    above: bottom silkscreen, bottom copper, top copper – each letting what lies under it show through –, the
+    through-hole pads, top silkscreen, holes."""
+    found = layers(g)
+    return [(area(found.get(("silk", "bottom"))), *EDITOR["silk bottom"]),
+            (area(found.get(("copper", "bottom"))), *EDITOR["copper bottom"]),
+            (area(found.get(("copper", "top"))), *EDITOR["copper top"]),
+            (through_hole_pads(g), EDITOR["pad"]),
+            (area(found.get(("silk", "top"))), EDITOR["silk top"]),
+            (holes(built_files(g)[1]), EDITOR["hole"])]
+
+
 # --- drawing ------------------------------------------------------------------------------------------------------
 
 def polygons(geom):
@@ -162,7 +193,7 @@ def polygons(geom):
     return [p for part in getattr(geom, "geoms", []) for p in polygons(part)]
 
 
-def patch(geom, colour):
+def patch(geom, colour, alpha=1.0):
     from matplotlib.patches import PathPatch
     from matplotlib.path import Path as MPath
     verts, codes = [], []
@@ -171,32 +202,34 @@ def patch(geom, colour):
             pts = list(ring.coords)
             verts += pts
             codes += [MPath.MOVETO] + [MPath.LINETO] * (len(pts) - 2) + [MPath.CLOSEPOLY]
-    return PathPatch(MPath(verts, codes), facecolor=colour, edgecolor="none", lw=0) if verts else None
+    return PathPatch(MPath(verts, codes), facecolor=colour, edgecolor="none", lw=0,
+                     alpha=alpha) if verts else None
 
 
-def save(view, shapes, edge, out, name):
-    """shapes [(area, colour)] in this order, the board's edge as a thin line over them, into out/name.svg and .png."""
+def save(view, shapes, edge, out, name, background=BACKGROUND, edge_colour=EDGE):
+    """shapes [(area, colour)] – or (area, colour, opacity) – in this order, the board's edge as a thin line over them,
+    into out/name.svg and .png."""
     import matplotlib
     from matplotlib.figure import Figure
     from shapely import affinity
     w, h = view.size[0] / view.ppm, view.size[1] / view.ppm
     flip = (lambda geom: affinity.scale(geom, xfact=-1, yfact=1, origin=(0, 0))) if view.mirror else (lambda geom: geom)
     with matplotlib.rc_context({"svg.hashsalt": "edakit", "svg.fonttype": "path"}):
-        fig = Figure(figsize=(w / 25.4, h / 25.4), dpi=view.ppm * 25.4, facecolor=BACKGROUND)
+        fig = Figure(figsize=(w / 25.4, h / 25.4), dpi=view.ppm * 25.4, facecolor=background)
         ax = fig.add_axes((0, 0, 1, 1))
         ax.set_xlim(view.x0, view.x0 + w)
         ax.set_ylim(view.y1 - h, view.y1)
         ax.axis("off")
-        for geom, colour in shapes:
-            p = patch(flip(geom), colour)
+        for geom, colour, *alpha in shapes:
+            p = patch(flip(geom), colour, *alpha)
             if p is not None:
                 ax.add_patch(p)
         if edge is not None:
             for poly in polygons(flip(edge)):
                 for ring in (poly.exterior, *poly.interiors):
-                    ax.plot(*ring.xy, color=EDGE, lw=0.5, solid_joinstyle="round")
-        fig.savefig(out / f"{name}.svg", facecolor=BACKGROUND, metadata={"Date": None})
-        fig.savefig(out / f"{name}.png", dpi=view.ppm * 25.4, facecolor=BACKGROUND, metadata={"Software": None})
+                    ax.plot(*ring.xy, color=edge_colour, lw=0.5, solid_joinstyle="round")
+        fig.savefig(out / f"{name}.svg", facecolor=background, metadata={"Date": None})
+        fig.savefig(out / f"{name}.png", dpi=view.ppm * 25.4, facecolor=background, metadata={"Software": None})
 
 
 def layer_name(role, f):
@@ -218,7 +251,7 @@ def stack_key(item):
 
 def board_pictures(run, board):
     """The pictures of one board from <run>/fab/<board>/gerber into <run>/pictures: ([Shot], [what was not drawn]) –
-    as made, top and bottom, then every layer and drill file."""
+    as made, top and bottom, all layers over each other, then every layer and drill file on its own."""
     g = Path(run) / "fab" / board / "gerber"
     out = Path(run) / DIR
     out.mkdir(parents=True, exist_ok=True)
@@ -235,6 +268,8 @@ def board_pictures(run, board):
     for side, caption in (("top", "top"), ("bottom", "bottom, seen from below")):
         one(f"board_{board}_{side}", f"{board}, {caption}",
             lambda name, side=side: save(board_view(g, side), as_made(g, side), edge, out, name))
+    one(f"board_{board}_layers", f"{board}, all layers from above",
+        lambda name: save(board_view(g, "top"), all_layers(g), edge, out, name, EDITOR["background"], EDITOR["outline"]))
     files = sorted(layers(g).items(), key=stack_key) + [(None, f) for f in built_files(g)[1]]
     for role, f in files:
         name, caption = layer_name(role, f)
@@ -308,13 +343,14 @@ def section(found, with_board):
     """The lines of section 12 of the protocol."""
     L = ["Each picture as SVG and PNG in `pictures/`. The schematic is edakit's drawing of the graph (`edakit "
          "schematic draw`); the board is drawn from this run's Gerber and drill files – as made, in the colours of the "
-         "order settings, the bottom seen from below –, then every layer and drill file on its own as the file draws "
+         "order settings, the bottom seen from below –, all layers over each other in the colours of the EasyEDA editor, "
+         "then every layer and drill file on its own as the file draws "
          "it. Documentation, in no hash."]
     if not with_board:
         L.append("\nThe board pictures come with stage F (the manufacturing files).")
     for b, v in found.items():
         L.append(f"\n### Board {b}\n")
-        made = [s for s in v["shots"] if s.name in (f"board_{b}_top", f"board_{b}_bottom")]
+        made = [s for s in v["shots"] if s.name in (f"board_{b}_top", f"board_{b}_bottom", f"board_{b}_layers")]
         for s in v["shots"]:
             if s.name.startswith("schematic_") or s in made:
                 L += [f"![{s.caption}]({DIR}/{s.name}.png)", f"[SVG]({DIR}/{s.name}.svg)", ""]

@@ -12,7 +12,7 @@ import re
 from collections import Counter, defaultdict
 from pathlib import Path
 
-from .. import handover
+from .. import handover, national
 from ..circuit import (KINDS_OF_PREFIX, KINDS_OF_TYPE, PURPOSES, cable_problems, core_mpn, read_value, strip_problems,
                        value_problem)
 from ..design import natural_key
@@ -104,6 +104,8 @@ def structure(d, boards, unmade=None):
     if "purpose" in g and (g["purpose"] or {}).get("use") not in PURPOSES:
         add("STRUCT.purpose", "purpose.use", f"purpose.use must be one of {', '.join(PURPOSES)} – the regulatory review "
                                              "(M-6) starts there")
+    if national.problem(g.get("purpose")):
+        add("STRUCT.purpose", "purpose.country", national.problem(g.get("purpose")))
     return out
 
 

@@ -28,8 +28,9 @@ boards of the project in the current repository. You **change nothing**, neither
   polarity sheet), read the same way; with `[order]` in the board file also `order.md` – thickness, the colours of
   mask and silkscreen, finish and mark are in the fab hash you sign (`order.json`), so judge them with the board:
   the silkscreen artwork on that colour, the mark where it may go. The run's `pictures/board_<board>_top.png` and
-  `_bottom.png` show the board as made from those files, in the order's colours (look at them with Read); the
-  layers on their own beside them.
+  `_bottom.png` show the board as made from those files, in the order's colours (look at them with Read);
+  `_layers.png` both copper layers over each other as the EasyEDA editor shows them – a track of one side under a
+  pour of the other, overlapping pours, the through-hole pads –; the layers on their own beside them.
 - EasyEDA only if `easyeda_bridge_status` reports connected. A picture can be stale; if it is byte-identical to the
   previous one, say so instead of drawing conclusions.
 - Track widths: `<artifacts>/sim/net_currents.json` (simulated currents) and the routing classes.
