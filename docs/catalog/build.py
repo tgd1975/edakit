@@ -142,15 +142,32 @@ ENGINES_ABOUT = ('Each engine decides one kind of relation; a finding\'s code is
                  'with its own severity, a topic the part of a code a domain switches on.')
 
 
+BOARD_ENGINES = ("SYNC", "GEO", "FILES", "ORDER")     # the rest decide on the circuit
+
+
+def severities(names):
+    """'5 errors · 4 warnings · 1 note' – the catalog's default severities of these codes."""
+    n = Counter(catalog.codes()[c]["severity"] for c in names)
+    words = {"error": "error", "warning": "warning", "note": "note", "pending": "pending"}
+    return " · ".join(f"{k} {words.get(s, s)}{'s' if k > 1 and s != 'pending' else ''}" for s, k in
+                      sorted(n.items(), key=lambda x: ["error", "warning", "pending", "note"].index(x[0])
+                             if x[0] in ("error", "warning", "pending", "note") else 9))
+
+
 def engines_section():
-    """The engines as a table, each linking its page; the old anchor engine-<prefix> on its row."""
-    per = Counter(catalog.engine_of(c) for c in catalog.codes())
-    rows = "".join(f'<tr id="engine-{e["prefix"]}"><td><a href="{e["prefix"].lower()}.html"><code>{e["prefix"]}</code>'
-                   f'</a></td><td>{escape(name)}</td><td>{md(e["decides"])}</td><td class="num">{per[name]}</td></tr>'
-                   for name, e in catalog.engines().items())
-    return (f'<section id="engines"><h2>Engines</h2><p>{ENGINES_ABOUT}</p>'
-            '<div class="scroll"><table><thead><tr><th>Prefix</th><th>Engine</th><th>Decides</th><th class="num">Codes'
-            f'</th></tr></thead><tbody>{rows}</tbody></table></div></section>')
+    """The engines as cards in two groups – on the circuit, on the board and the order –, each linking its page with
+    what it decides, its number of codes and their severities; the old anchor engine-<prefix> on its card."""
+    def card(name, e):
+        names = [c for c in catalog.codes() if catalog.engine_of(c) == name]
+        label = "" if name == e["prefix"] else f' <span class="muted">{escape(name)}</span>'
+        return (f'<a class="ecard" id="engine-{e["prefix"]}" href="{e["prefix"].lower()}.html">'
+                f'<span class="ehead"><code>{e["prefix"]}</code>{label}<span class="ecount">{len(names)}</span></span>'
+                f'<span class="edecides">{md(e["decides"])}</span><span class="esev">{severities(names)}</span></a>')
+    groups = []
+    for title, board in (("On the circuit", False), ("On the board and the order", True)):
+        cards = "".join(card(n, e) for n, e in catalog.engines().items() if (n in BOARD_ENGINES) == board)
+        groups.append(f'<h3>{title}</h3><div class="ecards">{cards}</div>')
+    return f'<section id="engines"><h2>Engines</h2><p>{ENGINES_ABOUT}</p>{"".join(groups)}</section>'
 
 
 def code_entry(name, e):
@@ -184,22 +201,23 @@ def text_of(name, e):
 
 
 def codes_section():
-    """Every code in one list – code, title, severity –, each row with the code as its id (the old anchors of the one
-    page land here) and linking the entry on its engine's page."""
+    """Every code, folded by engine – code, title, severity –, each row with the code as its id (the old anchors of the
+    one page land here and open their engine) and linking the entry on its engine's page; the filter opens what it
+    finds."""
     groups = []
     for eng, e in catalog.engines().items():
         names = [n for n in catalog.codes() if catalog.engine_of(n) == eng]
         rows = "".join(f'<tr id="{escape(n)}" data-text="{text_of(n, catalog.codes()[n])}"><td><a href="{href(n)}">'
                        f'<code>{escape(n)}</code></a></td><td>{escape(catalog.codes()[n]["title"])}</td>'
                        f'<td>{chip(catalog.codes()[n]["severity"])}</td></tr>' for n in names)
-        groups.append(f'<tbody class="group"><tr class="sec"><th colspan="3"><a href="{e["prefix"].lower()}.html">'
-                      f'<code>{e["prefix"]}</code></a> <span class="muted">– {md(e["decides"])}</span></th></tr>'
-                      f'{rows}</tbody>')
+        groups.append(f'<details class="group"><summary><code>{e["prefix"]}</code> <span class="muted">– '
+                      f'{md(e["decides"])} · {len(names)}</span></summary><div class="scroll"><table class="codes">'
+                      f'<tbody>{rows}</tbody></table></div></details>')
     retired = catalog.retired()
     old = ("<h3>Retired</h3><ul>" + "".join(f"<li><code>{escape(k)}</code> – {md(v)}</li>" for k, v in retired.items())
            + "</ul>" if retired else "")
-    return (f'<section id="codes"><h2>Codes</h2>{FILTER}<div class="scroll"><table class="codes"><thead><tr><th>Code'
-            f'</th><th>Title</th><th>Severity</th></tr></thead>{"".join(groups)}</table></div>{old}</section>')
+    return (f'<section id="codes"><h2>Codes</h2><p>Folded by engine; the filter opens what it finds.</p>{FILTER}'
+            f'{"".join(groups)}{old}</section>')
 
 
 def engine_body(eng, e):
@@ -514,6 +532,18 @@ ol.sources, ul.sources { margin: 0; padding-left: 1.2rem; font-size: 0.85rem; }
 .filter input { font: inherit; padding: 0.35rem 0.6rem; border: 1px solid var(--line); border-radius: 4px;
   background: var(--surface); color: var(--ink); min-width: 16rem; }
 .filter input:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.ecards { display: grid; grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr)); gap: .75rem; margin: .5rem 0 1.5rem; }
+.ecard { display: flex; flex-direction: column; gap: .35rem; padding: .8rem .9rem; border: 1px solid var(--line);
+  border-radius: 8px; background: var(--surface); color: var(--ink); text-decoration: none; }
+.ecard:hover, .ecard:focus-visible { border-color: var(--accent); }
+.ehead { display: flex; align-items: baseline; gap: .4rem; font-weight: 600; }
+.ehead code { font-size: 1.05rem; color: var(--accent); }
+.ecount { margin-left: auto; font-size: 1.3rem; font-weight: 700; }
+.edecides { font-size: .92rem; }
+.esev { font-size: .8rem; color: var(--muted); }
+details.group { border-top: 1px solid var(--line); padding: .4rem 0; }
+details.group > summary { cursor: pointer; padding: .3rem 0; font-weight: 600; }
+details.group table { margin-top: .4rem; }
 .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(22rem, 1fr)); gap: 1rem; }
 .card, .table-card, article.circuit { background: var(--surface); border: 1px solid var(--line); border-radius: 6px;
   padding: 0.9rem 1rem; }
@@ -548,8 +578,19 @@ const q = document.getElementById('q');
 if (q) q.addEventListener('input', () => {
   const s = q.value.trim().toLowerCase();
   document.querySelectorAll('[data-text]').forEach(a => { a.hidden = s && !a.dataset.text.includes(s); });
-  document.querySelectorAll('.group').forEach(g => { g.hidden = s && !g.querySelector('[data-text]:not([hidden])'); });
+  document.querySelectorAll('.group').forEach(g => {
+    g.hidden = s && !g.querySelector('[data-text]:not([hidden])');
+    if (g.tagName === 'DETAILS') g.open = !!s && !g.hidden;
+  });
 });
+function openTarget() {
+  const id = decodeURIComponent(location.hash.slice(1));
+  const el = id && document.getElementById(id);
+  const d = el && el.closest('details');
+  if (d) { d.open = true; el.scrollIntoView(); }
+}
+window.addEventListener('hashchange', openTarget);
+openTarget();
 """
 
 BRAND = ('<p class="meta brand"><a href="../"><picture><source media="(prefers-color-scheme: dark)" '

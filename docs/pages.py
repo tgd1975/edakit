@@ -149,41 +149,68 @@ def sources():
     return out
 
 
-def first_sentence(text):
-    """The first sentence of a concept's status line, or of its first paragraph."""
-    body = re.sub(r"^# .*\n", "", text, count=1).strip()
-    m = re.search(r"^(?:\*\*)?(?:Status|State)\b.*?(?=\n\n|\Z)", body, re.S | re.M)
-    para = " ".join((m.group(0) if m else body.split("\n\n")[0]).split())
-    para = re.sub(r"^\*\*(Status|State)[^*]*\*\*\s*", r"\1 ", para)
-    cut = re.search(r"(?<=[.;])\s|\s–\s", para)
-    return (para[:cut.start()] if cut else para)[:240].rstrip(" .;") + "."
+def short_title(text, fallback):
+    """A concept's title up to its colon: "Claude independence: edakit with …" gives "Claude independence"."""
+    return title_of(text, fallback).split(":")[0].strip()
+
+
+def status_of(text):
+    """(date, state) from a concept's status line: "Status 2026-10-31: decided – …" gives ("2026-10-31", "decided")."""
+    m = re.search(r"^(?:\*\*)?(?:Status|State)\b[^\n]*", text, re.M)
+    if not m:
+        return "", ""
+    line = re.sub(r"\[([^\]]*)\]\([^)]*\)", r"\1", re.sub(r"\*\*", "", m.group(0)))
+    date = re.search(r"20\d\d-\d\d-\d\d", line)
+    state = re.split(r"[:.]", line, maxsplit=1)[1] if ":" in line else ""
+    state = re.split(r"\s[–(]|[,;.]", state.strip(), maxsplit=1)[0].strip()
+    return (date.group(0) if date else ""), state[:40]
+
+
+def first_sentence(text, limit=110):
+    """The first sentence of a description, cut at a dash or a full stop, at most limit characters."""
+    s = re.split(r"(?<=[a-z0-9)])\.\s|\s–\s", " ".join(text.split()), maxsplit=1)[0].rstrip(".")
+    return s if len(s) <= limit else s[:limit].rsplit(" ", 1)[0] + " …"
 
 
 def index_pages():
-    """{repo path: Markdown} of the indexes this script writes: the concepts by state, the skills, the agents."""
+    """{repo path: Markdown} of the indexes this script writes: the concepts by state as tables – title, date, state –,
+    the folders of a concept (its reviews) as one row; the skills and the agents as tables of name and what for."""
+    root = ROOT / "docs" / "concepts"
     lines = ["# Concepts", "", "A concept is how a part of edakit should work, written before it is built and kept as the "
              "record of what was decided. It starts in `new/`, moves to `done/` once it is decided and built, and to "
-             "`discarded/` when the owner rejects it ([organisation](../organisation.md)). Each one below with the first "
-             "sentence of its status line.", ""]
+             "`discarded/` when the owner rejects it ([organisation](../organisation.md)).", ""]
     for state, title in (("new", "Open"), ("done", "Decided and built"), ("discarded", "Discarded")):
-        lines += [f"## {title}", ""]
+        rows, folders = [], {}
+        mine = [p for p in concepts() if p.relative_to(root).parts[0] == state]
+        shorts = [short_title(p.read_text(encoding="utf-8"), p.stem) for p in mine]
         for p in concepts():
-            rel = p.relative_to(ROOT / "docs" / "concepts")
-            if rel.parts[0] == state:
-                text = p.read_text(encoding="utf-8")
-                lines.append(f"- [{title_of(text, p.stem)}]({rel.as_posix()}) – {first_sentence(text)}")
-        lines.append("")
+            rel = p.relative_to(root)
+            if rel.parts[0] != state:
+                continue
+            if len(rel.parts) > 2:                      # a concept's folder, e.g. documentation-review/
+                folders.setdefault(rel.parts[1], []).append(rel)
+                continue
+            text = p.read_text(encoding="utf-8")
+            date, what = status_of(text)
+            name = short_title(text, p.stem)
+            name = name if shorts.count(name) == 1 else title_of(text, p.stem)
+            rows.append(f"| [{name}]({rel.as_posix()}) | {date.replace('-', chr(0x2011))} | {what} |")
+        rows += [f"| {name}/ – " + " ".join(f"[{f.stem.split('-')[0]}]({f.as_posix()})" for f in files)
+                 + f" | | {len(files)} files |" for name, files in folders.items()]
+        if rows:
+            lines += [f"## {title}", "", "| Concept | Date | State |", "| --- | --- | --- |", *rows, ""]
+    def table(head, entries):
+        return [head, "", "| | What for |", "| --- | --- |", *entries, ""]
     skills = ["# Skills", "", "The plugin's skills: prompts that run a workflow in a session, each called as "
               "`/edakit:<name>`. What each does for you is in [handbook 11.1](../handbook/11-working-with-claude.md).", ""]
-    for p in sorted((ROOT / "skills").glob("*/SKILL.md")):
-        meta, _ = front_matter(p.read_text(encoding="utf-8"))
-        skills.append(f"- [`/edakit:{p.parent.name}`]({p.parent.name}/SKILL.md) – {meta.get('description', '')}")
+    skills += table("", [f"| [`/edakit:{p.parent.name}`]({p.parent.name}/SKILL.md) | "
+                         f"{first_sentence(front_matter(p.read_text(encoding='utf-8'))[0].get('description', ''))} |"
+                         for p in sorted((ROOT / "skills").glob("*/SKILL.md"))])[1:]
     agents = ["# Agents", "", "The plugin's agents: prompts that run Claude in a context of its own for one role, such as "
               "a review. What each does for you is in [handbook 11.1](../handbook/11-working-with-claude.md).", ""]
-    for p in sorted((ROOT / "agents").glob("*.md")):
-        if p.name != "README.md":
-            meta, _ = front_matter(p.read_text(encoding="utf-8"))
-            agents.append(f"- [`{p.stem}`]({p.name}) – {meta.get('description', '')}")
+    agents += table("", [f"| [`{p.stem}`]({p.name}) | "
+                         f"{first_sentence(front_matter(p.read_text(encoding='utf-8'))[0].get('description', ''))} |"
+                         for p in sorted((ROOT / "agents").glob("*.md")) if p.name != "README.md"])[1:]
     return {"docs/concepts/README.md": "\n".join(lines) + "\n", "skills/README.md": "\n".join(skills) + "\n",
             "agents/README.md": "\n".join(agents) + "\n"}
 
