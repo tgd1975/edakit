@@ -22,7 +22,7 @@ run against a maker's page or EasyEDA yet.
 
 ### Needs the owner's computer – a session attached to it, Claude in Chrome, the makers' accounts
 
-- [ ] **Step 0 (5.0) and the live runs – the merge of branch `makers-step0`, on the owner's OK:** the four profiles
+- [x] **Step 0 (5.0) and the live runs – branch `makers-step0` merged (dcc0dfb):** the four profiles
       recorded from the forms (2026-10-31), JLCPCB's order number gone (`former_placeholder`, `mark = "specify"`
       refused; the bell needs `mark = "remove"` or a barcode before its next order), the skill cart stopping at every
       consent in the owner's name, and what the live runs found fixed in `edakit cart` (numbers, uploads a page does
