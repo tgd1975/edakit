@@ -88,13 +88,6 @@ Built and decided on 2026-10-31; what is left runs live.
       the polarity sheet), B3 (GEO.silk grade body on BT1's cell) and B7 (the BOM from the board's schematic with the
       other tabs closed).
 
-## The graph as TOML ([circuit-language-plan.md](docs/concepts/done/circuit-language-plan.md))
-
-L.1 to L.8 built on 2026-10-31.
-
-L.9 done in the bell on 2026-11-01 (on its main, edakit bc44fa7): the five boards converted, the
-sign-offs rehashed, the mentions of `graph.json` renamed, all five RELEASED.
-
 ## The documentation for its readers ([documentation.md](docs/concepts/new/documentation.md))
 
 Decided on 2026-10-31; D.1 (the style guide, the glossary and their tests) built the same day. D.2 to D.7 not before

@@ -1,8 +1,8 @@
 # Implementation plan: pins by name or role, the graph as TOML
 
 Status 2026-10-31: settled. L.1 to L.8 built on the owner's word of 2026-10-31 ("bitte … bearbeiten"), merged on
-the branch `ccr-f80e23dc-ak6668` with the suite green – section "State after the build"; L.9, the bell converting, is
-the bell's, on the owner's word and not during an order (the owner's answer of the same day), kept in `TODO.md`.
+the branch `ccr-f80e23dc-ak6668` with the suite green – section "State after the build"; L.9, the bell converting, done
+in the bell on 2026-11-01 (on its main, edakit bc44fa7).
 Plan for the decisions of [circuit-language.md](circuit-language.md) (its table of 2026-10-31). The ground rules of
 [implementation-plan.md](../new/implementation-plan.md) hold: one step, one branch, built with add-feature – a failing test
 first, then the interface, the code, the handbook, `pytest` and `ruff` –; no key, no change; hashes named; the bell told
@@ -30,7 +30,7 @@ round trip they ran moves into the tests of L.6.
 | L.6 | `edakit graph convert`, the sign-offs carried over, the round trip as its test | confirmed 6 | M | L.4, L.5 | built |
 | L.7 | `block add` on a TOML graph | 1 | M | L.3 | built |
 | L.8 | Handbook, reference, skills, README, the catalog's text of STRUCT.entry and STRUCT.pin | 1 | M | L.5, L.6, L.7 | built |
-| L.9 | The bell converts, in its repository | – | S | L.8, the user's word | open – the bell's, on the owner's word |
+| L.9 | The bell converts, in its repository | – | S | L.8, the user's word | done in the bell 2026-11-01 |
 
 ```mermaid
 graph LR
@@ -158,7 +158,7 @@ suite green after every merge (2534 passed after L.8). A JSON graph loads and ha
 | L.6 | built: `edakit graph convert [--dry-run]` – the TOML written by the word rule, the pin map left out where it is the entry's, `[project] graph` set by a line edit, the resolved `graph.json` written, the sign-offs of scope `circuit` carried over (`rehashed`); refuses null, a name twice, a word that names no pin, an existing `graph.toml`, and reads its own TOML back before writing. The touchstone ran on led-bar and the seven reference circuits. Not carried over: script stamps (scripts that read `graph` show as outdated once) and the firmware contract's `state_sha256` (convert says to run `edakit firmware`) – handbook 3.1, 10.5 | `edakit/graph_form.py`, `convert.py` (`carry_signoffs`) |
 | L.7 | built: `block add` on a TOML graph through a line editor that keeps comments and arrangement – tables after the last of their kind, a pin appended in the style of its array, `accept` as keys, grounds; the new text is written only if it reads back as the graph with the block; the block's pin maps left out where they are the entries' (decision 3) | `edakit/toml_edit.py`, `block.py`, `tests/test_block_toml.py` |
 | L.8 | built: handbook 1, 2.7, 3 (the form on led-bar, the generated file, moving a project, 3.2, 3.4), 7.4, 8.2, 8.6, 10, 14.3, 14.5; catalog STRUCT.entry and STRUCT.pin; skills new-project (writes `hardware/graph.toml`, the hook line), circuit-design, hardware-change, own-part; the agents; README; `evals/add-led`; one TOML value writer for convert and block add | handbook, `skills/`, `agents/`, `tests/test_plugin.py` |
-| L.9 | open: the bell converts in its repository – on the owner's word, in the bell's session, not during an order | `TODO.md` |
+| L.9 | done in the bell on 2026-11-01 (on its main, edakit bc44fa7): the five boards converted, the sign-offs rehashed, the mentions of `graph.json` renamed, all five RELEASED | the bell's repository |
 
 Seen on the way and left: the walkthrough of handbook 17 and `examples/coin-cell-led` stay JSON as the record of a
 run; the reference circuits and the evals stay JSON (decision of the plan). Two old mentions of the key `checks` in

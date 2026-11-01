@@ -4,7 +4,7 @@ Status 2026-10-31: plan; phase 1 (1.1 to 1.8), 3.1 to 3.5, 3.7 and the follow-up
 3.6 are built and ran live on 2026-10-31 (results under each live run; built from them the same day: 2.2's mode
 "write", M-6 on the electrical hash, the way back after `part build`; open: the bell's T-Display on the data path); 4.3 is written, reviewed and decided – the
 language deferred, TOML with names the form, its plan [circuit-language-plan.md](../done/circuit-language-plan.md)
-built on 2026-10-31 up to L.8, L.9 the bell's. It builds
+built on 2026-10-31 up to L.8, L.9 done in the bell on 2026-11-01. It builds
 three concepts after the user took their decisions on 2026-10-28 (e5caf42, 301fd90):
 [requirements.md](../done/requirements.md), [design-as-text.md](../done/design-as-text.md) and
 [project-scripts.md](../done/project-scripts.md). Phase 5 builds a fourth, [ordering.md](../done/ordering.md) – ordering
@@ -54,7 +54,7 @@ starts when the user asks for it.
 | 3.7 | Project setup: `new-project` with two ways, agent `project-surveyor` | project-setup, decisions 1–6 | M | no | 3.2, 3.4 | done (92db89f) |
 | 4.1 | Bell: requirements file | requirements order 5, decision 9 | M | no | 3.4, the bell's order | done in the bell (2026-11-01, on its main, its D-32) |
 | 4.2 | Bell: entries for `kunst` and `tdisplay` | project-scripts example | S | no | 2.4 | done in the bell (2026-11-01, on its main: `[scripts.kunst]` ×5, `[scripts.tdisplay]`) |
-| 4.3 | Bell: the circuit as a language and as TOML with names, then the choice | design-as-text decision 8 | M | no | – | written (3f2b9e3, 7bbf3ce); reviewed and decided 2026-10-31: the language deferred, TOML with names the form; what both forms share has a plan of its own, circuit-language-plan.md, built 2026-10-31 (L.1–L.8; L.9 the bell converts, on the owner's word); the language thought further in circuit-dsl.md |
+| 4.3 | Bell: the circuit as a language and as TOML with names, then the choice | design-as-text decision 8 | M | no | – | written (3f2b9e3, 7bbf3ce); reviewed and decided 2026-10-31: the language deferred, TOML with names the form; what both forms share has a plan of its own, circuit-language-plan.md, built 2026-10-31 (L.1–L.8; L.9, the bell converting, done there 2026-11-01); the language thought further in circuit-dsl.md |
 | 4.4 | Tree: its positions, scripts, agents and requirements | all three | M | yes | the tree's move, 2.1, 3.7 | open |
 | 4.5 | The requirements file becomes required | requirements decision 5 | S | no | 4.1, 4.4 | open |
 | 5.0 | Probes: the makers' pages in the owner's browser, EasyEDA's ODB++ | ordering steps 0, 0b | – | yes (0b) | the owner's Chrome | open |
@@ -470,7 +470,7 @@ the form, a resolved `graph.json` generated beside it, four complete variants, t
 net in fragments. What both forms share has a plan of its own:
 [circuit-language-plan.md](../done/circuit-language-plan.md), built on 2026-10-31 up to L.8 – pins by name or role,
 the graph as `hardware/graph.toml`, its hash, `edakit graph json|convert`, `block add` on TOML, the documentation –;
-L.9, the bell converting, waits for the owner's word ([TODO.md](../../../TODO.md)). The language itself is thought further in
+L.9, the bell converting, done in the bell on 2026-11-01 (on its main, edakit bc44fa7). The language itself is thought further in
 [circuit-dsl.md](circuit-dsl.md) – what it would have to be, on which basis, when, and what toolchain it needs.
 
 **4.4 The tree moves.** When the reference project moves to edakit after its order (EK-1 of its concept): the
