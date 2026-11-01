@@ -75,7 +75,7 @@ as a comment, otherwise an issue of its own. Nothing of ours is reported yet.
 | E-13 | Pours: a `$complexPolygon` with holes is filled as drawn; filling works while a non-plated pad without part – a tooling hole – is on the board | takes tooling holes out before filling and puts them back; the pours keep a notch around them | 9.4 Pours, Free pads | new – whether the failing fill is EasyEDA's or `easyeda_pcb_rebuild_copper`'s is not found yet | 3.2.206, 1.4.0 |
 | E-14 | `PCB_Document.autoLayout` places on both sides | parts on the bottom are placed by the plan (`[place]`) | 9.4 Auto-layout | new | 3.2.206 |
 | E-15 | `addIntoBom: false` works when a library part is created | creates the part, then modifies it | 9.3 `batch_write` | new – whether the "Invalid device" is EasyEDA's or `easyeda_schematic_batch_write`'s is not found yet | 3.2.206, 1.4.0 |
-| E-16 | ODB++: `getOpenDatabaseDoublePlusFile` out of BETA, honours `unit`, takes a file name | packs EasyEDA's tgz, removes the file `undefined` | 9.1 ODB++ | new | 3.2.206 |
+| E-16 | ODB++: `getOpenDatabaseDoublePlusFile` out of BETA and in millimetres as the dialog writes it – its `unit` admits `ESYS_Unit.INCH` only | SYNC.odb reads either unit | 9.1 ODB++ | new | 3.2.206 |
 
 E-2 (the query whether an import is pending), E-3 (writing by document id) and E-11 to E-15 come from the analysis
 of the project histories that pytree-27 left in the owner's TODO list.
@@ -92,19 +92,20 @@ the account that opened it – a consent in the owner's name, given by the owner
 | M-1 | The stale sweep honours each request's own timeout | `BRIDGE_TIMEOUT_MS=120000` for every server – a setting, no patch | [issue](issue-1-stale-sweep.md), [pull request](pr-1-stale-sweep.md) | `fix/stale-sweep-per-request-timeout` | 1.6.0 |
 | M-2 | `easyeda_export_pdf` with `what: "schematic"` exports the schematic | `bridge-extension-patch.sh` | [issue](issue-2-schematic-pdf.md), [pull request](pr-2-schematic-pdf.md); #527 (closed) only stopped the false success | `fix/schematic-pdf-export` | 1.6.0 |
 | M-3 | `easyeda_api_call` returns deeper results (`maxDepth`) – DRC details and the rule set lie 9 levels deep | `bridge-extension-patch.sh` (depth 12) | [issue](issue-3-api-call-depth.md), [pull request](pr-3-api-call-depth.md) | `feat/api-call-max-depth` | 1.6.0 |
-| M-4 | ODB++ export as a tool | `odb-tool-patch.mjs` and `bridge-extension-patch.sh` | [issue](issue-5-odb-export.md), [pull request](pr-4-odb-export.md) | `feat/odb-export` – not built | 1.6.0 |
+| M-4 | ODB++ export as a tool | `odb-tool-patch.mjs` and `bridge-extension-patch.sh` | [issue](issue-5-odb-export.md), [pull request](pr-4-odb-export.md) | `feat/odb-export` | 1.6.0 |
 | M-5 | `easyeda_api_call` reports a create call that returns null as a failure | checks the open project's name before every run | [issue](issue-4-create-project.md), its server part | – | 1.4.0 |
 | M-6 | The schematic read tools and the BOM read a page by its UUID without switching the owner's tab; the BOM of a board-linked schematic lists each part once | focuses page after page, merges, removes the duplicates, checks the focus after each read | #526 (closed into the design draft #539, built later) – our case as a comment there | – | 1.6.0 |
 | M-7 | The pick-and-place export returns csv when csv is asked: the bridge passes the project id as the file name and no type to `getPickAndPlaceFile(fileName, fileType, unit)`, so EasyEDA answers with its default xlsx | reads the xlsx | new | – | 1.6.0 |
 | M-8 | The bridge connects by itself, also after a crash of EasyEDA, and shows its menu | the skill start asks for *MCP Bridge → Connect*, or restarts EasyEDA | report only if the original extension does it too – the patched one sometimes shows no menu | – | 1.4.0 |
 
-Fork branches in the clone `../easyeda-mcp-pro`, rebased onto 1.6.0 on 2026-11-01, not pushed yet:
+Fork branches in the clone `../easyeda-mcp-pro`, on 1.6.0 since 2026-11-01, not pushed yet:
 
 | Branch | Commit | Tests on 1.6.0 |
 |---|---|---|
 | `fix/stale-sweep-per-request-timeout` | `fix(bridge): stale sweep honours each request's own timeout` | its test file 69 green, extension 568 green, `pnpm verify:fast` green |
 | `fix/schematic-pdf-export` | `fix(export): schematic PDF through SCH_ManufactureData.getExportDocumentFile` | extension 569 green, `pnpm verify:fast` green; the whole server suite as on `upstream/main`: green but for the test that expects no ngspice (installed here) |
 | `feat/api-call-max-depth` | `feat(api): optional maxDepth for easyeda_api_call results` | its test files 59 green, extension 571 green, `pnpm verify:fast` green |
+| `feat/odb-export` | `feat(export): easyeda_export_odb through getOpenDatabaseDoublePlusFile` | built on 1.6.0: export tests 19 green, extension 573 green, `pnpm verify:fast` green, the whole suite as on `upstream/main` |
 
 ## The component library (EasyEDA / LCSC)
 
