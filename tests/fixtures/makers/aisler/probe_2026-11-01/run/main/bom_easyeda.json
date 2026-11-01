@@ -1,0 +1,34 @@
+[
+ {
+  "reference": "BT1",
+  "value": "CR2032-BS-6-1",
+  "footprint": "BAT-TH_CR2032-BS-6-1",
+  "lcsc": "C70377",
+  "quantity": 1,
+  "manufacturer": "QIJEY"
+ },
+ {
+  "reference": "D1",
+  "value": "NCD0805R1",
+  "footprint": "LED0805-RD",
+  "lcsc": "C84256",
+  "quantity": 1,
+  "manufacturer": "国星光电"
+ },
+ {
+  "reference": "R1",
+  "value": "150Ω",
+  "footprint": "R0805",
+  "lcsc": "C17471",
+  "quantity": 1,
+  "manufacturer": "UNI-ROYAL(厚声)"
+ },
+ {
+  "reference": "SW1",
+  "value": "TS-1187A-B-A-B",
+  "footprint": "SW-SMD_4P-L5.1-W5.1-P3.70-LS6.5-TL_H1.5",
+  "lcsc": "C318884",
+  "quantity": 1,
+  "manufacturer": "XKB Connection(中国星坤)"
+ }
+]
