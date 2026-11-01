@@ -8,7 +8,9 @@ In a worktree of its own, so the session's checkout stays as it is:
    a conflict only in generated output – the catalog's pages, the handbook's generated sections – is regenerated);
 2. its fragments in changes/ make the number – minor if one says so, else patch; --major only on the owner's word –,
    written into edakit/__init__.py, the marketplace entry and CHANGELOG.md, the fragments deleted, one commit
-   "edakit X.Y.Z"; a branch without fragments that changes nothing a project reads is merged without a version;
+   "edakit X.Y.Z"; a branch without fragments that changes nothing a project reads is merged without a version; a
+   Dependabot branch (dependabot/…) that changes uv.lock or pyproject.toml gets its fragment here, patch with the
+   pull request's title, since Dependabot writes none;
 3. pushed, the checks waited for (test, kicad, build, paths, version – about five minutes);
 4. merged with --match-head-commit while main still has the number it was numbered from – a push of TODO.md or a
    concept meanwhile changes nothing; a version merged meanwhile does, for a pull request that is a version: then from
@@ -59,7 +61,22 @@ def gh_json(*args):
     return json.loads(run("gh", *args).stdout)
 
 
-def prepare(tree, branch, major):
+DEPENDABOT = "dependabot/"
+
+
+def dependabot_fragment(tree, branch, title, pr):
+    """Write the fragment of a Dependabot branch that changes what a project reads and has none – a dependency of
+    edakit moved, nothing for a project to do: patch. Returns its name, or None."""
+    if not branch.startswith(DEPENDABOT) or any(p.name != "README.md" for p in (tree / v.CHANGES).glob("*.md")):
+        return None
+    if not v.needs_version(v.changed_files("origin/main", "HEAD", root=tree)):
+        return None
+    name = branch.replace("/", "-") + ".md"
+    (tree / v.CHANGES / name).write_text(f"patch\n- Dependencies: {title} (#{pr}).\n")
+    return name
+
+
+def prepare(tree, branch, major, title="", pr=0):
     """Steps 1 and 2 in the worktree: returns (the branch's sha on origin, the head sha, main's number, the number or
     None)."""
     run("git", "fetch", "-q", "origin", "main", branch, cwd=tree)
@@ -81,6 +98,8 @@ def prepare(tree, branch, major):
                 run("git", "merge", "--abort", cwd=tree, check=False)
                 raise SystemExit("conflict with main – rebase the branch yourself: " + " ".join(files))
     main_n = v.number(v.show("origin/main", root=tree)(v.INIT))
+    if dependabot_fragment(tree, branch, title, pr):
+        say("a Dependabot branch without a fragment: patch, with the pull request's title")
     n = v.number_tree(tree, main_n, dt.date.today().isoformat(), major=major)
     if n is None:
         stray = v.needs_version(v.changed_files("origin/main", "HEAD", root=tree))
@@ -227,7 +246,7 @@ def main(argv=None):
     try:
         for round_ in range(1, ROUNDS + 1):
             say(f"#{args.pr} {branch}: round {round_}")
-            before, sha, main_n, n = prepare(tree, branch, args.major)
+            before, sha, main_n, n = prepare(tree, branch, args.major, pr["title"], args.pr)
             if args.dry_run:
                 print(run("git", "diff", f"origin/{branch}", "HEAD", "--", v.INIT, v.MARKETPLACE, v.CHANGELOG,
                           v.CHANGES, cwd=tree).stdout)
