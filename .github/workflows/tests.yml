@@ -1,22 +1,36 @@
 name: Tests
 
+# On main's pushes and on pull requests – a branch's push would run everything a second time beside its pull request.
 on:
   push:
+    branches: [main]
   pull_request:
   workflow_dispatch:     # the proposals workflow starts it for its branch – its own pushes start nothing
+
+permissions:
+  contents: read
+
+concurrency:   # a newer push to a pull request stops the older run; main runs every commit through
+  group: tests-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   test:
     runs-on: ubuntu-24.04
+    timeout-minutes: 30
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
       - name: ngspice, pdftotext
         run: sudo apt-get update && sudo apt-get install -y ngspice poppler-utils
-      - uses: astral-sh/setup-uv@v6
+      - uses: astral-sh/setup-uv@d0cc045d04ccac9d8b7881df0226f9e82c39688e # v6.8.0
       - name: Lint
         run: uvx ruff check edakit tests
+      - name: Workflows
+        run: uvx zizmor@1.31.1 --offline .github   # rights, triggers, injections; exceptions in .github/zizmor.yml
       - name: Tests
-        run: uv run --group dev pytest -q
+        run: uv run --group dev pytest -q -n auto   # pytest-xdist, one worker per core
       - name: Test project, offline stages
         working-directory: tests/fixtures/led-bar
         run: |
@@ -30,14 +44,17 @@ jobs:
     # The KiCad tool chain against a real kicad-cli (handbook 16.8): KiCad reads the files edakit writes, and its
     # exports are what the gate's checks read. KiCad's own container image of the version edakit writes for.
     runs-on: ubuntu-24.04
+    timeout-minutes: 20
     container:
       image: kicad/kicad:10.0
       options: --user root
     env:
       EDAKIT_KICAD_LIVE: required   # a missing kicad-cli or another major than cli.MAJOR fails here, not skipped
     steps:
-      - uses: actions/checkout@v4
-      - uses: astral-sh/setup-uv@v6
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@d0cc045d04ccac9d8b7881df0226f9e82c39688e # v6.8.0
       - name: kicad-cli
         run: kicad-cli version
       - name: Tests against kicad-cli

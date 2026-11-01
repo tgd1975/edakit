@@ -113,7 +113,7 @@ The lists of codes (3.3, 5.3, 8.1, 14.3), the parts schema (4.1) and the map of 
 
 ```bash
 uv run python -m edakit.catalog.handbook --write
-uv run --group dev pytest -q
+uv run --group dev pytest -q -n auto
 uvx ruff check edakit tests
 cd tests/fixtures/led-bar && uv run --project ../../.. edakit check && uv run --project ../../.. edakit sim
 ```

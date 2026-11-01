@@ -8,7 +8,7 @@ name: Pull request
 # pull request: GitHub's merge button cannot merge a change to edakit without its number.
 
 on:
-  pull_request_target:
+  pull_request_target:   # zizmor: ignore[dangerous-triggers] – main's code only, the head read as data (above)
     types: [opened, synchronize, reopened, edited]
     branches: [main]
 
@@ -23,12 +23,13 @@ concurrency:
 jobs:
   check:
     runs-on: ubuntu-24.04
+    timeout-minutes: 10
     strategy:
       fail-fast: false
       matrix:
         check: [paths, version]
     steps:
-      - uses: actions/checkout@v4   # main – the base, never the head
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0 – main – the base, never the head
         with:
           fetch-depth: 0
           persist-credentials: false

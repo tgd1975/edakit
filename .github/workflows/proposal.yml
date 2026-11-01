@@ -29,7 +29,7 @@ jobs:
       GH_TOKEN: ${{ github.token }}
       GH_REPO: ${{ github.repository }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
           fetch-depth: 0
           persist-credentials: false
@@ -73,7 +73,7 @@ jobs:
       - name: ngspice, pdftotext
         if: steps.read.outputs.claude == 'true'
         run: sudo apt-get update && sudo apt-get install -y ngspice poppler-utils
-      - uses: astral-sh/setup-uv@v6
+      - uses: astral-sh/setup-uv@d0cc045d04ccac9d8b7881df0226f9e82c39688e # v6.8.0
         if: steps.read.outputs.claude == 'true'
       - name: Python environment
         if: steps.read.outputs.claude == 'true'
@@ -117,7 +117,7 @@ jobs:
             *) if [ "${{ steps.read.outputs.mode }}" = accept ]; then prepare rules/proposals; prepare features/proposals; fi
                git checkout -q --detach origin/main ;;
           esac
-      - uses: anthropics/claude-code-action@v1
+      - uses: anthropics/claude-code-action@d535f5172dec02b204866b393d6b20b9b2aaf98d # v1.0.266
         id: claude
         if: steps.read.outputs.claude == 'true'
         with:
@@ -157,7 +157,7 @@ jobs:
             git bundle create "$R/build.bundle" HEAD ^origin/main
           fi
           ls -l "$R"
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         if: always()
         with:
           name: proposal-${{ inputs.n }}
@@ -178,10 +178,10 @@ jobs:
       GH_TOKEN: ${{ github.token }}
       GH_REPO: ${{ github.repository }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
           fetch-depth: 0
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
         continue-on-error: true
         with:
           name: proposal-${{ inputs.n }}
