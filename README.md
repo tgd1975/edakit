@@ -168,7 +168,7 @@ breadboard drawing. It was not a push-button run:
   today ([handbook 13.6](handbook/13-lessons-learned.md)): pin names checked against the symbols, a new project's
   default board, LEDs in a row pointing the same way, off-board loads and input levels in the simulation, and a guard
   against writing into the wrong project.
-- **Manual steps:** Creating the EasyEDA project, one click on *Import Changes*, and the decisions.
+- **Manual steps:** Creating the EasyEDA project, and the decisions.
 
 Where it stands:
 
@@ -224,7 +224,7 @@ Where it stands:
     with `drc_rules = "write"` (handbook 7.5);
   - single designators at a fixed spot (`[silk.place]`, handbook 7.7).
 
-  Creating the EasyEDA project and one *Import Changes* stay two clicks by hand until the API allows them.
+  Creating the EasyEDA project stays a click by hand until the API allows it.
 - The circuit as TOML with pins by name or role ([handbook 3.1](handbook/03-hardware-graph.md#31-format),
   [concept](docs/concepts/done/circuit-language.md)): built and tested on the example and the reference circuits,
   converted in scratch copies and in the Christmas bell, whose five boards were released on `hardware/graph.toml`. A JSON

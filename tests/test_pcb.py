@@ -981,14 +981,22 @@ def test_import_verdict_names_the_differences_and_the_fix():
 
 
 def test_drc_report_compares_only_for_an_import_item(project, monkeypatch, capsys):
+    from edakit import eda
     cfg = project.config()
-    calls = []
+    calls, linked, again = [], [], [[IMPORT]]
     monkeypatch.setattr(pcb, "netlist_diff", lambda cfg, board, mcp: calls.append(1) or NO_DIFF)
-    assert pcb.drc_report(cfg, cfg.board(), None, [CLEARANCE]) == 2 and not calls
+    monkeypatch.setattr(pcb, "link_channels", lambda board, mcp: linked.append(1) or 4)
+    monkeypatch.setattr(eda, "drc", lambda mcp, out=None: again[0])
+    monkeypatch.setattr(eda, "reload_pcb", lambda mcp: None)
+    assert pcb.drc_report(cfg, cfg.board(), None, [CLEARANCE]) == 2 and not calls and not linked
     out = cfg.artifact("route", "main_netlist_diff.json")
-    assert pcb.drc_report(cfg, cfg.board(), None, [IMPORT], out) == 3 and calls
+    assert pcb.drc_report(cfg, cfg.board(), None, [IMPORT], out) == 3 and calls and linked   # still there: one click
     assert json.loads(out.read_text()) == NO_DIFF
-    assert "open Design → Import Changes once" in capsys.readouterr().out
+    text = capsys.readouterr().out
+    assert "Channel IDs written into 4 schematic parts (E-2)" in text and "open Design → Import Changes once" in text
+    again[0] = []                                       # E-2: the Channel IDs written, the DRC clean without the click
+    assert pcb.drc_report(cfg, cfg.board(), None, [IMPORT], out) == 0
+    assert "open Design → Import Changes once" not in capsys.readouterr().out
     assert pcb.drc_report(cfg, cfg.board(), None, []) == 0
 
 
@@ -1005,6 +1013,8 @@ def test_route_drc_exits_3_for_the_acknowledgement_alone(project, monkeypatch):
     monkeypatch.setattr(eda, "connect", lambda *a, **k: Mcp())
     monkeypatch.setattr(eda, "drc", lambda mcp, out=None: [IMPORT])
     monkeypatch.setattr(pcb, "netlist_diff", lambda cfg, board, mcp: NO_DIFF)
+    monkeypatch.setattr(pcb, "link_channels", lambda board, mcp: 0)
+    monkeypatch.setattr(eda, "reload_pcb", lambda mcp: None)
     args = Namespace(board=None, action="drc", verbose=False, clearance=None, passes=None, threads=1,
                      no_optimizer=False, cleanup=False)
     assert route.main(project.config(), args) == 3
