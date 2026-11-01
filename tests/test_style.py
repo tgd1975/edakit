@@ -34,7 +34,8 @@ def documentation():
     pages = [ROOT / "README.md", *sorted((ROOT / "handbook").glob("*.md"))]
     pages += [p for p in sorted((ROOT / "docs").rglob("*.md"))
               if not p.relative_to(ROOT / "docs").as_posix().startswith(("concepts/", "catalog/"))]
-    pages += sorted((ROOT / "examples" / "coin-cell-led").rglob("*.md"))
+    example = ROOT / "examples" / "coin-cell-led"    # its build/ is gate output, ignored by git
+    pages += sorted(p for p in example.rglob("*.md") if "build" not in p.relative_to(example).parts)
     return [p.relative_to(ROOT).as_posix() for p in pages]
 
 

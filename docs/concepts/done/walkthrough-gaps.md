@@ -1,8 +1,9 @@
 # To be checked, clarified, fixed – what the walkthrough left open
 
 Status 2026-10-31: settled. Collected, decided and built the same day – A1 to A5 fixed, B1, B3, B4, B5, B7 and B8
-checked and built, C1 to C4 decided by the owner (section "Decisions"), C1, C2 and C4 built. Left are runs live in
-EasyEDA and at JLCPCB, kept in `TODO.md` (section "State after the build").
+checked and built, C1 to C4 decided by the owner (section "Decisions"), C1, C2 and C4 built. Live in EasyEDA on
+2026-11-01: A4, A5, B1, B3, B7 and C4 hold, the example RELEASED again (section "The live run of 2026-11-01"); B2
+held in the live run of step 3.6; left is B6 at JLCPCB, kept in `TODO.md` (ordering, step 0).
 
 The walkthrough of handbook 17 took `examples/coin-cell-led`
 from the setup to a released round board, on edakit main after rules at scale. What it found and closed on the way is
@@ -69,20 +70,20 @@ Built on the branch `ccr-f80e23dc-ak6668` on 2026-10-31, test first, the suite g
 | A1 | built: LIM.p for an LED – (Va − Vk) × I at the operating point of every scenario against `p_max_w`, derated by `derating.p`; an RGB LED per colour. The example's D1: 14.75 mW at most against 32.5 mW | `engines/sim.py` `stress()`, handbook 5.3, `tests/test_sim.py` |
 | A2 | built: the fix of STRUCT.entry per case; with the library symbol cached the finding says whether the symbol agrees with the entry (the graph has another part's pins) or with the graph (the entry to be checked) | `catalog/codes.toml`, `engines/struct.py`, handbook 17.6 |
 | A3 | built: offline, a signed sign-off of scope `fab` is bound to its hash, not open – "M-5 signed for fab f958… – checked by stage F" | `release/gate.py`, `requirements.py`, handbook 8.2, 17.10 |
-| A4 | built: a strip without area on Freerouting's 0.01 mil grid is dropped (`flat_on_grid`); the round board keeps 50 of 66 strips, the band still covered. No live Freerouting run yet | `route.py`, handbook 7 |
+| A4 | built: a strip without area on Freerouting's 0.01 mil grid is dropped (`flat_on_grid`); the round board keeps 50 of 66 strips, the band still covered. Live 2026-11-01: 50 strips, no "degenerate" | `route.py`, handbook 7 |
 | A5 | built: a tile of the polarity sheet takes in the signs GEO.mark pairs with the part; GEO.mark and the sheet share the pairing | `release/polarity.py`, `release/fab.py`, handbook 8 |
-| B1 | real, built: a via is measured on its own pad (the flash at its centre); a pour or a track no longer hides a thin ring. Whether EasyEDA flashes its vias as assumed: at the next gate run with stage F | `release/fab.py`, GEO.ring |
-| B2 | open: the hole unit of `footprint build` needs the live run of step 3.6 | `TODO.md` |
+| B1 | real, built: a via is measured on its own pad (the flash at its centre); a pour or a track no longer hides a thin ring. Live 2026-11-01: EasyEDA flashes its vias as assumed – narrowest ring 0.152 mm | `release/fab.py`, GEO.ring |
+| B2 | held: `PCB_PrimitivePad.create` takes holes in mil (the live run of step 3.6, 2026-10-31) | implementation plan, 3.6 |
 | B3 | real, built: `body.box` in a parts entry, GEO.silk grade `body` (warning), `silk apply` keeps labels beside a body. BT1's entry has it since, on the owner's word: [-11.05, -10, 11.05, 10] mm from the drawing QJ.BS-6 (housing 22.1 mm, cell Ø 20 mm concentric), also as the library draft `edakit/parts/C70377.json` | `pcb.py`, `silk.py`, `release/fab.py`, handbook 4.1, 7.7, 8.1 |
 | B4 | real, built: FILES.order grade `tooling` (warning) – `[tooling]` on an Economic board and nothing that tells the maker | `release/order_sheet.py`, handbook 8.4 |
 | B5 | real, built as decided | `route.py` `hand_joints`, handbook 7.5, 17.11 |
 | B6 | open: what JLCPCB's form shows, read at the next order | `TODO.md` ("JLCPCB's order number") |
-| B7 | (1) holds no more: without `silk_footprints_<b>/` the check says "run edakit silk apply", no false finding; (2) built: a page read is kept only while its page is still active, the gate closes other saved schematic tabs before the BOM. Live: whether EasyEDA reports its tab switch in time | `eda.py`, `release/fab.py`, `schematic.py`, `pcb.py`, handbook 9 |
+| B7 | (1) holds no more: without `silk_footprints_<b>/` the check says "run edakit silk apply", no false finding; (2) built: a page read is kept only while its page is still active, the gate closes other saved schematic tabs before the BOM. Live 2026-11-01: the BOM of the board's own schematic alone, no other schematic tab left open | `eda.py`, `release/fab.py`, `schematic.py`, `pcb.py`, handbook 9 |
 | B8 | built: the KiCad live tests skip with a reason on another major; the CI job requires them (`EDAKIT_KICAD_LIVE: required`) | `tests/test_kicad_live.py`, `toolchain/kicad/cli.py`, `.github/workflows/tests.yml` |
 | C1 | built in the example, with two gaps of edakit closed on the way: the cell's rows carry the holder, so an accept on it reaches them; the gate counts a simulation row whose finding the graph accepts as waived, not failed | `engines/sim.py`, `sim/run.py`, `release/gate.py`, handbook 5, 17.6 |
 | C2 | built | `skills/new-project`, handbook 14.2, 10 |
 | C3 | decided, nothing to build | – |
-| C4 | built; it changes the fab hash of a board with `[looks]` and `[order]` and no `mark` – the example's at its next gate run with stage F | `config.py`, `release/order_sheet.py`, handbook 10.2, 8.4, 7.5 |
+| C4 | built; it changes the fab hash of a board with `[looks]` and `[order]` and no `mark` – the example's moved to `dbbe8aa2…` on 2026-11-01 | `config.py`, `release/order_sheet.py`, handbook 10.2, 8.4, 7.5 |
 
 The example's circuit hash moved twice on the way – the stale accept of HINT.debounce removed in an earlier merge,
 C1's limit and accept –, and the agents electrical-reviewer and regulatory-reviewer signed M-1 and M-6 again for state
@@ -91,3 +92,26 @@ a simulation finding by its severity – a warning reads warn, for the sign-off 
 Seen and not built: a `[looks]` board without `[order]` or `[cart]` tells the maker nothing
 about the mark (B4's counterpart); `silk apply` never run on a machine leaves GEO.silk unable to tell edakit's print.
 
+## The live run of 2026-11-01
+
+`examples/coin-cell-led` in EasyEDA, in a fresh clone (branch `walkthrough-live`): `route all` (Freerouting: 4 nets,
+16 pieces, 2 vias, DRC 0), `silk apply`, `gate --easyeda`. A4: 50 edge strips in the DSN, no "geometry is
+degenerate". B1: GEO.ring "2 vias (narrowest ring 0.152 mm)". A5: BT1's tile of `polarity_main.png` shows the "+" at
+(40.3, 24). B3: GEO.silk grade body "BT1: TOP: 0.000 mm²". B7: `bom_main.csv` the board's three parts (BT1 is
+`bom: false`), EasyEDA's BOM only this board's four, and only the board's own schematic tab open after the gate. C4:
+`order.json` has `mark = "remove"`, the fab hash moved from `f958da9a…` to `dbbe8aa2…`, the layout unchanged; the
+gate rebound M-6 to the electrical hash on the way. The agent pcb-reviewer signed M-5 for `dbbe8aa2…` – nothing
+blocking, nothing important –, and the board file got its guards: `[looks] max_track_m = 0.05`, `max_vias = 2`,
+`[routing] hand_solder_keep_mm = 2`. The last run, 20261101-085856, says RELEASED.
+
+Found on the way:
+
+- **edakit's own silkscreen texts are known only to the clone that placed them.** `silk apply` removes the texts of
+  its previous run by their IDs in `<artifacts>/silk_strings_<b>.json` – build output. In a fresh clone it found no
+  record, left the earlier label and "+" on the board and placed a second "+" on the first (GEO.mark counted three
+  signs). Cleaned by hand in this run: the two old texts deleted, `silk apply` again.
+- **`fab/<board>/current`** in every run with stage F – a copy of `cpl_easyeda.xlsx` that EasyEDA's pick-and-place
+  export leaves under the project ID `current`; not in the manifest, not uploaded (the bell's runs have it too).
+- **VBAT on the visible top**: Freerouting took it as a 14.5 mm diagonal from SW1 to BT1.1 across the open lower
+  right – the pcb-reviewer's note on looks; left as it is (the owner's decision of 2026-11-01), the limits of
+  `[looks]` warn should a re-route make it longer.
