@@ -83,3 +83,10 @@ def test_a_conflict_in_a_file_of_its_own_stops_the_merge(tmp_path):
     r = repo(tmp_path)
     files = branch_and_main(r, "README.md", "readme branch\n", "readme main\n")
     assert files == ["README.md"] and not merge.resolve_generated(r, files)
+
+
+def test_every_page_of_the_split_catalog_is_generated_output():
+    """Since step D.4 the catalog is many pages: each is regenerated on a conflict, its generator is not."""
+    assert merge.generated("docs/catalog/lim.html") and merge.generated("docs/catalog/index.html")
+    assert merge.generated("docs/catalog/circuits/usb.svg")
+    assert not merge.generated("docs/catalog/build.py") and not merge.generated("docs/concepts/x.html")

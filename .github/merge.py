@@ -5,7 +5,7 @@
 In a worktree of its own, so the session's checkout stays as it is:
 
 1. the branch onto the newest main (a merge of origin/main; an earlier numbering commit at its tip is dropped first;
-   a conflict only in generated output – the catalog page, the handbook's generated sections – is regenerated);
+   a conflict only in generated output – the catalog's pages, the handbook's generated sections – is regenerated);
 2. its fragments in changes/ make the number – minor if one says so, else patch; --major only on the owner's word –,
    written into edakit/__init__.py, the marketplace entry and CHANGELOG.md, the fragments deleted, one commit
    "edakit X.Y.Z"; a branch without fragments that changes nothing a project reads is merged without a version;
@@ -98,7 +98,13 @@ def prepare(tree, branch, major):
 # Output written by a script, never by hand: when main and the branch both regenerated it, the conflict is no one's –
 # the whole files come from main, the handbook's generated sections from the branch, and both generators then run on
 # the merged sources (docs/catalog/build.py, python -m edakit.catalog.handbook --write).
-GENERATED = ("docs/catalog/index.html", "docs/catalog/circuits/")
+GENERATED = ("docs/catalog/circuits/",)
+
+
+def generated(f):
+    """A whole generated file: the catalog's pages (docs/catalog/*.html, one per engine and more since the split of
+    step D.4) and its drawings – not its generator build.py."""
+    return v.under(f, GENERATED) or (f.startswith("docs/catalog/") and f.count("/") == 2 and f.endswith(".html"))
 GENERATORS = (("docs/catalog/build.py",), ("-m", "edakit.catalog.handbook", "--write"))
 BEGIN, END = "<!-- edakit:generated", "<!-- edakit:end -->"
 
@@ -134,7 +140,7 @@ def only_generated(text):
 def resolve_generated(tree, files):
     """Resolve a merge conflict that lies only in generated output; False when any conflict lies elsewhere."""
     handbook = [f for f in files if f.startswith("handbook/") and f.endswith(".md")]
-    whole = [f for f in files if v.under(f, GENERATED)]
+    whole = [f for f in files if generated(f)]
     if not files or len(handbook) + len(whole) != len(files):
         return False
     for f in handbook:
