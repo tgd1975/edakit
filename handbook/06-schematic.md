@@ -1,5 +1,8 @@
 # 6 Schematic (stage S)
 
+For you when a board's schematic is generated, checked or laid out in EasyEDA Pro, or drawn without it. After it you
+can build and check both schematics, draw one as an SVG and quote design values in notes and documents.
+
 Two schematics per board, both generated:
 
 | | name (default) | made by | content | edited by hand |
@@ -7,15 +10,15 @@ Two schematics per board, both generated:
 | template | `generated_<board>` | `edakit schematic create` | every part, every net as short stubs with net labels – exact, ugly | never; rebuilt on every run |
 | board schematic | `layout_<board>` | `edakit schematic copy` + `layout` | readable sheet: blocks with titles and notes, real wires, power flags, GPIO table | never; rebuilt by `layout` |
 
-The PCB hangs on the board schematic. Once it does, the board schematic cannot be replaced (the PCB would lose its
-schematic); `layout` then syncs the parts in place instead of copying.
+The PCB hangs on the board schematic. Once it does, the board schematic cannot be replaced – the PCB would lose its
+schematic –, and `layout` syncs the parts in place instead of copying.
 
-Without EasyEDA, `edakit schematic draw` draws the schematic as an SVG from the graph and the parts database alone
-(6.5) – for a project without a PCB, for the documentation, for a look at a design before EasyEDA is involved.
+Without EasyEDA, `edakit schematic draw` draws the schematic as an SVG (the drawing, 6.5): for a project without a
+PCB, for the documentation, for a look at a design before EasyEDA is involved.
 
 A bought board on a cable (`bought = true`) or a hand-wired one (`wired = true`, 4.5) has no schematic in EasyEDA:
 `--board` of such a board is refused with one line, and without `--board` the one made board is taken. `schematic
-draw --board` draws a hand-wired board (6.5) – the drawing is its build document; a bought one stays refused.
+draw --board` draws a hand-wired board – the drawing is its build document; a bought one stays refused.
 
 ## 6.1 Generate the template
 
@@ -25,26 +28,31 @@ edakit schematic create --only U3,R10,C5   # partial build to try a part
 edakit schematic create --save             # everything, then save
 ```
 
-Steps (each with duration and EasyEDA's memory): bridge → project (it must exist – the local desktop client refuses
-`DMT_Project.createProject`, so create a new project by hand once; edakit finds it in EasyEDA's project folder, remembers its UUID and goes on
-only when
-the open project has the configured name) → delete and recreate the template (never a
-schematic that belongs to a board) → close other schematic tabs (EasyEDA sometimes switches to them by itself) →
-search every LCSC number once (cache `<artifacts>/device_cache.json`, `--refresh-devices` searches again) → place in
-blocks of 40 (`batch_write`; bigger blocks crashed EasyEDA) → set designators → compare symbol pins with the graph →
-connect nets as stubs (longer stubs on collisions) → connect leftover pins one by one → mark no-connects → compare the
-netlist with the graph → ERC → save. The template's name is read again after its page got its title and once more
-before the end, and put back if it changed: in a new project the first run once left the template named after its
-page ("LED bar template") and a panel named `generated_main` – a panel of the template's name is named, not touched.
+The steps, each with its duration and EasyEDA's memory:
+
+1. Bridge.
+2. Project. It must exist: the local desktop client refuses `DMT_Project.createProject`, so create a new project by
+   hand once. edakit finds it in EasyEDA's project folder, remembers its UUID and goes on only when the open project
+   has the configured name.
+3. Delete and recreate the template – never a schematic that belongs to a board.
+4. Close other schematic tabs; EasyEDA sometimes switches to them by itself.
+5. Search every LCSC number once (cache `<artifacts>/device_cache.json`; `--refresh-devices` searches again).
+6. Place in blocks of 40 (`batch_write`); bigger blocks crashed EasyEDA.
+7. Set designators and compare the symbol pins with the graph.
+8. Connect the nets as stubs (longer stubs on collisions), then the leftover pins one by one; mark no-connects.
+9. Compare the netlist with the graph, run ERC, save.
+
+The template's name is read again after its page got its title and once more before the end, and put back if it
+changed. A panel of the template's name is named in the output, not touched.
 
 `--save` of `create` and `layout` saves only a schematic whose netlist equals the graph: no differing net, no failed
 connection, no symbol pin mismatch, no part skipped. Otherwise the run says "not saved: 2 differing nets, 0 failed
 connections, 0 pin mismatches – fix and run again, or save in EasyEDA by hand" and exits 2; the schematic stays open
-in EasyEDA as it was written. An empty netlist (EasyEDA returned one after many writes in the reference project, and
-the script saved it) is read ten times; if it stays empty, every net counts as differing and nothing is saved.
-`layout --force` writes despite geometry conflicts, it does not force the save.
+in EasyEDA as it was written. EasyEDA can return an empty netlist after many writes, so an empty one is read ten
+times; if it stays empty, every net counts as differing and nothing is saved. `layout --force` writes despite
+geometry conflicts; it does not force the save.
 
-Timing in the reference project: 13 parts 12–41 s; 123 parts 6 minutes (placing 2.1 min, connecting 3.7 min).
+Timing on real projects: 13 parts 12–41 s; 123 parts 6 minutes (placing 2.1 min, connecting 3.7 min).
 
 ## 6.2 Check against the graph
 
@@ -53,13 +61,15 @@ edakit schematic check                                  # the template
 edakit schematic check --schematic layout_main --no-pins
 ```
 
-Read only (it activates the pages, though). Parts (missing, extra, duplicate, LCSC), nets (every graph pin on its net,
-no foreign pins, no unknown nets), pin numbers **and names** and no-connect markers. About 10 s. A name that
-differs from the symbol (`D11/MOSI` in the graph, `D11` in the symbol) fails: the graph then assumed another
-pinout, and that is the error to catch here – or the library part disagrees with itself (an LED symbol naming pin 1
-`K` while its footprint prints `+` at pad 1). Names follow the symbol; the meaning sits in the roles. The gate runs it
-for every board (SYNC.schematic). Run it also at the start of every EasyEDA session and before every gate run: a
-template once had a pin on two nets without anyone having written to it; regenerating fixed it.
+Read only (it activates the pages, though), about 10 s. It checks parts (missing, extra, duplicate, LCSC), nets (every
+graph pin on its net, no foreign pins, no unknown nets), pin numbers **and names** and no-connect markers.
+
+A name that differs from the symbol (`D11/MOSI` in the graph, `D11` in the symbol) fails. Either the graph assumed
+another pinout – the error to catch here – or the library part disagrees with itself: an LED symbol names pin 1 `K`
+while its footprint prints `+` at pad 1. Names follow the symbol; the meaning sits in the roles.
+
+The gate runs the check for every board (SYNC.schematic). Run it also at the start of every EasyEDA session and before
+every gate run: a template can get a pin on two nets without anyone writing to it, and generating it again fixes that.
 
 ## 6.3 Copy and lay out
 
@@ -70,18 +80,18 @@ edakit schematic layout --save             # rebuild the board schematic (1–2 
 edakit schematic check --schematic layout_main
 ```
 
-`copy` renames the copy only when it holds the source's parts, designator for designator, on all its pages. Once
-`DMT_Schematic.copySchematic` on the template copied another project's schematic (the bell's ESP32 THT template,
-19 parts for a graph of 17); now such a copy is deleted – where it is a free schematic of the open project – and the
-run names what EasyEDA made (its page, the company and graph version of its title block, the parts more and
-missing) and exits 1. A source drawn from another graph version than the current one is named before the copy.
-`layout` builds the board schematic without a copy: in a new project it renames the default board's schematic.
+`copy` renames the copy only when it holds the source's parts, designator for designator, on all its pages.
+`DMT_Schematic.copySchematic` can copy another project's schematic instead – the bell's ESP32 THT template, 19 parts
+for a graph of 17. Such a copy is deleted where it is a free schematic of the open project. The run names what EasyEDA
+made – its page, the company and graph version of its title block, the parts more and missing – and exits 1. A source
+drawn from another graph version than the current one is named before the copy. `layout` builds the board schematic
+without a copy: in a new project it renames the default board's schematic.
 
 `layout` deletes all wires, flags, rectangles and texts of the page, moves and rotates the parts and wires them again.
 What it arranges stands in the schematic file `hardware/schematic.toml` (10.3):
 
-- **Blocks** (`[layout] rows`): rows → columns → blocks with a title and start parts (connectors, ICs, the
-  MCU). Every block gets a dashed frame, its title and notes (`[layout.notes]`).
+- **Blocks** (`[layout] rows`): rows → columns → blocks with a title and start parts (connectors, ICs, the MCU). Every
+  block gets a dashed frame, its title and notes (`[layout.notes]`).
 - **Placement:** all other parts attach by breadth-first search over signal nets (not over power nets, not past
   another start part). The MCU goes last, so it collects only what is left (buttons, LEDs on GPIOs).
 - **Capacitors** that touch only supply nets go to the part in `[layout] near`.
@@ -91,18 +101,18 @@ What it arranges stands in the schematic file `hardware/schematic.toml` (10.3):
 - **Connections:** a net inside a block is one branched wire with its name; to other blocks a labelled stub; power
   nets get flags (`power_flags`).
 - **Page:** the smallest landscape standard size that holds the content and leaves the title block free (A4 … A0).
-- **GPIO table** (`[layout.pin_table]`): pin → net → function, generated from the graph into the MCU block,
-  plus the spare pins.
-- **Before writing** the plan is checked for shorts (wires of different nets touching, wires over foreign pins,
-  four-branch crossings which EasyEDA refuses). `--force` writes anyway.
+- **GPIO table** (`[layout.pin_table]`): pin → net → function, generated from the graph into the MCU block, plus the
+  spare pins.
+- **Before writing** the plan is checked for shorts: wires of different nets touching, wires over foreign pins,
+  four-branch crossings, which EasyEDA refuses. `--force` writes anyway.
 - **After writing:** netlist against the graph, ERC.
 
 The symbol geometry (pins and body per part) is cached per schematic; `--dry-run` works offline with it, `--reread`
 reads it again.
 
-If the board schematic is linked to a PCB, `layout` first syncs parts with the graph: missing ones are placed,
-extra ones deleted, swapped ones (other LCSC number) replaced – a swapped part keeps its UniqueId and with it the link
-to its footprint. New parts reach the PCB with `edakit pcb parts --write` (chapter 7).
+If the board schematic is linked to a PCB, `layout` first syncs parts with the graph: missing ones are placed, extra
+ones deleted, swapped ones (other LCSC number) replaced – a swapped part keeps its UniqueId and with it the link to its
+footprint. New parts reach the PCB with `edakit pcb parts --write` (chapter 7).
 
 ## 6.4 What made this hard (and is handled)
 
@@ -115,19 +125,23 @@ to its footprint. New parts reach the PCB with `edakit pcb parts --write` (chapt
 - A big page takes minutes to open; a timeout while opening does not mean failure.
 - The sheet frame (title block) may be missing; edakit creates it from the system library.
 
-Details: [chapter 9.3](09-easyeda-api.md#93-schematic).
+The API calls behind each: [9.3 Schematic](09-easyeda-api.md#93-schematic).
 
 ## 6.5 Drawn without EasyEDA
+
+The drawing is a result on its own, without EasyEDA or KiCad: the graph and the parts database are enough – no
+bridge, about a second. A project without a PCB – a development board and hand wiring – never needs EasyEDA: checks,
+simulation and this drawing work from the graph alone. For a PCB, EasyEDA's board schematic stays the one that counts;
+the PCB hangs on it.
 
 ```bash
 edakit schematic draw                          # <artifacts>/schematic_<board>.svg
 edakit schematic draw --out docs/schematic.svg
 ```
 
-The graph and the parts database are enough – no EasyEDA, no bridge, about a second. Every gate run draws it too, as
-SVG and PNG beside its protocol (8.3, section 12). The arrangement is the one of
-`layout` (6.3): blocks with titles and notes, placement by topology, real wires, flags, GPIO table. Only the symbols
-come from the parts database instead of EasyEDA's library:
+Every gate run draws it too, as SVG and PNG beside its protocol (the gate protocol's section 12, 8.3). The arrangement
+is the one of `layout` (copy and lay out, 6.3): blocks with titles and notes, placement by topology, real wires,
+flags, GPIO table. Only the symbols come from the parts database instead of EasyEDA's library:
 
 | kind | symbol |
 |---|---|
@@ -138,13 +152,13 @@ come from the parts database instead of EasyEDA's library:
 | connector, relay, RGB LED, DIP switch, anything else | a box with every pin (a connector in one column, a relay's coil on the left) |
 
 A parts entry can arrange its box itself – a module whose pin numbers do not run like a DIP package:
-`"symbol": {"left": ["1", …, "20"], "right": ["40", …, "21"], "bottom": ["41", "42", "43"]}` (left and right from top
-to bottom, top and bottom from left to right; connected pins not listed go to the right).
+`"symbol": {"left": ["1", …, "20"], "right": ["40", …, "21"], "bottom": ["41", "42", "43"]}`. Left and right run from
+top to bottom, top and bottom from left to right; connected pins not listed go to the right.
 
-A box names its pins as the symbol does (6.2). Where a pin of the parts entry has `print` – its name as the board
-prints it (4.1) – and the two differ, the drawing writes it beside the symbol's name in brackets: `PD2 (D2)` on a Nano
-whose library symbol names the ATmega ports. Only this drawing reads it; EasyEDA's schematic and SYNC.schematic keep
-the symbol's names.
+A box names its pins as the symbol does, the names the check holds (6.2). Where a pin of the parts entry has `print`
+– its name as the board prints it (the parts fields, 4.1) – and the two differ, the drawing writes it beside the
+symbol's name in brackets: `PD2 (D2)` on a Nano whose library symbol names the ATmega ports. Only this drawing reads
+it; EasyEDA's schematic and SYNC.schematic keep the symbol's names.
 
 **Without the schematic file** the drawing arranges itself:
 
@@ -161,37 +175,46 @@ Before the file is written, the drawing is checked like a plan for EasyEDA – n
 pin – and every connected pin must end in a wire or a flag of its own net; otherwise nothing is written (exit 2,
 `--force` writes anyway). The page is as big as the drawing plus the title block and to scale: one unit is 10 mil,
 designators are 1.8 mm high. `--no-frame`, or `frame = false` in the schematic file (10.3), leaves out the sheet
-border and the title block – for a drawing embedded in a document –; the page is then the drawing and its margin.
-
-A project without a PCB – a development board and hand wiring – never needs EasyEDA: checks, simulation and this
-drawing work from the graph alone. For a PCB, EasyEDA's board schematic stays the one that counts; the PCB hangs on it.
+border and the title block for a drawing embedded in a document; the page is then the drawing and its margin.
 
 ### Wired through
 
-`style` in the schematic file (10.3) chooses the drawing per board: `"labels"`, the drawing above and the default;
-`"wires"`, every connection a wire from pin to pin, as the maker scene draws it (Fritzing's schematic view);
-`"mixed"`, wires with labels for the buses. A board takes the style its project interview chose: labels for a board
-of any size, wires through for a maker-size circuit or a hand-wired board, mixed for a module with headers.
+`style` in the schematic file (10.3) chooses the drawing per board:
+
+- `"labels"`: the drawing above, and the default;
+- `"wires"`: every connection a wire from pin to pin, as the maker scene draws it (Fritzing's schematic view);
+- `"mixed"`: wires, with labels for the buses.
+
+A board takes the style its project interview chose: labels for a board of any size, wires through for a maker-size
+circuit or a hand-wired board, mixed for a module with headers.
 
 ```toml
 style = "wires"                          # every board; or by board: style = {main = "labels", panel = "wires"}
 ```
 
-Wired through, the blocks are the ones above, with four changes: a pin without a part on it gets a lead of one grid
-cell instead of a labelled stub and no flag; no frames, titles and notes; a module shows every pin as the board does,
-the open ones grey; a button's pins joined inside it show once per side. They are not set in rows but around the
-module – or the block with the most nets to the others –: each next block, the one with the most nets to those
-placed, on the side and the way round (as it is or turned by 180°) where its wires to them come out shortest, with
-the fewest crossings and through no part, its pins level with theirs; a channel as wide as the wires it brings stays
-free around it. A block without a wire to the others goes where the drawing grows least. The rows of the schematic
-file still say which parts form a block. Then a router on the schematic grid joins every net: the cheapest path from
-piece to piece – a step costs 1, a bend 4, crossing another net 12, running beside one 1, each of the two cells in
-front of another net's open lead 12, so that the lead keeps its way out –, never through a part or along its outline,
-never along another net's wire or through its ends, bends, junctions and pin tips; the ground along a rail below the
-drawing and the supplies along rails above when at least two pieces join there. Every net gets a colour – ground
-black, the supplies red and orange, the rest from ten colours, so that nets that cross or run side by side differ. A
-dot marks every junction; two wires crossing without a dot are not connected. A net the router cannot join, or one
-with a single pin on the board (it goes on elsewhere), is named at its pieces as in the labelled drawing.
+Wired through, the blocks are the ones above, with four changes:
+
+- a pin without a part on it gets a lead of one grid cell instead of a labelled stub, and no flag;
+- no frames, titles and notes;
+- a module shows every pin as the board does, the open ones grey;
+- a button's pins joined inside it show once per side.
+
+The blocks are not set in rows but around the module, or around the block with the most nets to the others. Each next
+block – the one with the most nets to those placed – goes on the side and the way round (as it is or turned by 180°)
+where its wires to them come out shortest, with the fewest crossings and through no part, its pins level with theirs.
+A channel as wide as the wires it brings stays free around it. A block without a wire to the others goes where the
+drawing grows least. The rows of the schematic file still say which parts form a block.
+
+Then a router on the schematic grid joins every net by the cheapest path from piece to piece. A step costs 1, a bend
+4, crossing another net 12, running beside one 1, and each of the two cells in front of another net's open lead 12, so
+that the lead keeps its way out. The router never runs through a part or along its outline, never along another net's
+wire or through its ends, bends, junctions and pin tips. The ground runs along a rail below the drawing and the
+supplies along rails above when at least two pieces join there.
+
+Every net gets a colour – ground black, the supplies red and orange, the rest from ten colours, so that nets that cross
+or run side by side differ. A dot marks every junction; two wires crossing without a dot are not connected. A net the
+router cannot join, or one with a single pin on the board (it goes on elsewhere), is named at its pieces as in the
+labelled drawing.
 
 `"mixed"` keeps the labelled stubs for the nets that are nothing but pass-throughs and buses – only modules, ICs and
 connectors on them, or six pins or more (a key matrix, a shared line) – and wires the rest. The output line counts
@@ -202,9 +225,10 @@ drawn (wires through): 19 parts, 19 wires, 4 crossings, 1.2 m of wire, 122 x 220
 ```
 
 How far it goes is the structure, not the number of parts: the bell (19 parts) has 4 crossings, the LED bar 18, the
-TS/Rat pedal with 86 parts 36; a module whose headers mirror its pins (the ESP32 DevKitC: 183) or a key matrix is a
-mesh – mixed brings the DevKitC to 30, a matrix stays one. A second for the bell, a quarter of a minute for a
-keyboard half.
+TS/Rat pedal with 86 parts 36. A module whose headers mirror its pins (the ESP32 DevKitC: 183) or a key matrix is a
+mesh – mixed brings the DevKitC to 30, a matrix stays one. A second for the bell, a quarter of a minute for a keyboard
+half.
+
 The check then tells a crossing – two nets' wires meeting inside both – from a T, which is a short, and refuses a
 crossing at a junction, a bend or a pin tip and a net crossing itself without a dot. The style reaches the SVG only:
 EasyEDA's board schematic and the KiCad schematic keep their labels (concept wired-schematic, decision 1).
@@ -242,13 +266,14 @@ must do, they quote the requirements file (3.6) by ID instead of copying the sen
 - **R-1** <!--edakit req:R-1-->Runs from the USB port of a laptop with all eight LEDs on.<!--/edakit-->
 ```
 
-The quote is the entry's `text`, a line break in it as a space – a block is one line. A draft is quoted as it
-stands; when its text changes, the quote is stale like any other. A dropped entry is not quoted: it no longer holds,
-and a document that quotes it reads as if it did – DOCS.quote names it with its reason; quote the entry that holds now,
-or drop the block. Its text stays in the requirements file, where `edakit req` shows it. Without
-`[project] requirements` a `req:` source is DOCS.quote that names the key; a requirements file that does not read,
-DOCS.quote with what is wrong in it. The requirements file is in the circuit hash (8.2), the documents are not: a
-changed requirement voids M-1 and M-6, `edakit docs --write` then brings the quotes along without voiding anything.
+The quote is the entry's `text`, a line break in it as a space – a block is one line. A draft is quoted as it stands;
+when its text changes, the quote is stale like any other. A dropped entry is not quoted: it no longer holds, and a
+document that quotes it reads as if it did. DOCS.quote names it with its reason; quote the entry that holds now, or
+drop the block. Its text stays in the requirements file, where `edakit req` shows it.
+
+Without `[project] requirements` a `req:` source is DOCS.quote that names the key; a requirements file that does not
+read, DOCS.quote with what is wrong in it. The requirements file is in the circuit hash (8.2), the documents are not:
+a changed requirement voids M-1 and M-6, `edakit docs --write` then brings the quotes along without voiding anything.
 
 ```bash
 edakit docs            # DOCS.quote for every block that differs from its source and every source that does not exist; exit 2
