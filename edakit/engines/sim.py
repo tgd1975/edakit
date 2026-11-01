@@ -325,6 +325,7 @@ def stress(s):
                 s.q(des, "i", abs(i), "A", kind, des, "average current")
             elif kind == "buzzer":
                 s.q(des, "v", abs(a - b), "V", kind, des, "coil voltage")
+                s.q(des, "i", abs(i), "A", kind, des, "coil current")
             elif kind == "relay_coil":
                 s.q(des, "v_coil", abs(a - b), "V", kind, des, "coil voltage")
             elif kind == "capacitor":

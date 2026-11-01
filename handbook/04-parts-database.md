@@ -102,7 +102,7 @@ in `sources` – any RP2350 module takes the same list per GPIO. On the RP2040 a
 | `dip_switch` | `v_max_v`, `i_max_a`, `i_contact_max_a`, `i_switch_max_a` | `r_on_ohm`, `min_load_a`, `positions` |
 | `button` | `v_max_v`, `i_max_a`, `i_contact_max_a`, `i_switch_max_a` | `r_on_ohm`, `force_n`, `min_load_a` |
 | `battery_holder` | `i_max_a`, `v_max_v` | `r_contact_ohm` |
-| `buzzer` | `v_max_v` | `coil_ohm` |
+| `buzzer` | `v_max_v`, `i_max_a` | `coil_ohm` |
 | `relay` | `v_coil_max_v`, `i_max_a`, `v_max_v`, `i_contact_max_a`, `i_switch_max_a` | `coil_ohm`, `v_operate_v`, `v_release_v`, `r_contact_ohm`, `min_load_a` |
 | `connector` | `v_max_v`, `i_max_a`, `i_contact_max_a` | `pitch_mm`, `r_contact_ohm`, `r_source_ohm`, `usb_c` |
 | `ic` | `vdd_max_v`, `vdd_op_min_v`, `vdd_op_max_v`, `vin_min_v`, `vin_max_v`, `vout_max_v`, `i_out_max_a`, `vin_rel_max_v`, `i_supply_pin_max_a`, `f_max_hz`, `r_sense_min_ohm`, `f_sck_max_hz`, `f_scl_max_hz`, `gpio_i_max_a`, `gpio_i_total_max_a` | `behavior`, `vout_v`, `dropout_v`, `iq_a`, `efficiency`, `idd_max_a`, `iout_gain`, `iout_accuracy`, `vout_knee_v`, `vrext_v`, `vih_v`, `vil_v`, `vih_ratio`, `vil_ratio`, `first_bit_to`, `vout_swing_v`, `vicm_v`, `r_out_ohm`, `comparator`, `gain_min_ratio`, `f_clock_hz`, `vref_v`, `i_load_min_a`, `prog_v`, `icc_a`, `i_a`, `i_core_a`, `i_core_min_a`, `gpio_r_out_ohm`, `regulator`, `vdd_shunt_v`, `i_shunt_max_a`, `pd_request_v`, `r_on_ohm`, `vgs_th_v`, `r_on_high_ohm`, `r_on_low_ohm`, `v_headroom_v`, `uvlo_v`, `v_pre_v`, `i_pre_ratio`, `i_term_ratio`, `v_ovp_v`, `v_ovp_release_v`, `v_uvp_v`, `v_uvp_release_v`, `v_ocp_v`, `v_scp_v`, `vsense_v`, `duty_max_ratio`, `ripple_ratio` |
@@ -217,7 +217,8 @@ entry's before the default of the pin type. What the names do not say:
   datasheet edakit could read: a project enters its own measured spread, with its source.
 - shift registers and LED drivers `first_bit_to`: the output the first shifted bit ends on, e.g. `"out7"`, from the
   datasheet's timing diagram – copied into the firmware contract (3.5).
-- buzzer `coil_ohm`: a magnetic buzzer, a coil for REQ.missing (flyback diode); relay `v_operate_v`, `v_release_v`
+- buzzer `coil_ohm`: a magnetic buzzer, a coil for REQ.missing (flyback diode) and the simulation, which holds its
+  coil current to `i_max_a` (5.1); relay `v_operate_v`, `v_release_v`
   (must-operate and must-release voltage).
 - contacts – switch, button, DIP switch, relay, connector: `i_contact_max_a`, what a closed contact carries (a
   connector's current rating per circuit, the JST XH's 3 A at AWG 22); `i_switch_max_a`, what it may break when it

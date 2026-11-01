@@ -81,3 +81,18 @@ def test_the_protocol_lists_the_gaps(project, monkeypatch):
     two = text.split("## 2 ")[1].split("\n## ")[0]
     assert "Not checked for lack of data – no finding, nobody looked" in two
     assert "- LVL.threshold: U2 – inputs without thresholds" in two
+
+
+def test_a_buzzer_coil_without_its_current_limit_is_named(project):
+    """#90: the simulation holds a buzzer's coil current to i_max_a – a coil without it is a gap, a piezo (no coil_ohm,
+    not simulated) is none."""
+    from test_checks import BUZZER, coil_stage
+    coil_stage(project, BUZZER, ("plus", "minus"))
+    assert "LIM.i: X1 – no i_max_a – its coil current is not held to a limit (C409842)" in [
+        g.line() for g in gaps(project)]
+    part = dict(BUZZER, limits={"v_max_v": 7, "i_max_a": 0.15})
+    project.save_part(part["lcsc"], part)
+    assert not any("X1" in g.place for g in gaps(project) if g.code == "LIM.i")
+    piezo = dict(BUZZER, values={})
+    project.save_part(piezo["lcsc"], piezo)
+    assert not any("X1" in g.place for g in gaps(project) if g.code == "LIM.i")

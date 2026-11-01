@@ -43,7 +43,9 @@ its row reads `waived`, and the gate lists it in section 4 of the protocol. A sc
   several poles (`common_2`, `throw_a_2` … – a 3PDT footswitch's three; REQ.value/switch judges each pole apart).
   A relay is its coil (`coil_ohm`) plus a contact from `common` to `no` when the load lists it in `relays_on`, else to
   `nc` – every contact set of it: a DPDT relay's second set carries the roles `common_2`, `no_2`, `nc_2` and switches
-  with the first (REQ.value/switch judges each set apart). A potentiometer's wiper sits where the load's `pot` puts
+  with the first (REQ.value/switch judges each set apart). A magnetic buzzer is its coil (`coil_ohm`): its coil
+  voltage against `v_max_v`, its coil current against `i_max_a` (LIM.i) – a GPIO stuck high on a 5 V buzzer of 42 Ω
+  drives about 90 mA through it. A potentiometer's wiper sits where the load's `pot` puts
   it – `{"RV1": 0.25}`, the share of its value between `end_a` and `wiper`, default 0.5.
 - Supplies: connectors listed under `sources` (a voltage source behind a source resistance), battery holders with a
   cell state (`cells`). A module that brings its own supply (an Arduino Nano on USB) is a source as well: `plus` is

@@ -157,6 +157,8 @@ def coverage(design, prof=None, sim=None):
                     found[(code, key, f"no {' or '.join(names)}{color} – {what} is not held to a limit")].append(des)
         if polarized(part) and "vr_max_v" not in r:
             found[("LIM.v", key, "no vr_max_v – its reverse voltage is not held to a limit")].append(des)
+        if kind == "buzzer" and "coil_ohm" in p and "i_max_a" not in r:   # a coil the simulation drives (#90)
+            found[("LIM.i", key, "no i_max_a – its coil current is not held to a limit")].append(des)
         if kind in DISSIPATES and "rth_ja_k_per_w" not in r:
             found[("LIM.t", key, "no rth_ja_k_per_w – no junction temperature")].append(des)
         from ..radio import radios

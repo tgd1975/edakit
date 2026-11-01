@@ -433,7 +433,7 @@ or lower a code's severity (14.2). Exit 1 on errors, with `--release` also on pe
 
 **What went unchecked.** A code that needs a datasheet value skips a part without it: LIM.v a capacitor without
 `v_max_v`, LIM.t every part without `rth_ja_k_per_w`, LVL.threshold an input without `vih`/`vil`, LIM.range an IC
-without its operating range or an op-amp without `vicm_v`. An RGB LED is read per colour, as the simulation holds it
+without its operating range or an op-amp without `vicm_v`, LIM.i a magnetic buzzer (`coil_ohm`) without `i_max_a`. An RGB LED is read per colour, as the simulation holds it
 (5.1): each colour by its own `limits.<color>`, a colour without its own table by the entry's limits – a gap names the
 colour that lacks the value (`LIM.i: D10 – no if_max_a for green – …`). `edakit check` names these gaps in one line above its last
 (`not checked for lack of data: LIM.t 11 parts, LVL.threshold 1 part – edakit check --coverage`), `--coverage` lists
