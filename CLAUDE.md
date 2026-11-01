@@ -38,6 +38,12 @@ A requirements file covers the circuit only; what firmware and mechanics must do
   number is the owner's. Such a branch goes onto main as a pull request through `python3 .github/merge.py <n>`, never
   by a local merge: the script numbers it, waits for the checks and merges, and `release.yml` sets the tag. Concepts
   and TODO.md go through the notes lane and are no version.
+- **main is protected** by the rulesets in `.github/rulesets/`: nothing reaches it but a pull request with the checks
+  test, kicad, build, paths and version green, no force push, no deletion, no bypass, only the owner's account merges,
+  and a version's tag is never moved. Every session acts as the owner's account, so this guards against slips and the
+  Actions – the owner's OK for code stays the rule above. A refused push to main ("Repository rule violations") moves
+  its commit to a branch. `python3 .github/rulesets.py` shows whether GitHub has what the files say; a change to them
+  is a pull request, applied after its merge with `python3 .github/rulesets.py apply` on the owner's word.
 - **No branch is left lying around.** When a piece of work is done, list the unmerged branches – local, origin,
   worktrees, and the clones of other sessions, read only. Merge what is finished, rebased and with the tests green, or
   say why a branch of your own stays: waiting for a decision, unfinished. Someone else's branch is one line naming the
