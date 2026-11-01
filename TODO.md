@@ -73,8 +73,10 @@ owner's rules there: no click because of the API, no self-extended MCP server, t
 - [ ] **On the owner's computer – the newest versions live:** EasyEDA Pro 3.2.209 (3.2.206 is installed) and
       easyeda-mcp-pro 1.6.0 (the pin is 1.4.0) with the patched extension of the same version; E-1 to E-4 and E-7
       checked again, the self-test, one gate run of the example. Then the pin raised in `mcp-server.sh`.
-- [ ] **On the owner's word – post:** M-1 to M-4 together (the owner's decision of 2026-11-01; M-4's branch built
-      the same day), each an issue, then the fork's branch and its pull request; M-5 and M-7 as issues, M-6 as a comment on #539; E-1 to
+- [ ] **M-1 to M-4 upstream, posted on 2026-11-01** (#792/#793, #794/#795, #796/#797, #798/#799): review comments
+      answered on the fork's branches, rebased when `main` moves; the comment "I agree to the Contributor Permission v1
+      in CONTRIBUTOR-LICENSING.md", when the maintainer asks for it, from the owner.
+- [ ] **On the owner's word – post:** M-5 and M-7 as issues, M-6 as a comment on #539; E-1 to
       E-16 at easyeda/easyeda-api-sdk after the live check above – to #33, #34, #36, #38 and #39 as comments. Before
       each the check of "The latest state".
 - [ ] **When a release brings M-2 to M-4:** pin raised, the original extension, `bridge-extension-patch.sh` and

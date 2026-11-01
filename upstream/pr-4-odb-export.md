@@ -21,9 +21,6 @@ method schema and in the extension's dispatcher; the extension calls the API in 
   counts of `pro`, `full`, `dev` and `experimental` one higher, the generated tool reference and capability tables.
 - Tests: the tool with a mocked bridge (tgz and zip written, a non-archive refused with nothing written, a failing
   bridge), the extension handler (file name, inch, drill options; a missing projectId), the router's method list.
-- `pnpm verify:fast` green; the whole suite green but for the test that expects no ngspice, as on `main`.
-
-Fixes #<issue>
 
 ## Risk
 
@@ -40,4 +37,4 @@ Fixes #<issue>
 
 Local stand-in until it is released: `edakit/easyeda/odb-tool-patch.mjs` (the tool, patched into the installed 1.4.0
 by `mcp-server.sh`) and `bridge-extension-patch.sh` (the handler, through `board.exportGerbers` with `format: "odb"`).
-Commit `8e3b1d9` on 1.6.0 (`e52d862`), not pushed yet.
+Commit `8e3b1d9` on 1.6.0 (`e52d862`); posted as #799 for #798 on 2026-11-01.

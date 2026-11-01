@@ -82,23 +82,24 @@ of the project histories that pytree-27 left in the owner's TODO list.
 
 ## easyeda-mcp-pro
 
-An issue first, then the fork's branch and its pull request with "Fixes #<issue>"; the issue drafts follow the
+An issue first, then the fork's branch and its pull request with "Fixes #<issue>" – M-1 to M-4 so posted on
+2026-11-01, the texts as in the drafts; the issue drafts follow the
 repository's issue forms field by field, the pull request drafts its template. On the first substantial pull request
 the maintainer asks once for the comment "I agree to the Contributor Permission v1 in CONTRIBUTOR-LICENSING.md" from
 the account that opened it – a consent in the owner's name, given by the owner.
 
 | # | Requirement | Local workaround – goes with the release | Upstream | Fork branch | Checked |
 |---|---|---|---|---|---|
-| M-1 | The stale sweep honours each request's own timeout | `BRIDGE_TIMEOUT_MS=120000` for every server – a setting, no patch | [issue](issue-1-stale-sweep.md), [pull request](pr-1-stale-sweep.md) | `fix/stale-sweep-per-request-timeout` | 1.6.0 |
-| M-2 | `easyeda_export_pdf` with `what: "schematic"` exports the schematic | `bridge-extension-patch.sh` | [issue](issue-2-schematic-pdf.md), [pull request](pr-2-schematic-pdf.md); #527 (closed) only stopped the false success | `fix/schematic-pdf-export` | 1.6.0 |
-| M-3 | `easyeda_api_call` returns deeper results (`maxDepth`) – DRC details and the rule set lie 9 levels deep | `bridge-extension-patch.sh` (depth 12) | [issue](issue-3-api-call-depth.md), [pull request](pr-3-api-call-depth.md) | `feat/api-call-max-depth` | 1.6.0 |
-| M-4 | ODB++ export as a tool | `odb-tool-patch.mjs` and `bridge-extension-patch.sh` | [issue](issue-5-odb-export.md), [pull request](pr-4-odb-export.md) | `feat/odb-export` | 1.6.0 |
+| M-1 | The stale sweep honours each request's own timeout | `BRIDGE_TIMEOUT_MS=120000` for every server – a setting, no patch | [#792](https://github.com/oaslananka/easyeda-mcp-pro/issues/792), [#793](https://github.com/oaslananka/easyeda-mcp-pro/pull/793) – [drafts](issue-1-stale-sweep.md) | `fix/stale-sweep-per-request-timeout` | 1.6.0 |
+| M-2 | `easyeda_export_pdf` with `what: "schematic"` exports the schematic | `bridge-extension-patch.sh` | [#794](https://github.com/oaslananka/easyeda-mcp-pro/issues/794), [#795](https://github.com/oaslananka/easyeda-mcp-pro/pull/795) – [drafts](issue-2-schematic-pdf.md); #527 (closed) only stopped the false success | `fix/schematic-pdf-export` | 1.6.0 |
+| M-3 | `easyeda_api_call` returns deeper results (`maxDepth`) – DRC details and the rule set lie 9 levels deep | `bridge-extension-patch.sh` (depth 12) | [#796](https://github.com/oaslananka/easyeda-mcp-pro/issues/796), [#797](https://github.com/oaslananka/easyeda-mcp-pro/pull/797) – [drafts](issue-3-api-call-depth.md) | `feat/api-call-max-depth` | 1.6.0 |
+| M-4 | ODB++ export as a tool | `odb-tool-patch.mjs` and `bridge-extension-patch.sh` | [#798](https://github.com/oaslananka/easyeda-mcp-pro/issues/798), [#799](https://github.com/oaslananka/easyeda-mcp-pro/pull/799) – [drafts](issue-5-odb-export.md) | `feat/odb-export` | 1.6.0 |
 | M-5 | `easyeda_api_call` reports a create call that returns null as a failure | checks the open project's name before every run | [issue](issue-4-create-project.md), its server part | – | 1.4.0 |
 | M-6 | The schematic read tools and the BOM read a page by its UUID without switching the owner's tab; the BOM of a board-linked schematic lists each part once | focuses page after page, merges, removes the duplicates, checks the focus after each read | #526 (closed into the design draft #539, built later) – our case as a comment there | – | 1.6.0 |
 | M-7 | The pick-and-place export returns csv when csv is asked: the bridge passes the project id as the file name and no type to `getPickAndPlaceFile(fileName, fileType, unit)`, so EasyEDA answers with its default xlsx | reads the xlsx | new | – | 1.6.0 |
 | M-8 | The bridge connects by itself, also after a crash of EasyEDA, and shows its menu | the skill start asks for *MCP Bridge → Connect*, or restarts EasyEDA | report only if the original extension does it too – the patched one sometimes shows no menu | – | 1.4.0 |
 
-Fork branches in the clone `../easyeda-mcp-pro`, on 1.6.0 since 2026-11-01, not pushed yet:
+Fork branches in the clone `../easyeda-mcp-pro`, on 1.6.0, pushed to the fork and posted on 2026-11-01 on the owner's word:
 
 | Branch | Commit | Tests on 1.6.0 |
 |---|---|---|
