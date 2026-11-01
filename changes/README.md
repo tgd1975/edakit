@@ -22,3 +22,7 @@ sign-offs to renew. The major number is the owner's: `merge.py <n> --major`, onl
 A branch that changes nothing a project reads – only `tests/`, `.github/`, `evals/`, `docs/`, `examples/`,
 `upstream/`, `.claude/`, `TODO.md`, `CLAUDE.md`, `README.md` – needs no fragment and is merged without a version. The
 check `version` of a pull request says which case it is (`.github/versions.py`).
+
+Dependabot (`.github/dependabot.yml`) writes no fragment: for its branches `dependabot/…` that change `uv.lock` or
+`pyproject.toml`, `merge.py` writes it – `patch`, with the pull request's title. A new major of a dependency is not
+proposed; it comes by hand, with a fragment of its own.
