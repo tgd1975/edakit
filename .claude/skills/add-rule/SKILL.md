@@ -124,4 +124,5 @@ that project's repository, with the user's OK. For a proposal the triage comment
 the project.
 
 Commit as the repository does (code with tests, then the handbook); push only when the user says so. A proposal
-built by triage-rule is one commit, pushed to `rules/proposals`.
+built by triage-rule is one commit on the branch the workflow prepared, never pushed from here: the workflow pushes it
+after its check.
