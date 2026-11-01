@@ -245,18 +245,19 @@ def main(argv):
         print(lines)
         return 0
     if argv[:1] == ["unnumbered"] and len(argv) == 3:
-        stray = needs_version(changed_files(argv[1], argv[2]))
+        stray = needs_version(changed_files(argv[1], argv[2], root=ROOT))
         if stray:
             print(f"changed since {argv[1]} without a version – merge through .github/merge.py:", *stray, sep="\n  ")
             return 1
         return 0
     if argv[:1] == ["check"] and len(argv) == 6 and argv[1] in ("paths", "version"):
         _, name, base, head, branch, pr = argv
-        changed = changed_files(base, head)
+        changed = changed_files(base, head, root=ROOT)
         if name == "paths":
-            ok, description, details = check_paths(branch, changed, pipeline_paths())
-        else:
-            ok, description, details = check_version(changed, show(base), show(head), pr)
+            ok, description, details = check_paths(branch, changed, pipeline_paths(ROOT))
+        else:   # the number the branch started from: a branch behind main still carries main's older one
+            fork = git("merge-base", base, head, root=ROOT).strip()
+            ok, description, details = check_version(changed, show(fork, root=ROOT), show(head, root=ROOT), pr)
         print(description[:140], *details, sep="\n")
         return 0 if ok else 1
     print(__doc__, file=sys.stderr)
