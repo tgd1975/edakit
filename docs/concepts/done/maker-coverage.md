@@ -1,6 +1,8 @@
 # Coverage of typical maker projects
 
-Status 2026-10-30: research and analysis, nothing is built. The candidates are built after the restructuring of the
+Status 2026-10-30: research and analysis. Built since: [maker-coverage-status.toml](maker-coverage-status.toml) records
+each candidate – 92 built, 6 partial, 5 out on 2026-11-01 –, and the catalog page shows it. The candidates were built
+after the restructuring of the
 catalog in [rules-at-scale.md](rules-at-scale.md), as data per domain (its section 10). What becomes a check, a hint, a
 block or a part fact is the owner's decision (handbook 14.4), and every candidate below still needs its sources opened
 and read before it gets a catalog entry (skill add-rule, step 2). Basis: edakit at `bf7450a`, seven research clusters

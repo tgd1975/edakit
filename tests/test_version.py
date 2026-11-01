@@ -1,0 +1,200 @@
+"""edakit's versions (docs/concepts/new/versioning.md): one number in edakit/__init__.py, the marketplace entry and the
+changelog held to it, the fragments that make the next one, the checks paths and version of a pull request
+(.github/versions.py), and the string `edakit --version` and the gate manifest print (edakit/version.py)."""
+
+import importlib.util
+import json
+import shutil
+import subprocess
+from pathlib import Path
+
+import pytest
+
+from edakit import __version__, cli
+from edakit.version import version
+
+ROOT = Path(__file__).resolve().parents[1]
+
+
+def _load(name):
+    spec = importlib.util.spec_from_file_location(name, ROOT / ".github" / f"{name}.py")
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return mod
+
+
+v = _load("versions")
+
+
+def test_the_number_is_written_once_and_held_everywhere():
+    entry = v.entry((ROOT / v.MARKETPLACE).read_text())
+    log = (ROOT / v.CHANGELOG).read_text()
+    assert v.number((ROOT / v.INIT).read_text()) == __version__
+    assert "version" not in json.loads((ROOT / ".claude-plugin" / "plugin.json").read_text())   # it would win
+    if __version__ == "0.1.0":     # before the first version: no section, the entry from the repository itself
+        assert v.top(log) is None and "version" not in entry
+        return
+    assert entry["version"] == __version__
+    assert entry["source"] == {"source": "github", "repo": v.REPO, "ref": f"v{__version__}"}
+    assert v.top(log) == __version__ and v.section(log, __version__)
+
+
+def test_the_fragments_on_this_branch_are_well_formed():
+    for p in sorted((ROOT / "changes").glob("*.md")):
+        if p.name != "README.md":
+            kind, lines = v.fragment(p.name, p.read_text())
+            assert kind in ("minor", "patch") and lines
+
+
+@pytest.mark.parametrize("kind, n", [("patch", "0.2.1"), ("minor", "0.3.0"), ("major", "1.0.0")])
+def test_bump(kind, n):
+    assert v.bump("0.2.0", kind) == n
+
+
+@pytest.mark.parametrize("text, error", [("major\n- x", "minor or patch"), ("patch\n", "no line"),
+                                         ("- a line, no kind", "minor or patch")])
+def test_a_malformed_fragment_names_what_is_wrong(text, error):
+    with pytest.raises(ValueError, match=error):
+        v.fragment("x.md", text)
+
+
+def test_what_needs_a_version():
+    assert v.needs_version(["tests/test_x.py", ".github/merge.py", "docs/concepts/new/a.md", "TODO.md",
+                            "CLAUDE.md", "README.md", "changes/x.md", "CHANGELOG.md", "upstream/README.md"]) == []
+    assert v.needs_version(["edakit/check.py", "skills/x/SKILL.md", "handbook/03-hardware-graph.md", "uv.lock",
+                            ".claude-plugin/marketplace.json", "newdir/x"]) == [
+        "edakit/check.py", "skills/x/SKILL.md", "handbook/03-hardware-graph.md", "uv.lock",
+        ".claude-plugin/marketplace.json", "newdir/x"]
+
+
+def _tree(tmp_path, number="0.2.0", fragments=None, log=None):
+    for rel in (v.INIT, v.MARKETPLACE, v.CHANGELOG):
+        (tmp_path / rel).parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy(ROOT / rel, tmp_path / rel)
+    (tmp_path / v.INIT).write_text(v.set_number((tmp_path / v.INIT).read_text(), number))
+    if log is not None:
+        (tmp_path / v.CHANGELOG).write_text(log)
+    (tmp_path / "changes").mkdir()
+    (tmp_path / "changes" / "README.md").write_text("# Fragments\n")
+    for name, text in (fragments or {}).items():
+        (tmp_path / "changes" / name).write_text(text)
+    return tmp_path
+
+
+LOG = "# Changelog\n\nIntro.\n\n## 0.2.0 – 2026-11-01\n\n- the first\n"
+
+
+def test_numbering_writes_number_entry_and_section_and_deletes_the_fragments(tmp_path):
+    t = _tree(tmp_path, log=LOG, fragments={"b.md": "patch\n- B fixed", "a.md": "minor\n- **When updating:** A"})
+    assert v.number_tree(t, "0.2.0", "2026-11-03") == "0.3.0"
+    assert v.number((t / v.INIT).read_text()) == "0.3.0"
+    entry = v.entry((t / v.MARKETPLACE).read_text())
+    assert entry["version"] == "0.3.0" and entry["source"]["ref"] == "v0.3.0"
+    log = (t / v.CHANGELOG).read_text()
+    assert v.top(log) == "0.3.0" and v.section(log, "0.3.0") == "- **When updating:** A\n- B fixed"
+    assert v.section(log, "0.2.0") == "- the first"
+    assert [p.name for p in (t / "changes").iterdir()] == ["README.md"]
+
+
+def test_numbering_takes_the_major_number_only_when_asked(tmp_path):
+    t = _tree(tmp_path, log=LOG, fragments={"a.md": "patch\n- a"})
+    assert v.number_tree(t, "0.2.0", "2026-11-03", major=True) == "1.0.0"
+    assert v.number_tree(_tree(tmp_path / "2", log=LOG), "0.2.0", "2026-11-03") is None
+
+
+def _reader(files):
+    return lambda path: files.get(path)
+
+
+def _files(number, log, ref=True, fragments=None):
+    market = (ROOT / v.MARKETPLACE).read_text()
+    files = {v.INIT: f'__version__ = "{number}"\n',
+             v.MARKETPLACE: v.set_marketplace(market, number) if ref else market, v.CHANGELOG: log}
+    files.update({f"changes/{k}": t for k, t in (fragments or {}).items()})
+    return files
+
+
+BASE = _files("0.2.0", LOG)
+
+
+def test_version_is_red_until_merge_numbers_it():
+    head = _files("0.2.0", LOG, fragments={"x.md": "patch\n- x"})
+    ok, description, _ = v.check_version(["edakit/check.py", "changes/x.md"], _reader(BASE), _reader(head), 12)
+    assert not ok and "python3 .github/merge.py 12" in description
+
+
+def test_version_asks_for_a_fragment():
+    ok, description, details = v.check_version(["edakit/check.py"], _reader(BASE), _reader(BASE), 12)
+    assert not ok and "without a fragment" in description and details == ["edakit/check.py"]
+
+
+def test_version_passes_a_change_nothing_a_project_reads():
+    ok, description, _ = v.check_version(["tests/test_x.py", "TODO.md"], _reader(BASE), _reader(BASE), 12)
+    assert ok and "no version" in description
+
+
+def test_version_passes_a_numbered_pull_request():
+    head = _files("0.2.1", "# Changelog\n\n## 0.2.1 – 2026-11-03\n\n- x\n\n" + LOG[LOG.index("## 0.2.0"):])
+    ok, description, _ = v.check_version(["edakit/check.py", v.INIT, v.MARKETPLACE, v.CHANGELOG],
+                                         _reader(BASE), _reader(head), 12)
+    assert ok and description == "numbered 0.2.1"
+
+
+@pytest.mark.parametrize("number, log, ref, problem", [
+    ("0.2.2", "## 0.2.2 – 2026-11-03\n\n- x\n", True, "does not follow"),
+    ("0.2.1", "## 0.2.1 – 2026-11-03\n\n- x\n", False, "version and ref"),
+    ("0.2.1", LOG, True, "top section"),
+])
+def test_version_names_an_inconsistent_number(number, log, ref, problem):
+    ok, _, details = v.check_version(["edakit/check.py"], _reader(BASE), _reader(_files(number, log, ref)), 12)
+    assert not ok and any(problem in d for d in details)
+
+
+def test_paths_holds_each_branch_family_to_its_paths():
+    pipeline = (".github/", "CLAUDE.md", "skills/propose-rule/")
+    assert v.check_paths("notes/versioning", ["docs/concepts/new/x.md", "TODO.md"], pipeline)[0]
+    ok, _, bad = v.check_paths("notes/versioning", ["TODO.md", "edakit/check.py"], pipeline)
+    assert not ok and bad == ["edakit/check.py"]
+    ok, _, bad = v.check_paths("rules/proposals", ["edakit/catalog/codes.toml", ".github/workflows/proposals.yml",
+                                                   "skills/propose-rule/SKILL.md", "CLAUDE.md"], pipeline)
+    assert not ok and bad == [".github/workflows/proposals.yml", "skills/propose-rule/SKILL.md", "CLAUDE.md"]
+    assert v.check_paths("rules/proposals", ["edakit/catalog/codes.toml"], pipeline)[0]
+    ok, description, _ = v.check_paths("features/proposals", [".github/x"], None)
+    assert ok and "not on main yet" in description
+    assert v.check_paths("versioning-v1", [".github/merge.py"], pipeline)[0]
+
+
+def test_the_notes_of_a_version_are_its_section(tmp_path, capsys, monkeypatch):
+    t = _tree(tmp_path, log=LOG)
+    monkeypatch.setattr(v, "ROOT", t)
+    assert v.main(["notes", "0.2.0"]) == 0 and capsys.readouterr().out == "- the first\n"
+    assert v.main(["notes", "9.9.9"]) == 1
+
+
+def _git(root, *args):
+    subprocess.run(["git", "-C", str(root), *args], check=True, capture_output=True)
+
+
+def test_the_version_string_names_the_commit_away_from_the_tag(tmp_path):
+    assert version(tmp_path) == __version__          # no .git: the plugin's cache, an install by uvx
+    _git(tmp_path, "init", "-q")
+    (tmp_path / "x").write_text("x")
+    _git(tmp_path, "add", "x")
+    _git(tmp_path, "-c", "user.name=t", "-c", "user.email=t@t", "commit", "-q", "-m", "x")
+    sha = subprocess.run(["git", "-C", str(tmp_path), "rev-parse", "--short=7", "HEAD"], capture_output=True,
+                         text=True).stdout.strip()
+    assert version(tmp_path) == f"{__version__}+g{sha}"
+    _git(tmp_path, "tag", f"v{__version__}")
+    assert version(tmp_path) == __version__
+
+
+def test_edakit_version(capsys):
+    with pytest.raises(SystemExit) as e:
+        cli.main(["--version"])
+    assert e.value.code == 0 and capsys.readouterr().out.startswith(f"edakit {__version__}")
+
+
+def test_merge_knows_its_numbering_commit_and_the_checks():
+    merge = _load("merge")
+    assert merge.NUMBERING.match("edakit 0.2.0") and not merge.NUMBERING.match("edakit 0.2.0: more")
+    assert set(merge.REQUIRED) == {"test", "kicad", "build", "paths", "version"}

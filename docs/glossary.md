@@ -319,6 +319,12 @@ A project of its own, with its own edakit.toml, in a folder below the main proje
 Handbook: [10.1 edakit.toml](../handbook/10-reference.md#101-edakittoml),
 [10.4 The requirements file](../handbook/10-reference.md#104-the-requirements-file).
 
+### Version
+
+A state of edakit with its own number, such as 0.2.0. Every change to edakit is one. The minor number goes up when a
+project has to act on an update, and the changelog says what to do. `edakit --version` names the version that runs.
+Handbook: [2.3 Claude Code: the plugin](../handbook/02-setup.md#23-claude-code-the-plugin).
+
 ### Working agreements
 
 The numbered rules of section 11.4. Every session in an edakit project starts with them.

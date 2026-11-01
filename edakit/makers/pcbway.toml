@@ -27,7 +27,6 @@ never = ["Order", "Buy", "Checkout", "Proceed to checkout", "Pay", "Pay Now", "S
          "Confirm Order", "Submit the File Now", "Agree"]
 excludes = []
 
-# Fields the page shows that edakit does not set, each with its reason.
 [compliance]                           # what the maker itself states, read 2026-11-01 – the regulatory review at the order
                                        # cites it from the job (handbook 15.5)
 rohs = "PCB: 'Are your PCBs RoHS Compliant? Yes. But we also offer leaded PCBs.' – lead-free HASL 'RoHS & REACH Compliant', HASL with lead 'for legacy applications'. PCBA: 'both leaded and lead-free (RoHS Compliant) assembly services'. A RoHS certification on request, no cost or document named"
@@ -39,6 +38,7 @@ sources = [
   "https://www.pcbway.com/oem/quality-control.html – the certifications and the REACH report (read 2026-11-01)",
 ]
 
+# Fields the page shows that edakit does not set, each with its reason.
 [ignore]
 "Different design in panel" = "one design per board"
 "Min track/spacing" = "PCBWay's default (6/6mil); edakit's routing keeps JLCPCB's tighter limits anyway"

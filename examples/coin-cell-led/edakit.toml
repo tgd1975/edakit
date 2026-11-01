@@ -2,7 +2,8 @@
 # Reference: handbook/10-reference.md. How this project came about, step by step: handbook/17-walkthrough.md.
 #
 # A CR2032 coin cell, a push button and a red LED with its series resistor: press the button, the LED lights.
-# One board, JLCPCB assembles all four parts on its top side (Economic, SMD only).
+# One board, JLCPCB assembles three of its four parts on its top side (Economic, SMD only); the holder is soldered
+# by hand (D-4).
 
 [project]
 name = "coin-cell-led"           # EasyEDA project (friendly name); created by hand once, edakit never creates it

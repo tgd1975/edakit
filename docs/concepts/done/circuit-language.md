@@ -4,7 +4,7 @@ Closed on 2026-10-31: the sketch has done its work – decision 8 of design-as-t
 it on: [circuit-language-plan.md](circuit-language-plan.md) builds its decisions (TOML with names, pins by name
 or role, the resolved graph.json), [circuit-dsl.md](../new/circuit-dsl.md) takes up the deferred language.
 
-Status 2026-10-31: sketch of step 4.3 of the [implementation plan](../new/implementation-plan.md), for decision 8 of
+Status 2026-10-31: sketch of step 4.3 of the [implementation plan](implementation-plan.md), for decision 8 of
 [design-as-text.md](design-as-text.md), written on 2026-10-29 against edakit at `75d5c32` and the bell at
 `f56b463`, reviewed on 2026-10-31 against main at `075574e`. The owner's conclusion from the review is in the section
 [Review 2026-10-31](#review-2026-10-31): what is worth building is independent of a language of its own and is built in

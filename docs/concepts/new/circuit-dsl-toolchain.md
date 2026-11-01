@@ -8,7 +8,7 @@ grammar; the project constructs, `block add` on the language, the fixtures, eval
 KerML exports with the electrical library; the language server and the VS Code extension – without a question
 answered in between. What the language is, statement by statement, is the detail concept's; this plan says which
 module, which function, which command, which test and which handbook section each step adds, and in which order.
-The ground rules of [implementation-plan.md](implementation-plan.md) hold – one step, one commit, add-feature's
+The ground rules of [implementation-plan.md](../done/implementation-plan.md) hold – one step, one commit, add-feature's
 order, no key no change, hashes named, the bell told –; the TOML form of
 [circuit-language-plan.md](../done/circuit-language-plan.md) is built and settled (L.1 to L.8 on 2026-10-31,
 merged in `2f4628a`): the Design resolves pin words, `edakit graph json` writes the resolved graph beside a TOML
@@ -614,7 +614,7 @@ SysML v2 in the export.
 
 -  [circuit-dsl.md](circuit-dsl.md) and [circuit-dsl-language.md](circuit-dsl-language.md) at main after
   `2f4628a`; [circuit-language-plan.md](../done/circuit-language-plan.md) (settled: L.1 to L.8 built on
-  2026-10-31, its "State after the build"); [implementation-plan.md](implementation-plan.md) (the ground rules);
+  2026-10-31, its "State after the build"); [implementation-plan.md](../done/implementation-plan.md) (the ground rules);
   [circuit-language.md](../done/circuit-language.md) (the decisions, the prototype's round trip).
 -  edakit at `2f4628a`: `edakit/cli.py` (the `graph` parser, the routing), `edakit/graph_form.py` (`design_of`,
   `resolved`, `generated_path`, `main_json`, `to_toml`, `written`, `entry_map`, `set_graph`, `canonical`,

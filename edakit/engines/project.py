@@ -86,26 +86,29 @@ class Recorder:
 
 def check_mpn(design, rec, cfg):
     """PARTS.fact/mpn: with a maker of [cart] makers that matches parts by manufacturer part number (bom.match = "mpn"
-    in its profile – Eurocircuits), every assembled part's entry names its mpn and its manufacturer – an error for the
-    planned maker, a warning for another one (grade other_maker). Found when the part is chosen, not at the release."""
+    in its profile – PCBWay, Eurocircuits, AISLER), every assembled part's entry names its mpn and its manufacturer – an
+    error when the planned maker is one of them, else a warning (grade other_maker). Found when the part is chosen, not
+    at the release."""
     from .. import makers, stock
     takers = [m for m in makers.all_of(cfg) if m.matches_by == "mpn"]
     if not takers:
         return
-    planned = takers[0].key == makers.planned(cfg)
+    planned = any(m.key == makers.planned(cfg) for m in takers)
     for lcsc, refs in stock.assembled(design).items():
         entry = design.parts.get(lcsc) or {}
         lost = [k for k in ("mpn", "manufacturer") if not str(entry.get(k) or "").strip()]
         if not lost:
             continue
         msg = (f"{stock.refs_text(refs)} {lcsc}: the parts entry has no {' and no '.join(lost)} – "
-               f"{', '.join(m.name for m in takers)} matches the BOM by manufacturer part number")
+               f"{', '.join(m.name for m in takers)} match{'es' if len(takers) == 1 else ''} the BOM by manufacturer "
+               "part number")
         if planned:
             reason = next((r for d in refs if (r := accept_reason(design.comps[d], "PARTS.fact", grade="mpn"))),
                           "")
             rec.add("error", "PARTS.fact", msg, reason, grade="mpn")
         else:
-            rec.add("warning", "PARTS.fact", f"{msg} – {takers[0].name}, not the planned maker", grade="other_maker")
+            rec.add("warning", "PARTS.fact", f"{msg} – {', '.join(m.name for m in takers)}, not the planned maker",
+                    grade="other_maker")
 
 
 def run(design, cfg):

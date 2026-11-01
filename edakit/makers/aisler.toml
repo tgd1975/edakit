@@ -6,7 +6,8 @@
 # and there is no BOM or CPL upload. kicad-cli's ODB++ of led-bar was taken with every part; AISLER assigned parts by
 # the component properties (it offers "Auto detect MPN", "edakit", "lcsc", "package" and "value" as the column to
 # match by), left the tooling holes out (.no_pop), matched the LEDs by value only and left one diode unassigned – the
-# skill reads the BOM tab back (ORDER.parts). EasyEDA's ODB++ is ordering step 0b. There is no cart: the project is
+# skill reads the BOM tab back (ORDER.parts). EasyEDA's ODB++ went through ordering step 0b (2026-11-01,
+# tests/fixtures/makers/aisler/step0b_2026-11-01.md): SYNC.odb passes on it, in inch. There is no cart: the project is
 # saved as it is, and the skill stops before "Continue to Checkout"; a price shows only when every part is assigned.
 #
 # Live run 5.10 (2026-11-01, tests/fixtures/makers/aisler/live_2026-11-01/): AISLER assigns by the ODB++ property the

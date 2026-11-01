@@ -1,18 +1,14 @@
 # Implementation plan: requirements, design as text, project scripts
 
-Status 2026-10-31: plan; phase 1 (1.1 to 1.8), 3.1 to 3.5, 3.7 and the follow-ups below are done; 2.1 to 2.4 and
-3.6 are built and ran live on 2026-10-31 (results under each live run; built from them the same day: 2.2's mode
-"write", M-6 on the electrical hash, the way back after `part build`; the bell's T-Display on the data path done there, its D-30); 4.3 is written, reviewed and decided – the
-language deferred, TOML with names the form, its plan [circuit-language-plan.md](../done/circuit-language-plan.md)
-built on 2026-10-31 up to L.8, L.9 done in the bell on 2026-11-01. It builds
-three concepts after the user took their decisions on 2026-10-28 (e5caf42, 301fd90):
-[requirements.md](../done/requirements.md), [design-as-text.md](../done/design-as-text.md) and
-[project-scripts.md](../done/project-scripts.md). Phase 5 builds a fourth, [ordering.md](../done/ordering.md) – ordering
-at the manufacturer, decided on 2026-10-30 –; on the user's word ("Implementiere das Konzept") its offline steps were
-built the same day on one branch: 5.1 to 5.6, 5.8 and 5.9 done, 5.7 and the offline part of 5.10 written; PCBWay was
-planned in afterwards (5.12); merged into main on 2026-10-30, after the KiCad tool chain. Open are the probes 5.0, the
-live runs of 5.7, 5.8, 5.10 and 5.12 – the list of what is left: [TODO.md](../../../TODO.md). Each other step
-starts when the user asks for it.
+Status 2026-11-01: done – moved to `done/` on the owner's word. Built: phases 1 to 3, 4.1 to 4.4 – 4.4 in pytree, its D-50
+to D-54 – and phase 5; the live runs of 2.1 to 2.4, 3.6, 5.7, 5.8, 5.10 and 5.12 passed (2026-10-31 and 2026-11-01,
+results under each; `tests/fixtures/makers/LIVE.md`), nothing ordered – no order has gone through
+`edakit cart actual` yet (TODO.md TD-57); 5.11 dropped – future work, nobody asks the makers. Left is 4.5, the requirements file required
+once the bell and the tree have one – an item in [TODO.md](../../../TODO.md).
+The plan built five concepts, decided by the user on 2026-10-28 (e5caf42, 301fd90) and 2026-10-30:
+[requirements.md](requirements.md), [design-as-text.md](design-as-text.md),
+[project-scripts.md](project-scripts.md), [project-setup.md](project-setup.md) and [ordering.md](ordering.md); the
+circuit's form has a plan of its own, [circuit-language-plan.md](circuit-language-plan.md), built up to L.9.
 
 ## Ground rules
 
@@ -55,21 +51,21 @@ starts when the user asks for it.
 | 4.1 | Bell: requirements file | requirements order 5, decision 9 | M | no | 3.4, the bell's order | done in the bell (2026-11-01, on its main, its D-32) |
 | 4.2 | Bell: entries for `kunst` and `tdisplay` | project-scripts example | S | no | 2.4 | done in the bell (2026-11-01, on its main: `[scripts.kunst]` ×5, `[scripts.tdisplay]`) |
 | 4.3 | Bell: the circuit as a language and as TOML with names, then the choice | design-as-text decision 8 | M | no | – | written (3f2b9e3, 7bbf3ce); reviewed and decided 2026-10-31: the language deferred, TOML with names the form; what both forms share has a plan of its own, circuit-language-plan.md, built 2026-10-31 (L.1–L.8; L.9, the bell converting, done there 2026-11-01); the language thought further in circuit-dsl.md |
-| 4.4 | Tree: its positions, scripts, agents and requirements | all three | M | yes | the tree's move, 2.1, 3.7 | open |
-| 4.5 | The requirements file becomes required | requirements decision 5 | S | no | 4.1, 4.4, requirements as inputs (#97) and the bell's file rewritten after it (its D-39) | open – the first files are the examples others copy |
+| 4.4 | Tree: its positions, scripts, agents and requirements | all three | M | yes | the tree's move, 2.1, 3.7 | done in the tree (2026-10-31 and 2026-11-01, its D-50 to D-54, merged with pytree#34) |
+| 4.5 | The requirements file becomes required | requirements decision 5 | S | no | 4.1, 4.4, requirements as inputs (#97) and the bell's file rewritten after it (its D-39) | open – 4.4 and #97 done; waits for the bell's D-39, after its order; the first files are the examples others copy |
 | 5.0 | Probes: the makers' pages in the owner's browser, EasyEDA's ODB++ | ordering steps 0, 0b | – | yes (0b) | the owner's Chrome | done: step 0 (2026-10-31, branch `makers-step0`), 0b (2026-11-01, branch `makers-step0b`) |
 | 5.1 | The order form as fields, `order.md` from them | ordering step 1 | S | no | – | done (d58f4ae) |
 | 5.2 | Every field of the form as a key, edakit's defaults, `edakit cart fields` | ordering step 2 | M | no | 5.0, 5.1 | done (d58f4ae) – the keys of the reference orders; 5.0 adds what the forms show |
-| 5.3 | Maker profiles; P-4, F-2 and F-6 per maker | ordering step 3 | M | no | 5.2 | done (d58f4ae) – profiles provisional until 5.0 |
+| 5.3 | Maker profiles; P-4, F-2 and F-6 per maker | ordering step 3 | M | no | 5.2 | done (d58f4ae); recorded by 5.0 on 2026-10-31 |
 | 5.4 | `edakit cart prepare` and `check` (B-1 to B-7), the order record | ordering step 4 | M | no | 5.3 | done (17446f9) |
 | 5.5 | Agent regulatory-reviewer at the order | ordering step 5 | S | no | 5.4 | done (be8781d) |
 | 5.6 | `edakit cart actual`: real cost, the fee table | ordering step 6 | M | no | 5.4 | done (af59226) |
-| 5.7 | Skill `cart`, live at JLCPCB up to the cart | ordering step 7 | M | no | 5.0, 5.4, 5.5 | written (be8781d), live run open |
+| 5.7 | Skill `cart`, live at JLCPCB up to the cart | ordering step 7 | M | no | 5.0, 5.4, 5.5 | written (be8781d), live 2026-11-01 at JLCPCB into the cart, nothing ordered |
 | 5.8 | BOM with MPN, P-12; Eurocircuits | ordering step 8 | M | no | 5.3, 5.7 | built offline (17446f9), Eurocircuits live 2026-11-01 into the basket (1.55 mm on the owner's word; the BOM's header Eurocircuits maps, the cart line's VAT) |
 | 5.9 | new-project asks for the maker | ordering step 9 | S | no | 5.3, 5.8 | done (be8781d) |
 | 5.10 | ODB++: MCP tool and bridge patch, F-7; AISLER | ordering step 10 | L | yes | 5.0, 5.7 | built offline (6b6ff5e), EasyEDA's export probed in 5.0 (0b), AISLER live 2026-11-01: up to the price on /checkout, every check passed (R1, R2 swapped in the throwaway copy for parts AISLER stocks) |
 | 5.11 | The makers' interfaces, where granted | ordering step 11 | – | no | the makers | future work: wishes, nobody asks the makers (the owner's decision of 2026-11-01), handbook 8.4 |
-| 5.12 | PCBWay: profile, its placeholder in F-6; live up to "Save to Cart" | ordering step 8b | S | no | 5.0, 5.7, 5.8 | profile and F-6 built (see below), live open |
+| 5.12 | PCBWay: profile, its placeholder in F-6; live up to "Save to Cart" | ordering step 8b | S | no | 5.0, 5.7, 5.8 | profile and F-6 built (see below), live 2026-11-01: "Save to Cart" after the owner's "Agree", the files uploaded in the cart, nothing ordered |
 
 S, M and L are the sizes the concepts give: small, medium, large.
 
@@ -157,7 +153,7 @@ in EasyEDA. Each later step removes its line. Documentation only, so it may go t
 resolves them together with edakit's fixed steps and reports R1–R9 in `edakit check`. `[[release.stages]]` and
 `sim_plugin` count as the kinds `check` and `sim`, and the old keys keep working. Tests: one fault per rule, as the
 concept's prototype did with 28 copies. The prototype is kept in
-[prototypes/project-scripts](../done/prototypes/project-scripts/); its README names what the decisions changed since.
+[prototypes/project-scripts](prototypes/project-scripts/); its README names what the decisions changed since.
 Its rules and cases become `tests/test_scripts.py`.
 
 **1.3 Data names.** `graph`, `parts`, `sim`, `board:<b>`, `footprints:<b>`, `routing:<b>`, `mech:<b>`, `gerber:<b>`,
@@ -264,7 +260,7 @@ first (`edakit lock claim --note "live runs"`), with EasyEDA unthrottled and the
 release it at the end. 2.2's probe is written out above.
 
 **2.1 Positions as text** (`pcb autolayout` writes `auto = true` rows, `pcb takeover` takes a placed board, L-20).
-Since 2026-10-30 edakit's own placer is to replace the auto-layout ([kicad-toolchain.md](../done/kicad-toolchain.md),
+Since 2026-10-30 edakit's own placer is to replace the auto-layout ([kicad-toolchain.md](kicad-toolchain.md),
 T.1, the user's decision): run 2 matters only while `pcb autolayout` exists; 1, 3 and 4 – the takeover and L-20 – stay.
 
 1. On a scratch copy of the bell with all `[place]` rows deleted: `edakit pcb takeover` in main and in
@@ -388,7 +384,7 @@ and the patched bridge (`edakit doctor`):
 1. **Throwaway** (agreement 18): a project `edakit-probe-fp` made by hand (File → New → Project); in the scratchpad a
    copy of the bell (`edakit.toml` and `hardware/` of the main project and of `variants/esp32`), the esp32 variant's
    `[project] name = "edakit-probe-fp"`, and `C18722937.json` with the T-Display's data of the dry run –
-   [prototypes/footprint-data](prototypes/footprint-data/) writes it into the copy. Add one pad to try a slot:
+   [prototypes/footprint-data](../new/prototypes/footprint-data/) writes it into the copy. Add one pad to try a slot:
    `"MH": {"x": 0, "y": 0, "shape": "OVAL", "w": 1.0, "h": 2.0, "hole": [0.6, 1.4], "plated": false,
    "mechanical": true}` – `edakit check` passes P-9.
 2. **The carrier, not rebuilt:** `schematic create --save`, `schematic layout --save`, `pcb parts --write`, `pcb dump`,
@@ -458,8 +454,8 @@ the README), the file, only for the circuit. M-1 and M-6 open again, as decision
 **4.3 Bell: language sketch.** The whole bell written down twice, as a language of its own and as TOML with pin
 names; then the user chooses (decision 8). Building the language would be a step of its own, size L.
 
-Written in [circuit-language.md](../done/circuit-language.md), with the prototype in
-[prototypes/circuit-language](../done/prototypes/circuit-language/): `bell.circuit` and `bell.toml` by hand, and a
+Written in [circuit-language.md](circuit-language.md), with the prototype in
+[prototypes/circuit-language](prototypes/circuit-language/): `bell.circuit` and `bell.toml` by hand, and a
 translator that takes all four configurations of the bell, led-bar and a graph with every field there and back without a
 difference. The recommendation is the language; six decisions are open.
 
@@ -468,22 +464,24 @@ abstraction, a schema that stands still and evidence from the evals to be worth 
 concept's table: TOML with names as the form, the pin map from the parts entry, the hash over the canonical data of
 the form, a resolved `graph.json` generated beside it, four complete variants, the symbol's names and the roles, no
 net in fragments. What both forms share has a plan of its own:
-[circuit-language-plan.md](../done/circuit-language-plan.md), built on 2026-10-31 up to L.8 – pins by name or role,
+[circuit-language-plan.md](circuit-language-plan.md), built on 2026-10-31 up to L.8 – pins by name or role,
 the graph as `hardware/graph.toml`, its hash, `edakit graph json|convert`, `block add` on TOML, the documentation –;
 L.9, the bell converting, done in the bell on 2026-11-01 (on its main, edakit bc44fa7). The language itself is thought further in
-[circuit-dsl.md](circuit-dsl.md) – what it would have to be, on which basis, when, and what toolchain it needs.
+[circuit-dsl.md](../new/circuit-dsl.md) – what it would have to be, on which basis, when, and what toolchain it needs.
 
 **4.4 The tree moves.** When the reference project moves to edakit after its order (EK-1 of its concept): the
 takeover of its positions (2.1), seven of its eight scripts – `review` only reads the release (decision 8) – with
 `platine` writing into `tree.toml` (decision 4), its agents `elektrotechniker` and `pcb-pruefer` with `replaces`, and
-its requirements file.
+its requirements file. Done in pytree before its order instead (its EK-5 lifted EK-1): `baumplan` writes
+`tree.toml`, the two agents went – edakit's reviewers signed M-1, M-5 and M-6 –, the requirements file accepted (D-51,
+D-54).
 
 **4.5 Requirements required.** Once the bell and the tree have a file, a project without one fails the gate
 (decision 5).
 
 ## Phase 5: ordering at the manufacturer
 
-Each at the user's request. The concept is [ordering.md](../done/ordering.md); its "Order of work" says what each step
+Each at the user's request. The concept is [ordering.md](ordering.md); its "Order of work" says what each step
 builds, and its "Decisions" what the user decided on 2026-10-30: Claude fills the maker's form in the owner's browser
 and stops at the cart – never orders, never pays –; the regulatory reviewer looks at every order; JLCPCB, PCBWay,
 Eurocircuits or AISLER, asked when the project is set up; ODB++ from EasyEDA Pro; real cost into the project's fee
@@ -541,7 +539,7 @@ Built on 2026-10-30, branch `ccr-341cce07-y5or0n`:
   so no signed hash changes. With that both exports pass SYNC.odb on every layer, hole, part and net; the run is a
   test fixture (`tests/fixtures/makers/aisler/probe_2026-11-01`, record `step0b_2026-11-01.md`).
 
-Open: the live runs of 5.8 and 5.10; 5.11 is future work (handbook 8.4).
+The live runs of 5.8 and 5.10 ran on 2026-11-01 (`tests/fixtures/makers/LIVE.md`); 5.11 is future work (handbook 8.4).
 
 ## Hashes and gate results
 

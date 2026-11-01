@@ -312,7 +312,7 @@ domain setting. The loop is part of the workflow:
    codes – also by hand in the repository, without an issue.
 7. **Back in the project.** `propose-rule` follows the issue: it answers questions with the user, and after the merge
    the decision gets the code (`edakit: REQ.function`) or `edakit: rejected (#12)`. From the next plugin update on the
-   rule runs on every project – the plugin pins no version, so every commit on `main` is an update.
+   rule runs on every project – every merge into `main` is a version of its own (2.3).
 
 REQ.missing (flyback diode) and REQ.missing:cc (USB-C termination) are the reference project's buzzer stage and USB-C
 input turned into rules; REQ.missing (I2C pull-ups), LVL.boot (strapping pins) and the MCU output currents of LIM come

@@ -335,3 +335,37 @@ def test_the_odb_carries_the_number_the_maker_matches_by(project):
             c["props"] = {}
     bad = [(r, a) for r, c, a in f7(run(project, lcsc_only)) if c.startswith("parts of the ODB++")]
     assert bad == [("fail", "no part of the ODB++ carries the MPN AISLER matches by – AISLER cannot match them")]
+
+
+def test_the_export_takes_the_answer_of_the_upstream_tool(project, tmp_path):
+    """easyeda-mcp-pro's own easyeda_export_odb (pull request #799, M-4) answers with file_path and takes no unit – the
+    patched tool's artifact_path goes once a release has it (TD-28). The gate takes either; an answer without a file is
+    named in the run, not a crash."""
+    f = project.root / "edakit.toml"
+    f.write_text(f.read_text() + '\n[cart]\nmaker = "aisler"\n')
+    cfg = project.config()
+    d = tmp_path / "main"
+    d.mkdir()
+    buf = io.BytesIO()
+    with tarfile.open(fileobj=buf, mode="w:gz") as t:
+        data = b"UNITS=INCH\n"
+        info = tarfile.TarInfo("job/misc/info")
+        info.size = len(data)
+        t.addfile(info, io.BytesIO(data))
+    (tmp_path / "current-odb.tgz").write_bytes(buf.getvalue())
+    calls = []
+
+    class MCP:
+        def __init__(self, answer):
+            self.answer = answer
+
+        def call(self, tool, **kw):
+            calls.append((tool, kw))
+            return self.answer
+    fab.export_odb(cfg, MCP({"project_id": "current", "format": "tgz", "exported": True,
+                             "file_path": str(tmp_path / "current-odb.tgz")}), cfg.board(), d)
+    assert zipfile.ZipFile(d / "odb_main.zip").namelist() == ["job/misc/info"]
+    assert "unit" not in calls[0][1]
+    fab.export_odb(cfg, MCP({"project_id": "current", "exported": True}), cfg.board(), d)
+    assert not (d / "odb_main.zip").exists()
+    assert "no file in its answer" in (d / fab.ODB_ERROR).read_text()

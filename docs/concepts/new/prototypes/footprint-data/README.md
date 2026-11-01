@@ -1,6 +1,6 @@
 # Dry run: the bell's T-Display as footprint data
 
-The dry run of step 3.6 of the [implementation plan](../../implementation-plan.md), written on 2026-10-29 and kept
+The dry run of step 3.6 of the [implementation plan](../../../done/implementation-plan.md), written on 2026-10-29 and kept
 here for its live run. Both scripts work on a scratch copy of the Christmas bell (`edakit.toml` and `hardware/` of the
 main project and of `variants/esp32`), never on the bell itself:
 

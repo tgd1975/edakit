@@ -60,8 +60,13 @@ To update, refresh the marketplace and update the plugin, then start a new sessi
 claude plugin marketplace update edakit && claude plugin update edakit@edakit
 ```
 
-The plugin pins no version, so every commit on `main` is an update. Auto-update for the edakit marketplace can be
-switched on under `/plugin` → Marketplaces (off by default for marketplaces outside Anthropic).
+An update brings the newest version of edakit. Auto-update for the edakit marketplace can be switched on under
+`/plugin` → Marketplaces (off by default for marketplaces outside Anthropic).
+
+**Versions.** Every change to edakit comes as a version with its own number, such as 0.2.0. The
+[changelog](CHANGELOG.md) says what each one changed. When the middle number goes up, a project has to act, and the
+changelog says what to do. `edakit --version` names the version that runs. A project can also stay on one version
+([handbook 2.3](handbook/02-setup.md#23-claude-code-the-plugin)).
 
 **Two tool chains.** A project draws its boards in EasyEDA Pro (the default) or in KiCad 10 – `toolchain = "kicad"`
 in `[project]` of edakit.toml. On KiCad edakit writes one KiCad project per board and calls kicad-cli: no bridge, no
@@ -210,7 +215,7 @@ Where it stands:
   KiCad tool chain ([live runs](tests/fixtures/makers/LIVE.md)). EasyEDA's ODB++ export ran on a probe board; no order
   has gone through `edakit cart actual` yet.
 - Text, run live in EasyEDA in throwaway projects ([concept](docs/concepts/done/design-as-text.md),
-  [plan](docs/concepts/new/implementation-plan.md), steps 2.1 to 2.3 and 3.6, results under each live run):
+  [plan](docs/concepts/done/implementation-plan.md), steps 2.1 to 2.3 and 3.6, results under each live run):
   - the positions EasyEDA's auto-layout sets, written back into `[place]` as `auto = true` rows, and `pcb place
     --rest` for every part (handbook 7.4);
   - own footprints as data in the parts entry (`part footprint`, `part build`, handbook 4.5) – the bell's T-Display

@@ -4,7 +4,7 @@ Status 2026-10-31: settled. L.1 to L.8 built on the owner's word of 2026-10-31 (
 the branch `ccr-f80e23dc-ak6668` with the suite green – section "State after the build"; L.9, the bell converting, done
 in the bell on 2026-11-01 (on its main, edakit bc44fa7).
 Plan for the decisions of [circuit-language.md](circuit-language.md) (its table of 2026-10-31). The ground rules of
-[implementation-plan.md](../new/implementation-plan.md) hold: one step, one branch, built with add-feature – a failing test
+[implementation-plan.md](implementation-plan.md) hold: one step, one branch, built with add-feature – a failing test
 first, then the interface, the code, the handbook, `pytest` and `ruff` –; no key, no change; hashes named; the bell told
 before a step changes its gate result or hashes.
 

@@ -261,11 +261,11 @@ def layout_hash(cfg):
 
 
 def header(cfg):
-    from .. import __version__
+    from ..version import version
     design = Design.from_config(cfg)
     mcp = re.search(r"EASYEDA_MCP_VERSION:-([\d.]+)",
                     (Path(__file__).resolve().parents[1] / "easyeda" / "mcp-server.sh").read_text())
-    tools = {"python": platform.python_version(), "edakit": __version__,
+    tools = {"python": platform.python_version(), "edakit": version(),
              "ngspice": (re.findall(r"ngspice-[\d.]+", sh(cfg.root, "ngspice", "-v")) or ["ngspice ?"])[0],
              "easyeda-mcp-pro": mcp.group(1) if mcp else "?"}
     if is_kicad(cfg):                 # the tool chain the stages S, L and F ran with (handbook 16)
@@ -630,14 +630,32 @@ def stage_fab(cfg, outdir, step=None):
         except (SystemExit, Exception) as e:  # one board failing must not hide the others
             rows.append({"stage": "L", "id": "L", "item": board.name, "check": f"fab stage not runnable: {e}",
                          "result": "fail"})
-        files = upload(cfg, board.name)
-        lost = [f for f in files if not (d / board.name / f).exists()]
-        what = "(Gerber ZIP, BOM, CPL)" if files == [p.format(b=board.name) for p in UPLOAD] else \
-            f"of [cart] makers ({', '.join(files)})"
-        rows.append({"stage": "F", "id": "FILES.manifest", "item": board.name, "check": f"manufacturing files of this run complete "
-                     f"{what}, checksums in the manifest", "actual": ", ".join(lost) or "complete",
-                     "expected": "complete", "result": "fail" if lost else "pass"})
+        rows += manifest_rows(cfg, board.name, d / board.name)
     return rows
+
+
+def manifest_rows(cfg, board, d):
+    """FILES.manifest of one board: the upload files of every maker of [cart] makers are in the run's folder. A file the
+    planned maker takes missing fails; one only another maker takes warns, named with that maker (makers.result) –
+    edakit cart prepare stops for it."""
+    from .. import makers
+    files = upload(cfg, board)
+    lost = [f for f in files if not (d / f).exists()]
+    what = "(Gerber ZIP, BOM, CPL)" if files == [p.format(b=board) for p in UPLOAD] else \
+        f"of [cart] makers ({', '.join(files)})"
+    row = {"stage": "F", "id": "FILES.manifest", "item": board, "check": f"manufacturing files of this run complete "
+           f"{what}, checksums in the manifest", "expected": "complete"}
+    if not lost:
+        return [{**row, "actual": "complete", "result": "pass"}]
+    planned = makers.get(cfg)
+    mine = [f for f in lost if f in planned.upload(board)]
+    out = [{**row, "actual": ", ".join(mine), "result": "fail", "maker": planned.key}] if mine else []
+    for m in makers.all_of(cfg):
+        theirs = [f for f in lost if f in m.upload(board) and f not in mine]
+        if m.key != planned.key and theirs:
+            out.append({**row, "actual": f"{m.name} (not the planned maker): {', '.join(theirs)}", "result": "warn",
+                        "maker": m.key})
+    return out
 
 
 def fab_hashes(cfg, outdir):

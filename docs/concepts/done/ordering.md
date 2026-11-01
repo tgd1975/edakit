@@ -1,11 +1,17 @@
 # Ordering at the manufacturer
 
-Status 2026-10-30: decided (Claude in Chrome, up to the cart; JLCPCB, PCBWay, Eurocircuits and AISLER; ODB++ from
-EasyEDA Pro – "What follows"), reviewed and corrected the same day, and **built offline** the same day – steps 1 to 6, 8
-and 9, the offline part of 10 (implementation plan, phase 5); every command and check is tested on recorded data. Open:
-the probes of steps 0 and 0b, the live runs of steps 7, 8 and 10, step 11. No call has been made live: the makers'
-profiles are provisional (`recorded = false`) until step 0 reads their forms. Changed while building: the checks of the
-order are B-1 to B-7, not K-1 to K-7 – K is a project's stage letter (handbook 8.1: the reference project's mechanics,
+Status 2026-11-01: decided on 2026-10-30 (Claude in Chrome, up to the cart; JLCPCB, PCBWay, Eurocircuits and AISLER;
+ODB++ from EasyEDA Pro – "What follows"), reviewed and corrected the same day, **built offline** the same day – steps 1
+to 6, 8 and 9, the offline part of 10 (implementation plan, phase 5) –, and **run live** since: step 0 recorded the four
+forms in the profiles (`recorded`, 2026-10-31), step 0b probed EasyEDA's ODB++ export, and the skill cart went into the
+cart at JLCPCB (step 7), Eurocircuits (8) and PCBWay (8b) and up to AISLER's price (10), nothing ordered
+(`tests/fixtures/makers/LIVE.md`); step 11 is future work (handbook 8.4), and step 6 has run on recorded data only, no
+order having gone through it. Where the text below and what step 0, 0b and the live runs found differ, the profiles
+and handbook 8.4 hold what is true: JLCPCB prints no order number since May 2026 (no `specify`), Eurocircuits' BOM
+header is Designator, Quantity, Value, Package, Manufacturer, Manufacturer Part Number, Eurocircuits makes 1.55 mm,
+not 1.6, AISLER has no cart and one class and matches by MPN, EasyEDA's ODB++ comes in inch, the customs description
+is `[order] customs`. Changed while building: the checks of the order were B-1 to B-7 – ORDER.form to ORDER.review
+since –, not K-1 to K-7 – K is a project's stage letter (handbook 8.1: the reference project's mechanics,
 `{id = "K"}`), and edakit's catalog would have explained a project's K-1 with its own text; the key of the board's size
 is `size_mm`, as edakit names lengths. The findings come from JLCPCB's help article on its online API, search summaries
 of the developer portal (api.jlcpcb.com, behind a login), the code of open-source clients of the official API and of the
@@ -653,7 +659,7 @@ this has no `[cart]`: its maker is JLCPCB, its checks run as today, and `edakit 
 
 ## Order of work
 
-Each step is built as the steps of the [implementation plan](../new/implementation-plan.md) are – its phase 5 lists them
+Each step is built as the steps of the [implementation plan](implementation-plan.md) are – its phase 5 lists them
 –: a branch, a failing test first, the interface, the code, the handbook (8.1 for stage K, 8.4 for ordering, 10 for the
 keys and commands), `pytest` and `ruff`. Every new check – P-12, F-7, B-1 to B-7 and what F-6 and P-4 gain – gets its
 entry in the rule catalog and a negative test (skill add-rule); every command and key is built with add-feature.

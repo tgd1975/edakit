@@ -91,24 +91,31 @@ in Chrome the skill prints the job as a checklist and `edakit cart check` checks
 server cannot order on purpose. The checklist below is what the skill and its checks cover, and what stays the
 user's:
 
-- [ ] Upload from `build/publish/<tag>/`, the staging of step 7 – per made board `gerber_<b>.zip`, `bom_<b>.csv`,
-      `cpl_<b>.csv` (a bought or hand-wired board, `bought = true` or `wired = true`, has none): publish verified each
-      against its project's current release, and `sha256sum -c SHA256SUMS` there shows that none changed since. Files
-      from anywhere else:
+- [ ] Upload the maker's files of the current release – the skill cart takes them from the job (`edakit cart prepare`
+      verified them); by hand from `build/publish/<tag>/`, the staging of step 7 – per made board the files of each
+      maker of `[cart] makers`: JLCPCB's `gerber_<b>.zip`, `bom_<b>.csv`, `cpl_<b>.csv`, `bom_<b>_mpn.csv` for PCBWay
+      and Eurocircuits, `cpl_<b>_eurocircuits.csv`, `odb_<b>.zip` for AISLER (a bought or hand-wired board, `bought =
+      true` or `wired = true`, has none): publish verified each against its project's current release, and
+      `sha256sum -c SHA256SUMS` there shows that none changed since. Files from anywhere else:
       `edakit release verify <the files about to be uploaded>` says every file is of the current release (exit 0)
-- [ ] Assembly type matches `[release] assembly` (Economic: one side, SMD; two SMD sides or a "Standard Only" part
-      need Standard PCBA – `assembly.pcba`, PARTS.stock); bake set when PARTS.stock warns about MSL ≥ 5
-- [ ] The form as `fab/<b>/order.md` of the released run says (with `[order]` in the board file; FILES.order checked it):
-      thickness, mask and silkscreen colour, tooling holes "added by customer" when the board has its own, order
-      number "specify position" at the placeholder, the remark (≤ 200 ASCII characters, tabs only on stretches
+- [ ] Assembly type matches `[release] assembly` – one of the maker's classes; at JLCPCB Economic: one side, SMD; two
+      SMD sides or a "Standard Only" part need Standard PCBA (`assembly.pcba`, PARTS.stock); bake set when PARTS.stock
+      warns about MSL ≥ 5
+- [ ] The form as `fab/<b>/order.md` of the released run says (with `[order]` in the board file or edakit.toml, or with
+      `[cart]`; FILES.order checked it): thickness, mask and silkscreen colour, tooling holes "added by customer" when
+      the board has its own, the order-number mark (JLCPCB prints none since May 2026: "Remove Mark" or a 2D barcode;
+      PCBWay "Specify a location" at `WayWayWay`), the remark (≤ 200 ASCII characters, tabs only on stretches
       order.md lists as free), bake. Without `[order]`: thickness, colours, tooling holes, order number position and
       remark by hand as in handbook 8.4
-- [ ] M-2: in JLCPCB's assembly preview the rotation and polarity of every polarised part (compare with
-      `polarity_<b>.png`), no missing part in the BOM tool, price, and the datasheet points and the project's checks
+- [ ] M-2: in the maker's assembly preview (PCBWay shows none – its engineers' question after their review) the
+      rotation and polarity of every polarised part (compare with `polarity_<b>.png`), no missing part in the BOM
+      tool, price; at JLCPCB "Do not confirm automatically" ticked, or the order goes into production 72 hours after
+      it is placed; and the datasheet points and the project's checks
       section 6 lists under "after uploading" (a check: run its command); then sign M-2
 - [ ] The cart against `edakit cost` – class, fees and parts; a difference of more than a few dollars has a reason
-      (a thickness, colour or finish `edakit cost` names as not in the price is one)
-- [ ] Parts that do not come from JLCPCB (hand-soldered, cables, enclosure, a bought board and what is soldered onto
+      (a thickness, colour or finish `edakit cost` names as not in the price is one); a maker without a fee table
+      (PCBWay, Eurocircuits, AISLER) has no estimate – ORDER.quote held its board total to `[cost] budget`
+- [ ] Parts the maker does not place (hand-soldered, cables, enclosure, a bought board and what is soldered onto
       it, the parts of a hand-wired board) ordered in the same go: `edakit order`
       writes a cart per supplier and `hand_assembly.md` for all sets, with spares and minimum quantities
 
