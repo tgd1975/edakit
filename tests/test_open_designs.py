@@ -61,6 +61,37 @@ def test_there_are_open_designs():
     assert len(NAMES) >= 3
 
 
+CC = {"CC BY 4.0": "by/4.0", "CC BY-SA 3.0": "by-sa/3.0"}
+
+
+def licence(name):
+    """The licence a design is offered under, as its edakit.toml's company names it ("foostan design (CC BY 4.0), …"),
+    or None."""
+    company = tomllib.loads((DESIGNS / name / "edakit.toml").read_text(encoding="utf-8"))["project"]["company"]
+    return company.split("(", 1)[1].split(")", 1)[0] if "(" in company else None
+
+
+@pytest.mark.parametrize("name", NAMES)
+def test_a_cc_licensed_design_links_its_licence(name):
+    """CC BY 4.0 (3(a)(1)(C)) and CC BY-SA 3.0 (4(a)) ask for the licence's text or its URI with the material: the
+    README of a design offered under one links it."""
+    text = " ".join((DESIGNS / name / "README.md").read_text(encoding="utf-8").split())
+    if licence(name) in CC:
+        assert f"https://creativecommons.org/licenses/{CC[licence(name)]}/" in text, f"{name}: no licence URI"
+
+
+def test_the_readme_names_every_open_design_under_its_licence():
+    """The repository is MIT except for the third-party material of the tests: README.md's Licence section names each
+    design in a row with its licence, so that none is taken for edakit's own."""
+    readme = (DESIGNS.parent.parent / "README.md").read_text(encoding="utf-8")
+    section = readme.split("\n## Licence\n", 1)[1].split("\n## ", 1)[0]
+    for name in NAMES:
+        rows = [line for line in section.splitlines() if f"{name}/" in line]
+        assert rows, f"README.md, Licence: {name} not named"
+        assert licence(name) is None or licence(name) in rows[0], f"README.md, Licence: {name} without {licence(name)}"
+    assert "not legal advice" in section
+
+
 @pytest.mark.parametrize("name", NAMES)
 def test_what_edakit_check_finds_is_what_is_judged(name, tmp_path):
     cfg = copy(name, tmp_path)
