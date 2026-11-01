@@ -23,7 +23,8 @@ the files of a state that goes to the maker, the repository keeps what released 
    bytes change with every export), without them the SHA-256 of its upload files against SHA256SUMS there; the
    decisions since the previous release ([release] publish.decisions: the headings "## D-…" of the decision log); the
    purpose of the graph with the note that the regulatory review M-6 is support, not legal advice; the schematic and
-   the board as made of every board, shown from the release's own files; how to order. Every link is absolute, into
+   the board as made of every board, shown from the release's own files; how to order; the line "Released with edakit
+   X.Y.Z" with the link to that version ([release] publish.credit = false: without). Every link is absolute, into
    the commit or the release – relative links do not work in release notes.
 5. gh release create <tag> --prerelease --target <HEAD> with the files of the staging; a tag the remote has already
    gets -2, -3, …
@@ -49,6 +50,7 @@ from collections import Counter
 from dataclasses import dataclass, field
 from pathlib import Path
 
+from .. import __version__
 from .. import config as configmod
 from . import gate, pictures
 
@@ -56,6 +58,7 @@ STAGING = Path("build") / "publish"   # below the project: build/publish/<tag>/
 TITLE = "Manufacturing files"         # the title of every release publish makes – how the next one finds it
 SUMS = "SHA256SUMS"
 NOTES = "notes.md"
+EDAKIT = "https://github.com/tgd1975/edakit"   # the notes' last line links the version that published them
 NOT_SEARCHED = ("build", "node_modules", "__pycache__")   # folders no variant is looked for in, besides hidden ones
 USE = {"private": "built for oneself", "gift": "given away", "sale": "sold"}   # purpose.use (handbook 3.1)
 DECISION = re.compile(r"^## (D-\d+)\b.*$", re.M)   # a decision of the log: its heading
@@ -102,9 +105,9 @@ def sh(cwd, *cmd, check=True):
 
 
 def options(cfg):
-    """[release] publish with its defaults: variants true, decisions none."""
+    """[release] publish with its defaults: variants true, decisions none, credit true."""
     p = cfg.release.get("publish", {})
-    return {"variants": p.get("variants", True), "decisions": p.get("decisions")}
+    return {"variants": p.get("variants", True), "decisions": p.get("decisions"), "credit": p.get("credit", True)}
 
 
 # --- 1. the guards ------------------------------------------------------------------------------------------------
@@ -384,7 +387,15 @@ def notes(cfg, tag, head, repo, boards, projs, changes, prev, new, draft):
           "record of the gate run with the SHA-256 of its files; `SHA256SUMS` covers every file here "
           "(`sha256sum -c SHA256SUMS`).",
           ""]
+    if options(cfg)["credit"]:
+        L += [credit(), ""]
     return "\n".join(L)
+
+
+def credit():
+    """The last line of the notes: the edakit that published them – provenance, and the way back to edakit ([release]
+    publish.credit = false leaves it out)."""
+    return f"Released with [edakit {__version__}]({EDAKIT}/releases/tag/v{__version__})."
 
 
 # --- the command --------------------------------------------------------------------------------------------------
