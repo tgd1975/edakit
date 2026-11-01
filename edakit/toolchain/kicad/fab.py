@@ -11,7 +11,8 @@ and kicad-cli – the same files in the same form, so that every check of the ga
                              of the ZIP)
     cpl_kicad.csv            kicad-cli's position file in the columns of EasyEDA's CPL (SYNC.cpl)
     bom_kicad.json           the schematic's parts per LCSC number from kicad-cli's netlist, as EasyEDA's BOM (SYNC.bom)
-    odb_<board>.zip          with a maker of [cart] makers that takes ODB++ (AISLER): kicad-cli's ODB++ export
+    odb_<board>.zip          with a maker of [cart] makers that takes ODB++ (AISLER), with [release] maker_files = "all"
+                             for every board with an assembly side: kicad-cli's ODB++ export
                              (SYNC.odb); odb_error.txt when it failed
 """
 
@@ -77,13 +78,14 @@ def collect(cfg, board, d, verbose=False):
 
 
 def odb(cfg, board, d, verbose=False):
-    """odb_<b>.zip from the KiCad PCB – only for a maker of [cart] makers that takes ODB++; a failed export leaves
-    odb_error.txt for SYNC.odb, as release/fab.export_odb does on EasyEDA."""
+    """odb_<b>.zip from the KiCad PCB – for a maker of [cart] makers that takes ODB++, with [release] maker_files = "all"
+    for every board with an assembly side (release/fab.takers); a failed export leaves odb_error.txt for SYNC.odb, as
+    release/fab.export_odb does on EasyEDA."""
     from ...release import fab as rfab
     target = d / f"odb_{board.name}.zip"
     target.unlink(missing_ok=True)
     (d / rfab.ODB_ERROR).unlink(missing_ok=True)
-    if not rfab.odb_takers(cfg):
+    if not rfab.takers(cfg, None, board, "odb")[0]:
         return None
     try:
         return cli.odb(kb.paths(cfg, board)["pcb"], target, verbose)

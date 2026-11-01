@@ -7,6 +7,12 @@ written once, by `.github/merge.py`, from the fragments in [changes/](changes/RE
 [versioning.md](docs/concepts/done/versioning.md). Update with `claude plugin marketplace update edakit && claude plugin
 update edakit@edakit`, then `/reload-plugins` or a new session; `edakit --version` names the version that runs.
 
+## 0.5.0 – 2026-11-02
+
+- An `easyeda` script may change the copper in the PCB: `writes = ["pcb:<b>", <files>]` – vias and a pour placed after the pours, with the list of what it placed beside. It runs after what it reads (`routing:<b>`: after `route all`) and before the scripts that read its files; `edakit run` records the change, and `route all` and `route pours` mark it gone in `hardware/scripts.lock`, so the script is outdated until it ran again. EasyEDA's DRC checks this copper, `route check` does not (handbook 8.6, #113).
+- Every board with an assembly side gets `odb_<board>.zip` and `bom_<board>_mpn.csv` in stage F, whatever the makers of `[cart] makers` – a release can be quoted at AISLER, Eurocircuits or PCBWay as it is; SYNC.odb holds that ODB++ to the run as a note, neither file enters the fab hash, both are in the manifest for `edakit release verify` (`[release] maker_files`, #153).
+- **When updating:** nothing has to change, and no sign-off lapses; the next gate run makes one more EasyEDA export per assembled board and shows a SYNC.odb note on a bridge without the ODB++ patch (`edakit doctor`, handbook 2.5). To keep the behaviour of before, set `[release] maker_files = "cart"`.
+
 ## 0.4.18 – 2026-11-02
 
 - The tests run in parallel (pytest-xdist in the group `dev`): `uv run --group dev pytest -q -n auto`. From the next version on, an update that moves only the dev tools is no version (`.github/versions.py`).

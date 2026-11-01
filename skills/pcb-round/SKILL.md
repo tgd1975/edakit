@@ -130,7 +130,10 @@ scripts before …"; one that failed stops the step: fix it (its output is in `<
 `edakit run <name>`; an easyeda script changes the project library in EasyEDA and runs on command only, under the
 claim, after `schematic create` (section 0). After it the parts in the PCB keep their old footprint until deleted and
 recreated: delete them, `edakit pcb parts --write`, `edakit pcb dump`, then the round as usual through `route all` –
-`edakit check` warns until `pcb dump` and `route all` ran. Commit `hardware/scripts.lock` with what the scripts wrote.
+`edakit check` warns until `pcb dump` and `route all` ran. An easyeda script that writes `pcb:<b>` places copper after
+the pours – vias, a pour – and `route all` and `route pours` fill over it: after either, it is outdated, and
+`edakit run <name> 2>&1 | cat` under the claim places it again, before `silk apply` – `edakit scripts` names its place.
+Commit `hardware/scripts.lock` with what the scripts wrote.
 
 ## Known limits
 

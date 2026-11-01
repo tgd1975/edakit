@@ -35,7 +35,7 @@ Before each stage – each project check, and with `--easyeda` each board of sta
 | *project checks* | e.g. K – the board fits its stand | `[scripts.<name>]` of kind `check`, phase `export`, and `[[release.stages]]` – see below |
 | S – Schematic | EasyEDA schematic = graph | SYNC.schematic per board |
 | L – Board | PCB = graph and plan, every part in the plan, copper from the Gerber files, the circuit's hand-over kept, pads apart, silkscreen as printed, hand-soldered joints clear, the visible side's print as the board file puts it | SYNC.pcb, SYNC.footprint, SYNC.plan, GEO |
-| F – Manufacturing | BOM, stock, pick and place, Gerber set, order settings per maker; with a maker that takes ODB++ the ODB++ against the released files | SYNC.bom, PARTS.stock, SYNC.cpl, SYNC.odb, FILES |
+| F – Manufacturing | BOM, stock, pick and place, Gerber set, order settings per maker; the ODB++ of an assembled board against the released files (`[release] maker_files`) | SYNC.bom, PARTS.stock, SYNC.cpl, SYNC.odb, FILES |
 | *project checks after F* | e.g. a check of this run's Gerber files | `[scripts.<name>]` with `at = "after F"` – see below |
 
 A bought board on a cable (`bought = true`) or a hand-wired one (`wired = true`, 4.5) is in stages P, G and E like any
@@ -66,7 +66,7 @@ and `SYNC.agents` in G; the rest in L. Their codes, generated from the catalog:
 | [`SYNC.plan`](../docs/catalog/sync.html#SYNC.plan) | board = placement plan | error; replaces L-7, L-12, L-20 |
 | [`SYNC.bom`](../docs/catalog/sync.html#SYNC.bom) | BOM = graph | error; replaces F-1 |
 | [`SYNC.cpl`](../docs/catalog/sync.html#SYNC.cpl) | pick and place = PCB | error; replaces F-3 |
-| [`SYNC.odb`](../docs/catalog/sync.html#SYNC.odb) | ODB++ = the released files | error, other_maker: warning; replaces F-7 |
+| [`SYNC.odb`](../docs/catalog/sync.html#SYNC.odb) | ODB++ = the released files | error, other_maker: warning, unlisted: note; replaces F-7 |
 | [`SYNC.source`](../docs/catalog/sync.html#SYNC.source) | own part = its source | error, margin: warning, stale: pending, unchecked: note; replaces P-3 |
 | [`SYNC.scripts`](../docs/catalog/sync.html#SYNC.scripts) | project scripts current | error, margin: warning, unchecked: note |
 | [`SYNC.agents`](../docs/catalog/sync.html#SYNC.agents) | project agents complete | error |
@@ -720,6 +720,13 @@ sit inside the EU: there is no import, and for `sale` you stay the manufacturer 
 `edakit stock` ask JLCPCB's catalogue only where JLCPCB is among the makers; another maker's stock is what its matching
 shows, checked by ORDER.parts.
 
+With `[release] maker_files = "all"` (the default) every board with an assembly side gets `odb_<board>.zip` and
+`bom_<board>_mpn.csv`, whatever `[cart] makers` says: a board released for JLCPCB can be quoted at AISLER, Eurocircuits
+or PCBWay from the release, without EasyEDA and a new gate run. While no maker of `[cart] makers` takes ODB++, SYNC.odb
+reads it as AISLER's profile does and reports a fault as a note – a failed export blocks no release. Neither file is in
+the fab hash: a sign-off with scope `fab` stays valid. `cart prepare` still asks for the maker in `[cart] makers` and a
+new gate run, since its checks run only for those. `"cart"` writes both files only for such a maker.
+
 Each profile also holds what the maker itself states about RoHS and REACH (`[compliance]`, read 2026-11-01, with the
 pages): JLCPCB's and PCBWay's boards are RoHS compliant only with a lead-free finish, JLCPCB's assembly terms do not
 promise lead-free solder, AISLER's statement leaves the placed parts out, Eurocircuits makes lead-free only. The job
@@ -831,8 +838,8 @@ pre-release mark: `edakit release publish --built <tag>` (publishing, 8.3). The 
 ## 8.6 Project scripts and agents
 
 A project registers in edakit.toml the scripts that touch edakit's flow (`[scripts.<name>]`, 10.1): one that writes a
-file edakit reads, derives something from edakit's data, changes the project library in EasyEDA, or holds up the release
-as a check of its own. A script that only reads what edakit made – a review package from the release – stays
+file edakit reads, derives something from edakit's data, changes the project library or the copper of the PCB in
+EasyEDA, or holds up the release as a check of its own. A script that only reads what edakit made – a review package from the release – stays
 unregistered, like every other script of the project. Each entry says what its script reads and writes; when it runs
 follows from that and from edakit's steps in their fixed order, so nobody has to write that rule into a skill.
 
@@ -840,7 +847,7 @@ follows from that and from edakit's steps in their fixed order, so nobody has to
 |---|---|---|
 | `input` | a file edakit reads: the board file (`board:<b>`, its own sections – every writer keeps the lines of the others, as `pcb place --write` does), an SVG of `[[silk.art]]`, the simulation plugin | before the first step that reads it – the step runs it when it is outdated |
 | `derive` | files no edakit step reads: the firmware's pin table, pictures, the enclosure | before `edakit check`, where its result is to be current – before the gate when the script reads what comes after `edakit check` (footprints, routing); `edakit run` runs it |
-| `easyeda` | changes in EasyEDA: the project library, `project-library:<b>` | on command only: `edakit run`, under the EasyEDA claim |
+| `easyeda` | changes in EasyEDA: the project library, `project-library:<b>`, or copper in the PCB, `pcb:<b>` – with files beside it | on command only: `edakit run`, under the EasyEDA claim; one that changes `pcb:<b>` after what it reads, before the scripts that read its files |
 | `check` | – | phase `export`: a stage of the gate (8.1), before S, or with `at = "after F"` after stage F on the run's manufacturing files; phase `order` and `acceptance`: a line of section 6, after the export |
 | `sim` | – | `[project] sim_plugin`, inside `edakit sim` (5.1) |
 
@@ -865,6 +872,7 @@ board; a bought or hand-wired one (4.5) has none of this data:
 | `graph`, `parts`, `sim` | graph (the file `[project] graph` names – a TOML graph, not the `graph.json` generated beside it), parts database, simulation scenarios | by hand, `edakit block`, `edakit part` | the files as the circuit hash reads them – graph and parts without the keys of `hash_ignore`, a TOML graph as its data (8.2) |
 | `board:<b>` | the board file | by hand, `edakit pcb place --write`, `input` scripts | the board file |
 | `project-library:<b>` | the project library in EasyEDA, which `pcb parts` takes the parts from | `edakit schematic create`, `easyeda` scripts, `edakit part build` (own footprints as data, 4.5) | – (in EasyEDA only) |
+| `pcb:<b>` | copper an `easyeda` script places in the PCB after edakit's routing and pours: vias, a pour, tracks | `easyeda` scripts | – (in EasyEDA only) |
 | `footprints:<b>` | footprint geometry with pads, as `pcb dump` measures it in the PCB: `<b>.geometry.json` beside the board file – one not moved yet in `<artifacts>/pcb_geometry_<b>.json` (7.4) | `edakit pcb dump` | the file it is read from |
 | `mech:<b>` | the board as a mechanical model (`mech_<b>.json`, 7.4) | `edakit pcb plan` | the file |
 | `routing:<b>` | tracks and vias | `edakit route` | the routing session `route/<b>.ses` and the stitching vias of `route pours` (`route/<b>_stitch.json`) |
@@ -884,7 +892,8 @@ The project library is in EasyEDA only, and edakit cannot read it offline. What 
 that the script ran is what tells edakit: its hash is the last change `edakit run` saw an `easyeda` script make (which
 script, when – kept in `hardware/scripts.lock`, below); before the first there is none. So an `easyeda` script writes
 `project-library:<b>`, never `footprints:<b>`: the geometry is edakit's own data, measured anew from the PCB by
-`pcb dump`.
+`pcb dump`. The same holds for `pcb:<b>`, the copper an `easyeda` script changes in the PCB – never `routing:<b>`,
+which is `edakit route`'s session file and its stitching vias.
 
 ### Resolving the entries
 
@@ -893,8 +902,9 @@ with the ID `scripts`:
 
 - `kind` and the fields of the kind are there, and no field of another kind
 - every data name is edakit's, with a made board of `[boards]`; `firmware` only with `[firmware]`
-- a script writes files, an input also `board:<b>`, an `easyeda` script changes `project-library:<b>`; graph, parts, sim
-  and edakit's other data – `footprints:<b>` too – are written by edakit or by hand
+- a script writes files, an input also `board:<b>`, an `easyeda` script changes `project-library:<b>` or `pcb:<b>`, and
+  files only beside `pcb:<b>`; graph, parts, sim and edakit's other data – `footprints:<b>` and `routing:<b>` too – are
+  written by edakit or by hand
 - scripts that write the same file or change the same data run in a fixed order through `after`; a script that writes
   what it reads gets the version of the one before it
 - an edakit step needs what an input writes – directly or through another input – and nothing a derive writes
@@ -1025,6 +1035,27 @@ once.
 ```text
 WARNING scripts  project-library:main changed by tdisplay (2026-10-28 23:46) – from before it: the parts in the PCB, which keep their old copy until deleted and recreated (edakit pcb parts --write, then edakit pcb dump; after the first change of a copy edakit schematic create --save and schematic layout --save before); the routing (edakit route all)
 ```
+
+**Copper in the PCB.** An `easyeda` script that writes `pcb:<b>` places copper after edakit's routing and pours – the
+seams of a board cut apart later: vias and a pour along the cut. It has a place among the scripts: after what it reads
+(`routing:<b>`: after `route all`), and before the scripts that read the files it writes beside – the list of the vias
+it placed, which a silkscreen artwork is drawn around. `edakit scripts` names it with its neighbours
+(`on command only: naehte (after edakit route all, before naehtkunst)`), and `edakit run` runs it there; an input that
+reads its file is outdated after it, and runs before its step (`silk apply`).
+
+Nothing is from before such a change. But `edakit route all` and `edakit route pours` fill the pours anew, and
+EasyEDA's fill replaces the script's pour: each marks the change gone in the lock and says so, and the script is
+outdated – a warning – until `edakit run` ran it again:
+
+```text
+hardware/scripts.lock: pcb:main gone since edakit route pours filled the pours (2026-11-01 22:40) – edakit run naehte; commit the lock
+WARNING scripts  naehte outdated: pcb:main gone since edakit route pours filled the pours (2026-11-01 22:40) – Seams: vias and a pour along the cuts
+```
+
+This copper is in EasyEDA only: `edakit route check`, the independent clearance check, reads `route/<b>.ses` and
+`route/<b>_stitch.json`, not what a script placed. EasyEDA's DRC – `route all`'s, and stage L of the gate – checks it.
+Copper that edakit's own checks are to see belongs in the board file and edakit's steps (stitching, 7.6), not in an
+`easyeda` script.
 
 `edakit scripts stamp` records no change: it records the run of a script run by hand, also long ago – a project that
 registers an `easyeda` script whose change is in the PCB since stamps it so.

@@ -14,7 +14,8 @@ stamps that tell an outdated script. Project agents: the entries [agents.<name>]
                                  before it (after_step)
 
 A project registers the scripts that touch edakit's flow: a script writes a file edakit reads, derives something from
-edakit's data, changes the project library in EasyEDA, or holds up the release as a check of its own. Its entry says
+edakit's data, changes the project library or the copper of the PCB in EasyEDA, or holds up the release as a check of
+its own. Its entry says
 what it reads and writes; when it runs follows from that and from edakit's steps in their fixed order (STEPS). edakit
 runs an input before the step that reads it and every script on command (edakit run); the gate runs the checks, as
 gate_checks gives them (handbook 8.1).
@@ -25,7 +26,9 @@ gate_checks gives them (handbook 8.1).
   derive   before edakit check, where its result is to be current;  files no edakit step reads
            before the gate when it reads what comes after edakit check
            – no step runs it: edakit run
-  easyeda  on command only: edakit run, under the EasyEDA claim     project-library:<b> in EasyEDA
+  easyeda  on command only: edakit run, under the EasyEDA claim     project-library:<b> in EasyEDA, or pcb:<b> – the
+           – one that changes pcb:<b> after what it reads, before the       copper in the PCB – and files beside it
+           scripts that read what it writes
   check    phase export: a stage of the gate, before S or at        nothing
            "after F"; phase order and acceptance: a line of the
            protocol's list of its phase (gate_checks)
@@ -34,13 +37,14 @@ gate_checks gives them (handbook 8.1).
 
 Names of edakit's data in reads and writes: graph, parts, sim (written by hand, edakit block, edakit part), board:<b>
 (the board file), project-library:<b> (EasyEDA's project library: schematic create, easyeda scripts, part build –
-recorded like an easyeda script's change, record_library_change), footprints:<b>
+recorded like an easyeda script's change, record_library_change), pcb:<b> (copper easyeda scripts changed in the
+PCB: vias, pours, tracks – gone once route all or route pours filled the pours again), footprints:<b>
 (<b>.geometry.json: pcb dump), mech:<b> (pcb plan), routing:<b> (route), gerber:<b> and release (the gate),
 firmware (edakit firmware, with [firmware]); <b> is a made board – a bought or hand-wired one has none. Anything else
 is a path relative to edakit.toml: a folder holds the files in it, and an edakit file named by its path is its data
 (hardware/boards/<b>.toml is board:<b>, route/<b>.ses routing:<b>, a gate run's fab/<b>/ gerber:<b>). Each name has a
-hash of what edakit has of it offline (data_hash) – the project library, which is in EasyEDA only, the last change
-edakit run saw an easyeda script make, none before.
+hash of what edakit has of it offline (data_hash) – the project library and the copper of easyeda scripts, which are in
+EasyEDA only, the last change edakit run saw an easyeda script make, none before.
 
 The stamp of a script (input, derive, easyeda) in hardware/scripts.lock: its cmd, the script itself – the first word of
 cmd that names a file (script_file) – and the hash of everything it reads, at its last run (input_hash: a name's
@@ -54,14 +58,17 @@ any change edakit run saw are not compared, whatever the stamp says: a note name
 is an error (the gate: a failed check of stage G), a derive or easyeda script a warning; a check has no stamp, its
 result is the gate's protocol. After an easyeda script ran through edakit run, the lock also keeps what it changed –
 project-library:<b> – and what is from before it: the parts in the PCB with their geometry, and the routing, until
-edakit pcb dump and edakit route all made them again; a warning until then (open_changes).
+edakit pcb dump and edakit route all made them again; a warning until then (open_changes). Of pcb:<b> nothing is from
+before it; edakit route all and route pours fill the pours anew and mark it gone (after_step): the scripts that change
+it are outdated until one ran again.
 
 The entries resolve when (docs/concepts/done/project-scripts.md, "Checking the TOML", its rules 1 to 9; 10 and 11 are
 about agents, see agents):
   1  kind is input, derive, easyeda or check, the fields of the kind are there, and no field of another kind
   2  every data name is edakit's, with a made board of [boards]; firmware only with [firmware]
-  3  a script writes files, an input also board:<b>; an easyeda script changes project-library:<b> – footprints:<b> is
-     the geometry pcb dump measures, edakit's own data like the others
+  3  a script writes files, an input also board:<b>; an easyeda script changes project-library:<b> or pcb:<b>, and
+     files only beside pcb:<b> – footprints:<b> is the geometry pcb dump measures, routing:<b> the tracks of edakit
+     route, edakit's own data like the others
   4  scripts that write the same file or change the same data run in a fixed order through after
   5  an edakit step needs what an input writes, directly or through another input
   6  no edakit step needs what a derive writes
@@ -102,11 +109,11 @@ PLACES = ("before S", "after F")                     # at: where a check of phas
 GATE_STAGES = ("P", "G", "E", "S", "L", "F")
 SOURCES = ("graph", "parts", "sim")                  # written by hand, edakit block, edakit part
 ONCE = ("release", "firmware")                       # one per project
-PER_BOARD = ("board", "project-library", "footprints", "mech", "routing", "gerber")   # <name>:<b>
-IN_EASYEDA = ("project-library",)                    # what an easyeda script changes
+PER_BOARD = ("board", "project-library", "pcb", "footprints", "mech", "routing", "gerber")   # <name>:<b>
+IN_EASYEDA = ("project-library", "pcb")              # what an easyeda script changes – pcb:<b> also with files beside
 MADE_BY = {"graph": "hand or edakit block", "parts": "hand or edakit part", "sim": "hand",
            "project-library": "edakit schematic create, changed by easyeda scripts and edakit part build",
-           "footprints": "edakit pcb dump",
+           "pcb": "easyeda scripts", "footprints": "edakit pcb dump",
            "mech": "edakit pcb plan", "routing": "edakit route", "gerber": "the gate", "release": "the gate",
            "firmware": "edakit firmware"}
 ABSENT = "absent"      # data_hash of data that does not exist yet: no gate run, no geometry, no routing, no contract
@@ -161,6 +168,7 @@ class _Entry:
     phase: str | None = None    # a check's phase and place
     at: str | None = None
     flawed: bool = False        # a field or a name is wrong: rule 5 would only repeat it
+    place: str = ""             # an easyeda script that changes the copper: between which neighbours it runs
 
 
 class _Names:
@@ -206,7 +214,7 @@ class _Names:
                                        f"– <name>:<b> names a made board ({', '.join(self.cfg.made()) or 'none'})")
             return (kind, board), None
         if m and m[2] is not None:
-            return None, ("no data name of edakit (graph, parts, sim, release, firmware; board, project-library, "
+            return None, ("no data name of edakit (graph, parts, sim, release, firmware; board, project-library, pcb, "
                           "footprints, mech, routing, gerber with :<b>)")
         p = self.path(spelling)
         if p in self.own:
@@ -217,6 +225,11 @@ class _Names:
         if len(run) > 2 and run[1] == "fab" and run[2] in self.cfg.made():   # <reports>/<run>/fab/<b>/…: a gate run's
             return ("gerber", run[2]), None                                   # manufacturing files of the board
         return ("file", p), None
+
+
+def _copper(e):
+    """An easyeda script that changes the copper in the PCB (pcb:<b>): it has a place among the scripts."""
+    return e.kind == "easyeda" and any(k[0] == "pcb" for _, k in e.writes)
 
 
 def _spell(key):
@@ -321,15 +334,18 @@ def _entries(cfg, names, finding):
                 finding(8, f'{name}: reads {spelling}, which the gate makes in stage F – the check needs at = "after F"')
             else:
                 e.reads.append((spelling, key))
-        for spelling in s.get("writes", []) if kind != "check" else ():
+        writes = s.get("writes", []) if kind != "check" else ()
+        copper = kind == "easyeda" and any((names.parse(w)[0] or ("",))[0] == "pcb" for w in writes)
+        for spelling in writes:
             key, why = names.parse(spelling)
             what = spelling if key is None or key[0] == "file" or _spell(key) == spelling \
                 else f"{spelling} ({_spell(key)})"
-            if key is not None and kind == "easyeda" and key[0] not in IN_EASYEDA:
+            if key is not None and kind == "easyeda" and key[0] not in IN_EASYEDA and not (key[0] == "file" and copper):
                 made = f"made by {MADE_BY[key[0]]}; " if key[0] in MADE_BY else ""
                 board = key[1] if key[0] != "file" and key[1] in cfg.boards else "<b>"
                 finding(3, f"{name}: writes {what} – {made}an easyeda script changes the project library in EasyEDA: "
-                           f"project-library:{board}")
+                           f"project-library:{board}, or the copper in the PCB: pcb:{board}"
+                           + (f" – and files only beside pcb:{board}" if key[0] == "file" else ""))
                 e.flawed = True
             elif key is not None and kind != "easyeda" and key[0] not in ("file", "board"):
                 finding(3, f"{name}: writes {what} – made by {MADE_BY[key[0]]}; a script writes files, an input also "
@@ -424,13 +440,15 @@ def _resolve(cfg):
     for a, b in zip(steps, steps[1:]):
         edge(a, b, "")
     reads_of, writes_of = _step_data(cfg, names)
-    makers = [e for e in entries if e.kind in ("input", "derive")]   # what they write, the others read
+    # what they write, the others read – an easyeda script that changes the copper in the PCB too: it comes after what
+    # it reads (the routing), and the scripts that read the file it writes beside come after it
+    makers = [e for e in entries if e.kind in ("input", "derive") or _copper(e)]
 
     def writes(e, key):
         return any(_overlap(key, k) for _, k in e.writes)
     for e in entries:          # a script reads from the scripts and the step that make it; one that writes what it
-        if e.kind == "easyeda":    # reads gets the version of the writers before it. easyeda: on command, no place
-            continue
+        if e.kind == "easyeda" and not _copper(e):     # reads gets the version of the writers before it. easyeda: on
+            continue                                    # command, no place – but for the copper
         for spelling, key in e.reads:
             own = writes(e, key)
             for w in makers:
@@ -499,6 +517,11 @@ def _resolve(cfg):
                                                                       for r in read)), default=len(STEPS))
              for e in entries if e.kind == "easyeda"}
     sequence = _order(steps, entries, edges, labels, feeds) if not found else []
+    for e in entries:          # where an easyeda script that changes the copper comes in the sequence
+        if _copper(e) and e.label in sequence:
+            i = sequence.index(e.label)
+            e.place = (f"after {sequence[i - 1]}" if i else "") + (", " if 0 < i < len(sequence) - 1 else "") + \
+                (f"before {sequence[i + 1]}" if i < len(sequence) - 1 else "")
     on_command = {e.label for e in entries if e.kind == "easyeda"}
     return Resolution(found, [n for n in sequence if n not in on_command], before, sequence), entries, names
 
@@ -542,6 +565,8 @@ def data_hash(cfg, name):
       project-library:<b> the project library is in EasyEDA only: what changes it is an easyeda script, and running
                           the script is what tells edakit – the hash of its last change edakit run recorded in
                           hardware/scripts.lock (which script, when); None before any
+      pcb:<b>             the copper easyeda scripts changed in the PCB, in EasyEDA only: as the project library – and
+                          whether route all or route pours filled the pours since (gone)
       graph, parts, sim   the files as the circuit hash reads them – graph and parts without [release] hash_ignore,
                           a TOML graph as its data (comments and arrangement count for nothing)
       board:<b>           the board file
@@ -560,7 +585,7 @@ def data_hash(cfg, name):
     if key is None or key[0] == "file" or why:
         raise ValueError(f"{name}: " + (why or "a path, not a name of edakit's data"))
     kind, b = key
-    if kind == "project-library":
+    if kind in IN_EASYEDA:
         change = load_changes(cfg).get(_spell(key))
         return _change_hash(change) if change else None
     if kind == "gerber":
@@ -736,9 +761,10 @@ def load_changes(cfg):
 
 
 def _change_hash(change):
-    """The hash of a change of the project library: which script made it, when – what a stamp compares."""
-    return hashlib.sha256(json.dumps({"script": change["script"], "at": change["at"]}, sort_keys=True)
-                          .encode()).hexdigest()
+    """The hash of a change in EasyEDA: which script made it, when, and for the copper since when it is gone – what a
+    stamp compares."""
+    data = {"script": change["script"], "at": change["at"]} | ({"gone": change["gone"]} if change.get("gone") else {})
+    return hashlib.sha256(json.dumps(data, sort_keys=True).encode()).hexdigest()
 
 
 def _user(cfg):
@@ -809,6 +835,7 @@ def _review(cfg):
         problem = f"{e} – nothing compared; fix it, or delete it and stamp every script again"
     compare = not res.findings and problem is None
     scripts, memo = {e.label: e for e in entries if e.node[0] == "script"}, {}
+    changes = load_changes(cfg) if any(_copper(e) for e in entries) else {}
 
     def state(e):
         if e.label not in memo:
@@ -822,6 +849,9 @@ def _review(cfg):
             elif compare and e.kind in STAMPED:
                 script, now = _inputs(cfg, names, e)
                 why, unseen = _compare(s, cmd, script, now)
+                for n, k in e.writes if _copper(e) else ():   # its copper filled over by the pours since
+                    if k[0] == "pcb" and (g := (changes.get(_spell(k)) or {}).get("gone")):
+                        why.append(_gone_said(_spell(k), g))
                 for b in res.before.get(e.label, []):        # a script it comes after that is not current
                     if scripts[b].kind in STAMPED and (prior := state(scripts[b]).state) != "current":
                         why.append(f"after {b}, which " + ("never ran" if prior == "never run" else "is outdated"))
@@ -988,7 +1018,7 @@ def _said(s):
         (f" – not compared: {', '.join(s.unseen)}" if s.unseen else "")
 
 
-def listing(cfg, res, states, problem, changes=()):
+def listing(cfg, res, states, problem, changes=(), entries=()):
     """edakit scripts: every entry with kind, state, about, cmd and its last run; the order, or what keeps the entries
     from it; what is from before a change of the project library; what is to run."""
     lines = [f"The project's scripts – [scripts.<name>] of {cfg.path.name}, their stamps in {LOCK} (handbook 8.6)", ""]
@@ -1012,8 +1042,10 @@ def listing(cfg, res, states, problem, changes=()):
     else:
         lines += textwrap.wrap("order: " + " → ".join(res.order), 120, subsequent_indent=" " * 7,
                                break_long_words=False, break_on_hyphens=False)
+        place = {e.label: e.place for e in entries if e.place}
         if on_command := [s.name for s in states if s.kind == "easyeda"]:
-            lines.append(f"on command only: {', '.join(on_command)}")
+            lines.append("on command only: " + ", ".join(n + (f" ({place[n]})" if n in place else "")
+                                                       for n in on_command))
     if problem:
         lines += ["", problem]
     if changes:
@@ -1054,7 +1086,7 @@ def main(cfg, args):
         return 0
     res, states, problem, entries, _ = _review(cfg)
     changes = [msg for _, msg in _change_findings(cfg, problem, res, entries)]
-    print("\n".join(listing(cfg, res, states, problem, changes)))
+    print("\n".join(listing(cfg, res, states, problem, changes, entries)))
     team = agents(cfg) if cfg.agents else None        # [agents]: who reviews where (handbook 8.6)
     if team:
         print("\n".join(agent_listing(cfg, team)))
@@ -1078,6 +1110,7 @@ HOOKED = {   # the commands that run the outdated inputs they read first – wit
     ("gate", None): "edakit gate",
 }
 REMADE = {("pcb", "dump"): "footprints", ("route", "all"): "routing"}   # what these steps make again for their board
+REFILLED = (("route", "all"), ("route", "pours"))     # these fill the pours anew: the copper of easyeda scripts is gone
 FROM_BEFORE = {   # what is from before a change of the project library until the step of REMADE made it again
     "footprints": "the parts in the PCB, which keep their old copy until deleted and recreated (edakit pcb parts "
                   "--write, then edakit pcb dump; after the first change of a copy edakit schematic create --save and "
@@ -1158,7 +1191,10 @@ def _run_one(cfg, name, indent=""):
     if changes:
         res, entries, _ = _resolve(cfg)
         for n, c in changes:
-            print(f"{indent}  {_change_said(n, c, () if res.findings else _made_from(res, entries, c))}")
+            print(f"{indent}  " + (_change_said(n, c, () if res.findings else _made_from(res, entries, c))
+                                   if c["from_before"] else f"{n} changed by {c['script']} "
+                                   f"({c['at'][:16].replace('T', ' ')}) – gone when edakit route all or route pours "
+                                   "fill the pours again: run it after them"))
     return cfg, True
 
 
@@ -1261,7 +1297,7 @@ def _due(cfg, step, boards):
     need = set(direct) | _upstream(res, direct)
     stale = {n for n, s in state.items() if s.state in ("outdated", "never run")}
     run = [state[n] for n in res.sequence if n in need and n in stale and by[n].kind == "input"]
-    libraries = {("project-library", b) for b in boards}
+    libraries = {(d, b) for d in IN_EASYEDA for b in boards}
     report = []
     for n in res.sequence[:res.sequence.index(step)]:
         e = by.get(n)
@@ -1316,22 +1352,24 @@ def before_step(cfg, args):
 
 
 # --- what an easyeda script changed: project-library:<b>, and what is from before it ------------------------------
-def _change(cfg, by, board, when=None):
-    """A change of a board's project library made by `by` (an easyeda script, or edakit part build), now."""
+def _change(cfg, by, board, when=None, data="project-library"):
+    """A change of a board's project library made by `by` (an easyeda script, or edakit part build), now – or of the
+    copper in its PCB (data pcb), of which nothing is from before it."""
     return {"script": by, "at": when or dt.datetime.now().astimezone().isoformat(timespec="seconds"), "by": _user(cfg),
-            "from_before": [f"{d}:{board}" for d in FROM_BEFORE]}
+            "from_before": [f"{d}:{board}" for d in FROM_BEFORE] if data == "project-library" else []}
 
 
 def _record_change(cfg, name):
-    """The easyeda script name ran through edakit run: each project library it writes changed now. Its hash is this
-    change (data_hash), and from before it are the parts in the PCB with their geometry, and the routing of its board,
-    until edakit pcb dump and edakit route all made them again (after_step). Returns [(data name, change)]."""
+    """The easyeda script name ran through edakit run: each project library and each PCB's copper it writes changed now.
+    Its hash is this change (data_hash); from before a change of the project library are the parts in the PCB with
+    their geometry, and the routing of its board, until edakit pcb dump and edakit route all made them again
+    (after_step). Returns [(data name, change)]."""
     changed, out = load_changes(cfg), []
     nm, when = _Names(cfg), dt.datetime.now().astimezone().isoformat(timespec="seconds")
     for spelling in cfg.scripts[name].get("writes", []):
         key, why = nm.parse(spelling)
         if key is not None and not why and key[0] in IN_EASYEDA:
-            change = _change(cfg, name, key[1], when)
+            change = _change(cfg, name, key[1], when, key[0])
             changed[_spell(key)] = change
             out.append((_spell(key), change))
     save_lock(cfg, load_lock(cfg), changed)
@@ -1395,28 +1433,44 @@ def _change_said(name, change, made=()):
 def after_step(cfg, args, code):
     """A step of REMADE made its data of the board again – edakit pcb dump of every part (no --ref), edakit route all
     that wrote its routing into EasyEDA (exit 0; 2: DRC findings; 3: the import acknowledgement pending): it is no
-    longer from before the last change of the board's project library – the lock says so. Returns code."""
+    longer from before the last change of the board's project library – the lock says so. A step of REFILLED that
+    filled the pours (exit 0, 2, 3): the copper easyeda scripts placed in the PCB (pcb:<b>) is gone – the lock says
+    since when, and the scripts that change it are outdated until one ran again. Returns code."""
     from .config import ConfigError
-    made = REMADE.get((args.command, getattr(args, "action", None)))
-    if made is None or not cfg.scripts or code not in ((0,) if made == "footprints" else (0, 2, 3)) or \
-            getattr(args, "ref", None):
+    step = (args.command, getattr(args, "action", None))
+    made = REMADE.get(step)
+    if not cfg.scripts or code not in ((0,) if made == "footprints" else (0, 2, 3)) or getattr(args, "ref", None) \
+            or made is None and step not in REFILLED:
         return code
     try:
         b = cfg.board(args.board, made=True).name
     except ConfigError:
         return code
-    changed, name, data = load_changes(cfg), f"project-library:{b}", f"{made}:{b}"
-    if data not in (change := changed.get(name) or {}).get("from_before", []):
+    changed, said = load_changes(cfg), []
+    name, data = f"project-library:{b}", f"{made}:{b}"
+    if made and data in (change := changed.get(name) or {}).get("from_before", []):
+        change["from_before"] = [d for d in change["from_before"] if d != data]
+        left = _before_it(change)
+        said.append(f"{LOCK}: {data} made again after {name} changed ({change['script']}) – "
+                    + (f"from before it: {left}" if left else "nothing from before it any more") + "; commit the lock")
+    copper = f"pcb:{b}"
+    if step in REFILLED and (change := changed.get(copper)) and not change.get("gone"):
+        change["gone"] = {"step": f"edakit {' '.join(step)}",
+                          "at": dt.datetime.now().astimezone().isoformat(timespec="seconds")}
+        said.append(f"{LOCK}: {_gone_said(copper, change['gone'])} – edakit run {change['script']}; commit the lock")
+    if not said:
         return code
-    change["from_before"] = [d for d in change["from_before"] if d != data]
     try:
         save_lock(cfg, load_lock(cfg), changed)
     except StampError:
         return code     # edakit check names the lock that cannot be read
-    left = _before_it(change)
-    print(f"{LOCK}: {data} made again after {name} changed ({change['script']}) – "
-          + (f"from before it: {left}" if left else "nothing from before it any more") + "; commit the lock")
+    print("\n".join(said))
     return code
+
+
+def _gone_said(name, gone):
+    """pcb:main gone since edakit route pours filled the pours (2026-11-01 22:40)"""
+    return f"{name} gone since {gone['step']} filled the pours ({gone['at'][:16].replace('T', ' ')})"
 
 
 # --- project agents: [agents.<name>] of edakit.toml (handbook 8.6) ----------------------------------------------------
