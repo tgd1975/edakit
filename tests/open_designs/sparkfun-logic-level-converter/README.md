@@ -6,6 +6,12 @@ product page <https://www.sparkfun.com/sparkfun-logic-level-converter-bi-directi
 Released under the Creative Commons Attribution Share-Alike 3.0 License (the schematic's title block); this
 transcription keeps that licence.
 
+**Licence and attribution:** *Logic Level Converter – Bi-Directional* by SparkFun Electronics (design Patrick Alberts),
+CC BY-SA 3.0 (<https://creativecommons.org/licenses/by-sa/3.0/>) – this transcription is an adaptation under the same
+licence. Changes: the circuit's facts – parts, values, connections – are transcribed into edakit's graph, not the
+drawing; the parts stated below stand in; the parts entries are written from the parts' datasheets. This is a reading
+of the schematic's title block, not legal advice.
+
 **Transcribed:** four identical channels – Q1 to Q4 (BSS138) with the gate on LV, the source on LVn pulled up to LV and
 the drain on HVn pulled up to HV, each through 10 kΩ (R1 to R7, R10) – and the headers JP1 (LV1, LV2, LV, GND, LV3,
 LV4) and JP2 (HV1, HV2, HV, GND, HV3, HV4), pins as numbered in the schematic.

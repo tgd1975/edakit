@@ -109,8 +109,12 @@ more of a first contribution, the maintainer fills its checklists himself; no "G
 (the owner, 2026-11-01). The pattern: #468 and #527 there, under
 1000 characters each; the owner found the first, long texts too long and machine-like (2026-11-01). The same for reports to
 EasyEDA. On the first substantial pull request
-the maintainer asks once for the comment "I agree to the Contributor Permission v1 in CONTRIBUTOR-LICENSING.md" from
-the account that opened it – a consent in the owner's name, given by the owner.
+the maintainer asked once for the comment "I agree to the Contributor Permission v1 in CONTRIBUTOR-LICENSING.md" from
+the account that opened it – a consent in the owner's name, given by the owner. Gone since 2026-11-01: upstream's
+`caa931c` (#806) took the project back from PolyForm Noncommercial 1.0.0 to MIT and dropped the contributor permission;
+1.1.0 to 1.6.0 stay PolyForm Noncommercial, the next release will be the first under MIT. When the pin
+reaches it, the licence notes go with it: `README.md` (Status and limits), `handbook/02-setup.md` 2.8,
+`docs/concepts/new/outreach.md`, `docs/concepts/done/kicad-toolchain.md`.
 
 | # | Requirement | Local workaround – goes with the release | Upstream | Fork branch | Checked |
 |---|---|---|---|---|---|

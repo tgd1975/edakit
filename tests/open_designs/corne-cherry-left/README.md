@@ -12,7 +12,7 @@ read on 2026-10-31 from a read-only clone. The LCSC numbers come from the schema
 Attribution 4.0 International) and `LICENSE_MIT` (MIT, "Copyright (c) 2023 foostan"); neither its README nor the files
 say which of them covers the PCB files. This transcription is offered under CC BY 4.0, the licence of the two that
 asks for attribution and a note of changes, and keeps foostan's copyright notice. Attribution: *Corne keyboard* by
-foostan, <https://github.com/foostan/crkbd>, CC BY 4.0. Changes: the circuit's facts – parts, values, connections –
+foostan, <https://github.com/foostan/crkbd>, CC BY 4.0 (<https://creativecommons.org/licenses/by/4.0/>). Changes: the circuit's facts – parts, values, connections –
 are transcribed into edakit's graph, not the drawing; unnamed nets got names (LED_VDD, XIN, USB_DP, …); the parts
 stated below are left out or stand in; the parts entries are written from the parts' datasheets. This is a reading of
 the repository's files, not legal advice.

@@ -281,8 +281,9 @@ Where it stands:
   switching spikes and fast edges are left to the acceptance test.
 - The MCP server cannot order, by design.
 - Used components and their licences: [easyeda-mcp-pro](https://github.com/oaslananka/easyeda-mcp-pro) (PolyForm
-  Noncommercial 1.0.0 – check before commercial use), EasyEDA Pro (proprietary), Freerouting (GPL-3.0), ngspice (BSD).
-  None of them is bundled.
+  Noncommercial 1.0.0 in the pinned 1.6.0 – check before commercial use; upstream went back to MIT on 2026-11-01,
+  from its next release on), EasyEDA Pro (proprietary), Freerouting (GPL-3.0), ngspice (BSD). None of them is
+  bundled.
 
 ## Future work
 
@@ -309,4 +310,16 @@ and answers come as time allows.
 
 ## Licence
 
-MIT – see [LICENSE](LICENSE).
+MIT – see [LICENSE](LICENSE) –, except for third-party material the tests use. Each folder of
+[tests/open_designs/](tests/open_designs/) names its source, licence and changes in its README:
+
+| Path | Source | Licence |
+| --- | --- | --- |
+| `tests/open_designs/guitarml-classic-boost/`, `guitarml-ts-rat-combo/` | Keith Bloemer (GuitarML), *GuitarPedalPCBs* | MIT, notice in the README |
+| `tests/open_designs/corne-cherry-v3-left/` | foostan, *Corne Cherry* v3 | MIT, notice in the README |
+| `tests/open_designs/corne-cherry-left/` | foostan, *Corne keyboard* v4 | [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/) |
+| `tests/open_designs/sparkfun-logic-level-converter/` | SparkFun Electronics, *Logic Level Converter* | [CC BY-SA 3.0](https://creativecommons.org/licenses/by-sa/3.0/) |
+| `tests/open_designs/esp32-devkitc-v4/` | Espressif Systems, *ESP32-DevKitC V4* schematic | none stated – only the circuit's facts are transcribed, not the drawing |
+| `tests/fixtures/jlcpcb/`, `easyeda/`, `datasheets/`, `makers/` | short excerpts of the pages and API answers of JLCPCB, LCSC, EasyEDA, AISLER, Eurocircuits and PCBway, with source and date, for the parsers' tests | the sites' own; not under MIT |
+
+This is a reading of the sources' licences, not legal advice.
