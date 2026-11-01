@@ -2,22 +2,23 @@
 
 Status 2026-10-31: decided – the eight decisions and what Claude decided itself accepted by the owner the same day, and
 a ninth and a tenth added by the owner the same evening (the circuit alone as a station; condensing as a rule, with its
-measure); an eleventh and a twelfth on 2026-11-01 – the case for edakit on the start page, confirmed by the owner with
+measure); an eleventh to a thirteenth on 2026-11-01 – the case for edakit on the start page, confirmed by the owner with
 the vision line added, and a gallery of the projects built with edakit, a page per project with its schematic and board
-pictures, accepted with the owner's additions, in a decision round in Claude Code's form (the table at the end); D.1
-built the same evening (`docs/style.md`, `docs/glossary.md`, `tests/test_style.py`, `tests/test_references.py`); each
-step D.2 to D.7 and D.9 starts on the owner's word, one per branch, listed in `TODO.md`. Written against main at
-`8fba5f2`; the gallery checked against main at `a6ae71a` – its pictures are the release protocol's section 12 (since
-`741cc9a`), and chapter 18, the second walkthrough, joins "The board". Asked for by the owner: the pages are
-comprehensive but confusing, so unreadable – a concept for how the documentation should look, be organised and be
-written, who its readers are, the language and its style, what is missing for it to be understood, everything needed so
-that others use edakit. With one condition the owner set while it was written: everything `docs/organisation.md` does
-not list as documentation – skills, agents, CLAUDE.md, the catalog's and the domains' texts, the manifests, the concepts
-– is data the automation reads; a change there may break something elsewhere or shift a meaning, so this concept leaves
-it alone and says where documentation itself is read by the automation; and a rule for every change: when unsure, ask –
-or check whether the text is generated or used elsewhere, which says to leave it as it is. The findings come from the
-site built from main (`docs/pages.py`, MkDocs), the Markdown measured – words, sentence lengths, headings,
-cross-references, the words that go unexplained – and the code and tests that read the documentation.
+pictures, accepted with the owner's additions, and future work – two items, on the owner's word –, in a decision round
+in Claude Code's form (the table at the end); D.1 built the same evening (`docs/style.md`, `docs/glossary.md`,
+`tests/test_style.py`, `tests/test_references.py`); each step D.2 to D.7 and D.9 starts on the owner's word, one per
+branch, listed in `TODO.md`. Written against main at `8fba5f2`; the gallery checked against main at `a6ae71a` – its
+pictures are the release protocol's section 12 (since `741cc9a`), and chapter 18, the second walkthrough, joins "The
+board". Asked for by the owner: the pages are comprehensive but confusing, so unreadable – a concept for how the
+documentation should look, be organised and be written, who its readers are, the language and its style, what is missing
+for it to be understood, everything needed so that others use edakit. With one condition the owner set while it was
+written: everything `docs/organisation.md` does not list as documentation – skills, agents, CLAUDE.md, the catalog's and
+the domains' texts, the manifests, the concepts – is data the automation reads; a change there may break something
+elsewhere or shift a meaning, so this concept leaves it alone and says where documentation itself is read by the
+automation; and a rule for every change: when unsure, ask – or check whether the text is generated or used elsewhere,
+which says to leave it as it is. The findings come from the site built from main (`docs/pages.py`, MkDocs), the Markdown
+measured – words, sentence lengths, headings, cross-references, the words that go unexplained – and the code and tests
+that read the documentation.
 
 ## The short answer
 
@@ -185,17 +186,17 @@ The sources stay on the site, at its end, as "Inside edakit", untouched.
   The walkthrough is the evidence, linked: 14 steps, six of them yours, seven decisions. Its limit in the same breath: a
   check for every known error class and reviews by agents, not a guarantee (chapter 1); the regulatory review support,
   not legal advice. Then the expectation set right, in one sentence that calls it the vision – "at least that is the
-  vision, and we are close", the owner's words – and links the state: what is built offline only or has not run live
-  yet, with its date (today's "Status and limits", then on How it works), so that the reader sees how close. Three lines
-  for whom – the maker (a circuit, or a board from it), the engineer, the developer – each with its link; what it needs
-  (Claude Code; EasyEDA Pro desktop or KiCad 10; uv, ngspice; tested on Linux, Windows and macOS untested; a JLCPCB
-  account for stock and ordering); what it is not (no editor of its own, two copper layers, DC operating points and a
-  few transient runs); install in three lines; "try it in two minutes" – `uvx --from
-  git+https://github.com/tgd1975/edakit edakit check` in `examples/coin-cell-led`, which takes 0.2 s and shows an
-  accepted finding with its reason –; then the quickstart, the guides, the reference. The command block moves to the
-  reference, the repository map to `docs/organisation.md`, "Status and limits" to "How it works". The test that wants
-  every skill and agent in the README (`test_plugin.py`) is pointed at the page that lists them – the test changes with
-  the page, on the same branch.
+  vision, and we are close", the owner's words – and links the state – what is built offline only or has not run live
+  yet, with its date – and the future work, both on How it works (today the README's "Status and limits" and "Future
+  work"), so that the reader sees how close and where it goes. Three lines for whom – the maker (a circuit, or a board
+  from it), the engineer, the developer – each with its link; what it needs (Claude Code; EasyEDA Pro desktop or KiCad
+  10; uv, ngspice; tested on Linux, Windows and macOS untested; a JLCPCB account for stock and ordering); what it is not
+  (no editor of its own, two copper layers, DC operating points and a few transient runs); install in three lines; "try
+  it in two minutes" – `uvx --from git+https://github.com/tgd1975/edakit edakit check` in `examples/coin-cell-led`,
+  which takes 0.2 s and shows an accepted finding with its reason –; then the quickstart, the guides, the reference. The
+  command block moves to the reference, the repository map to `docs/organisation.md`, "Status and limits" to "How it
+  works". The test that wants every skill and agent in the README (`test_plugin.py`) is pointed at the page that lists
+  them – the test changes with the page, on the same branch.
 - **Quickstart** (`docs/quickstart.md`): the first project to the first finding and the first drawn schematic, in about
   fifteen minutes, without EasyEDA – install the plugin, a project from the example or from `/edakit:new-project`, a
   graph of four parts, `edakit check`, one finding read with `edakit explain`, `edakit sim`, `edakit schematic draw`,
@@ -209,7 +210,12 @@ The sources stay on the site, at its end, as "Inside edakit", untouched.
   run, release, domain, block, hand-over –, one paragraph each; what Claude does and what the person decides – the table
   of 17.1's "Who" column, step by step, with the count that backs the start page's case, and chapter 1's "what it does
   not give you" –, the decision round shown once as a shortened transcript; what is text and what still exists only in
-  EasyEDA – the README's "Status and limits", kept current as it is today.
+  EasyEDA – the README's "Status and limits", kept current as it is today. After it, "Future work": the disruptive
+  changes only, today two – ordering through the makers' interfaces instead of their pages in the browser, the same
+  steps up to the cart and the same checks, ordering and paying still the reader's (handbook 8.4); and the circuit in a
+  language of edakit's own instead of the TOML graph (circuit-dsl.md) –, each with what it changes for a project and the
+  link to where it is worked out. Smaller extensions and fixes are not future work and are not listed; `TODO.md` holds
+  them.
 - **Projects** (`docs/projects/`): the projects built with edakit, each on a page of its own – there are two today, and
   each is worth a page. The index (`docs/projects/README.md`) shows a card per project: its board as made, one line, the
   link; the two examples (`examples/coin-cell-led`, `examples/blinker-555`) are cards whose page is their walkthrough,
@@ -364,7 +370,9 @@ after, the reasons at the end; a status admonition at the top where something is
 most five words in the navigation. Regulatory content says once that it is support, not legal advice (CLAUDE.md). The
 case for edakit is made once, on the start page, as a statement a reader can check against the walkthrough – the count
 of steps and decisions –, never by an adjective; the sentence after it calls it the vision and links the state – the one
-wink the site allows itself, and no false expectation: what has not run live says so, dated.
+wink the site allows itself, and no false expectation: what has not run live says so, dated. Future work lists the
+disruptive changes only – what changes how a project works –; a smaller extension or a fix is `TODO.md`'s and never on
+the site.
 
 **Pictures.** One per guide page where a picture is faster than a paragraph – the pipeline, a drawn schematic, a
 placement plan, a gate protocol –, SVG in the brand's colours; where edakit draws it (`schematic draw`, `pcb plan`)
@@ -401,7 +409,10 @@ documentation review's (`docs/organisation.md`).
    source: the review reports them, the owner changes them.
 8. **Boards to look at** – the gallery (decision 12): a reader judges a tool by what has been built with it, and two
    real projects with their pictures say more than a list of features.
-9. **Contributing, said plainly** on the developer page: issues and pull requests are welcome and the owner merges; rule
+9. **Where it goes** – future work (decision 13): the two changes that will alter how a reader's project works, and no
+   wish list.
+10. **Contributing, said plainly** on the developer page: issues and pull requests are welcome and the owner merges;
+    rule
    and feature proposals come from projects through the plugin, and only the owner's are triaged by the Action.
 
 ## Steps
@@ -409,7 +420,7 @@ documentation review's (`docs/organisation.md`).
 | Step | What | Size | Waits for |
 | --- | --- | --- | --- |
 | D.1 | `docs/style.md` and `docs/glossary.md`; `docs/organisation.md` points at the style guide; `tests/test_style.py` for the countable rules, red on today's pages where it must be; `tests/test_references.py` for the addresses | M | the decisions |
-| D.2 | The entry layer: the README as the start page, `docs/quickstart.md` with its test, `docs/how-it-works.md` with the pipeline drawing and the transcript; `test_plugin.py` pointed at the page that lists skills and agents | M | D.1 |
+| D.2 | The entry layer: the README as the start page, `docs/quickstart.md` with its test, `docs/how-it-works.md` with the pipeline drawing, the transcript, the state and the future work; `test_plugin.py` pointed at the page that lists skills and agents | M | D.1 |
 | D.3 | The site: the navigation as data, by reader, short titles; `organisation.md` and the brand page on it; "Inside edakit" with its index and the source line; the footer line; the feedback line; prototypes off the navigation; `test_pages.py` follows | S–M | D.2 |
 | D.4 | The reference: 10.5 as entries with the generated synopsis; the catalog page split by `build.py`; the chapters' generated lists as the short kind of `catalog/handbook.py` | M | D.1 |
 | D.5 | The chapters in place, worst first – 8, 3, 5, 7, 4, 10, then 2, 6, 11, 14, 15, 16, 17, 1 –, condensed to a third fewer words with the statements listed before and checked after, one per branch, the review for meaning after each; chapter 13 takes the history | L (M per large chapter) | D.1 |
@@ -434,6 +445,7 @@ through a navigation that tells them where they are, with the chapters still as 
   outside chapter 13, the status lines and the dates the automation relies on.
 - The projects: every page with the schematic and the board as made from a named release, its blocks and its findings
   explained; nothing planned on the gallery.
+- Future work: the disruptive changes only, today two items; nothing smaller.
 - The navigation: two levels, at most fourteen entries per group, titles of at most five words.
 - The reference: no cell over 25 words; the commands' synopses equal the command line (test); no catalog page over 300
   KB.
@@ -496,6 +508,7 @@ recommendation.
 | 10 | Condensing as a rule (the owner's addition: "it would be advisable to condense the texts – a style question") | the same statements in a third fewer words per chapter, no chapter over 500 lines, no paragraph over 120 words, no statement lost – the review's list proves it, and where a chapter does not give the third the statements win | the rules without a number; a target per chapter set at its branch | accepted |
 | 11 | The case for edakit (the owner's addition: "a big argument for edakit is that one needs relatively little knowledge to design a correct circuit and order the PCB, up to assembly – a selling point too"; where, the owner left to Claude) | on the start page, in its first lines, as a statement a reader can check – you bring the idea, what the board must do and the decisions on money, purpose and looks; edakit and Claude bring the rest – with the walkthrough's count (14 steps, six yours, seven decisions) and its limit in the same breath: not a guarantee, the regulatory review support, not legal advice; the evidence table on How it works; the quickstart ends with what the reader did not need | a slogan on the start page; the case nowhere, the facts alone | accepted, with the owner's addition: after the case one sentence that calls it the vision – "at least that is the vision, and we are close" – and links the state, so that no false expectation is raised |
 | 12 | A gallery of projects (the owner's addition: "a kind of gallery with project presentations – pytree, even though the repository is private: some information and pictures can go out; the bell; later the tiny jukebox, the pedal and the steering wheel, once converted") | `docs/projects/` in the entry layer: an index with a card per project and a page per project – what it is, the circuit with its drawn schematic and its blocks explained, the board as made, what edakit found, its variants, what it changed in edakit –, the pictures from the project's release; the bell and pytree, pytree with what the owner picks and its page the one description of the reference project; the examples as cards to their walkthroughs; a page once a project has a result with edakit | the projects in chapter 13 only; links on the start page only; a picture and three lines per project (Claude's first proposal) | accepted, with the owner's additions: schematic and board pictures and more explanation – "otherwise it would be very dry" –, a page per project since there are two, the bell's board variants shown ("not uninteresting"); which project converts next is "none of the gallery's business"; what Claude decided itself – `docs/projects/README.md` as the index, the examples as cards to chapters 17 and 18, the pictures from the release with its tag, a page once a project has a result with edakit, chapter 18 in "The board" – confirmed the same day |
+| 13 | Future work (the owner's addition: "two points are central: the ordering automation – it runs over the web pages today, I want to do it through APIs – and the switch to the DSL; these are disruptive, everything else is smaller extensions and fixes for now, not to be mentioned in future work") | two items, nothing else: ordering through the makers' interfaces instead of their pages in the browser – the same steps up to the cart and the same checks, ordering and paying still the reader's, as handbook 8.4 has it –, and the circuit in a language of edakit's own instead of the TOML graph (circuit-dsl.md); on How it works after the state, linked from the start page's vision line, in the README's "Future work" until D.2; the style guide's rule that future work lists disruptive changes only | a page of its own ("Roadmap"); every open item of `TODO.md` on the site | the owner's word on the content; the place placed by Claude, to be confirmed |
 
 Decided by Claude and confirmed by the owner on 2026-10-31: MkDocs Material stays; chapter files and numbers stay;
 sources, data and code untouched, with the rules of the section "What the automation reads"; `tests/test_references.py`;
