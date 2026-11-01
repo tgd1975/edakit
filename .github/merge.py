@@ -9,7 +9,8 @@ In a worktree of its own, so the session's checkout stays as it is:
    written into edakit/__init__.py, the marketplace entry and CHANGELOG.md, the fragments deleted, one commit
    "edakit X.Y.Z"; a branch without fragments that changes nothing a project reads is merged without a version;
 3. pushed, the checks waited for (test, kicad, build, paths, version – about five minutes);
-4. merged with --match-head-commit, unless main has moved meanwhile: then from 1 again, since two merges must never
+4. merged with --match-head-commit while main still has the number it was numbered from – a push of TODO.md or a
+   concept meanwhile changes nothing; a version merged meanwhile does: then from 1 again, since two merges must never
    share a number.
 
 The workflow release.yml then sets the tag v<number> and the GitHub release. --dry-run does 1 and 2 and shows the diff.
@@ -21,6 +22,7 @@ import datetime as dt
 import json
 import re
 import shutil
+import signal
 import subprocess
 import sys
 import tempfile
@@ -53,7 +55,8 @@ def gh_json(*args):
 
 
 def prepare(tree, branch, major):
-    """Steps 1 and 2 in the worktree: returns (the branch's sha on origin, the head sha, the number or None)."""
+    """Steps 1 and 2 in the worktree: returns (the branch's sha on origin, the head sha, main's number, the number or
+    None)."""
     run("git", "fetch", "-q", "origin", "main", branch, cwd=tree)
     before = run("git", "rev-parse", f"origin/{branch}", cwd=tree).stdout.strip()
     run("git", "checkout", "-q", "--detach", before, cwd=tree)
@@ -79,11 +82,11 @@ def prepare(tree, branch, major):
             raise SystemExit("the branch changes edakit but has no fragment in changes/ – add changes/<branch>.md "
                              "(first line minor or patch, then the lines):\n  " + "\n  ".join(stray))
         say("nothing a project reads changed: merged without a version")
-        return before, run("git", "rev-parse", "HEAD", cwd=tree).stdout.strip(), None
+        return before, run("git", "rev-parse", "HEAD", cwd=tree).stdout.strip(), main_n, None
     run("git", "add", "-A", v.INIT, v.MARKETPLACE, v.CHANGELOG, v.CHANGES, cwd=tree)
     run("git", "commit", "-q", "-m", f"edakit {n}", cwd=tree)
     say(f"numbered {n} (main is {main_n})")
-    return before, run("git", "rev-parse", "HEAD", cwd=tree).stdout.strip(), n
+    return before, run("git", "rev-parse", "HEAD", cwd=tree).stdout.strip(), main_n, n
 
 
 FAILED = ("failure", "error", "cancelled", "timed_out", "action_required")
@@ -133,6 +136,7 @@ def wait(sha, names):
 
 
 def main(argv=None):
+    signal.signal(signal.SIGTERM, lambda *_: sys.exit(143))   # a stopped run still removes its worktree
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("pr", type=int)
     ap.add_argument("--major", action="store_true", help="the major number – only on the owner's word")
@@ -148,7 +152,7 @@ def main(argv=None):
     try:
         for round_ in range(1, ROUNDS + 1):
             say(f"#{args.pr} {branch}: round {round_}")
-            before, sha, n = prepare(tree, branch, args.major)
+            before, sha, main_n, n = prepare(tree, branch, args.major)
             if args.dry_run:
                 print(run("git", "diff", f"origin/{branch}", "HEAD", "--", v.INIT, v.MARKETPLACE, v.CHANGELOG,
                           v.CHANGES, cwd=tree).stdout)
@@ -159,8 +163,9 @@ def main(argv=None):
                 say(f"pushed {sha[:7]}")
             wait(sha, required(tree))
             run("git", "fetch", "-q", "origin", "main", cwd=tree)
-            if run("git", "merge-base", "--is-ancestor", "origin/main", sha, cwd=tree, check=False).returncode:
-                say("main moved while the checks ran – again")
+            now = v.number(v.show("origin/main", root=tree)(v.INIT))
+            if now != main_n:
+                say(f"main became {now} while the checks ran – numbered again")
                 continue
             r = run("gh", "pr", "merge", str(args.pr), "--merge", "--match-head-commit", sha,
                     "--subject", f"Merge branch '{branch}': {pr['title']}", "--body", "", check=False)

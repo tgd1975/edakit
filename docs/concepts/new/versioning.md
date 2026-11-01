@@ -30,7 +30,8 @@ hand and never conflict over the changelog. The marketplace entry points at the 
 installs that version, and the owner's projects follow it unpinned, as they follow main today.
 
 main gets rulesets that are kept as JSON in the repository. Every change comes through a pull request with green
-checks. A pull request must sit on the newest main, because two merges must never get the same number. Nobody may
+checks, and `merge.py` merges only while main still has the number it numbered from, so two merges never get the
+same number. Nobody may
 force-push or delete main, and the owner has no bypass. One fact shapes all of it: every session acts as the owner's
 GitHub account. GitHub cannot tell a session from the owner, so the protection guards against slips and against the
 Actions. It does not lock out the sessions, and the owner's OK for code stays a working rule.
@@ -165,8 +166,9 @@ proposed (below). So with the owner's OK, a session merges through `.github/merg
    into the changelog's new section and deletes them, and commits that as "edakit 0.2.6".
 4. It pushes the branch, waits for the checks (about 5 minutes) and merges with `--match-head-commit`, so that nothing
    pushed meanwhile slips in.
-5. If main has moved in the meantime, the merge is refused, because the checks are strict. The script then goes back
-   to step 1, and since it rewrites the version's lines anyway, they never conflict.
+5. It merges only while main still has the number it numbered from. A push of `TODO.md` or a concept in the meantime
+   changes nothing. A version merged in the meantime does: then the script goes back to step 1, and since it rewrites
+   the version's lines anyway, they never conflict.
 
 The workflow `release.yml` runs on every push to main. When the package's number has no tag yet, it sets the tag
 `v0.2.6` on that merge commit and opens the GitHub release with the changelog section as its text. A merge without a
@@ -208,7 +210,7 @@ everything else. A change to it goes through a pull request and is applied after
 
 | Ruleset | Target | Rules | Bypass |
 | --- | --- | --- | --- |
-| `main` | main | a pull request, no approval required (the owner cannot approve their own, and the sessions are the owner); the checks `test`, `kicad`, `build`, `paths` and `version` green, strict; no force push; no deletion | nobody, the owner included |
+| `main` | main | a pull request, no approval required (the owner cannot approve their own, and the sessions are the owner); the checks `test`, `kicad`, `build`, `paths` and `version` green, not strict; no force push; no deletion | nobody, the owner included |
 | `main-updates` | main | only the bypass may update the branch | the role Repository admin, only through a pull request: only the owner's account merges into main. The Actions may push branches and open pull requests, but never merge |
 | `tags` | `v*` | no deletion, no update, no force push; creating stays open for the release workflow | nobody: a version once out is never moved |
 
@@ -216,10 +218,11 @@ The repository's settings also allow auto-merge, delete head branches after a me
 Squash and rebase merges are off, because the merge message carries the description, as the history shows
 (`merge.py` takes it as `--subject "Merge branch 'cpl-turn': …"`).
 
-- **Strict.** A pull request must sit on the newest main before it is merged. Without that, two branches merged
-  within the same minutes would both carry 0.2.6, since git merges two identical changes to one line without a
-  conflict. The price is a new run of the checks after every merge for each pull request that is about to be merged,
-  and `merge.py` and `notes.py` pay it by themselves.
+- **Not strict.** A pull request need not sit on the newest main. Two branches merged within the same minutes must
+  not both carry 0.2.6, since git merges two identical changes to one line without a conflict. `merge.py` prevents
+  that: it merges only while main still has the number it numbered from (step 5 above). A strict rule would do the
+  same at a high price. Every push of `TODO.md`, which comes many times an hour, would send each waiting pull request
+  through its checks again. This was found while building TD-45, and it replaces the strict rule the owner confirmed.
 - **Skipped counts as passed.** `paths` and `version` run only where they apply. GitHub counts a job
   skipped by its `if` as successful, so a required check never blocks a pull request it does not concern.
 - **`main-updates`** closes the gap that [proposals-pipeline.md](proposals-pipeline.md) found (its layer 1): today
@@ -294,8 +297,7 @@ would end up merging the tick of TD-12.
    and its other changes stay as they are. If two sessions changed the same lines, it stops and names them. The
    session pulls and runs it again.
 4. It pushes the commit to `notes/<topic>`, opens the pull request and switches on auto-merge. Then it waits until the
-   pull request is merged. If main moves first, which strict refuses, it brings the branch up to date and waits again.
-   It ends with the merge or with a conflict it names. A session runs it in the background.
+   pull request is merged, and ends with the merge or with a conflict it names. A session runs it in the background.
 5. It puts the files in the checkout back to its commit. They come back with main: the main clone gets them with
    `git pull --ff-only`, a code branch with its next rebase. Git refuses to fast-forward over a working tree that holds
    the same edit uncommitted (tried on 2026-11-01). The edits left in place would block the main clone's next pull.
@@ -345,13 +347,14 @@ cache become text:
 | --- | --- | --- | --- | --- |
 | 1 | The scheme and the first number | Semantic versioning from 1.0.0: three numbers, each with a meaning for a project | **0.2.0, and 1.0 once the documentation's entry layer is done**; CalVer (2026.11.0) – says when, not what to do | **0.2.0, 1.0 after D.2** (the owner, 2026-11-01). Added by the owner the same day: the major number is the owner's to release; minor and patch are Claude's; a new rule is a patch; the rest kept simple – minor when a project must act, patch otherwise |
 | 2 | How concepts and TODO.md reach main | **the notes lane**, auto-merge once green | a pull request with the owner's OK, like code; a bypass for the owner, which is one for every session | **the notes lane** (the owner, 2026-11-01) |
-| 3 | When a version is made | on the owner's word, several merges in one | **every merge into main a version of its own**; once a week | **every merge** (the owner, 2026-11-01): numbered by `merge.py` before the merge, the checks strict, a red `version` check before that |
+| 3 | When a version is made | on the owner's word, several merges in one | **every merge into main a version of its own**; once a week | **every merge** (the owner, 2026-11-01): numbered by `merge.py` before the merge, which merges only while main still has the number it numbered from; a red `version` check before that |
 | 4 | The owner's projects | each pins a version in its own repository, and a main channel for live runs | **the newest version, unpinned**; the main channel throughout | **the newest version, unpinned** (the owner, 2026-11-01): no main channel, pinning in the README for whoever wants it, pytree's D-50 its own |
 
 What Claude decided itself, confirmed by the owner on 2026-11-01:
 
 - no approval required;
-- the checks strict (decision 3 makes it necessary);
+- the checks strict (decision 3 makes it necessary) – replaced while building TD-45: not strict, `merge.py` holds the
+  numbers apart ("Not strict" above);
 - merge commits only;
 - no bypass on `main`;
 - the ruleset `main-updates`;
