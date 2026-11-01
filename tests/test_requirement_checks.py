@@ -184,9 +184,11 @@ DERIVED = "names nobody who stated it"
     ('source = "README.md"\nfrom = ["N-1", "USB', 'source = "edakit.toml"\nfrom = ["N-1", "USB',
      "R-1: names nobody who stated it – source names 'edakit.toml'"),
     # without source: from – a requirement or a manual check is nobody
-    ('from = ["N-1"]\nbinding = "must"\nverify = [{ rows = "PATH', 'from = ["R-1", "M-1"]\nbinding = "must"\nverify = [{ rows = "PATH',
+    ('source = "README.md: a diode against reverse polarity"\nfrom = ["N-1"]\nbinding = "must"\nverify = [{ rows = "PATH',
+     'from = ["R-1", "M-1"]\nbinding = "must"\nverify = [{ rows = "PATH',
      "R-2: names nobody who stated it – no source, from names R-1, M-1"),
-    ('from = ["N-1"]\nbinding = "must"\nverify = [{ rows = "PATH', 'binding = "must"\nverify = [{ rows = "PATH',
+    ('source = "README.md: a diode against reverse polarity"\nfrom = ["N-1"]\nbinding = "must"\nverify = [{ rows = "PATH',
+     'binding = "must"\nverify = [{ rows = "PATH',
      "R-2: names nobody who stated it – no source, no from"),
 ])
 def test_derived_a_requirement_names_who_stated_it(project, capsys, old, new, message):
