@@ -85,7 +85,8 @@ assembly preview at JLCPCB.
   SYNC.odb  with a maker of [cart] makers that takes ODB++ (AISLER; fails for the planned maker, warns for another one):
        odb_<board>.zip, exported through the patched easyeda_export_odb, against this run's files – every layer
        (copper, mask, paste, silkscreen) rasterised as GEO.copper and XOR'd with its Gerber layer, no spot above
-       SPOT_MM2 and no layer in one only; the drill hits = the drill files (1 µm, diameter, plated or not); the profile
+       SPOT_MM2 beyond an edge one raster point off (ODB_EDGE_STEPS: the ODB++'s coarser coordinates) and no layer
+       in one only; the drill hits = the drill files (1 µm, diameter, plated or not); the profile
        = the Gerber outline; every BOM part once at the CPL's place, rotation (ODB++ clockwise) and side with its part
        number, a part with bom: false as the maker's dnp says; the nets of the pins as the graph's, compared as groups
   FILES.order  with [order] or [cart], per maker of [cart] makers (fails for the planned maker, warns for another one):
@@ -1654,6 +1655,7 @@ def check_cpl(cfg, board, design, d, ours, rows):
 ODB_POS_MM = 0.01            # SYNC.odb: a part's place against the CPL
 ODB_HOLE_MM = 0.001          # SYNC.odb: a drill hit's place and diameter against the drill files
 ODB_PROFILE_MM = 0.05        # SYNC.odb: the profile against the Gerber outline (Hausdorff distance)
+ODB_EDGE_STEPS = 1           # SYNC.odb: an edge this many raster points off is the ODB++'s coarser coordinates (5.10)
 ROLES = (("TopLayer", ("copper", "top")), ("BottomLayer", ("copper", "bottom")), ("TopSolderMask", ("mask", "top")),
          ("BottomSolderMask", ("mask", "bottom")), ("TopSilkscreen", ("silk", "top")),
          ("BottomSilkscreen", ("silk", "bottom")), ("TopPaste", ("paste", "top")), ("BottomPaste", ("paste", "bottom")))
@@ -1731,8 +1733,8 @@ def check_odb(cfg, board, design, d, rows):
             bad.append(f"{f.name}: no layer of the ODB++ is the {' '.join(role) if role else 'same'}")
             continue
         seen.add(lay.name)
-        xor = r.render(gerber.parse_gerber(f)) ^ odb.render(r, lay.features)
-        found = [s for s in spots(xor, r) if s[0] >= SPOT_MM2]
+        found = [s for s in spots(beyond_edge(r.render(gerber.parse_gerber(f)), odb.render(r, lay.features)), r)
+                 if s[0] >= SPOT_MM2]
         if found:
             a, (x0, x1, y0, y1) = found[0]
             bad.append(f"{f.name} ≠ {lay.name}: {len(found)} spots, the largest {a:.3f} mm² at ({(x0 + x1) / 2:.2f}, "
@@ -1766,6 +1768,18 @@ def check_odb(cfg, board, design, d, rows):
 
     check_odb_parts(cfg, board, design, d, job, m, add)
     check_odb_nets(design, board, job, add)
+
+
+def beyond_edge(a, b, steps=ODB_EDGE_STEPS):
+    """What differs between two rasters of a layer by more than an edge moved steps raster points: a point of one
+    farther than that from the other. The ODB++ is written with coarser coordinates than the Gerber files (kicad-cli:
+    0.1 µm against 1 nm), and along a long straight edge that flips one row of the raster."""
+    import numpy as np
+    from scipy import ndimage
+    grow = np.ones((3, 3), dtype=bool)
+    near_a = ndimage.binary_dilation(a, grow, iterations=steps)
+    near_b = ndimage.binary_dilation(b, grow, iterations=steps)
+    return (a & ~near_b) | (b & ~near_a)
 
 
 def mm_value(v):

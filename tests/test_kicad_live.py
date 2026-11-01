@@ -102,8 +102,6 @@ def test_the_exports_are_what_the_checks_read(project):
     assert len(cu.pins) == sum(len(c["pads"]) for c in data["components"])
 
 
-@pytest.mark.xfail(strict=True, reason="TODO 5.10: kicad-cli's ODB++ differs from its own Gerber files – on the LCSC "
-                   "footprints (LT-9) at SW1's pads, 4 spots of 0.016 mm² at (77.51, 26.85)")
 def test_kicad_odb_is_read_and_equals_the_runs_files(project):
     """kicad-cli's ODB++ for a maker that takes it (AISLER): edakit's reader takes it, and SYNC.odb finds it equal to
     the Gerber, drill, BOM and CPL files of the same run – layers, holes, profile, parts and nets."""

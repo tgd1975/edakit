@@ -49,9 +49,9 @@ run against a maker's page or EasyEDA yet.
       every check passed, into the cart, order record written, nothing ordered.
 - [ ] **5.8:** Eurocircuits live – stopped, as it must, at "Board thickness": 1.6 mm is not among Eurocircuits'
       thicknesses (1.55 is its standard). Again with a board of a thickness it makes, or the owner's word on 1.55.
-- [ ] **5.10:** AISLER live – the release's SYNC.odb warns: kicad-cli's ODB++ of the blinker differs from its Gerber
-      files on the bottom silkscreen (1.06 mm² at 27.27, 1.57) and the top copper (0.05 mm² at 40.96, 17.53); find why,
-      then the run.
+- [ ] **5.10:** AISLER live in Chrome. SYNC.odb's warning on the blinker was SYNC.odb's own: kicad-cli writes ODB++
+      coordinates to 0.1 µm, the Gerber to 1 nm, and one raster row flipped along long straight edges – an edge one
+      raster point off is rounding now (2026-11-01), the release's ODB++ equal on every layer. Left: the run.
 
 ### Needs the makers
 

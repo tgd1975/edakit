@@ -13,7 +13,7 @@ import zipfile
 import pytest
 
 import test_fab_run as fr
-from edakit import odb
+from edakit import gerber, odb
 from edakit.release import fab
 
 UM = 1000            # symbols of an MM file are in microns
@@ -229,3 +229,22 @@ def test_a_part_left_in_against_the_makers_dnp_fails(project, tmp_path):
     rows = run(project, cart=f'[cart]\nmaker = "odbmaker"\nprofiles = {{ odbmaker = {json.dumps(str(own))} }}')
     bad = [a for r, c, a in f7(rows) if r == "fail"]
     assert bad == ["J1: bom: false, but in the ODB++ – ODB maker would place it"]
+
+
+def shifted(mm):
+    """Every line of the ODB++'s top copper and top silkscreen moved up by mm."""
+    def change(job):
+        for name in ("top", "top_silk"):
+            job["layers"][name] = [[i[0], i[1], [(x, y + mm) for x, y in i[2]], *i[3:]] if i[0] == "draw" else i
+                                   for i in job["layers"][name]]
+    return change
+
+
+def test_an_edge_one_raster_step_off_is_rounding(project):
+    """5.10 (the 555 blinker's live run, 2026-11-01): kicad-cli writes ODB++ coordinates to 0.1 µm, the Gerber files to
+    1 nm – a track at y 17.400016 in the Gerber is at 17.4 in the ODB++, and along a long straight edge one row of the
+    raster (gerber.RES) flips: 1.06 mm² of "difference" on a 53 mm silkscreen line. An edge one raster step off is
+    rounding; a line moved by 0.1 mm is not."""
+    assert f7(run(project, shifted(gerber.RES)))[0][0] == "pass"
+    bad = f7(run(project, shifted(0.1)))[0]
+    assert bad[0] == "fail" and "Gerber_TopLayer.GTL ≠ top: " in bad[2] and "Gerber_TopSilkscreenLayer.GTO ≠ top_silk" in bad[2]
