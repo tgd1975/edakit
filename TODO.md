@@ -147,25 +147,19 @@ sources, data and code untouched; a text that is generated or used elsewhere sta
       picks (needs the owner – the repository stays private); a later project's page once it has a result with edakit,
       nothing planned on the gallery; the style guide's project page and `test_style.py` follow.
 
-## Getting edakit known ([outreach.md](docs/concepts/new/outreach.md))
-
-K.2, K.3 and K.9 in implementation since 2026-11-01, as one branch `outreach-k2-k3-k9`, a commit each, one pull
-request. The concept's other steps stay in its table until the launch is implemented – a concept's steps come here
-only once they are built (the owner, 2026-11-01).
-
-- [ ] TD-71 - **K.2** Ready for Anthropic's plugin directory: the README section on what edakit runs, sends and fetches
-      (Freerouting, easyeda-mcp-pro, JLCPCB, datasheets, `gh`, Claude in Chrome, the settings new-project writes, the
-      two hooks); the texts of decision 5 in `plugin.json` and `marketplace.json`, `plugin.json` without a version
-      (versioning.md) – which settles the plugin's text of TD-34.
-- [ ] TD-72 - **K.3** The issue forms – bug with `edakit --version` and `edakit doctor`, question, "built with edakit" –
-      and the line on how issues are answered.
-- [ ] TD-78 - **K.9** "Released with edakit X.Y.Z" in the GitHub release of `edakit release publish`, on by default, a
-      key to turn it off (decision 3).
-
 ## Closed todos
 
 Done or dropped, newest first, each with its date and the commit that closed it. What closed before 2026-11-01 is
 taken from the history of this file; an item rewritten on its way is listed once, in its last form.
+
+- [x] TD-78 - **K.9** "Released with edakit X.Y.Z" as the last line of the notes of `edakit release publish`, linked to
+      that version; `[release] publish.credit = false` leaves it out – merged as edakit 0.4.8 (#154, 08a6951).
+      [2026-11-01]
+- [x] TD-72 - **K.3** The issue forms – bug, question, "built with edakit" with the label `gallery` – and "Questions
+      and bugs" in the README; merged as edakit 0.4.8 (#154, 08a6951). [2026-11-01]
+- [x] TD-71 - **K.2** The README's "What it runs, sends, fetches" and the texts of decision 5 in `plugin.json` and
+      `marketplace.json`, `plugin.json` without a version; merged as edakit 0.4.8 (#154, 08a6951) – the plugin's text
+      of TD-34 settled. [2026-11-01]
 
 - [x] TD-47 - **V.4** main protected: the rulesets main, main-updates and tags and the merge settings as files in
   `.github/rulesets/` (#119), applied with `.github/rulesets.py apply` on the owner's word once everything in flight had
