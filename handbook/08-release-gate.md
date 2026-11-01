@@ -430,8 +430,12 @@ run draws the schematic of every board but a bought one – the drawing of `edak
 block and style included –; a run with stage F draws each made board from its own Gerber and drill files: as made,
 top and bottom (the bottom seen from below, mirrored) in the colours of the run's order settings – solder mask,
 silkscreen, the finish on open copper (ENIG gold, a HASL silver), copper under the mask a shade of the mask, FR-4
-where the mask is open over no copper; without `[order]` edakit's defaults, green, white, HASL –, then every layer and
-drill file the maker builds from on its own, as the file draws it. The board's SVG is at scale, 1 mm on paper for
+where the mask is open over no copper; without `[order]` edakit's defaults, green, white, HASL –, then all layers
+over each other, seen from above, in the colours of the EasyEDA editor (`board_<board>_layers`): on black, bottom
+silkscreen, bottom copper and top copper, each letting what lies under it show through – a bottom track under a top
+pour shows as a darker track –, the through-hole pads grey (the pieces of top copper open in the top mask that hold a
+plated hole; a tented via is no pad), the top silkscreen, the holes and the outline; then every layer and drill file
+the maker builds from on its own, as the file draws it. The board's SVG is at scale, 1 mm on paper for
 1 mm of board; its PNG has 40 pixels a millimetre (at most 4000 on the longer side), the schematic's 300 dpi.
 Pictures are documentation: in no hash, and one that cannot be drawn is named in section 12 while the gate goes on.
 `pictures/pictures.json` lists them for `release publish` (8.3).
@@ -444,7 +448,7 @@ the simulation's information is in section 7, that of the other stages in sectio
 Result folder `<reports>/<YYYYMMDD-hhmmss>/`: `protocol.md`, `graph_checks.json`, `sim.json`, `schematic_<board>.json`,
 `stage_<id>.txt` per project check (8.1), `fab/<board>/` (Gerber ZIP, BOM, CPL, raw data, with `[order]` or `[cart]`
 the order form `order.md`, with `[order]` the order settings `order.json`), `fab/polarity_<board>.png`,
-`pictures/` (section 12: `schematic_<board>`, `board_<board>_top`, `_bottom` and `_<layer>`, each `.svg` and `.png`),
+`pictures/` (section 12: `schematic_<board>`, `board_<board>_top`, `_bottom`, `_layers` and `_<layer>`, each `.svg` and `.png`),
 `fab/manifest.json` and `makers.json` – per maker of `[cart] makers` its role and the findings of its checks, which
 `edakit cart prepare` reads (8.4).
 
