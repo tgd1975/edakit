@@ -2182,7 +2182,8 @@ def main(cfg, args):
         rules.hand = hand_soldered(load_graph(cfg.graph), board.name)
     P = paths(cfg, board)
     passes = args.passes or rules.passes
-    steps = {"all": ["read", "dsn", "route", "check", "apply", "pours", "reload", "drc"]}.get(args.action, [args.action])
+    reload = ["reload"] if drc_rules.mode(board) == "write" else []    # else only when the DRC asks (E-7)
+    steps = {"all": ["read", "dsn", "route", "check", "apply", "pours", *reload, "drc"]}.get(args.action, [args.action])
     if board.routing.get("widths") == "sim" and {"dsn", "route", "check", "diagnose"} & set(steps):
         sim_widths(cfg, board, rules)
     mcp = None
@@ -2311,7 +2312,7 @@ def main(cfg, args):
                 if code:
                     return code
             elif step == "drc":
-                found = eda.drc(mcp, P["drc"])
+                found = eda.drc_reloading(mcp, P["drc"], say=say)
                 P["netlist_diff"].unlink(missing_ok=True)
                 code = pcb.drc_report(cfg, board, mcp, found, P["netlist_diff"], say=say)
                 if code:

@@ -674,7 +674,7 @@ def check(cfg, board, mcp, footprint_silk=None, step=None):
         print(f"  {side}: silkscreen on mask openings {hit:.3f} mm² (target 0), picture -> {img}")
         bad += hit > 0.001
     step("DRC")
-    code = pcb.drc_report(cfg, board, mcp, eda.drc(mcp))
+    code = pcb.drc_report(cfg, board, mcp, eda.drc_reloading(mcp))
     return 2 if bad else code
 
 

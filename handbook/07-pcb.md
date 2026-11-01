@@ -18,7 +18,7 @@ edakit pcb plan              # offline: check the plan, preview PNG, net classes
 edakit pcb place --write     # offline: decoupling capacitors, pull and series resistors next to their host
 edakit pcb apply             # outline, holes, tooling holes, fixed parts locked; pads verified
 edakit pcb autolayout        # the parts without a row; once they stand still, their rows into [place]
-edakit route all             # Freerouting -> EasyEDA, pours, reload, DRC (exit 0 = DRC 0)
+edakit route all             # Freerouting -> EasyEDA, pours, DRC (exit 0 = DRC 0)
 edakit silk apply            # designators where there is room, silkscreen check on the Gerber, DRC
 ```
 
@@ -422,7 +422,7 @@ bridge cannot pass. edakit writes the Specctra DSN itself from pads and outline 
 headless, reads the SES, and creates every track and via through the API.
 
 `edakit route all`, steps: read → dsn → route → check (up to `attempts` times with a reshuffled DSN) → apply → pours →
-reload → drc. About 3–7 minutes for 120 parts.
+(reload, only with `[routing] drc_rules = "write"`) → drc. About 3–7 minutes for 120 parts.
 
 Rules in the board file:
 
@@ -662,8 +662,9 @@ coinciding ends), pieces are split at T junctions, straight continuations merged
 inside a via dropped. Afterwards a **geometric** comparison plan ↔ PCB (counting is no check because EasyEDA merges),
 and anything unplanned is deleted – old tracks have come back after a reload before.
 
-**DRC only after reload:** right after API changes the DRC reported 320 false connection errors; saved and reloaded:
-0. `route all` saves, closes and reopens the PCB before its DRC.
+**Reload when the DRC asks:** right after API changes the DRC once reported 320 false connection errors; saved and
+reloaded: 0. On 3.2.209 not seen (E-7) – `route all`, `silk apply` and the gate run the DRC at once and save, close and
+reopen the PCB only when it reports Connection Errors, then run it once more.
 
 **Import Changes.** After parts were placed in the schematic, EasyEDA's DRC reports "Netlist Error – Import
 Changes" until its import view has been opened once – also when schematic and PCB are equal. `route drc` (and
