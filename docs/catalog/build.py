@@ -561,7 +561,8 @@ def nav(current, sub=()):
     """The catalog's pages, the same on each: current marked, under it sub – [(href, label, is it this page)]."""
     def item(f, title, label=None):
         here = f == current
-        inner = "".join(f'<li><a href="{h}"{" aria-current=\"page\"" if c else ""}>{escape(t)}</a></li>'
+        current_attr = ' aria-current="page"'
+        inner = "".join(f'<li><a href="{h}"{current_attr if c else ""}>{escape(t)}</a></li>'
                         for h, t, c in sub) if here and sub else ""
         mark = ' aria-current="page"' if here and not any(c for *_, c in sub) else ""
         return (f'<li><a href="{f}"{mark} title="{escape(title)}">{escape(label or title)}</a>'
