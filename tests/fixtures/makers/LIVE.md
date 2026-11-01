@@ -12,7 +12,15 @@ quote_page.txt), edakit cart check (check.md), the regulatory review at the orde
 - 5.12 PCBWay: every check passed, "Save to Cart" after the owner's "Agree", the files uploaded in the cart (not
   submitted for review), order record written. Found: no part matching before the cart, files only after it, a cart
   line named by the board's size, a tick "change HASL to ENIG at our discretion".
-- 5.8 Eurocircuits: stopped, as the skill must, at "Board thickness" – 1.6 mm is not among Eurocircuits' thicknesses.
+- 5.8 Eurocircuits: the first try stopped, as the skill must, at "Board thickness" – 1.6 mm is not among
+  Eurocircuits' thicknesses. Again on the owner's word with 1.55 mm in the copy and Eurocircuits its only maker (M-5
+  signed anew for the fab hash); the second try's BOM import took "Comment" for the part number and left "MPN"
+  unmapped (first_try.md) – edakit's header fixed, released again (run 20261101-101815). Then every check passed,
+  "Add to basket" after the owner's "Accept the Eurocircuits Terms of Sales", basket line B5490623 read back, order
+  record written. Found: the configurator quotes gross (20 % VAT of the ship-to country), the basket line net with
+  the VAT apart (cart.json `vat`); after BOM and CPL the tick "Include Assembly Service" is empty again; the
+  Assembly Editor marks Q1 (SOT-23 drawn turned by 90°), C3 and R3 "footprint does not match the board layout"
+  and the PCBA tab "Data conflicts" – M-2's, in the basket; four parts On Demand without a price.
 - 5.10 AISLER: SYNC.odb's two spots were its own rounding (fixed). The first try (aisler/live_2026-11-01/first_try.md)
   stopped at the parts: the ODB++ carried LCSC numbers only, and AISLER matches by MPN – one part of ten assigned.
   The second (run 20261101-084718, with MPN and Manufacturer in the footprints; job, quote, page text and check in

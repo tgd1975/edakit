@@ -93,6 +93,13 @@ assign the line with the job's MPN and the release's manufacturer, never another
 the project's address with `/checkout`): open it by that address – never by the buttons "Checkout" or "Checkout
 now" –, set and read back the fields and the price there, and stop before "Continue to Checkout".
 
+**Eurocircuits** (live run 5.8, 2026-11-01): the upload's dropzones are hidden file inputs – give the one of the
+dropzone an aria-label to reach it. Ticking "Check to Include Assembly Service" opens the BOM import; once BOM and
+CPL are in, the tick is empty again – tick it once more, or Summary leaves Assembly and Components out of the price.
+The CPL opens the Assembly Editor: read each part's status there ("No issues detected", "The component footprint does
+not match the board layout") into `notes`, change nothing, and "Apply". The PCBA tab's red flag ("Data conflicts") is
+reported, not solved – turning a part is M-2's.
+
 Rules: one field at a time, read back after each; a field you cannot find, or a value the form does not offer, stops
 with the field's name – no guessing, no nearby option; a dialog the job does not explain (DFM warning, part
 replacement) is reported, not answered.
@@ -117,8 +124,8 @@ text):
 `fields`: every field the page shows, with its label and value as shown. `mark` of a part line: empty, or the
 maker's word for it. `kind` of a price line: `pcb`, `fee` (each assembly fee), `parts`, `shipping`, `vat`, `coupon`,
 `total`. `quote_page.txt`: the page text of the form, the matching and the quote, as read. `cart.json`:
-`{"name": "<what the cart line names>", "quantity": 5, "price": 23.45, "currency": "USD"}`. No address, no account
-data, no payment detail in any of them.
+`{"name": "<what the cart line names>", "quantity": 5, "price": 23.45, "currency": "USD"}`, with `"vat"` where the
+line shows its VAT apart from the price (Eurocircuits). No address, no account data, no payment detail in any of them.
 
 ## The real cost, after the owner paid
 

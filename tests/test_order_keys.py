@@ -516,10 +516,23 @@ def test_the_bom_with_mpn_for_a_maker_that_takes_it(project):
     d = project.root / "build" / "fab" / "main"
     with open(d / "bom_main_mpn.csv", newline="") as f:
         rows = list(csv.reader(f))
-    assert rows == [["Designator", "Quantity", "Manufacturer", "MPN", "Comment"],
-                    ["C2", "1", "SAMSUNG(三星)", "CL21A226MAQNNNE", "22uF"], ["D1", "1", "MDD(辰达半导体)", "SS34", "SS34"]]
+    assert rows == [["Designator", "Quantity", "Value", "Package", "Manufacturer", "Manufacturer Part Number"],
+                    ["C2", "1", "22uF", "C0805", "SAMSUNG(三星)", "CL21A226MAQNNNE"],
+                    ["D1", "1", "SS34", "SMA_L4.3-W2.6-LS5.2-RD", "MDD(辰达半导体)", "SS34"]]
     run(project, lambda ex, p: toml(p, '[cart]\nmakers = ["jlcpcb"]'))
     assert not (d / "bom_main_mpn.csv").exists()
+
+
+def test_one_bom_with_mpn_serves_every_maker_that_takes_it():
+    """Live run 5.8 (2026-11-01): Eurocircuits' import left a column "MPN" unmapped and took "Comment" for the part
+    number – C1 became a foam adhesive, R2 a battery holder. bom_<b>_mpn.csv is one file for every maker of [cart]
+    makers, so they share the header Eurocircuits maps by itself."""
+    from edakit.release.fab import MPN_COLUMNS
+    takers = [m for m in map(makers.load, makers.shipped()) if "bom_mpn" in m.files]
+    assert {m.key for m in takers} >= {"pcbway", "eurocircuits"}
+    for m in takers:
+        assert m.data["bom"]["columns"] == MPN_COLUMNS, m.key
+    assert "MPN" not in MPN_COLUMNS and "Comment" not in MPN_COLUMNS
 
 
 def test_pcbway_has_a_placeholder_of_its_own(project):

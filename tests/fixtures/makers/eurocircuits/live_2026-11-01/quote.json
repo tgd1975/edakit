@@ -1,0 +1,370 @@
+{
+ "maker": "eurocircuits",
+ "read": "2026-11-01T10:40:00+01:00",
+ "fields": [
+  {
+   "label": "Select a Service",
+   "value": "PCB proto"
+  },
+  {
+   "label": "Unit",
+   "value": "mm"
+  },
+  {
+   "label": "Number of layers",
+   "value": "2"
+  },
+  {
+   "label": "PCB size",
+   "value": "60.00 x 28.00 mm"
+  },
+  {
+   "label": "Delivery format",
+   "value": "Single PCB"
+  },
+  {
+   "label": "Top stencil",
+   "value": "No"
+  },
+  {
+   "label": "Bottom stencil",
+   "value": "No"
+  },
+  {
+   "label": "Base material",
+   "value": "FR-4 Improved"
+  },
+  {
+   "label": "Board thickness",
+   "value": "1.55 mm"
+  },
+  {
+   "label": "Material Tg",
+   "value": "145-150 ºC"
+  },
+  {
+   "label": "Outer layer copper foil",
+   "value": "18 µm (end +/-35 µm)"
+  },
+  {
+   "label": "Blind/Buried via runs",
+   "value": "0"
+  },
+  {
+   "label": "Top soldermask",
+   "value": "Green"
+  },
+  {
+   "label": "Bottom soldermask",
+   "value": "Green"
+  },
+  {
+   "label": "Top legend",
+   "value": "White"
+  },
+  {
+   "label": "Bottom legend",
+   "value": "White"
+  },
+  {
+   "label": "Surface finish",
+   "value": "HAL Lead-free"
+  },
+  {
+   "label": "Bare Board Testing",
+   "value": "Yes"
+  },
+  {
+   "label": "Outer layer trackwidth (OL-TW)",
+   "value": "0.150 mm"
+  },
+  {
+   "label": "Outer layer isolation distance (OL-TT-TP-PP)",
+   "value": "0.150 mm"
+  },
+  {
+   "label": "Outer layer annular ring (OAR)",
+   "value": "0.125 mm"
+  },
+  {
+   "label": "Smallest final hole",
+   "value": "0.25 mm"
+  },
+  {
+   "label": "Holes <= may be reduced",
+   "value": "0.45 mm"
+  },
+  {
+   "label": "Hole density",
+   "value": "< 1000/dm²"
+  },
+  {
+   "label": "Component pad pitch",
+   "value": "0.50 mm"
+  },
+  {
+   "label": "Technology class",
+   "value": "6C"
+  },
+  {
+   "label": "Peelable mask",
+   "value": "No"
+  },
+  {
+   "label": "Carbon contacts",
+   "value": "No"
+  },
+  {
+   "label": "UL marking",
+   "value": "No"
+  },
+  {
+   "label": "Specific marking",
+   "value": "No"
+  },
+  {
+   "label": "Milling",
+   "value": "No"
+  },
+  {
+   "label": "Specific hole tolerances",
+   "value": "No"
+  },
+  {
+   "label": "Specific dimension tolerances",
+   "value": "No"
+  },
+  {
+   "label": "PTH on the board edge",
+   "value": "No"
+  },
+  {
+   "label": "Round-edge plating",
+   "value": "No"
+  },
+  {
+   "label": "Press-fit holes",
+   "value": "No"
+  },
+  {
+   "label": "Depth routing",
+   "value": "No"
+  },
+  {
+   "label": "Chamfered holes",
+   "value": "No"
+  },
+  {
+   "label": "Copper up to board edge",
+   "value": "No"
+  },
+  {
+   "label": "Edge connector gold surface mm²",
+   "value": "0"
+  },
+  {
+   "label": "Edge connector bevelling",
+   "value": "No"
+  },
+  {
+   "label": "Top heatsink paste",
+   "value": "No"
+  },
+  {
+   "label": "Bottom heatsink paste",
+   "value": "No"
+  },
+  {
+   "label": "Package quantity",
+   "value": "Standard"
+  },
+  {
+   "label": "Via filling/Hole plugging",
+   "value": "No"
+  },
+  {
+   "label": "Wire bonding",
+   "value": "No"
+  },
+  {
+   "label": "High-Voltage board",
+   "value": "No"
+  },
+  {
+   "label": "PCB quantity",
+   "value": "5"
+  },
+  {
+   "label": "Total lead time",
+   "value": "Proposed (6 working days)"
+  },
+  {
+   "label": "Special assembly requirements",
+   "value": "No"
+  },
+  {
+   "label": "Automotive required",
+   "value": "No"
+  },
+  {
+   "label": "Do not assemble all PCBs",
+   "value": "not ticked"
+  },
+  {
+   "label": "PCB Name",
+   "value": "gerber_main"
+  },
+  {
+   "label": "Purchase reference",
+   "value": ""
+  },
+  {
+   "label": "Project reference",
+   "value": ""
+  },
+  {
+   "label": "Article reference",
+   "value": ""
+  },
+  {
+   "label": "SMS notification",
+   "value": ""
+  },
+  {
+   "label": "Require Pre-Production Approval",
+   "value": "ticked"
+  },
+  {
+   "label": "Accept the Eurocircuits Terms of Sales",
+   "value": "not ticked"
+  }
+ ],
+ "files": [
+  {
+   "name": "gerber_main.zip"
+  },
+  {
+   "name": "bom_main_mpn.csv"
+  },
+  {
+   "name": "cpl_main.csv"
+  }
+ ],
+ "parts": [
+  {
+   "part": "CC0805KRX7R9BB104",
+   "designators": [
+    "C1"
+   ],
+   "mark": ""
+  },
+  {
+   "part": "CL21B105KBFNNNE",
+   "designators": [
+    "C2",
+    "C4"
+   ],
+   "mark": ""
+  },
+  {
+   "part": "CL21B103KBANNNC",
+   "designators": [
+    "C3"
+   ],
+   "mark": ""
+  },
+  {
+   "part": "APTD2012LSURCK",
+   "designators": [
+    "D1"
+   ],
+   "mark": ""
+  },
+  {
+   "part": "AO3415A",
+   "designators": [
+    "Q1"
+   ],
+   "mark": ""
+  },
+  {
+   "part": "0805W8F7503T5E",
+   "designators": [
+    "R1"
+   ],
+   "mark": ""
+  },
+  {
+   "part": "0805W8F2000T5E",
+   "designators": [
+    "R2"
+   ],
+   "mark": ""
+  },
+  {
+   "part": "0805W8F1002T5E",
+   "designators": [
+    "R3"
+   ],
+   "mark": ""
+  },
+  {
+   "part": "LMC555CMX/NOPB",
+   "designators": [
+    "U1"
+   ],
+   "mark": ""
+  }
+ ],
+ "dnp": [],
+ "prices": [
+  {
+   "label": "PCB, 5 (gross)",
+   "amount": 82.26,
+   "kind": "pcb"
+  },
+  {
+   "label": "Assembly, 5 (gross)",
+   "amount": 220.68,
+   "kind": "fee"
+  },
+  {
+   "label": "Components (Incomplete, gross)",
+   "amount": 23.82,
+   "kind": "parts"
+  },
+  {
+   "label": "VAT 20 % in the PCB line",
+   "amount": 13.71,
+   "kind": "vat"
+  },
+  {
+   "label": "VAT 20 % in the Assembly line",
+   "amount": 36.78,
+   "kind": "vat"
+  },
+  {
+   "label": "VAT 20 % in the Components line",
+   "amount": 3.97,
+   "kind": "vat"
+  },
+  {
+   "label": "Total (Incomplete)",
+   "amount": 326.76,
+   "kind": "total"
+  }
+ ],
+ "currency": "EUR",
+ "lead_time": "Proposed (6 working days)",
+ "notes": [
+  "Prices are gross with 20 % VAT (Austria) included; net: PCB 13.71 per board (68.55 for 5), assembly 36.78 per board, components 19.85",
+  "Components (Incomplete): 4 lines with no price info – C2,C4 CL21B105KBFNNNE, R1 0805W8F7503T5E, R2 0805W8F2000T5E, R3 0805W8F1002T5E; all 9 lines On Demand, supplied by Assembler",
+  "Manufacturers as Eurocircuits names them, the release's MPN on every line: Yageo, Samsung, Samsung Electro-Mechanics, Kingbright, Alpha & Omega Semiconductor, UNI-ROYAL, Royal Ohm, Uniroyal Elec, Texas Instruments",
+  "Assembly Editor (CPL): Q1, C3 and R3 'The component footprint does not match the board layout' – Q1's SOT-23 drawn turned by 90° against the board's pads; the other seven 'No issues detected'; U1, D1, Q1 'No data available to check pin 1 location'. Nothing changed, Apply – for M-2 in the basket",
+  "PCBA tab flag: 'There are Data conflicts - Please review and solve.' – reported, not solved",
+  "Measured values warning after the upload: PCB width 60.00 mm, height 28.00 mm applied – closed with OK",
+  "Shipping: Express transport '-' – chosen at checkout, the owner's",
+  "'Accept the Eurocircuits Terms of Sales' not ticked; 'Require Pre-Production Approval' ticked by Eurocircuits",
+  "First try in the same session (run 20261101-095338): the BOM with a column 'MPN' – Eurocircuits mapped 'Comment' as the part number (C1 a foam adhesive, R2 a battery holder, 5 unidentified); edakit's header fixed, released again (fab hash the same), the configurator started anew"
+ ]
+}
