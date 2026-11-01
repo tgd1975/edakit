@@ -29,10 +29,6 @@ to touch.
 
 ## For the owner
 
-- [ ] TD-90 - **OK for #184:** https://github.com/tgd1975/edakit/pull/184 – issues by others: `wrap.yml` wraps
-      their texts, sealed and numbered, and the owner's comment starting with `review`, `accept` or `reject` is the
-      only answer that starts anything there (decisions 7 to 9 of `docs/concepts/done/proposals-pipeline.md`); with
-      the OK the session merges it with `python3 .github/merge.py 184`. *(edakit-60)*
 - [ ] TD-81 - **Review the documentation as built:** `docs/concepts/new/documentation-assumptions.md` and the chapters'
       reviews in `docs/concepts/new/documentation-review/` (#174) – every judgement call of that evening, among them
       the strict rule that kept the chapters from a third fewer words; then the concept moves to `done/`, and 1.0.0
@@ -102,6 +98,9 @@ Noted in the walkthrough's last section until 2026-11-01; each is edakit's to bu
 Done or dropped, newest first, each with its date and the commit that closed it. What closed before 2026-11-01 is
 taken from the history of this file; an item rewritten on its way is listed once, in its last form.
 
+- [x] TD-90 - **OK for #184:** given; merged as edakit 0.4.16 (#184, feac91e) – issues by others: `wrap.yml` wraps
+  their texts, sealed and numbered, the owner answers with `review`, `accept` or `reject`; `wrap.yml` run by hand on
+  #153 posted nothing, as it should on the owner's own issue. *(edakit-60)* [2026-11-01]
 - [x] TD-80 - **E-17 and M-10 upstream:** posted on the owner's word – E-17 as easyeda-api-sdk #52, M-10 as
   easyeda-mcp-pro #818 with the fix #819 from the fork's `fix/rebuild-copper-batch-reconcile`, only a net's pours in
   one call – a refill left out on the owner's word (#172). *(edakit-ce)* [2026-11-01]
