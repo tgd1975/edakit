@@ -7,6 +7,11 @@ written once, by `.github/merge.py`, from the fragments in [changes/](changes/RE
 [versioning.md](docs/concepts/done/versioning.md). Update with `claude plugin marketplace update edakit && claude plugin
 update edakit@edakit`, then `/reload-plugins` or a new session; `edakit --version` names the version that runs.
 
+## 0.4.15 – 2026-11-01
+
+- The walkthroughs end with their story: what the coin-cell board and the 555 blinker changed in edakit is chapter 13's
+  13.9 and 13.10 now; pytree's page in the gallery shows its board and schematic.
+
 ## 0.4.14 – 2026-11-01
 
 - The documentation by reader (docs/concepts/new/documentation.md, steps D.2 to D.9): a start page of one screen,
