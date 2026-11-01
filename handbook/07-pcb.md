@@ -684,8 +684,9 @@ wrong.
 `easyeda_pcb_rebuild_copper` per net (status `readback-mismatch` is harmless for the fill). EasyEDA drops every piece of
 a pour that touches no pad of its net: where the pour net has no pad, that side stays bare – it looks the same as a pour
 that was never filled. The gate measures it in the Gerber files (GEO.pour): a copper-free circle above `[copper]
-max_bare_mm` (5 mm) inside the pour outline of a poured layer warns, and so does a copper piece without pad, via or
-hole. Give such an area a net that reaches it – a second pour net with `pour_regions` below, or a pad or via of the pour
+max_bare_mm` (5 mm) inside the pour outline of a poured layer warns, so does a copper-free piece there above
+`max_bare_mm2` (20 mm²) – a long strip between two pin rows, an island walled in by other nets, that the circle misses
+–, and so does a copper piece without pad, via or hole. Give such an area a net that reaches it – a second pour net with `pour_regions` below, or a pad or via of the pour
 net. With `stitch = "BOTTOM"` edakit fills once keeping islands, puts a via into every loose island on that side where
 it overlaps the pour of the other side (with clearance), then fills again without islands.
 
