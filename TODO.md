@@ -6,7 +6,11 @@ name; this list is what is left to do of them, in the order it can be done. An i
 date and the commit that does it and moves to [Closed todos](#closed-todos) at the end, newest first – by whichever
 session learns it; one that is dropped says so. No item is deleted. Every item, in every section, open or closed, is a
 line with a checkbox and an ID `TD-<n>` unique in this file, counted up and never reused; who adds an item takes the
-next free ID and counts it up here. Next free ID: TD-36.
+next free ID and counts it up here. Next free ID: TD-36. A heading groups open items; once none is left under it,
+the heading and its text go. What only the owner can do – an account, a payment, an OK, hardware in hand, a click in
+Claude Code – goes into a section "For the owner" at the top, opened when there is one, one line each
+(`- [ ] TD-<n> **What:** command or link – why. *(session)*`); an item further down that waits for the owner stays
+where its step is.
 
 **Taking an item.** Several sessions work on edakit at once. Before a session starts an item, it lists the others
 (`ListAgents`, `git worktree list`), asks each running edakit session which item it holds, and takes one that nobody
@@ -15,21 +19,6 @@ another (W.4 after W.2) is agreed with the session holding that one and merged a
 its own beside the main clone, named for it (`../edakit-w4`, branch `wired-w4`), so `git worktree list` shows who
 holds what; the main clone belongs to whoever has it checked out, and its uncommitted changes are not anyone else's
 to touch.
-
-## For the owner
-
-What only the owner can do – an account, a payment, an OK, hardware in hand, a click in Claude Code –, one line each
-(`- [ ] TD-<n> **What:** command or link – why. *(session)*`), ticked off at once with the date and moved to
-[Closed todos](#closed-todos). The items further down that wait for the owner stay where their step is.
-
-Nothing open.
-
-## Ordering at the manufacturer (phase 5, [ordering.md](docs/concepts/done/ordering.md))
-
-Built offline and tested on recorded data on 2026-10-30, merged into main the same day: the order form as keys, the
-makers' profiles (JLCPCB, PCBWay, Eurocircuits, AISLER), the checks per maker, `edakit cart fields|prepare|check|
-actual` with B-1 to B-7, the order record, the skill cart, the review at the order, ODB++ with F-7. Run live at the
-four makers on 2026-10-31 and 2026-11-01, into the cart and nothing ordered ([LIVE.md](tests/fixtures/makers/LIVE.md)).
 
 ## What edakit needs from EasyEDA Pro and easyeda-mcp-pro ([upstream/README.md](upstream/README.md))
 
