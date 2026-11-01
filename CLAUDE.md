@@ -25,7 +25,7 @@ A requirements file covers the circuit only; what firmware and mechanics must do
   written against an older main is checked against the current one first. It gets there through the notes lane, and
   so does every change of TODO.md, a ticked todo included: `python3 .github/notes.py "<message>" <files…>`, from any
   worktree on any branch, in the background – it lands the session's own edits on the newest main without an OK and
-  is merged in about five minutes (`docs/concepts/done/versioning.md`).
+  is merged in about a minute (`docs/concepts/done/versioning.md`).
 - **A concept moves on once it is settled.** Decided and built in edakit – what is left being live runs, probes at a
   maker or a project taking it over, each kept in `TODO.md` or the implementation plan –, it moves to
   `docs/concepts/done/`; one the owner rejects moves to `docs/concepts/discarded/`, with the decision in its status

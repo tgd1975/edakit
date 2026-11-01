@@ -9,9 +9,9 @@ From any worktree on any branch; the checkout stays as it is until the merge:
    are applied with a three-way merge onto the newest main, in a temporary index: a TODO.md taken whole from an older
    checkout would undo what other sessions landed meanwhile; an edit of the same lines as one on main stops it,
    naming the file;
-3. the commit goes to notes/<topic>, a pull request is opened, the checks are waited for (about five minutes), and it
-   is merged from the owner's account, so the site is published as after any merge; when main has moved into a
-   conflict, from 2 again;
+3. the commit goes to notes/<topic>, a pull request is opened, the checks are waited for (about a minute: test and
+   kicad skip a change of concepts and TODO.md alone, tests.yml), and it is merged from the owner's account, so the
+   site is published as after any merge; when main has moved into a conflict, from 2 again;
 4. then the files in the checkout go back to its commit – unless they were edited again meanwhile – and come back
    with main: the main clone on main is fast-forwarded here, a code branch gets them with its next rebase.
 
