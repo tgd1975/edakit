@@ -230,6 +230,20 @@ def test_paths_holds_each_branch_family_to_its_paths():
     assert v.check_paths("versioning-v1", [".github/merge.py"], pipeline)[0]
 
 
+@pytest.mark.parametrize("changed, only", [
+    (["TODO.md"], True), (["docs/concepts/new/a.md", "TODO.md"], True), (["docs/concepts/done/b.md"], True),
+    (["TODO.md", "README.md"], False), (["docs/organisation.md"], False), (["edakit/check.py"], False), ([], False)])
+def test_the_lane_skips_the_tests_only_for_concepts_and_todo(changed, only):
+    assert v.lane_only(changed) is only
+
+
+def test_test_and_kicad_run_unless_the_lane_says_otherwise():
+    """Skipped on a notes-only pull request – and run when the job lane failed or did not run (push, dispatch)."""
+    text = (ROOT / ".github" / "workflows" / "tests.yml").read_text()
+    guard = "    needs: lane\n    if: ${{ !cancelled() && needs.lane.outputs.only != 'true' }}\n"
+    assert text.count(guard) == 2 and "python3 .github/versions.py lane HEAD^1 HEAD" in text
+
+
 def test_the_notes_of_a_version_are_its_section(tmp_path, capsys, monkeypatch):
     t = _tree(tmp_path, log=LOG)
     monkeypatch.setattr(v, "ROOT", t)

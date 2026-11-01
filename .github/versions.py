@@ -16,6 +16,8 @@ never running its code.
                                                                  exit 1 on a finding; the first line of the output
                                                                  is the status description for the pull request
     python3 .github/versions.py unnumbered <tag> <rev>           exit 1 when <rev> changes edakit since <tag>
+    python3 .github/versions.py lane <base> <head>               true when <head> changes only the notes lane's
+                                                                 paths – tests.yml then skips test and kicad
 """
 
 import json
@@ -210,6 +212,11 @@ def number_tree(root, main_number, date, major=False):
 
 # --- the checks of a pull request -------------------------------------------------------------------------------
 
+def lane_only(changed):
+    """Nothing but concepts and TODO.md: the tests have nothing to test (the pages' build still checks the links)."""
+    return bool(changed) and all(under(p, LANE) for p in changed)
+
+
 def check_paths(branch, changed, pipeline):
     """(ok, description, details): a branch family held to its paths."""
     if branch.startswith("notes/"):
@@ -305,6 +312,9 @@ def main(argv):
         if stray:
             print(f"changed since {argv[1]} without a version – merge through .github/merge.py:", *stray, sep="\n  ")
             return 1
+        return 0
+    if argv[:1] == ["lane"] and len(argv) == 3:
+        print("true" if lane_only(changed_files(argv[1], argv[2], root=ROOT)) else "false")
         return 0
     if argv[:1] == ["check"] and len(argv) == 6 and argv[1] in ("paths", "version"):
         _, name, base, head, branch, pr = argv
