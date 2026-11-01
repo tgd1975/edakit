@@ -1,0 +1,2 @@
+patch
+- An `easyeda` script may change the copper in the PCB: `writes = ["pcb:<b>", <files>]` – vias and a pour placed after the pours, with the list of what it placed beside. It runs after what it reads (`routing:<b>`: after `route all`) and before the scripts that read its files; `edakit run` records the change, and `route all` and `route pours` mark it gone in `hardware/scripts.lock`, so the script is outdated until it ran again. EasyEDA's DRC checks this copper, `route check` does not (handbook 8.6, #113).

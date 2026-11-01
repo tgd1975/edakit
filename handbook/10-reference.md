@@ -30,7 +30,7 @@ are. What one role decides lives in a file of its own, with one owner and one ha
   writes it for `hash_ignore`).
 - `hardware/scripts.lock` – per script its `cmd`, the script itself and the hashes of what it reads, at its last run;
   after an `easyeda` script ran through `edakit run`, what it changed and what is from before it (8.6). `pcb dump` and
-  `route all` take off what they made again.
+  `route all` take off what they made again; `route all` and `route pours` mark a change of `pcb:<b>` gone.
 
 Complete example: [tests/fixtures/led-bar](../tests/fixtures/led-bar/). A key edakit does not know is an error with
 the list of the known ones – a typo does not fall back to a default unnoticed. An edakit.toml that still holds the
@@ -235,7 +235,7 @@ work without it.
 ### [scripts.&lt;name&gt;]
 
 Optional: a project script that touches edakit's flow – it writes a file edakit reads, derives something from
-edakit's data, changes the project library in EasyEDA, or is a check of its own (8.6). Without the table nothing
+edakit's data, changes the project library or the copper of the PCB in EasyEDA, or is a check of its own (8.6). Without the table nothing
 changes.
 
 `edakit check` and the gate resolve the entries with edakit's steps into one order, report what keeps them from it,
@@ -250,8 +250,8 @@ the checks (8.1).
 | `kind` | every entry | `input`, `derive`, `easyeda` or `check` (8.6); the kind `sim` is `[project] sim_plugin` |
 | `cmd` | every entry | the command as a list, run in the project directory – `python` or `python3` as its first word is edakit's own interpreter, where edakit runs the entry (8.6); a check gets `EDAKIT_RUN`, the gate run's folder (8.1) |
 | `about` | every entry | one sentence why the script exists, citing a decision |
-| `writes` | input, derive, easyeda (required) | what it makes: paths; an input also `board:<b>`; an easyeda script changes `project-library:<b>` (not `footprints:<b>`, the geometry `pcb dump` measures); `<b>` a made board |
-| `reads` | every kind (optional) | what its result is made from: edakit's data (8.6, each with a hash; the project library has none), files and folders – the script itself, the first file `cmd` names, counts anyway |
+| `writes` | input, derive, easyeda (required) | what it makes: paths; an input also `board:<b>`; an easyeda script changes `project-library:<b>` (not `footprints:<b>`, the geometry `pcb dump` measures) or `pcb:<b>`, copper it places in the PCB – vias, a pour – with files beside it, such as the list of what it placed; `<b>` a made board |
+| `reads` | every kind (optional) | what its result is made from: edakit's data (8.6, each with a hash; the project library and `pcb:<b>` have none offline), files and folders – the script itself, the first file `cmd` names, counts anyway |
 | `after` | every kind (optional) | other entries of `[scripts]` this one runs after – needed when several write the same file or change the same data |
 | `check` | input, derive, easyeda (optional) | an exact check command, when the stamp is not enough (not run yet) |
 | `id` | check (required) | its ID in the protocol: no stage of the gate (P, G, E, S, L, F), no sign-off (M-…), no code of the catalog, and none twice – `[[release.stages]]` included |
@@ -978,7 +978,7 @@ Run project scripts ([scripts.<name>]) in their order and record their runs; an 
 
 - **Reads:** the same
 - **Writes:** runs the scripts named in their order, in the project directory (`python` = edakit's), and records each
-  run: its stamp; for an easyeda script also its change of `project-library:<b>` (8.6); `<artifacts>/scripts/<name>.log`
+  run: its stamp; for an easyeda script also its change of `project-library:<b>` or `pcb:<b>` (8.6); `<artifacts>/scripts/<name>.log`
   per script. Refused for a check, a name not in `[scripts]`, entries that do not resolve; a failed script records
   nothing and stops the run; exit 2 when a script named is still outdated, 3 when another session holds EasyEDA
 
@@ -1104,7 +1104,8 @@ Route with Freerouting and write the result into EasyEDA.
 - **Reads:** PCB, rules (`--passes`, `--clearance` over `[routing] passes`, `clearance_mil`); `net_currents.json`
   (check: GEO.width offline; `widths = "sim"`)
 - **Writes:** `route/<board>_board.json`, `.dsn`, `.ses`, `_routing.png`, `_drc.json`, `_netlist_diff.json` (with an
-  Import Changes item); tracks, vias, pours
+  Import Changes item); tracks, vias, pours; with `[scripts]`, `all` and `pours` mark a change of `pcb:<b>` gone in
+  `hardware/scripts.lock` – the pours filled anew over the copper of `easyeda` scripts (8.6)
 
 `edakit route diagnose [--net N]` – EasyEDA: no
 
