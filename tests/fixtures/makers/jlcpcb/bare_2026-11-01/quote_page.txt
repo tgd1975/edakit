@@ -1,0 +1,169 @@
+Title: Online PCB Instant Quote - JLCPCB
+URL: https://cart.jlcpcb.com/quote
+Online PCB Quote
+Re-Upload
+Gerber Viewer
+Detected 2 layer board of 56x85mm(2.205x3.346 inches).
+Base Material
+FR-4
+Flex
+Aluminum
+Copper Core
+Rogers
+PTFE Teflon
+HDI
+Layers
+124
+High Precision PCB
+6
+8
+10
+12
+14
+16
+Dimensions
+*
+PCB Qty
+5
+Product Type
+Industrial/Consumer electronicsAerospaceMedical
+PCB Specifications
+Different Design
+1 234
+Delivery Format
+Single PCB Panel by Customer Panel by JLCPCB
+PCB Thickness
+0.4mm0.6mm0.8mm1.0mm1.2mm1.6mm2.0mm
+PCB Color
+Green
+Purple
+Red
+Yellow
+Blue
+White
+Black
+Silkscreen
+White
+Material Type
+FR4 TG135KB6164 - TG135KB6165F - TG155Nan Ya NP-140F
+Surface Finish
+OSP
+New
+HASL(with lead) LeadFree HASL ENIG
+High-spec Options
+Outer Copper Weight
+1 oz2 oz2.5 oz3.5 oz4.5 oz
+Via Covering
+TentedUntentedPluggedEpoxy Filled & CappedCopper paste Filled & Capped
+Via Plating Method
+Not SpecifiedConductive AdhesiveHorizontal Electroless Copper Plating
+Min via hole size/diameter
+0.3mm/(0.4/0.45mm)0.25mm/(0.35/0.4mm)0.2mm/(0.3/0.35mm)0.15mm/(0.25/0.3mm)0.1mm/(0.2/0.25mm)
+Board Outline Tolerance
+±0.2mm(Regular)±0.1mm(Precision)
+Confirm Production file
+NoYes
+Mark on PCB
+Remove Mark2D barcode (Serial Number)
+Electrical Test
+Flying Probe Fully Test
+Gold Fingers
+No Yes
+Castellated Holes
+No Yes
+Edge Plating
+NoYes
+Blind Slots
+NoYes
+UL Marking
+NoYes (Any Position)Yes (Specify Position)
+Humidity Indicator Card
+NoYes
+Advanced Options
+4-Wire Kelvin Test
+NoYes
+Paper between PCBs
+NoYes
+Appearance Quality
+IPC Class 2 StandardSuperb Quality
+Silkscreen Technology
+Ink-jet Printing SilkscreenHigh-precision Printing SilkscreenEasyEDA multi-color silkscreenHigh-definition Exposure Silkscreen
+Package Box
+With JLCPCB logoBlank box
+Inspection Report
+NoFinal Inspection ReportElectrical Test ReportROHS Test Report
+PCB Remark
+PCB Assembly
+Assembly cost starting from $0 with coupon>
+Stencil
+Stencil Order Guide>
+Order together with PCB
+Charge Details
+Special Offer
+$4.00
+Via Covering
+$0.00
+Surface Finish
+$1.20
+PCB Build Time
+2 days
+$0.00
+24 hours
+$7.60
+24 hours PCBA Only
+$0.00
+Calculated Price
+Additional charges may apply for special cases
+$5.20
+Web Price
+$3.20
+Desktop Price
+SAVE TO CART
+Shipping Estimate
+$23.44
+DHL Express
+2-4 business days
+Weight
+0.20kg
+Coupons
+Save $30.00Save $20.00
+
+
+=== selected on the form (buttons marked current), read 2026-11-01 ===
+Base Material: FR-4
+Layers: 2
+Dimensions: 85 x 56 mm
+PCB Qty: 5
+Product Type: Industrial/Consumer electronics
+Different Design: 1
+Delivery Format: Single PCB
+PCB Thickness: 1.6mm
+PCB Color: Green
+Silkscreen: White
+Material Type: FR4 TG135
+Surface Finish: LeadFree HASL
+Outer Copper Weight: 1 oz
+Via Covering: Tented
+Via Plating Method: Not Specified
+Min via hole size/diameter: 0.3mm/(0.4/0.45mm)
+Board Outline Tolerance: ±0.2mm(Regular)
+Confirm Production file: No
+Mark on PCB: Remove Mark
+Electrical Test: Flying Probe Fully Test
+Gold Fingers: No
+Castellated Holes: No
+Edge Plating: No
+Blind Slots: No
+UL Marking: No
+Humidity Indicator Card: No
+4-Wire Kelvin Test: No
+Paper between PCBs: No
+Appearance Quality: IPC Class 2 Standard
+Silkscreen Technology: Ink-jet Printing Silkscreen
+Package Box: With JLCPCB logo
+Inspection Report: No
+PCB Remark: 
+PCB Build Time: 2 days
+PCB Assembly: off
+Stencil: off
+Shipping Method: DHL Express

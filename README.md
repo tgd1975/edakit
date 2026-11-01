@@ -2,6 +2,11 @@
 
 # edakit
 
+[![Tests](https://github.com/tgd1975/edakit/actions/workflows/tests.yml/badge.svg?branch=main)](https://github.com/tgd1975/edakit/actions/workflows/tests.yml)
+[![Release](https://img.shields.io/github/v/release/tgd1975/edakit)](https://github.com/tgd1975/edakit/releases/latest)
+[![License: MIT](https://img.shields.io/github/license/tgd1975/edakit)](LICENSE)
+[![Docs](https://github.com/tgd1975/edakit/actions/workflows/pages.yml/badge.svg?branch=main)](https://tgd1975.github.io/edakit/)
+
 **Circuit design as code.** edakit takes a circuit from an idea to a board ready to order. It is a plugin for Claude
 Code and a command line, and everything it works on is text in your repository. The documentation:
 <https://tgd1975.github.io/edakit/>.
