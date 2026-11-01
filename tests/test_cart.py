@@ -490,3 +490,73 @@ def test_eurocircuits_as_the_live_run_read_it():
     ignore = {c.norm(k) for k in makers.load("eurocircuits").data["ignore"]}
     known = ignore | {c.norm(f["label"]) for f in job["fields"]}
     assert [q["label"] for q in quote["fields"] if c.norm(q["label"]) not in known] == []
+
+
+# --- the review of the ordering documentation (2026-11-01, the owner's word) -------------------------------------------
+
+def test_a_failed_order_read_leaves_the_order_record_alone(prepared, monkeypatch):
+    """ORDER.read failed on the order page: nothing of it is a value – neither the fee table nor the order record takes
+    the order number and the totals."""
+    q = write_quote(prepared)
+    review(prepared)
+    subtotal = round(sum(p["amount"] for p in q["prices"] if p["kind"] != "shipping"), 2)
+    (order_dir(prepared) / "cart.json").write_text(json.dumps({"name": "gerber_main", "quantity": 5,
+                                                               "price": subtotal}))
+    assert cart(prepared, monkeypatch, "check", "--cart") == 0
+    write_actual(prepared)
+    d = order_dir(prepared)
+    (d / "actual_page.txt").write_text((d / "actual_page.txt").read_text().replace("Y8-1234567A", ""))
+    assert cart(prepared, monkeypatch, "actual") == 2
+    r = json.loads(next((prepared.root / "hardware" / "orders").glob("*.json")).read_text())
+    assert r["order_number"] is None and r["actual"] is None
+
+
+def test_the_job_names_the_manufacturer_of_every_part(prepared):
+    """AISLER lists an MPN more than once (another manufacturer, "Partner Stock"): the skill assigns the line of the
+    release's manufacturer, so the job carries it – from the parts entry, the file the maker matches by aside."""
+    from edakit.design import Design
+    design = Design.from_config(prepared.config())
+    lines = job(prepared)["bom"]
+    assert lines and all(p["manufacturer"] == design.part(p["designators"][0])["manufacturer"] for p in lines)
+
+
+def test_the_budget_without_a_fee_table(prepared):
+    """A maker without a fee table has no estimate – the board total of its quote is still held to [cost] budget, in
+    [cost] currency through [cost] rates; without a rate for the quote's currency it is named, not compared."""
+    from edakit import cart as c
+    d = Path(__file__).parent / "fixtures" / "makers" / "aisler" / "live_2026-11-01" / "price"
+    j, q = (json.loads((d / f).read_text()) for f in ("job.json", "quote.json"))
+    assert j["estimate"] is None
+    warn, actual = c.b3({**j, "budget": {"amount": 300.0, "currency": "USD", "rates": {"USD": 1.0, "EUR": 1.15}}}, q)
+    assert warn == ["board total 400.23 USD above the budget of 300.00 ([cost] budget)"]
+    warn, actual = c.b3({**j, "budget": {"amount": 500.0, "currency": "USD", "rates": {"USD": 1.0, "EUR": 1.15}}}, q)
+    assert warn == [] and "budget 500.00 USD" in actual
+    warn, actual = c.b3({**j, "budget": {"amount": 300.0, "currency": "USD", "rates": {"USD": 1.0}}}, q)
+    assert warn == [] and "budget not compared: [cost] rates has no rate for EUR" in actual
+
+
+def test_prepare_writes_the_budget_into_the_job(project, monkeypatch, capsys):
+    released(project, fr.ordered)
+    toml(project, '[cost]\nbudget = 80.0\ncurrency = "EUR"\nrates = { USD = 0.9 }')
+    assert cart(project, monkeypatch, "prepare") == 0
+    assert job(project)["budget"] == {"amount": 80.0, "currency": "EUR", "rates": {"EUR": 1.0, "USD": 0.9}}
+
+
+def test_an_aisler_order_gets_its_record_from_the_checkout_page():
+    """AISLER has no cart: the saved project is the state, its page /checkout the line – project name, quantity, net
+    price and VAT apart. Read into cart.json, edakit cart check --cart holds it to the job and the quote and writes the
+    order record; another quantity fails."""
+    from edakit import cart as c
+    d = Path(__file__).parent / "fixtures" / "makers" / "aisler" / "live_2026-11-01" / "price"
+    j, q = (json.loads((d / f).read_text()) for f in ("job.json", "quote.json"))
+    line = {"name": "Sandbox / odb_main", "quantity": 5, "price": 348.03, "vat": 66.13, "currency": "EUR"}
+    assert c.check_cart(j, q, line)[0] == []
+    assert c.check_cart(j, q, {**line, "quantity": 10})[0] == ["quantity 10 in the cart, 5 in the job"]
+
+
+def test_the_lead_finding_says_it_is_no_legal_advice():
+    """ORDER.finish and FILES.order/lead name RoHS and REACH to the reader of check.md and the protocol: once, that it
+    is support, not legal advice (CLAUDE.md, handbook 15)."""
+    from edakit import cart as c
+    for use in ("sale", "gift"):
+        assert c.lead(["HASL(with lead)"], {"use": use})[1].endswith("(handbook 15.2 – support, not legal advice)")

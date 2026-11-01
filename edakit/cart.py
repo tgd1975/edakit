@@ -123,8 +123,9 @@ def fields(cfg, args):
 # --- edakit cart prepare --------------------------------------------------------------------------------------------
 
 def bom_of(d, board, m, design):
-    """The expected parts: [{part, designators, comment}] – by the key the maker matches by (LCSC number or MPN), from
-    the run's BOM file for the maker (bom_<b>_mpn.csv for a maker that matches by MPN, else bom_<b>.csv)."""
+    """The expected parts: [{part, designators, comment, manufacturer}] – by the key the maker matches by (LCSC number
+    or MPN), from the run's BOM file for the maker (bom_<b>_mpn.csv for a maker that matches by MPN, else bom_<b>.csv);
+    the manufacturer from that file, else the parts entry – the line to assign where a maker lists an MPN twice."""
     import csv
     match = m.matches_by or "lcsc"
     path = d / (f"bom_{board}_mpn.csv" if match == "mpn" and (d / f"bom_{board}_mpn.csv").exists() else f"bom_{board}.csv")
@@ -133,12 +134,14 @@ def bom_of(d, board, m, design):
         with open(path, newline="", encoding="utf-8-sig") as f:
             for r in csv.DictReader(f):
                 refs = [x.strip() for x in re.split(r"[,\s]+", r.get("Designator", "")) if x.strip()]
+                entry = (design.part(refs[0]) if refs else None) or {}
                 part = r.get("Manufacturer Part Number") if match == "mpn" else r.get("LCSC Part #")
                 if match == "mpn" and not part:
-                    lcsc = r.get("LCSC Part #") or (design.part(refs[0]) or {}).get("lcsc")
+                    lcsc = r.get("LCSC Part #") or entry.get("lcsc")
                     part = (design.parts.get(lcsc) or {}).get("mpn")
                 out.append({"part": part or "", "designators": sorted(refs, key=natural_key),
-                            "comment": r.get("Value", r.get("Comment", ""))})
+                            "comment": r.get("Value", r.get("Comment", "")),
+                            "manufacturer": r.get("Manufacturer") or entry.get("manufacturer") or ""})
     return out, match, path.name
 
 
@@ -226,6 +229,10 @@ def prepare(cfg, args):
     form = order_sheet.form(cfg, design, board, d, m)
     bom, match, bom_file = bom_of(d, board.name, m, design)
     estimate, why = estimate_of(cfg, board.name, m) if m.data.get("fees") else (None, f"{m.name} has no fee table")
+    money = cfg.cost or {}
+    budget = None if money.get("budget") is None else {           # ORDER.quote, with or without a fee table
+        "amount": float(money["budget"]), "currency": money.get("currency", "USD"),
+        "rates": {money.get("currency", "USD"): 1.0, **{k: float(v) for k, v in (money.get("rates") or {}).items()}}}
     keys = {(design.entry_key(r) or "") for p in bom for r in p["designators"] if r in design.comps}
     job = {
         "made": dt.datetime.now().astimezone().isoformat(timespec="seconds"),
@@ -244,7 +251,7 @@ def prepare(cfg, args):
                   for n in names],
         "fields": form, "bom": bom, "match": match, "bom_file": bom_file,
         "dnp": not_placed(design, board.name, m),
-        "estimate": estimate, "estimate_why": why,
+        "estimate": estimate, "estimate_why": why, "budget": budget,
         "compliance": {k: design.parts[k].get("compliance") for k in sorted(keys, key=natural_key) if k in design.parts},
         "ship_to": c["ship_to"], "shipping": c["shipping"][m.key], "tolerance": c["tolerance"],
     }
@@ -375,7 +382,8 @@ def board_lines(quote):
 
 def b3(job, quote):
     """The quote against the estimate: per kind of line (PCB, assembly fees, parts) and the board total; above
-    [cart] tolerance per line a warning with both values. The board total against [cost] budget."""
+    [cart] tolerance per line a warning with both values. The board total against [cost] budget – without an estimate
+    (a maker without a fee table, a quote in another currency) through the job's budget and [cost] rates."""
     e, tol, warn, info = job.get("estimate"), float(job.get("tolerance", makers.TOLERANCE)), [], []
     lines = board_lines(quote)
     kinds = {k: [p for p in lines if p["kind"] == k] for k in ("pcb", "fee", "parts")}
@@ -395,6 +403,17 @@ def b3(job, quote):
         if budget is not None and total * e["rate"] > budget + 1e-9:
             warn.append(f"board total {total * e['rate']:.2f} {e['budget_currency']} above the budget of "
                         f"{budget:.2f} ([cost] budget)")
+    b = job.get("budget")
+    if e is None and b:                       # no estimate to compare with: the board total against the budget alone
+        cur = quote.get("currency") or job["maker"].get("currency")
+        rate = (b.get("rates") or {}).get(cur)
+        if rate is None:
+            info.append(f"budget not compared: [cost] rates has no rate for {cur}")
+        elif total * rate > b["amount"] + 1e-9:
+            warn.append(f"board total {total * rate:.2f} {b['currency']} above the budget of {b['amount']:.2f} "
+                        "([cost] budget)")
+        else:
+            info.append(f"budget {b['amount']:.2f} {b['currency']}")
     actual = f"board {total:.2f} {quote.get('currency', '')}".rstrip() + (
         f", estimate {e['total']:.2f} {e['currency']}" if e is not None else "")
     return warn, actual + ("; " + "; ".join(info) if info else "")
@@ -476,9 +495,10 @@ def lead(words, purpose):
         return "pass", f"{words[0] if words else 'no finish'}: no lead"
     level = {"sale": "fail", "gift": "warn"}.get(use, "info")
     return level, (f"{words[-1]}: lead in the product, purpose {use} – " + {
-        "sale": "RoHS: lead above 0.1 % is not allowed in what is placed on the market (handbook 15.2)",
+        "sale": "RoHS: lead above 0.1 % is not allowed in what is placed on the market (handbook 15.2 – support, not "
+                "legal advice)",
         "gift": "lead is a substance of very high concern: REACH Art. 33 asks to name it to a consumer who asks "
-                "(handbook 15.2)",
+                "(handbook 15.2 – support, not legal advice)",
         "private": "for yourself: a note (handbook 15.1)"}[use if use in ("sale", "gift") else "private"])
 
 
@@ -801,7 +821,8 @@ def actual_cost(cfg, args):
     if notes:
         L += ["\nNot written:\n", *(f"- {n}" for n in notes)]
     (out / ACTUAL_MD).write_text("\n".join(L) + "\n", encoding="utf-8")
-    rec = complete_record(cfg, job, out, actual, {"estimate": est, "quote": q, "actual": a, "currency": cur})
+    rec = None if bad else complete_record(cfg, job, out, actual, {"estimate": est, "quote": q, "actual": a,
+                                                                    "currency": cur})
     print(f"{'FAIL' if bad else 'ok  '} ORDER.read read, not made up: {'; '.join(bad) if bad else b4_text}")
     print(f"board {job['board']} at {m.name}: estimate {money(est)}, quote {money(q)}, actual {money(a)} {cur}")
     for w in written:

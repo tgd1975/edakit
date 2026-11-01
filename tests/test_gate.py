@@ -508,3 +508,30 @@ def test_offline_gate_names_the_fab_hash_of_the_layout_review(project, monkeypat
             f"{FAB[:12]}… by agent pcb-reviewer (own session), 2026-10-31: checked by stage F") in six
     layout_review(project, signed=False)
     assert "open: M-1, M-6, M-5 (section 6)" in decision(gate_run(project, monkeypatch))
+
+
+def test_a_missing_file_of_another_maker_warns(project, monkeypatch, tmp_path):
+    """FILES.manifest holds the upload files of every maker of [cart] makers to the run: one the planned maker takes
+    missing fails, one only another maker takes – AISLER's ODB++ whose export failed – warns, as every check that holds
+    the board to a maker (makers.result); edakit cart prepare stops for that maker, which has no files."""
+    from edakit.release import fab
+
+    def fab_run(cfg, board, d):
+        out = d / board.name
+        out.mkdir(parents=True, exist_ok=True)
+        for name in (f"gerber_{board.name}.zip", f"bom_{board.name}.csv", f"cpl_{board.name}.csv"):
+            (out / name).write_text("x")
+        return []
+    monkeypatch.setattr(fab, "run", fab_run)
+    toml = project.root / "edakit.toml"
+    text = toml.read_text()
+
+    def manifest_rows(cart):
+        toml.write_text(text + "\n" + cart + "\n")
+        out = tmp_path / cart.split("maker = ")[1].split("\n")[0].strip('"')
+        out.mkdir()
+        rows = [r for r in gate.stage_fab(project.config(), out) if r["id"] == "FILES.manifest"]
+        return [(r["result"], r["actual"]) for r in rows]
+    assert manifest_rows('[cart]\nmaker = "jlcpcb"\nmakers = ["jlcpcb", "aisler"]') == [
+        ("warn", "AISLER (not the planned maker): odb_main.zip")]
+    assert manifest_rows('[cart]\nmaker = "aisler"\nmakers = ["jlcpcb", "aisler"]') == [("fail", "odb_main.zip")]
