@@ -579,3 +579,16 @@ def test_a_zone_kicad_saved_without_the_thickness_flag_keeps_its_fill_exact(proj
     kb.write_parts(cfg, board)
     assert all(sexp.value(z, "filled_areas_thickness") == "no" for z in kb.load(cfg, board).zones)
     assert path.read_text().count("(filled_areas_thickness no)") == 2
+
+
+def test_a_footprint_names_the_mpn_and_its_manufacturer(project):
+    """5.10 (AISLER live, 2026-11-01): AISLER matches the parts of the ODB++ by a manufacturer part number and knows no
+    LCSC number – every footprint carries MPN and Manufacturer of its parts entry beside LCSC, and kicad-cli's ODB++
+    takes them as properties of its components."""
+    cfg = kicad_project(project)
+    board, design = cfg.board(), Design.from_config(cfg)
+    fps = {r: f for r, f in kb.parts(kb.Pcb.load(kb.write_parts(cfg, board)[0]))}
+    for ref, fp in fps.items():
+        entry = design.parts.get(design.comps[ref].get("lcsc")) or {}
+        assert (kb.prop(fp, "MPN"), kb.prop(fp, "Manufacturer")) == (entry.get("mpn"), entry.get("manufacturer")), ref
+    assert kb.prop(fps["D1"], "MPN") == "SS34"

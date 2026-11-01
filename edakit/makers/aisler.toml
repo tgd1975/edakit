@@ -19,6 +19,9 @@ classes = ["assembly"]                 # the service "Amazing Assembly" (also: B
 never = ["Order", "Buy", "Checkout", "Continue to Checkout", "Pay", "Place order", "Confirm order"]
 excludes = []
 
+[bom]                                  # no BOM upload: the parts come in the ODB++
+match = "mpn"                          # AISLER assigns by manufacturer part number and knows no LCSC number (5.10, 2026-11-01)
+
 [ignore]
 "Stackup & Design Rules" = "a line AISLER derives (2L 1.6mm 35um var.)"
 "Blitz Service" = "the owner's choice at checkout"

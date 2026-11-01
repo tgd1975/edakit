@@ -87,8 +87,8 @@ assembly preview at JLCPCB.
        (copper, mask, paste, silkscreen) rasterised as GEO.copper and XOR'd with its Gerber layer, no spot above
        SPOT_MM2 beyond an edge one raster point off (ODB_EDGE_STEPS: the ODB++'s coarser coordinates) and no layer
        in one only; the drill hits = the drill files (1 µm, diameter, plated or not); the profile
-       = the Gerber outline; every BOM part once at the CPL's place, rotation (ODB++ clockwise) and side with its part
-       number, a part with bom: false as the maker's dnp says; the nets of the pins as the graph's, compared as groups
+       = the Gerber outline; every BOM part once at the CPL's place, rotation (ODB++ clockwise) and side with the part
+       number the maker matches by (AISLER: MPN), a part with bom: false as the maker's dnp says; the nets of the pins as the graph's, compared as groups
   FILES.order  with [order] or [cart], per maker of [cart] makers (fails for the planned maker, warns for another one):
        every field a value of the maker's form, the remark, thickness_mm and the colours of mask and silkscreen as its
        form has them, mark = its placeholder on the silkscreen – JLCPCB's placeholder at a maker without one –, its
@@ -1834,9 +1834,16 @@ def check_odb_parts(cfg, board, design, d, job, m, add):
             bad.append(f"{ref}: rotation {rot:g}° (ODB++ {c.rot:g}° clockwise), the CPL {float(row['Rotation']):g}°")
     numbered = [c for c in job.components if c.designator in bom]
     names = lambda c: {c.part, *c.props.values()}  # noqa: E731
-    keys = lambda r: {r.get("LCSC Part #"), (design.parts.get(r.get("LCSC Part #")) or {}).get("mpn")} - {None, ""}  # noqa: E731
+    match = m.matches_by                    # the number the maker matches by; None: either
+
+    def keys(r):
+        lcsc = r.get("LCSC Part #")
+        both = {"lcsc": lcsc, "mpn": (design.parts.get(lcsc) or {}).get("mpn")}
+        return {v for k, v in both.items() if match in (None, k)} - {None, ""}
     if numbered and not any(names(c) & keys(bom[c.designator]) for c in numbered):
-        bad.append("no part of the ODB++ carries its BOM's part number (LCSC or MPN) – the maker cannot match them")
+        bad.append(f"no part of the ODB++ carries the {'MPN' if match == 'mpn' else 'LCSC number'} {m.name} matches by – "
+                   f"{m.name} cannot match them" if match else
+                   "no part of the ODB++ carries its BOM's part number (LCSC or MPN) – the maker cannot match them")
     else:
         bad += [f"{c.designator}: part {c.part or '–'} – the BOM {', '.join(sorted(keys(bom[c.designator])))}"
                 for c in numbered if not names(c) & keys(bom[c.designator])]

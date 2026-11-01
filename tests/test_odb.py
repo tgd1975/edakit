@@ -24,6 +24,9 @@ LAYERS = [("comp_+_top", "COMPONENT", "top"), ("top_silk", "SILK_SCREEN", "top_s
           ("comp_+_bot", "COMPONENT", "bottom"), ("drill", "DRILL", None)]
 
 
+MPN = {"J1": "B2B-PH-K-S(LF)(SN)", "D1": "SS34", "C2": "CL21A226MAQNNNE"}   # the led-bar entries' mpn
+
+
 def job_of(ex):
     """The ODB++ job of an export, as data a fault can change: layers {name: [items of test_fab_run's Layer]}, holes
     [(x, y, d, kind)], components [{ref, x, y, rot (clockwise), side, part, pins [(num, x, y, net)]}], the profile."""
@@ -36,7 +39,7 @@ def job_of(ex):
     for c in ex.pcb["components"]:
         ref = c["designator"]
         comps.append({"ref": ref, "x": c["x"] / fr.MIL, "y": c["y"] / fr.MIL, "rot": (360 - c["rotation"]) % 360,
-                      "side": "top", "part": fr.LCSC[ref],
+                      "side": "top", "part": fr.LCSC[ref], "props": {"MPN": MPN[ref]},
                       "pins": [(p["PadNumber"], p["X"] / fr.MIL, p["Y"] / fr.MIL, p["Net"]) for p in c["pads"]]})
     return {"layers": layers, "holes": holes, "components": comps,
             "profile": [(0, 0), (30, 0), (30, 20), (0, 20), (0, 0)], "drop": set()}
@@ -181,7 +184,8 @@ def test_f7_passes_on_an_odb_of_the_same_board(project):
                                                                         "CPL 180°"),
     (lambda j: j["components"][1].update(x=13.2), "parts of the ODB++", "D1: at (13.200, 9.000), the CPL"),
     (lambda j: j["components"].pop(2), "parts of the ODB++", "C2: 0x in the ODB++"),
-    (lambda j: j["components"][2].update(part="C1"), "parts of the ODB++", "C2: part C1 – the BOM C45783, "),
+    (lambda j: j["components"][2]["props"].update(MPN="CL21A106KAYNNNE"), "parts of the ODB++",
+     "C2: part C45783 – the BOM CL21A226MAQNNNE"),
     (lambda j: j["components"][2]["pins"].__setitem__(0, ("1", 19.05, 9, "VIN")), "nets of the ODB++",
      "ODB++ net VIN joins +5V, VIN"),
 ])
@@ -322,3 +326,12 @@ def test_f7_on_easyeda_s_own_export(tmp_path):
     parts = {c.designator: c for c in odb.read(out / "main" / "odb_main.zip").components}
     assert {ref: (c.side, c.rot, c.mirror) for ref, c in parts.items()} == {
         "BT1": ("top", 0, False), "D1": ("top", 270, False), "SW1": ("top", 0, False), "R1": ("bottom", 270, False)}
+def test_the_odb_carries_the_number_the_maker_matches_by(project):
+    """5.10 (AISLER live, 2026-11-01): AISLER matches by manufacturer part number and knows no LCSC number – an ODB++
+    whose parts carry only their LCSC numbers left AISLER's "Auto detect MPN" with one part of ten. For a maker that
+    matches by MPN every part carries its entry's MPN."""
+    def lcsc_only(job):
+        for c in job["components"]:
+            c["props"] = {}
+    bad = [(r, a) for r, c, a in f7(run(project, lcsc_only)) if c.startswith("parts of the ODB++")]
+    assert bad == [("fail", "no part of the ODB++ carries the MPN AISLER matches by – AISLER cannot match them")]

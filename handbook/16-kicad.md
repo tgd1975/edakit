@@ -118,7 +118,10 @@ edakit calls (`edakit/toolchain/kicad/cli.py`, `-v` prints every call):
   `pcb export pdf`, `pcb render`.
 - `pcb export odb --units mm --precision 4 --compression zip` – only with a maker of `[cart] makers` that takes ODB++
   (AISLER). Four decimals, KiCad's most: with its default of two a pad at 62.825 mm is written at 62.82, and SYNC.odb
-  sees the step on copper, paste and mask.
+  sees the step on copper, paste and mask; the step that is left, 0.1 µm against the Gerber's 1 nm, is one raster point
+  at most, which SYNC.odb takes as rounding. Every footprint carries `LCSC`, `MPN` and `Manufacturer` of its parts
+  entry, and the ODB++ takes them as properties of its components: AISLER assigns parts by MPN and knows no LCSC
+  number.
 
 The DRC checks whose subject edakit checks itself are off in `<board>.kicad_pro`: footprints against the library
 (SYNC.footprint holds them to the parts database), courtyards (the plan), silkscreen overlaps and texts (GEO.silk on the
