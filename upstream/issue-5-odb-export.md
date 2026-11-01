@@ -25,22 +25,19 @@ tools return theirs through `normalizeBinaryResult` (base64).
 ### Proposed Solution
 
 ```markdown
-A tool `easyeda_export_odb` beside `easyeda_export_gerbers`: input `projectId`, `filePath?`, `unit` (`mm` | `inch`,
-default `mm`), `platedHoles`, `nonPlatedHoles` (default `true`); the extension calls
-`PCB_ManufactureData.getOpenDatabaseDoublePlusFile(fileName, unit, otherData)` and returns the file through
-`normalizeBinaryResult`; the server writes it with `writeExportPayload` and checks that it is a zip or tgz archive.
-
-A new bridge method (`board.exportOdb`) is the clean way; the method registry and its hash change with it. As a local
-workaround, edakit routes the call through `board.exportGerbers` with `format: "odb"`, so that the pinned 1.4.0 keeps
-its registry, and marks the answer `format: "odb"` so that an extension without the handler is recognised – not a
-proposal for upstream.
+A tool `easyeda_export_odb` beside `easyeda_export_gerbers`: input `projectId`, `filePath?`, `platedHoles`,
+`nonPlatedHoles` (default `true`); a new bridge method `export.odb`, in which the extension calls
+`PCB_ManufactureData.getOpenDatabaseDoublePlusFile(fileName, 'inch', otherData)` and returns the file through
+`normalizeBinaryResult`; the server writes it with `writeExportPayload` once its magic bytes show a tgz or zip archive.
+No `unit` input: the API's type admits `ESYS_Unit.INCH` only.
 ```
 
 ### Acceptance Criteria
 
 ```markdown
-- [ ] `easyeda_export_odb` writes the ODB++ archive EasyEDA exports, in mm by default.
-- [ ] An extension without the handler gives a clear error, never a Gerber ZIP.
+- [ ] `easyeda_export_odb` writes the ODB++ archive EasyEDA exports, named with its extension.
+- [ ] A payload that is no archive is refused and nothing is written; an extension without the handler gives a clear
+      error.
 - [ ] Tests cover the tool and the extension handler (unit and the drill options passed through).
 ```
 
@@ -48,5 +45,7 @@ proposal for upstream.
 
 ```markdown
 Found while adding AISLER as a maker in edakit (https://github.com/tgd1975/edakit, docs/concepts/done/ordering.md),
-where a check holds the ODB++ to the released Gerber, drill and pick-and-place files. Not yet tried against EasyEDA:
-whether the export holds the component layers (packages, pins, part numbers) and its rotation convention are open.
+where a check holds the ODB++ to the released Gerber, drill and pick-and-place files. Tried on EasyEDA Pro 3.2.206
+with a local stand-in of this tool: the archive holds `comp_+_top` and `comp_+_bot` with package, pins and the part
+number, turns clockwise, and equals the export from File > Export > ODB++ but for the unit – the dialog writes mm,
+the API inch. Without a file name EasyEDA names the archive `undefined`, so the tool passes one.
