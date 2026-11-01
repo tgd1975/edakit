@@ -15,3 +15,8 @@ quote_page.txt), edakit cart check (check.md), the regulatory review at the orde
 - 5.8 Eurocircuits: stopped, as the skill must, at "Board thickness" – 1.6 mm is not among Eurocircuits' thicknesses.
 - 5.10 AISLER: SYNC.odb's two spots were its own rounding (fixed). The first try (aisler/live_2026-11-01/first_try.md)
   stopped at the parts: the ODB++ carried LCSC numbers only, and AISLER matches by MPN – one part of ten assigned.
+  The second (run 20261101-084718, with MPN and Manufacturer in the footprints; job, quote, page text and check in
+  aisler/live_2026-11-01/): seven parts assigned by "mpn", three whose MPN AISLER lists twice by the release's
+  manufacturer, BT1 and SW1 excluded; /checkout set to Amazing Assembly, 1.6 mm, HASL Lead Free, 35 µm, green, white,
+  quantity 5 – ORDER.form passed. Stopped at ORDER.parts: R1 and R2 out of stock at AISLER, so no price; the BOM price
+  for 5 was €175.24.

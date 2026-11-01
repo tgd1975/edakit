@@ -47,9 +47,11 @@ run against a maker's page or EasyEDA yet.
       every check passed, into the cart, order record written, nothing ordered.
 - [ ] **5.8:** Eurocircuits live – stopped, as it must, at "Board thickness": 1.6 mm is not among Eurocircuits'
       thicknesses (1.55 is its standard). Again with a board of a thickness it makes, or the owner's word on 1.55.
-- [ ] **5.10:** AISLER live in Chrome. SYNC.odb's warning on the blinker was SYNC.odb's own: kicad-cli writes ODB++
-      coordinates to 0.1 µm, the Gerber to 1 nm, and one raster row flipped along long straight edges – an edge one
-      raster point off is rounding now (2026-11-01), the release's ODB++ equal on every layer. Left: the run.
+- [ ] **5.10:** AISLER live – ran on 2026-11-01 and stopped, as it must, at ORDER.parts: R1 and R2 (UNI-ROYAL
+      0805W8F7503T5E, 0805W8F2000T5E) are out of stock at AISLER. On the way built: SYNC.odb's edge tolerance, the MPN
+      in every KiCad footprint (AISLER assigns by it, not by LCSC numbers), the profile's fields on AISLER's /checkout
+      (the owner's word: opened by its address, stop before "Continue to Checkout") – ORDER.form passed. Left: a run
+      with parts AISLER has, up to the price on /checkout (`tests/fixtures/makers/aisler/live_2026-11-01/`).
 
 ### Needs the makers
 
