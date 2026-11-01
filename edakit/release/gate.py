@@ -498,7 +498,7 @@ def stage_graph(cfg, design):
 def executed(prof, cfg):
     """The codes of stages P and G a run checks, each counted once as passed where it has no finding: those of the
     engines on the graph and of the checks beyond it that the profile has on – the footprint data's only where an
-    entry has footprint data, the requirements file's only with [project] requirements, PARTS.stock only with a
+    entry has footprint data, DOCS.file always and the requirements file's only with [project] requirements, PARTS.stock only with a
     maker of [cart] makers that orders from JLCPCB's catalogue; no hint, no suggestion note."""
     from ..findings import Finding
     from ..checks import has_footprint_data
@@ -506,7 +506,7 @@ def executed(prof, cfg):
     beyond = ["SYNC.source", "GEO.hole", "GEO.formed"]
     beyond += ["SYNC.footprint"] if has_footprint_data(cfg) else []
     from .. import makers, requirements
-    beyond += list(requirements.CHECKS) if cfg.requirements else []
+    beyond += ["DOCS.file", *requirements.CHECKS] if cfg.requirements else ["DOCS.file"]
     skip = {"STRUCT.domain"} | (set() if has_footprint_data(cfg) else {"PARTS.footprint"})
     if not makers.with_catalogue(cfg, "jlcpcb"):
         skip.add("PARTS.stock")       # no maker of [cart] makers orders from JLCPCB's catalogue: it does not run

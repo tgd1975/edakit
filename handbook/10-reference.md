@@ -9,7 +9,7 @@ are. What one role decides lives in a file of its own, with one owner and one ha
 | File | Content | Written by | Hash |
 |---|---|---|---|
 | `edakit.toml` | project, boards with their EasyEDA documents, where the files are, release settings, the project's scripts and agents | new-project, the user | – |
-| `hardware/requirements.toml` | what the circuit must do: needs and requirements with their evidence (3.6, 10.4), with `[project] requirements` | the skill requirements drafts, only the user accepts | circuit |
+| `hardware/requirements.toml` | what the circuit must do: needs and requirements with their evidence (3.6, 10.4), named in `[project] requirements`; required before a release (DOCS.file) | the skill requirements drafts, only the user accepts | circuit |
 | `hardware/graph.toml` | the circuit with its purpose, the hand-over to the layout, the ground net and the check settings (3.1) – in a project that has not converted `hardware/graph.json`, the same graph as JSON | circuit designer | circuit |
 | `hardware/graph.json` beside a TOML graph | the resolved graph, generated: pin numbers, every pin map (3.1) – never edited | `edakit graph json --write`, `edakit graph convert` | – |
 | `hardware/parts/`, `hardware/sim.json` | parts database (4), simulation scenarios (5) | part-selector, circuit designer | circuit |
@@ -41,7 +41,7 @@ board, the schematic or the checks (the earlier one-file form) is refused with a
 | `sim_plugin` | – | optional Python file with `MODELS` and `checks` (5.1) |
 | `schematic` | `hardware/schematic.toml` | the schematic file (10.3) |
 | `signoff` | `hardware/signoff.json` | the sign-off file (8.2) |
-| `requirements` | – | the requirements file (3.6, 10.4), e.g. `"hardware/requirements.toml"`; a variant names the main project's file and its own, `["../../hardware/requirements.toml", "hardware/requirements.toml"]`. With it `edakit req` lists the file, `edakit check` checks it (DOCS.ref to DOCS.draft), the gate evaluates every requirement (8.7) and the circuit hash covers it. A file named here must exist and be valid, else `edakit req`, `edakit check` and the gate stop. Without the key no file is read and nothing changes |
+| `requirements` | – | the requirements file (3.6, 10.4), e.g. `"hardware/requirements.toml"`; a variant names the main project's file and its own, `["../../hardware/requirements.toml", "hardware/requirements.toml"]`. With it `edakit req` lists the file, `edakit check` checks it (DOCS.ref to DOCS.draft), the gate evaluates every requirement (8.7) and the circuit hash covers it. A file named here must exist and be valid, else `edakit req`, `edakit check` and the gate stop. Required: without the key DOCS.file is open – `edakit check` passes, `--release` and the gate do not release (8.7) |
 | `domains` | – | the domains the project switches on besides `core` (`edakit/domains`: `usb`, `radio`, `audio`, `guitar`, `motors`, `power`, `cables`, `mains`), e.g. `["usb"]` – what each switches on, its severities, the facts it requires of the parts, its hints and the reviewers' questions; `edakit domains` lists them. Without the key every domain the graph suggests is on; with it a domain the graph suggests and the list leaves out is a note `STRUCT.domain` and reports nothing |
 | `artifacts` | `build/edakit` | caches, previews, routing files, exports, Gerber exports (not versioned) |
 | `reports` | `build/release` | gate runs |
