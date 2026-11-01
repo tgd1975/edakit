@@ -4,6 +4,12 @@
 # tests/test_open_designs.py holds the sets; the catalog page shows them (docs/catalog/build.py).
 
 [[check]]
+code = "DOCS.file"
+place = "edakit.toml"
+judged = "criterion"
+why = "The transcription has no requirements file: what the published design must do stands in its own documents, not in edakit's form. edakit requires the file before a release (handbook 3.6); it is no point of the design."
+
+[[check]]
 code = "LIM.v"
 place = "D6"
 judged = "real"

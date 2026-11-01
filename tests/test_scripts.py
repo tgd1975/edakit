@@ -371,7 +371,7 @@ def test_edakit_check_reports_the_findings(project, capsys, tmp_path):
     text = capsys.readouterr().out
     assert "SYNC.scripts – project scripts current: 1 error\n  G  x: an input, but no edakit step reads what it writes " \
         "(build/x.json)" in text
-    assert "handbook 8.6" in text and "; 1 error, 5 note, 3 accepted" in text   # a note: U1's symbol_differs
+    assert "handbook 8.6" in text and "; 1 error, 1 pending, 5 note, 3 accepted" in text   # a note: U1's symbol_differs
     errors = [f for f in json.loads(out.read_text())["findings"] if f["severity"] == "error" and not f.get("accepted")]
     assert [e["code"] for e in errors] == ["SYNC.scripts"] and errors[0]["text"].startswith("x: an input")
 

@@ -221,6 +221,8 @@ Handbook: [8.6 Project scripts and agents](../handbook/08-release-gate.md#86-pro
 ### Proposal
 
 A rule or a feature that a project asks edakit for. The skills propose-rule and propose-feature file it as an issue.
+An Action triages the repository owner's proposals; an issue by someone else is welcome and reaches it once the owner
+posts a sealed proposal there.
 Handbook: [11.6 When edakit falls short: feature proposals](../handbook/11-working-with-claude.md#116-when-edakit-falls-short-feature-proposals),
 [14.4 From a finding to a rule](../handbook/14-design.md#144-from-a-finding-to-a-rule).
 
@@ -316,6 +318,12 @@ Handbook: [14.2 The catalog: engines, codes, data and domains](../handbook/14-de
 A project of its own, with its own edakit.toml, in a folder below the main project.
 Handbook: [10.1 edakit.toml](../handbook/10-reference.md#101-edakittoml),
 [10.4 The requirements file](../handbook/10-reference.md#104-the-requirements-file).
+
+### Version
+
+A state of edakit with its own number, such as 0.2.0. Every change to edakit is one. The minor number goes up when a
+project has to act on an update, and the changelog says what to do. `edakit --version` names the version that runs.
+Handbook: [2.3 Claude Code: the plugin](../handbook/02-setup.md#23-claude-code-the-plugin).
 
 ### Working agreements
 

@@ -5,7 +5,7 @@ import json
 
 import pytest
 
-from helpers import check
+from helpers import check, open_points
 
 from edakit import checks
 from edakit.design import Design
@@ -23,7 +23,7 @@ def ids(rep):
 def test_example_is_clean(project):
     rep = run(project)
     assert rep.errors == []
-    assert rep.pending == []
+    assert [c for c, _ in rep.pending] == ["DOCS.file"]       # no requirements file (handbook 3.6)
     assert {c for c, _, _ in rep.waived} == {"LVL.undefined"}
 
 
@@ -531,7 +531,7 @@ def bridged(project, value_ohm=0.0):
 def test_zero_ohm_bridges_join_their_nets(project, capsys):
     bridged(project)
     rep = run(project)
-    assert rep.errors == [] and rep.pending == []
+    assert rep.errors == [] and open_points(rep) == []
     assert {c for c, _, _ in rep.waived} == {"LVL.undefined"}
     assert checks.main(project.config(), argparse.Namespace(release=False, json=None)) == 0
     assert ("joined by 0 Ω bridges, checked as one net: GND = GND_B (R11); 3V3 = 3V3_B (R10); LED7 = LED7_B (R12)"

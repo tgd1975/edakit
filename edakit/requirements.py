@@ -4,8 +4,8 @@
     edakit req R-4 [N-2 …]  the chain of each: where a requirement comes from, the requirement, what verifies it – for a
                             need, the requirements that follow from it
 
-[project] requirements in edakit.toml names the file, relative to edakit.toml – none by default: no key, no file, no
-change. A path, "hardware/requirements.toml", or a list: a variant names the main project's file and its own,
+[project] requirements in edakit.toml names the file, relative to edakit.toml – required before a release: without
+the key DOCS.file is open (engines/project.py), edakit check passes, --release and the gate do not. A path, "hardware/requirements.toml", or a list: a variant names the main project's file and its own,
 ["../../hardware/requirements.toml", "hardware/requirements.toml"]. An ID is unique across all of them – a variant
 adds entries, it does not change the main project's.
 
