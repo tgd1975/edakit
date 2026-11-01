@@ -55,4 +55,5 @@ def test_the_session_hook_names_the_edakit_that_runs(tmp_path):
 
 def test_the_session_hook_says_when_it_does_not_meet_the_project(tmp_path):
     out = context(run_hook(led_bar(tmp_path, replace=("[project]\n", '[project]\nedakit = ">=99"\n'))))
-    assert f"edakit {__version__} runs here" in out and '[project] edakit asks for ">=99"' in out
+    line = out.splitlines()[-1]   # 0.4.12, or 0.4.12+g1a2b3c4 from a git clone away from the tag
+    assert line.startswith(f"edakit {__version__}") and '[project] edakit asks for ">=99"' in line
