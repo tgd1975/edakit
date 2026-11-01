@@ -12,7 +12,7 @@ from pathlib import Path
 
 import pytest
 
-from helpers import check, executed
+from helpers import check, executed, open_points
 
 from edakit import cli
 from edakit.design import Design
@@ -142,7 +142,7 @@ def test_without_a_snapshot_p4_is_a_note_and_the_rest_unchanged(project):
     rep = run_checks(project)
     assert p4(rep) == ([], [], [], ["no stock snapshot (hardware/stock.json) – edakit stock asks JLCPCB about the 9 "
                                     "assembled parts"])
-    assert not rep.errors and not rep.pending and not rep.warnings and "PARTS.stock" in executed(project.config())
+    assert not rep.errors and not open_points(rep) and not rep.warnings and "PARTS.stock" in executed(project.config())
 
 
 def test_the_example_with_its_snapshot_fails_u1(project, jlcpcb, monkeypatch, capsys):
