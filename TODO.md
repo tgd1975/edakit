@@ -84,10 +84,6 @@ when a project must act); every merge that changes edakit a version of its own, 
 notes lane for concepts and TODO.md; the rulesets on main as text; the projects on the newest version, unpinned. Each
 step starts on the owner's word.
 
-- [ ] TD-47 - **V.4** The rulesets as text in `.github/rulesets/`, applied with `gh api` on the owner's word, the
-      checks not strict, with CLAUDE.md (the protection) and the skills triage, add-rule and add-feature (a fragment per
-      change) in the same branch – README, handbook 2.3, the merging rule and the notes lane came with TD-45 and TD-46.
-      Checked then: the admin role as a bypass on a personal repository.
 - [ ] TD-48 - **V.5** Branches left lying around: 9 `claude/*` and 2 `ccr-*` on origin, the local ones and the
       worktrees – listed, then merged or deleted on the owner's word; other sessions' branches named with their session.
 - [ ] TD-49 - **V.6** 1.0.0 on the owner's word once D.2 is built (`merge.py <n> --major`).
@@ -171,6 +167,10 @@ only once they are built (the owner, 2026-11-01).
 Done or dropped, newest first, each with its date and the commit that closed it. What closed before 2026-11-01 is
 taken from the history of this file; an item rewritten on its way is listed once, in its last form.
 
+- [x] TD-47 - **V.4** main protected: the rulesets main, main-updates and tags and the merge settings as files in
+  `.github/rulesets/` (#119), applied with `.github/rulesets.py apply` on the owner's word once everything in flight had
+  landed – GitHub took the admin role as the bypass of main-updates; the marker tag `protected-2026-11-01` on 71f807f;
+  the skills write a fragment per change (#120). [2026-11-01]
 - [x] TD-77 - **K.7** dropped: the launch is not in implementation – the step stays in outreach.md's table until it
       is (the owner: a concept's steps come here only once they are built). [2026-11-01]
 - [x] TD-76 - **K.6** dropped the same way: the launch week stays in outreach.md. [2026-11-01]
