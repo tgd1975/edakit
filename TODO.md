@@ -78,7 +78,7 @@ owner's rules there: no click because of the API, no self-extended MCP server, t
 - [ ] **M-1 to M-4 upstream, posted on 2026-11-01** (#792/#793, #794/#795, #796/#797, #798/#799): review comments
       answered on the fork's branches, rebased when `main` moves; the comment "I agree to the Contributor Permission v1
       in CONTRIBUTOR-LICENSING.md", when the maintainer asks for it, from the owner.
-- [ ] **M-5 and M-7 upstream, posted on 2026-11-01** (#800, #801): follow them; M-6 not posted – #539 has met it as far
+- [ ] **M-5 and M-7 upstream, posted on 2026-11-01** (#800/#802, #801/#803): follow them like M-1 to M-4; M-6 not posted – #539 has met it as far
       as EasyEDA's API lets it (upstream/README.md).
 - [ ] **On the owner's word – post:** E-1 to E-16 at easyeda/easyeda-api-sdk after the live check above – to #33, #34, #36, #38 and #39 as comments. Before
       each the check of "The latest state".
