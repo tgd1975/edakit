@@ -17,6 +17,7 @@ errors; with --release also on pending findings (an unverified part, an old stoc
 
 from __future__ import annotations
 
+import math
 import sys
 from collections import defaultdict
 from pathlib import Path
@@ -157,13 +158,53 @@ def self_fits(holes):
     return out
 
 
+def most_still(offsets):
+    """The bend as the solderer makes it: the offsets {pin: (dx, dy)} less the one shared by the most legs – moving every
+    leg by the same amount moves the body, not the bend."""
+    import math
+    base = max(offsets.values(), key=lambda o: sum(math.dist(o, q) <= FORMED_MM for q in offsets.values()))
+    return {n: (o[0] - base[0], o[1] - base[1]) for n, o in offsets.items()}
+
+
+def counter_bends(holes, lib, pad_map):
+    """GEO.formed/counter: [(turn, {pin: offset of its lead, mm}, [(pin, pin whose hole it lands in)])] for every turn of
+    90°, 180° and 270° that lays the library footprint onto itself – one row by nature. Turned so, the board's holes are
+    again the library's pattern with the offsets at other legs: a part bent there instead goes in turned. A bend equal
+    to the board's own is left out (the turn lays the board's holes onto themselves – GEO.formed's error), so is a part
+    with a number on several legs."""
+    from .part import TURNS, fit, pad_points, turned
+    at = defaultdict(list)
+    for n, x, y, _ in pad_points(lib):
+        at[n].append((x, y))
+    numbers = [pad_map.get(n, n) for n, *_ in holes]
+    if len(set(numbers)) < len(numbers) or any(len(at.get(n, [])) != 1 for n in numbers):
+        return []
+    own = {n: (x, y) for n, x, y, _ in holes}
+    library = [(n, *at[k][0], {}) for n, k in zip(own, numbers)]
+    offsets = most_still({n: (own[n][0] - x, own[n][1] - y) for n, x, y, _ in library})
+    out = []
+    for turn in (t for t in TURNS if t):
+        c = fit(library, library, turn, False)
+        if max(r for _, _, r in c["pairs"]) > FORMED_MM:
+            continue
+        lands = {library[j][0]: library[i][0] for i, j, _ in c["pairs"]}       # turned, leg j stands where leg i stood
+        back = (360 - turn) % 360
+        bend = most_still({j: turned(*offsets[i], back, False) for j, i in lands.items()})
+        moved = [(bend[n][0] - offsets[n][0], bend[n][1] - offsets[n][1]) for n in own]
+        if all(math.dist(m, moved[0]) <= FORMED_MM for m in moved):
+            continue
+        out.append((turn, bend, sorted(lands.items(), key=lambda p: natural_key(p[0]))))
+    return out
+
+
 def check_formed(d, rep, cfg):
     """GEO.formed: a through-hole part whose plated holes the board's footprint (`pcb dump`) moves away from its library
     footprint – leads formed for this board – and that has three or more of them fits only one way round: no turn by
     90°, 180° or 270° lays its holes onto themselves with a pin in the hole of a pin on another net of the graph. The
     library footprint is the one of the dump's footprint name that `edakit part import` cached; without it, or when
     it lacks a pad number of the dump, a note. A part on its library pattern is not judged: its orientation is the
-    print's job (GEO.mark, FILES.sheet, M-2)."""
+    print's job (GEO.mark, FILES.sheet, M-2). The counter-bend (#100): where a turn lays the library footprint onto
+    itself, a part bent at other legs fits turned – a note (grade counter) when a pin then lands on another net."""
     from . import part as parts
     dumped = board_dumps(d, cfg)
     for des in sorted(d.comps, key=natural_key):
@@ -200,6 +241,18 @@ def check_formed(d, rep, cfg):
                              + (f" (also {', '.join(f'{t}°' for t in more)})" if more else "") + " – "
                              + ", ".join(f"{pin(a)} in the hole of {pin(b)}" for a, b in shown),
                       d.comps[des].get("accept"))
+        counter = [(turn, bend, [(a, b) for a, b in lands if net(a) != net(b)])
+                   for turn, bend, lands in counter_bends(holes, lib, (d.part(des) or {}).get("pad_map") or {})]
+        counter = [c for c in counter if c[2]]
+        if counter:
+            (turn, bend, shown), more = counter[0], [t for t, *_ in counter[1:]]
+            pin = lambda n: f"pin {n} ({net(n) or 'no net'})"  # noqa: E731
+            legs = [f"pin {n} by ({x:+.2f}, {y:+.2f}) mm" for n, (x, y) in bend.items() if math.hypot(x, y) > FORMED_MM]
+            acc = d.comps[des].get("accept") or {}
+            rep.add("note", "GEO.formed", f"{des}: bent at other legs it goes in turned by {turn}°"
+                    + (f" (also {', '.join(f'{t}°' for t in more)}, with other legs)" if more else "") + " – "
+                    + ", ".join(legs) + ": " + ", ".join(f"{pin(a)} in the hole of {pin(b)}" for a, b in shown),
+                    acc.get("GEO.formed/counter") or acc.get("GEO.formed", ""), grade="counter")
 
 
 def check_signoff(d, rep):

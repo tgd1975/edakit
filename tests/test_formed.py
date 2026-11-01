@@ -4,7 +4,10 @@ lays onto itself with a pin in the hole of a pin on another net.
 
 The example gets the origin's RGB star LED as D10 (XINGLIGHT XL-B504RGBC, common anode, four legs in one row at
 1.25 mm, library footprint LED-TH_4P-BD5.8-P1.25 as `edakit part import C7371895` cached it) – round 1 of the origin's
-decision D-49 with pins 1 and 4 bent 1.6 mm towards the tip, round 2 with pin 4 bent towards the trunk instead."""
+decision D-49 with pins 1 and 4 bent 1.6 mm towards the tip, round 2 with pin 4 bent towards the trunk instead.
+
+The counter-bend (#100, the origin's D-54): turned by 180° round 2's holes are the row again with the offsets at pins 2
+and 3 – a part bent there goes in turned, a note."""
 
 import json
 
@@ -88,10 +91,67 @@ def test_round_1_fits_turned(project):
     assert "GEO.formed" in executed(project.config())
 
 
-def test_round_2_fits_one_way_only(project):
+COUNTER = ("D10: bent at other legs it goes in turned by 180° – pin 2 by (+0.00, +1.60) mm, pin 3 by (+0.00, -1.60) mm: "
+           "pin 1 (+5V) in the hole of pin 3 (STAR_G_K), pin 2 (STAR_R_K) in the hole of pin 4 (STAR_B_K), "
+           "pin 3 (STAR_G_K) in the hole of pin 1 (+5V), pin 4 (STAR_B_K) in the hole of pin 2 (STAR_R_K)")
+
+
+def test_round_2_fits_one_way_only_but_the_counter_bend_fits_turned(project):
+    """#100: the board's holes lie on themselves in no turn – but turned by 180° they are the row again with the offsets at
+    pins 2 and 3: a solderer who bends 'the second leg from the right up, the leftmost down' holding the part turned
+    bends those, and the star goes in with its anode in green's hole. No pattern of one row avoids it: a note."""
     star(project)
     dump(project, ROUND_2)
-    assert p8(project) == {"errors": [], "pending": [], "warnings": [], "notes": [], "waived": []}
+    assert p8(project) == {"errors": [], "pending": [], "warnings": [], "notes": [COUNTER], "waived": []}
+    assert "GEO.formed" in executed(project.config())
+
+
+def test_the_counter_bend_lands_where_the_note_says():
+    """The note's bend, turned by 180° about the row's centre, lies on the board's holes of round 2 pin for pin."""
+    from edakit.checks import counter_bends
+    holes = part.pad_points({"pads": pads(ROUND_2)})
+    lib = {"pads": pads({n: (x, 0) for n, x in ROW.items()})}
+    [(turn, bend, lands)] = counter_bends(holes, lib, {})
+    assert turn == 180
+    for leg, hole in lands:
+        x, y = ROW[leg] + bend[leg][0], bend[leg][1]
+        assert (round(-x, 3), round(-y, 3) + 0) == tuple(round(v, 3) + 0 for v in ROUND_2[hole])
+
+
+def test_the_counter_bend_on_one_net_is_no_note(project):
+    """Turned, every pin of the counter-bend lands in a hole of its own net: nothing to report."""
+    star(project, {"1": "+5V", "2": "+5V", "3": "+5V", "4": "+5V"})
+    dump(project, ROUND_2)
+    assert p8(project)["notes"] == []
+
+
+def test_a_board_pattern_that_fits_turned_is_its_own_counter_bend(project):
+    """Round 1: turned by 180° the counter-bend is the bend itself – the error says it, no note besides."""
+    star(project)
+    dump(project, ROUND_1)
+    found = p8(project)
+    assert len(found["errors"]) == 1 and found["notes"] == []
+
+
+def test_accept_the_counter_bend(project):
+    star(project)
+    dump(project, ROUND_2)
+    g = project.graph()
+    project.comp(g, "D10")["accept"] = {"GEO.formed/counter": "the assembly instruction: the longest lead into the hole "
+                                                              "with the '+', then bend"}
+    project.save_graph(g)
+    found = p8(project)
+    assert found["notes"] == [] and found["waived"] == [COUNTER]
+
+
+def test_a_library_pattern_no_turn_lays_onto_itself_has_no_counter_bend(project):
+    """Three holes in a triangle: no turn of the library lays it onto itself, so no bend fits turned."""
+    library(project, "TRI", {"1": (0, 1.0), "2": (-1.0, -0.5), "3": (1.2, -0.5)})
+    dump(project, {"1": (0, 2.0), "2": (-1.0, -0.5), "3": (1.2, -0.5)}, ref="D10", name="TRI")
+    star_nets = project.graph()
+    star_nets["graph"]["components"].append({"designator": "D10", "type": "led", "pins": {"1": "A", "2": "K", "3": "K2"}})
+    project.save_graph(star_nets)
+    assert p8(project)["notes"] == []
 
 
 @pytest.mark.parametrize("p4, found", [(1.6, True), (1.2, True), (1.0, False)])
