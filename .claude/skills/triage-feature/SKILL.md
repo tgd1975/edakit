@@ -75,7 +75,9 @@ between rejected and question: question – except for **Safe?**, which never as
    interface does not fit after all, a build that would touch the pipeline's paths: no commit, **Question** or
    **Rejected** with what showed it.
 3. **Commit.** Step 7 of add-feature passes (tests, ruff, the example). Exactly one commit: `<module>: <title> (#14)`,
-   with the repository's trailer and the git identity the workflow set (never `git config`).
+   with the repository's trailer and the git identity the workflow set (never `git config`). It carries the
+   proposal's fragment `changes/proposal-14.md` – `patch`, or `minor` when a project must act on the update, then the
+   line for the changelog (`changes/README.md`): one per proposal, since accepted proposals share their branch.
 4. **`pr-line.md`**: the line for the pull request body – `Closes #14 – zero-ohm bridges join their nets` –, the
    projects it ran on, and for a private origin the commands to run there; one list item starting `- Closes #14 –`, its
    details indented below it; `{commit}` as in section 5, and "this pull request" where the pull request goes.

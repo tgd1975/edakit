@@ -79,7 +79,9 @@ doubt between rejected and question: question – except for **Safe?**, which ne
    **Question** or **Rejected** with what showed it.
 3. **Commit.** Section 8 of add-rule passes (handbook generated, tests, ruff, the example). Exactly one commit:
    `REQ.function: <title> (#12)` – for a fact or a domain setting the code it serves, or the part –, with the
-   repository's trailer and the git identity the workflow set (never `git config`).
+   repository's trailer and the git identity the workflow set (never `git config`). It carries the proposal's
+   fragment `changes/proposal-12.md` – `patch`, or `minor` when a project must act on the update, then the line for
+   the changelog (`changes/README.md`): one per proposal, since accepted proposals share their branch.
 4. **`pr-line.md`**: the line for the pull request body – `Closes #12 – REQ.function (hole fits the lead)` –, the
    real projects it ran on, and what could not be run; one list item starting `- Closes #12 –`, its details indented
    below it; `{commit}` as in section 5, and "this pull request" where the pull request goes.
