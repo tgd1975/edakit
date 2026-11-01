@@ -36,9 +36,6 @@ to touch.
 - [ ] TD-82 - **pytree's pictures:** pick what of the private repository may go onto `docs/projects/pytree.md` – the
       page is text only, from its README and chapter 13; say too whether that much about the gift may stand before
       Christmas. *(edakit, documentation session)*
-- [ ] TD-91 - **OK for #186, the feature proposals #153 and #113:** every assembled board gets its ODB++ and MPN
-      BOM whatever the makers in `[cart]` (minor), an `easyeda` script may write `pcb:<b>` (patch) – main merged in,
-      checks green but version, which `python3 .github/merge.py 186` sets. *(edakit-3f)*
 - [ ] TD-57 - **The real cost of the first order:** once an order the skill cart put into a maker's cart is paid,
       `/edakit:cart actual` on its order page or saved invoice – `edakit cart actual` (handbook 8.4, step 5) has run
       on recorded data only; the real cost, the project's fee table and the order record come from it. *(edakit-80)*
@@ -102,6 +99,8 @@ Noted in the walkthrough's last section until 2026-11-01; each is edakit's to bu
 Done or dropped, newest first, each with its date and the commit that closed it. What closed before 2026-11-01 is
 taken from the history of this file; an item rewritten on its way is listed once, in its last form.
 
+- [x] TD-91 - **OK for #186, the feature proposals #153 and #113:** given, merged as edakit 0.5.0 (05cd313);
+      #153 and #113 closed. [2026-11-02]
 - [x] TD-86 - **Messages on KiCad:** closed by 27b86b3 before the item was written – on KiCad the gate's stages S and F
   name KiCad's schematic and BOM, and `route all` says nothing was written to the KiCad PCB (test_kicad_fab).
   *(edakit-6a)* [2026-11-02]
