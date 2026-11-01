@@ -1020,3 +1020,42 @@ def test_route_drc_exits_3_for_the_acknowledgement_alone(project, monkeypatch):
     assert route.main(project.config(), args) == 3
     monkeypatch.setattr(pcb, "netlist_diff", lambda cfg, board, mcp: {"parts": {"swapped": ["D1"]}, "nets": []})
     assert route.main(project.config(), args) == 2
+
+
+def test_the_holes_are_kept_free_by_no_pours_regions_not_by_a_notch(project, monkeypatch):
+    """E-13: EasyEDA fills a pour polygon with a hole as its outer contour but leaves a NO_POURS region free – the pour
+    follows the outline, every mounting and tooling hole gets a region of its keep circle. EasyEDA keeps no region
+    name: earlier regions are known by the ids edakit remembered or by sitting on a hole; a region of the user stays."""
+    import json
+
+    from shapely.geometry import Point, Polygon
+    cfg = project.config()
+    board = cfg.board()
+    board.tooling, board.tooling_keep = [(3.0, 3.0)], 1.5
+    board.holes = [{"x": 20.0, "y": 10.0, "d": 3.2, "keep": 3.5}]
+    cfg.artifact("pcb", "main_keep_regions.json").write_text(json.dumps(["r-memo"]))
+    on_hole = pcb.outline_arg([board.eda_point(x, y) for x, y in pcb.circle_points(20.0, 10.0, 3.5)])["$polygon"]
+    elsewhere = pcb.outline_arg([board.eda_point(x, y) for x, y in pcb.circle_points(30.0, 15.0, 2)])["$polygon"]
+    calls = []
+
+    def api(mcp, path, *args, **kw):
+        calls.append((path, args))
+        if path == "PCB_PrimitiveRegion.getAll":
+            return [{"state": {"PrimitiveId": "r-memo", "RuleType": [7], "Layer": 12, "RegionName": None}},
+                    {"state": {"PrimitiveId": "r-hole", "RuleType": [7], "Layer": 12, "RegionName": None,
+                               "ComplexPolygon": {"polygon": on_hole}}},
+                    {"state": {"PrimitiveId": "r-user", "RuleType": [7], "Layer": 12, "RegionName": None,
+                               "ComplexPolygon": {"polygon": elsewhere}}}]
+        if path == "PCB_PrimitiveRegion.create":
+            return {"state": {"PrimitiveId": f"new{len(calls)}"}}
+        return True
+    monkeypatch.setattr(pcb, "api", api)
+    monkeypatch.setattr(pcb, "ensure_pcb_focus", lambda mcp: None)
+    assert pcb.keep_regions(cfg, board, None) == 2
+    assert ("PCB_PrimitiveRegion.delete", (["r-memo", "r-hole"],)) in calls
+    made = [a for p, a in calls if p == "PCB_PrimitiveRegion.create"]
+    assert [(a[0], a[2]) for a in made] == [(pcb.MULTI_LAYER, [7]), (pcb.MULTI_LAYER, [7])]
+    assert len(json.loads(cfg.artifact("pcb", "main_keep_regions.json").read_text())) == 2
+    whole = Polygon(pcb.pour_outline(board, notches=False))
+    assert whole.contains(Point(3.0, 3.0)) and whole.contains(Point(20.0, 10.0))      # no notch any more
+    assert not Polygon(pcb.pour_outline(board)).contains(Point(3.0, 3.0))           # the notch where the others read it
