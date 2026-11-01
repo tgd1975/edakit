@@ -156,6 +156,17 @@ sources = [
   "Concept docs/concepts/done/rules-at-scale.md, section 5: suggested domains",
 ]
 
+[codes."STRUCT.edakit"]
+title = "the edakit the project needs"
+rule = "The running edakit meets [project] edakit, where the project names it – \">=0.4\", \">=0.4, <0.5\" (handbook 2.3)."
+why = "Skills and the command line come from the plugin; a project that needs a newer one – a key, a check – is checked by an older one without a word."
+fix = "Update the plugin (claude plugin marketplace update edakit, then claude plugin update edakit@edakit), or run the edakit the project names."
+severity = "note"
+replaces = []
+sources = [
+  "Concept docs/concepts/done/versioning.md, V.7",
+]
+
 [codes."STRUCT.entry"]
 title = "graph pins = parts entry"
 rule = "Every part with an LCSC number or a part number has a parts entry, its pins (number and name) equal the entry's where the component states them – without `pins` it takes the entry's, and only the comparison with the library symbol is left; without an entry as well, the numbers its nets and nc use, so that the rest is checked –, no supply pin is in nc, a component's config names one of its entry's configs and its states name output or bidirectional pins of the entry, each high, low or off (high not on an open-drain output), and – with the library symbol cached by edakit part import – the pins equal that symbol (case and blanks ignored); the symbol gives no number to two pins and has a pin for every pad of its footprint (grade symbol). Pins the entry's symbol_differs names follow the datasheet against the symbol on purpose: left out of the comparison and named in a note with the reason (grade declared). An LED strip (kind led_strip) gives its length, strip.length_m or strip.pixels (grade strip)."

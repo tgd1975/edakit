@@ -100,9 +100,19 @@ def agreements(chapter=CHAPTER):
     return [(int(n), title.strip()) for n, title in re.findall(r"^(\d+)\. \*\*(.+?)\*\*", body.group(1), re.M)]
 
 
+def _edakit():
+    """edakit.version, imported by path: the hook runs as a plain script."""
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+    try:
+        from edakit import version
+    finally:
+        sys.path.pop(0)
+    return version
+
+
 def digest(chapter=CHAPTER):
-    head = (f"edakit project – the working agreements of handbook {SECTION} apply in this session; the reason and the "
-            f"incident behind each are in {chapter}")
+    head = (f"edakit project (edakit {_edakit().version()} runs here) – the working agreements of handbook {SECTION} "
+            f"apply in this session; the reason and the incident behind each are in {chapter}")
     return "\n".join([head] + [f"{n}. {title}" for n, title in agreements(chapter)])
 
 
@@ -166,13 +176,30 @@ def kicad(path):
     return bool(project and re.search(r'^\s*toolchain\s*=\s*"kicad"', project.group(1), re.M))
 
 
+def running(path):
+    """The line for a project whose [project] edakit the running edakit does not meet (STRUCT.edakit), else none – read
+    by hand, like toolchain; the digest's first line names the edakit that runs."""
+    text = path.read_text(encoding="utf-8", errors="replace")
+    project = re.search(r"^\[project\][^\n]*\n(.*?)(?=^\[|\Z)", text, re.M | re.S)
+    asked = project and re.search(r'^\s*edakit\s*=\s*"([^"]*)"', project.group(1), re.M)
+    v = _edakit()
+    try:
+        if asked and not v.meets(asked.group(1)):
+            return [f'edakit {v.version()} runs here; [project] edakit asks for "{asked.group(1)}" – update the plugin '
+                    "(handbook 2.3)."]
+    except ValueError:
+        pass                                   # edakit check names a requirement it cannot read
+    return []
+
+
 def hook(data):
     """The hook's output for the hook JSON `data`, or None for no output."""
     path = find_project(data.get("cwd") or os.getcwd())
     if path is None:
         return None
     wanted, entries = read(path)
-    lines = ([digest()] if wanted else []) + ([KICAD] if kicad(path) else []) + registered(entries) + command()
+    lines = (([digest()] if wanted else []) + running(path) + ([KICAD] if kicad(path) else []) + registered(entries)
+             + command())
     if not lines:
         return None
     return {"hookSpecificOutput": {"hookEventName": "SessionStart", "additionalContext": "\n".join(lines)}}

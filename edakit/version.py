@@ -6,6 +6,7 @@ The number is `__version__` in edakit/__init__.py, written by .github/merge.py a
 cache and an install by uvx have no .git: there the number alone.
 """
 
+import re
 import subprocess
 from pathlib import Path
 
@@ -30,3 +31,28 @@ def version(root=ROOT):
         return __version__
     sha = _git(root, "rev-parse", "--short=7", "HEAD")
     return f"{__version__}+g{sha}" if sha else __version__
+
+
+CLAUSE = re.compile(r"^(>=|<=|==|>|<)\s*(\d+(?:\.\d+){0,2})$")
+
+
+def parse(required):
+    """[(operator, number)] of a requirement such as ">=0.4, <0.5" – [project] edakit in edakit.toml; ValueError when
+    edakit cannot read it."""
+    clauses = [c.strip() for c in str(required).split(",")]
+    found = [CLAUSE.match(c) for c in clauses]
+    if not str(required).strip() or not all(found):
+        raise ValueError(f"{required!r}: comparisons such as \">=0.4\" or \">=0.4, <0.5\" (>=, >, <=, <, ==)")
+    return [(m.group(1), m.group(2)) for m in found]
+
+
+def _key(number):
+    parts = tuple(int(x) for x in number.split("+")[0].split("."))
+    return parts + (0,) * (3 - len(parts))
+
+
+def meets(required, have=__version__):
+    """True when the edakit `have` (0.4.11, 0.4.11+g1a2b3c4) meets the requirement."""
+    h = _key(have)
+    compare = {">=": h.__ge__, ">": h.__gt__, "<=": h.__le__, "<": h.__lt__, "==": h.__eq__}
+    return all(compare[op](_key(n)) for op, n in parse(required))
