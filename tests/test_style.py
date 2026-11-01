@@ -15,11 +15,12 @@ import pytest
 
 ROOT = Path(__file__).resolve().parents[1]
 GLOSSARY = ROOT / "docs" / "glossary.md"
-ENTRY = ("README.md", "docs/glossary.md", "docs/quickstart.md", "docs/how-it-works.md")   # the entry layer
+PROJECTS = tuple(p.relative_to(ROOT).as_posix() for p in sorted((ROOT / "docs" / "projects").glob("*.md")))
+ENTRY = ("README.md", "docs/glossary.md", "docs/quickstart.md", "docs/how-it-works.md") + PROJECTS   # the entry layer
 HISTORY = ("handbook/13-lessons-learned.md",)       # the history of edakit: its dates are its content
 DATED = ("handbook/15-regulatory.md",               # the state of the law the regulatory review relies on
          "examples/coin-cell-led/docs/decisions.md",  # a decision log: each decision with its day
-         "examples/blinker-555/docs/decisions.md")
+         "examples/blinker-555/docs/decisions.md") + PROJECTS   # a project page names its release with its date
 QUOTED = ("11.4",)                                  # the working agreements: the hook reads them, their words stay
 SECTION_LINES = 80
 CHAPTER_LINES = 500                        # a chapter of the handbook
