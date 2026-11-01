@@ -261,11 +261,11 @@ def layout_hash(cfg):
 
 
 def header(cfg):
-    from .. import __version__
+    from ..version import version
     design = Design.from_config(cfg)
     mcp = re.search(r"EASYEDA_MCP_VERSION:-([\d.]+)",
                     (Path(__file__).resolve().parents[1] / "easyeda" / "mcp-server.sh").read_text())
-    tools = {"python": platform.python_version(), "edakit": __version__,
+    tools = {"python": platform.python_version(), "edakit": version(),
              "ngspice": (re.findall(r"ngspice-[\d.]+", sh(cfg.root, "ngspice", "-v")) or ["ngspice ?"])[0],
              "easyeda-mcp-pro": mcp.group(1) if mcp else "?"}
     if is_kicad(cfg):                 # the tool chain the stages S, L and F ran with (handbook 16)
