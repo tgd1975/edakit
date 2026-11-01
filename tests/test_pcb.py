@@ -6,6 +6,7 @@ import json
 import math
 import re
 import tomllib
+from pathlib import Path
 from types import SimpleNamespace
 
 import pytest
@@ -228,13 +229,20 @@ SOIC16 = {**{i + 1: (-2.7, 4.445 - 1.27 * i) for i in range(8)}, **{16 - i: (2.7
 BUTTON = {1: (-3.25, 1.85), 2: (3.25, 1.85), 3: (-3.25, -1.85), 4: (3.25, -1.85)}
 
 
+LED_BAR_FOOTPRINTS = Path(__file__).parent / "fixtures" / "led-bar-footprints"
+
+
 def led_bar_geo():
-    geo = {"U1": footprint(51, 21, {**MODULE, 41: (25, -2.54), 42: (25, 0), 43: (25, 2.54)}),
-           "U2": footprint(6.0, 10.4, SOIC16), "J1": footprint(6.0, 4.5, {1: (-1, 0), 2: (1, 0)}, tht=True),
-           "D1": footprint(6.6, 3.0, {1: (-2.2, 0), 2: (2.2, 0)}), "SW1": footprint(6.5, 5.1, BUTTON),
-           **{r: footprint(3.7, 1.9, CHIP) for r in ("R1", "R2", "C1", "C2", *(f"D{i}" for i in range(2, 10)))}}
-    geo["U1"]["bbox"] = [-21.5 * MIL, -10.5 * MIL, 25.5 * MIL, 10.5 * MIL]   # clear of the mounting hole (3.5, 3.5)
-    geo["J1"]["bbox"] = [-3 * MIL, -5.5 * MIL, 3 * MIL, 2.25 * MIL]          # its body reaches the edge (layout.edge)
+    """The example's geometry as `pcb dump` would store it: the LCSC footprints of its parts as `edakit part import`
+    cached them in the live test of 2026-10-31 (fixtures/led-bar-footprints) – box and pads with their shapes, no
+    print. The example's rows fit them (LT-9: on boxes made up from the footprint names the rows fitted those only)."""
+    fixture = Path(__file__).parent / "fixtures" / "led-bar" / "hardware"
+    graph = json.loads((fixture / "graph.json").read_text())["graph"]
+    geo = {}
+    for c in graph["components"]:
+        name = json.loads((fixture / "parts" / f"{c['lcsc']}.json").read_text())["footprint"]
+        fp = json.loads((LED_BAR_FOOTPRINTS / part.file_name(name)).read_text())
+        geo[c["designator"]] = {"footprint": name, "bbox": fp["bbox"], "pads": fp["pads"]}
     return geo
 
 
@@ -244,8 +252,7 @@ def place_project(project, drop=("C1", "R1"), add="", geo=None):
     lines = [ln for ln in f.read_text().splitlines(keepends=True) if ln.split(" = ")[0] not in drop]
     text = "".join(lines)
     if add:
-        text = text.replace('C2 = { x = 29, y = 28, rot = 0, side = "top" }\n',
-                            f'C2 = {{ x = 29, y = 28, rot = 0, side = "top" }}\n{add}')
+        text = re.sub(r"^(C2 = .*\n)", lambda m: m.group(1) + add, text, count=1, flags=re.M)
     f.write_text(text)
     (project.root / "hardware" / "boards" / "main.geometry.json").write_text(json.dumps(geo or led_bar_geo()))
     return f
@@ -317,7 +324,7 @@ def test_place_write_adds_the_rows_and_the_plan_passes(project, capsys):
     new = [ln for ln in after.splitlines() if ln not in before.splitlines()]
     assert [ln.split(" = ")[0] for ln in new] == ["R1", "C1"] and all(ln.endswith("auto = true }") for ln in new)
     assert [ln for ln in after.splitlines() if ln not in new] == before.splitlines()   # nothing else changed
-    assert after.index("C2 = { x = 29") < after.index(new[0]) < after.index("[near]")  # at the end of [place]
+    assert after.index("C2 = { x = 8.1") < after.index(new[0]) < after.index("[near]")  # at the end of [place]
     cfg = project.config()
     assert pcb.plan(cfg, cfg.board()) == []
     assert cli.main(["pcb", "place", "--write", "--config", toml]) == 0  # a second run changes nothing
@@ -325,7 +332,7 @@ def test_place_write_adds_the_rows_and_the_plan_passes(project, capsys):
 
 
 def test_place_never_moves_a_hand_written_row(project, capsys):
-    hand = 'R1 = { x = 59, y = 17, rot = 90, side = "top" }   # by hand\n'
+    hand = 'R1 = { x = 60.4, y = 13.8, rot = 180, side = "top" }   # by hand\n'
     f = place_project(project, add=hand)
     loose = [ln for ln in f.read_text().splitlines(keepends=True) if ln.startswith(("D1 = ", "R2 = "))]
     assert len(loose) == 2 and all("auto = true" in ln for ln in loose)    # the example's auto rows: no host
@@ -347,10 +354,13 @@ def test_place_moves_its_own_rows(project, capsys):
 
 
 def test_place_names_a_part_without_a_free_spot(project, capsys):
-    # U2's box spans x 60.8-71.2, y 14-20; four walls 0.05 mm from it reach 6.05 mm out on every side
-    walls = {"X1": (66, 23.05, 22.5, 6), "X2": (66, 10.95, 22.5, 6), "X3": (57.75, 17, 6, 6.1),
-             "X4": (74.25, 17, 6, 6.1)}
-    geo = {**led_bar_geo(), **{r: footprint(w, h, {}) for r, (_, _, w, h) in walls.items()}}
+    # four walls 0.05 mm from U2's box reach 6.05 mm out on every side
+    board, geo = project.config().board(), led_bar_geo()
+    x0, y0, x1, y1 = pcb.part_box(board, geo["U2"], board.place["U2"])
+    cx, cy, w, h = (x0 + x1) / 2, (y0 + y1) / 2, x1 - x0 + 12.1, y1 - y0 + 0.1
+    walls = {"X1": (cx, y1 + 3.05, w, 6), "X2": (cx, y0 - 3.05, w, 6), "X3": (x0 - 3.05, cy, 6, h),
+             "X4": (x1 + 3.05, cy, 6, h)}
+    geo = {**geo, **{r: footprint(w, h, {}) for r, (_, _, w, h) in walls.items()}}
     add = "".join(f'{r} = {{ x = {x}, y = {y}, rot = 0, side = "top" }}\n' for r, (x, y, _, _) in walls.items())
     place_project(project, drop=("C1",), add=add, geo=geo)
     assert cli.main(["pcb", "place", "--config", str(project.root / "edakit.toml")]) == 2
@@ -407,18 +417,18 @@ def test_place_rest_brings_the_parts_tied_to_a_host_it_places(project, capsys):
 
 
 def test_place_rest_improvement_swaps_and_moves_its_rows(project):
-    """The improvement pass: D5 and D6 in the LED row, each in the other's slot – their cathodes cross on the way to
-    U2.8 and U2.9, swapping the rows shortens the airline length by 0.18 mm; back would lengthen it. A move takes D5
-    off the row to a spot shorter still. The plan check stays clean."""
+    """The improvement pass: D5 and D6 in their slots of the example's LED row – on the LCSC footprint their cathodes
+    cross on the way to U2.8 and U2.9, swapping the rows shortens the airline length by 1.86 mm; back would lengthen
+    it. A move takes D5 off the row to a spot shorter still. The plan check stays clean."""
     place_project(project, drop=("D5", "D6"))
     cfg = project.config()
     board, design = cfg.board(), Design.from_config(cfg)
     s = pcb.Placing(cfg, board, pcb.plan_geometry(cfg, board, design), design, set(), lambda r: True)
-    s.add("D5", config.Placement(69, 34, 0, "top", auto=True))
-    s.add("D6", config.Placement(65, 34, 0, "top", auto=True))
+    s.add("D5", config.Placement(62.6, 34, 0, "top", auto=True))
+    s.add("D6", config.Placement(67.2, 34, 0, "top", auto=True))
     found, total = s.findings(), s.total()
     assert s.swap("D5", "D6", found) == found
-    assert (s.place["D5"].x, s.place["D6"].x) == (65, 69) and s.total() == pytest.approx(total - 0.18, abs=0.005)
+    assert (s.place["D5"].x, s.place["D6"].x) == (67.2, 62.6) and s.total() == pytest.approx(total - 1.86, abs=0.005)
     assert s.swap("D5", "D6", found) is None
     total = s.total()
     assert s.move("D5", found) == found and s.total() < total - pcb.PLACE_REST_EPS and s.place["D5"].y < 34
@@ -441,28 +451,6 @@ def test_place_rest_names_a_part_without_a_spot(project, capsys):
 # boxes 0.19 mm outside their pads. Boxes that only touch leave 0.2 mm between such pads: `--rest` put R2 0.01 mm
 # from U1.43, `route all` turned it down (paste gap 0.4 mm), `pcb plan` had not seen it.
 
-def copper_geo():
-    geo = led_bar_geo()
-    for ref, fp in geo.items():
-        for p in fp["pads"].values():
-            if p["tht"]:
-                p.update(shape="ELLIPSE", w=70, h=70, rot=0, layer="MULTI")
-            elif ref == "U1":
-                p.update(shape="RECT", w=63, h=126, rot=0 if abs(p["y"]) > 300 else 90, layer="TOP")
-            elif ref == "U2":
-                p.update(shape="RECT", w=59, h=24, rot=0, layer="TOP")
-            else:
-                p.update(shape="RECT", w=44.6, h=54.2, rot=0, layer="TOP")
-    geo["U2"]["bbox"] = [-3.7 * MIL, -5.2 * MIL, 3.7 * MIL, 5.2 * MIL]
-    ys = [p["y"] for p in geo["U1"]["pads"].values()]
-    geo["U1"]["bbox"][1:] = min(ys) - 63, 25 * MIL + 63, max(ys) + 63
-    for ref in ("R1", "R2", "C1", "C2", *(f"D{i}" for i in range(2, 10))):
-        geo[ref]["bbox"] = [-69, -36, 70, 36]
-        for n, p in geo[ref]["pads"].items():
-            p["x"] = 39.37 if n == "2" else -39.37
-    return geo
-
-
 def paste_pairs(cfg, geo):
     """The pad pairs of different parts closer than the paste gap on top, measured as `route check` measures the PCB:
     every pad of the plan's parts at its place, with its net of the graph."""
@@ -478,17 +466,17 @@ def paste_pairs(cfg, geo):
 
 
 def test_plan_names_pads_of_two_parts_closer_than_the_paste_gap(project):
-    geo = copper_geo()
+    geo = led_bar_geo()
     place_project(project, drop=("R2",), geo=geo,
-                  add='R2 = { x = 57.4, y = 11.96, rot = 0, side = "top" }\n')   # its box 0.05 mm from U1's at pad 41
+                  add='R2 = { x = 57.0, y = 16.0, rot = 0, side = "top" }\n')   # where pcb place put it in the live test
     cfg = project.config()
     assert paste_pairs(cfg, geo) == [("R2.1", "U1.41")]
     assert pcb.plan(cfg, cfg.board()) == [
-        "GEO.spacing R2.1 (3V3) – U1.41 (no net): 0.233 mm apart on TOP, below the paste gap 0.400 mm"]
+        "GEO.spacing R2.1 (3V3) – U1.41 (no net): 0.219 mm apart on TOP, below the paste gap 0.400 mm"]
 
 
 def test_place_keeps_the_paste_gap_next_to_a_host_and_by_airline_length(project, capsys):
-    geo = copper_geo()
+    geo = led_bar_geo()
     place_project(project, drop=("C1", "R1", "C2", "D1", "R2"), geo=geo)
     capsys.readouterr()
     assert cli.main(["pcb", "place", "--rest", "--write", "--config", str(project.root / "edakit.toml")]) == 0
@@ -506,7 +494,7 @@ BELL_PCB = [("C1", 2578.74, 1181.102, 0, 1), ("J1", 3149.6059999999998, 1181.102
             ("S2", 2834.646, 472.441, 0, 1), ("U1", 889.764, 1102.362, -90.00000000000001, 1)]
 BELL_PLAN = {"C1": (65.5, 30, 0), "J1": (80, 30, 90), "LED3": (50, 48, 0), "R6": (65, 12, 90), "R8": (22, 16.3, 0),
              "S2": (72, 12, 0), "U1": (22.6, 28, 270)}
-AUTO = {"C1": (70.2, 22.4, 90), "D1": (75.0, 12.0, 0), "R2": (40.0, 30.0, 180)}   # where an auto-layout left them
+AUTO = {"C1": (64.8, 10.5, 0), "D1": (86.4, 18.3, 270), "R2": (57.2, 15.7, 180)}   # where an auto-layout left them
 
 
 def bare_board(**keys):
@@ -580,11 +568,11 @@ def test_write_back_adds_auto_rows_for_the_parts_without_one(project, capsys):
     assert pcb.write_back(cfg, board, comps, auto=True) == 0
     after = f.read_text()
     new = [ln for ln in after.splitlines() if ln not in before.splitlines()]
-    assert new == ['C1 = { x = 70.2, y = 22.4, rot = 90, side = "top", auto = true }',
-                   'D1 = { x = 75.0, y = 12.0, rot = 0, side = "top", auto = true }',
-                   'R2 = { x = 40.0, y = 30.0, rot = 180, side = "top", auto = true }']
+    assert new == ['C1 = { x = 64.8, y = 10.5, rot = 0, side = "top", auto = true }',
+                   'D1 = { x = 86.4, y = 18.3, rot = 270, side = "top", auto = true }',
+                   'R2 = { x = 57.2, y = 15.7, rot = 180, side = "top", auto = true }']
     assert [ln for ln in after.splitlines() if ln not in new] == before.splitlines()   # every other line as it was
-    assert after.index("C2 = { x = 29") < after.index(new[0]) < after.index("[near]")  # at the end of [place]
+    assert after.index("C2 = { x = 8.1") < after.index(new[0]) < after.index("[near]")  # at the end of [place]
     assert "3 rows written into hardware/boards/main.toml [place] with auto = true" in capsys.readouterr().out
     cfg = project.config()
     assert pcb.parts_without_row(cfg.board(), Design.from_config(cfg)) == []
@@ -619,10 +607,10 @@ def test_autolayout_writes_back_once_the_positions_stand_still(project, monkeypa
     cfg = project.config()
     board = cfg.board()
     moving = led_bar_pcb(board, {r: (x - 5, y, rot) for r, (x, y, rot) in AUTO.items()})
-    turned = led_bar_pcb(board, {**AUTO, "R2": (40.0, 30.0, 0)})       # the same spots, R2 turned: still moving
+    turned = led_bar_pcb(board, {**AUTO, "R2": (57.2, 15.7, 0)})       # the same spots, R2 turned: still moving
     still = led_bar_pcb(board, AUTO)
     noisy = json.loads(json.dumps(still))                               # as EasyEDA reports it now and then
-    next(c for c in noisy if c["designator"] == "C1")["rotation"] = 90.00000000000001
+    next(c for c in noisy if c["designator"] == "C1")["rotation"] += 1e-14
     readings = iter([moving, turned, still, noisy, still])
     calls = stub_autolayout(monkeypatch, readings)
     assert pcb.autolayout(cfg, board, None) == 0
@@ -675,7 +663,7 @@ def test_takeover_takes_a_board_placed_before_as_fixed_rows(project, monkeypatch
     assert cli.main(["pcb", "takeover", "--config", toml]) == 0         # without --write: shown only
     out = capsys.readouterr().out
     assert f.read_text() == before and "13 parts without a row – --write puts them into [place]" in out
-    assert '  D1 = { x = 75.0, y = 12.0, rot = 0, side = "top" }\n' in out          # fixed: no auto
+    assert '  D1 = { x = 86.4, y = 18.3, rot = 270, side = "top" }\n' in out        # fixed: no auto
     assert cli.main(["pcb", "takeover", "--write", "--config", toml]) == 0
     assert "13 rows written into hardware/boards/main.toml [place] (fixed)" in capsys.readouterr().out
     board = project.config().board()
@@ -755,7 +743,7 @@ def test_the_bar_with_d3_turned(project, capsys):
     """The proposal's case: with D3 turned the plan names it as long as the LEDs' kind is led; with the parts entry
     saying diode it passed – now `uniform` names the kind."""
     f = place_project(project, drop=())
-    f.write_text(f.read_text().replace('D3 = { x = 57, y = 34, rot = 0,', 'D3 = { x = 57, y = 34, rot = 180,'))
+    f.write_text(f.read_text().replace('D3 = { x = 53.4, y = 34, rot = 0,', 'D3 = { x = 53.4, y = 34, rot = 180,'))
     cfg = project.config()
     assert pcb.plan(cfg, cfg.board()) == ["LEDs in a row (D2, D3, D4, D5, D6, D7, D8, D9): anode of D3 points the other "
                                           "way than D2 – turn them by 180°"]
@@ -768,16 +756,17 @@ def test_the_bar_with_d3_turned(project, capsys):
     cfg = project.config()
     assert pcb.plan(cfg, cfg.board()) == ["diodes in a row (D2, D3, D4, D5, D6, D7, D8, D9): cathode of D3 points the "
                                           "other way than D2 – turn it by 180°"]
-    f.write_text(f.read_text().replace('uniform = { diode = "row" }', 'uniform = { diode = "+x" }'))
+    f.write_text(f.read_text().replace('uniform = { diode = "row" }', 'uniform = { diode = "-x" }'))
     cfg = project.config()
     assert pcb.plan(cfg, cfg.board()) == [                             # the whole board: D1, the SS34, is a diode too
-        "D1 (diode): cathode points -x, uniform +x – turn it by 180° (rot = 180)",
-        "D3 (diode): cathode points -x, uniform +x – turn it by 180° (rot = 0)"]
+        "D1 (diode): cathode points +y, uniform -x – turn it by 90° (rot = 0)",
+        "D3 (diode): cathode points +x, uniform -x – turn it by 180° (rot = 0)"]
 
 
-# --- mated plugs and the mechanical model (#62): the example with the test geometry; J1 at (84, 12) turned by 90°, so
-# that its footprint's +y points into the board (-x) and -y to the right edge (+x, the outline at x = 90); its box
-# reaches x = 81.75 … 89.5, y = 9 … 15. U2 (SOIC-16 turned by 90°) covers x = 60.8 … 71.2, y = 14 … 20.
+# --- mated plugs and the mechanical model (#62): the example on its LCSC footprints; J1 at (87.4, 12) turned by 90°,
+# so that its footprint's +y points into the board (-x) and -y to the right edge (+x, the outline at x = 90); its box
+# reaches x = 84.5 … 89.1, y = 9 … 15. U2 (SOIC-16 turned by 90°) covers x = 62.28 … 69.72, y = 11.64 … 22.03, C1
+# x = 62.84 … 66.78, y = 9.61 … 11.41.
 
 def with_mate(project, mate=None, f=None, **entry):
     """The example with its test geometry, J1's parts entry (C131337) given `mate` and further fields."""
@@ -790,15 +779,15 @@ def with_mate(project, mate=None, f=None, **entry):
     return f
 
 
-INTO_BOARD = {"box": [-2.5, 2.25, 2.5, 14.25], "h_mm": 4.5, "exit": "+y"}    # 12 mm out of J1 towards U2 (-x)
-TO_EDGE = {"box": [-2.5, -7.5, 2.5, -5.5], "h_mm": 4.5, "exit": "-y"}       # 2 mm out of J1, over the edge (+x)
+INTO_BOARD = {"box": [-2.5, 2.25, 2.5, 24.4], "h_mm": 4.5, "exit": "+y"}     # 22 mm out of J1 towards U2 (-x)
+TO_EDGE = {"box": [-2.5, -7.5, 2.5, -5.5], "h_mm": 4.5, "exit": "-y"}       # 2 mm long, past the edge (+x)
 
 
 def test_a_mated_plug_into_the_board_names_the_part_it_hits(project, capsys):
     with_mate(project, INTO_BOARD)
     cfg = project.config()
-    assert pcb.plan(cfg, cfg.board()) == ["J1: mated plug reaches into D1 (top)", "J1: mated plug reaches into U2 (top)",
-                                          "J1: mated plug leaves towards -x but ends 69.8 mm inside the outline"]
+    assert pcb.plan(cfg, cfg.board()) == ["J1: mated plug reaches into C1 (top)", "J1: mated plug reaches into U2 (top)",
+                                          "J1: mated plug leaves towards -x but ends 63.0 mm inside the outline"]
 
 
 def test_a_mated_plug_over_the_edge_passes(project):
@@ -808,7 +797,7 @@ def test_a_mated_plug_over_the_edge_passes(project):
 
 
 def test_a_sideways_plug_that_stops_short_of_the_outline(project):
-    with_mate(project, {"box": [-2.5, -5.0, 2.5, -3.0], "exit": "-y"})         # ends at x = 89, 1 mm before the edge
+    with_mate(project, {"box": [-2.5, -1.6, 2.5, -1.0], "exit": "-y"})         # ends at x = 89, 1 mm before the edge
     cfg = project.config()
     assert "J1" in cfg.board().edge_ok                                       # edge_ok lifts neither finding
     assert pcb.plan(cfg, cfg.board()) == ["J1: mated plug leaves towards +x but ends 1.0 mm inside the outline"]
@@ -817,13 +806,13 @@ def test_a_sideways_plug_that_stops_short_of_the_outline(project):
 def test_a_cable_that_leaves_upwards_needs_no_outline(project):
     with_mate(project, {**INTO_BOARD, "exit": "+z"})
     cfg = project.config()
-    assert pcb.plan(cfg, cfg.board()) == ["J1: mated plug reaches into D1 (top)", "J1: mated plug reaches into U2 (top)"]
+    assert pcb.plan(cfg, cfg.board()) == ["J1: mated plug reaches into C1 (top)", "J1: mated plug reaches into U2 (top)"]
 
 
 def test_a_mated_plug_over_an_smd_part_within_the_silkscreen_tolerance(project):
     """The plug is a body without a margin, the other part's box has its silkscreen and pads: silk_overlap_mm holds
     for an SMD part as it does between two SMD boxes."""
-    mate = {"box": [-2.5, 2.25, 2.5, 14.25], "exit": "+z"}                      # y = 9.5 … 14.5: 0.5 mm into U2
+    mate = {"box": [-2.5, 2.25, 2.5, 18.18], "exit": "+z"}                      # x = 69.22 …: 0.5 mm into U2
     f = with_mate(project, mate, f=place_project(project, drop=("D1",)))       # D1 out of its way
     f.write_text(f.read_text().replace('view = "top"', 'view = "top"\nsilk_overlap_mm = 0.8'))
     cfg = project.config()
@@ -862,11 +851,12 @@ def test_a_body_larger_than_its_footprint_in_the_parts_entry():
 
 
 def test_two_mated_plugs_side_by_side(project):
-    f = with_mate(project, {"box": [-4, -7.5, 4, -5.5], "exit": "-y"})          # 8 mm wide plugs, J1's y = 8 … 16
+    f = with_mate(project, {"box": [-4, -7.5, 4, -5.5], "exit": "-y"}, f=place_project(project, drop=("D1",)))
+    # 8 mm wide plugs: J1's y = 8 … 16, J2's 15.5 … 23.5 – D1 out of J2's way
     g = project.graph()
     g["graph"]["components"].append({**project.comp(g, "J1"), "designator": "J2"})
     project.save_graph(g)
-    f.write_text(f.read_text().replace('SW1 = {', 'J2 = { x = 84, y = 19, rot = 90, side = "top" }\nSW1 = {'))
+    f.write_text(f.read_text().replace('SW1 = {', 'J2 = { x = 87.4, y = 19.5, rot = 90, side = "top" }\nSW1 = {'))
     geo = led_bar_geo()
     geo["J2"] = geo["J1"]
     (project.root / "hardware" / "boards" / "main.geometry.json").write_text(json.dumps(geo))
@@ -904,12 +894,12 @@ def test_mechanical_model(project, capsys):
     assert mech["holes"] == [{"x": 3.5, "y": 3.5, "d": 3.2}, {"x": 86.5, "y": 36.5, "d": 3.2}]
     assert mech["tooling"] == [{"x": 3.5, "y": 36.5, "d": 1.152}, {"x": 86.5, "y": 3.5, "d": 1.152}]
     j1 = mech["parts"]["J1"]
-    assert (j1["side"], j1["x"], j1["y"], j1["rot"], j1["h_mm"]) == ("top", 84, 12, 90, 6.0)
-    assert j1["box"] == pytest.approx([81.75, 9, 89.5, 15])
-    assert j1["mate"] == {"box": pytest.approx([89.5, 9.5, 91.5, 14.5]), "h_mm": 4.5, "exit": "+x"}
+    assert (j1["side"], j1["x"], j1["y"], j1["rot"], j1["h_mm"]) == ("top", 87.4, 12, 90, 6.0)
+    assert j1["box"] == pytest.approx([84.504, 8.993, 89.102, 15.039])
+    assert j1["mate"] == {"box": pytest.approx([92.9, 9.5, 94.9, 14.5]), "h_mm": 4.5, "exit": "+x"}
     assert j1["protrusion_mm"] == pytest.approx(1.8)                         # 3.4 mm lead - 1.6 mm board
-    assert [(q["pad"], q["x"], q["y"]) for q in j1["leads"]] == [("1", pytest.approx(84), pytest.approx(11)),
-                                                                ("2", pytest.approx(84), pytest.approx(13))]
+    assert [(q["pad"], q["x"], q["y"]) for q in j1["leads"]] == [("1", pytest.approx(87.4), pytest.approx(13)),
+                                                                ("2", pytest.approx(87.4), pytest.approx(11))]
     assert mech["parts"]["U2"]["h_mm"] == 1.75 and "mate" not in mech["parts"]["U2"]
     assert set(mech["parts"]["R1"]) == {"side", "x", "y", "rot", "box"}       # nothing known: nothing guessed
     assert mech["unplaced"] == ["D1", "R2"]                                   # their rows taken out above

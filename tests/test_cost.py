@@ -169,8 +169,8 @@ def test_the_example_with_u1_soldered_by_hand_is_economic(project, jlcpcb, monke
     assert main["class"] == "economic" and main["drivers"] == ["U2 C90107 Extended Part – 3.07 loading fee"]
     assert fees_of(main, *LISTED) == round(8.18 + 1.53 + 3.07 + 46 * 5 * 0.0016, 2)   # 13.15; with 0.0017 13.17
     board = project.root / "hardware" / "boards" / "main.toml"
-    board.write_text(board.read_text().replace('C1 = { x = 66, y = 25, rot = 0, side = "top" }',
-                                               'C1 = { x = 66, y = 25, rot = 0, side = "bottom" }'))
+    board.write_text(board.read_text().replace('C1 = { x = 64.8, y = 10.5, rot = 0, side = "top" }',
+                                               'C1 = { x = 64.8, y = 10.5, rot = 0, side = "bottom" }'))
     run_cost(project, monkeypatch)
     main = last_estimate(project)["boards"]["main"]
     assert main["class"] == "standard" and main["drivers"][0] == "C1 on bottom – both sides assembled, Standard PCBA"
