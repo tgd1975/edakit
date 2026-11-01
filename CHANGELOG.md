@@ -7,6 +7,10 @@ written once, by `.github/merge.py`, from the fragments in [changes/](changes/RE
 [versioning.md](docs/concepts/new/versioning.md). Update with `claude plugin marketplace update edakit && claude plugin
 update edakit@edakit`, then `/reload-plugins` or a new session; `edakit --version` names the version that runs.
 
+## 0.4.1 – 2026-11-01
+
+- No click on *Design → Import Changes* any more (E-2): `pcb parts --write` writes the PCB part's Channel ID into the schematic part as it does the UniqueId, and `route all|drc` and `silk apply|check` write it into parts linked before when the DRC reports "Netlist Error – Import Changes" with schematic and PCB equal, reload the PCB and run the DRC once more – exit 3 only if the item is still there.
+
 ## 0.4.0 – 2026-11-01
 
 - **When updating:** in EasyEDA Pro uninstall the old bridge extension, import `~/.easyeda-mcp-pro/easyeda-bridge-extension-1.6.0.eext` (built by `bridge-extension-patch.sh`, handbook 2.5), allow "External Interactions", restart EasyEDA and every MCP server – easyeda-mcp-pro is pinned to 1.6.0 now, and since 1.5.1 a server whose extension has another version refuses every write, export and `easyeda_api_call`.
