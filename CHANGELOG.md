@@ -7,6 +7,10 @@ written once, by `.github/merge.py`, from the fragments in [changes/](changes/RE
 [versioning.md](docs/concepts/done/versioning.md). Update with `claude plugin marketplace update edakit && claude plugin
 update edakit@edakit`, then `/reload-plugins` or a new session; `edakit --version` names the version that runs.
 
+## 0.4.17 – 2026-11-02
+
+- edakit cart: a bare board at JLCPCB passes ORDER.form and ORDER.files – its quote page has no "Product Description" (now a checkout field without assembly, profile `fields.<key>.assembly`) and names no upload (`unshown_bare`: the cart line names the Gerber); "PCB Assembly" and "Stencil" are in the profile's ignore, and the job says "bare" instead of "5 assembled" (live run 2026-11-01).
+
 ## 0.4.16 – 2026-11-01
 
 - Issues by others in the edakit repository: the Action wrap posts every text by others on them again – plain text, numbered within the issue, sealed –, and the repository owner answers with `review`, `accept` or `reject`; the skills propose-rule and propose-feature name the commands (handbook 14.4).
