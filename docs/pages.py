@@ -49,6 +49,7 @@ NAV = [
     ("Start", [
         ("docs/quickstart.md", "Quickstart"),
         ("docs/how-it-works.md", "How it works"),
+        ("docs/catalog/index.html", "Rule catalog"),
         ("docs/projects/README.md", "Projects"),
         ("docs/glossary.md", "Glossary"),
     ]),
