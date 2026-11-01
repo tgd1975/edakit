@@ -376,3 +376,60 @@ def test_silk_apply_removes_every_free_print_of_the_silkscreen():
     assert unknown == ["'+' at (40.3, 24.0) mm on the top", "a fill on the top"]
     assert silk.stale_print(strings, fills, {"strings": ["a", "b", "c"], "fills": ["f1"]})[2] == []
 
+
+
+# --- artwork in its frame ([[silk.art]] fit = "viewbox", #115): the origin draws its art in a frame that is the board;
+# placed by the bounds of what is drawn, the art printed too large and moved when a star joined near the top.
+
+def art_project(path, svgs, fit=None):
+    """A 40 x 20 mm board with one [[silk.art]] per SVG text, each 40 mm wide at the board's centre -> (cfg, board)."""
+    rows = ""
+    for i, text in enumerate(svgs):
+        (path / f"a{i}.svg").write_text(text)
+        rows += f'\n[[silk.art]]\nsvg = "a{i}.svg"\nx = 20\ny = 10\nwidth_mm = 40\n' + (f'fit = "{fit}"\n' if fit else "")
+    cfg = project(path, "", head="")
+    f = path / "hardware" / "boards" / "main.toml"
+    f.write_text(f.read_text() + rows)
+    cfg = config.load(path / "edakit.toml")
+    return cfg, cfg.board("main")
+
+
+FRAME = '<svg xmlns="http://www.w3.org/2000/svg" {}><rect x="5" y="2" width="10" height="4"/>{}</svg>'
+STAR = '<rect x="30" y="0.5" width="1" height="1"/>'           # a new star near the top of the frame
+
+
+def test_artwork_is_placed_by_its_content_without_fit(tmp_path):
+    """As before: the content's bounds are scaled to width_mm and centred on (x, y)."""
+    cfg, board = art_project(tmp_path, [FRAME.format('viewBox="0 0 40 20"', "")])
+    assert silk.art_items(cfg, board, "top")[0].bounds == pytest.approx((0, 2, 40, 18), abs=1e-6)
+    cfg, board = art_project(tmp_path, [FRAME.format('viewBox="0 0 40 20"', "")], fit="content")
+    assert silk.art_items(cfg, board, "top")[0].bounds == pytest.approx((0, 2, 40, 18), abs=1e-6)
+
+
+@pytest.mark.parametrize("head", ['viewBox="0 0 40 20"', 'width="80mm" height="40mm" viewBox="0 0 40 20"',
+                                  'viewBox="-10 5 40 20"'])
+def test_artwork_with_fit_viewbox_keeps_its_place_in_the_frame(tmp_path, head):
+    """fit = "viewbox": the viewBox is scaled to width_mm and centred on (x, y); the content keeps its offset in the
+    frame – whatever the SVG's own width and height, wherever the viewBox starts."""
+    shift = (10, -5) if head.startswith('viewBox="-10') else (0, 0)
+    content = FRAME.format(head, "").replace('x="5" y="2"', f'x="{5 - shift[0]}" y="{2 - shift[1]}"')
+    cfg, board = art_project(tmp_path, [content], fit="viewbox")
+    assert silk.art_items(cfg, board, "top")[0].bounds == pytest.approx((5, 14, 15, 18), abs=1e-6)
+
+
+def test_artwork_with_fit_viewbox_stays_when_its_content_changes(tmp_path):
+    """The origin's case: a star near the top moved the whole art by its content's bounds; in its frame it stays."""
+    before, after = FRAME.format('viewBox="0 0 40 20"', ""), FRAME.format('viewBox="0 0 40 20"', STAR)
+    moved = [silk.art_items(*art_project(tmp_path, [svg]), "top")[0] for svg in (before, after)]
+    assert moved[0].bounds != pytest.approx(moved[1].bounds, abs=0.1)                       # by its content: it moves
+    kept = [silk.art_items(*art_project(tmp_path, [svg], fit="viewbox"), "top")[0] for svg in (before, after)]
+    assert kept[0].bounds == pytest.approx((5, 14, 15, 18), abs=1e-6)
+    assert kept[1].difference(kept[0]).bounds == pytest.approx((30, 18.5, 31, 19.5), abs=0.05)  # only the star is new
+    assert kept[0].difference(kept[1]).area == pytest.approx(0, abs=1e-6)                     # the rest stays
+
+
+def test_artwork_with_fit_viewbox_needs_a_viewbox(tmp_path):
+    cfg, board = art_project(tmp_path, [FRAME.format('width="40" height="20"', "")], fit="viewbox")
+    with pytest.raises(config.ConfigError, match=r'a0.svg: fit = "viewbox" needs a viewBox on its <svg> element'):
+        silk.art_items(cfg, board, "top")
+

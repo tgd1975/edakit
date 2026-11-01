@@ -4,7 +4,7 @@ Open work that needs the owner's computer, a maker or the owner's word. The stat
 and plans the sections name; this list is what is left to do of them, in the order it can be done. No item is deleted.
 
 **Layout.** Every item, in every section, open or closed, is a line with a checkbox and an ID unique in this file,
-counted up and never reused – whoever adds an item takes the next free ID and counts it up here. Next free ID: TD-61.
+counted up and never reused – whoever adds an item takes the next free ID and counts it up here. Next free ID: TD-79.
 
 - Open: `- [ ] TD-<n> - **Title:** what and why.` – a step's own name after the dash (`- [ ] TD-31 - **D.4** …`).
 - Done: ticked, the commit that did it, the date at the end, moved to [Closed todos](#closed-todos), newest first –
@@ -29,10 +29,13 @@ to touch.
 
 ## For the owner
 
-- [ ] TD-60 - **OK for #138:** <https://github.com/tgd1975/edakit/pull/138> (the rule proposal #103, GEO.pour:
-      bare area per side) – the triage built it for #102, but it reached `rules/proposals` after that merge and was
-      left without a pull request; rebased, fragment added, 2876 tests green. On the OK `merge.py 138`.
-      *(branch housekeeping)*
+- [ ] TD-70 - **The social preview uploaded:** <https://github.com/tgd1975/edakit/settings> → General → Social preview
+      → Edit → Upload an image → `docs/concepts/new/outreach/social-preview.png` – GitHub has no API for it; the card
+      shows with every link to the repository (K.1 of outreach.md). *(edakit-ce)*
+- [ ] TD-69 - **Where CI.0 runs:** a machine with GitHub Copilot CLI logged in, Qwen Code, Mistral Vibe with a Mistral
+      API key, OpenCode, and Ollama and llama.cpp with a GPU for Qwen3-Coder-Next and Devstral Small 2 – this session's
+      cloud container has no GPU and no logins; which machine, and whether a Copilot plan and a Mistral key are at hand.
+      *(amazing-newton)*
 - [ ] TD-59 - **OK for #129, #130, #131:** <https://github.com/tgd1975/edakit/pull/129> (TD-37, no click on Import
       Changes), <https://github.com/tgd1975/edakit/pull/130> (TD-38, the DRC reloads only on Connection Errors),
       <https://github.com/tgd1975/edakit/pull/131> (TD-39, local projects through the API) – each checked live on 1.6.0;
@@ -94,6 +97,30 @@ step starts on the owner's word.
 - [ ] TD-50 - **V.7** Later, on the owner's word: `edakit = ">=0.4"` under `[project]` in `edakit.toml`, noted by
       `edakit check` and the SessionStart hook when the running edakit does not meet it.
 
+## Claude independence ([claude-independence.md](docs/concepts/new/claude-independence.md))
+
+Decided on 2026-11-01; nothing built. Each step starts on the owner's word, one per branch; CI.0 first – it decides what
+CI.1 and CI.4 contain. Copilot, Qwen Code, Mistral Vibe and OpenCode at once, self-hosted models through Ollama and
+llama.cpp.
+
+- [ ] TD-61 - **CI.0** Probe before anything is built: the plugin as it is in Copilot CLI, Qwen Code and Mistral Vibe at
+      once, and OpenCode with its files set by hand; add-led, fault-motors, a decision round and the hooks, each with a
+      hosted and a self-hosted model (Ollama, llama.cpp); what breaks is the list for CI.1 and CI.4.
+- [ ] TD-62 - **CI.1** The plugin portable, each change with its test: `edakit handbook` and `edakit root` for the 27
+      plugin paths, the MCP server's start, `lock.py` recognising EasyEDA's tools under every naming and
+      `EDAKIT_SESSION`, the question tool by function, the agents' tool names, new-project per `[project] assistants`.
+- [ ] TD-63 - **CI.2** `edakit agreements --write|--check` and `EDAKIT_CALL_LOG`.
+- [ ] TD-64 - **CI.3** The eval runner across harnesses (`copilot -p`, `qwen -p`, `vibe -p`, `opencode run`), the loop
+      case, the first matrix; supported is every case in two of three runs.
+- [ ] TD-65 - **CI.4** `edakit assistant vibe|opencode --write|--check`: Vibe's agents as TOML and the agreements in
+      `AGENTS.md`; OpenCode's skills, sub-agents, the EasyEDA server with `codemode: false` and a TypeScript plugin for
+      the claim and the agreements.
+- [ ] TD-66 - **CI.5** The browser for the skills cart and release: Chrome DevTools MCP (`--autoConnect`) or the
+      harness's own, beside Claude in Chrome.
+- [ ] TD-67 - **CI.6** new-project asks for the assistants; project-surveyor reports a harness's files a project brings.
+- [ ] TD-68 - **CI.7** The documentation: chapter 11's table of harnesses, the README's supported pairs, "the assistant"
+      in `docs/style.md` and the glossary, the first property of "edakit as a meta-harness".
+
 ## The documentation for its readers ([documentation.md](docs/concepts/new/documentation.md))
 
 Decided on 2026-10-31; D.1 (the style guide, the glossary and their tests) built the same day. D.2 to D.7 not before
@@ -104,8 +131,9 @@ sources, data and code untouched; a text that is generated or used elsewhere sta
 
 - [ ] TD-29 - **D.2** The entry layer: the README as the start page of one screen with the case for edakit (what you
       bring, what edakit brings, the walkthrough's count), `docs/quickstart.md` with its test, `docs/how-it-works.md`
-      with the pipeline drawing, a transcript, the state and the future work (two items); `test_plugin.py` pointed at
-      the page that lists skills and agents.
+      with the pipeline drawing and its loops back, the mechanism without a buzzword, a transcript, the state and the
+      future work (three items); the buzzword rule into `docs/style.md` and `tests/test_style.py` ("harness" once at the
+      README's start, as a keyword); `test_plugin.py` pointed at the page that lists skills and agents.
 - [ ] TD-30 - **D.3** The site: the navigation as data, by reader and by station (The circuit, The board), short titles;
       `organisation.md` and the brand page on it; "Inside edakit" with its index and the source line; the footer and
       feedback lines; prototypes off the navigation.
@@ -113,7 +141,9 @@ sources, data and code untouched; a text that is generated or used elsewhere sta
       generated lists as the short kind.
 - [ ] TD-32 - **D.5** The chapters in place, condensed to a third fewer words with no statement lost, worst first – 8,
       3, 5, 7, 4, 10, then the rest –, the review for meaning after each; chapter 13 takes the history.
-- [ ] TD-33 - **D.6** The reader pages "Adding a rule" and "Working on edakit".
+- [ ] TD-33 - **D.6** The reader pages "Adding a rule" and "Working on edakit", and "edakit as a meta-harness"
+      (`docs/architecture.md`): the term defined by three properties, the layers, the loops and the files that set them,
+      what is bound to Claude Code, the rules for developers.
 - [ ] TD-34 - **D.7** The "is it for me" numbers from the evals; the findings on sources (the plugin's descriptions say
       "JSON hardware graph") to the owner.
 - [ ] TD-35 - **D.9** `docs/projects/`, the gallery: the index with a card per project – the examples' cards lead to
@@ -124,11 +154,36 @@ sources, data and code untouched; a text that is generated or used elsewhere sta
       picks (needs the owner – the repository stays private); a later project's page once it has a result with edakit,
       nothing planned on the gallery; the style guide's project page and `test_style.py` follow.
 
+## Getting edakit known ([outreach.md](docs/concepts/new/outreach.md))
+
+Decided on 2026-11-01; K.1 (description, topics, homepage) built the same day, its image waits for TD-70. The launch
+waits for D.2, D.7, D.9 and the bell built; each step starts on the owner's word, one per branch where it changes files.
+
+- [ ] TD-71 - **K.2** Ready for Anthropic's plugin directory: the README section on what edakit runs, sends and fetches
+      (Freerouting, easyeda-mcp-pro, JLCPCB, datasheets, `gh`, Claude in Chrome, the settings new-project writes, the
+      two hooks); `plugin.json` with `version` and the owner's description – a branch, a patch.
+- [ ] TD-72 - **K.3** The issue forms – bug with `edakit --version` and `edakit doctor`, question, "built with edakit" –
+      and the line on how issues are answered – a branch.
+- [ ] TD-73 - **K.4** The directory submission at <https://claude.ai/directory/manage>, the repository at its tag, the
+      data-handling answers from the kit, new versions by webhook – the owner, 15 min; waits for TD-71.
+- [ ] TD-74 - **K.5** The kit in `docs/concepts/new/outreach/`: the fact sheet with fresh numbers, the drafts for
+      Hackaday, Adafruit, r/ClaudeAI, the KiCad forum, OSHWLab and awesome-claude-code, notes for the Show HN – waits
+      for TD-29, TD-34 and TD-35.
+- [ ] TD-75 - **K.5, the bell in hand:** a photo of the built bell and ten seconds of it ringing, from the owner – the
+      header picture for Hackaday; the order is the bell's project's.
+- [ ] TD-76 - **K.6** The launch week: 1.0.0 (TD-49), Show HN in the owner's own words, r/ClaudeAI, Hackaday, Adafruit,
+      awesome-claude-code, the week after the KiCad forum and OSHWLab – the owner; waits for TD-71 to TD-75.
+- [ ] TD-77 - **K.7** Two weeks after the launch: the referrers and stars per place into outreach.md, what worked named.
+- [ ] TD-78 - **K.9** "Released with edakit X.Y.Z" in the GitHub release of `edakit release publish`, on by default, a
+      key to turn it off – a branch, a patch (decision 3).
+
 ## Closed todos
 
 Done or dropped, newest first, each with its date and the commit that closed it. What closed before 2026-11-01 is
 taken from the history of this file; an item rewritten on its way is listed once, in its last form.
 
+- [x] TD-60 - **OK for #138:** given; the rule proposal #103 (GEO.pour, bare area per side) merged as edakit
+      0.4.3 (3cc88ba), #103 closed. [2026-11-01]
 - [x] TD-44 - **The Claude GitHub app uninstalled:** dropped on the owner's word – the app is Claude Code on the web's
       access to the repositories; the proposals Action no longer fetches its token (0.3.1), and main's ruleset (TD-47)
       keeps it off main. [2026-11-01]

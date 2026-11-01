@@ -80,6 +80,39 @@ def test_pour_inset_default_follows_the_edge_clearance(tmp_path):
     assert insets(inset_board(tmp_path)) == (0.5, 0.4)                    # no key: edge clearance + 0.1 mm, as before
 
 
+# --- pours keep the tab zone's copper distance (#114): the 40 x 20 mm board above, pour_inset_mm = 0.55, a tab zone
+# along the lower edge from x = 10 to 30 with tab_copper_mm = 1.15 – the order check (FILES.order) wants no copper
+# within 1.15 mm of it, and the pour of the plain outline lies 0.55 mm from it
+
+TAB = 'pour_inset_mm = 0.55\n[order]\ntab_zones = [{ from = [10.0, 0.0], to = [30.0, 0.0] }]\ntab_copper_mm = 1.15\n'
+
+
+def test_pour_keeps_the_tab_copper_distance(tmp_path):
+    from shapely.geometry import LineString, Point
+    board = inset_board(tmp_path, TAB)
+    pour = Polygon(pcb.pour_outline(board))
+    zone = LineString([(10, 0), (30, 0)])
+    assert zone.distance(pour) >= 1.15                                    # the order check's distance, kept
+    assert zone.distance(pour) == pytest.approx(1.15 + pcb.TAB_MARGIN_MM, abs=0.005)   # the strip's round ends: chords
+    for x, y in ((0, 10), (20, 20), (40, 10), (5, 0), (35, 0)):           # the other edges and beyond the zone
+        assert round(Point(x, y).distance(pour), 3) == 0.55               # pour_inset_mm, as before
+    area = route._pour_area(route.Rules(board))                           # the computed pour of route check too
+    edge = LineString([tuple(v * MIL for v in board.eda_point(*p)) for p in ((10, 0), (30, 0))])
+    assert edge.distance(area) == pytest.approx((1.15 + pcb.TAB_MARGIN_MM) * MIL, abs=0.005 * MIL)
+
+
+def test_pour_keeps_a_tab_zone_from_the_outline_start(tmp_path):
+    from shapely.geometry import LineString
+    zone = '{ from = [0.0, 0.0], to = [0.0, 20.0] }'                     # starts at the outline's first point
+    board = inset_board(tmp_path, TAB.replace('{ from = [10.0, 0.0], to = [30.0, 0.0] }', zone))
+    assert LineString([(0, 0), (0, 20)]).distance(Polygon(pcb.pour_outline(board))) >= 1.15
+
+
+def test_pour_without_tab_zones_as_before(tmp_path):
+    board = inset_board(tmp_path, TAB.replace('{ from = [10.0, 0.0], to = [30.0, 0.0] }', ''))
+    assert insets(board) == (0.55, 0.4)                                   # tab_copper_mm alone moves nothing
+
+
 # --- a module on pin headers (#14): U1 a module of 51 x 21 mm with two rows of 20 through-hole pins 17.78 mm apart
 # (pins 1-20 below, 21-40 above), 0805 boxes 3.7 x 1.9 mm, D1 an SMA diode, J1 a through-hole connector
 

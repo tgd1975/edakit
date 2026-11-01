@@ -285,10 +285,11 @@ def test_silk_place_key(tmp_path):
 
 def test_copper_key(tmp_path):
     from edakit.config import _board
-    assert _board("b", {}, {}).copper == {"max_bare_mm": 5.0, "min_cover": {}}     # no key: 5 mm, no share required
-    b = _board("b", {}, {"copper": {"max_bare_mm": 8, "min_cover": {"BOTTOM": 60}}})
-    assert b.copper == {"max_bare_mm": 8.0, "min_cover": {"BOTTOM": 60.0}}
-    for bad, msg in (({"max_bare_mm": 0}, "max_bare_mm must be positive"), ({"min_cover": {"INNER1": 50}}, "min_cover"),
+    assert _board("b", {}, {}).copper == {"max_bare_mm": 5.0, "max_bare_mm2": 20.0, "min_cover": {}}  # no share required
+    b = _board("b", {}, {"copper": {"max_bare_mm": 8, "max_bare_mm2": 40, "min_cover": {"BOTTOM": 60}}})
+    assert b.copper == {"max_bare_mm": 8.0, "max_bare_mm2": 40.0, "min_cover": {"BOTTOM": 60.0}}
+    for bad, msg in (({"max_bare_mm": 0}, "max_bare_mm must be positive"),
+                     ({"max_bare_mm2": -1}, "max_bare_mm2 must be positive"), ({"min_cover": {"INNER1": 50}}, "min_cover"),
                      ({"min_cover": {"TOP": 150}}, "min_cover"), ({"bare_mm": 5}, "unknown key 'bare_mm'")):
         with pytest.raises(ConfigError, match=msg):
             _board("b", {}, {"copper": bad})
@@ -611,3 +612,13 @@ def test_schematic_style_is_a_word_or_a_table_by_board(tmp_path):
     schematic.write_text('style = "wire"\n')
     with pytest.raises(ConfigError, match="style = 'wire' – one of labels, wires, mixed"):
         load(tmp_path / "edakit.toml")
+
+
+def test_silk_art_fit_is_content_or_viewbox():
+    """[[silk.art]] fit (#115): absent or "content" as before, "viewbox", nothing else."""
+    from edakit.config import _board
+    art = {"svg": "a.svg", "x": 1, "y": 1, "width_mm": 5}
+    for fit in ({}, {"fit": "content"}, {"fit": "viewbox"}):
+        _board("b", {}, {"silk": {"art": [art | fit]}})
+    with pytest.raises(ConfigError, match=r'board b: silk.art\[2\].fit must be "content" or "viewbox", not \'frame\''):
+        _board("b", {}, {"silk": {"art": [art, art | {"fit": "frame"}]}})

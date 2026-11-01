@@ -521,6 +521,9 @@ def ensure_frame(mcp):
     raise MCPError("sheet frame missing and could not be created")
 
 
+HIDDEN_TITLE_ITEMS = ("Width", "Height")   # title block items the sheet frame does not show
+
+
 def label_sheet(mcp, cfg, page_uuid, title, graph_version, extra=None):
     """Page name and title block: company, graph version, 'generated'. The page must be active (the rename API acts
     on the active document). getSchematicPageInfo shows new values only after a while, so there is no read-back."""
@@ -531,8 +534,11 @@ def label_sheet(mcp, cfg, page_uuid, title, graph_version, extra=None):
         print("  sheet frame was missing – created")
     fields = {"Company": cfg.company, "Version": f"graph v{graph_version}", "Drawn": "generated", "Reviewed": "",
               **(extra or {})}
+    # EasyEDA Pro 3.2.209 refuses an item without boolean showTitle and showValue (INVALID_TITLE_BLOCK_ITEM, #116):
+    # the fields the frame shows stay shown, the page's width and height stay hidden as on the frame
     api(mcp, "DMT_Schematic.modifySchematicPageTitleBlock", page_uuid,
-        {k: {"showTitle": None, "showValue": None, "value": str(v)} for k, v in fields.items()})
+        {k: {"showTitle": k not in HIDDEN_TITLE_ITEMS, "showValue": k not in HIDDEN_TITLE_ITEMS, "value": str(v)}
+         for k, v in fields.items()})
     api(mcp, "DMT_Schematic.modifySchematicPageName", page_uuid, title)
 
 
