@@ -320,8 +320,12 @@ projects add `"cells": {"fresh": {"v": 1.6, "r": 0.15}, "empty": {"v": 1.0, "r":
 A board people reach – picked up, held, pressed – gets its touch limit: `"touch_c": {"main": 48}`, a map from each such
 board to the temperature in °C its parts may reach (LIM.t, 5.3). The number comes from the standard the product follows,
 for the surface and the time a hand stays on it; IEC 62368-1 TS1 allows 48 °C for longer than a minute, 60 °C on plastic
-(51 °C on metal) for 10 s to 1 min and 77 °C (60 °C) for 1–10 s. A board without it gets no touch item; a name that is
-no board of edakit.toml stops the run.
+(51 °C on metal) for 10 s to 1 min and 77 °C (60 °C) for 1–10 s. The plain number applies at the scenarios'
+`ambient_c`. A limit stated for another room temperature names it: `"touch_c": {"main": {"max_c": 60, "ambient_c":
+25}}` – a project that designs at 40 °C for margin and requires "below 60 °C at 25 °C room" for what a hand touches.
+The touch item then takes the same P × Rth(j-a) on 25 °C ("temperature where people touch at 25 °C room (board main)");
+the junction items stay at `ambient_c`. A board without `touch_c` gets no touch item; a name that is no board of
+edakit.toml, or another key than `max_c` and `ambient_c`, stops the run.
 
 **Routed copper.** Once a board is routed, `copper` brings the resistance of its tracks into every scenario:
 
@@ -507,7 +511,8 @@ The LILYGO T-Display's AP2112K-3.3 (184 K/W in SOT25) feeding an ESP32 that tran
 4.83 V in, 122 °C at 30 °C ambient ("junction temperature of the on-board regulator at 30 °C: 0.5 W × 184 K/W"). A
 buck, on a module or not, gets no item, and neither does a module whose 3V3 pin is on no net – the model has no
 regulator then. On a board of `touch_c` the same temperature – the upper bound of the part's surface – is held to the
-touch limit, for the LDOs and LED drivers too ("temperature where people touch (board main)"). A P-MOSFET switched
+touch limit, for the LDOs and LED drivers too ("temperature where people touch (board main)") – on the room
+temperature the limit names, where it names one (5.2). A P-MOSFET switched
 off while fresh cells and USB meet passes every rating with 0.27 W in its body diode and still reaches 74 °C under a
 hand.
 

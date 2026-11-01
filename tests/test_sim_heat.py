@@ -57,6 +57,45 @@ def test_too_hot_to_touch(project):
     assert len([c for c in out["checks"] if c["check"] == TOUCH]) == 24      # Q1 and U2 in 12 scenarios
 
 
+TOUCH_AT_25 = "temperature where people touch at 25 °C room (board main)"
+
+
+def test_touch_limit_at_its_own_room_temperature(project):
+    """A touch limit that names its room temperature: the same P × Rth(j-a) on 25 °C instead of the scenarios' 40 °C
+    (#93) – Q1 and U2, too hot for 48 °C at 40 °C, pass it at 25 °C; the junction items stay at 40 °C."""
+    body_diode_in_the_supply_path(project)
+    sim = sim_config(project)
+    sim["touch_c"] = {"main": {"max_c": 48, "ambient_c": 25}}
+    out = simulate(project, sim)
+    assert not failing(out)
+    touch = {(c["item"], c["scenario"]): c for c in out["checks"] if c["check"] == TOUCH_AT_25}
+    assert len(touch) == 24 and all(c["id"] == "LIM.t" and c["expected"] == "≤ 48 °C" for c in touch.values())
+    hot = touch["Q1", "usb-nom/all_on/vf-min"]
+    assert hot["actual"] == "34.38 °C"                                  # 49.38 °C at 40 °C, 15 K less
+    assert not [c for c in out["checks"] if c["check"] == TOUCH]
+    assert len([c for c in out["checks"] if c["check"].startswith(JUNCTION)]) == 24      # Q1, U2, as before
+    sim["touch_c"] = {"main": {"max_c": 30, "ambient_c": 25}}
+    bad = failing(simulate(project, sim))
+    assert {(c["item"], c["check"], c["expected"]) for c in bad} == {
+        ("Q1", TOUCH_AT_25, "≤ 30 °C"), ("U2", TOUCH_AT_25, "≤ 30 °C")}
+    sim["touch_c"] = {"main": {"max_c": 48}}                            # without ambient_c: the scenarios' 40 °C
+    bad = failing(simulate(project, sim))
+    assert {(c["item"], c["check"]) for c in bad} == {("Q1", TOUCH), ("U2", TOUCH)} and len(bad) == 12
+
+
+@pytest.mark.parametrize("value, message", [
+    ({"ambient_c": 25}, "touch_c.main: max_c"),
+    ({"max_c": "60"}, "touch_c.main: max_c"),
+    ({"max_c": 60, "ambient_c": True}, "touch_c.main: ambient_c"),
+    ({"max_c": 60, "room_c": 25}, "touch_c.main: unknown key room_c"),
+])
+def test_touch_limit_with_a_wrong_room_temperature(project, value, message):
+    sim = sim_config(project)
+    sim["touch_c"] = {"main": value}
+    with pytest.raises(simrun.SimError, match=message):
+        simulate(project, sim)
+
+
 def test_junction_of_a_diode(project):
     part = project.part("C8678")                                  # D1 (SS34) carries the supply current: 0.03 W
     part["limits"]["rth_ja_k_per_w"] = 3000

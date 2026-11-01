@@ -133,12 +133,22 @@ def check_sources(design, sim):
 
 
 def touch_limits(design, sim):
-    """touch_c of the simulation config: {board: °C}, every key a board of the project."""
+    """touch_c of the simulation config: {board: °C} or {board: {max_c, ambient_c}} – the limit, and the room
+    temperature it applies at where that is not the scenarios' ambient_c –, every key a board of the project."""
     touch_c = sim.get("touch_c", {})
-    if not isinstance(touch_c, dict) or not all(
-            isinstance(x, (int, float)) and not isinstance(x, bool) for x in touch_c.values()):
+    if not isinstance(touch_c, dict):
         raise SimError(f"touch_c: a map from each board people touch to its limit in °C expected, not {touch_c!r}")
-    for board in touch_c:
+    for board, lim in touch_c.items():
+        if isinstance(lim, dict):
+            for key in sorted(set(lim) - {"max_c", "ambient_c"}):
+                raise SimError(f"touch_c.{board}: unknown key {key} (max_c, ambient_c)")
+            if not number(lim.get("max_c")):
+                raise SimError(f"touch_c.{board}: max_c, the limit in °C, expected, not {lim.get('max_c')!r}")
+            if "ambient_c" in lim and not number(lim["ambient_c"]):
+                raise SimError(f"touch_c.{board}: ambient_c, the room temperature in °C the limit applies at, "
+                               f"expected, not {lim['ambient_c']!r}")
+        elif not number(lim):
+            raise SimError(f"touch_c: a map from each board people touch to its limit in °C expected, not {touch_c!r}")
         if design.boards and board not in design.boards:
             raise SimError(f"touch_c: {board} is no board of the project (boards: {', '.join(design.boards)})")
     return touch_c
