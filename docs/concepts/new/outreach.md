@@ -3,7 +3,7 @@
 Status 2026-11-01: decided – the owner took the three decisions the same day in a decision round in Claude Code's
 form, each as recommended, and confirmed what Claude decided itself (the table at the end). K.1 built the same day on
 the owner's word: the repository's description, topics and homepage set with `gh api`, the social preview made
-(`outreach/social-preview.png`) for the owner to upload. Each further step starts on the owner's word, listed in
+(`outreach/social-preview.png`) and uploaded by the owner. Each further step starts on the owner's word, listed in
 `TODO.md`. Written against main at `bef46c2`, checked against `4e7064a` (claude-independence.md decided meanwhile: one
 more occasion under K.8). Asked for by the owner: a concept for how edakit gets out to people – where to post, where to
 register and list it, for makers, users and developers alike –, at low effort, since the owner has put enough time
@@ -248,7 +248,7 @@ them.
 
 | Step | What | Who | Size | Waits for |
 | --- | --- | --- | --- | --- |
-| K.1 | The repository's front: description, topics (`easyeda`, `kicad`, `pcb`, `pcb-design`, `jlcpcb`, `electronics`, `hardware-as-code`, `claude-code`, `claude-code-plugin`, `ngspice`, `freerouting`), the site as homepage – with `gh api`; the social preview (1280 × 640) from the brand and the bell's board, uploaded by the owner. Built 2026-11-01 but the upload: [outreach/social-preview.png](outreach/social-preview.png), the bell's board from its release of 2026-11-01 | Claude, the owner's click | S | – |
+| K.1 | The repository's front: description, topics (`easyeda`, `kicad`, `pcb`, `pcb-design`, `jlcpcb`, `electronics`, `hardware-as-code`, `claude-code`, `claude-code-plugin`, `ngspice`, `freerouting`), the site as homepage – with `gh api`; the social preview (1280 × 640) from the brand and the bell's board, uploaded by the owner. Done 2026-11-01: [outreach/social-preview.png](outreach/social-preview.png), the bell's board from its release of 2026-11-01 | Claude, the owner's click | S | – |
 | K.2 | Ready for the directory: the README section on what edakit runs, sends and fetches; `plugin.json` with `version` and the owner's description | Claude, a branch, a patch | S | – (or with D.2) |
 | K.3 | The issue forms: bug, question, "built with edakit"; the line on how issues are answered | Claude, a branch | S | – |
 | K.4 | The directory submission at claude.ai/directory/manage: the repository at its tag, the data-handling answers from the kit, new versions by webhook | the owner | 15 min | K.2 |
