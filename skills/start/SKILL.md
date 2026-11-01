@@ -62,7 +62,7 @@ bridge, no claim. `edakit doctor 2>&1 | cat` shows the line for kicad-cli (KiCad
   `until grep -q "^END exit" $LOG || ! kill -0 $(cat $LOG.pid) 2>/dev/null; do sleep 15; done`.
 - **Route only with `edakit route all`** (Freerouting, exit 0 = DRC 0), never with EasyEDA's autorouter: it throws away
   its whole result when anything fails.
-- **DRC only after save and reload** (`edakit route reload`): right after API changes it reports false connection errors.
+- **DRC and Connection Errors:** right after API changes it once reported false ones; `route all`, `silk apply` and the gate then save, reload and run it once more themselves – by hand `edakit route reload`, then `edakit route drc`.
 - Auto-layout and pour fills keep running after the bridge timeout; judge the end by stable numbers
   (`edakit pcb autolayout` does that).
 - A canvas capture may show a stale state. If an image is byte-identical to the previous one, do not trust it.

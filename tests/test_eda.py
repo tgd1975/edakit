@@ -506,3 +506,35 @@ def test_the_pcb_parts_are_listed_with_the_pcb_focused_and_the_projects_uuid(cfg
     mcp = FakePcbList()
     assert [c["designator"] for c in eda.list_pcb_components(mcp)] == [f"R{i}" for i in range(1, 251)]
     assert mcp.active == "pcb-1"
+
+
+# --- E-3 and E-7 on 3.2.209 (TD-38) ------------------------------------------------------------------------------------
+
+def test_the_probe_throwing_counts_as_an_inactive_pcb_tab(monkeypatch):
+    """With the schematic active, 3.2.209 throws on the PCB probe instead of answering empty: activate_pcb switches."""
+    answers = iter([eda.MCPError("PCB_Drc.getCurrentRuleConfigurationName: 指定的主题消息在对应的画布内没有相关订阅"), "Custom"])
+    switched = []
+
+    def api(mcp, path, *args, **kw):
+        if path == "PCB_Drc.getCurrentRuleConfigurationName":
+            a = next(answers)
+            if isinstance(a, Exception):
+                raise a
+            return a
+        switched.append(path)
+    monkeypatch.setattr(eda, "api", api)
+    monkeypatch.setattr(eda, "open_pcb", lambda mcp, name: switched.append("open_pcb"))
+    monkeypatch.setattr(eda.time, "sleep", lambda s: None)
+    monkeypatch.setitem(eda.PCB, "name", "main")
+    eda.activate_pcb(None)
+    assert switched == ["DMT_EditorControl.openDocument", "open_pcb"]
+
+
+@pytest.mark.parametrize("first, reloads", [([], 0), ([{"errorType": "Clearance Error"}], 0),
+                                            ([{"errorType": "Connection Error"}] * 3, 1)])
+def test_the_drc_reloads_the_pcb_only_on_connection_errors(monkeypatch, first, reloads):
+    runs, done = iter([first, []]), []
+    monkeypatch.setattr(eda, "drc", lambda mcp, out=None: next(runs))
+    monkeypatch.setattr(eda, "reload_pcb", lambda mcp: done.append("reload"))
+    found = eda.drc_reloading(None, say=lambda s: None)
+    assert len(done) == reloads and found == ([] if reloads else first)

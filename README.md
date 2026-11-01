@@ -111,7 +111,7 @@ edakit pcb parts --write        # parts into the PCB, no "Import Changes" dialog
 edakit pcb place --write        # decoupling capacitors, pull resistors next to their host – offline
 edakit pcb apply                # outline, holes, tooling holes, fixed parts from the plan
 edakit pcb autolayout           # the small parts
-edakit route all                # Freerouting -> EasyEDA, pours, reload, DRC
+edakit route all                # Freerouting -> EasyEDA, pours, DRC
 edakit route diagnose           # why a connection stays open: walled in, blocked by other nets, or free – offline
 edakit silk apply               # designators where there is room, silkscreen check
 edakit lock                     # who holds EasyEDA; claim, release, yield between parallel sessions
