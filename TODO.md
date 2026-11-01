@@ -95,6 +95,18 @@ L.1 to L.8 built on 2026-10-31.
 L.9 done in the bell on 2026-11-01 (on its main, edakit bc44fa7): the five boards converted, the
 sign-offs rehashed, the mentions of `graph.json` renamed, all five RELEASED.
 
+## KiCad tool chain ([kicad-toolchain.md](docs/concepts/done/kicad-toolchain.md))
+
+Built and merged into main on 2026-10-30, tested offline and in CI against KiCad 10 on the led-bar example. The live
+test with the owner ran on 2026-10-31, all seven steps; what it found and what was built from it (LT-1 to LT-11, branch
+`kicad-live-fixes`) is in the concept's section "Live test".
+
+- [ ] **LT-9, the led-bar example on real footprints:** its fixed rows in `[place]` do not fit the LCSC footprints (the
+      LEDs 4 mm apart at 4.2 mm, U1 in the keep-out of the hole at (3.5, 3.5), J1 4.3 mm off the edge), and its
+      Pico's entry names pins 41 and 43 SWCLK and SWDIO where the library's symbol has them the other way round, its
+      GP pins by their short names. The example is the tests' fixture on test footprints (test_pcb's `led_bar_geo`),
+      so the rows move only with the tests that read them; the pin names want the datasheet first.
+
 ## The documentation for its readers ([documentation.md](docs/concepts/new/documentation.md))
 
 Decided on 2026-10-31; D.1 (the style guide, the glossary and their tests) built the same day. D.2 to D.7 not before

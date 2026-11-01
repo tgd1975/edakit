@@ -438,7 +438,7 @@ written. Built in edakit, test first, on the branch `kicad-live-fixes`:
 | LT-6 | The bell's J1 without a designator on KiCad – every spot half a stroke on its own outline | a part's box with the stroke of its lines |
 | LT-7 | `doctor`, the gate's stage table and `route all` said EasyEDA on KiCad | KiCad's names |
 | LT-8 | `pcb place` on a new KiCad project stopped for want of the dump | it reads the library as `pcb apply` does |
-| LT-9 | The led-bar example's fixed rows do not fit the real LCSC footprints (LEDs 4 mm apart at 4.2 mm, U1 in a hole's keep-out, J1 off the edge); its Pico's pins 41 and 43 named the other way round from the library's symbol | left as it is – the owner's decision of 2026-11-01: the example is not released, it stays the tests' fixture on test footprints |
+| LT-9 | The led-bar example's fixed rows do not fit the real LCSC footprints (LEDs 4 mm apart at 4.2 mm, U1 in a hole's keep-out, J1 off the edge); its Pico's pins 41 and 43 named the other way round from the library's symbol | open (TODO.md): the example is the tests' fixture on test footprints |
 | LT-10 | The first `schematic create` in a new EasyEDA project left the template named after its page, and a panel of its name | the name read again and put back; such a panel named |
 | LT-11 | `schematic copy` – EasyEDA copied another project's schematic, and edakit renamed it | the copy renamed only with its source's parts, otherwise deleted and named |
 
