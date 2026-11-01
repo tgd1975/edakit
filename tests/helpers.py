@@ -33,6 +33,11 @@ def check(design, cfg=None):
     return Checked(engines.run_all(design, cfg) if cfg is not None else engines.run(design))
 
 
+def open_points(rep):
+    """rep.pending without DOCS.file: the example has no requirements file unless a test writes one (handbook 3.6)."""
+    return [(c, m) for c, m in rep.pending if c != "DOCS.file"]
+
+
 def executed(cfg):
     """The codes of stages P and G the gate counts as passed when they have no finding."""
     from edakit.design import Design

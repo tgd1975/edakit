@@ -4,7 +4,7 @@ Open work that needs the owner's computer, a maker or the owner's word. The stat
 and plans the sections name; this list is what is left to do of them, in the order it can be done. No item is deleted.
 
 **Layout.** Every item, in every section, open or closed, is a line with a checkbox and an ID unique in this file,
-counted up and never reused – whoever adds an item takes the next free ID and counts it up here. Next free ID: TD-58.
+counted up and never reused – whoever adds an item takes the next free ID and counts it up here. Next free ID: TD-61.
 
 - Open: `- [ ] TD-<n> - **Title:** what and why.` – a step's own name after the dash (`- [ ] TD-31 - **D.4** …`).
 - Done: ticked, the commit that did it, the date at the end, moved to [Closed todos](#closed-todos), newest first –
@@ -29,12 +29,14 @@ to touch.
 
 ## For the owner
 
-- [ ] TD-51 - **The bridge extension 1.6.0 in EasyEDA:** in EasyEDA *Settings → Extensions → Extension Manager*
-      uninstall "MCP Pro Bridge (depth 12, schematic PDF, ODB++)", import
-      `~/.easyeda-mcp-pro/easyeda-bridge-extension-1.6.0.eext`, allow "External Interactions", restart EasyEDA – the
-      extension for easyeda-mcp-pro 1.6.0 (E-4). Only while no session works in EasyEDA and right before TD-52: until
-      then edakit on main reads the PCB's parts with projectId "current", which the 1.6.0 extension refuses.
-      *(edakit-e4)*
+- [ ] TD-60 - **OK for #138:** <https://github.com/tgd1975/edakit/pull/138> (the rule proposal #103, GEO.pour:
+      bare area per side) – the triage built it for #102, but it reached `rules/proposals` after that merge and was
+      left without a pull request; rebased, fragment added, 2876 tests green. On the OK `merge.py 138`.
+      *(branch housekeeping)*
+- [ ] TD-59 - **OK for #129, #130, #131:** <https://github.com/tgd1975/edakit/pull/129> (TD-37, no click on Import
+      Changes), <https://github.com/tgd1975/edakit/pull/130> (TD-38, the DRC reloads only on Connection Errors),
+      <https://github.com/tgd1975/edakit/pull/131> (TD-39, local projects through the API) – each checked live on 1.6.0;
+      on the OK `merge.py` merges them one after the other. *(edakit-35)*
 - [ ] TD-57 - **The real cost of the first order:** once an order the skill cart put into a maker's cart is paid,
       `/edakit:cart actual` on its order page or saved invoice – `edakit cart actual` (handbook 8.4, step 5) has run
       on recorded data only; the real cost, the project's fee table and the order record come from it. *(edakit-80)*
@@ -48,22 +50,15 @@ E-1 to E-16 on EasyEDA Pro and M-1 to M-9 on easyeda-mcp-pro, checked live on Ea
 
 At the owner's computer, in this order; each change checked live before it is built.
 
-- [ ] TD-52 - **The switch to 1.6.0:** right after TD-51, branch `mcp-160` merged, the plugin updated in every project
-      that uses EasyEDA (pytree, the bell) and every edakit session's server restarted, the self-test and one gate run
-      of the example green; then handbook 2's "Tested with" names 1.6.0.
-- [ ] TD-53 - **M-6, all pages at once:** `easyeda_schematic_components` with `scope: "all_pages"` instead of focusing
-      page after page – once TD-52 is done.
-- [ ] TD-54 - **M-6, the BOM's duplicates:** does the BOM of a board-linked schematic still list parts twice on 1.6.0?
-      If not, edakit's removal of the duplicates goes.
-- [ ] TD-37 - **E-2, the one click goes:** `pcb parts` writes the Channel ID (`otherProperty["Channel ID"]`) into the
-      schematic part as it does the UniqueId, the same value on the PCB part – live on 3.2.209 the DRC was clean without
-      the import view; then exit 3 of `route`/`silk` and handbook 7 and 9.4 follow (`edakit/pcb.py` `sync_parts`).
-- [ ] TD-38 - **E-3 and E-7, the PCB tab and the DRC:** `activate_pcb` (`edakit/eda.py`) takes the probe's error on
-      3.2.209 as "inactive"; `reload_pcb` before the DRC (`edakit/route.py`) only as the fallback when it reports
-      Connection Errors – a live routing run confirms it, also on a PCB never reloaded.
-- [ ] TD-39 - **E-9, local projects through the API:** `local_project_uuid` (`edakit/eda.py`) asks
-      `DMT_Project.getAllProjectsUuid(<project folder>)` (folders from `DMT_Team.getAllTeamsInfo`) instead of reading
-      `config.json` and the `.eprj2` files.
+- [ ] TD-52 - **The switch to 1.6.0:** on main as edakit 0.4.0 (#121), the self-test and the example's gate green; left:
+      the plugin updated in pytree and the bell and their servers restarted; handbook 2's "Tested with" in #131.
+- [ ] TD-37 - **E-2, the one click goes:** the Channel ID written into the schematic parts (`edakit/pcb.py`), built and
+      checked live – #129, waits for TD-59.
+- [ ] TD-38 - **E-3 and E-7, the PCB tab and the DRC:** the probe's error as "inactive", the reload only on Connection
+      Errors (`edakit/eda.py`, `route.py`), built and checked live – #130, waits for TD-59; a full routing run without
+      reload is the next project's.
+- [ ] TD-39 - **E-9, local projects through the API:** `getAllProjectsUuid` per project folder (`edakit/eda.py`), built
+      and checked live – #131, waits for TD-59.
 - [ ] TD-40 - **E-10, E-11 and E-13 taken up:** `edakit part build` modifies the symbol's pins instead of creating them
       anew (`SCH_PrimitivePin.modify` is saved on 3.2.209); `clear_orphan_attributes` kept as a cheap check or dropped;
       tooling holes stay on the board while the pours fill, and a hole in a pour becomes a `NO_POURS` region instead of
@@ -82,19 +77,6 @@ Nothing to do until there is an answer or a release; whichever session learns of
       check it live, take it up and say so in upstream/README.md. EasyEDA's first answer is often "update to the latest
       version".
 
-## The proposals pipeline ([proposals-pipeline.md](docs/concepts/new/proposals-pipeline.md))
-
-Decided on 2026-11-01: the owner's six checks held in four layers, the workflow's own token, the nine paths of the
-pipeline, what counts as dangerous, the queue, issues by others handed over with a sealed comment. Held by edakit-12.
-
-- [ ] TD-42 - **P.1 to P.5** The queue, the paths and the check of the commits, the workflows (Claude reads, a fixed
-      job publishes), the triage and propose skills, the documentation – one branch, onto main with the owner's OK;
-      starts on the owner's word.
-- [ ] TD-43 - **P.6** The setting "Allow GitHub Actions to create and approve pull requests" on, on the owner's word;
-      then two sealed test proposals by the owner – a harmless one, and one that asks to change triage-rule, which must
-      end rejected without a push.
-- [ ] TD-44 - **P.7** The Claude App uninstalled (github.com/settings/installations), once P.6 ran.
-
 ## Versions and branch protection ([versioning.md](docs/concepts/new/versioning.md))
 
 Decided on 2026-11-01: 0.2.0 first; the major number the owner's to release, minor and patch by one question (minor
@@ -102,15 +84,10 @@ when a project must act); every merge that changes edakit a version of its own, 
 notes lane for concepts and TODO.md; the rulesets on main as text; the projects on the newest version, unpinned. Each
 step starts on the owner's word.
 
-- [ ] TD-45 - **V.1 and V.2** The number in one place (0.2.0), `edakit --version`, the manifest's `tools.edakit`; the
-      changelog from the merges since 2026-11-01, the fragments, `.github/merge.py`, `release.yml`, the checks `paths`,
-      `changes` and `version` – one branch, its merge is 0.2.0. `paths` reads the proposals' list from
-      `edakit/proposal.py`, which TD-42 writes: agreed with that step, the one merged second rebases.
-- [ ] TD-46 - **V.3** The notes lane: `.github/notes.py`, `paths` for `notes/*`.
-- [ ] TD-47 - **V.4** The rulesets as text in `.github/rulesets/`, applied with `gh api` on the owner's word once
-      TD-45 and TD-46 are on main, with CLAUDE.md, `docs/organisation.md`, the skills, README and handbook 2.3 in the
-      same branch. Checked then: the admin role as a bypass on a personal repository, auto-merge as the account that
-      switched it on, a `pull_request_target` run as the required check.
+- [ ] TD-47 - **V.4** The rulesets as text in `.github/rulesets/`, applied with `gh api` on the owner's word, the
+      checks not strict, with CLAUDE.md (the protection) and the skills triage, add-rule and add-feature (a fragment per
+      change) in the same branch – README, handbook 2.3, the merging rule and the notes lane came with TD-45 and TD-46.
+      Checked then: the admin role as a bypass on a personal repository.
 - [ ] TD-48 - **V.5** Branches left lying around: 9 `claude/*` and 2 `ccr-*` on origin, the local ones and the
       worktrees – listed, then merged or deleted on the owner's word; other sessions' branches named with their session.
 - [ ] TD-49 - **V.6** 1.0.0 on the owner's word once D.2 is built (`merge.py <n> --major`).
@@ -127,7 +104,8 @@ sources, data and code untouched; a text that is generated or used elsewhere sta
 
 - [ ] TD-29 - **D.2** The entry layer: the README as the start page of one screen with the case for edakit (what you
       bring, what edakit brings, the walkthrough's count), `docs/quickstart.md` with its test, `docs/how-it-works.md`
-      with the pipeline drawing and a transcript; `test_plugin.py` pointed at the page that lists skills and agents.
+      with the pipeline drawing, a transcript, the state and the future work (two items); `test_plugin.py` pointed at
+      the page that lists skills and agents.
 - [ ] TD-30 - **D.3** The site: the navigation as data, by reader and by station (The circuit, The board), short titles;
       `organisation.md` and the brand page on it; "Inside edakit" with its index and the source line; the footer and
       feedback lines; prototypes off the navigation.
@@ -138,25 +116,54 @@ sources, data and code untouched; a text that is generated or used elsewhere sta
 - [ ] TD-33 - **D.6** The reader pages "Adding a rule" and "Working on edakit".
 - [ ] TD-34 - **D.7** The "is it for me" numbers from the evals; the findings on sources (the plugin's descriptions say
       "JSON hardware graph") to the owner.
-- [ ] TD-35 - **D.9** `docs/projects.md`, the gallery: the example and the bell now; pytree's entry with the information
-      and the pictures the owner picks (needs the owner – the repository stays private); the tiny jukebox, the pedal and
-      the steering wheel each after its conversion to edakit (`/edakit:new-project` with the inventory, a project of its
-      own), on the owner's word.
-
-## The projects take it over ([implementation-plan.md](docs/concepts/done/implementation-plan.md), phase 4)
-
-- [ ] TD-56 - **4.5** A project without `hardware/requirements.toml` fails the gate – once the bell and the tree have
-      one. Waits only for the bell's D-39: its accepted proposal replaces D-32's files after its order (the bell's
-      TD-4); the tree's file (TD-55) and #97 (merged with #89) are done.
+- [ ] TD-35 - **D.9** `docs/projects/`, the gallery: the index with a card per project – the examples' cards lead to
+      chapters 17 and 18 –; the bell's page – what it is, the circuit with its drawn schematic and its blocks explained,
+      the board as made, what edakit found, its variants main, smd, tht and esp32 side by side, what it changed in
+      edakit – from the pictures of its current release (section 12 of the protocol; where the release has none, the
+      bell's session draws them at its next gate run); pytree's page with the information and the pictures the owner
+      picks (needs the owner – the repository stays private); a later project's page once it has a result with edakit,
+      nothing planned on the gallery; the style guide's project page and `test_style.py` follow.
 
 ## Closed todos
 
 Done or dropped, newest first, each with its date and the commit that closed it. What closed before 2026-11-01 is
 taken from the history of this file; an item rewritten on its way is listed once, in its last form.
 
+- [x] TD-44 - **The Claude GitHub app uninstalled:** dropped on the owner's word – the app is Claude Code on the web's
+      access to the repositories; the proposals Action no longer fetches its token (0.3.1), and main's ruleset (TD-47)
+      keeps it off main. [2026-11-01]
+- [x] TD-58 - **OK for #121, easyeda-mcp-pro 1.6.0:** given, merged as edakit 0.4.0 (5ae332d). [2026-11-01]
+- [x] TD-54 - **M-6, the BOM's duplicates:** on 1.6.0 each part listed once; the removal went, SYNC.bom reports a
+      designator listed twice – edakit 0.4.0 (#121). [2026-11-01]
+- [x] TD-53 - **M-6, all pages at once:** dropped – `all_pages` answers with the parts of every open schematic, the
+      template's included, without their page; edakit stays page by page, recorded in upstream/README.md – edakit 0.4.0
+      (#121). [2026-11-01]
+- [x] TD-43 - **P.6, the live test of the proposals pipeline:** the setting for pull requests on; three sealed test
+      proposals – #108 broken seal: the workflow's question, no Claude run; #109 covered: rejected as LIM.range and
+      closed; #110 asks to change triage-rule: rejected at "Safe?", no commit –; a batch of six real ones (#112–#117)
+      triaged once each, #112, #114, #115 and #116 built into #122 by the workflow's token. Found and fixed: a
+      left-over commit (#103's 9aad156) conflicting only in the catalog page (#111, 0.3.2); a result written before
+      its commit and a placeholder left in the pull request (#125). [2026-11-01]
+- [x] TD-42 - **P.1 to P.5, the proposals pipeline:** Claude reads with the workflow's own token, a fixed job checks
+      the commit against PIPELINE before the push, the queue triages once and takes adopted issues of others (#105,
+      edakit 0.3.1). [2026-11-01]
+- [x] TD-51 - **The bridge extension 1.6.0 in EasyEDA:** imported by the owner; `edakit doctor` and the self-test:
+      extension 1.6.0 = server 1.6.0. [2026-11-01]
+- [x] TD-46 - **V.3** The notes lane: `.github/notes.py` lands a session's edits of concepts and TODO.md on the newest
+  main without an OK – the diff, three-way, from any worktree; a pull request from notes/<topic>, merged by the script
+  once green, no GitHub auto-merge; `paths` holds notes/* to the lane; this tick its first run (#107, 897ae0d).
+  [2026-11-01]
+- [x] TD-56 - **4.5** A project without a requirements file does not release: DOCS.file, open like a required
+  sign-off – `edakit check` passes, `--release` and the gate do not; built before the bell's D-39 on the owner's word,
+  the bell has its file (#106, edakit 0.3.0). [2026-11-01]
+- [x] TD-45 - **V.1 and V.2** edakit 0.2.0, the first version: the number in `edakit/__init__.py`, `edakit --version`
+  and the manifest's `tools.edakit`, the changelog from 2026-11-01 on, the fragments in `changes/`, `.github/merge.py`
+  (merges while main keeps its number – not strict), the checks `paths` and `version`, `release.yml` (tag v0.2.0 and the
+  GitHub release set); CLAUDE.md "A merge is a version", README, handbook 2.3, 10.5, 14.4, the glossary (#104, 1cb2d68).
+  [2026-11-01]
 - [x] TD-25 - **easyeda-mcp-pro 1.6.0 prepared:** branch `mcp-160`, the pin raised, both patches applied, the patched
   extension built to `~/.easyeda-mcp-pro/easyeda-bridge-extension-1.6.0.eext`; on the way 1.6.0's one break for
-  edakit – the PCB lists refuse projectId "current" – met in `list_pcb_components` (4c1ec99, not merged).
+  edakit – the PCB lists refuse projectId "current" – met in `list_pcb_components` (branch `mcp-160`, not merged).
   *(edakit-e4)* [2026-11-01]
 - [x] TD-55 - **4.4** The tree moved to edakit before its order instead (its EK-5 lifted EK-1), in pytree: D-50 to
   D-54, merged on its main with pytree#34 – `hardware/boards/tree.toml` written by its script `baumplan`, its scripts

@@ -11,6 +11,14 @@ Action proposals. Two sorts, told apart by the section Kind:
     edakit proposal seal FILE              check the filled-in text and append its SHA-256 – the body of the issue
     edakit proposal verify FILE|-          every section filled in, and the text is the one that was sealed
 
+The Action proposals runs this module with the system's Python, from main, before and after Claude
+(docs/concepts/done/proposals-pipeline.md) – it imports nothing but the standard library:
+
+    python3 -m edakit.proposal queue ISSUES COMMENTS   what the run triages (env OWNER, N, SINCE): the matrix as JSON
+    python3 -m edakit.proposal input ISSUE DIR         the owner's text only: DIR/proposal.md and DIR/thread.md
+    python3 -m edakit.proposal verify FILE             as above, without the CLI's dependencies
+    python3 -m edakit.proposal build N BASE [HEAD]     the commits of a triage, checked before the push
+
 The checksum shows that the text was not changed after it was sealed – an issue edited by hand fails on purpose.
 Who wrote it is what GitHub says about the author; the Action only works on proposals of the repository owner.
 Line ends and trailing blanks are normalised before hashing, a round trip through GitHub may change them.
@@ -19,8 +27,12 @@ Exit codes: 0 = ok, 2 = findings, 1 = error.
 
 from __future__ import annotations
 
+import argparse
 import hashlib
+import json
+import os
 import re
+import subprocess
 import sys
 from pathlib import Path
 
@@ -54,6 +66,14 @@ FEATURE_SECTIONS = {
     "Origin": SECTIONS["Origin"],
 }
 SEAL = re.compile(r"^edakit-proposal v(\d+) sha256:([0-9a-f]{64})$")
+SEALED = "edakit-proposal v"                    # the marker the workflow's if looks for
+# the pipeline: what starts, reads, judges, builds and publishes proposals – a build never touches it (the owner's
+# no-go of 2026-11-01); a directory ends in '/'
+PIPELINE = (".github/", ".claude/", "CLAUDE.md", "edakit/proposal.py", "tests/test_proposal.py",
+            "skills/propose-rule/", "skills/propose-feature/", "pyproject.toml", "uv.lock")
+TRIAGE = ("github-actions", "github-actions[bot]", "claude", "claude[bot]")    # who writes the triage's results
+RESULT = re.compile(r"\*\*(Accepted|Rejected|Question)\*\*")
+MOST = 8                                        # proposals one run triages; the rest waits for the next
 
 
 def canonical(text):
@@ -152,6 +172,130 @@ def verify(body):
     return problems + check(text)
 
 
+def pipeline_paths(paths):
+    """The paths of the pipeline among `paths`, sorted."""
+    return sorted(p for p in paths if any(p == q or (q.endswith("/") and p.startswith(q)) for q in PIPELINE))
+
+
+def check_build(commits, n):
+    """What keeps a triage's build from being pushed: commits as (sha, message, paths), oldest first."""
+    if not commits:
+        return []
+    problems = [f"{len(commits)} commits – one per proposal"] if len(commits) > 1 else []
+    problems += [f"the subject does not end in (#{n})" for _, message, _ in commits
+                 if not message.strip().split("\n")[0].rstrip().endswith(f"(#{n})")]
+    touched = pipeline_paths({p for _, _, paths in commits for p in paths})
+    return problems + ([f"it touches the pipeline: {', '.join(touched)}"] if touched else [])
+
+
+def _who(comment):
+    return (comment.get("author") or {}).get("login", "")
+
+
+def is_result(comment):
+    """A comment of the triage: written by the workflow and starting with its result."""
+    return _who(comment) in TRIAGE and bool(RESULT.match(comment.get("body", "").lstrip()))
+
+
+def _labels(issue):
+    return {label["name"] for label in issue.get("labels", [])}
+
+
+def owners_text(issue, owner):
+    """(the proposal, the thread) Claude reads: the owner's sealed text – the body of the owner's issue, or on an issue
+    by someone else the owner's newest sealed comment – and the owner's comments and the triage's results, oldest
+    first. Nothing anyone else wrote; (None, '') without such a text."""
+    comments = sorted(issue.get("comments", []), key=lambda c: c["createdAt"])
+    if _who(issue) == owner and SEALED in issue.get("body", ""):
+        text, own = issue["body"], None
+    else:
+        sealed = [c for c in comments if _who(c) == owner and SEALED in c["body"]]
+        if not sealed:
+            return None, ""
+        own = sealed[-1]
+        text = own["body"]
+    thread = [f"### {'the triage' if is_result(c) else 'the owner'}, {c['createdAt']}\n\n{c['body'].strip()}"
+              for c in comments if c is not own and (_who(c) == owner or is_result(c))]
+    return text, "\n\n".join(thread)
+
+
+def waiting(issue, owner):
+    """A proposal still waiting for its triage: the owner's sealed text and no result yet, or a question the owner
+    answered since – in a comment, or by sealing the own issue's body again."""
+    labels = _labels(issue)
+    if labels & {"accepted", "rejected"} or owners_text(issue, owner)[0] is None:
+        return False
+    if "needs-info" not in labels:
+        return True
+    asked = max((c["createdAt"] for c in issue.get("comments", []) if is_result(c)), default="")
+    edited = (issue.get("editor") or {}).get("login") == owner and (issue.get("lastEditedAt") or "") > asked
+    return edited or any(_who(c) == owner and c["createdAt"] > asked for c in issue.get("comments", []))
+
+
+def queue(issues, owner, trigger=None, since="", comments=()):
+    """What a run triages, one after another, at most MOST: the issue that started it – unless a triage answered it
+    after its event (`since`; `comments` are the issue's): then it waited behind the run that took it along –, then
+    every proposal still waiting, oldest first."""
+    ready = sorted({i["number"] for i in issues if waiting(i, owner)})
+    if trigger is not None and not any(is_result(c) and c["createdAt"] > since for c in comments):
+        ready = [trigger] + [n for n in ready if n != trigger]
+    return ready[:MOST]
+
+
+def _commits(base, head):
+    log = subprocess.run(["git", "log", "--reverse", "--format=%H%x00%B%x01", f"{base}..{head}"], check=True,
+                         capture_output=True, text=True).stdout
+    out = []
+    for entry in filter(str.strip, log.split("\x01")):
+        sha, message = entry.strip("\n").split("\x00", 1)
+        paths = subprocess.run(["git", "diff-tree", "--no-commit-id", "--name-only", "-r", "-m", sha], check=True,
+                               capture_output=True, text=True).stdout.split()
+        out.append((sha, message.strip(), paths))
+    return out
+
+
+def ci(argv):
+    """The steps of the Action (module docstring). Exit codes: 0 = ok, 2 = findings, 3 = no text of the owner."""
+    ap = argparse.ArgumentParser(prog="python3 -m edakit.proposal")
+    sub = ap.add_subparsers(dest="action", required=True)
+    p = sub.add_parser("queue")
+    p.add_argument("issues", help="JSON list of the open issues to consider")
+    p.add_argument("comments", help="JSON list of the comments of the issue that started the run")
+    p = sub.add_parser("input")
+    p.add_argument("issue")
+    p.add_argument("dir")
+    p = sub.add_parser("verify")
+    p.add_argument("file")
+    p = sub.add_parser("build")
+    p.add_argument("n", type=int)
+    p.add_argument("base")
+    p.add_argument("head", nargs="?", default="HEAD")
+    args = ap.parse_args(argv)
+    owner = os.environ.get("OWNER", "")
+    if args.action == "queue":
+        n = os.environ.get("N") or None
+        print(json.dumps(queue(json.loads(Path(args.issues).read_text()), owner, int(n) if n else None,
+                               os.environ.get("SINCE", ""), json.loads(Path(args.comments).read_text()))))
+        return 0
+    if args.action == "input":
+        text, thread = owners_text(json.loads(Path(args.issue).read_text()), owner)
+        if text is None:
+            print("no sealed text of the owner on this issue")
+            return 3
+        out = Path(args.dir)
+        out.mkdir(parents=True, exist_ok=True)
+        (out / "proposal.md").write_text(text, encoding="utf-8")
+        (out / "thread.md").write_text(thread + "\n", encoding="utf-8")
+        return 0
+    if args.action == "verify":
+        problems = verify(Path(args.file).read_text(encoding="utf-8"))
+    else:
+        problems = check_build(_commits(args.base, args.head), args.n)
+    for p in problems:
+        print(f"- {p}")
+    return 2 if problems else 0
+
+
 def main(args):
     if args.action == "template":
         sys.stdout.write(template(FEATURE if args.feature else None))
@@ -185,3 +329,7 @@ def main(args):
         return 2
     print("proposal ok: every section filled in, checksum matches")
     return 0
+
+
+if __name__ == "__main__":
+    sys.exit(ci(sys.argv[1:]))

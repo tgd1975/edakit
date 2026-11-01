@@ -1,6 +1,6 @@
 # 2 Setup
 
-Tested with EasyEDA Pro 3.2.206 on Linux (Ubuntu), easyeda-mcp-pro 1.4.0, Node 24, Python 3.11–3.14, ngspice 45,
+Tested with EasyEDA Pro 3.2.209 on Linux (Ubuntu), easyeda-mcp-pro 1.6.0, Node 24, Python 3.11–3.14, ngspice 45,
 Freerouting 2.4.1, Claude Code 2.1.3xx. Windows and macOS should work for everything except the bundled Freerouting
 download (set `FREEROUTING_JAR`) – untested.
 
@@ -67,6 +67,19 @@ To give every session in a project the plugin automatically, put this into the p
 
 Without Claude Code (CI, a terminal): `uvx --from git+https://github.com/tgd1975/edakit edakit <command>`,
 or from a clone `uv run --project /path/to/edakit edakit <command>`.
+
+**Versions.** Every change to edakit comes as a version with its own number, and the plugin installs the newest one.
+The minor number goes up when a project has to act on an update – its lines in [CHANGELOG.md](../CHANGELOG.md) begin
+with **When updating:** and say what to do, such as which sign-offs to renew. The patch number goes up for everything
+else: a new rule, a new command, a fix. The major number marks a milestone of edakit itself.
+
+`edakit --version` prints the version that runs. Run from a git clone that is not on the version's tag, it adds the
+commit, as in `0.2.0+g1a2b3c4`. Every gate run writes the same string into its manifest, under `tools.edakit`.
+
+A project that wants to stay on one version names it in two places. In `.claude/settings.json` it adds the tag beside
+the repository: `"source": { "source": "github", "repo": "tgd1975/edakit", "ref": "v0.2.0" }`. In CI it runs
+`uvx --from git+https://github.com/tgd1975/edakit@v0.2.0 edakit <command>`. Skills, agents and the command line are
+then of the same version. To move up, read the changelog, change both tags, run the gate and commit.
 
 ## 2.4 The MCP server
 

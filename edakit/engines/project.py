@@ -131,6 +131,9 @@ def run(design, cfg):
     checks.check_signoff(design, rec)
     if cfg.requirements:
         requirements.check(rec, cfg)
+    else:   # required (requirements decision 5): open like a sign-off, edakit check passes, the gate does not release
+        rec.pending.append(("DOCS.file", f"{cfg.path.name}: [project] requirements names no requirements file – "
+                                         "write it with /edakit:requirements"))
     for level, msg in scripts.findings(cfg):
         rec.add(level, "SYNC.scripts", msg)
     for f in (scripts.agents(cfg).findings if cfg.agents else []):

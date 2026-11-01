@@ -1330,6 +1330,22 @@ sources = [
   "Concept docs/concepts/done/requirements.md, 'Scope': the documents quote a requirement by its ID in a value block (step 3.5)",
 ]
 
+[codes."DOCS.file"]
+title = "requirements file named"
+rule = "edakit.toml names the project's requirements file in [project] requirements. Without it the point is open, as a required sign-off is: edakit check reports it and passes – a project being set up can still commit –, edakit check --release and the gate do not release."
+why = "The requirements are the pipeline's input: what the boards must do, in the words of those who want it. Without them the gate can say that the circuit is consistent, but not that it does what it is for, and the reviews M-1, M-5 and M-6 judge the design against nothing written. Since the bell and the tree have their files, every project has one before it orders, as it has its sign-offs."
+fix = "Write the file with the skill requirements (/edakit:requirements) and name it: [project] requirements = \"hardware/requirements.toml\"; a variant names the main project's file and its own."
+severity = "pending"
+details = [
+  "requirements file named: `[project] requirements` in `edakit.toml` names a file (3.6, 10.4) – open, like a required sign-off: `edakit check` passes, `--release` and the gate do not – finds e.g.: a project that never wrote down what its circuit must do",
+]
+replaces = []
+sources = [
+  "edakit handbook 3.6 and 10.4",
+  "Concept docs/concepts/done/requirements.md, decision 5: optional until the bell and the reference project have a file; then required, as M-1, M-5 and M-6 are",
+  "Implementation plan docs/concepts/done/implementation-plan.md, step 4.5; the owner's word of 2026-11-01: build it now, the bell has its file",
+]
+
 [codes."DOCS.ref"]
 title = "requirement references resolve"
 rule = "In the requirements file of [project] requirements, every reference of a requirement that is not dropped resolves: a need or requirement in from (N-…, R-…) stands in the files, a manual check in from or in verify signoff (M-…) is one of the sign-off file or one the gate requires, a rows pattern that starts with a code names a code of the catalog (one that starts with a check ID of before is a finding naming the codes that replace it), and verify script names an entry [scripts.<name>] of kind check or the id of a [[release.stages]]. A from that names a dropped need or requirement is a warning. About a draft – status draft, or no status – every finding is a warning in edakit check and information in the gate: a draft never blocks; it is an error once the user accepts the requirement."

@@ -1,0 +1,63 @@
+name: Pull request
+
+# The checks paths and version of a pull request into main (docs/concepts/new/versioning.md). On pull_request_target
+# they run main's workflow and main's .github/versions.py, so a branch cannot loosen its own check; they read the
+# pull request's changed files and, for version, its number, marketplace entry, changelog and fragments with git
+# show – never checking out or running its code – and write the result as a commit status on the pull request's
+# head, under the name a ruleset requires (paths, version). version stays red until .github/merge.py numbers the
+# pull request: GitHub's merge button cannot merge a change to edakit without its number.
+
+on:
+  pull_request_target:
+    types: [opened, synchronize, reopened, edited]
+    branches: [main]
+
+permissions:
+  contents: read
+  statuses: write
+
+concurrency:
+  group: pull-request-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        check: [paths, version]
+    steps:
+      - uses: actions/checkout@v4   # main – the base, never the head
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: The pull request's commits, as data
+        env:
+          N: ${{ github.event.pull_request.number }}
+        run: git fetch -q --no-tags origin "+refs/pull/$N/head:refs/pr/head"
+      - name: ${{ matrix.check }}
+        id: check
+        env:
+          CHECK: ${{ matrix.check }}
+          BRANCH: ${{ github.event.pull_request.head.ref }}
+          N: ${{ github.event.pull_request.number }}
+        run: |
+          set +e
+          python3 .github/versions.py check "$CHECK" origin/main refs/pr/head "$BRANCH" "$N" > out.txt
+          code=$?
+          cat out.txt
+          exit $code
+      - name: Status on the head
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+          CHECK: ${{ matrix.check }}
+          SHA: ${{ github.event.pull_request.head.sha }}
+          OUTCOME: ${{ steps.check.outcome }}
+          URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          state=failure; [ "$OUTCOME" = success ] && state=success
+          description=$(head -1 out.txt 2>/dev/null | cut -c1-140)
+          gh api -X POST "repos/${{ github.repository }}/statuses/$SHA" -f state="$state" -f context="$CHECK" \
+            -f description="${description:-the check did not run}" -f target_url="$URL" > /dev/null

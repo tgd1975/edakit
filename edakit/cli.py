@@ -79,7 +79,10 @@ def _no_scripts(p):
 
 
 def build_parser():
+    from .version import version
     ap = argparse.ArgumentParser(prog="edakit", description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    ap.add_argument("--version", action="version", version=f"edakit {version()}",
+                    help="the version – from a git checkout away from its tag with the commit")
     sub = ap.add_subparsers(dest="command", required=True)
 
     p = sub.add_parser("check", help="rule checks on the graph (stages P, G)")

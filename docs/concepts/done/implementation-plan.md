@@ -1,10 +1,10 @@
 # Implementation plan: requirements, design as text, project scripts
 
-Status 2026-11-01: done – moved to `done/` on the owner's word. Built: phases 1 to 3, 4.1 to 4.4 – 4.4 in pytree, its D-50
-to D-54 – and phase 5; the live runs of 2.1 to 2.4, 3.6, 5.7, 5.8, 5.10 and 5.12 passed (2026-10-31 and 2026-11-01,
-results under each; `tests/fixtures/makers/LIVE.md`), nothing ordered – no order has gone through
-`edakit cart actual` yet (TODO.md TD-57); 5.11 dropped – future work, nobody asks the makers. Left is 4.5, the requirements file required
-once the bell and the tree have one – an item in [TODO.md](../../../TODO.md).
+Status 2026-11-01: done – moved to `done/` on the owner's word. Built: phases 1 to 3, phase 4 – 4.4 in pytree, its
+D-50 to D-54; 4.5, the requirements file required, as DOCS.file – and phase 5; the live runs of 2.1 to 2.4, 3.6, 5.7,
+5.8, 5.10 and 5.12 passed (2026-10-31 and 2026-11-01, results under each; `tests/fixtures/makers/LIVE.md`), nothing
+ordered – no order has gone through `edakit cart actual` yet (TODO.md TD-57); 5.11 dropped – future work, nobody
+asks the makers.
 The plan built five concepts, decided by the user on 2026-10-28 (e5caf42, 301fd90) and 2026-10-30:
 [requirements.md](requirements.md), [design-as-text.md](design-as-text.md),
 [project-scripts.md](project-scripts.md), [project-setup.md](project-setup.md) and [ordering.md](ordering.md); the
@@ -52,7 +52,7 @@ circuit's form has a plan of its own, [circuit-language-plan.md](circuit-languag
 | 4.2 | Bell: entries for `kunst` and `tdisplay` | project-scripts example | S | no | 2.4 | done in the bell (2026-11-01, on its main: `[scripts.kunst]` ×5, `[scripts.tdisplay]`) |
 | 4.3 | Bell: the circuit as a language and as TOML with names, then the choice | design-as-text decision 8 | M | no | – | written (3f2b9e3, 7bbf3ce); reviewed and decided 2026-10-31: the language deferred, TOML with names the form; what both forms share has a plan of its own, circuit-language-plan.md, built 2026-10-31 (L.1–L.8; L.9, the bell converting, done there 2026-11-01); the language thought further in circuit-dsl.md |
 | 4.4 | Tree: its positions, scripts, agents and requirements | all three | M | yes | the tree's move, 2.1, 3.7 | done in the tree (2026-10-31 and 2026-11-01, its D-50 to D-54, merged with pytree#34) |
-| 4.5 | The requirements file becomes required | requirements decision 5 | S | no | 4.1, 4.4, requirements as inputs (#97) and the bell's file rewritten after it (its D-39) | open – 4.4 and #97 done; waits for the bell's D-39, after its order; the first files are the examples others copy |
+| 4.5 | The requirements file becomes required | requirements decision 5 | S | no | 4.1, 4.4, requirements as inputs (#97) and the bell's file rewritten after it (its D-39) | done (2026-11-01, branch `requirements-required`): DOCS.file, open like a required sign-off – `edakit check` passes, `--release` and the gate do not; built before the bell's D-39 on the owner's word, the bell has its file |
 | 5.0 | Probes: the makers' pages in the owner's browser, EasyEDA's ODB++ | ordering steps 0, 0b | – | yes (0b) | the owner's Chrome | done: step 0 (2026-10-31, branch `makers-step0`), 0b (2026-11-01, branch `makers-step0b`) |
 | 5.1 | The order form as fields, `order.md` from them | ordering step 1 | S | no | – | done (d58f4ae) |
 | 5.2 | Every field of the form as a key, edakit's defaults, `edakit cart fields` | ordering step 2 | M | no | 5.0, 5.1 | done (d58f4ae) – the keys of the reference orders; 5.0 adds what the forms show |
@@ -477,7 +477,8 @@ its requirements file. Done in pytree before its order instead (its EK-5 lifted 
 D-54).
 
 **4.5 Requirements required.** Once the bell and the tree have a file, a project without one fails the gate
-(decision 5).
+(decision 5). Built 2026-11-01 as DOCS.file, severity pending: open like a required sign-off, so a project being set
+up still commits.
 
 ## Phase 5: ordering at the manufacturer
 
