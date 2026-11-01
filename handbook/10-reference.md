@@ -381,7 +381,7 @@ project's file and its own: `requirements = ["../../hardware/requirements.toml",
 Every command that reads a project: `--config`, `-v` (MCP traffic). Exit codes: 0 ok, 2 findings, 1 error; 3 from
 `edakit lock` and from `edakit run` of an easyeda script (another session holds EasyEDA), from `edakit cart check`
 (the review of the order is open) and from `route all|drc` and `silk apply|check` when the DRC's only item is EasyEDA
-waiting for the import acknowledgement (schematic = PCB; *Design → Import Changes* once – 7.5). With uv from snap
+waiting for the import acknowledgement after writing the Channel IDs (schematic = PCB; *Design → Import Changes* once – 7.5). With uv from snap
 inside Claude Code: `edakit … 2>&1 | cat`. The long commands – `route all`, `gate`, `pcb apply`, `silk apply`,
 `export`, `schematic create|layout` – print `[x.x min] step n/m: <step>` before each step
 (11.3). With `[scripts]`, `pcb place|parts|plan|apply`, `route all`, `silk apply|preview` and `gate` run the input
