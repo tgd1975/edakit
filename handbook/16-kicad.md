@@ -103,7 +103,7 @@ The commands are the same; what they do on KiCad:
 | `pcb dump` | the footprints measured from the file – nothing has to be turned first |
 | `pcb place --rest` | edakit places the parts without a row (the placement plan, 7.4) – KiCad has no auto-layout |
 | `pcb autolayout` | refused: `pcb place --rest` |
-| `pcb pour`, `route pours` | zones of `[[pours]]`, filled by `kicad-cli pcb drc --refill-zones --save-board`; `stitch` is EasyEDA's |
+| `pcb pour`, `route pours` | zones of `[[pours]]` along the outline and a rule area around the keep circle of every mounting and tooling hole, filled by `kicad-cli pcb drc --refill-zones --save-board`; `stitch` is EasyEDA's |
 | `route read` | `<board>_board.json` from the file, in the form EasyEDA's read has |
 | `route dsn`/`route`/`check`/`diagnose` | unchanged |
 | `route apply` | the SES as segments and vias – the pieces `route.segments` prepares for EasyEDA |
@@ -189,6 +189,9 @@ is no regression. The job confirmed:
 - KiCad reads the PCB; `pcb drc --refill-zones --save-board` fills the zones; the DRC's JSON, with schematic parity, has
   only the connections the routing has not made yet. The schematic has global labels: local labels name a net
   "/GND", and the parity found every pad in conflict.
+- The rule areas around the holes: KiCad leaves each keep circle free and fills the board right up to it, where the
+  pours kept EasyEDA's square notch to the edge before – the 555 blinker's layout review, M-5 note 7
+  (`test_kicad_fills_around_a_tooling_hole_and_keeps_its_circle_free`).
 - The flags of kicad-cli (16.5) for Gerber, drill and position file; the file names of the export; the Gerber reader on
   KiCad's files. The position file's place and turn of every part against `pcb.json` (SYNC.cpl), on the bottom too: a
   part at 90° and one at 180° keep their turn in the position file (neither -a nor 180-a).
@@ -223,4 +226,3 @@ Confirmed on chapter 18's real project (KiCad 10.0.6):
 - The led-bar example as a KiCad project looked at in KiCad, the placer on both tool chains, the Christmas bell – the
   steps are in the concept's [Live test](../docs/concepts/done/kicad-toolchain.md#live-test).
 - Polygon pads, which the blinker's footprints do not have.
-- The square notch the pours leave around a tooling hole, EasyEDA's workaround, where KiCad could fill around it.

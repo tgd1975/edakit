@@ -125,12 +125,14 @@ values = ["vf_v", "vf_at_a", "ir_a", "ir_at_v"]
 [kinds.led]
 roles = ["anode", "cathode"]
 limits = ["vr_max_v", "if_max_a"]
-values = ["color", "vf_typ_v", "vf_min_v", "vf_max_v", "vf_at_a", "rs_ohm"]
+values = ["color", "vf_typ_v", "vf_min_v", "vf_max_v", "vf_at_a", "rs_ohm",
+          "vf_vs_if"]                        # [[A, V], …]: points of the datasheet's IV curve – the model's ideality
+                                             # follows them (sim/netlist.py led_ideality), 2 without
 
 [kinds.led_rgb]
 roles = ["anode", "cathode", "anode_red", "anode_green", "anode_blue", "cathode_red", "cathode_green", "cathode_blue"]
 limits = ["vr_max_v", "if_max_a"]
-values = ["vf_typ_v", "vf_min_v", "vf_max_v", "vf_at_a", "rs_ohm"]
+values = ["vf_typ_v", "vf_min_v", "vf_max_v", "vf_at_a", "rs_ohm", "vf_vs_if"]
 per_color = ["red", "green", "blue"]       # limits and values may be given per colour
 
 [kinds.npn]                                  # hfe_min, hfe_max: the corners of the simulation's spread (sim/spread.py);

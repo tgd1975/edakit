@@ -56,8 +56,8 @@ Concept: `${CLAUDE_PLUGIN_ROOT}/handbook/08-release-gate.md`.
    adds it as open. A sign-off a project agent signs counts only when `done_by` names that agent ("agent pcb-pruefer");
    signed by edakit's agent, or for another scope than the agent's entry gives, it is open (a note in section 6 says
    why). OK → `done_by` = the agent, date, note – with `[project] requirements` the note names every requirement the
-   check found met, as the agent's line gives them ("requirements met: R-4, R-5"; `verify = [{ signoff = "M-1" }]`,
-   handbook 8.7) –, and the hash of its scope from the protocol header into the sign-off file – for scope `fab` (M-5,
+   check found met, as the agent's line gives them ("requirements met: R-4, R-5" – only IDs in that clause count;
+   `verify = [{ signoff = "M-1" }]`, handbook 8.7) –, and the hash of its scope from the protocol header into the sign-off file – for scope `fab` (M-5,
    M-2) the `fab_sha256` of the run whose files were reviewed; a later run with the same files – and the same thickness,
    colours, finish and mark of `[order]` – keeps it. When it lapsed: `edakit fab diff <reviewed run> <new run>` shows
    what changed, and the review looks at that. Not OK → fix the cause and check again. What changes looks or operation
@@ -123,5 +123,5 @@ After delivery: acceptance test of every board (M-4), with the datasheet points 
 under "after delivery, per board" (`verified.open` with `when`), the project's checks of phase acceptance there (each
 with its command), the project agents of phase acceptance (`- [ ] M-8 … – the project agent kamera`: start it in its
 own session, its OK signs the line, `done_by` = the agent) and, with `[project] requirements`, the acceptance steps of
-the requirements (`- [ ] R-4: …`); M-4's note names the requirements it tested. Once a board of a published release
-passed it: `edakit release publish --built <tag> 2>&1 | cat` – the release is no longer a pre-release.
+the requirements (`- [ ] R-4: …`); M-4's note names the requirements it found met ("requirements met: R-4"). Once a
+board of a published release passed it: `edakit release publish --built <tag> 2>&1 | cat` – the release is no longer a pre-release.

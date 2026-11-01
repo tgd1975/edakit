@@ -30,6 +30,11 @@ row reads `waived`, and the gate lists it in section 4 of the protocol. A scenar
   JFET is held to its entry in every scenario like the other transistors: |VDS| (`vds_max_v`), |VDG| (`vdg_max_v`), the
   gate's reverse voltage against the source (`vgs_max_v`), its forward gate current (`ig_max_a` – a gate driven above
   its source conducts), the drain current (`id_max_a`), the power.
+- An LED is a diode through `vf_*_v` of the corner at `vf_at_a`, with `rs_ohm` (10 Ω without) and an ideality of 2 –
+  or the one its datasheet's IV curve gives: `values.vf_vs_if`, points `[[A, V], …]` read off the curve (4.1), the
+  slope of V − I·RS over ln I. With N = 2 the 555 blinker's red LED (Kingbright DSAO7910) lay 20–25 mV below its curve
+  at 0.5 mA (chapter 18, M-1). `edakit part lint` holds the points to rising currents and volts and the ideality they
+  give to 1 … 4.
 - A 0 Ω bridge (`value_ohm: 0`) is its `r_max_ohm`, 50 mΩ without one – ngspice finds no operating point with 0 Ω.
 - A capacitor with a DC-bias curve (`values.dc_bias`, 4.1) is the capacitance left at the highest DC the declared ranges
   of its two nets put across it – a KEMET 4.7 µF 6.3 V 0603 X5R on a 0 … 5.5 V rail is 1.86 µF: the least capacitance it

@@ -696,12 +696,27 @@ def write_copper(cfg, board, rules, routes, data):
     return sum(1 for t in tracks if t[0] == "segment"), sum(1 for t in tracks if t[0] == "via")
 
 
+def keep_area(board, k, x, y, r):
+    """A rule area on both copper layers that no pour fills – the keep circle (x, y, r) in plan mm of a mounting or
+    tooling hole (pcb.pour_keepouts), as EasyEDA's NO_POURS region (pcb.keep_regions); tracks and vias may cross it."""
+    from ...pcb import circle_points
+    pts = [board.eda_point(px, py) for px, py in circle_points(x, y, r, 48)]
+    return ["zone", ["net", 0], ["net_name", ""], ["layers", "F.Cu", "B.Cu"], ["uuid", uid(board.name, "keep", k)],
+            ["name", f"edakit_keep_{k}"], ["hatch", Sym("edge"), 0.5], ["connect_pads", ["clearance", 0]],
+            ["min_thickness", 0.25], ["filled_areas_thickness", False],
+            ["keepout", ["tracks", Sym("allowed")], ["vias", Sym("allowed")], ["pads", Sym("allowed")],
+             ["copperpour", Sym("not_allowed")], ["footprints", Sym("allowed")]],
+            ["fill", ["thermal_gap", 0.5], ["thermal_bridge_width", 0.5]],
+            ["polygon", ["pts", *(["xy", px, -py] for px, py in pts)]]]
+
+
 def write_zones(cfg, board, regions=None):
     """The pours of [[pours]] as zones along the pour outline (pcb.pour_outline) – or, with pour_regions, one zone
-    per outline of route.region_outlines ({(net, layer): [outline in EasyEDA mm]}). Unfilled: cli.fill_zones fills
-    them. Old zones go. -> number of zones."""
+    per outline of route.region_outlines ({(net, layer): [outline in EasyEDA mm]}) –, and a rule area around every
+    mounting and tooling hole (keep_area): KiCad fills around it, where the pours once kept EasyEDA's square notch to
+    the edge. Unfilled: cli.fill_zones fills them. Old zones go. -> number of pour zones."""
     from ...config import POUR_CLEARANCE_MM
-    from ...pcb import pour_outline
+    from ...pcb import pour_keepouts, pour_outline
     pcb = load(cfg, board)
     pts = [board.eda_point(*q) for q in pour_outline(board)]
     zones = []
@@ -719,9 +734,12 @@ def write_zones(cfg, board, regions=None):
                               ["fill", True, ["thermal_gap", 0.5], ["thermal_bridge_width", 0.5],
                                ["island_removal_mode", 0]],
                               ["polygon", ["pts", *(["xy", x, -y] for x, y in shape)]]])
+    poured = len(zones)
+    if poured:
+        zones += [keep_area(board, k, *c) for k, c in enumerate(pour_keepouts(board), 1)]
     pcb.zones = zones
     pcb.save(cfg, board)
-    return len(zones)
+    return poured
 
 
 # --- silkscreen ------------------------------------------------------------------------------------------------------

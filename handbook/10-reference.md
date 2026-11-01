@@ -527,7 +527,8 @@ status = "accepted"
 `verify`, one kind per entry:
 
 - `{ rows = "…" }` – rows of the gate protocol, a pattern over "ID scenario item check" as `accept` match them (8.2);
-- `{ signoff = "M-1" }` – a manual check, which counts when its `note` names the requirement's ID;
+- `{ signoff = "M-1" }` – a manual check, which counts when its `note` names the requirement's ID after
+  "requirements met:";
 - `{ script = "…" }` – a project script of kind `check` or the id of a `[[release.stages]]`: it passes when the check
   passed in the gate's run, one of phase `order` or `acceptance` once M-2 or M-4 is signed;
 - `{ accept = "…" }` – a step of the acceptance test, on the list of protocol section 6.

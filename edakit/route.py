@@ -936,12 +936,15 @@ def segments(rules, routes, data=None):
 # --- 4 check ------------------------------------------------------------------------------------------------------
 
 def _pour_area(rules):
-    """The pour outline of `pcb pour` in mil."""
+    """The pour outline of `pcb pour` in mil, the keep circle of every mounting and tooling hole left out – EasyEDA's
+    NO_POURS regions and KiCad's rule areas keep them free (pcb.pour_keepouts)."""
     board = rules.board
     if not board.outline:
         raise SystemExit(f"board {board.name}: pour_only and pour_regions need the outline in the board file – the pour "
                          "outline is computed from it")
-    return Polygon([tuple(v * MIL_PER_MM for v in board.eda_point(x, y)) for x, y in pcb.pour_outline(board)])
+    area = Polygon([tuple(v * MIL_PER_MM for v in board.eda_point(x, y)) for x, y in pcb.pour_outline(board)])
+    keep = [(*(v * MIL_PER_MM for v in board.eda_point(x, y)), r * MIL_PER_MM) for x, y, r in pcb.pour_keepouts(board)]
+    return area.difference(unary_union(circles(keep))) if keep else area
 
 
 def _layer_copper(rules, data, routes, segs):

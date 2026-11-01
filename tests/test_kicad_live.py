@@ -72,6 +72,32 @@ def test_kicad_reads_the_pcb_fills_its_zones_and_finds_only_open_nets(project, t
     assert other == [], other
 
 
+def test_kicad_fills_around_a_tooling_hole_and_keeps_its_circle_free(project):
+    """The pours on KiCad followed EasyEDA's square notch from the edge around every tooling hole (the 555 blinker's
+    layout review, M-5 note 7): the zone follows the outline now, a rule area keeps the keep circle free, and KiCad
+    fills the corners of the old square around it."""
+    from shapely.geometry import Point, Polygon
+    cfg = kicad_project(project)
+    board = cfg.board()
+    assert board.tooling
+    kb.write_parts(cfg, board)
+    assert kb.write_zones(cfg, board) == 2
+    cli.fill_zones(kb.paths(cfg, board)["pcb"], verbose=True)
+    pcb = kb.load(cfg, board)
+    keeps = [z for z in pcb.zones if kb.first(z, "keepout")]
+    assert len(keeps) == len(board.holes) + len(board.tooling)
+    fills = [Polygon([(float(q[1]), -float(q[2])) for q in kb.first(f, "pts")[1:]])
+             for z in pcb.zones if kb.value(z, "layer") == "F.Cu" for f in kb.find(z, "filled_polygon")]
+    copper = fills[0].union(*fills[1:]) if len(fills) > 1 else fills[0]
+    for tx, ty in board.tooling:
+        r = board.tooling_keep
+        x, y = board.eda_point(tx, ty)
+        assert not copper.intersects(Point(x, y).buffer(r - 0.05))              # the keep circle stays free
+        cx, cy = Polygon(board.outline).centroid.coords[0]
+        sx, sy = (1 if cx > tx else -1), (1 if cy > ty else -1)
+        assert copper.contains(Point(*board.eda_point(tx + sx * 0.95 * r, ty + sy * 0.95 * r)))   # the old square's corner
+
+
 def test_the_exports_are_what_the_checks_read(project):
     cfg = kicad_project(project)
     board = cfg.board()

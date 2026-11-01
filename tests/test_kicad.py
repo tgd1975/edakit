@@ -260,7 +260,9 @@ def test_tracks_vias_and_zones_are_written_and_kept_by_the_next_parts_run(projec
     assert kb.write_zones(cfg, board) == 2                                          # GND on TOP and BOTTOM
     kb.write_parts(cfg, board)                                                     # pcb apply again: copper stays
     pcb = kb.load(cfg, board)
-    assert len(pcb.tracks) == 2 and len(pcb.zones) == 2
+    pours = [z for z in pcb.zones if not kb.first(z, "keepout")]
+    assert len(pcb.tracks) == 2 and len(pours) == 2
+    assert len(pcb.zones) - len(pours) == len(board.holes) + len(board.tooling)   # a rule area at every hole
     lines = kb.pcb_json(cfg, board)["lines"]
     assert lines == [{"Net": "GND", "Layer": 1, "LineWidth": pytest.approx(18), "StartX": pytest.approx(a["x"]),
                       "StartY": pytest.approx(a["y"]), "EndX": pytest.approx(a["x"]),
@@ -563,9 +565,13 @@ def test_a_zone_keeps_its_net_however_the_file_names_it(project, form):
     path.write_text(re.sub(r'^\t\(net \d+ "[^"]*"\)\n', "", text, flags=re.M))
     kb.write_parts(cfg, board)                            # read and written again, as after KiCad saved it
     pcb = kb.load(cfg, board)
-    assert len(pcb.zones) == 2
-    for z in pcb.zones:
+    pours = [z for z in pcb.zones if not kb.first(z, "keepout")]
+    assert len(pours) == 2
+    for z in pours:
         assert sexp.value(z, "net_name") == "GND" and pcb.net_name(sexp.value(z, "net")) == "GND"
+    for z in pcb.zones:
+        if z not in pours:
+            assert sexp.value(z, "net_name") == "" and sexp.value(z, "net") == 0       # the rule areas: no net
 
 
 def test_a_zone_kicad_saved_without_the_thickness_flag_keeps_its_fill_exact(project):
@@ -579,7 +585,7 @@ def test_a_zone_kicad_saved_without_the_thickness_flag_keeps_its_fill_exact(proj
     path.write_text(path.read_text().replace("(filled_areas_thickness no)", ""))
     kb.write_parts(cfg, board)
     assert all(sexp.value(z, "filled_areas_thickness") == "no" for z in kb.load(cfg, board).zones)
-    assert path.read_text().count("(filled_areas_thickness no)") == 2
+    assert path.read_text().count("(filled_areas_thickness no)") == len(kb.load(cfg, board).zones)
 
 
 def test_a_footprint_names_the_mpn_and_its_manufacturer(project):
