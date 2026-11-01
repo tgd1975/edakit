@@ -268,7 +268,8 @@ that rule set into EasyEDA before its DRC, reads it back after a reload, and the
 what = "wire"|"all", rect | polygon, windows, window_mm}), `[[routing.fixed_wires]]` ({net, layer, width_mil, points}).
 
 `[copper]`: `max_bare_mm` (5: the largest copper-free circle inside the pour outline of a layer that `[[pours]]` pours;
-above it GEO.pour warns), `min_cover` (`{TOP = %, BOTTOM = %}`, none: the least copper share of the board area per
+above it GEO.pour warns), `max_bare_mm2` (20: the largest copper-free piece there in mm² that a pour could fill –
+opened with a disc of 2 × `clearance_mm` + `min_width_mm` of `[[pours]]`; above it GEO.pour warns), `min_cover` (`{TOP = %, BOTTOM = %}`, none: the least copper share of the board area per
 layer; below it GEO.pour warns).
 
 `[net_classes]`: `NAME = {min_a, width_mm}` – class by the largest simulated current, practical minimum width (default

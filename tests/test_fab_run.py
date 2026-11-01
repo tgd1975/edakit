@@ -793,7 +793,8 @@ FAULTS = [
      [("GEO.spacing", "fail", "C2.2 (GND) – D1.2 (VIN): 0.300 mm apart on TOP, below the paste gap 0.400 mm")]),
     # GEO.pour
     ("a poured layer left bare", bare_bottom,
-     [("GEO.pour", "warn", "BOTTOM: 1 % copper, largest copper-free circle Ø 19.0 mm at (13.2, 10.1) mm")]),
+     [("GEO.pour", "warn", "BOTTOM: 1 % copper, largest copper-free circle Ø 19.0 mm at (13.2, 10.1) mm"),
+      ("GEO.pour", "warn", "BOTTOM: 466 mm² in x 0.5–29.5, y 0.5–19.5 mm (other side 7 % copper)")]),
     ("copper that touches no pad, via or hole", loose_copper,
      [("GEO.pour", "warn", "TOP: 1 piece without pad, via or hole: 16.2 mm² around (10.5, 4.5) mm")]),
     # GEO.ring
@@ -1017,16 +1018,41 @@ def test_copper_per_side_of_the_clean_export(project):
 
 
 def test_copper_per_side_settings(project):
-    """[copper] of the board file: max_bare_mm lets the bare BOTTOM pass, min_cover warns below its share."""
+    """[copper] of the board file: max_bare_mm and max_bare_mm2 let the bare BOTTOM pass, min_cover warns below its
+    share."""
     def settings(ex, p):
         bare_bottom(ex, p)
         f = p.root / "hardware" / "boards" / "main.toml"
-        f.write_text(f.read_text() + "\n[copper]\nmax_bare_mm = 20\nmin_cover = { TOP = 10 }\n")
+        f.write_text(f.read_text() + "\n[copper]\nmax_bare_mm = 20\nmax_bare_mm2 = 500\nmin_cover = { TOP = 10 }\n")
     rows = run(project, settings)
     assert findings(rows) == [("GEO.pour", "warn")]
     by = {r["check"]: (r["result"], r["actual"]) for r in rows if r["id"] == "GEO.pour"}
     assert by["BOTTOM: no copper-free circle above 20 mm inside the pour outline (poured: GND)"][0] == "pass"
+    assert by["BOTTOM: no copper-free piece above 500 mm² inside the pour outline (gaps from 0.75 mm)"] == \
+        ("pass", "BOTTOM: largest copper-free piece 466.0 mm²")
     assert by["TOP: copper share at least 10 % ([copper] min_cover)"] == ("warn", "TOP: 6 % copper")
+
+
+def test_a_bare_strip_is_measured_by_its_area():
+    """#103: a GND island walled in by other nets – a strip of 3 x 35 mm – passes the circle (Ø 3 mm) but its 105 mm²
+    are a piece above max_bare_mm2; a gap of 0.5 mm between foreign copper is no piece a pour of 0.75 mm fills."""
+    import numpy as np
+    res = gerber.RES
+    mm = lambda v: round(v / res)  # noqa: E731
+    free = np.zeros((mm(20), mm(50)), dtype=bool)
+    free[mm(2):mm(5), mm(5):mm(40)] = True                # the strip: 3 x 35 mm
+    free[mm(10):mm(10.5), mm(5):mm(40)] = True            # a clearance gap of 0.5 mm, 35 mm long
+    other = np.ones_like(free)
+    other[mm(2):mm(5), mm(5):mm(15)] = False              # the other side: copper under 25 of the 35 mm
+    dia, _, _ = fab.free_circle(free)
+    assert dia * res < 5
+    pieces = fab.bare_pieces(free, 0.75 / res, other)
+    assert len(pieces) == 1
+    points, (rs, cs), share = pieces[0]
+    assert abs(points * res * res - 105) < 1
+    assert ((rs.start, rs.stop), (cs.start, cs.stop)) == ((mm(2), mm(5)), (mm(5), mm(40)))
+    assert abs(share - 100 * 25 / 35) < 1
+    assert fab.bare_pieces(free & False, 0.75 / res) == []
 
 
 def test_rings_and_hole_spacing_of_the_clean_export(project):
