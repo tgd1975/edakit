@@ -80,7 +80,7 @@ Every BOM part is in the pick-and-place file exactly once with the PCB's side an
 - pick and place: every BOM part exactly once, side and rotation = PCB; sides and SMD-only as `[release] assembly` says (Economic PCBA: one side, SMD only; two SMD sides need Standard PCBA)
 
 **`SYNC.odb`** – ODB++ = the released files (error, other_maker: warning; replaces F-7)  
-With a maker of [cart] makers that takes ODB++ (files = ["odb"] in its profile – AISLER): odb_<board>.zip, exported by EasyEDA through the patched tool easyeda_export_odb or on the KiCad tool chain by kicad-cli pcb export odb, holds to this run's files – every board layer (copper, solder mask, paste, silkscreen) rasterised as GEO.copper does and XOR'd with the Gerber layer of the same side: no spot above 0.01 mm² of points farther than one raster point (0.02 mm) from the other layer – an edge that far off is the ODB++'s coarser coordinates (kicad-cli: 0.1 µm against the Gerber's 1 nm) –, no layer in one and not in the other; the drill hits = the drill files (place to 1 µm, diameter, plated or not); the profile = the Gerber outline (0.05 mm); every BOM part exactly once at the place (0.01 mm), rotation (ODB++ clockwise, the CPL counter-clockwise) and side of the CPL, with the BOM's part number; a part with bom: false as the maker's profile says – left out (dnp = "omit"), else listed for the skill to mark; a tooling hole of the KiCad tool chain (a footprint with property edakit = "tooling") only marked .no_pop; the nets of the pins as the graph's, compared as groups of pins. An export that failed or cannot be read fails. A failure for [cart] maker, a warning for another maker.
+With a maker of [cart] makers that takes ODB++ (files = ["odb"] in its profile – AISLER): odb_<board>.zip, exported by EasyEDA through the patched tool easyeda_export_odb or on the KiCad tool chain by kicad-cli pcb export odb, holds to this run's files – every board layer (copper, solder mask, paste, silkscreen) rasterised as GEO.copper does – EasyEDA's RoundRect mask openings as their rectangle, as the ODB++ has them – and XOR'd with the Gerber layer of the same side: no spot above 0.01 mm² of points farther than one raster point (0.02 mm) from the other layer – an edge that far off is the ODB++'s coarser coordinates (kicad-cli: 0.1 µm against the Gerber's 1 nm) –, no layer in one and not in the other; the drill hits = the drill files (place to 1 µm, diameter, plated or not); the profile = the Gerber outline (0.05 mm); every BOM part exactly once at the place (0.01 mm), rotation (ODB++ clockwise, the CPL counter-clockwise) and side of the CPL, with the part number the maker matches by (its profile's bom.match – AISLER: the MPN of the parts entry, which the KiCad tool chain writes into every footprint as MPN and Manufacturer; no match given: LCSC or MPN); a part with bom: false as the maker's profile says – left out (dnp = "omit"), else listed for the skill to mark; a tooling hole of the KiCad tool chain (a footprint with property edakit = "tooling") only marked .no_pop; the nets of the pins as the graph's, compared as groups of pins. An export that failed or cannot be read fails. A failure for [cart] maker, a warning for another maker.
 
 **`SYNC.source`** – own part = its source (error, margin: warning, stale: pending, unchecked: note; replaces P-3)  
 A board copied from another edakit project (own.what pcb, edakit part own) is that project's current datasheet and was copied from a commit, every datasheet a project writes (hardware/datasheet/) is of its current state, and a board that is not released at the state of its datasheet is a warning.
@@ -425,6 +425,17 @@ rules behind the findings", gives rule, reason, fix and sources of every check t
 catalog (chapter 14.2), so that the protocol can be read without this handbook. With `[project] requirements` a
 section 11, "Requirements", follows it (8.7).
 
+Section 12, "Pictures", shows the circuit and the board, each picture as SVG and PNG in the run's `pictures/`. Every
+run draws the schematic of every board but a bought one – the drawing of `edakit schematic draw` (6.5), its title
+block and style included –; a run with stage F draws each made board from its own Gerber and drill files: as made,
+top and bottom (the bottom seen from below, mirrored) in the colours of the run's order settings – solder mask,
+silkscreen, the finish on open copper (ENIG gold, a HASL silver), copper under the mask a shade of the mask, FR-4
+where the mask is open over no copper; without `[order]` edakit's defaults, green, white, HASL –, then every layer and
+drill file the maker builds from on its own, as the file draws it. The board's SVG is at scale, 1 mm on paper for
+1 mm of board; its PNG has 40 pixels a millimetre (at most 4000 on the longer side), the schematic's 300 dpi.
+Pictures are documentation: in no hash, and one that cannot be drawn is named in section 12 while the gate goes on.
+`pictures/pictures.json` lists them for `release publish` (8.3).
+
 Section 2 ends with the information of stages P and G – what `edakit check` prints as a note, such as GEO.hole before
 the first `pcb dump` or PARTS.stock without a stock snapshot – under "Information (does not block the release, needs no
 acceptance)": one line per finding, with the check's words. It changes neither the decision nor section 1's counts;
@@ -433,6 +444,7 @@ the simulation's information is in section 7, that of the other stages in sectio
 Result folder `<reports>/<YYYYMMDD-hhmmss>/`: `protocol.md`, `graph_checks.json`, `sim.json`, `schematic_<board>.json`,
 `stage_<id>.txt` per project check (8.1), `fab/<board>/` (Gerber ZIP, BOM, CPL, raw data, with `[order]` or `[cart]`
 the order form `order.md`, with `[order]` the order settings `order.json`), `fab/polarity_<board>.png`,
+`pictures/` (section 12: `schematic_<board>`, `board_<board>_top`, `_bottom` and `_<layer>`, each `.svg` and `.png`),
 `fab/manifest.json` and `makers.json` – per maker of `[cart] makers` its role and the findings of its checks, which
 `edakit cart prepare` reads (8.4).
 
@@ -491,15 +503,18 @@ edakit release publish --built 2026-10-31 # a board of that release has been bui
    `[cart] makers` the files of every maker. A file refused, or a project without a current release: exit 2, nothing
    staged, `gh` not called.
 3. **Staging** in `build/publish/<tag>/`: those files, `polarity_<b>.png`, the run's manifest as `manifest_<b>.json`,
-   the order form as `order_<b>.md` where the run has one (`[order]`, `[cart]`), and `SHA256SUMS` over all of them –
+   the order form as `order_<b>.md` where the run has one (`[order]`, `[cart]`), the run's pictures of circuit and
+   board as its `pictures/pictures.json` lists them (SVG and PNG, section 12 of the protocol), and `SHA256SUMS` over
+   all of them –
    the folder to upload to the maker from; publish names it at the end. `notes.md` beside them is the release's text.
 4. **The notes**, written by edakit: the commit; per board the gate run, the git state of its manifest, the fab hash,
    and whether the board changed since the previous release – by its fab layers in both manifests, what the maker
    builds from (the Gerber ZIP's own bytes change with every export, the fab hash does not), and where a manifest has
    none by the SHA-256 of the upload files in both `SHA256SUMS`; the decisions since the previous release – the
    headings `## D-…` of the decision log at HEAD that it lacked at that tag (`[release] publish.decisions`, without it
-   none); the purpose from the graph, with the note that the regulatory review M-6 is support, not legal advice; how
-   to order. Every link is absolute, into the commit – relative links do not work in release notes.
+   none); the purpose from the graph, with the note that the regulatory review M-6 is support, not legal advice; the
+   schematic and the board as made, top and bottom, of every board, shown from the release's own files; how to order.
+   Every link is absolute, into the commit or the release – relative links do not work in release notes.
 5. `gh release create <YYYY-MM-DD> --prerelease --target <HEAD>` with the staged files; a tag the remote has already
    gets `-2`, `-3`. The previous release is the newest one publish made (its title "Manufacturing files …"), drafts
    left out.
@@ -641,7 +656,10 @@ skill prints the job as a checklist, the owner fills the form and `quote.json`, 
 **Makers.** JLCPCB and PCBWay (China), Eurocircuits (Belgium) and AISLER (Netherlands) have a profile each in
 `edakit/makers/` (`[cart]`, 10.1); ordering step 0 read the four forms in the owner's accounts and recorded them
 (`recorded`, the notes in `tests/fixtures/makers/`). PCBWay and Eurocircuits match the BOM by manufacturer part number:
-`bom_<board>_mpn.csv` and PARTS.fact/mpn; both took it, and the CPL in JLCPCB's columns, as edakit writes them.
+`bom_<board>_mpn.csv` and PARTS.fact/mpn; both took it, and the CPL in JLCPCB's columns, as edakit writes them. The
+file's header is the one Eurocircuits' import maps by itself – Designator, Quantity, Value, Package, Manufacturer,
+Manufacturer Part Number: a column named "MPN" it left unmapped and took "Comment" for the part number (live run
+5.8); PCBWay's engineers read the same file by eye.
 JLCPCB's form offers no order number any more – "Mark on PCB" is "Remove Mark" or a 2D barcode (`barcode`: `"qr"`,
 `"datamatrix"`; `serial_number`, 10.2) –, so `mark = "specify"` is not a value of its form, and its former placeholder
 `JLCJLCJLCJLC` is printed as text at every maker: FILES.order warns about it. PCBWay's placeholder `WayWayWay` is text to

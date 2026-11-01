@@ -8,6 +8,14 @@
 # match by), left the tooling holes out (.no_pop), matched the LEDs by value only and left one diode unassigned – the
 # skill reads the BOM tab back (ORDER.parts). EasyEDA's ODB++ is ordering step 0b. There is no cart: the project is
 # saved as it is, and the skill stops before "Continue to Checkout"; a price shows only when every part is assigned.
+#
+# Live run 5.10 (2026-11-01, tests/fixtures/makers/aisler/live_2026-11-01/): AISLER assigns by the ODB++ property the
+# BOM tab's "Auto assign parts using" names – "mpn" (the KiCad tool chain writes MPN and Manufacturer into every
+# footprint); an MPN it lists more than once (another manufacturer, "Partner Stock") stays unassigned, and the skill
+# assigns the line of the release's manufacturer – the same MPN, no other part. Stackup, colours, service and quantity
+# are set on the project's page /checkout, a configuration with the price (the owner's word of 2026-11-01: the skill
+# opens it by its address and stops before "Continue to Checkout"; the buttons "Checkout" and "Checkout now" stay
+# untouched). Address and shipping follow "Continue to Checkout": the owner's.
 
 name = "AISLER"
 recorded = "2026-10-31"
@@ -16,13 +24,21 @@ seat = "NL"                            # inside the EU: no import; for "sale" th
 currency = "EUR"
 files = ["odb"]                        # odb_<b>.zip: board, parts and placement in one file (SYNC.odb)
 classes = ["assembly"]                 # the service "Amazing Assembly" (also: Beautiful Boards, Simple Supply, Scalable Series)
-never = ["Order", "Buy", "Checkout", "Continue to Checkout", "Pay", "Place order", "Confirm order"]
+never = ["Order", "Buy", "Checkout", "Checkout now", "Continue to Checkout", "Pay", "Place order", "Confirm order"]
 excludes = []
+
+[bom]                                  # no BOM upload: the parts come in the ODB++
+match = "mpn"                          # AISLER assigns by manufacturer part number and knows no LCSC number (5.10, 2026-11-01)
 
 [ignore]
 "Stackup & Design Rules" = "a line AISLER derives (2L 1.6mm 35um var.)"
 "Blitz Service" = "the owner's choice at checkout"
-"Quantity" = "the owner's, at checkout (quantity)"
+"Dimension / Size" = "the project's overview, read from the ODB++ (SYNC.odb holds its profile to the Gerber outline)"
+"Layer Count" = "the project's overview, read from the ODB++"
+"Minimal Drill Diameter" = "the project's overview, read from the ODB++ (SYNC.odb holds its holes to the drill files)"
+"Elongated Hole Count" = "the project's overview, read from the ODB++"
+"Castellated Hole Count" = "the project's overview, read from the ODB++"
+"Estimated Dispatch" = "/checkout: AISLER's date for the quantity, read with the price"
 
 # The form's limits: no order-number placeholder, no remark field.
 [rules]
@@ -59,10 +75,55 @@ section = "PCBA"
 label = "Service"
 words = { assembly = "Amazing Assembly" }
 
-# No order number, no barcode or serial number, no remark field at AISLER: the keys are left out of its job.
+[fields.sides]                         # the Assembly tab, from the ODB++
+section = "PCBA"
+label = "Sides"
+words = { top = "Single-sided (top)" }
+
+[fields.quantity]                      # /checkout: one quantity – AISLER assembles every board it makes
+section = "PCB"
+label = "Quantity"
+
+[fields.ship_to]                       # after "Continue to Checkout": the owner's
+section = "Shipping"
+label = "Ship to"
+checkout = true
+
+[fields.shipping]
+section = "Shipping"
+label = "Shipping"
+checkout = true
+
+# No such field on AISLER's pages (step 0, live run 5.10): the keys are left out of its job. No order number, barcode,
+# serial number or remark; the material and its tg, vias, tolerances and tests are AISLER's standard ("Stackup & Design
+# Rules", in ignore); the board size and layers come from the ODB++; the tooling holes are left out (.no_pop).
 [fields]
 mark = false
 barcode = false
 serial_number = false
 remark = false
 customs = false                        # seated in the EU: no customs declaration
+material = false
+tg = false
+layers = false
+size_mm = false
+delivery = false
+vias = false
+outline_tolerance = false
+gold_fingers = false
+castellated = false
+edge_plating = false
+electrical_test = false
+quality = false
+confirm_production_file = false
+paper_between = false
+packaging = false
+pcba_quantity = false
+tooling = false
+confirm_placement = false
+photo_confirmation = false
+bake = false
+depanel = false
+conformal_coating = false
+function_test = false
+pcba_packaging = false

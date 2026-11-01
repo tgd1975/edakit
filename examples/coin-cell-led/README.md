@@ -27,7 +27,7 @@ Offline, from this folder:
 ```bash
 edakit check      # 0 errors; PATH.reverse accepted (a cell upside down: D1 blocks it, D-3) and three hints
 edakit sim        # 9 scenarios, 112 comparisons: the cell's current with SW1 held accepted on BT1 (D-7)
-edakit gate       # P, G, E pass; NOT RELEASED offline: stages S, L, F need EasyEDA, M-5 is signed for fab f958da9ad4f8… – checked by stage F
+edakit gate       # P, G, E pass; NOT RELEASED offline: stages S, L, F need EasyEDA, M-5 is signed for fab dbbe8aa2baf1… – checked by stage F
 ```
 
 With the EasyEDA project `coin-cell-led` open, `edakit gate --easyeda` exports the manufacturing files and says

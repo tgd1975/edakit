@@ -140,6 +140,31 @@ def test_dry_run_stages_the_order_files_and_writes_the_notes(project, gh, capsys
     assert f"dry run: nothing uploaded – {dest}" in capsys.readouterr().out
 
 
+def test_the_pictures_of_the_run_are_published_and_shown(project, gh):
+    """The run's pictures (pictures.py) go into the release, SVG and PNG; the notes show the schematic and the board as
+    made from the release's own files, the layers only as files."""
+    cfg = project.config()
+    released(cfg, NEW)
+    pics = cfg.reports / NEW / "pictures"
+    pics.mkdir()
+    names = ["schematic_main", "board_main_top", "board_main_bottom", "board_main_copper_top"]
+    (pics / "pictures.json").write_text(json.dumps({"main": [{"name": n, "caption": n} for n in names]}))
+    for n in names:
+        (pics / f"{n}.png").write_bytes(f"png of {n}".encode())
+        (pics / f"{n}.svg").write_text(f"<svg>{n}</svg>")
+    (pics / "schematic_other.png").write_bytes(b"not listed")
+    assert publish(cfg, "--dry-run") == 0
+    dest = project.root / "build" / "publish" / TODAY
+    staged = {p.name for p in dest.iterdir()}
+    assert {f"{n}.{x}" for n in names for x in ("png", "svg")} <= staged and "schematic_other.png" not in staged
+    assert "board_main_copper_top.png" in sums_of(dest)
+    notes = (dest / "notes.md").read_text()
+    url = f"https://github.com/example/led-bar/releases/download/{TODAY}"
+    for n in names[:3]:
+        assert f"]({url}/{n}.png)" in notes
+    assert "copper_top.png)" not in notes and "pictures of the circuit and of the board" in notes
+
+
 def test_a_changed_byte_stops_before_the_staging_and_gh(project, gh, capsys):
     cfg = project.config()
     zipped = released(cfg, NEW) / "gerber_main.zip"

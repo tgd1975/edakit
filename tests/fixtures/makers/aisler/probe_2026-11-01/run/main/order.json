@@ -1,0 +1,7 @@
+{
+ "thickness_mm": 1.6,
+ "mask": "green",
+ "silkscreen": "white",
+ "finish": "LeadFree HASL",
+ "mark": "remove"
+}

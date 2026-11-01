@@ -2,7 +2,7 @@
 
 Status 2026-10-31: plan; phase 1 (1.1 to 1.8), 3.1 to 3.5, 3.7 and the follow-ups below are done; 2.1 to 2.4 and
 3.6 are built and ran live on 2026-10-31 (results under each live run; built from them the same day: 2.2's mode
-"write", M-6 on the electrical hash, the way back after `part build`; open: the bell's T-Display on the data path); 4.3 is written, reviewed and decided – the
+"write", M-6 on the electrical hash, the way back after `part build`; the bell's T-Display on the data path done there, its D-30); 4.3 is written, reviewed and decided – the
 language deferred, TOML with names the form, its plan [circuit-language-plan.md](../done/circuit-language-plan.md)
 built on 2026-10-31 up to L.8, L.9 done in the bell on 2026-11-01. It builds
 three concepts after the user took their decisions on 2026-10-28 (e5caf42, 301fd90):
@@ -57,7 +57,7 @@ starts when the user asks for it.
 | 4.3 | Bell: the circuit as a language and as TOML with names, then the choice | design-as-text decision 8 | M | no | – | written (3f2b9e3, 7bbf3ce); reviewed and decided 2026-10-31: the language deferred, TOML with names the form; what both forms share has a plan of its own, circuit-language-plan.md, built 2026-10-31 (L.1–L.8; L.9, the bell converting, done there 2026-11-01); the language thought further in circuit-dsl.md |
 | 4.4 | Tree: its positions, scripts, agents and requirements | all three | M | yes | the tree's move, 2.1, 3.7 | open |
 | 4.5 | The requirements file becomes required | requirements decision 5 | S | no | 4.1, 4.4 | open |
-| 5.0 | Probes: the makers' pages in the owner's browser, EasyEDA's ODB++ | ordering steps 0, 0b | – | yes (0b) | the owner's Chrome | open |
+| 5.0 | Probes: the makers' pages in the owner's browser, EasyEDA's ODB++ | ordering steps 0, 0b | – | yes (0b) | the owner's Chrome | done: step 0 (2026-10-31, branch `makers-step0`), 0b (2026-11-01, branch `makers-step0b`) |
 | 5.1 | The order form as fields, `order.md` from them | ordering step 1 | S | no | – | done (d58f4ae) |
 | 5.2 | Every field of the form as a key, edakit's defaults, `edakit cart fields` | ordering step 2 | M | no | 5.0, 5.1 | done (d58f4ae) – the keys of the reference orders; 5.0 adds what the forms show |
 | 5.3 | Maker profiles; P-4, F-2 and F-6 per maker | ordering step 3 | M | no | 5.2 | done (d58f4ae) – profiles provisional until 5.0 |
@@ -65,9 +65,9 @@ starts when the user asks for it.
 | 5.5 | Agent regulatory-reviewer at the order | ordering step 5 | S | no | 5.4 | done (be8781d) |
 | 5.6 | `edakit cart actual`: real cost, the fee table | ordering step 6 | M | no | 5.4 | done (af59226) |
 | 5.7 | Skill `cart`, live at JLCPCB up to the cart | ordering step 7 | M | no | 5.0, 5.4, 5.5 | written (be8781d), live run open |
-| 5.8 | BOM with MPN, P-12; Eurocircuits | ordering step 8 | M | no | 5.3, 5.7 | built offline (17446f9), Eurocircuits live open |
+| 5.8 | BOM with MPN, P-12; Eurocircuits | ordering step 8 | M | no | 5.3, 5.7 | built offline (17446f9), Eurocircuits live 2026-11-01 into the basket (1.55 mm on the owner's word; the BOM's header Eurocircuits maps, the cart line's VAT) |
 | 5.9 | new-project asks for the maker | ordering step 9 | S | no | 5.3, 5.8 | done (be8781d) |
-| 5.10 | ODB++: MCP tool and bridge patch, F-7; AISLER | ordering step 10 | L | yes | 5.0, 5.7 | built offline (6b6ff5e), export and AISLER live open |
+| 5.10 | ODB++: MCP tool and bridge patch, F-7; AISLER | ordering step 10 | L | yes | 5.0, 5.7 | built offline (6b6ff5e), EasyEDA's export probed in 5.0 (0b), AISLER live 2026-11-01: up to the price on /checkout, every check passed (R1, R2 swapped in the throwaway copy for parts AISLER stocks) |
 | 5.11 | The makers' interfaces, where granted | ordering step 11 | – | no | the makers | open |
 | 5.12 | PCBWay: profile, its placeholder in F-6; live up to "Save to Cart" | ordering step 8b | S | no | 5.0, 5.7, 5.8 | profile and F-6 built (see below), live open |
 
@@ -443,8 +443,8 @@ script's (`tdisplay_device.py symbol`, without `"symbol"` in the data). **`PCB_P
 the system library and with the footprint alone – while R1 was created; after a build without MH it worked, and then
 with MH in all four forms (round and slot, plated or not) too. The cause is not found; edakit's message should name
 the way out (`schematic create`, `schematic layout`, then `pcb parts`). The slot's direction in the library view and
-the look of the footprint are the owner's to check (TODO.md). The owner decided on 2026-10-31 that a changed footprint voids M-1, not M-6 (TODO.md). By the plan's rule the bell's footprint goes to the data
-path and the symbol stays the script's – in the bell's repository, at the owner's request.
+the look of the footprint the owner checked in EasyEDA on 2026-10-31. The owner decided the same day that a changed footprint voids M-1, not M-6 (built: M-6 on the electrical hash). By the plan's rule the bell's footprint goes to the data
+path and the symbol stays the script's – done in the bell's repository (its D-30, on its main 2026-11-01).
 
 ## Phase 4: in the projects
 
@@ -529,11 +529,17 @@ Built on 2026-10-30, branch `ccr-341cce07-y5or0n`:
   `serial_number` are keys of `[order]` that change the board as made – no project that sets neither changes its fab
   hash; a board with the placeholder gets the warning to accept or the placeholder taken off.
 
-Open: 5.0 (it decides the profiles' words, the CPL format of Eurocircuits and PCBWay, PCBWay's BOM template, the cart
-buttons, whether the placement preview opens again from the cart, whether JLCPCB's order number is gone as its help
-article reports – then the placeholder leaves JLCPCB's profile, else the warning goes –, and in 0b the component layers,
-part numbers and rotation of EasyEDA's ODB++ – F-7 assumes ODB++'s clockwise rotation and checks it then), the live runs
-of 5.7, 5.8, 5.10 and 5.12, 5.11.
+- **5.0, step 0b** (2026-11-01, branch `makers-step0b`): the bridge extension with ODB++ imported, a probe board (a copy
+  of coin-cell-led, D1 turned by 90°, R1 on the bottom turned by 90°, BT1 kept out of the BOM) built in EasyEDA and
+  exported through `easyeda_export_odb` and by hand. Both hold `comp_+_top` and `comp_+_bot` with package, pins and the
+  device name (the MPN of an LCSC part, no LCSC number); EasyEDA turns clockwise (90° in the CPL is 270°, on the bottom
+  too, mirror N) – F-7's assumption holds –; BT1 stays in the ODB++ without a mark, so a part with `bom: false` is
+  listed for the skill to mark (way b). SYNC.odb found 1.7 mm² at BT1's pads: `Raster.render` drew EasyEDA's RoundRect
+  mask openings as obrounds. SYNC.odb now draws them as their rectangle (`rr_box`); the fab hash keeps its raster v1,
+  so no signed hash changes. With that both exports pass SYNC.odb on every layer, hole, part and net; the run is a
+  test fixture (`tests/fixtures/makers/aisler/probe_2026-11-01`, record `step0b_2026-11-01.md`).
+
+Open: the live runs of 5.8 and 5.10, 5.11.
 
 ## Hashes and gate results
 

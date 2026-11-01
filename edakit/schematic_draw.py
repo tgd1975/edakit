@@ -67,6 +67,7 @@ LABEL_TRIM = 6      # of the layout's margin of 10 round a body, labels may take
 RAIL_PINS = 10      # a net with this many pins gets flags instead of a wire when the schematic file has no power_flags
 CHAR_W = 0.62       # character width / font size of the drawing font
 FONT = "DejaVu Sans, Arial, Helvetica, sans-serif"
+PNG_DPI = 300      # the drawing as PNG (Svg.png): 3 pixels a unit
 NAME, NUMBER, DESIGNATOR, VALUE, NET = 6, 5, 7, 6, 6   # font sizes
 COLOR = {"part": "#8b1a1a", "wire": "#16801a", "net": "#1f3a9f", "pin": "#555555", "text": "#000000",
          "frame": "#888888"}
@@ -872,8 +873,11 @@ def junctions(sheet, tips):
 
 
 class Svg:
+    """The drawing as SVG – and, from the same calls, as PNG (png): each element is kept in ops as well."""
+
     def __init__(self, w, h):
-        self.h = h
+        self.w, self.h = w, h
+        self.ops = []
         self.out = [f'<svg xmlns="http://www.w3.org/2000/svg" width="{w * MM:.1f}mm" height="{h * MM:.1f}mm" '
                     f'viewBox="0 0 {w} {h}" font-family="{FONT}" stroke-linecap="round" stroke-linejoin="round">',
                     f'<rect width="{w}" height="{h}" fill="#ffffff"/>']
@@ -882,15 +886,18 @@ class Svg:
         return f"{round(x, 2):g},{round(self.h - y, 2):g}"
 
     def line(self, points, colour, width=1.2, dash=None):
+        self.ops.append(("line", points, colour, width, dash))
         extra = f' stroke-dasharray="{dash}"' if dash else ""
         self.out.append(f'<polyline points="{" ".join(self.p(*q) for q in points)}" fill="none" stroke="{colour}" '
                         f'stroke-width="{width}"{extra}/>')
 
     def poly(self, points, colour, fill):
+        self.ops.append(("poly", points, colour, fill))
         self.out.append(f'<polygon points="{" ".join(self.p(*q) for q in points)}" '
                         f'fill="{colour if fill else "#ffffff"}" stroke="{colour}" stroke-width="1.2"/>')
 
     def circle(self, x, y, r, colour, fill=False):
+        self.ops.append(("circle", x, y, r, colour, fill))
         self.out.append(f'<circle cx="{round(x, 2):g}" cy="{round(self.h - y, 2):g}" r="{r}" '
                         f'fill="{colour if fill else "#ffffff"}" stroke="{colour}" stroke-width="1.2"/>')
 
@@ -899,6 +906,7 @@ class Svg:
         if angle in (180, 270):
             angle -= 180
             anchor = {"start": "end", "end": "start"}.get(anchor, anchor)
+        self.ops.append(("text", x, y, text, size, anchor, angle, colour, bold, dy))
         X, Y = round(x, 2), round(self.h - y, 2)
         turn = f' transform="rotate(-90 {X:g} {Y:g})"' if angle == 90 else ""
         weight = ' font-weight="bold"' if bold else ""
@@ -907,6 +915,43 @@ class Svg:
 
     def done(self):
         return "\n".join([*self.out, "</svg>"]) + "\n"
+
+    def png(self, path, dpi=PNG_DPI):
+        """The same drawing as a PNG at its size on paper (one unit = MM), dpi pixels per inch: every element of ops
+        drawn again with matplotlib – lines, dashes, fills and texts with their anchors as the SVG has them."""
+        import matplotlib
+        from matplotlib.figure import Figure
+        from matplotlib.patches import Circle, Polygon
+        pt = MM / 25.4 * 72      # points per unit
+        ha = {"start": "left", "middle": "center", "end": "right"}
+        with matplotlib.rc_context({"lines.scale_dashes": False}):
+            fig = Figure(figsize=(self.w * MM / 25.4, self.h * MM / 25.4), dpi=dpi, facecolor="#ffffff")
+            ax = fig.add_axes((0, 0, 1, 1))
+            ax.set_xlim(0, self.w)
+            ax.set_ylim(0, self.h)
+            ax.axis("off")
+            for kind, *a in self.ops:
+                if kind == "line":
+                    points, colour, width, dash = a
+                    ax.plot(*zip(*points), color=colour, lw=width * pt, solid_capstyle="round",
+                            solid_joinstyle="round", dash_capstyle="round",
+                            linestyle=(0, [float(v) * pt for v in dash.split()]) if dash else "-")
+                elif kind == "poly":
+                    points, colour, fill = a
+                    ax.add_patch(Polygon(points, closed=True, facecolor=colour if fill else "#ffffff",
+                                         edgecolor=colour, lw=1.2 * pt, joinstyle="round"))
+                elif kind == "circle":
+                    x, y, r, colour, fill = a
+                    ax.add_patch(Circle((x, y), r, facecolor=colour if fill else "#ffffff", edgecolor=colour,
+                                        lw=1.2 * pt))
+                else:   # the baseline as the SVG puts it: dy below the point, along the text's own down
+                    x, y, text, size, anchor, angle, colour, bold, dy = a
+                    shift = float(dy[:-2]) * size if dy.endswith("em") else float(dy)
+                    bx, by = (x + shift, y) if angle == 90 else (x, y - shift)
+                    ax.text(bx, by, text, fontsize=size * pt, ha=ha[anchor], va="baseline", rotation=angle,
+                            rotation_mode="anchor", color=colour, fontweight="bold" if bold else "normal",
+                            fontfamily="DejaVu Sans", parse_math=False)
+            fig.savefig(path, dpi=dpi, facecolor="#ffffff", metadata={"Software": None})
 
 
 def flag_reach(net, kind, ground):
@@ -1180,7 +1225,13 @@ def net_labels(sheet, power, tips):
 
 
 def render(sheet, size, syms, power, ground, title_lines, frame=True, wires=None):
-    """wires: what wire_through returned (the wired styles) – a colour per net, names only for the named nets."""
+    """The drawing as SVG text (draw)."""
+    return draw(sheet, size, syms, power, ground, title_lines, frame, wires).done()
+
+
+def draw(sheet, size, syms, power, ground, title_lines, frame=True, wires=None):
+    """The drawing as an Svg – its text with done(), a PNG with png(). wires: what wire_through returned (the wired
+    styles) – a colour per net, names only for the named nets."""
     w, h = size
     colour = (wires or {}).get("colour", {})
     g = Svg(w, h)
@@ -1259,7 +1310,7 @@ def render(sheet, size, syms, power, ground, title_lines, frame=True, wires=None
             x, y = T(*s.pins[p][:2])
             g.line([(x - 3, y - 3), (x + 3, y + 3)], COLOR["part"])
             g.line([(x - 3, y + 3), (x + 3, y - 3)], COLOR["part"])
-    return g.done()
+    return g
 
 
 def drawing(cfg, board, drawn_by="edakit schematic draw", frame=True, style="labels"):
@@ -1305,6 +1356,16 @@ def drawing(cfg, board, drawn_by="edakit schematic draw", frame=True, style="lab
             "wires": wires}
 
 
+def title_lines(cfg, board, drawn, style):
+    """The lines of the title block: (text, size, bold)."""
+    design, (w, h) = drawn["design"], drawn["size"]
+    date = design.graph.get("date", "")
+    return [(board.title, 16, True), (f"{cfg.project} · board {board.name}", 8, False),
+            (f"graph v{design.version}" + (f" ({date})" if date else "") + f" · {w * MM:.0f} x {h * MM:.0f} mm"
+             + (f" · {STYLES[style]}" if drawn["wires"] is not None else ""), 8, False),
+            ("drawn by edakit schematic draw – change the graph, not this drawing", 7, False)]
+
+
 def main(cfg, args):
     # a hand-wired board is drawn too – its drawing is its build document; a bought one is not ours to draw; without
     # --board the only made board
@@ -1337,12 +1398,7 @@ def main(cfg, args):
         return 2
     out = Path(args.out) if args.out else cfg.artifact(f"schematic_{board.name}.svg")
     out.parent.mkdir(parents=True, exist_ok=True)
-    date = design.graph.get("date", "")
-    title_lines = [(board.title, 16, True), (f"{cfg.project} · board {board.name}", 8, False),
-                   (f"graph v{design.version}" + (f" ({date})" if date else "") + f" · {mm}"
-                    + (f" · {STYLES[style]}" if wires else ""), 8, False),
-                   ("drawn by edakit schematic draw – change the graph, not this drawing", 7, False)]
-    out.write_text(render(sheet, size, syms, drawn["power"], design.ground, title_lines, frame, wires),
-                   encoding="utf-8")
+    out.write_text(render(sheet, size, syms, drawn["power"], design.ground, title_lines(cfg, board, drawn, style),
+                          frame, wires), encoding="utf-8")
     print(f"  -> {out}")
     return 2 if problems else 0

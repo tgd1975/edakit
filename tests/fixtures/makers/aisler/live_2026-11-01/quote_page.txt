@@ -1,0 +1,39 @@
+=== aisler.net project EBRTNFZJ (Sandbox / odb_main), revision 2 – read 2026-11-01 ===
+Overview: Dimension / Size 60mm x 28mm; Layer Count 2; Minimal Drill Diameter 0.3mm; Elongated Hole Count 2; Castellated Hole Count 0
+Select your stackup and color in the checkout.
+Your production data is ready – Checkout now, starting at just €17.36 (not touched)
+[not page text: odb_main.zip went up by "Add New Revision"; the page names the project odb_main, not the file]
+
+=== Assembly ===
+Sides Single-sided (top); Distinct components 9; SMT components 10; THT components 0; Press-fit components 0
+Part polarity - please check
+
+=== BOM – Auto assign parts using: mpn ===
+Assigned (8 components), Assignment confirmed:
+C1 CC0805KRX7R9BB104 Yageo
+C2, C4 CL21B105KBFNNNE Samsung
+C3 CL21B103KBANNNC Samsung
+D1 APTD2012LSURCK Kingbright
+Q1 AO3415A Alpha & Omega Semiconductor
+R3 0805W8F1002T5E ROYALOHM
+U1 LMC555CMX/NOPB Texas Instruments
+Out of Stock (2 components): R1 0805W8F7503T5E ROYALOHM; R2 0805W8F2000T5E ROYALOHM
+Excluded from Assembly (4 components): BT1 2468; SW1 SK12D07VG4; TH1, TH2 Tooling
+The quantity seems to be unavailable. Replace problematic components, supply them on your own, or contact our account management here, we will be able to assist you!
+
+=== BOM Price ===
+1 €167.46 (€167.46 / piece)
+5 €175.24 (€35.05 / piece)
+10 €181.93 (€18.19 / piece)
+50 €243.09; 100 €297.52; 200 €428.30; 500 €749.94; 1000 €1,175.81
+The displayed prices are valid for the next 24 hours. For a total PCB assembly price, proceed to checkout.
+
+=== /checkout (opened by its address; 'Checkout' and 'Checkout now' not pressed) ===
+Service: Amazing Assembly – Selected (Beautiful Boards, Simple Supply, Scalable Series: Select)
+Configuration (selected): PCB Thickness 1.6mm | Surface Finish HASL Lead Free | Copper Thickness of outer layers 35 µm | PCB Color Green | Silkscreen White
+Stackup & Design Rules 2L 1.6mm 35um var. / 0.3mm min. drill diameter, 200µm/150µm min. trace width/space
+Addons: Blitz Service – Select (not selected)
+We are almost ready to order – The parts for this quantity are not available. Please check your quantity and part availability in your BOM.
+EBRTNFZJ (revision 2); Quantity 5
+We cannot offer any prices as one or more requirements are unmet. Estimated Dispatch – ; Net Total – ; VAT – ; Total –
+Continue to Checkout (not touched)

@@ -1,4 +1,7 @@
-# Issue 1 – form "Bug Report"
+# Issue #792 – as posted
+
+Posted on 2026-11-01 (https://github.com/oaslananka/easyeda-mcp-pro/issues/792), shortened the same day on the owner's word to the length of the short contributions
+there (#468, #527).
 
 ### Title
 
@@ -6,63 +9,14 @@
 bridge: stale sweep rejects requests before their own timeoutMs
 ```
 
-**Affected Area:** `area:easyeda-bridge`
-**Impact / Priority:** `P2 - roadmap, docs, polish, or non-blocking issue`
+### Body
 
-### Bug Description
+````markdown
+**Environment:** easyeda-mcp-pro 1.4.0 (code unchanged on 1.6.0), EasyEDA Pro 3.2.206, Linux.
 
-```markdown
-`BridgeManager.call(method, params, { timeoutMs })` accepts a per-request timeout, and the request's own `setTimeout` uses it ([manager.ts#L921](https://github.com/oaslananka/easyeda-mcp-pro/blob/582f818bbb4c5ffd5ec707d0f600b6331822e8f2/src/bridge/manager.ts#L921)). The stale sweep, however, compares every pending request with the global `BRIDGE_TIMEOUT_MS` ([manager.ts#L1158-L1175](https://github.com/oaslananka/easyeda-mcp-pro/blob/582f818bbb4c5ffd5ec707d0f600b6331822e8f2/src/bridge/manager.ts#L1158-L1175)):
+The stale sweep compares every pending request with the global `BRIDGE_TIMEOUT_MS` ([manager.ts#L1158-L1175](https://github.com/oaslananka/easyeda-mcp-pro/blob/e52d862bb7661bed6c760da6f3ed547b514aed27/src/bridge/manager.ts#L1158-L1175)), not with the request's own `timeoutMs`. A call given more time – a DRC on a large board with `timeoutMs: 120000` – fails after 15–45 s with `Bridge request "drc.run" expired (stale sweep)` although its own timer has not run out.
 
-    if (elapsed >= this.config.BRIDGE_TIMEOUT_MS) { … reject(new Error(`Bridge request "${entry.method}" expired (stale sweep)`)) }
+**Expected:** the sweep uses each request's own timeout.
 
-So a request that was given more time than the default – a DRC or a copper-pour rebuild on a large board takes 30–120 s – is rejected by the sweep after 15–45 s although its own timeout has not run out. Requests a follower server relays to the leader are affected the same way, because the leader's sweep applies the leader's default.
-```
-
-### Steps to Reproduce
-
-```markdown
-1. Start the server with the default `BRIDGE_TIMEOUT_MS` (15000).
-2. Issue a bridge call with a longer per-request timeout that runs longer than 45 s in EasyEDA, e.g. `manager.call('project.save', {}, { timeoutMs: 120000 })` against an extension that answers late (or a DRC of a ~120-part board in a throttled EasyEDA window).
-3. The call fails after the next 30 s sweep tick with `Bridge request "…" expired (stale sweep)` instead of returning or timing out after 120 s.
-
-A unit reproduction with fake timers is in the linked PR: it fails on `main` and passes with the fix.
-```
-
-### Acceptance Criteria
-
-```markdown
-- [ ] The stale sweep rejects a request only after that request's own timeout.
-- [ ] A regression test covers a request whose `timeoutMs` exceeds `BRIDGE_TIMEOUT_MS`.
-```
-
-### Expected Behavior
-
-```markdown
-The sweep is defence in depth for leaked timers; it should use each entry's own timeout and never cut a request shorter than the caller asked for.
-```
-
-### Environment Info
-
-```text
-easyeda-mcp-pro doctor   (1.4.0, installed package)
-
-Runtime mode: installed-package
-Node.js: OK 24.14.1 (required: 24.x; pinned: 24.21.0)
-Environment: OK
-EasyEDA extension package: OK …/easyeda-mcp-pro/easyeda-bridge-extension.eext
-Bridge server: OK reachable on 127.0.0.1:49620
-Remote backend: local_bridge / transport=stdio / session=per-request / oauth=disabled
-Tools: Profile 'full' with 115 / 120 tools enabled
-
-EasyEDA Pro Desktop Client 3.2.206 (local projects), Ubuntu (Linux 7.0).
-Observed on 1.4.0; the code path is unchanged on main at 1.5.4 (582f818).
-```
-
-**Relevant Log Output:** leave empty, or:
-
-```shell
-Bridge request "drc.run" expired (stale sweep)
-```
-
-**Workaround (add at the end of the description if you like):** `BRIDGE_TIMEOUT_MS=120000` for every server instance that may hold the bridge port.
+Workaround: `BRIDGE_TIMEOUT_MS=120000` on every server instance. Fix with a regression test in #793.
+````

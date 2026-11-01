@@ -483,11 +483,12 @@ build/edakit/               artifacts (not versioned): caches, previews, routing
                             another folder); scripts/: the output of each project script's last run (edakit run)
 build/release/<run>/        gate runs – build output, not versioned (with [release] archive = "git" the released
                             ones are committed); fab/manifest.json says which one is current;
+                            pictures/ the schematic and the board as SVG and PNG (protocol section 12, 8.3);
                             fab/<board>/cart/<maker>/ the files of an order: job, quote, page texts, screenshots,
                             regulatory review, check, cart line, real cost (edakit cart, 8.4)
 build/publish/<tag>/        what edakit release publish published: per board the upload files, polarity_<board>.png,
-                            manifest_<board>.json, order_<board>.md; SHA256SUMS, notes.md – the folder to upload to
-                            the maker from (not versioned; the GitHub release keeps it, 8.3)
+                            manifest_<board>.json, order_<board>.md, the run's pictures; SHA256SUMS, notes.md – the
+                            folder to upload to the maker from (not versioned; the GitHub release keeps it, 8.3)
 ```
 
 ## 10.7 Check IDs of before

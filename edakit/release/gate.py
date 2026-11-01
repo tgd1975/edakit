@@ -12,6 +12,8 @@ Result: <reports>/<YYYYMMDD-hhmmss>/
                            warnings and who accepted them, waivers, open sign-offs, manual checks, simulation table,
                            and the rule, reason and fix of every code that failed or warned (the catalog)
     graph_checks.json, sim.json, schematic_<board>.json   raw results
+    pictures/              the schematic of every board and, with stage F, the board as made and layer by layer, as
+                           SVG and PNG – section 12 of the protocol (pictures.py)
     fab/<board>/           Gerber ZIP, BOM and CPL in JLCPCB format plus raw data (stages L, F)
     fab/manifest.json      SHA-256 of every file to upload – the files of every maker of [cart] makers –, the
                            hashes of the checked state, the decision, and whether the run is the current release
@@ -79,6 +81,7 @@ from fnmatch import fnmatch
 from pathlib import Path
 
 from .. import catalog, docs, eda, requirements
+from . import pictures
 from ..config import ConfigError
 from ..design import KEYED, Design, graph_of_toml
 from ..toolchain import is_kicad
@@ -917,10 +920,11 @@ def main_release(cfg, args):
 
 
 def write_protocol(cfg, outdir, head, rows, sim, signoff, notes, decision, reasons, stages_run, stages, files,
-                   reqs=(), project_checks=()):
+                   reqs=(), project_checks=(), shots=None):
     """reqs: requirements.evaluate of this run; with [project] requirements the protocol gets section 11 and the
     acceptance steps in section 6 – without the key it is the protocol it always was. project_checks: the project's
-    checks (scripts.gate_checks); those of phase order and acceptance are lines of section 6."""
+    checks (scripts.gate_checks); those of phase order and acceptance are lines of section 6. shots: the run's
+    pictures (pictures.draw_run) – section 12."""
     by_stage = defaultdict(Counter)
     for r in rows:
         by_stage[r["stage"]][r["result"]] += 1
@@ -1077,6 +1081,8 @@ def write_protocol(cfg, outdir, head, rows, sim, signoff, notes, decision, reaso
     if cfg.requirements:    # [project] requirements: section 11, only then – every other section keeps its number
         L += ["\n## 11 Requirements\n",
               *requirements.section(reqs, signoff, [cfg.relative(p) for p in cfg.requirements])]
+    if shots is not None:
+        L += ["\n## 12 Pictures\n", *pictures.section(shots, with_board="F" in stages_run)]
     (outdir / "protocol.md").write_text("\n".join(L) + "\n", encoding="utf-8")
 
 
@@ -1143,8 +1149,9 @@ def main(cfg, args):
         files = write_manifest(cfg, outdir, head, decision)
         (outdir / MAKERS).write_text(json.dumps(maker_findings(cfg, rows), indent=1, ensure_ascii=False) + "\n",
                                      encoding="utf-8")
+    shots = pictures.draw_run(cfg, outdir)    # documentation: in no hash, a picture not drawn is named in section 12
     write_protocol(cfg, outdir, head, rows, sim, signoff, notes, decision, reasons, stages_run, stages, files, reqs,
-                   project_checks)
+                   project_checks, shots)
     print(f"\n{decision}")
     for r in reasons:
         print(f"  - {r}")
