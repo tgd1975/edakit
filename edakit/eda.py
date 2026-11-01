@@ -422,7 +422,9 @@ def rename_schematic(mcp, uuid, name):
                 raise MCPError(f"names inconsistent after renaming: {final} (before {before}) – nothing deleted")
             return
         time.sleep(1 + attempt)
-    raise MCPError(f"schematic {uuid} could not be renamed to '{name}' – not deleted, check EasyEDA")
+    raise MCPError(f"schematic {uuid} could not be renamed to '{name}' – not deleted. EasyEDA renames only what the "
+                   "project tree of its left panel lists, and after a start of EasyEDA the tree is empty until it was "
+                   "shown: open the project tree in the left panel once, then run again (E-17, handbook 9.2)")
 
 
 def keep_schematic_name(mcp, uuid, name, page_uuid, panels=False):

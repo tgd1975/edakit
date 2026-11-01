@@ -21,6 +21,7 @@ Start with `edakit doctor`.
 | pour status `readback-mismatch` | harmless for the fill | look at the number of filled areas per layer; GEO.pour of the gate measures what the fill left |
 | "focus lost" / "获取器件关联的所有引脚失败" (pins not readable) | another tab became active (a click, another script) | scripts get the tab back or abort; never run two EasyEDA jobs at once; claim EasyEDA |
 | schematic texts come back after a reload | `SCH_PrimitiveText.delete` is not saved | edakit deletes through another primitive class (chapter 9.3) |
+| "schematic … could not be renamed" (`modifySchematicName` false) | after a start of EasyEDA the project tree in the left panel was never shown – EasyEDA renames only what it lists | open the project tree in EasyEDA's left panel once, run again (E-17, 9.2) |
 | renaming a schematic renamed another one | `modifySchematicName` acts on the active schematic | edakit activates first and checks every name; never delete on a mismatch |
 | `edakit schematic check` suddenly reports a pin on two nets in the template | drift of unknown cause in a generated schematic | regenerate the template (`schematic create --save`) |
 | `copy` refuses: "belongs to board" | the PCB is linked to the target | correct: use `edakit schematic layout`, which syncs in place |
