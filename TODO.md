@@ -154,11 +154,13 @@ sources, data and code untouched; a text that is generated or used elsewhere sta
 ## Getting edakit known ([outreach.md](docs/concepts/new/outreach.md))
 
 Decided on 2026-11-01; K.1 (description, topics, homepage, the social preview) done the same day. The launch
-waits for D.2, D.7, D.9 and the bell built; each step starts on the owner's word, one per branch where it changes files.
+waits for D.2, D.7, D.9 and the bell built; each step starts on the owner's word – K.2, K.3 and K.9 as one branch
+`outreach-k2-k3-k9`, a commit each, one pull request.
 
 - [ ] TD-71 - **K.2** Ready for Anthropic's plugin directory: the README section on what edakit runs, sends and fetches
       (Freerouting, easyeda-mcp-pro, JLCPCB, datasheets, `gh`, Claude in Chrome, the settings new-project writes, the
-      two hooks); `plugin.json` with `version` and the owner's description – a branch, a patch.
+      two hooks); `plugin.json` with `version`, the texts of decision 5 in `plugin.json` and `marketplace.json` –
+      which settles the plugin's text of TD-34.
 - [ ] TD-72 - **K.3** The issue forms – bug with `edakit --version` and `edakit doctor`, question, "built with edakit" –
       and the line on how issues are answered – a branch.
 - [ ] TD-73 - **K.4** The directory submission at <https://claude.ai/directory/manage>, the repository at its tag, the
