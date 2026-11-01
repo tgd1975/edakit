@@ -27,6 +27,4 @@ Low. Only `src/bridge/manager.ts` (a critical path): the expiry condition of pen
 - Regression test in `tests/unit/bridge/manager.test.ts` (fake timers): fails on `main`, passes with the fix.
 - On 1.6.0: `pnpm verify:fast` green; the full suite green except `workflows.test.ts` (power rail), which fails on `main` here too because ngspice is installed.
 - Live: seen on 1.4.0 with long DRC runs, worked around with `BRIDGE_TIMEOUT_MS=120000`.
-
-🤖 Generated with [Claude Code](https://claude.com/claude-code)
 ````

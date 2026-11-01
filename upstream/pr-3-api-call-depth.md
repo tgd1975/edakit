@@ -27,6 +27,4 @@ Low – only the depth of the returned result; the allowlist, `confirmWrite` and
 - Tests for the server forwarding (with and without `maxDepth`) and the extension's depth and clamping.
 - On 1.6.0: `pnpm verify:fast` and the extension tests green; the full suite as on `main` (only the ngspice test fails here).
 - Live: depth 12 used daily through a patched 1.4.0 extension.
-
-🤖 Generated with [Claude Code](https://claude.com/claude-code)
 ````

@@ -27,6 +27,4 @@ Low – only `easyeda-bridge-extension/src/export-operations.ts`. Revert to roll
 - `export-operations.test.ts`: a new test for the schematic branch; the existing one covers board and both.
 - On 1.6.0: `pnpm verify:fast` and the extension tests green; the full suite as on `main` (only the ngspice test fails here).
 - Live: the same call used daily through a patched 1.4.0 extension on EasyEDA Pro 3.2.206.
-
-🤖 Generated with [Claude Code](https://claude.com/claude-code)
 ````

@@ -27,6 +27,4 @@ Low – a new export tool, no design mutation. It adds one name to the method li
 - Tests: the tool (tgz, zip, a non-archive, a failing bridge), the extension handler, the router's method list.
 - On 1.6.0: `pnpm verify:fast` and the extension tests green; the full suite as on `main` (only the ngspice test fails here).
 - Live: the same API call through a locally patched 1.4.0 server and extension on EasyEDA Pro 3.2.206; this branch itself not live yet.
-
-🤖 Generated with [Claude Code](https://claude.com/claude-code)
 ````
