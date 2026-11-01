@@ -223,6 +223,18 @@ def test_the_short_kind_is_a_table_that_links_the_catalog_page():
     assert e["rule"] not in text and "`edakit explain CODE`" in text
 
 
+def test_every_command_has_its_entry_in_the_reference():
+    """Step D.4 of docs/concepts/new/documentation.md: 10.5 is one entry per subcommand, its synopsis and help line
+    generated from the parser (held by test_the_handbook_lists_what_the_catalog_holds through stale())."""
+    import re
+    from edakit.catalog import handbook
+    text = (handbook.ROOT / "10-reference.md").read_text(encoding="utf-8")
+    section = text.split("## 10.5 ")[1].split("## 10.6 ")[0]
+    assert re.findall(r"<!-- edakit:generated command (\S+) -->", section) == handbook.commands()
+    assert "`edakit cart [--board BOARD]" in handbook.render("command", "cart")
+    assert "[--config CONFIG]" not in handbook.render("command", "check")
+
+
 def test_a_retired_code_explains_itself_and_stays_taken(monkeypatch):
     data = dict(catalog.data(), retired={"GEO.old": "GEO.spacing holds it now"})
     monkeypatch.setattr(catalog, "data", lambda: data)
