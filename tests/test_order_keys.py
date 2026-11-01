@@ -5,6 +5,7 @@ a finding fails for [cart] maker and warns for every other maker."""
 
 import json
 import shutil
+from pathlib import Path
 
 import pytest
 
@@ -545,8 +546,11 @@ def cpl_rows(path):
 def test_eurocircuits_turns_a_sot23_by_90():
     """Live run 5.8 (2026-11-01): Eurocircuits' Assembly Editor drew Q1, EasyEDA's SOT-23-3_…-BR at 180°, turned by 90°
     against its pads; U1 (SOIC-8, -BL), D1 (the LED) and the 0805s sat on theirs. Eurocircuits reads IEC 61188-7 –
-    pin 1 lower left –, the -BR footprint has pin 1 bottom right: Q1 is 270° there. JLCPCB draws EasyEDA's footprints."""
+    pin 1 lower left –, the -BR footprint has pin 1 bottom right: Q1 is 270° there. JLCPCB draws EasyEDA's footprints.
+    The probe the same day drew the CPL so turned with Q1 on its pads (live_2026-11-01/turn_probe.md)."""
     m = makers.load("eurocircuits")
+    probe = Path(__file__).parent / "fixtures" / "makers" / "eurocircuits" / "live_2026-11-01" / "cpl_main_eurocircuits.csv"
+    assert dict((ref, rot) for ref, _, rot in cpl_rows(probe))["Q1"] == "270"
     assert m.zero == "IEC 61188-7"
     assert {fp: m.turn(fp) for fp in ("SOT-23-3_L2.9-W1.6-P1.90-LS2.8-BR", "SOIC-8_L4.9-W3.9-P1.27-LS6.0-BL", "C0805",
                                       "R0805", "C0603", "LED-SMD_L2.0-W1.3_APTD2012SF4C", "SMA_L4.3-W2.6-LS5.2-RD")} == {

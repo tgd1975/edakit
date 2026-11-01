@@ -100,8 +100,8 @@ The CPL opens the Assembly Editor: read each part's status there ("No issues det
 not match the board layout") into `notes`, change nothing, and "Apply". The PCBA tab's red flag ("Data conflicts") is
 reported, not solved – turning a part is M-2's. Its CPL is `cpl_<b>_eurocircuits.csv`, each part turned to
 Eurocircuits' zero orientation (IEC 61188-7) by the profile's `[cpl.turns]`; a part SYNC.cpl warned about – a
-footprint without a turn – is the one to name for M-2. "Does not match" on a part whose footprint has its turn is
-mostly the part Eurocircuits identified (5.8: C3 and R3 under another manufacturer's name).
+footprint without a turn – is the one to name for M-2. "Does not match" on a part whose footprint has its turn,
+with copper beside its pads hatched yellow, is the board's copper, not the rotation (5.8: C3 and R3).
 
 Rules: one field at a time, read back after each; a field you cannot find, or a value the form does not offer, stops
 with the field's name – no guessing, no nearby option; a dialog the job does not explain (DFM warning, part

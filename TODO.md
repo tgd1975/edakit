@@ -67,8 +67,9 @@ run against a maker's page or EasyEDA yet.
       orientation (`[cpl] zero`: Eurocircuits IEC 61188-7, pin 1 lower left; JLCPCB the footprint's) and the turn
       per footprint (`[cpl.turns]`: EasyEDA's SOT-23-3_…-BR 90°, so Q1 is 270°; chips, the LED and SOIC-…-BL 0°);
       the gate writes `cpl_<b>_eurocircuits.csv`, and SYNC.cpl warns for that maker about a footprint without a turn
-      or a turned part on the bottom. C3 and R3 were no rotation: Eurocircuits had identified them under another
-      manufacturer's name.
+      or a turned part on the bottom. Probe the same day: Eurocircuits drew Q1 at 270° on its pads ("No issues
+      detected"); C3 and R3 stay "does not match" – copper beside their pads, no rotation
+      (`tests/fixtures/makers/eurocircuits/live_2026-11-01/turn_probe.md`).
 - [x] **5.10:** AISLER live (2026-11-01): R1 and R2 swapped in the throwaway copy for YAGEO parts AISLER stocks,
       released again (M-1, M-5, M-6 by the agents), every part assigned, /checkout at Amazing Assembly, quantity 5,
       €348.03 net; ORDER.form to ORDER.review passed, stopped before "Continue to Checkout"

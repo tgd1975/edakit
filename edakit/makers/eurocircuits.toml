@@ -14,8 +14,10 @@
 # by their names – "Manufacturer Part Number" yes, "MPN" not, and "Comment" it took for the part number ([bom]
 # columns). The Assembly Editor marks a footprint whose pads differ from the board's ("does not match the board
 # layout") and the PCBA tab flags "Data conflicts": that is M-2's, in the basket. Q1 so marked was a rotation
-# ([cpl.turns]); C3 and R3, 0805s at 0° like C1 and R2 beside them, were parts Eurocircuits had identified under
-# another manufacturer's name ("Samsung Electro-Mechanics", "Uniroyal Elec") – its part record, not the CPL.
+# ([cpl.turns]: the probe of the same day drew it at 270° on its pads, "No issues detected", pin 1's dot upper left
+# as on the board – live_2026-11-01/turn_probe.md). C3 and R3, 0805s at 0° like C1 and R2, stayed "does not match":
+# the editor hatches copper beside their pads yellow (a track meeting C3's pad at an angle, copper around R3's) – the
+# board's copper, no rotation.
 
 name = "Eurocircuits"
 recorded = "2026-10-31"
