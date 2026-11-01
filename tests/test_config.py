@@ -611,3 +611,13 @@ def test_schematic_style_is_a_word_or_a_table_by_board(tmp_path):
     schematic.write_text('style = "wire"\n')
     with pytest.raises(ConfigError, match="style = 'wire' – one of labels, wires, mixed"):
         load(tmp_path / "edakit.toml")
+
+
+def test_silk_art_fit_is_content_or_viewbox():
+    """[[silk.art]] fit (#115): absent or "content" as before, "viewbox", nothing else."""
+    from edakit.config import _board
+    art = {"svg": "a.svg", "x": 1, "y": 1, "width_mm": 5}
+    for fit in ({}, {"fit": "content"}, {"fit": "viewbox"}):
+        _board("b", {}, {"silk": {"art": [art | fit]}})
+    with pytest.raises(ConfigError, match=r'board b: silk.art\[2\].fit must be "content" or "viewbox", not \'frame\''):
+        _board("b", {}, {"silk": {"art": [art, art | {"fit": "frame"}]}})

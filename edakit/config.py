@@ -72,6 +72,7 @@ MARKS = ("default", "specify", "remove")   # order.mark: JLCPCB's order number a
 LOOKS_MARK = "remove"   # edakit's default of order.mark on a board with [looks]: no order number on a face people see,
                         # decided in the files and so in the fab hash before gate and M-5 (the owner, 2026-10-31)
 MASKS = ("green", "purple", "red", "yellow", "blue", "white", "black")   # order.mask: solder mask colours
+ART_FITS = ("content", "viewbox")   # [[silk.art]] fit: scaled and centred by the drawn shapes or by the frame
 SILKSCREENS = ("white", "black")   # order.silkscreen: white print, on a white mask black (silkscreen_on)
 # [order]: every field of a maker's order form as a key in edakit's words, with edakit's default – the board edakit
 # assumes when nothing is said, the same for every maker (handbook 10.2). Three layers, the later wins per key: these
@@ -624,6 +625,10 @@ def _board(name, entry, b, file="", project=None, quantity=5):
     if not isinstance(unlabelled, dict) or not all(isinstance(v, str) and v.strip() for v in unlabelled.values()):
         raise ConfigError(f"board {name}: silk.unlabelled must be a table of designator = reason (GEO.silk), "
                           "e.g. { R21 = \"no room between the star tracks\" }")
+    for i, art in enumerate(silk.get("art", []) if isinstance(silk.get("art"), list) else [], 1):
+        if isinstance(art, dict) and art.get("fit", "content") not in ART_FITS:
+            raise ConfigError(f'board {name}: silk.art[{i}].fit must be "content" or "viewbox", not {art["fit"]!r} – '
+                              "content: the drawn shapes are scaled to width_mm; viewbox: the SVG's frame")
     region = silk.get("board_label_region")
     if region is not None and not (isinstance(region, list) and len(region) >= 3 and all(
             isinstance(p, list) and len(p) == 2 and all(isinstance(v, (int, float)) for v in p) for p in region)):

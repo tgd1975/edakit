@@ -835,7 +835,11 @@ board_label_region = [[0, 0], [60, 0], [60, 34], [0, 34]]  # the lower 34 mm, in
 
 **Artwork and labels** come first: `[[silk.art]]` places an SVG (filled shapes and strokes, scaled to
 `width_mm`, centred at `x`, `y` in plan mm) and `[[silk.texts]]` free texts – "START" at a button, "GND 5V
-SIG" at a connector. edakit cuts the artwork free of pads and solder-mask openings (+0.15 mm), drops everything thinner
+SIG" at a connector. With `fit = "viewbox"` the SVG's viewBox – the frame it is drawn in – is what is scaled to
+`width_mm` and centred, not the bounds of what is drawn: art drawn in a frame the size of the board (`width_mm` the
+board's width, `x`, `y` its centre) prints where it was drawn and stays there when a shape near the frame's edge comes
+or goes. Without `fit` (`"content"`) a new star at the top moves and rescales all of it; an SVG without a viewBox
+cannot use `"viewbox"`. edakit cuts the artwork free of pads and solder-mask openings (+0.15 mm), drops everything thinner
 than 0.15 mm (JLCPCB does not print it) and mirrors graphics on the bottom side (EasyEDA does that only for texts).
 Designators and the board label keep clear of artwork and texts. `edakit silk preview` draws them onto the last Gerber
 export offline (`<artifacts>/silk_preview_<board>_<side>.png`), so a design can be tuned without EasyEDA. Draw motifs in
