@@ -116,7 +116,8 @@ llama.cpp.
 
 ## The documentation for its readers ([documentation.md](docs/concepts/new/documentation.md))
 
-Decided on 2026-10-31; D.1 (the style guide, the glossary and their tests) built the same day. D.2 to D.7 not before
+Decided on 2026-10-31; D.1 (the style guide, the glossary and their tests) built the same day. D.2, D.7 and D.9 first,
+ahead of the other todos – outreach.md's launch and 1.0.0 wait for them (the owner, 2026-11-01); D.3 to D.6 not before
 the other todos in this list are done: the documentation describes what they leave behind.
 
 Each step starts on the owner's word, one per branch, under the concept's rules for what the automation reads –
