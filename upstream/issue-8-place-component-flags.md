@@ -1,6 +1,7 @@
-# Issue – draft (M-9)
+# Issue #804 – as posted (M-9)
 
-Not posted yet. Reproduced on 2026-11-01, short as the rule for texts upstream asks.
+Posted on 2026-11-01 (https://github.com/oaslananka/easyeda-mcp-pro/issues/804) after the live reproduction the same day, short as the rule for texts
+upstream asks.
 
 ### Title
 

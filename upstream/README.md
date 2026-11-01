@@ -98,7 +98,7 @@ of the project histories that pytree-27 left in the owner's TODO list.
 ## easyeda-mcp-pro
 
 An issue first, then the fork's branch and its pull request with "Fixes #<issue>" – M-1 to M-4 so posted on
-2026-11-01, M-5 and M-7 the same day (their pull requests on the owner's question whether we had fixes), the texts as in the drafts. **Short, as a person writes them:** an issue says the environment, what
+2026-11-01, M-5 and M-7 the same day (their pull requests on the owner's question whether we had fixes), M-9 too, the texts as in the drafts. **Short, as a person writes them:** an issue says the environment, what
 happens, what is expected and the workaround; a pull request its Summary, Risk and Validation – the template asks no
 more of a first contribution, the maintainer fills its checklists himself; no "Generated with Claude Code" line
 (the owner, 2026-11-01). The pattern: #468 and #527 there, under
@@ -117,10 +117,10 @@ the account that opened it – a consent in the owner's name, given by the owner
 | M-6 | The schematic read tools and the BOM read a page by its UUID without switching the owner's tab; the BOM of a board-linked schematic lists each part once | focuses page after page, merges, removes the duplicates, checks the focus after each read | met as far as EasyEDA lets it: #539, merged on 2026-08-26 and in 1.4.0 already, gives the read tools `scope` and `pageUuid`; `page` and `all_pages` fail closed where EasyEDA's API reads only the active page – that is E-3. Not reported; at the live check: `scope: "all_pages"` of `easyeda_schematic_components` for edakit, and whether the BOM still lists parts twice | – | 1.6.0 |
 | M-7 | The pick-and-place export returns csv when csv is asked: the bridge passes the project id as the file name and no type to `getPickAndPlaceFile(fileName, fileType, unit)`, so EasyEDA answers with its default xlsx | reads the xlsx | [#801](https://github.com/oaslananka/easyeda-mcp-pro/issues/801), [#803](https://github.com/oaslananka/easyeda-mcp-pro/pull/803) – [as posted](issue-7-pick-place-csv.md) | `fix/pick-place-file-type` | 1.6.0 |
 | M-8 | The bridge connects by itself, also after a crash of EasyEDA, and shows its menu | the skill start asks for *MCP Bridge → Connect*, or restarts EasyEDA | report only if the original extension does it too – the patched one sometimes shows no menu | – | 1.4.0 |
-| M-9 | `easyeda_schematic_place_component` and `batch_write` set `mirror`, `addIntoBom` and `addIntoPcb` of a placed part | places the part, then modifies `addIntoBom` (`place` in `edakit/schematic.py`, `sync_bom`) | [drafts](issue-8-place-component-flags.md), [pull request](pr-8-place-component-flags.md) – not posted yet. Reproduced on 2026-11-01 with EasyEDA Pro 3.2.209 and the bridge of 1.4.0, the code unchanged on 1.6.0: `batch_write` reports `applied`, the part keeps `Mirror: false`, `AddIntoBom` and `AddIntoPcb: true` – the bridge calls `create(deviceItem, x, y)` and applies only `rotation` afterwards. Not "Invalid device": `needDevice()` turns away only device ids `LIB_Device.get` does not know, whatever `addIntoBom` says | `fix/place-component-flags` | 1.6.0 |
+| M-9 | `easyeda_schematic_place_component` and `batch_write` set `mirror`, `addIntoBom` and `addIntoPcb` of a placed part | places the part, then modifies `addIntoBom` (`place` in `edakit/schematic.py`, `sync_bom`) | [#804](https://github.com/oaslananka/easyeda-mcp-pro/issues/804), [#805](https://github.com/oaslananka/easyeda-mcp-pro/pull/805) – [as posted](issue-8-place-component-flags.md). Reproduced on 2026-11-01 with EasyEDA Pro 3.2.209 and the bridge of 1.4.0, the code unchanged on 1.6.0: `batch_write` reports `applied`, the part keeps `Mirror: false`, `AddIntoBom` and `AddIntoPcb: true` – the bridge calls `create(deviceItem, x, y)` and applies only `rotation` afterwards. Not "Invalid device": `needDevice()` turns away only device ids `LIB_Device.get` does not know, whatever `addIntoBom` says | `fix/place-component-flags` | 1.6.0 |
 
 Fork branches in the clone `../easyeda-mcp-pro`, on 1.6.0, pushed to the fork and posted on 2026-11-01 on the owner's
-word – `fix/place-component-flags` (M-9) pushed, not posted yet:
+word:
 
 | Branch | Commit | Tests on 1.6.0 |
 |---|---|---|
@@ -130,7 +130,7 @@ word – `fix/place-component-flags` (M-9) pushed, not posted yet:
 | `feat/odb-export` | `feat(export): easyeda_export_odb through getOpenDatabaseDoublePlusFile` | built on 1.6.0: export tests 19 green, extension 573 green, `pnpm verify:fast` green, the whole suite as on `upstream/main` |
 | `fix/api-call-null-create` | `fix(api): report an empty create result of easyeda_api_call as a failure` | registry tests 59 green (the new one red without the fix), `pnpm verify:fast` green, the whole suite as on `upstream/main` |
 | `fix/pick-place-file-type` | `fix(export): pass the file type to getPickAndPlaceFile` | extension 568 green (two tests red without the fix), `pnpm verify:fast` green, the whole suite as on `upstream/main` |
-| `fix/place-component-flags` | `fix(schematic): apply mirror, addIntoBom and addIntoPcb after placement` | extension 571 green (two of the three new tests red without the fix), `pnpm verify:fast` green; pushed to the fork, not posted |
+| `fix/place-component-flags` | `fix(schematic): apply mirror, addIntoBom and addIntoPcb after placement` | extension 571 green (two of the three new tests red without the fix), `pnpm verify:fast` green |
 
 ## The component library (EasyEDA / LCSC)
 

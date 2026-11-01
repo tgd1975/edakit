@@ -36,14 +36,15 @@ owner's rules there: no click because of the API, no self-extended MCP server, t
       writes from an extension of another version; the self-test, one gate run of the example; M-6: `scope: "all_pages"`
       of `easyeda_schematic_components` instead of focusing page after page, and the BOM's duplicates. Then the pin
       raised in `mcp-server.sh`.
-- [ ] TD-26 - **The six issues with their pull requests at easyeda-mcp-pro, posted on 2026-11-01** – #792/#793 (stale
+- [ ] TD-26 - **The seven issues with their pull requests at easyeda-mcp-pro, posted on 2026-11-01** – #792/#793 (stale
       sweep), #794/#795 (schematic PDF), #796/#797 (return depth), #798/#799 (ODB++), #800/#802 (createProject),
-      #801/#803 (pick-and-place as CSV): follow them, answer review comments on the fork's branches, rebase when `main`
+      #801/#803 (pick-and-place as CSV), #804/#805 (mirror and BOM flags when placing, M-9): follow them, answer review comments on the fork's branches, rebase when `main`
       moves; the comment "I agree to the Contributor Permission v1 in CONTRIBUTOR-LICENSING.md", when the maintainer
       asks for it, from the owner. M-6 not posted – #539 has met it as far as EasyEDA's API lets it
       (upstream/README.md).
 - [ ] TD-28 - **When a release brings M-2 to M-4:** pin raised, the original extension, `bridge-extension-patch.sh` and
-      `odb-tool-patch.mjs` removed, handbook 2.4, 2.5 and 9.1 follow.
+      `odb-tool-patch.mjs` removed, handbook 2.4, 2.5 and 9.1 follow. With M-9 (#805) `place` in `edakit/schematic.py`
+      may pass `addIntoBom` on create again, handbook 9.3 follows.
 - [ ] TD-36 - **Follow the reports at EasyEDA:** #45 to #51 and our comments to #36 and #38 – answer questions; when a
       release fixes one, check it live, take it up and say so in upstream/README.md. EasyEDA's first answer is often
       "update to the latest version".
@@ -60,11 +61,6 @@ owner's rules there: no click because of the API, no self-extended MCP server, t
       anew (`SCH_PrimitivePin.modify` is saved on 3.2.209); `clear_orphan_attributes` kept as a cheap check or dropped;
       tooling holes stay on the board while the pours fill, and a hole in a pour becomes a `NO_POURS` region instead of
       the notch – each checked live first.
-- [ ] TD-41 - **M-9 (was E-15):** reproduced on 2026-11-01 (3.2.209, bridge 1.4.0, code unchanged on 1.6.0): not
-      "Invalid device" – the bridge drops `mirror`, `addIntoBom` and `addIntoPcb` of a placed part and reports
-      `applied`. Fork branch `fix/place-component-flags` pushed, tests green; left: post the issue and the pull request
-      (`upstream/issue-8-place-component-flags.md`, `pr-8-…`) – the owner's OK, Claude's posting was held by the
-      permission check.
 
 ## The documentation for its readers ([documentation.md](docs/concepts/new/documentation.md))
 
@@ -97,6 +93,11 @@ sources, data and code untouched; a text that is generated or used elsewhere sta
 Done or dropped, newest first, each with its date and the commit that closed it. What closed before 2026-11-01 is
 taken from the history of this file; an item rewritten on its way is listed once, in its last form.
 
+- [x] TD-41 - **M-9 (was E-15):** reproduced live on 3.2.209 with the bridge of 1.4.0 (code unchanged on 1.6.0) – not
+  "Invalid device": the bridge drops `mirror`, `addIntoBom` and `addIntoPcb` of a placed part and reports `applied`;
+  posted as #804 with the pull request #805 from the fork's `fix/place-component-flags`; edakit's `place` takes every
+  part with `bom: false` out of the BOM afterwards, not only those with an LCSC number (cb9ddc7). *(edakit-e4)*
+  [2026-11-01]
 - [x] TD-27 - **On the owner's word – post:** E-1 to E-16 checked live on EasyEDA Pro 3.2.209 and against the JSDoc of
   its types, then posted: #45 to #51 at easyeda/easyeda-api-sdk and comments to #36 and #38; E-3 watched, E-2's Channel
   ID, E-7 to E-10 and E-13 ours, documented or met, E-14 by design, E-15 moved to M-9 (5d2ee55). *(edakit-e4)*

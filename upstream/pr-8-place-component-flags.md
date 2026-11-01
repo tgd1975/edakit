@@ -1,7 +1,6 @@
-# Pull request – draft (M-9)
+# Pull request #805 – as posted (M-9)
 
-Not posted yet; for the issue in [issue-8-place-component-flags.md](issue-8-place-component-flags.md), branch in the
-fork as named in upstream/README.md.
+Posted on 2026-11-01 (https://github.com/oaslananka/easyeda-mcp-pro/pull/805) for #804; branch in the fork as named in upstream/README.md.
 
 ### Title
 
@@ -16,7 +15,7 @@ fix(schematic): apply mirror, addIntoBom and addIntoPcb after placement
 
 `schematic.placeComponent` called `create(deviceItem, x, y)` and applied only `rotation` afterwards, so `mirror`, `addIntoBom` and `addIntoPcb` from `place_component` and `batch_write` were dropped. `applyPlacedRotation` becomes `applyPlacedState` and sets all four in the snapshot-merge `modify` it already made; a placement without them is not modified.
 
-Fixes #<issue>
+Fixes #804
 
 ## Risk
 
