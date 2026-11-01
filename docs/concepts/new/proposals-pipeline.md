@@ -1,8 +1,9 @@
 # The proposals pipeline: checked before it acts, never changed through itself
 
-Status 2026-11-01: proposal, the decisions at the end open. Asked for by the owner after a review of the pipeline: the
-pipeline can change anything, so every incoming issue is analysed closely – is it from an authorised person (today the
-owner alone), is it correctly formatted, is it plausible, is it acceptable, is it dangerous, does it change this
+Status 2026-11-01: decided – the five decisions accepted by the owner the same day in a decision round in Claude Code's
+form (the table at the end); the steps start on the owner's word. Asked for by the owner after a review of the pipeline:
+the pipeline can change anything, so every incoming issue is analysed closely – is it from an authorised person (today
+the owner alone), is it correctly formatted, is it plausible, is it acceptable, is it dangerous, does it change this
 pipeline. The last is an absolute no-go: the pipeline must never be changed through itself. Aligned before it was
 written, on the owner's word: with edakit-93, which built the fixes of the day (702a4f4, 7a20a13, a7a1337), merged the
 proposals pull requests #89, #96, #101 and #102 and handed the pipeline over; and with edakit-a3, whose concept
@@ -194,19 +195,21 @@ One branch for P.1 to P.5, about one session; onto main with the owner's OK, aft
 
 ## Decisions
 
-Open – to be asked in a decision round in Claude Code's form.
+Taken by the owner on 2026-11-01, in a decision round in Claude Code's form; "accepted" is the owner's yes to the
+recommendation. Decisions 3 and 4 were asked as one question.
 
 | # | Question | Recommendation | Alternatives | Decision |
 | --- | --- | --- | --- | --- |
-| 1 | How the six checks are held | the four layers: who and the format fixed before Claude; Claude judges safe, plausible, acceptable and only reads; a fixed job checks the commits against the pipeline's paths before anything is pushed | Claude keeps write access and a check runs after its push; as today | open |
-| 2 | The token | the workflow's own token, no `id-token: write`; the setting for pull requests on; the Claude App uninstalled after P.6 | the Claude App stays | open |
-| 3 | The pipeline's paths | the nine above | also `hooks/` and `.claude-plugin/` – what runs in projects without being asked; fewer | open |
-| 4 | What counts as dangerous | the six kinds of "Safe?", each rejected | each a question; fewer kinds | open |
-| 5 | The queue | the trigger unless a triage answered it since its event; sealing again counts as an answer | the trigger only while it is waiting, with cases for sealing again and reopening | open |
+| 1 | How the six checks are held | the four layers: who and the format fixed before Claude; Claude judges safe, plausible, acceptable and only reads; a fixed job checks the commits against the pipeline's paths before anything is pushed | Claude keeps write access and a check runs after its push; as today | accepted |
+| 2 | The token | the workflow's own token, no `id-token: write`; the setting for pull requests on; the Claude App uninstalled after P.6 | the Claude App stays | accepted |
+| 3 | The pipeline's paths | the nine above | also `hooks/` and `.claude-plugin/` – what runs in projects without being asked; fewer | accepted |
+| 4 | What counts as dangerous | the six kinds of "Safe?", each rejected | each a question; fewer kinds | accepted |
+| 5 | The queue | the trigger unless a triage answered it since its event; sealing again counts as an answer | the trigger only while it is waiting, with cases for sealing again and reopening | accepted |
 
-Decided by Claude, to be confirmed: the chain of at most eight calls; Claude's result as three files; the list and the
-check in `edakit/proposal.py`, read from main; GraphQL for the body's last edit; the test proposals of P.6 filed by the
-owner; the rulesets left to `versioning.md`.
+Decided by Claude: the chain of at most eight calls and Claude's result as files – both named in the question of
+decision 1 and accepted with it; the list and the check in `edakit/proposal.py`, read from main, and GraphQL for the
+body's last edit – technical; the rulesets left to `versioning.md`, which takes the list of paths from here; the test
+proposals of P.6 are asked for when P.6 is due.
 
 ## Sources
 
