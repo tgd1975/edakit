@@ -79,6 +79,44 @@ once and start EasyEDA unthrottled – [handbook/02-setup.md](handbook/02-setup.
 
 Without Claude Code: `uvx --from git+https://github.com/tgd1975/edakit edakit <command>`.
 
+## What it runs, sends, fetches
+
+edakit runs on your machine and collects no usage data. Your design leaves it only where a command below says so.
+
+**Programs.** The plugin starts these:
+
+- the `edakit` command line, in a Python environment that uv builds from the plugin's `uv.lock` (packages from PyPI);
+- easyeda-mcp-pro 1.6.0, the MCP server for EasyEDA Pro, installed once with npm into `~/.easyeda-mcp-pro/runtime/`;
+  it talks to EasyEDA Pro on your machine through the bridge extension you import in the setup;
+- ngspice, Freerouting (Java), kicad-cli, git and the GitHub CLI `gh`, where a command needs them.
+
+**Hooks.** The plugin has two:
+
+- at the start of a session, in a project with an edakit.toml, it adds the working agreements (handbook 11.4) and
+  the project's own scripts and agents to the session – it reads files only (`edakit/agreements.py`);
+- before each EasyEDA tool call, it claims EasyEDA for the session, so that two sessions never drive it at once
+  (`edakit/lock.py`, state in `~/.local/state/edakit/`).
+
+**The network.** These commands go online:
+
+| Command | Where to | What leaves your machine |
+| --- | --- | --- |
+| `edakit route` | github.com: Freerouting's release, once, into `~/.local/share/freerouting/` | nothing |
+| `edakit part import` | easyeda.com: EasyEDA's public component data | the LCSC number |
+| `edakit part fetch` | LCSC and the datasheet's own site | the LCSC number, the URL |
+| `edakit part search`, `edakit stock` | jlcpcb.com: the public assembly catalogue and part pages | the search words, the LCSC numbers |
+| `edakit release publish` | GitHub through `gh` | the release files – into your own repository |
+| `/edakit:propose-rule`, `/edakit:propose-feature` | GitHub through `gh` | an issue in tgd1975/edakit with the text you approved |
+| `/edakit:cart` | the maker's website, in your Chrome through Claude in Chrome | the order files and form fields; it stops at the cart and never orders or pays |
+
+The checks, the simulation, the drawings, the routing and the gate run offline.
+
+**Your project's files.** `/edakit:new-project` writes, after your OK, besides edakit.toml and `hardware/`:
+
+- `.claude/settings.json`, which enables the edakit marketplace and plugin for every session in the repository;
+- a pre-commit hook in `.githooks/`, with `git config core.hooksPath .githooks`;
+- a CI workflow that runs the same checks on every pull request.
+
 ## Use
 
 ```bash
@@ -262,6 +300,12 @@ Three changes would alter how a project works; the rest is smaller extensions an
   Copilot, Qwen Code and Mistral Vibe, and OpenCode would get the files it reads. The model could run on your own
   machine, through Ollama or llama.cpp. A pair of assistant and model is named here only once the evals show it
   works. What it takes: [claude-independence](docs/concepts/new/claude-independence.md).
+
+## Questions and bugs
+
+A question, a bug or a board you built with edakit: open an
+[issue](https://github.com/tgd1975/edakit/issues/new/choose) with its form. edakit is kept by one person with Claude,
+and answers come as time allows.
 
 ## Licence
 

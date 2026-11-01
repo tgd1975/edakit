@@ -66,7 +66,7 @@ SCHEMATIC_STYLES = ("labels", "wires", "mixed")   # style: the drawing of `schem
 RELEASE_KEYS = ("layout_files", "state_files", "hash_ignore", "assembly", "stages", "archive", "publish")
 PCBA = ("economic", "standard")  # [release] assembly.pcba: JLCPCB's classes – another maker's: its profile's classes
 ARCHIVE = ("none", "git")        # [release] archive: gate runs are build output (none) – or a released one is committed
-PUBLISH_KEYS = ("variants", "decisions")   # [release] publish: what edakit release publish takes (release/publish.py)
+PUBLISH_KEYS = ("variants", "decisions", "credit")   # [release] publish: what edakit release publish takes
 COST_KEYS = ("fees", "budget", "currency", "rates", "shipping", "coupon", "vat_pct", "pcb_price")   # [cost]
 EXTRA_KEYS = ("item", "supplier", "code", "per_set", "spare", "moq", "step", "unit_price", "currency")   # [[extra]]
 STOCK_MAX_AGE_DAYS = 14          # [project] stock_max_age_days: an older stock snapshot is pending (PARTS.stock)
@@ -791,8 +791,8 @@ def _release_values(release, maker=None):
 
 
 def _publish_values(release):
-    """[release] archive: "none" or "git"; [release] publish: a table of variants (true or false) and decisions (the
-    path of the decision log)."""
+    """[release] archive: "none" or "git"; [release] publish: a table of variants (true or false), decisions (the
+    path of the decision log) and credit (true or false)."""
     out = []
     if release.get("archive", "none") not in ARCHIVE:
         out.append('[release] archive must be "none" (gate runs are build output, the default) or "git" (a released '
@@ -803,6 +803,8 @@ def _publish_values(release):
     out += _unknown("[release] publish", pub, PUBLISH_KEYS)
     if not isinstance(pub.get("variants", True), bool):
         out.append("[release] publish.variants: true or false")
+    if not isinstance(pub.get("credit", True), bool):
+        out.append("[release] publish.credit: true or false")
     if "decisions" in pub and not (isinstance(pub["decisions"], str) and pub["decisions"].strip()):
         out.append('[release] publish.decisions: the path of the decision log, e.g. "docs/decisions.md"')
     return out

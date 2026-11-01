@@ -7,6 +7,11 @@ written once, by `.github/merge.py`, from the fragments in [changes/](changes/RE
 [versioning.md](docs/concepts/new/versioning.md). Update with `claude plugin marketplace update edakit && claude plugin
 update edakit@edakit`, then `/reload-plugins` or a new session; `edakit --version` names the version that runs.
 
+## 0.4.8 – 2026-11-01
+
+- `edakit release publish` ends the release notes with "Released with edakit X.Y.Z" and the link to that version; `[release] publish.credit = false` leaves the line out (handbook 8.3).
+- The plugin's texts in `/plugin` say "circuit design as code", for EasyEDA Pro or KiCad; the README says what edakit runs, sends and fetches, and how to ask a question or report a bug.
+
 ## 0.4.7 – 2026-11-01
 
 - `schematic create` and every rename through EasyEDA's API need the project tree of EasyEDA's left panel shown once after EasyEDA starts – EasyEDA renames only what that tree lists (E-17); edakit's message says so when a rename fails, the start skill asks for the click.

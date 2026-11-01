@@ -523,8 +523,10 @@ edakit release publish --built 2026-10-31 # a board of that release has been bui
    none by the SHA-256 of the upload files in both `SHA256SUMS`; the decisions since the previous release – the
    headings `## D-…` of the decision log at HEAD that it lacked at that tag (`[release] publish.decisions`, without it
    none); the purpose from the graph, with the note that the regulatory review M-6 is support, not legal advice; the
-   schematic and the board as made, top and bottom, of every board, shown from the release's own files; how to order.
-   Every link is absolute, into the commit or the release – relative links do not work in release notes.
+   schematic and the board as made, top and bottom, of every board, shown from the release's own files; how to order;
+   last, "Released with edakit X.Y.Z" with the link to that version – which edakit published the files, and the way
+   to it for whoever reads the release (`[release] publish.credit = false` leaves the line out). Every link is
+   absolute, into the commit or the release – relative links do not work in release notes.
 5. `gh release create <YYYY-MM-DD> --prerelease --target <HEAD>` with the staged files; a tag the remote has already
    gets `-2`, `-3`. The previous release is the newest one publish made (its title "Manufacturing files …"), drafts
    left out.

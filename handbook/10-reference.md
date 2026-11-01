@@ -85,8 +85,8 @@ profile's `class_of_sides` – at JLCPCB one side Economic, two Standard –, el
 `edakit release publish`; `"git"`: a released run is committed, `edakit release current` names one git does not track
 yet, 8.3), `publish` ({`variants` (`true`: the variants below the project too – folders with an edakit.toml of their
 own), `decisions` (the decision log, e.g. `"docs/decisions.md"`: the release notes list the decisions `## D-…` since
-the previous release; without it none)} – `edakit release publish` of this project reads them, a variant's own are
-not read, 8.3).
+the previous release; without it none), `credit` (`true`: the notes end with "Released with edakit X.Y.Z" and its
+link; `false`: without)} – `edakit release publish` of this project reads them, a variant's own are not read, 8.3).
 
 ### [cost]
 

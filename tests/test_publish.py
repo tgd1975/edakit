@@ -13,7 +13,7 @@ from pathlib import Path
 import pytest
 from fake_gh import flags
 
-from edakit import cli, config
+from edakit import __version__, cli, config
 from edakit.release import fab, gate
 
 OLD, NEW = "20261030-232043", "20261031-101500"
@@ -136,8 +136,22 @@ def test_dry_run_stages_the_order_files_and_writes_the_notes(project, gh, capsys
     assert "](hardware/" not in notes and "](./" not in notes
     assert "Purpose: private – built for oneself" in notes and "support, not legal advice" in notes
     assert "**Pre-release**" in notes and "gerber_<board>.zip" in notes
+    assert notes.rstrip().endswith(f"Released with [edakit {__version__}]"
+                                   f"(https://github.com/tgd1975/edakit/releases/tag/v{__version__}).")
     assert not gh.created()
     assert f"dry run: nothing uploaded – {dest}" in capsys.readouterr().out
+
+
+def test_credit_false_leaves_the_edakit_line_out(project, gh):
+    toml = project.root / "edakit.toml"
+    toml.write_text(toml.read_text() + "publish = { credit = false }\n")
+    cfg = project.config()
+    commit(project.root)
+    released(cfg, NEW)
+    assert publish(cfg, "--dry-run") == 0
+    notes = (project.root / "build" / "publish" / TODAY / "notes.md").read_text()
+    assert "Released with" not in notes and "github.com/tgd1975/edakit" not in notes
+    assert notes.rstrip().endswith("(`sha256sum -c SHA256SUMS`).")
 
 
 def test_the_pictures_of_the_run_are_published_and_shown(project, gh):
@@ -335,6 +349,7 @@ def test_a_decision_log_that_is_not_there_stops_at_once(project, gh, capsys):
     ("publish = { variant = true }", "[release] publish: unknown key 'variant'"),
     ('publish = { variants = "yes" }', "[release] publish.variants: true or false"),
     ("publish = { decisions = 3 }", "[release] publish.decisions: the path of the decision log"),
+    ('publish = { credit = "no" }', "[release] publish.credit: true or false"),
 ])
 def test_archive_and_publish_are_checked(project, release, said):
     toml = project.root / "edakit.toml"
