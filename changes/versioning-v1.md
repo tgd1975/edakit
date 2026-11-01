@@ -1,5 +1,5 @@
 minor
-- **When updating:** nothing beyond the update itself – 0.2.0 is the first number, the owner's choice. From now on the
+- **When updating:** nothing beyond the update itself – 0.2.0 is edakit's first number. From now on the
   plugin comes from the version's tag, and `edakit --version` and the gate manifest's `tools.edakit` name the version
   (from a git checkout with its commit: `0.2.0+g1a2b3c4`). A project that sets the new `purpose.country` (below)
   changes its circuit hash and signs M-6 again.
