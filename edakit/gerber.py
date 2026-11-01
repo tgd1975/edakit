@@ -280,7 +280,10 @@ class Raster:
         """Point (column, row) of the image -> (x, y) in mm."""
         return self.x0 + col * RES, self.y0 + (self.h - row) * RES
 
-    def render(self, ops):
+    def render(self, ops, rr_box=False):
+        """Gerber operations -> bool image. EasyEDA's RoundRect ("RR") is drawn as an obround – the raster of FAB_METHOD
+        v1, which the signed fab hashes are made of –, with rr_box as its enclosing rectangle, as parse_gerber and shape
+        read it: its corners are EasyEDA's 0.05 mm mask rounding, below one raster point (SYNC.odb, ordering step 0b)."""
         import numpy as np
         from PIL import Image, ImageDraw
         img = Image.new("1", (self.w, self.h), 0)
@@ -296,7 +299,7 @@ class Raster:
                 bx = [cx - a / 2 / RES, cy - b / 2 / RES, cx + a / 2 / RES, cy + b / 2 / RES]
                 if k == "C":
                     dr.ellipse(bx, fill=1)
-                elif k == "R":
+                elif k == "R" or k == "RR" and rr_box:
                     dr.rectangle(bx, fill=1)
                 else:
                     dr.rounded_rectangle(bx, radius=min(a, b) / 2 / RES, fill=1)

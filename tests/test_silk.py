@@ -359,3 +359,20 @@ def test_fixed_labels_are_plan_mm_on_the_designators_side():
     assert silk.fixed_labels(board) == {"R4": (-12.5, 3, 90, "bottom"), "LED1": (-5, 3, 0, "top")}
     board.silk = {}
     assert silk.fixed_labels(board) == {}                                  # no key: none
+
+
+def test_silk_apply_removes_every_free_print_of_the_silkscreen():
+    """The walkthrough's live run of 2026-11-01: in a fresh clone the record of the last run (silk_strings_<board>.json,
+    build output) is not there, and silk apply left the earlier label and "+" and printed a second "+" on the first.
+    Every free text and fill on the silkscreen layers is silk apply's – the board file says what is printed –, so all
+    of it goes; what the record did not name is said. Copper is not touched."""
+    strings = [{"PrimitiveId": "a", "Layer": silk.TOP + 2, "Text": "+", "X": 40.3 * silk.MIL_PER_MM, "Y": 24 * silk.MIL_PER_MM},
+               {"PrimitiveId": "b", "Layer": silk.TOP + 2, "Text": "+", "X": 40.3 * silk.MIL_PER_MM, "Y": 24 * silk.MIL_PER_MM},
+               {"PrimitiveId": "c", "Layer": silk.BOTTOM + 2, "Text": "rev 1", "X": 0, "Y": 0},
+               {"PrimitiveId": "d", "Layer": silk.TOP, "Text": "on copper", "X": 0, "Y": 0}]
+    fills = [{"PrimitiveId": "f1", "Layer": silk.TOP + 2}, {"PrimitiveId": "f2", "Layer": silk.TOP}]
+    texts, shapes, unknown = silk.stale_print(strings, fills, {"strings": ["b", "c"], "fills": []})
+    assert texts == ["a", "b", "c"] and shapes == ["f1"]
+    assert unknown == ["'+' at (40.3, 24.0) mm on the top", "a fill on the top"]
+    assert silk.stale_print(strings, fills, {"strings": ["a", "b", "c"], "fills": ["f1"]})[2] == []
+

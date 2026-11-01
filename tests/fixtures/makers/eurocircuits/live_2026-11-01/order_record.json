@@ -1,0 +1,59 @@
+{
+ "date": "2026-11-01",
+ "run": "20261101-101815",
+ "fab_sha256": "ab99c1777e9373254d96e2544b36c278b445bede28b6393d5d4329dab3604873",
+ "state_sha256": "b85dd8d8a978fd3160d7efee4d7919456fe41bec9903f0b0d2a3c3d6407937f3",
+ "board": "main",
+ "maker": "eurocircuits",
+ "quantity": 5,
+ "pcba_quantity": 5,
+ "job_sha256": "a13032784fd5f2df4715a2b0d96b1054d5eef4aa469faefe5ed0bbaae971dc8d",
+ "quote_sha256": "f663441660f151e61cf7c244ecacd3ba0cd21697b06d726af5d3b4867bfbacbb",
+ "regulatory": {
+  "verdict": "Order: OK",
+  "findings": [
+   {
+    "n": 1,
+    "grade": "note"
+   },
+   {
+    "n": 2,
+    "grade": "note"
+   },
+   {
+    "n": 3,
+    "grade": "note"
+   }
+  ]
+ },
+ "quote": {
+  "currency": "EUR",
+  "board": 326.76
+ },
+ "estimate": null,
+ "cart": {
+  "name": "gerber_main",
+  "quantity": 5,
+  "price": 272.3,
+  "vat": 54.46,
+  "currency": "EUR",
+  "basket": "B5490623",
+  "type": "PCBA",
+  "status": "Ready to checkout",
+  "service": "PCB Proto",
+  "assembly_quantity": 5,
+  "delivery": "6 Working days",
+  "lines": {
+   "PCB unit price": 13.71,
+   "PCB price": 68.55,
+   "Assembly price": 183.9,
+   "Component price": "19.85 Incomplete",
+   "Net price": 272.3,
+   "VAT %": 20.0,
+   "VAT": 54.46
+  },
+  "bom": "# parts defined: 9, # parts not defined: 0"
+ },
+ "order_number": null,
+ "actual": null
+}

@@ -52,6 +52,10 @@ ORDER = """
 [order]                          # tooling holes of its own on an Economic board: order.md tells JLCPCB (FILES.order)
 remark = "2 NPTH tooling holes added by customer."
 """
+RR_D = 0.1016                      # EasyEDA's RoundRect on the mask layers: corners of this diameter (ordering step 0b)
+ROUNDRECT_MACRO = ("%AMRoundRect*1,1,$1,$2,$3*1,1,$1,$4,$5*1,1,$1,0-$2,0-$3*1,1,$1,0-$4,0-$5*20,1,$1,$2,$3,$4,$5,0*"
+                   "20,1,$1,$4,$5,0-$2,0-$3,0*20,1,$1,0-$2,0-$3,0-$4,0-$5,0*20,1,$1,0-$4,0-$5,$2,$3,0*"
+                   "4,1,4,$2,$3,$4,$5,0-$2,0-$3,0-$4,0-$5,$2,$3,0*%")
 PLUS = (10.8, 10.9)                # "+" on the top silkscreen, next to D1's anode
 CATHODE = (15.2, 10.9)             # 1.9 mm above D1.1, D1's cathode
 BOARD = f"""# The input stage of the example on a board of its own (tests/test_fab_run.py)
@@ -125,8 +129,10 @@ class Layer(list):
                 _, w, pts, _ = item
                 body += [f"D{code(('C', w, w))}*", f"X{um(pts[0][0])}Y{um(pts[0][1])}D02*"]
                 body += [f"X{um(x)}Y{um(y)}D01*" for x, y in pts[1:]]
-        head = ["%FSLAX46Y46*%", "%MOMM*%"] + [f"%ADD{c}{k},{a:.6f}" + ("" if k == "C" else f"X{b:.6f}") + "*%"
-                                              for (k, a, b), c in aps.items()]
+        head = ["%FSLAX46Y46*%", "%MOMM*%"] + [ROUNDRECT_MACRO] * any(k == "RR" for k, _, _ in aps) + [
+            f"%ADD{c}{k},{a:.6f}" + ("" if k == "C" else f"X{b:.6f}") + "*%" if k != "RR" else
+            f"%ADD{c}RoundRect,{RR_D}X{-(a - RR_D) / 2:.6f}X{(b - RR_D) / 2:.6f}X{(a - RR_D) / 2:.6f}X{(b - RR_D) / 2:.6f}*%"
+            for (k, a, b), c in aps.items()]
         return "\n".join(head + body + ["M02*"]) + "\n"
 
     def drop(self, tag):
@@ -583,8 +589,9 @@ def ordered(ex, project, order=None, placeholder=False, h_mm=1.0):
     h_mm."""
     unordered(ex, project)
     order = {"mark": "remove", "remark": REMARK, **(order or {})}
-    text = "\n[order]\n" + "".join(f"{k} = {json.dumps(v, ensure_ascii=False)}\n" for k, v in order.items()
-                                   if k != "tab_zones")
+    value = lambda v: ("{ " + ", ".join(f"{k} = {json.dumps(x, ensure_ascii=False)}" for k, x in v.items()) + " }"  # noqa: E731
+                       if isinstance(v, dict) else json.dumps(v, ensure_ascii=False))
+    text = "\n[order]\n" + "".join(f"{k} = {value(v)}\n" for k, v in order.items() if k != "tab_zones")
     if "tab_zones" in order:
         text += "tab_zones = [" + ", ".join(f"{{ from = {list(a)}, to = {list(b)} }}" for a, b in order["tab_zones"]) + "]\n"
     if placeholder:
@@ -1443,3 +1450,19 @@ def test_a_waived_designator_on_the_visible_side(project):
     w = next(r for r in rows if r["result"] == "waived")
     assert w["reason"] == "test: the label is wanted there"
     assert "C2 shows its designator – [silk] designators is bottom" in w["check"]
+
+
+def test_an_export_the_server_wrote_into_the_run_folder_leaves_no_copy(tmp_path):
+    """EasyEDA's pick-and-place export lands in the run folder under the project ID ("current"); taken as
+    cpl_easyeda.xlsx it does not stay beside it. An export elsewhere stays where the server keeps it."""
+    d = tmp_path / "fab" / "main"
+    d.mkdir(parents=True)
+    (d / "current").write_bytes(b"xlsx")
+    fab.take_export(d / "current", d / "cpl_easyeda.xlsx")
+    assert sorted(p.name for p in d.iterdir()) == ["cpl_easyeda.xlsx"]
+    assert (d / "cpl_easyeda.xlsx").read_bytes() == b"xlsx"
+    elsewhere = tmp_path / "server" / "board.zip"
+    elsewhere.parent.mkdir()
+    elsewhere.write_bytes(b"zip")
+    fab.take_export(elsewhere, d / "gerber_main.zip")
+    assert elsewhere.exists() and (d / "gerber_main.zip").read_bytes() == b"zip"

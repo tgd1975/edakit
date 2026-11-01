@@ -9,6 +9,11 @@
 # Sales" – a consent in the owner's name the skill does not give. The placement opens again from the basket
 # (Assembly Visualizer, CPL Editor): M-2 can wait for the basket. Values behind "More Options" were not read: a value
 # edakit sets there is not checked (no words).
+#
+# Live run 5.8 (2026-11-01, tests/fixtures/makers/eurocircuits/live_2026-11-01/): the BOM's import maps its columns
+# by their names – "Manufacturer Part Number" yes, "MPN" not, and "Comment" it took for the part number ([bom]
+# columns). The Assembly Editor marks a footprint whose pads differ from the board's ("does not match the board
+# layout") and the PCBA tab flags "Data conflicts": that is M-2's, in the basket.
 
 name = "Eurocircuits"
 recorded = "2026-10-31"
@@ -38,6 +43,7 @@ excludes = []
 "Outer layer isolation distance (OL-TT-TP-PP)" = "measured by Eurocircuits from the data (Technology)"
 "Outer layer annular ring (OAR)" = "measured by Eurocircuits from the data (Technology)"
 "Smallest final hole" = "measured by Eurocircuits from the data (Technology)"
+"Holes <= may be reduced" = "Eurocircuits' standard (0.45 mm, live run 5.8): holes up to it may come smaller – the vias"
 "Hole density" = "measured by Eurocircuits from the data (Technology)"
 "Component pad pitch" = "measured by Eurocircuits from the data (Technology)"
 "Technology class" = "derived by Eurocircuits"
@@ -47,6 +53,10 @@ excludes = []
 "Milling" = "not used"
 "Specific hole tolerances" = "Eurocircuits' standard"
 "Specific dimension tolerances" = "Eurocircuits' standard"
+"PTH on the board edge" = "not used"                     # this and the next three: read in live run 5.8
+"Round-edge plating" = "not used"
+"Press-fit holes" = "not used"
+"Via filling/Hole plugging" = "not used: the vias are tented"
 "Depth routing" = "not used"
 "Chamfered holes" = "not used"
 "Copper up to board edge" = "not used"
@@ -70,7 +80,8 @@ excludes = []
 "Accept the Eurocircuits Terms of Sales" = "a consent in the owner's name: the skill stops and asks"
 
 [bom]
-columns = ["Designator", "Quantity", "Manufacturer", "MPN", "Comment"]
+columns = ["Designator", "Quantity", "Value", "Package", "Manufacturer", "Manufacturer Part Number"]   # mapped by the
+# import itself (step 0, live run 5.8); a column named "MPN" it leaves unmapped and takes "Comment" for the part number
 match = "mpn"                          # Eurocircuits identifies the BOM by manufacturer part number (PARTS.fact/mpn)
 
 [cpl]
@@ -154,6 +165,7 @@ words = { false = "No" }
 # class, the sides and the tooling follow from the data Eurocircuits analyses; the tg and the copper are its standard
 # (in ignore above); shipping is chosen at checkout.
 [fields]
+customs = false                        # seated in the EU: no customs declaration
 tg = false
 copper_oz = false
 inner_copper_oz = false

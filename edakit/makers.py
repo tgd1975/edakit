@@ -36,6 +36,7 @@ every other one (result). Without [cart] the maker is JLCPCB and the makers are 
 
 from __future__ import annotations
 
+import re
 import tomllib
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -131,6 +132,8 @@ class Maker:
         values = self.offered(key)
         if values is None:
             return None
+        if key == "customs":
+            return customs_entry(values, value) is not None
         if isinstance(value, (int, float)) and not isinstance(value, bool):
             found = any(not isinstance(v, bool) and isinstance(v, (int, float)) and abs(v - value) < 1e-9 for v in values)
         else:
@@ -149,6 +152,9 @@ class Maker:
         """The form's word for edakit's value of a key: from words, a number with its unit, a size as the form shows it,
         else the value as text. A value words do not list keeps edakit's word (FILES.order names it)."""
         f = self.field(key) or {}
+        if key == "customs" and isinstance(value, dict):
+            entry = customs_entry(f.get("values") or [], value)
+            return entry or f"{value.get('category')} - HS Code {value.get('hs_code')}"
         words = f.get("words") or {}
         token = _token(value)
         if token in words:
@@ -178,6 +184,25 @@ class Maker:
     def upload(self, board):
         """The names of the files the maker takes for a board, in the order of the profile."""
         return [UPLOAD[f].format(b=board) for f in self.files if f in UPLOAD]
+
+
+def customs_parts(entry):
+    """A customs entry of a profile as (category, item, hs_code): "Reserch\\Education\\DIY\\Entertainment / DIY - HS
+    Code 902300" -> ("Reserch\\Education\\DIY\\Entertainment", "DIY", "902300"); hs_code None without one."""
+    head, _, item = entry.partition(" / ")
+    m = re.search(r"\s*-\s*HS Code\s*(\d+)\s*$", item)
+    return head, (item[:m.start()] if m else item).strip(), m.group(1) if m else None
+
+
+def customs_entry(entries, value):
+    """The entry of a profile's customs field that [order] customs {category, hs_code} picks – its item named as
+    category (case ignored) with that HS code; None when the form has none."""
+    want = (str(value.get("category", "")).casefold(), str(value.get("hs_code", "")))
+    for e in entries:
+        _, item, hs = customs_parts(e)
+        if (item.casefold(), hs) == want:
+            return e
+    return None
 
 
 def _token(value):

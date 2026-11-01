@@ -85,9 +85,10 @@ assembly preview at JLCPCB.
   SYNC.odb  with a maker of [cart] makers that takes ODB++ (AISLER; fails for the planned maker, warns for another one):
        odb_<board>.zip, exported through the patched easyeda_export_odb, against this run's files – every layer
        (copper, mask, paste, silkscreen) rasterised as GEO.copper and XOR'd with its Gerber layer, no spot above
-       SPOT_MM2 and no layer in one only; the drill hits = the drill files (1 µm, diameter, plated or not); the profile
-       = the Gerber outline; every BOM part once at the CPL's place, rotation (ODB++ clockwise) and side with its part
-       number, a part with bom: false as the maker's dnp says; the nets of the pins as the graph's, compared as groups
+       SPOT_MM2 beyond an edge one raster point off (ODB_EDGE_STEPS: the ODB++'s coarser coordinates) and no layer
+       in one only; the drill hits = the drill files (1 µm, diameter, plated or not); the profile
+       = the Gerber outline; every BOM part once at the CPL's place, rotation (ODB++ clockwise) and side with the part
+       number the maker matches by (AISLER: MPN), a part with bom: false as the maker's dnp says; the nets of the pins as the graph's, compared as groups
   FILES.order  with [order] or [cart], per maker of [cart] makers (fails for the planned maker, warns for another one):
        every field a value of the maker's form, the remark, thickness_mm and the colours of mask and silkscreen as its
        form has them, mark = its placeholder on the silkscreen – JLCPCB's placeholder at a maker without one –, its
@@ -173,6 +174,15 @@ def board_bom(mcp, board):
 
 # --- collect from EasyEDA -----------------------------------------------------------------------------------------
 
+def take_export(src, dest):
+    """An export file of the server as dest: a copy – and gone from where it was when the server wrote it into dest's
+    folder (the pick-and-place export lands in the run folder under the project ID, "current")."""
+    src, dest = Path(src), Path(dest)
+    shutil.copy(src, dest)
+    if src.parent.resolve() == dest.parent.resolve() and src.name != dest.name:
+        src.unlink()
+
+
 def collect(cfg, board, d, verbose=False):
     from .. import eda, pcb
     (d / "netlist_diff.json").unlink(missing_ok=True)
@@ -215,7 +225,7 @@ def collect(cfg, board, d, verbose=False):
         res = mcp.call("easyeda_export_pick_place", projectId="current", format="csv", timeout=120)
         if not res.get("exported"):
             raise SystemExit(f"pick-and-place export failed: {res}")
-        shutil.copy(res["file_path"], d / "cpl_easyeda.xlsx")  # EasyEDA delivers xlsx even when csv is asked for
+        take_export(res["file_path"], d / "cpl_easyeda.xlsx")  # EasyEDA delivers xlsx even when csv is asked for
         (d / "bom_easyeda.json").write_text(json.dumps(board_bom(mcp, board), indent=1, ensure_ascii=False))
         if pcb.import_items(found):   # last: the comparison focuses the schematic pages
             try:
@@ -255,7 +265,10 @@ def export_odb(cfg, mcp, board, d):
     if not res.get("exported"):
         (d / ODB_ERROR).write_text(f"easyeda_export_odb: {res.get('error') or res}")
         return
-    raw = Path(res["artifact_path"]).read_bytes()
+    artifact = Path(res["artifact_path"])
+    raw = artifact.read_bytes()
+    if artifact.resolve().parent == Path(d).resolve() and artifact.resolve() != target.resolve():
+        artifact.unlink()       # EasyEDA names the file "undefined" (no file name in the bridge's call): not a run file
     if raw[:2] == b"PK":
         target.write_bytes(raw)
         return
@@ -342,7 +355,9 @@ def write_bom(bom, path):
         w.writerows(bom)
 
 
-MPN_COLUMNS = ["Designator", "Quantity", "Manufacturer", "MPN", "Comment"]
+# The header Eurocircuits' import maps by itself (ordering step 0, live run 5.8): "MPN" it leaves unmapped and takes
+# "Comment" for the part number. PCBWay's engineers read the file by eye – one file serves every maker of [cart].
+MPN_COLUMNS = ["Designator", "Quantity", "Value", "Package", "Manufacturer", "Manufacturer Part Number"]
 
 
 def mpn_rows(design, bom):
@@ -352,8 +367,8 @@ def mpn_rows(design, bom):
     for r in bom:
         entry = design.parts.get(r["LCSC Part #"]) or {}
         out.append({"Designator": r["Designator"], "Quantity": len(r["Designator"].split(",")),
-                    "Manufacturer": entry.get("manufacturer", ""), "MPN": entry.get("mpn", ""),
-                    "Comment": r["Comment"], "Footprint": r["Footprint"], "LCSC Part #": r["LCSC Part #"]})
+                    "Value": r["Comment"], "Package": r["Footprint"], "Manufacturer": entry.get("manufacturer", ""),
+                    "Manufacturer Part Number": entry.get("mpn", ""), "LCSC Part #": r["LCSC Part #"]})
     return out
 
 
@@ -1657,6 +1672,7 @@ def check_cpl(cfg, board, design, d, ours, rows):
 ODB_POS_MM = 0.01            # SYNC.odb: a part's place against the CPL
 ODB_HOLE_MM = 0.001          # SYNC.odb: a drill hit's place and diameter against the drill files
 ODB_PROFILE_MM = 0.05        # SYNC.odb: the profile against the Gerber outline (Hausdorff distance)
+ODB_EDGE_STEPS = 1           # SYNC.odb: an edge this many raster points off is the ODB++'s coarser coordinates (5.10)
 ROLES = (("TopLayer", ("copper", "top")), ("BottomLayer", ("copper", "bottom")), ("TopSolderMask", ("mask", "top")),
          ("BottomSolderMask", ("mask", "bottom")), ("TopSilkscreen", ("silk", "top")),
          ("BottomSilkscreen", ("silk", "bottom")), ("TopPaste", ("paste", "top")), ("BottomPaste", ("paste", "bottom")))
@@ -1734,8 +1750,8 @@ def check_odb(cfg, board, design, d, rows):
             bad.append(f"{f.name}: no layer of the ODB++ is the {' '.join(role) if role else 'same'}")
             continue
         seen.add(lay.name)
-        xor = r.render(gerber.parse_gerber(f)) ^ odb.render(r, lay.features)
-        found = [s for s in spots(xor, r) if s[0] >= SPOT_MM2]
+        found = [s for s in spots(beyond_edge(r.render(gerber.parse_gerber(f), rr_box=True), odb.render(r, lay.features)), r)
+                 if s[0] >= SPOT_MM2]
         if found:
             a, (x0, x1, y0, y1) = found[0]
             bad.append(f"{f.name} ≠ {lay.name}: {len(found)} spots, the largest {a:.3f} mm² at ({(x0 + x1) / 2:.2f}, "
@@ -1769,6 +1785,18 @@ def check_odb(cfg, board, design, d, rows):
 
     check_odb_parts(cfg, board, design, d, job, m, add)
     check_odb_nets(design, board, job, add)
+
+
+def beyond_edge(a, b, steps=ODB_EDGE_STEPS):
+    """What differs between two rasters of a layer by more than an edge moved steps raster points: a point of one
+    farther than that from the other. The ODB++ is written with coarser coordinates than the Gerber files (kicad-cli:
+    0.1 µm against 1 nm), and along a long straight edge that flips one row of the raster."""
+    import numpy as np
+    from scipy import ndimage
+    grow = np.ones((3, 3), dtype=bool)
+    near_a = ndimage.binary_dilation(a, grow, iterations=steps)
+    near_b = ndimage.binary_dilation(b, grow, iterations=steps)
+    return (a & ~near_b) | (b & ~near_a)
 
 
 def mm_value(v):
@@ -1811,9 +1839,16 @@ def check_odb_parts(cfg, board, design, d, job, m, add):
             bad.append(f"{ref}: rotation {rot:g}° (ODB++ {c.rot:g}° clockwise), the CPL {float(row['Rotation']):g}°")
     numbered = [c for c in job.components if c.designator in bom]
     names = lambda c: {c.part, *c.props.values()}  # noqa: E731
-    keys = lambda r: {r.get("LCSC Part #"), (design.parts.get(r.get("LCSC Part #")) or {}).get("mpn")} - {None, ""}  # noqa: E731
+    match = m.matches_by                    # the number the maker matches by; None: either
+
+    def keys(r):
+        lcsc = r.get("LCSC Part #")
+        both = {"lcsc": lcsc, "mpn": (design.parts.get(lcsc) or {}).get("mpn")}
+        return {v for k, v in both.items() if match in (None, k)} - {None, ""}
     if numbered and not any(names(c) & keys(bom[c.designator]) for c in numbered):
-        bad.append("no part of the ODB++ carries its BOM's part number (LCSC or MPN) – the maker cannot match them")
+        bad.append(f"no part of the ODB++ carries the {'MPN' if match == 'mpn' else 'LCSC number'} {m.name} matches by – "
+                   f"{m.name} cannot match them" if match else
+                   "no part of the ODB++ carries its BOM's part number (LCSC or MPN) – the maker cannot match them")
     else:
         bad += [f"{c.designator}: part {c.part or '–'} – the BOM {', '.join(sorted(keys(bom[c.designator])))}"
                 for c in numbered if not names(c) & keys(bom[c.designator])]

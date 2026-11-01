@@ -33,7 +33,7 @@ The working rules for sessions in this repository are in [CLAUDE.md](../CLAUDE.m
 | `.claude-plugin/` | Source | Plugin and marketplace manifests |
 | `.github/` | Source | The workflows: tests, the site, proposals |
 | [evals/](../evals/README.md) | Source | Tasks and graders for `claude plugin eval` |
-| [upstream/](../upstream/README.md) | Source | Drafts of issues and pull requests for other projects, posted only on the owner's word |
+| [upstream/](../upstream/README.md) | Source | What edakit needs from EasyEDA Pro and easyeda-mcp-pro – the requirements, their state upstream, drafts of issues and pull requests, posted only on the owner's word |
 | [edakit/](../edakit/) (without the folders below), [bin/](../bin/), [hooks/](../hooks/hooks.json) | Code | The Python package and command line, the plugin's command and hooks |
 | [edakit/catalog/](../edakit/catalog/), [edakit/domains/](../edakit/domains/), [edakit/blocks/](../edakit/blocks/), [edakit/parts/](../edakit/parts/), [edakit/makers/](../edakit/makers/), [edakit/fees/](../edakit/fees/) | Data | Codes and tables, domains, building blocks, parts entries, the makers' profiles, the fee table |
 | [tests/](../tests/) | Code, test data | The tests; `tests/fixtures/` and `tests/open_designs/` – their READMEs included – are test data |

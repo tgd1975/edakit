@@ -19,8 +19,8 @@ from edakit.toolchain.kicad import library, sexp
 
 def kicad_project(project, rows=None):
     """The example as a KiCad project: toolchain = "kicad", no EasyEDA document names, the library's footprints in the
-    cache (from test_pcb's geometry: boxes from the footprint names, pads as the packages have them). rows: [place]
-    rows replaced, {ref: row text}."""
+    cache (test_pcb's geometry: the LCSC footprints with their pads, a line of print). rows: [place] rows replaced,
+    {ref: row text}."""
     t = (project.root / "edakit.toml").read_text()
     t = t.replace('name = "led-bar"', 'name = "led-bar"\ntoolchain = "kicad"')
     (project.root / "edakit.toml").write_text(re.sub(r"^(template|schematic|pcb) = .*\n", "", t, flags=re.M))
@@ -36,15 +36,6 @@ def kicad_project(project, rows=None):
         name = project.part(c["lcsc"])["footprint"]
         fp = json.loads(json.dumps(geo[c["designator"]]))
         fp["footprint"] = name
-        for p in fp["pads"].values():     # pads that keep the routing clearance, as KiCad's DRC asks (16.8)
-            if p["tht"]:
-                p.update(shape="ELLIPSE", w=70, h=70, rot=0, layer="MULTI", hole=[1.0, 1.0], plated=True)
-            elif c["designator"] == "U2":     # SOIC-16, 1.27 mm pitch
-                p.update(shape="RECT", w=60, h=24, rot=0, layer="TOP")
-            elif c["designator"] == "U1":     # the module's castellated pads, clear of the mounting hole
-                p.update(shape="ELLIPSE", w=35, h=35, rot=0, layer="TOP")
-            else:
-                p.update(shape="RECT", w=40, h=50, rot=0, layer="TOP")
         b = fp["bbox"]
         fp["silk"] = [{"layer": "TOP", "points": [[b[0], b[1]], [b[2], b[1]]], "width": 6, "fill": False}]
         fp["silk_version"] = SILK_VERSION     # a cache of today's edakit: not read from the library again
@@ -107,7 +98,7 @@ def test_footprints_from_the_cache_with_pads_holes_and_silkscreen(project):
     design = Design.from_config(cfg)
     fps = library.footprints(cfg, design, ["J1", "R1", "U2"], fetch=False)
     j1 = fps["J1"]
-    assert j1.tht and {p.kind for p in j1.pads} == {"thru_hole"} and j1.pads[0].drill == (1.0,)
+    assert j1.tht and {p.kind for p in j1.pads} == {"thru_hole"} and j1.pads[0].drill == (0.9,)
     assert j1.package == "CONN-TH_B2B-PH-K-S"
     text = library.module(fps["U2"])
     root = sexp.loads(text)
@@ -186,7 +177,7 @@ def test_bottom_parts_measure_as_the_library_footprint(project):
         for num, p in want.items():
             q = geo[ref]["pads"][num]
             assert (q["x"], q["y"]) == pytest.approx((p["x"], p["y"]), abs=0.01), f"{ref}.{num}"
-    assert geo["J1"]["pads"]["1"]["hole"] == [1.0, 1.0] and geo["J1"]["footprint"] == "CONN-TH_B2B-PH-K-S"
+    assert geo["J1"]["pads"]["1"]["hole"] == [0.9, 0.9] and geo["J1"]["footprint"] == "CONN-TH_B2B-PH-K-S"
 
 
 def test_pcb_json_has_the_parts_their_nets_and_no_tooling_hole(project):
@@ -356,9 +347,10 @@ def connectivity(text):
     return out
 
 
-def test_the_schematic_connects_every_pin_as_the_graph(project):
-    from edakit.toolchain.kicad import schematic as ks
-    cfg = kicad_project(project)
+def test_the_schematic_connects_every_pin_as_the_graph(project, monkeypatch):
+    from edakit.toolchain.kicad import cli, schematic as ks
+    monkeypatch.setattr(cli, "netlist", lambda sch, out, verbose=False: ({}, {}))    # write_parts reads the
+    cfg = kicad_project(project)                                                      # schematic's no-connect nets
     board, design = cfg.board(), Design.from_config(cfg)
     path, problems = ks.write(cfg, board)
     assert problems == [] and path.exists()
@@ -390,7 +382,8 @@ def test_a_pcb_kicad_saved_with_nets_by_name_is_read_and_written_by_number(proje
     text = re.sub(r'^\t\(net \d+ "[^"]*"\)\n', "", text, flags=re.M)             # no table
     path.write_text(text + "")
     pcb = kb.load(cfg, board)
-    assert pcb.nets["GND"] > 0 and kb.pad_net(pcb, next(kb.find(pcb.footprint("C1"), "pad"))) == "3V3"
+    pad1 = next(p for p in kb.find(pcb.footprint("C1"), "pad") if p[1] == "1")
+    assert pcb.nets["GND"] > 0 and kb.pad_net(pcb, pad1) == "3V3"
     data = kb.pcb_json(cfg, board)
     assert {p["Net"] for c in data["components"] for p in c["pads"]} >= {"GND", "3V3", "+5V"}
     pcb.save(cfg, board)
@@ -587,3 +580,16 @@ def test_a_zone_kicad_saved_without_the_thickness_flag_keeps_its_fill_exact(proj
     kb.write_parts(cfg, board)
     assert all(sexp.value(z, "filled_areas_thickness") == "no" for z in kb.load(cfg, board).zones)
     assert path.read_text().count("(filled_areas_thickness no)") == 2
+
+
+def test_a_footprint_names_the_mpn_and_its_manufacturer(project):
+    """5.10 (AISLER live, 2026-11-01): AISLER matches the parts of the ODB++ by a manufacturer part number and knows no
+    LCSC number – every footprint carries MPN and Manufacturer of its parts entry beside LCSC, and kicad-cli's ODB++
+    takes them as properties of its components."""
+    cfg = kicad_project(project)
+    board, design = cfg.board(), Design.from_config(cfg)
+    fps = {r: f for r, f in kb.parts(kb.Pcb.load(kb.write_parts(cfg, board)[0]))}
+    for ref, fp in fps.items():
+        entry = design.parts.get(design.comps[ref].get("lcsc")) or {}
+        assert (kb.prop(fp, "MPN"), kb.prop(fp, "Manufacturer")) == (entry.get("mpn"), entry.get("manufacturer")), ref
+    assert kb.prop(fps["D1"], "MPN") == "SS34"

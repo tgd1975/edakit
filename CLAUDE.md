@@ -30,7 +30,17 @@ A requirements file covers the circuit only; what firmware and mechanics must do
 - **Everything else goes through a branch**, and onto main only with the owner's OK.
 - **No branch is left lying around.** When a piece of work is done, list the unmerged branches – local, origin,
   worktrees, and the clones of other sessions, read only. Merge what is finished, rebased and with the tests green, or
-  say why a branch stays: waiting for a decision, unfinished, someone else's.
+  say why a branch of your own stays: waiting for a decision, unfinished. Someone else's branch is one line naming the
+  session that holds it – its decisions and OKs are that session's to ask, never an item for the owner in your reply.
+
+## EasyEDA Pro and easyeda-mcp-pro
+
+The owner's rules of 2026-11-01, kept with the requirements in `upstream/README.md`: no click in EasyEDA Pro because
+its API gets something wrong or leaves it out – every click edakit asks for is a requirement E-… there until the API
+takes it over –; no self-extended MCP server – no new patch of easyeda-mcp-pro, what edakit needs goes upstream as an
+issue and a pull request from the fork tgd1975/easyeda-mcp-pro –; and before a requirement is reported, a branch built
+or a workaround changed, the latest state upstream is checked ("The latest state" there). A new click, patch or
+workaround goes into that list in the same commit.
 
 ## Proposals
 

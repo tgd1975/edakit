@@ -57,7 +57,8 @@ excludes = []
 "Tick means you accept we might change \"HASL\" to \"ENIG\" at our discretion without extra charge." = "left unticked: the finish is the job's"
 
 [bom]
-columns = ["Designator", "Quantity", "Manufacturer", "MPN", "Comment"]   # taken; PCBWay asks designators, quantity, package, part number
+columns = ["Designator", "Quantity", "Value", "Package", "Manufacturer", "Manufacturer Part Number"]   # Eurocircuits'
+# header – one file serves both; PCBWay's engineers read it by eye and ask designators, quantity, package, part number
 match = "mpn"                          # PCBWay buys the parts by manufacturer part number (PARTS.fact/mpn)
 
 [cpl]
@@ -214,6 +215,7 @@ checkout = true
 
 # No such field on PCBWay's form: the keys are left out of its job.
 [fields]
+customs = false                        # the form asks none; PCBWay declares the shipment at checkout, the owner's
 outline_tolerance = false
 barcode = false
 electrical_test = false

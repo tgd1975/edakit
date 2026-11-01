@@ -26,7 +26,9 @@ and check FILES.order (order settings = board, per maker). Both when the board h
        finding – this maker prints the letters as they are; a former placeholder (JLCPCB's JLCJLCJLCJLC, its order
        number gone since May 2026, seen on the form by ordering step 0) warns at every maker; an assembly class with
        fewer tooling holes than the profile's
-       tooling_min warns (JLCPCB: Economic, 2 – it adds its own); a provisional profile is named as information.
+       tooling_min warns (JLCPCB: Economic, 2 – it adds its own); customs is an entry of the maker's form (JLCPCB's
+       "Product Description"), and not set where the form asks it, it is named as information – the owner chooses it
+       at the cart; a provisional profile is named as information.
        Independent of the maker: layers and size_mm, where set, are those of the Gerber files; panel_by_customer fails
        – the run's Gerber is one board; pcba_quantity is at most quantity, and another number than [project] quantity
        warns (PARTS.stock counts that many sets); copper within tab_copper_mm of a declared tab zone fails – measured
@@ -62,7 +64,7 @@ FORM = ("material", "layers", "size_mm", "quantity", "delivery", "thickness_mm",
         "mark", "barcode", "serial_number", "electrical_test", "quality", "confirm_production_file", "paper_between",
         "packaging", "remark",
         "pcba", "sides", "pcba_quantity", "tooling", "confirm_placement", "photo_confirmation", "bake", "depanel",
-        "conformal_coating", "function_test", "pcba_packaging", "ship_to", "shipping")
+        "conformal_coating", "function_test", "pcba_packaging", "ship_to", "shipping", "customs")
 PCBA_KEYS = FORM[FORM.index("pcba"):FORM.index("ship_to")]
 SHIP_KEYS = ("ship_to", "shipping")
 DERIVED = ("layers", "size_mm", "pcba", "sides", "tooling", "bake", "ship_to", "shipping")   # not values to offer
@@ -255,6 +257,8 @@ def form(cfg, design, board, d, maker, o=None, bom=None, found=None):
     for key in dict.fromkeys(keys):
         if not maker.has(key) or (key in PCBA_KEYS and not bom) or (key == "inner_copper_oz" and (layers or 2) <= 2):
             continue
+        if key == "customs" and not maker.field(key):          # asked only where the profile records the field
+            continue
         when = (maker.field(key) or {}).get("when") or {}    # a field of a dialog behind another option
         if any(o.get(k) not in (v if isinstance(v, list) else [v]) for k, v in when.items()):
             continue
@@ -434,6 +438,28 @@ def check_untold(cfg, board, rows):
     rows[-1]["maker"] = m.key
 
 
+def check_customs(c, f, entries):
+    """A customs description the maker's form does not offer: the entries of the same HS code, else of the same name."""
+    v, m = f["raw"], c.maker
+    parts = [makers.customs_parts(e) for e in entries]
+    same = [i for _, i, hs in parts if hs == v["hs_code"]]
+    named = [f"{i} (HS {hs})" for _, i, hs in parts if i.casefold() == v["category"].casefold()]
+    near = (f"with HS {v['hs_code']}: " + ", ".join(same) if same else
+            "named so: " + ", ".join(named) if named else f"see its profile ({m.path.name}, fields.customs)")
+    c.add(f"{f['label']}: a value {m.name}'s form offers", False,
+          f"customs = {v['category']}, HS {v['hs_code']} ({f['from']}) – {m.name} offers no such entry; {near}",
+          "an entry of the form")
+
+
+def check_customs_set(c, fields):
+    """A maker that asks the customs description, [order] without it: named – the owner chooses it at the cart."""
+    f = next((f for f in fields if f["key"] == "customs"), None)
+    if f is not None and f["raw"] is None:
+        c.add(f"{f['label']}: the customs category with its HS code", True,
+              f"not set ([order] customs) – {c.maker.name}'s form asks it before the cart; the owner chooses it "
+              "there", "[order] customs", "info")
+
+
 def check_fields(c, fields, o):
     """Every field's value one the maker's form offers; no combination its profile excludes."""
     m = c.maker
@@ -441,6 +467,9 @@ def check_fields(c, fields, o):
     bad = [f for f in asked if m.offers(f["key"], f["raw"]) is False]
     for f in bad:
         offered = m.offered(f["key"])
+        if f["key"] == "customs":
+            check_customs(c, f, offered)
+            continue
         c.add(f"{f['label']}: a value {m.name}'s form offers", False,
               f"{f['key']} = {f['raw']!r} ({f['from']}) – {m.name} offers "
               + ", ".join(repr(v) for v in offered), "one of " + ", ".join(repr(v) for v in offered))
@@ -640,6 +669,7 @@ def check(cfg, board, design, d, rows, bom):
         pcba = makers.pcba(cfg, m.key)
         fields = form(cfg, design, board, d, m, o, bom, placeholders(board, data, m)[0])
         check_fields(c, fields, o)
+        check_customs_set(c, fields)
         check_remark(c, o["remark"])
         check_material(c, o)
         check_mark(c, o, data)

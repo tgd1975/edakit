@@ -6,11 +6,12 @@ the example's export of test_fab_run, released, and a quote and page text as the
 import json
 import shutil
 import zipfile
+from pathlib import Path
 
 import pytest
 
 import test_fab_run as fr
-from edakit import cli, cost
+from edakit import cli, cost, makers
 from edakit.release import gate
 
 RUN = "20261030-120000"
@@ -415,3 +416,77 @@ def test_a_cart_line_named_by_its_size():
     assert c.check_cart(job, quote, {"name": "2 Layers Size 60x28mm 1.6mm", "quantity": 5, "price": 35.5})[0] == []
     assert c.check_cart(job, quote, {"name": "2 Layers Size 50x28mm 1.6mm", "quantity": 5, "price": 35.5})[0] == [
         "the cart line '2 Layers Size 50x28mm 1.6mm' names neither the board nor a file of the job"]
+
+
+def test_a_cart_line_with_its_vat_apart():
+    """Eurocircuits' configurator quotes gross, its basket line shows the net price and the VAT apart (live run 5.8):
+    the cart line's price with its VAT is the quote's."""
+    from edakit import cart as c
+    job = {"board": "main", "quantity": 5, "files": [{"name": "gerber_main.zip"}], "fields": []}
+    quote = {"prices": [{"amount": 82.26, "kind": "pcb"}, {"amount": 220.68, "kind": "fee"},
+                        {"amount": 23.82, "kind": "parts"}, {"amount": 54.46, "kind": "vat"}]}
+    line = {"name": "gerber_main", "quantity": 5, "price": 272.30, "vat": 54.46, "currency": "EUR"}
+    assert c.check_cart(job, quote, line)[0] == []
+    assert c.check_cart(job, quote, {**line, "vat": None})[0] == ["price 272.3 in the cart, 326.76 in the quote"]
+    assert c.check_cart(job, quote, {**line, "vat": 50.0})[0] == [
+        "price 272.3 (VAT 50.0 apart) in the cart, 326.76 in the quote"]
+
+
+def test_the_customs_description_in_the_job(project, monkeypatch, capsys):
+    """[order] customs: the job carries JLCPCB's "Product Description" in its words, to set and read back – another
+    entry on the page fails ORDER.form. Without the key the field is one the skill only reads: the owner chooses it."""
+    released(project, lambda ex, p: fr.ordered(ex, p, {"customs": {"category": "DIY", "hs_code": "902300"}}))
+    assert cart(project, monkeypatch, "prepare") == 0
+    f = next(f for f in job(project)["fields"] if f["key"] == "customs")
+    assert (f["label"], f["value"], f.get("read")) == (
+        "Product Description", "Reserch\\Education\\DIY\\Entertainment / DIY - HS Code 902300", None)
+    assert "Product Description: Reserch\\Education\\DIY\\Entertainment / DIY - HS Code 902300" in capsys.readouterr().out
+    write_quote(project, lambda q: next(x for x in q["fields"] if x["label"] == "Product Description").update(
+        value="Reserch\\Education\\DIY\\Entertainment / Development Board - HS Code 847330"))
+    assert cart(project, monkeypatch, "check") == 2
+    assert "Product Description: the page" in results(project)["ORDER.form"][1]
+
+    shutil.rmtree(project.config().reports)
+    released(project, fr.ordered)
+    assert cart(project, monkeypatch, "prepare") == 0
+    f = next(f for f in job(project)["fields"] if f["key"] == "customs")
+    assert (f["value"], f["read"]) == ("–", True)
+
+
+def test_aisler_as_the_live_run_read_it():
+    """Live run 5.10 (2026-11-01, tests/fixtures/makers/aisler/live_2026-11-01): with the parts' MPN in the ODB++
+    AISLER assigned every part of the release by "mpn"; the form of /checkout and the Assembly tab are the job's
+    fields, the project overview is in the profile's ignore – ORDER.form passes; R1 and R2 out of stock at AISLER stop
+    the order at ORDER.parts, as they must."""
+    from edakit import cart as c
+    d = Path(__file__).parent / "fixtures" / "makers" / "aisler" / "live_2026-11-01"
+    job, quote = (json.loads((d / f).read_text()) for f in ("job.json", "quote.json"))
+    assert job["match"] == "mpn" and c.b1(job, quote)[0] == []
+    assert c.b2(job, quote)[0] == ["0805W8F7503T5E R1: Out of Stock", "0805W8F2000T5E R2: Out of Stock"]
+
+
+def test_aisler_up_to_the_price():
+    """Live run 5.10, its end (2026-11-01, tests/fixtures/makers/aisler/live_2026-11-01/price): R1 and R2 swapped in the
+    throwaway copy for YAGEO parts AISLER stocks, released again – every part assigned by "mpn" or by the release's
+    manufacturer, /checkout at Amazing Assembly, quantity 5, €348.03 net; ORDER.form, ORDER.parts and the review pass,
+    and the skill stops before "Continue to Checkout" (AISLER has no cart)."""
+    from edakit import cart as c
+    d = Path(__file__).parent / "fixtures" / "makers" / "aisler" / "live_2026-11-01" / "price"
+    job, quote = (json.loads((d / f).read_text()) for f in ("job.json", "quote.json"))
+    assert c.b1(job, quote)[0] == [] and c.b2(job, quote)[0] == []
+    assert job["maker"]["cart"] is None and "Continue to Checkout" in job["maker"]["never"]
+    assert (d / "regulatory.md").read_text().rstrip().endswith("Order: OK")
+
+
+def test_eurocircuits_as_the_live_run_read_it():
+    """Live run 5.8 (2026-11-01, tests/fixtures/makers/eurocircuits/live_2026-11-01): with the header Eurocircuits'
+    import maps by itself the BOM's nine lines were identified by MPN; every field the configurator showed is the
+    job's or in the profile's ignore as edakit ships it now, and every value is in the page text read."""
+    from edakit import cart as c
+    d = Path(__file__).parent / "fixtures" / "makers" / "eurocircuits" / "live_2026-11-01"
+    job, quote = (json.loads((d / f).read_text()) for f in ("job.json", "quote.json"))
+    assert job["match"] == "mpn" and c.b1(job, quote)[0] == [] and c.b2(job, quote)[0] == []
+    assert c.b4(quote, (d / "quote_page.txt").read_text())[0] == []
+    ignore = {c.norm(k) for k in makers.load("eurocircuits").data["ignore"]}
+    known = ignore | {c.norm(f["label"]) for f in job["fields"]}
+    assert [q["label"] for q in quote["fields"] if c.norm(q["label"]) not in known] == []

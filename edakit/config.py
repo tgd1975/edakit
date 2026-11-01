@@ -117,6 +117,7 @@ ORDER = {
     "pcba_packaging": ("antistatic_bag", str, False),
     "mask": ("green", MASKS, True),
     "silkscreen": (None, SILKSCREENS, True),    # None: silkscreen_on(mask)
+    "customs": (None, "customs", False),        # { category, hs_code }: the shipment's customs description, the owner's
 }
 ORDER_KEYS = tuple(ORDER)                       # [order] (FILES.order)
 BOARD_ONLY = ("tab_zones", "size_mm", "layers")  # [order] keys of a board file only, not of edakit.toml
@@ -479,6 +480,15 @@ def _order_value(where, key, v):
         if bad := _number(f"{where}.panel.rails_mm", v.get("rails_mm", 0)):
             raise ConfigError(bad[0])
         return {"x": v["x"], "y": v["y"], "rails_mm": float(v.get("rails_mm", 0))}
+    if kind == "customs":
+        if not isinstance(v, dict) or not all(isinstance(v.get(k), str) and v[k] for k in ("category", "hs_code")):
+            raise ConfigError(f'{where}.customs must be {{ category = "DIY", hs_code = "902300" }} – the customs '
+                              "category of the shipment with its HS code")
+        if bad := _unknown(f"{where}.customs", v, ("category", "hs_code")):
+            raise ConfigError(bad[0])
+        if not re.fullmatch(r"\d{4,10}", v["hs_code"]):
+            raise ConfigError(f"{where}.customs.hs_code must be the HS code's digits, 4 to 10, not {v['hs_code']!r}")
+        return {"category": v["category"], "hs_code": v["hs_code"]}
     out = []                                    # zones
     if not isinstance(v, list):
         raise ConfigError(f"{where}.tab_zones must be a list of {{ from = [x, y], to = [x, y] }}")

@@ -516,10 +516,23 @@ def test_the_bom_with_mpn_for_a_maker_that_takes_it(project):
     d = project.root / "build" / "fab" / "main"
     with open(d / "bom_main_mpn.csv", newline="") as f:
         rows = list(csv.reader(f))
-    assert rows == [["Designator", "Quantity", "Manufacturer", "MPN", "Comment"],
-                    ["C2", "1", "SAMSUNG(三星)", "CL21A226MAQNNNE", "22uF"], ["D1", "1", "MDD(辰达半导体)", "SS34", "SS34"]]
+    assert rows == [["Designator", "Quantity", "Value", "Package", "Manufacturer", "Manufacturer Part Number"],
+                    ["C2", "1", "22uF", "C0805", "SAMSUNG(三星)", "CL21A226MAQNNNE"],
+                    ["D1", "1", "SS34", "SMA_L4.3-W2.6-LS5.2-RD", "MDD(辰达半导体)", "SS34"]]
     run(project, lambda ex, p: toml(p, '[cart]\nmakers = ["jlcpcb"]'))
     assert not (d / "bom_main_mpn.csv").exists()
+
+
+def test_one_bom_with_mpn_serves_every_maker_that_takes_it():
+    """Live run 5.8 (2026-11-01): Eurocircuits' import left a column "MPN" unmapped and took "Comment" for the part
+    number – C1 became a foam adhesive, R2 a battery holder. bom_<b>_mpn.csv is one file for every maker of [cart]
+    makers, so they share the header Eurocircuits maps by itself."""
+    from edakit.release.fab import MPN_COLUMNS
+    takers = [m for m in map(makers.load, makers.shipped()) if "bom_mpn" in m.files]
+    assert {m.key for m in takers} >= {"pcbway", "eurocircuits"}
+    for m in takers:
+        assert m.data["bom"]["columns"] == MPN_COLUMNS, m.key
+    assert "MPN" not in MPN_COLUMNS and "Comment" not in MPN_COLUMNS
 
 
 def test_pcbway_has_a_placeholder_of_its_own(project):
@@ -564,3 +577,52 @@ def test_jlcpcbs_mark_and_barcode(project):
     assert "| Printing | 2D barcode & Number | board file |" in text
     rows = run(project, lambda ex, p: fr.ordered(ex, p, {"serial_number": True}))
     assert ("fail", "no combination JLCPCB's form refuses") in {(r, c) for r, c, _ in f6(rows)}
+
+
+# --- the customs description ----------------------------------------------------------------------------------------
+
+DIY = {"category": "DIY", "hs_code": "902300"}
+
+
+@pytest.mark.parametrize("customs, msg", [
+    ("902300", r"order.customs must be \{ category = "),
+    ({"category": "DIY"}, r"order.customs must be \{ category = "),
+    ({"category": "DIY", "hs_code": "90-23"}, r"order.customs.hs_code must be the HS code's digits, 4 to 10, not '90-23'"),
+    ({"category": "DIY", "hs_code": "902300", "value": 30}, r"order.customs: unknown key 'value'"),
+])
+def test_customs_of_the_wrong_kind_is_an_error(customs, msg):
+    with pytest.raises(ConfigError, match=msg):
+        _board("b", {}, {"order": {"customs": customs}})
+
+
+def test_customs_is_no_setting_of_the_board(project):
+    """The customs description tells the shipment, not the board: it is not in order.json, and the fab hash stays."""
+    d, h = fh.exported(project, fh.ordered())
+    d, same = fh.exported(project, fh.ordered(customs=DIY))
+    assert same == h and "customs" not in json.loads((d / "order.json").read_text())
+
+
+def test_jlcpcbs_product_description(project):
+    """JLCPCB's Quote & Order asks a customs category with its HS code (a cascader, ordering step 0): [order] customs
+    picks its entry, order.md shows it in JLCPCB's words, FILES.order holds it to the entries the form offers – one it
+    does not offer fails and names the entries of the same HS code; without the key FILES.order names it, the owner's
+    choice at the cart. A maker that asks nothing (Eurocircuits) has no such field."""
+    rows = run(project, lambda ex, p: fr.ordered(ex, p, {"customs": DIY}))
+    assert fr.findings(rows) == []
+    assert ("| Product Description | Reserch\\Education\\DIY\\Entertainment / DIY - HS Code 902300 | board file |"
+            in sheet(project))
+    rows = run(project, lambda ex, p: fr.ordered(ex, p, {"customs": {"category": "Blinker", "hs_code": "847330"}}))
+    assert ("fail", "Product Description: a value JLCPCB's form offers",
+            "customs = Blinker, HS 847330 (board file) – JLCPCB offers no such entry; with HS 847330: PC(Personal "
+            "Computer), Mouse, Keyboard, SSD(Solid State Disk), Reader, Development Board") in f6(rows)
+    rows = run(project, lambda ex, p: fr.ordered(ex, p))
+    assert ("info", "Product Description: the customs category with its HS code",
+            "not set ([order] customs) – JLCPCB's form asks it before the cart; the owner chooses it there") in f6(rows)
+    assert fr.findings(rows) == []
+    assert "| Product Description | – |" in sheet(project)
+
+    def euro(ex, p):
+        fr.ordered(ex, p, {"customs": DIY})
+        toml(p, '[cart]\nmaker = "eurocircuits"\nmakers = ["eurocircuits"]')
+    run(project, euro)
+    assert "Product Description" not in sheet(project)

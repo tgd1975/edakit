@@ -1,9 +1,9 @@
 {
- "made": "2026-11-01T00:28:13+01:00",
- "run": "20261101-000246",
- "fab_sha256": "ff5b1567b9162ccd4b3b6a51ec6a115fd482cc39feba8625241a86f29f8763f1",
+ "made": "2026-11-01T10:27:13+01:00",
+ "run": "20261101-101815",
+ "fab_sha256": "ab99c1777e9373254d96e2544b36c278b445bede28b6393d5d4329dab3604873",
  "state_sha256": "b85dd8d8a978fd3160d7efee4d7919456fe41bec9903f0b0d2a3c3d6407937f3",
- "layout_sha256": "6701738364d59b296932fb0e9bbbfd1b830158157966d7633ab666b78cea1bbc",
+ "layout_sha256": "c711a6e6415c5f0c73c55a2a25b1b368ea5407892c7a4231a47f67127a13a550",
  "purpose": {
   "use": "private",
   "market": "EU",
@@ -15,7 +15,7 @@
  "maker": {
   "key": "eurocircuits",
   "name": "Eurocircuits",
-  "profile": "/home/tobias/Dokumente/Projekte/edakit-step0/edakit/makers/eurocircuits.toml",
+  "profile": "/home/tobias/Dokumente/Projekte/edakit-eurocircuits/edakit/makers/eurocircuits.toml",
   "recorded": "2026-10-31",
   "start": "https://be.eurocircuits.com/shop/assembly/configurator.aspx",
   "cart": "Add to basket",
@@ -44,6 +44,7 @@
    "Outer layer isolation distance (OL-TT-TP-PP)": "measured by Eurocircuits from the data (Technology)",
    "Outer layer annular ring (OAR)": "measured by Eurocircuits from the data (Technology)",
    "Smallest final hole": "measured by Eurocircuits from the data (Technology)",
+   "Holes <= may be reduced": "Eurocircuits' standard (0.45 mm, live run 5.8): holes up to it may come smaller – the vias",
    "Hole density": "measured by Eurocircuits from the data (Technology)",
    "Component pad pitch": "measured by Eurocircuits from the data (Technology)",
    "Technology class": "derived by Eurocircuits",
@@ -53,6 +54,10 @@
    "Milling": "not used",
    "Specific hole tolerances": "Eurocircuits' standard",
    "Specific dimension tolerances": "Eurocircuits' standard",
+   "PTH on the board edge": "not used",
+   "Round-edge plating": "not used",
+   "Press-fit holes": "not used",
+   "Via filling/Hole plugging": "not used: the vias are tented",
    "Depth routing": "not used",
    "Chamfered holes": "not used",
    "Copper up to board edge": "not used",
@@ -80,26 +85,26 @@
   "matching": "page",
   "seat": "BE",
   "currency": "EUR",
-  "role": "other"
+  "role": "planned"
  },
  "quantity": 5,
  "pcba_quantity": 5,
  "files": [
   {
    "name": "gerber_main.zip",
-   "path": "/tmp/claude-1000/-home-tobias-Dokumente-Projekte-edakit/797aadb4-7ef0-466c-9354-d5c9eb7a5ab8/scratchpad/live/blinker-555/build/release/20261101-000246/fab/main/gerber_main.zip",
-   "size": 29366,
-   "sha256": "c60aa04487f4b09c31652b1724d42bc19e0820e0f5a754f2e5876a8c5140530f"
+   "path": "/tmp/claude-1000/-home-tobias-Dokumente-Projekte-edakit/8c2a6e39-7550-4363-9434-5735c66cbedd/scratchpad/live/blinker-555/build/release/20261101-101815/fab/main/gerber_main.zip",
+   "size": 30774,
+   "sha256": "2808aa0fc08ade5984f26349929c87acde3ceb4e682e64703e713bd4b23b1dd3"
   },
   {
    "name": "bom_main_mpn.csv",
-   "path": "/tmp/claude-1000/-home-tobias-Dokumente-Projekte-edakit/797aadb4-7ef0-466c-9354-d5c9eb7a5ab8/scratchpad/live/blinker-555/build/release/20261101-000246/fab/main/bom_main_mpn.csv",
-   "size": 433,
-   "sha256": "0301ff0517a68b8f1e02ee420cb6467380e2d88688658ee93c87d0dd63ff4f80"
+   "path": "/tmp/claude-1000/-home-tobias-Dokumente-Projekte-edakit/8c2a6e39-7550-4363-9434-5735c66cbedd/scratchpad/live/blinker-555/build/release/20261101-101815/fab/main/bom_main_mpn.csv",
+   "size": 593,
+   "sha256": "ed3b7dd6f506eb4eb36645906c73931dfd3d092d2c17c409d42d657abbb97b0a"
   },
   {
    "name": "cpl_main.csv",
-   "path": "/tmp/claude-1000/-home-tobias-Dokumente-Projekte-edakit/797aadb4-7ef0-466c-9354-d5c9eb7a5ab8/scratchpad/live/blinker-555/build/release/20261101-000246/fab/main/cpl_main.csv",
+   "path": "/tmp/claude-1000/-home-tobias-Dokumente-Projekte-edakit/8c2a6e39-7550-4363-9434-5735c66cbedd/scratchpad/live/blinker-555/build/release/20261101-101815/fab/main/cpl_main.csv",
    "size": 344,
    "sha256": "a760dc0b0b08c23b03b1f8fd8df5529b4d702fea53f6f1f05ca4b9e4dcd6a8c9"
   }
@@ -157,9 +162,9 @@
    "key": "thickness_mm",
    "section": "PCB",
    "label": "Board thickness",
-   "value": "1.6 mm",
-   "raw": 1.6,
-   "from": "edakit",
+   "value": "1.55 mm",
+   "raw": 1.55,
+   "from": "board file",
    "note": ""
   },
   {

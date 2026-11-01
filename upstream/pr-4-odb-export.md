@@ -1,38 +1,30 @@
-# PR – branch `feat/odb-export` (not built yet)
+# Pull request #799 – as posted
+
+Posted on 2026-11-01 (https://github.com/oaslananka/easyeda-mcp-pro/pull/799), shortened the same day on the owner's word to the length of the short contributions
+there (#468, #527).
 
 ### Title
 
 ```text
-feat(export): easyeda_export_odb – ODB++ through PCB_ManufactureData.getOpenDatabaseDoublePlusFile
+feat(export): easyeda_export_odb through getOpenDatabaseDoublePlusFile
 ```
 
-### Description
+### Body
 
-```markdown
+````markdown
 ## Summary
 
-A new tool `easyeda_export_odb` exports the PCB as ODB++ (EasyEDA Pro's `getOpenDatabaseDoublePlusFile`, BETA in its
-extension API), for assemblers that take ODB++ instead of Gerber. A new bridge method `board.exportOdb` in the server's
-method registry and in the extension's dispatcher; the extension returns the file through `normalizeBinaryResult`,
-the server writes it with `writeExportPayload` after checking that it is a zip or tgz archive.
+New tool `easyeda_export_odb` (profile `pro`) and bridge method `export.odb`. The extension calls `getOpenDatabaseDoublePlusFile(fileName, 'inch', {metallizedDrilledHoles, nonMetallizedDrilledHoles})`; the server writes the result as `<projectId>-odb.tgz` or `.zip` after checking the archive's magic bytes – anything else is refused and nothing is written. Tool counts, tool reference and capability tables updated.
 
-- Input: `projectId`, `filePath?`, `unit` (`mm` | `inch`, default `mm`), `platedHoles`, `nonPlatedHoles`.
-- Tests: the tool with a mocked bridge (archive written, a non-archive refused), the extension handler (arguments
-  passed through).
-
-Fixes #<issue>
+Fixes #798
 
 ## Risk
 
-- Risk level: low – a new tool, nothing existing changes but the method registry (its hash with it).
-- Affected areas: server export tools, bridge method registry, extension export operations.
-- Rollback plan: revert the commit.
+Low – a new export tool, no design mutation. It adds one name to the method list in `src/bridge/types.ts` and the extension's `dispatcher.ts` (both critical paths), so the extension of the same version is needed. Revert to roll back.
 
-## Critical-path review
+## Validation
 
-- [x] This PR does not touch a critical path listed in [Repository Governance](../docs/REPOSITORY_GOVERNANCE.md).
-- [ ] This PR touches a critical path; CODEOWNERS and the affected risk area are identified below.
-```
-
-Local stand-in until it is released: `edakit/easyeda/odb-tool-patch.mjs` (the tool, patched into the installed 1.4.0
-by `mcp-server.sh`) and `bridge-extension-patch.sh` (the handler, through `board.exportGerbers` with `format: "odb"`).
+- Tests: the tool (tgz, zip, a non-archive, a failing bridge), the extension handler, the router's method list.
+- On 1.6.0: `pnpm verify:fast` and the extension tests green; the full suite as on `main` (only the ngspice test fails here).
+- Live: the same API call through a locally patched 1.4.0 server and extension on EasyEDA Pro 3.2.206; this branch itself not live yet.
+````

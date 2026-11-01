@@ -1,8 +1,8 @@
 {
   "about": "Sign-offs for the release gate (edakit gate). Each one counts only for the hash of its scope: 'circuit' = state_sha256 (graph, parts database, simulation config), 'layout' = layout_sha256 (board files with their artwork, footprint geometry), 'fab' = fab_sha256 (what the manufacturer builds from: Gerber layers rasterised, drill hits, BOM and CPL rows – in the protocol header of a gate run with stage F). When something there changes, it no longer counts – copy the new hash from the protocol header after the check was repeated. phase: 'export' blocks the release, 'order' and 'acceptance' come after the export. An accepted warning with scope 'decision' counts regardless of the hash and refers to a numbered decision in the docs. Parts are signed in their parts entry (field 'verified').",
   "state_sha256": "e34902df3e31229022cbb14b7327db8a28e27919d346270df4d12326b6d6157e",
-  "layout_sha256": "1f529013a56fea12747977d89132f5f3822c9562158d49190e9769a74420b338",
-  "fab_sha256": "f958da9ad4f85a2eb6376122c5ec21203dbbc12730c1ca59184b383f90a61d70",
+  "layout_sha256": "442a85bf3cea63d5e2528fd65d9cbdd5205dcf0db28e384176a3145024ff92e4",
+  "fab_sha256": "dbbe8aa2baf11e97d24082041de0ab284d64a78a2df4c1d6eddc02c0a6e83be6",
   "manual": [
     {
       "id": "M-1",
@@ -16,7 +16,7 @@
     {
       "id": "M-6",
       "phase": "export",
-      "scope": "circuit",
+      "scope": "electrical",
       "text": "Regulatory review: circuit and parts against EU law for the purpose in the graph – the agent regulatory-reviewer in its own session. No finding 'block' open. Support, not legal advice: no claim to correctness, nothing legally guaranteed",
       "done_by": "agent regulatory-reviewer (own session)",
       "date": "2026-10-31",
@@ -28,8 +28,8 @@
       "scope": "fab",
       "text": "Layout reviewed independently (manufacturability, mechanics, operation, looks) on the manufacturing files of a gate run with this layout – e.g. by the agent pcb-reviewer. No finding 'block' open, every 'important' finding fixed or rejected by the owner",
       "done_by": "agent pcb-reviewer (own session)",
-      "date": "2026-10-31",
-      "note": "M-5: OK for fab f958da9ad4f85a2eb6376122c5ec21203dbbc12730c1ca59184b383f90a61d70; layout 1f529013a56fea12747977d89132f5f3822c9562158d49190e9769a74420b338. Manufacturing files of gate run 20261031-130109 against 20261031-115405: only the top silkscreen and the order settings changed. JLCPCB manufacturability including the round outline with two own tooling holes, copper 91/93 % without floating copper, the cell's overhang strips and 10 mm lever room free, BT1's tabs within reach of the iron, D1 visible beside SW1; the BT1 designator and the centred board label clear of the cell, the pads and the edge; order.md states the two tooling holes as 'Added by Customer'."
+      "date": "2026-11-01",
+      "note": "M-5: OK for fab dbbe8aa2baf11e97d24082041de0ab284d64a78a2df4c1d6eddc02c0a6e83be6; layout 1f529013a56fea12747977d89132f5f3822c9562158d49190e9769a74420b338. Manufacturing files of gate run 20261101-084430 reviewed in full (run 20261031-130109 of f958da9a no longer on this machine, so no fab diff): mark 'remove' – no order number on the visible top; the new Freerouting routing – 4 nets, 16 pieces of 0.254 mm for at most 10.7 mA, 2 tented vias (0.305/0.61 mm, ring 0.152 mm), 0.256 mm to the pour, copper 0.5 mm from the edge, DRC 0; copper 91/93 % in 6/1 pieces, each on a pad or via, no floating copper; JLCPCB manufacturability including the round outline (one 48-chord loop) with two own tooling holes Ø 1.152 mm NPTH 2.86 mm from the edge, mask open, copper 1.83 mm away, stated in order.md as 'Added by Customer'; the cell's overhang strips and 9–10 mm lever room free, BT1's tabs within reach of the iron (thermal spokes, pads pre-tinned, nearest via 2.9 mm, tented, under the holder), D1 visible beside SW1; the label at (21.9, 38.2) and the BT1 designator 3.7 and 1.2 mm clear of the cell, at least 3.1 mm from the edge, off every pad; one '+' at (40.3, 24) 1.1 mm from BT1.1's opening. Noted for the owner: VBAT runs on the visible top as a 14.5 mm diagonal from SW1 to BT1.1 (taste). Afterwards the board file got the reviewer's guards – [looks] max_track_m = 0.05 and max_vias = 2, [routing] hand_solder_keep_mm = 2 – a new layout hash, the board as made unchanged."
     },
     {
       "id": "M-2",
@@ -50,5 +50,17 @@
       "note": null
     }
   ],
-  "accept": []
+  "accept": [],
+  "electrical_sha256": "45c0b84277b3fb3d3b89540357d0a8d73dc5cf3a10a7de4b47facfeabdde8dcd",
+  "rehashed": [
+    {
+      "date": "2026-11-01",
+      "by": "edakit gate",
+      "why": "M-6 bound to the electrical hash – the circuit without the footprint data, which has no regulatory content (2026-10-31); the files are the signed ones",
+      "electrical_sha256": [
+        null,
+        "45c0b84277b3fb3d3b89540357d0a8d73dc5cf3a10a7de4b47facfeabdde8dcd"
+      ]
+    }
+  ]
 }

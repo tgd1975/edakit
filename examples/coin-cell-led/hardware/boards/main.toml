@@ -25,6 +25,11 @@ board_label_region = [[11, 37.6], [33, 37.6], [33, 39.8], [11, 39.8]]   # centre
 
 [looks]
 visible = "top"            # the face people see: stage L holds its tracks and vias
+max_track_m = 0.05         # VBAT's 0.04 m of top track today (M-5 of 2026-11-01): a re-route that grows it warns
+max_vias = 2
+
+[routing]
+hand_solder_keep_mm = 2    # BT1's tabs are soldered by hand (D-4): no via or foreign pad within 2 mm (GEO.spacing)
 
 [order]
 remark = "Round board, no V-cut, no tabs. 2 tooling holes added by customer."

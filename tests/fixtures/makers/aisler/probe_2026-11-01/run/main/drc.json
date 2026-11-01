@@ -1,0 +1,26 @@
+[
+ {
+  "visible": true,
+  "errorType": "Netlist Error",
+  "errorObjType": "Netlist Error",
+  "ruleName": "Import Changes",
+  "ruleTypeName": "Import Changes",
+  "obj1": {
+   "typeName": "Schematic Netlist",
+   "suffix": ""
+  },
+  "obj2": {
+   "typeName": "PCB Netlist",
+   "suffix": ""
+  },
+  "objs": [
+   "err0"
+  ],
+  "explanation": {
+   "str": "PCB and schematic netlist does not match. You can click on the rule name \"Import Changes\" to view the difference.",
+   "param": {}
+  },
+  "globalIndex": "err0",
+  "parentId": "DRCTab|_|Errors|_|Netlist Error|_|Netlist Error"
+ }
+]

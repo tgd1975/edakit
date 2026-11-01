@@ -2,7 +2,8 @@
 
 Everything here was found the hard way, on EasyEDA Pro 3.2.206 (Linux) with easyeda-mcp-pro 1.4.0, between
 19 and 26 October 2026. edakit works around each point; this chapter explains why the code looks the way it does and
-helps when you call the API directly.
+helps when you call the API directly. What edakit wants instead, and how far upstream has got, is kept in
+[upstream/README.md](../upstream/README.md).
 
 Calls go through the MCP tool `easyeda_api_call` with `path` (e.g. `PCB_PrimitiveLine.create`) and `args` (a list).
 List the available methods with `easyeda_api_inventory` and a `filter`.
@@ -19,7 +20,7 @@ List the available methods with `easyeda_api_inventory` and a `filter`.
 | Schematic PDF | The bridge's PDF export always calls the first available function, `PCB_ManufactureData.getPdfFile`; for a schematic nothing comes back, although `SCH_ManufactureData.getExportDocumentFile(name, "PDF"|"SVG"|"PNG")` can do it. The patch adds that path for `scope: "schematic"`. |
 | BOM and netlist export | `easyeda_bom_export` writes no file and mixes all schematics of the project; the netlist export returns nothing. edakit writes both itself from the schematic primitives. |
 | Exports | Export tools write only into the server's `ARTIFACT_DIR`; edakit starts its server with the directory it wants. The pick-and-place export returns xlsx even when csv is asked for. |
-| ODB++ | The server has no ODB++ export. `odb-tool-patch.mjs` adds the tool `easyeda_export_odb` to the installed server (`mcp-server.sh` runs it after the install), and `bridge-extension-patch.sh` lets the bridge answer it with `PCB_ManufactureData.getOpenDatabaseDoublePlusFile` (BETA in EasyEDA Pro's API); a bridge without that handler answers with the Gerber ZIP, which the tool refuses. It serves a maker that assembles from ODB++ (8.4, SYNC.odb) and has not run live yet. |
+| ODB++ | The server has no ODB++ export. `odb-tool-patch.mjs` adds the tool `easyeda_export_odb` to the installed server (`mcp-server.sh` runs it after the install), and `bridge-extension-patch.sh` lets the bridge answer it with `PCB_ManufactureData.getOpenDatabaseDoublePlusFile` (BETA in EasyEDA Pro's API); a bridge without that handler answers with the Gerber ZIP, which the tool refuses. It serves a maker that assembles from ODB++ (8.4, SYNC.odb). Live on 2026-11-01 (ordering step 0b, EasyEDA Pro 3.2.206, a probe board): the archive holds `comp_+_top` and `comp_+_bot` with package, pins and the device name – the MPN for LCSC parts, no LCSC number –, turns clockwise (90° in the CPL is 270°, on the bottom too, mirror N) and keeps a part kept out of EasyEDA's BOM without a mark; it equals the export by hand (File > Export > ODB++, "One Key Export") but for the unit – the API writes inch whatever `unit` says (its type admits `ESYS_Unit.INCH` only), the dialog mm – and 30 empty `custom_layer` folders. The bridge's call names no file, so EasyEDA's tgz arrives as `undefined` in the `ARTIFACT_DIR`; edakit packs it into `odb_<board>.zip` and removes it. |
 | Simulation tools | `easyeda_simulate_operating_point` / `_transient` know two diode models and no transistors – useless for a real circuit; edakit simulates with ngspice from the graph instead. |
 | Part search | `easyeda_schematic_search_device` is a full-text search: `C5613` also finds `C5613331` and `UC5613PWP`. Take only hits whose `supplierId` is exactly the LCSC number. It returns no stock and no price. |
 

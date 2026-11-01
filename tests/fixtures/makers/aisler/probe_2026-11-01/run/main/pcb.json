@@ -1,0 +1,306 @@
+{
+ "components": [
+  {
+   "primitiveId": "f973a6e6a4507dd7",
+   "designator": "BT1",
+   "footprintName": "BAT-TH_CR2032-BS-6-1",
+   "footprintUuid": "94ce59a4458b5ded",
+   "footprintLibraryUuid": "b3f341feb0c6524f796fc2dd013b5c9ea9e8da7dc365ac492e2c4066aea48b75",
+   "deviceName": "CR2032-BS-6-1",
+   "x": 866.142,
+   "y": 944.882,
+   "rotation": 0,
+   "layer": 1,
+   "locked": true,
+   "pads": [
+    {
+     "PadNumber": "1",
+     "X": 1432.5,
+     "Y": 944.9,
+     "Net": "VBAT",
+     "Layer": 1,
+     "tht": false
+    },
+    {
+     "PadNumber": "2",
+     "X": 299.8,
+     "Y": 944.9,
+     "Net": "GND",
+     "Layer": 1,
+     "tht": false
+    }
+   ]
+  },
+  {
+   "primitiveId": "e233df35026a1160",
+   "designator": "D1",
+   "footprintName": "LED0805-RD",
+   "footprintUuid": "55e8baade19ffb13",
+   "footprintLibraryUuid": "b3f341feb0c6524f796fc2dd013b5c9ea9e8da7dc365ac492e2c4066aea48b75",
+   "deviceName": "NCD0805R1_C84256",
+   "x": 748.031,
+   "y": 354.331,
+   "rotation": 90,
+   "layer": 1,
+   "locked": true,
+   "pads": [
+    {
+     "PadNumber": "2",
+     "X": 748,
+     "Y": 397.6,
+     "Net": "LED_ANODE",
+     "Layer": 1,
+     "tht": false
+    },
+    {
+     "PadNumber": "1",
+     "X": 748,
+     "Y": 311,
+     "Net": "GND",
+     "Layer": 1,
+     "tht": false
+    }
+   ]
+  },
+  {
+   "primitiveId": "4d7deb1988ebc34f",
+   "designator": "R1",
+   "footprintName": "R0805",
+   "footprintUuid": "4d5c3d7c7a80aeca",
+   "footprintLibraryUuid": "b3f341feb0c6524f796fc2dd013b5c9ea9e8da7dc365ac492e2c4066aea48b75",
+   "deviceName": "0805W8F1500T5E",
+   "x": 866.142,
+   "y": 196.85,
+   "rotation": 90,
+   "layer": 2,
+   "locked": true,
+   "pads": [
+    {
+     "PadNumber": "2",
+     "X": 866.1,
+     "Y": 236.2,
+     "Net": "LED_ANODE",
+     "Layer": 2,
+     "tht": false
+    },
+    {
+     "PadNumber": "1",
+     "X": 866.1,
+     "Y": 157.5,
+     "Net": "LED_SW",
+     "Layer": 2,
+     "tht": false
+    }
+   ]
+  },
+  {
+   "primitiveId": "78f016acd39362e2",
+   "designator": "SW1",
+   "footprintName": "SW-SMD_4P-L5.1-W5.1-P3.70-LS6.5-TL_H1.5",
+   "footprintUuid": "6b664987d3d227e2",
+   "footprintLibraryUuid": "b3f341feb0c6524f796fc2dd013b5c9ea9e8da7dc365ac492e2c4066aea48b75",
+   "deviceName": "TS-1187A-B-A-B",
+   "x": 1102.362,
+   "y": 354.331,
+   "rotation": 0,
+   "layer": 1,
+   "locked": true,
+   "pads": [
+    {
+     "PadNumber": "1",
+     "X": 984.3,
+     "Y": 428.2,
+     "Net": "VBAT",
+     "Layer": 1,
+     "tht": false
+    },
+    {
+     "PadNumber": "2",
+     "X": 1220.5,
+     "Y": 428.2,
+     "Net": "",
+     "Layer": 1,
+     "tht": false
+    },
+    {
+     "PadNumber": "3",
+     "X": 984.3,
+     "Y": 280.5,
+     "Net": "LED_SW",
+     "Layer": 1,
+     "tht": false
+    },
+    {
+     "PadNumber": "4",
+     "X": 1220.5,
+     "Y": 280.5,
+     "Net": "",
+     "Layer": 1,
+     "tht": false
+    }
+   ]
+  }
+ ],
+ "lines": [
+  {
+   "Net": "GND",
+   "Layer": 1,
+   "LineWidth": 10,
+   "StartX": 748,
+   "StartY": 311,
+   "EndX": 748,
+   "EndY": 342.37
+  },
+  {
+   "Net": "GND",
+   "Layer": 1,
+   "LineWidth": 10,
+   "StartX": 748,
+   "StartY": 342.37,
+   "EndX": 777.77,
+   "EndY": 342.37
+  },
+  {
+   "Net": "GND",
+   "Layer": 2,
+   "LineWidth": 10,
+   "StartX": 782.59,
+   "StartY": 627.2,
+   "EndX": 782.59,
+   "EndY": 347.19
+  },
+  {
+   "Net": "GND",
+   "Layer": 1,
+   "LineWidth": 10,
+   "StartX": 299.8,
+   "StartY": 858.3299999999999,
+   "EndX": 530.93,
+   "EndY": 627.2
+  },
+  {
+   "Net": "GND",
+   "Layer": 1,
+   "LineWidth": 10,
+   "StartX": 530.93,
+   "StartY": 627.2,
+   "EndX": 782.59,
+   "EndY": 627.2
+  },
+  {
+   "Net": "GND",
+   "Layer": 1,
+   "LineWidth": 10,
+   "StartX": 299.8,
+   "StartY": 944.8,
+   "EndX": 299.8,
+   "EndY": 858.3299999999999
+  },
+  {
+   "Net": "LED_ANODE",
+   "Layer": 1,
+   "LineWidth": 10,
+   "StartX": 748,
+   "StartY": 397.69999999999993,
+   "EndX": 784.27,
+   "EndY": 397.69999999999993
+  },
+  {
+   "Net": "LED_ANODE",
+   "Layer": 1,
+   "LineWidth": 10,
+   "StartX": 866.18,
+   "StartY": 388.22,
+   "EndX": 793.75,
+   "EndY": 388.22
+  },
+  {
+   "Net": "LED_ANODE",
+   "Layer": 1,
+   "LineWidth": 10,
+   "StartX": 793.75,
+   "StartY": 388.22,
+   "EndX": 784.27,
+   "EndY": 397.69999999999993
+  },
+  {
+   "Net": "LED_ANODE",
+   "Layer": 2,
+   "LineWidth": 10,
+   "StartX": 866.18,
+   "StartY": 388.22,
+   "EndX": 866.1,
+   "EndY": 236.2
+  },
+  {
+   "Net": "LED_SW",
+   "Layer": 1,
+   "LineWidth": 10,
+   "StartX": 984.3,
+   "StartY": 280.5,
+   "EndX": 904.8699999999999,
+   "EndY": 280.5
+  },
+  {
+   "Net": "LED_SW",
+   "Layer": 2,
+   "LineWidth": 10,
+   "StartX": 904.8699999999999,
+   "StartY": 157.5,
+   "EndX": 904.8699999999999,
+   "EndY": 280.5
+  },
+  {
+   "Net": "LED_SW",
+   "Layer": 2,
+   "LineWidth": 10,
+   "StartX": 866.1,
+   "StartY": 157.5,
+   "EndX": 904.8699999999999,
+   "EndY": 157.5
+  },
+  {
+   "Net": "VBAT",
+   "Layer": 1,
+   "LineWidth": 10,
+   "StartX": 984.3,
+   "StartY": 428.2,
+   "EndX": 984.3,
+   "EndY": 454.62
+  },
+  {
+   "Net": "VBAT",
+   "Layer": 1,
+   "LineWidth": 10,
+   "StartX": 1432.4,
+   "StartY": 944.8,
+   "EndX": 1432.4,
+   "EndY": 858.3299999999999
+  },
+  {
+   "Net": "VBAT",
+   "Layer": 1,
+   "LineWidth": 10,
+   "StartX": 984.3,
+   "StartY": 454.62,
+   "EndX": 1028.69,
+   "EndY": 454.62
+  },
+  {
+   "Net": "VBAT",
+   "Layer": 1,
+   "LineWidth": 10,
+   "StartX": 1028.69,
+   "StartY": 454.62,
+   "EndX": 1432.4,
+   "EndY": 858.3299999999999
+  }
+ ],
+ "strings": [],
+ "designators": {
+  "BT1": true,
+  "D1": true,
+  "R1": true,
+  "SW1": true
+ }
+}

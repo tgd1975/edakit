@@ -56,7 +56,6 @@ excludes = [{ barcode = "none", serial_number = true }]
 "Nitrogen reflow soldering" = "JLCPCB's default"
 "Assembly remark" = "not used"
 "I agree to the Terms and Conditions of JLCPCB assembly Service" = "pre-checked by JLCPCB; a consent the owner gives"
-"Product Description" = "the customs category with its HS code, required on Quote & Order: the owner's, asked at the order"
 "Remark" = "Quote & Order's remark: not used"
 
 [bom]
@@ -280,6 +279,74 @@ words = { false = "No", true = "Yes" }
 section = "PCBA"
 label = "Packaging"
 words = { antistatic_bag = "Antistatic bubble film" }
+
+[fields.customs]                  # Quote & Order's "Product Description", a cascader: category, then the entry with its HS
+section = "Shipping"              # code – [order] customs { category, hs_code } picks the entry; those without one (Others) not
+label = "Product Description"
+values = [
+    "Sensor\\Controller\\Precision Instrument / Temperature Sensor - HS Code 902590",
+    "Sensor\\Controller\\Precision Instrument / Humidity Sensor - HS Code 902590",
+    "Sensor\\Controller\\Precision Instrument / Pressure Sensor - HS Code 902690",
+    "Sensor\\Controller\\Precision Instrument / Liquid Level Sensor - HS Code 902690",
+    "Sensor\\Controller\\Precision Instrument / Oxygen Sensor - HS Code 902790",
+    "Sensor\\Controller\\Precision Instrument / Current Sensor - HS Code 903090",
+    "Sensor\\Controller\\Precision Instrument / Circuit Control - HS Code 853890",
+    "Sensor\\Controller\\Precision Instrument / Battery - HS Code 853890",
+    "Sensor\\Controller\\Precision Instrument / Electronic Clock - HS Code 911490",
+    "Sensor\\Controller\\Precision Instrument / IR Remote Control - HS Code 854390",
+    "Sensor\\Controller\\Precision Instrument / Distance Measuring Instrument - HS Code 901590",
+    "Sensor\\Controller\\Precision Instrument / Electronic Level Meter - HS Code 901590",
+    "Sensor\\Controller\\Precision Instrument / Multimeter - HS Code 903090",
+    "Sensor\\Controller\\Precision Instrument / Thermostat - HS Code 903290",
+    "Sensor\\Controller\\Precision Instrument / Avigraph - HS Code 901490",
+    "Sensor\\Controller\\Precision Instrument / Elevator Controller - HS Code 853710",
+    "Sensor\\Controller\\Precision Instrument / Lamps and lanterns - HS Code 940599",
+    "Sensor\\Controller\\Precision Instrument / Irrigation Controller - HS Code 903290",
+    "Sensor\\Controller\\Precision Instrument / Rain gauge - HS Code 901590",
+    "Sensor\\Controller\\Precision Instrument / Distance Measurement Sensor Module - HS Code 901790",
+    "Office Appliance and Accessories / PC(Personal Computer) - HS Code 847330",
+    "Office Appliance and Accessories / Mouse - HS Code 847330",
+    "Office Appliance and Accessories / Keyboard - HS Code 847330",
+    "Office Appliance and Accessories / SSD(Solid State Disk) - HS Code 847330",
+    "Office Appliance and Accessories / Gateway - HS Code 851779",
+    "Office Appliance and Accessories / Reader - HS Code 847330",
+    "Office Appliance and Accessories / Versatile Signal Generator - HS Code 854390",
+    "Office Appliance and Accessories / Router - HS Code 851779",
+    "Office Appliance and Accessories / Printer - HS Code 844399",
+    "Office Appliance and Accessories / Network Switch - HS Code 851779",
+    "Office Appliance and Accessories / Calculator - HS Code 847321",
+    "Office Appliance and Accessories / Scale - HS Code 842390",
+    "Office Appliance and Accessories / Alarm - HS Code 853190",
+    "Office Appliance and Accessories / Lock - HS Code 830160",
+    "Office Appliance and Accessories / Doorbell - HS Code 851779",
+    "Office Appliance and Accessories / Drink Dispenser - HS Code 847690",
+    "Office Appliance and Accessories / LCD Board - HS Code 853190",
+    "Office Appliance and Accessories / LED Board - HS Code 853190",
+    "Audio and Video Appliance / Audio Equipment - HS Code 851890",
+    "Audio and Video Appliance / Audio Amplifiers - HS Code 851890",
+    "Audio and Video Appliance / Sound Console - HS Code 854390",
+    "Audio and Video Appliance / Effectors - HS Code 854390",
+    "Smart Product and Accessories / Charger - HS Code 850490",
+    "Smart Product and Accessories / DC Stabilized Power Supply - HS Code 850490",
+    "Reserch\\Education\\DIY\\Entertainment / DIY - HS Code 902300",
+    "Reserch\\Education\\DIY\\Entertainment / Development Board - HS Code 847330",
+    "Reserch\\Education\\DIY\\Entertainment / Programmable Controller - HS Code 853890",
+    "Reserch\\Education\\DIY\\Entertainment / Robot - HS Code 847990",
+    "Reserch\\Education\\DIY\\Entertainment / Video/TV Game Player - HS Code 950450",
+    "Household Appliance / Fan - HS Code 841490",
+    "Household Appliance / Washing Machine - HS Code845090",
+    "Household Appliance / Mixer - HS Code 850990",
+    "Household Appliance / Slicer - HS Code 850990",
+    "Household Appliance / Grinder - HS Code 850990",
+    "Household Appliance / Humidifier - HS Code 850990",
+    "Household Appliance / Fruit/Vegetable Juice Extractors - HS Code 850990",
+    "Household Appliance / Sweeping Robot - HS Code 850990",
+    "Household Appliance / Household Electric Heating Equipment - HS Code 851690",
+    "Household Appliance / Massager - HS Code 901910",
+    "musical instruments / Guitar - HS Code 920994",
+    "musical instruments / Accordion - HS Code 920994",
+    "musical instruments / Electronic Music Instrument - HS Code 920994",
+]
 
 [fields.ship_to]                  # the account's address at checkout, which the skill never opens: in order.md, not read back
 section = "Shipping"

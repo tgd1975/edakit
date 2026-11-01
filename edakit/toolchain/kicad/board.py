@@ -277,6 +277,10 @@ def placed(cfg, board, design, fp, ref, at, nets, symbol=None, locked=False, unc
              hidden_prop("Package", fp.package, fab, key)]
     if comp.get("lcsc"):
         item.append(hidden_prop("LCSC", comp["lcsc"], fab, key))
+    entry = design.parts.get(comp.get("lcsc")) or {}
+    for name, field in (("MPN", "mpn"), ("Manufacturer", "manufacturer")):   # what a maker matching by MPN reads
+        if entry.get(field):                                                 # (AISLER, in the ODB++)
+            item.append(hidden_prop(name, entry[field], fab, key))
     if symbol:
         item += [["path", f"/{symbol}"], ["sheetname", "Root"], ["sheetfile", f"{board.name}.kicad_sch"]]
     attr = ["attr", Sym("through_hole" if fp.tht else "smd")]

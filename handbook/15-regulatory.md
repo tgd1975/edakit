@@ -101,7 +101,7 @@ result for the run's circuit hash, and looks only at the difference:
 | where the maker sits | outside the EU (JLCPCB, PCBWay) and `sale`: the owner imports the boards and is the manufacturer – name and address, technical file, registrations before the first sale (15.2); inside the EU (Eurocircuits, AISLER): no import, the owner stays the manufacturer (15.1), the maker's declarations are input for the technical file |
 | parts the owner supplies to the maker | imported by the owner when bought outside the EU |
 | a cell, a power supply in the matching | batteries regulation, the supply's own conformity, transport of lithium cells |
-| declarations the form asks for | what the shipment is declared as (customs description and value) |
+| declarations the form asks for | what the shipment is declared as (customs description and value; `[order] customs`, 10.2) |
 
 Its result goes unchanged into `regulatory.md`: numbered findings graded as for M-6, the SHA-256 of the job and the
 quote it reviewed, the line that it is support and not legal advice, and as the last line `Order: OK` or

@@ -1,0 +1,24 @@
+=== aisler.net project IVXBTNXF (Sandbox / odb_main), revision 1 – read 2026-11-01 ===
+Overview: Dimension / Size 60mm x 28mm; Layer Count 2; Minimal Drill Diameter 0.3mm; Elongated Hole Count 2; Castellated Hole Count 0
+Select your stackup and color in the checkout. Checkout now, starting at just €17.36 (not touched)
+
+=== Assembly tab ===
+Sides Single-sided (top); Distinct components 9; SMT components 10; THT components 0; Press-fit components 0
+Part polarity - please check
+
+=== BOM – Auto assign parts using: mpn ===
+Automatically assigned (then Confirm All): C2, C4 CL21B105KBFNNNE Samsung; C3 CL21B103KBANNNC Samsung; D1 APTD2012LSURCK Kingbright; R1 RC0805FR-07750KL Yageo; R2 RC0805FR-07200RL Yageo; U1 LMC555CMX/NOPB Texas Instruments
+Needs assignment, assigned by the release's manufacturer: C1 CC0805KRX7R9BB104 Yageo (also Yageo / Partner Stock); Q1 AO3415A Alpha & Omega Semiconductor (also AOS, UMW); R3 0805W8F1002T5E ROYALOHM (also Royal ohm)
+Excluded from Assembly (4 components): BT1 2468; SW1 SK12D07VG4; TH1, TH2 Tooling
+BOM Price: 1 €167.63; 5 €175.52 (€35.10 / piece); 10 €184.38; 50 €246.64; 100 €302.42; 200 €435.92; 500 €763.84; 1000 €1,203.34
+Your parts are ready to order – Every part is assigned and priced. (Continue to checkout – not touched)
+
+=== /checkout (opened by its address) ===
+Service: Amazing Assembly – Selected
+Configuration (selected): PCB Thickness 1.6mm | Surface Finish HASL Lead Free | Copper Thickness of outer layers 35 µm | PCB Color Green | Silkscreen White
+Stackup & Design Rules 2L 1.6mm 35um var. / 0.3mm min. drill diameter, 200µm/150µm min. trace width/space
+Addons: Blitz Service – Select (not selected)
+IVXBTNXF (revision 1); Quantity 5
+Estimated Dispatch Wednesday, Nov 25, 2026
+Net Total €348.03; VAT 19% €66.13; Total €414.16
+Continue to Checkout (not touched)
