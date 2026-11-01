@@ -7,8 +7,8 @@
 # ODB++ files (or .kicad_pcb, .brd); the BOM with manufacturer part numbers and the CPL in JLCPCB's columns were taken
 # as edakit writes them. The basket button is on Summary, after a required tick "Accept the Eurocircuits Terms of
 # Sales" – a consent in the owner's name the skill does not give. The placement opens again from the basket
-# (Assembly Visualizer, CPL Editor): M-2 can wait for the basket. Values behind "More Options" were not read: a value
-# edakit sets there is not checked (no words).
+# (Assembly Visualizer, CPL Editor): M-2 can wait for the basket. Values behind "More Options" were not read by step 0
+# – the thickness was in live run 5.8 –: a value edakit sets there is not checked (no words).
 #
 # Live run 5.8 (2026-11-01, tests/fixtures/makers/eurocircuits/live_2026-11-01/): the BOM's import maps its columns
 # by their names – "Manufacturer Part Number" yes, "MPN" not, and "Comment" it took for the part number ([bom]
@@ -31,8 +31,6 @@ cart = "Add to basket"                 # Summary; "Proceed to Summary – to Rev
 never = ["Order", "Buy", "Checkout", "Proceed to checkout", "Pay", "Place order", "Confirm order", "Launch inquiry"]
 excludes = []
 
-# Fields the page shows that edakit does not set, each with its reason. The skill leaves them as Eurocircuits sets
-# them; ORDER.form names any other one as a question the maker added.
 [compliance]                           # what the maker itself states, read 2026-11-01 – the regulatory review at the order
                                        # cites it from the job (handbook 15.5)
 rohs = "PCB and PCBA: a group certificate of compliance (March 2026, no signature): 'all components and all homogeneous subcomponents manufactured by the Eurocircuits Group comply with the directive 2011/65/EC [sic] … amended by Directive (EU) 2015/863'; the finishes lead-free HAL, ENIG and immersion silver – 'All of these are Lead-free and can be used for RoHS designs'; assembly with SAC 305, lead-free"
@@ -43,6 +41,8 @@ sources = [
   "https://www.eurocircuits.com/services/pcb-assembly-capabilities/ (read 2026-11-01)",
 ]
 
+# Fields the page shows that edakit does not set, each with its reason. The skill leaves them as Eurocircuits sets
+# them; ORDER.form names any other one as a question the maker added.
 [ignore]
 "Select a Service" = "Eurocircuits chooses the service by the board (PCB proto, STANDARD pool) after the upload"
 "Unit" = "mm, Eurocircuits' default"

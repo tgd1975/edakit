@@ -10,9 +10,9 @@ three concepts after the user took their decisions on 2026-10-28 (e5caf42, 301fd
 [project-scripts.md](../done/project-scripts.md). Phase 5 builds a fourth, [ordering.md](../done/ordering.md) – ordering
 at the manufacturer, decided on 2026-10-30 –; on the user's word ("Implementiere das Konzept") its offline steps were
 built the same day on one branch: 5.1 to 5.6, 5.8 and 5.9 done, 5.7 and the offline part of 5.10 written; PCBWay was
-planned in afterwards (5.12); merged into main on 2026-10-30, after the KiCad tool chain. Open are the probes 5.0, the
-live runs of 5.7, 5.8, 5.10 and 5.12 – the list of what is left: [TODO.md](../../../TODO.md). Each other step
-starts when the user asks for it.
+planned in afterwards (5.12); merged into main on 2026-10-30, after the KiCad tool chain. The probes 5.0 and the live
+runs of 5.7, 5.8, 5.10 and 5.12 ran on 2026-10-31 and 2026-11-01 (`tests/fixtures/makers/LIVE.md`), nothing ordered;
+no order has gone through `edakit cart actual` yet. Each other step starts when the user asks for it.
 
 ## Ground rules
 
@@ -60,16 +60,16 @@ starts when the user asks for it.
 | 5.0 | Probes: the makers' pages in the owner's browser, EasyEDA's ODB++ | ordering steps 0, 0b | – | yes (0b) | the owner's Chrome | done: step 0 (2026-10-31, branch `makers-step0`), 0b (2026-11-01, branch `makers-step0b`) |
 | 5.1 | The order form as fields, `order.md` from them | ordering step 1 | S | no | – | done (d58f4ae) |
 | 5.2 | Every field of the form as a key, edakit's defaults, `edakit cart fields` | ordering step 2 | M | no | 5.0, 5.1 | done (d58f4ae) – the keys of the reference orders; 5.0 adds what the forms show |
-| 5.3 | Maker profiles; P-4, F-2 and F-6 per maker | ordering step 3 | M | no | 5.2 | done (d58f4ae) – profiles provisional until 5.0 |
+| 5.3 | Maker profiles; P-4, F-2 and F-6 per maker | ordering step 3 | M | no | 5.2 | done (d58f4ae); recorded by 5.0 on 2026-10-31 |
 | 5.4 | `edakit cart prepare` and `check` (B-1 to B-7), the order record | ordering step 4 | M | no | 5.3 | done (17446f9) |
 | 5.5 | Agent regulatory-reviewer at the order | ordering step 5 | S | no | 5.4 | done (be8781d) |
 | 5.6 | `edakit cart actual`: real cost, the fee table | ordering step 6 | M | no | 5.4 | done (af59226) |
-| 5.7 | Skill `cart`, live at JLCPCB up to the cart | ordering step 7 | M | no | 5.0, 5.4, 5.5 | written (be8781d), live run open |
+| 5.7 | Skill `cart`, live at JLCPCB up to the cart | ordering step 7 | M | no | 5.0, 5.4, 5.5 | written (be8781d), live 2026-11-01 at JLCPCB into the cart, nothing ordered |
 | 5.8 | BOM with MPN, P-12; Eurocircuits | ordering step 8 | M | no | 5.3, 5.7 | built offline (17446f9), Eurocircuits live 2026-11-01 into the basket (1.55 mm on the owner's word; the BOM's header Eurocircuits maps, the cart line's VAT) |
 | 5.9 | new-project asks for the maker | ordering step 9 | S | no | 5.3, 5.8 | done (be8781d) |
 | 5.10 | ODB++: MCP tool and bridge patch, F-7; AISLER | ordering step 10 | L | yes | 5.0, 5.7 | built offline (6b6ff5e), EasyEDA's export probed in 5.0 (0b), AISLER live 2026-11-01: up to the price on /checkout, every check passed (R1, R2 swapped in the throwaway copy for parts AISLER stocks) |
 | 5.11 | The makers' interfaces, where granted | ordering step 11 | – | no | the makers | future work: wishes, nobody asks the makers (the owner's decision of 2026-11-01), handbook 8.4 |
-| 5.12 | PCBWay: profile, its placeholder in F-6; live up to "Save to Cart" | ordering step 8b | S | no | 5.0, 5.7, 5.8 | profile and F-6 built (see below), live open |
+| 5.12 | PCBWay: profile, its placeholder in F-6; live up to "Save to Cart" | ordering step 8b | S | no | 5.0, 5.7, 5.8 | profile and F-6 built (see below), live 2026-11-01: "Save to Cart" after the owner's "Agree", the files uploaded in the cart, nothing ordered |
 
 S, M and L are the sizes the concepts give: small, medium, large.
 
@@ -541,7 +541,7 @@ Built on 2026-10-30, branch `ccr-341cce07-y5or0n`:
   so no signed hash changes. With that both exports pass SYNC.odb on every layer, hole, part and net; the run is a
   test fixture (`tests/fixtures/makers/aisler/probe_2026-11-01`, record `step0b_2026-11-01.md`).
 
-Open: the live runs of 5.8 and 5.10; 5.11 is future work (handbook 8.4).
+The live runs of 5.8 and 5.10 ran on 2026-11-01 (`tests/fixtures/makers/LIVE.md`); 5.11 is future work (handbook 8.4).
 
 ## Hashes and gate results
 

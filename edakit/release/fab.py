@@ -262,14 +262,18 @@ def export_odb(cfg, mcp, board, d):
     if not odb_takers(cfg):
         return
     try:
-        res = mcp.call("easyeda_export_odb", projectId="current", unit="mm", timeout=300)
+        res = mcp.call("easyeda_export_odb", projectId="current", timeout=300)   # inch whatever unit says (E-16)
     except eda.MCPError as e:
         (d / ODB_ERROR).write_text(f"easyeda_export_odb: {e} – the patched MCP server and bridge (handbook 2.5)")
         return
     if not res.get("exported"):
         (d / ODB_ERROR).write_text(f"easyeda_export_odb: {res.get('error') or res}")
         return
-    artifact = Path(res["artifact_path"])
+    path = res.get("file_path") or res.get("artifact_path")   # easyeda-mcp-pro's own tool (#799) / the patched one
+    if not path:
+        (d / ODB_ERROR).write_text(f"easyeda_export_odb: no file in its answer ({res})")
+        return
+    artifact = Path(path)
     raw = artifact.read_bytes()
     if artifact.resolve().parent == Path(d).resolve() and artifact.resolve() != target.resolve():
         artifact.unlink()       # EasyEDA names the file "undefined" (no file name in the bridge's call): not a run file

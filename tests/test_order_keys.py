@@ -517,6 +517,21 @@ def test_p12_needs_mpn_and_manufacturer_for_a_maker_that_matches_by_mpn(project)
     assert p12() == ([], ["D1 C8678: the parts entry has no manufacturer – Eurocircuits matches the BOM by manufacturer "
                           "part number – Eurocircuits, not the planned maker"])
 
+def test_p12_grades_by_the_planned_maker_among_several(project):
+    """With PCBWay and Eurocircuits both among [cart] makers and Eurocircuits the planned one, a part without its
+    manufacturer is an error – the planned maker matches by MPN –, not a warning for PCBWay, the first of them."""
+    from helpers import check
+    from edakit.design import Design
+    part = project.part("C8678")
+    del part["manufacturer"]
+    project.save_part("C8678", part)
+    toml(project, '[cart]\nmaker = "eurocircuits"\nmakers = ["jlcpcb", "pcbway", "eurocircuits"]')
+    cfg = project.config()
+    found = [(f.severity, f.text) for f in check(Design.from_config(cfg), cfg).findings
+             if f.code == "PARTS.fact" and f.grade in ("mpn", "other_maker")]
+    assert found == [("error", "D1 C8678: the parts entry has no manufacturer – PCBWay, Eurocircuits match the BOM by "
+                               "manufacturer part number")]
+
 
 def test_the_bom_with_mpn_for_a_maker_that_takes_it(project):
     import csv
@@ -664,6 +679,7 @@ def test_jlcpcbs_mark_and_barcode(project):
     assert "| Printing | 2D barcode & Number | board file |" in text
     rows = run(project, lambda ex, p: fr.ordered(ex, p, {"serial_number": True}))
     assert ("fail", "no combination JLCPCB's form refuses") in {(r, c) for r, c, _ in f6(rows)}
+
 
 
 # --- the customs description ----------------------------------------------------------------------------------------
