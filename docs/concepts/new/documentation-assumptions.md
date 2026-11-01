@@ -47,3 +47,73 @@ move to `docs/concepts/done/` with the concept.
   repository.
 - **"State"** is the README's "Status and limits", every statement kept, split into short sentences, with links to
   the handbook's sections instead of the concepts' plan steps.
+- **The README** keeps "What it runs, sends, fetches" (outreach.md, K.2), the line on issues and the licences below
+  its first screen. The skills-and-agents paragraph left it for table 11.1, so `tests/test_plugin.py` now holds 11.1
+  alone. The update steps for Claude Code and VS Code moved into handbook 2.3, which had pointed back at the README.
+  The bell's section moved to its project page with every statement.
+- **"What it needs"** says "an account at the maker you order from" instead of the concept's "a JLCPCB account for
+  stock": `edakit stock` reads JLCPCB's public pages, no account needed.
+- **"Harness" on the README** reads "edakit specializes an agent harness for circuit design", linked to
+  `docs/architecture.md`. The style test allows exactly one "harness" there; "GitHub Copilot" counts as a product's
+  name, not as the buzzword.
+- **The voice:** the style guide now says "the assistant" for the role and the assistant by name where it is meant –
+  today "Claude" – as decision 8 of claude-independence.md amended decision 4. The pages keep "Claude", which is the
+  assistant they mean today.
+
+## D.3 – the site
+
+- **The groups** are the concept's table, with one change: "Start" as a group of its own for the entry pages – the
+  quickstart, How it works, the projects, the glossary – before "The circuit".
+- **The concepts, skills and agents are behind an index each** in "Inside edakit", their pages off the navigation
+  (reached from the index), so that every group stays at two levels and fourteen entries. The indexes are written by
+  `docs/pages.py`, not kept as files.
+- **The source line** is an admonition "A source" added by `docs/pages.py` under the title of every concept, skill,
+  agent, the evals and CLAUDE.md – the sources' files stay untouched.
+- **The footer** carries both the version line and the feedback line, through MkDocs' `copyright` field, so it is on
+  every page without touching a page.
+- **"Commands" and "Files and keys"** are one navigation entry, chapter 10, since MkDocs lists a page once.
+
+## D.6 – the reader pages
+
+- **"Working on edakit"** is a page of its own, linking `docs/organisation.md`, rather than an extension of
+  organisation.md, which CLAUDE.md points sessions at for the kinds of content. The README's repository map was mostly
+  in organisation.md's table already; the page has a short map of the main parts.
+- **"Adding a rule"** says "the maintainer" for the one who merges – "the owner" stays on the developer pages.
+
+## D.7 – the numbers
+
+- **"What it costs"** on the start page quotes the one measured number there is: the six eval tasks of the baseline
+  cost 0.55 USD together with Sonnet 5.5 and 1.48 USD with Opus 5.5, one run each. A gate run, a decision round and a
+  whole circuit design have no measured token cost yet – open, for the evals with `--runs 3`. outreach.md's fact
+  sheet (K.5) is not touched: outreach.md is to be revised anyway.
+
+## D.8 – what changed
+
+- **The changelog** is on the site under "Reference", as `CHANGELOG.md` rendered as it is.
+
+## D.9 – the gallery
+
+- **The bell's pictures** are copied from its repository at commit 49f3373 – the silkscreen, routing and placement
+  pictures of main from release 20261101-142527 and the five drawn schematics –, not from the GitHub release's
+  assets. The board's other layers (the pictures `<run>/pictures/` of section 12) are not in its repository yet; they
+  come with its next gate run after the plugin update (its D-40).
+- **The bell's "What edakit found"** holds the README's old "Where it stands" numbers, labelled as at its first
+  release; the current runs differ (stitching vias of D-41).
+- **pytree's page is text only**, from its README and chapter 13: the owner picks what goes out of a private
+  repository, and no picture was picked. The page says what the calendar is – it is a gift; the owner may want less
+  said before Christmas.
+- **The examples are cards** on the gallery's index with their top-side pictures, linked to their walkthroughs.
+
+## D.5 – the chapters
+
+- **No chapter came out a third shorter.** Every agent found the same: nearly every section is named by code, skills,
+  agents or tests, and many sentences are shared word for word with docstrings, the catalog or skills – the brief's
+  rule "a text found elsewhere stays" kept them. The statements won, as the concept says; what changed is the form –
+  first paragraphs, subheadings every 80 lines, no paragraph over 120 words, shorter sentences, subjects in
+  cross-references, "you" instead of "the user", the history out. The measure "a third fewer words" is unmet; a
+  looser reading of rule 5 – a docstring that mirrors the handbook is no reader of it – would allow 10 to 15 % more.
+  Decision for the owner: keep the strict reading, or loosen it per chapter.
+- **The not-legal-advice line** stands once per page; the walkthroughs dropped their second and third mention.
+- **Findings against the code**, collected in each review file, were not fixed: they are sources (codes.toml,
+  docstrings, skills) or need a decision.
+- **Chapters over 500 lines remain:** 4, 5, 7, 8, 10, 17 – the rule stays red for them.

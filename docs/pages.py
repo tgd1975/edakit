@@ -252,7 +252,7 @@ def config(nav):
         "use_directory_urls": True,
         "theme": {
             "name": "material",
-            "features": ["navigation.sections", "navigation.top", "navigation.indexes", "search.highlight",
+            "features": ["navigation.sections", "navigation.top", "search.highlight",
                          "content.code.copy", "toc.follow"],
             "logo": "brand/edakit-mark-mono-white.svg",
             "favicon": "brand/edakit-favicon.svg",
