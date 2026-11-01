@@ -77,7 +77,7 @@ Nothing to do until there is an answer or a release; whichever session learns of
       check it live, take it up and say so in upstream/README.md. EasyEDA's first answer is often "update to the latest
       version".
 
-## Versions and branch protection ([versioning.md](docs/concepts/new/versioning.md))
+## Versions and branch protection ([versioning.md](docs/concepts/done/versioning.md))
 
 Decided on 2026-11-01: 0.2.0 first; the major number the owner's to release, minor and patch by one question (minor
 when a project must act); every merge that changes edakit a version of its own, numbered by `.github/merge.py`; the
