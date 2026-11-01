@@ -124,3 +124,7 @@ sources, data and code untouched; a text that is generated or used elsewhere sta
 - [ ] **D.6** The reader pages "Adding a rule" and "Working on edakit".
 - [ ] **D.7** The "is it for me" numbers from the evals; the findings on sources (the plugin's descriptions say "JSON
       hardware graph") to the owner.
+- [ ] **D.9** `docs/projects.md`, the gallery: the example and the bell now; pytree's entry with the information and the
+      pictures the owner picks (needs the owner – the repository stays private); the tiny jukebox, the pedal and the
+      steering wheel each after its conversion to edakit (`/edakit:new-project` with the inventory, a project of its
+      own), on the owner's word.
