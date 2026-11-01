@@ -7,6 +7,10 @@ written once, by `.github/merge.py`, from the fragments in [changes/](changes/RE
 [versioning.md](docs/concepts/new/versioning.md). Update with `claude plugin marketplace update edakit && claude plugin
 update edakit@edakit`, then `/reload-plugins` or a new session; `edakit --version` names the version that runs.
 
+## 0.4.3 – 2026-11-01
+
+- No click on *Design → Import Changes* any more (E-2): `pcb parts --write` writes the PCB part's Channel ID into the schematic part as it does the UniqueId, and `route all|drc` and `silk apply|check` write it into parts linked before when the DRC reports "Netlist Error – Import Changes" with schematic and PCB equal, reload the PCB and run the DRC once more – exit 3 only if the item is still there.
+
 ## 0.4.2 – 2026-11-01
 
 - A project never opened is found by its name through EasyEDA's API – `getAllProjectsUuid` with each project folder of `DMT_Team.getAllTeamsInfo` (E-9) – instead of reading EasyEDA's `config.json` and `.eprj2` files; `EDAKIT_EASYEDA_HOME` is gone.
