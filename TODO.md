@@ -5,7 +5,7 @@ Open work that needs the owner's computer, a maker or the owner's word. The stat
 name; this list is what is left to do of them, in the order it can be done. No item is deleted.
 
 **Layout.** Every item, in every section, open or closed, is a line with a checkbox and an ID unique in this file,
-counted up and never reused – whoever adds an item takes the next free ID and counts it up here. Next free ID: TD-55.
+counted up and never reused – whoever adds an item takes the next free ID and counts it up here. Next free ID: TD-58.
 
 - Open: `- [ ] TD-<n> - **Title:** what and why.` – a step's own name after the dash (`- [ ] TD-31 - **D.4** …`).
 - Done: ticked, the commit that did it, the date at the end, moved to [Closed todos](#closed-todos), newest first –
@@ -27,6 +27,12 @@ another (W.4 after W.2) is agreed with the session holding that one and merged a
 its own beside the main clone, named for it (`../edakit-w4`, branch `wired-w4`), so `git worktree list` shows who
 holds what; the main clone belongs to whoever has it checked out, and its uncommitted changes are not anyone else's
 to touch.
+
+## For the owner
+
+- [ ] TD-57 - **The real cost of the first order:** once an order the skill cart put into a maker's cart is paid,
+      `/edakit:cart actual` on its order page or saved invoice – `edakit cart actual` (handbook 8.4, step 5) has run
+      on recorded data only; the real cost, the project's fee table and the order record come from it. *(edakit-80)*
 
 ## What edakit needs from EasyEDA Pro and easyeda-mcp-pro ([upstream/README.md](upstream/README.md))
 
