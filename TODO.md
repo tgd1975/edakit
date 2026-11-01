@@ -102,12 +102,10 @@ when a project must act); every merge that changes edakit a version of its own, 
 notes lane for concepts and TODO.md; the rulesets on main as text; the projects on the newest version, unpinned. Each
 step starts on the owner's word.
 
-- [ ] TD-46 - **V.3** The notes lane: `.github/notes.py`, `paths` for `notes/*`.
-- [ ] TD-47 - **V.4** The rulesets as text in `.github/rulesets/`, applied with `gh api` on the owner's word once
-      TD-46 is on main, the checks not strict, with CLAUDE.md (the notes lane, the protection) and the skills triage,
-      add-rule and add-feature (a fragment per change) in the same branch – README, handbook 2.3 and the working rule
-      for merging came with TD-45. Checked then: the admin role as a bypass on a personal repository, auto-merge as the
-      account that switched it on.
+- [ ] TD-47 - **V.4** The rulesets as text in `.github/rulesets/`, applied with `gh api` on the owner's word, the
+      checks not strict, with CLAUDE.md (the protection) and the skills triage, add-rule and add-feature (a fragment per
+      change) in the same branch – README, handbook 2.3, the merging rule and the notes lane came with TD-45 and TD-46.
+      Checked then: the admin role as a bypass on a personal repository.
 - [ ] TD-48 - **V.5** Branches left lying around: 9 `claude/*` and 2 `ccr-*` on origin, the local ones and the
       worktrees – listed, then merged or deleted on the owner's word; other sessions' branches named with their session.
 - [ ] TD-49 - **V.6** 1.0.0 on the owner's word once D.2 is built (`merge.py <n> --major`).
@@ -148,6 +146,10 @@ sources, data and code untouched; a text that is generated or used elsewhere sta
 Done or dropped, newest first, each with its date and the commit that closed it. What closed before 2026-11-01 is
 taken from the history of this file; an item rewritten on its way is listed once, in its last form.
 
+- [x] TD-46 - **V.3** The notes lane: `.github/notes.py` lands a session's edits of concepts and TODO.md on the newest
+  main without an OK – the diff, three-way, from any worktree; a pull request from notes/<topic>, merged by the script
+  once green, no GitHub auto-merge; `paths` holds notes/* to the lane; this tick its first run (#107, 897ae0d).
+  [2026-11-01]
 - [x] TD-56 - **4.5** A project without a requirements file does not release: DOCS.file, open like a required
   sign-off – `edakit check` passes, `--release` and the gate do not; built before the bell's D-39 on the owner's word,
   the bell has its file (#106, edakit 0.3.0). [2026-11-01]
