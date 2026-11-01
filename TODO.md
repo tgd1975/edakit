@@ -29,9 +29,6 @@ to touch.
 
 ## For the owner
 
-- [ ] TD-44 - **The Claude GitHub app uninstalled:** <https://github.com/settings/installations> → Claude → Uninstall
-      – since 0.3.1 the proposals Action runs with its own token and no workflow fetches the app's token; the app
-      could still change workflows, Actions settings and webhooks. *(edakit-12)*
 - [ ] TD-59 - **OK for #129, #130, #131:** <https://github.com/tgd1975/edakit/pull/129> (TD-37, no click on Import
       Changes), <https://github.com/tgd1975/edakit/pull/130> (TD-38, the DRC reloads only on Connection Errors),
       <https://github.com/tgd1975/edakit/pull/131> (TD-39, local projects through the API) – each checked live on 1.6.0;
@@ -128,6 +125,9 @@ sources, data and code untouched; a text that is generated or used elsewhere sta
 Done or dropped, newest first, each with its date and the commit that closed it. What closed before 2026-11-01 is
 taken from the history of this file; an item rewritten on its way is listed once, in its last form.
 
+- [x] TD-44 - **The Claude GitHub app uninstalled:** dropped on the owner's word – the app is Claude Code on the web's
+      access to the repositories; the proposals Action no longer fetches its token (0.3.1), and main's ruleset (TD-47)
+      keeps it off main. [2026-11-01]
 - [x] TD-58 - **OK for #121, easyeda-mcp-pro 1.6.0:** given, merged as edakit 0.4.0 (5ae332d). [2026-11-01]
 - [x] TD-54 - **M-6, the BOM's duplicates:** on 1.6.0 each part listed once; the removal went, SYNC.bom reports a
       designator listed twice – edakit 0.4.0 (#121). [2026-11-01]
