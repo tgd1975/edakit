@@ -72,12 +72,15 @@ owner's rules there: no click because of the API, no self-extended MCP server, t
 
 - [ ] **On the owner's computer – the newest versions live:** EasyEDA Pro 3.2.209 (3.2.206 is installed) and
       easyeda-mcp-pro 1.6.0 (the pin is 1.4.0) with the patched extension of the same version; E-1 to E-4 and E-7
-      checked again, the self-test, one gate run of the example. Then the pin raised in `mcp-server.sh`.
+      checked again, the self-test, one gate run of the example; M-6: `scope: "all_pages"` of
+      `easyeda_schematic_components` instead of focusing page after page, and the BOM's duplicates. Then the pin raised
+      in `mcp-server.sh`.
 - [ ] **M-1 to M-4 upstream, posted on 2026-11-01** (#792/#793, #794/#795, #796/#797, #798/#799): review comments
       answered on the fork's branches, rebased when `main` moves; the comment "I agree to the Contributor Permission v1
       in CONTRIBUTOR-LICENSING.md", when the maintainer asks for it, from the owner.
-- [ ] **On the owner's word – post:** M-5 and M-7 as issues, M-6 as a comment on #539; E-1 to
-      E-16 at easyeda/easyeda-api-sdk after the live check above – to #33, #34, #36, #38 and #39 as comments. Before
+- [ ] **M-5 and M-7 upstream, posted on 2026-11-01** (#800, #801): follow them; M-6 not posted – #539 has met it as far
+      as EasyEDA's API lets it (upstream/README.md).
+- [ ] **On the owner's word – post:** E-1 to E-16 at easyeda/easyeda-api-sdk after the live check above – to #33, #34, #36, #38 and #39 as comments. Before
       each the check of "The latest state".
 - [ ] **When a release brings M-2 to M-4:** pin raised, the original extension, `bridge-extension-patch.sh` and
       `odb-tool-patch.mjs` removed, handbook 2.4, 2.5 and 9.1 follow.
