@@ -12,7 +12,7 @@ Action proposals. Two sorts, told apart by the section Kind:
     edakit proposal verify FILE|-          every section filled in, and the text is the one that was sealed
 
 The Action proposals runs this module with the system's Python, from main, before and after Claude
-(docs/concepts/new/proposals-pipeline.md) – it imports nothing but the standard library:
+(docs/concepts/done/proposals-pipeline.md) – it imports nothing but the standard library:
 
     python3 -m edakit.proposal queue ISSUES COMMENTS   what the run triages (env OWNER, N, SINCE): the matrix as JSON
     python3 -m edakit.proposal input ISSUE DIR         the owner's text only: DIR/proposal.md and DIR/thread.md
