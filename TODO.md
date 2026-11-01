@@ -27,8 +27,8 @@ run against a maker's page or EasyEDA yet.
       refused; the bell needs `mark = "remove"` or a barcode before its next order), the skill cart stopping at every
       consent in the owner's name, and what the live runs found fixed in `edakit cart` (numbers, uploads a page does
       not show or takes after the cart, matching in the maker's review, checkout fields, a cart line named by size).
-      Evidence in `tests/fixtures/makers/` (LIVE.md); full suite green. B6 (Economic on a round board with two customer
-      tooling holes) not checked.
+      Evidence in `tests/fixtures/makers/` (LIVE.md); full suite green. B6 checked on 2026-11-01: Economic takes a
+      round board on two customer tooling holes, no rails, no panel fee (`tests/fixtures/makers/jlcpcb/b6_2026-11-01/`).
 - [x] **PCBWay:** the files go up after "Save to Cart" (Gerber, BOM, centroid in Altium's mil format, assembly
       drawings; "Submit the File Now" starts the review); the assembly price shows online but without components until
       the review; one `bom_<b>_mpn.csv` serves PCBWay and Eurocircuits – both took it.

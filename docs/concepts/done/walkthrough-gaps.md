@@ -3,7 +3,7 @@
 Status 2026-10-31: settled. Collected, decided and built the same day – A1 to A5 fixed, B1, B3, B4, B5, B7 and B8
 checked and built, C1 to C4 decided by the owner (section "Decisions"), C1, C2 and C4 built. Live in EasyEDA on
 2026-11-01: A4, A5, B1, B3, B7 and C4 hold, the example RELEASED again (section "The live run of 2026-11-01"); B2
-held in the live run of step 3.6; left is B6 at JLCPCB, kept in `TODO.md` (ordering, step 0).
+held in the live run of step 3.6; B6 read off JLCPCB's form on 2026-11-01.
 
 The walkthrough of handbook 17 took `examples/coin-cell-led`
 from the setup to a released round board, on edakit main after rules at scale. What it found and closed on the way is
@@ -77,7 +77,7 @@ Built on the branch `ccr-f80e23dc-ak6668` on 2026-10-31, test first, the suite g
 | B3 | real, built: `body.box` in a parts entry, GEO.silk grade `body` (warning), `silk apply` keeps labels beside a body. BT1's entry has it since, on the owner's word: [-11.05, -10, 11.05, 10] mm from the drawing QJ.BS-6 (housing 22.1 mm, cell Ø 20 mm concentric), also as the library draft `edakit/parts/C70377.json` | `pcb.py`, `silk.py`, `release/fab.py`, handbook 4.1, 7.7, 8.1 |
 | B4 | real, built: FILES.order grade `tooling` (warning) – `[tooling]` on an Economic board and nothing that tells the maker | `release/order_sheet.py`, handbook 8.4 |
 | B5 | real, built as decided | `route.py` `hand_joints`, handbook 7.5, 17.11 |
-| B6 | open: what JLCPCB's form shows, read at the next order | `TODO.md` ("JLCPCB's order number") |
+| B6 | read off the form: the order number gone (2026-10-31); Economic takes the round board on two customer tooling holes, no rails, Panel $0.00 (2026-11-01) | `tests/fixtures/makers/jlcpcb/step0_2026-10-31.md`, `tests/fixtures/makers/jlcpcb/b6_2026-11-01/` |
 | B7 | (1) holds no more: without `silk_footprints_<b>/` the check says "run edakit silk apply", no false finding; (2) built: a page read is kept only while its page is still active, the gate closes other saved schematic tabs before the BOM. Live 2026-11-01: the BOM of the board's own schematic alone, no other schematic tab left open | `eda.py`, `release/fab.py`, `schematic.py`, `pcb.py`, handbook 9 |
 | B8 | built: the KiCad live tests skip with a reason on another major; the CI job requires them (`EDAKIT_KICAD_LIVE: required`) | `tests/test_kicad_live.py`, `toolchain/kicad/cli.py`, `.github/workflows/tests.yml` |
 | C1 | built in the example, with two gaps of edakit closed on the way: the cell's rows carry the holder, so an accept on it reaches them; the gate counts a simulation row whose finding the graph accepts as waived, not failed | `engines/sim.py`, `sim/run.py`, `release/gate.py`, handbook 5, 17.6 |
