@@ -40,10 +40,7 @@ WAIT_S = 45 * 60
 
 
 NAME = "merge"   # the prefix of the progress lines; .github/notes.py sets its own
-# --admin takes the owner's bypass of the ruleset main-updates (only the admin role updates main, only through a
-# pull request); the ruleset main has no bypass, so its checks hold all the same – and both scripts merge only once
-# they have seen them green (.github/rulesets/, docs/concepts/new/versioning.md)
-MERGE = ("--merge", "--admin")
+MERGE = ("--merge",)   # merge commits only; main has no bypass, so no flag takes one (.github/rulesets/)
 
 
 def say(*args):

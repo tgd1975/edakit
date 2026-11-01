@@ -2,7 +2,8 @@
 repository's merge settings in .github/rulesets/settings.json, held against what GitHub has.
 
     python3 .github/rulesets.py           what differs between the files and GitHub – exit 1 if anything does
-    python3 .github/rulesets.py apply     make GitHub as the files say – only on the owner's word
+    python3 .github/rulesets.py apply     make GitHub as the files say – a ruleset no file names is removed –, only
+                                          on the owner's word
 
 Every session acts as the owner's account, so the rules guard against slips and against the Actions, not against a
 session: the owner's OK for code stays a working rule. A change to the rules is a pull request like any other, applied
@@ -84,6 +85,9 @@ def main(argv):
             else:
                 gh("-X", "POST", f"repos/{REPO}/rulesets", payload=want)
                 print(f"ruleset {name}: created")
+        for name in sorted(set(live_rulesets) - set(rulesets)):
+            gh("-X", "DELETE", f"repos/{REPO}/rulesets/{live_rulesets[name]['id']}")
+            print(f"ruleset {name}: removed")
         gh("-X", "PATCH", f"repos/{REPO}", payload=settings)
         print("settings: set")
         live_rulesets, live_settings = live()

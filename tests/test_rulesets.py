@@ -43,10 +43,10 @@ def test_main_takes_pull_requests_only_and_nobody_bypasses_it():
     assert RULESETS["main"]["bypass_actors"] == [] and RULESETS["tags"]["bypass_actors"] == []
 
 
-def test_only_the_admin_role_merges_into_main_and_only_through_a_pull_request():
-    assert set(rules("main-updates")) == {"update"}
-    assert RULESETS["main-updates"]["bypass_actors"] == [
-        {"actor_id": 5, "actor_type": "RepositoryRole", "bypass_mode": "pull_request"}]
+def test_no_ruleset_bypasses_and_none_needs_a_flag_to_merge():
+    # main-updates went on 2026-11-01: its bypass needs --admin on every merge, which auto mode refuses
+    assert set(RULESETS) == {"main", "tags"}
+    assert all(not r["bypass_actors"] for r in RULESETS.values())
 
 
 def test_a_version_once_out_is_never_moved():
@@ -83,7 +83,7 @@ def test_merge_numbers_again_only_a_version_whose_main_moved():
     assert not merge.again(None, "0.3.0", "0.3.1")      # no version: merges onto any main
 
 
-def test_the_scripts_merge_with_the_owners_bypass_of_main_updates():
-    # main-updates lets only the admin role update main, and GitHub takes the bypass only when the merge asks for it
-    assert merge.MERGE == ("--merge", "--admin")
-    assert "*m.MERGE" in (ROOT / ".github" / "notes.py").read_text()
+def test_the_scripts_merge_plainly():
+    assert merge.MERGE == ("--merge",)
+    for script in ("merge.py", "notes.py"):
+        assert "--admin" not in (ROOT / ".github" / script).read_text()
