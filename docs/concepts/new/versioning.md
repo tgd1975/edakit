@@ -4,7 +4,8 @@ Status 2026-11-01: decided. The owner took the four decisions the same day in a 
 (the table at the end): 0.2.0 first, with 1.0 once the documentation's entry layer is built; the notes lane; every
 merge a version of its own; the projects on the newest version, unpinned. The owner then added three points: a
 changelog from now on; the major number is the owner's to release, minor and patch are Claude's; a new rule is a
-patch, and the rule for the rest kept simple. What Claude decided itself waits for the owner's confirmation. Nothing is built yet. Written against main at `d633a4b`. Asked for by the owner:
+patch, and the rule for the rest kept simple. What Claude decided itself the owner confirmed the same day. Each step
+starts on the owner's word, listed in `TODO.md`. Nothing is built yet. Written against main at `d633a4b`. Asked for by the owner:
 edakit has reached the point where it should work with version numbers and branch protection from now on – a concept
 for both, and, since a concept could then no longer be committed straight to main, an elegant way for concepts to get
 there all the same.
@@ -162,7 +163,10 @@ proposed (below). So with the owner's OK, a session merges through `.github/merg
 
 The workflow `release.yml` runs on every push to main. When the package's number has no tag yet, it sets the tag
 `v0.2.6` on that merge commit and opens the GitHub release with the changelog section as its text. A merge without a
-version (notes, `none`) leaves the number alone, and the workflow does nothing.
+version (notes, `none`) leaves the number alone, and the workflow does nothing. A branch that the proposals workflow
+pushes with its own token starts no checks ([proposals-pipeline.md](proposals-pipeline.md) gives it that token).
+`merge.py`'s push of the numbered commit comes from the owner's account and does start them, so a proposals pull
+request gets its checks at the merge.
 
 A required check `version` guards the button. A pull request that carries fragments is not numbered yet, and the check
 stays red with the text "set when merging: `.github/merge.py <n>`". So GitHub's merge button cannot merge a change
@@ -336,7 +340,7 @@ cache become text:
 | 3 | When a version is made | on the owner's word, several merges in one | **every merge into main a version of its own**; once a week | **every merge** (the owner, 2026-11-01): numbered by `merge.py` before the merge, the checks strict, a red `version` check before that |
 | 4 | The owner's projects | each pins a version in its own repository, and a main channel for live runs | **the newest version, unpinned**; the main channel throughout | **the newest version, unpinned** (the owner, 2026-11-01): no main channel, pinning in the README for whoever wants it, pytree's D-50 its own |
 
-What Claude decided itself, to be confirmed with them:
+What Claude decided itself, confirmed by the owner on 2026-11-01:
 
 - no approval required;
 - the checks strict (decision 3 makes it necessary);

@@ -5,7 +5,7 @@ Open work that needs the owner's computer, a maker or the owner's word. The stat
 name; this list is what is left to do of them, in the order it can be done. No item is deleted.
 
 **Layout.** Every item, in every section, open or closed, is a line with a checkbox and an ID unique in this file,
-counted up and never reused – whoever adds an item takes the next free ID and counts it up here. Next free ID: TD-45.
+counted up and never reused – whoever adds an item takes the next free ID and counts it up here. Next free ID: TD-51.
 
 - Open: `- [ ] TD-<n> - **Title:** what and why.` – a step's own name after the dash (`- [ ] TD-31 - **D.4** …`).
 - Done: ticked, the commit that did it, the date at the end, moved to [Closed todos](#closed-todos), newest first –
@@ -74,6 +74,28 @@ pipeline, what counts as dangerous, the queue, issues by others handed over with
       then two sealed test proposals by the owner – a harmless one, and one that asks to change triage-rule, which must
       end rejected without a push.
 - [ ] TD-44 - **P.7** The Claude App uninstalled (github.com/settings/installations), once P.6 ran.
+
+## Versions and branch protection ([versioning.md](docs/concepts/new/versioning.md))
+
+Decided on 2026-11-01: 0.2.0 first; the major number the owner's to release, minor and patch by one question (minor
+when a project must act); every merge that changes edakit a version of its own, numbered by `.github/merge.py`; the
+notes lane for concepts and TODO.md; the rulesets on main as text; the projects on the newest version, unpinned. Each
+step starts on the owner's word.
+
+- [ ] TD-45 - **V.1 and V.2** The number in one place (0.2.0), `edakit --version`, the manifest's `tools.edakit`; the
+      changelog from the merges since 2026-11-01, the fragments, `.github/merge.py`, `release.yml`, the checks `paths`,
+      `changes` and `version` – one branch, its merge is 0.2.0. `paths` reads the proposals' list from
+      `edakit/proposal.py`, which TD-42 writes: agreed with that step, the one merged second rebases.
+- [ ] TD-46 - **V.3** The notes lane: `.github/notes.py`, `paths` for `notes/*`.
+- [ ] TD-47 - **V.4** The rulesets as text in `.github/rulesets/`, applied with `gh api` on the owner's word once
+      TD-45 and TD-46 are on main, with CLAUDE.md, `docs/organisation.md`, the skills, README and handbook 2.3 in the
+      same branch. Checked then: the admin role as a bypass on a personal repository, auto-merge as the account that
+      switched it on, a `pull_request_target` run as the required check.
+- [ ] TD-48 - **V.5** Branches left lying around: 9 `claude/*` and 2 `ccr-*` on origin, the local ones and the
+      worktrees – listed, then merged or deleted on the owner's word; other sessions' branches named with their session.
+- [ ] TD-49 - **V.6** 1.0.0 on the owner's word once D.2 is built (`merge.py <n> --major`).
+- [ ] TD-50 - **V.7** Later, on the owner's word: `edakit = ">=0.4"` under `[project]` in `edakit.toml`, noted by
+      `edakit check` and the SessionStart hook when the running edakit does not meet it.
 
 ## The documentation for its readers ([documentation.md](docs/concepts/new/documentation.md))
 
