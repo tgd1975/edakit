@@ -4,7 +4,7 @@ Open work that needs the owner's computer, a maker or the owner's word. The stat
 and plans the sections name; this list is what is left to do of them, in the order it can be done. No item is deleted.
 
 **Layout.** Every item, in every section, open or closed, is a line with a checkbox and an ID unique in this file,
-counted up and never reused – whoever adds an item takes the next free ID and counts it up here. Next free ID: TD-58.
+counted up and never reused – whoever adds an item takes the next free ID and counts it up here. Next free ID: TD-59.
 
 - Open: `- [ ] TD-<n> - **Title:** what and why.` – a step's own name after the dash (`- [ ] TD-31 - **D.4** …`).
 - Done: ticked, the commit that did it, the date at the end, moved to [Closed todos](#closed-todos), newest first –
@@ -29,12 +29,9 @@ to touch.
 
 ## For the owner
 
-- [ ] TD-51 - **The bridge extension 1.6.0 in EasyEDA:** in EasyEDA *Settings → Extensions → Extension Manager*
-      uninstall "MCP Pro Bridge (depth 12, schematic PDF, ODB++)", import
-      `~/.easyeda-mcp-pro/easyeda-bridge-extension-1.6.0.eext`, allow "External Interactions", restart EasyEDA – the
-      extension for easyeda-mcp-pro 1.6.0 (E-4). Only while no session works in EasyEDA and right before TD-52: until
-      then edakit on main reads the PCB's parts with projectId "current", which the 1.6.0 extension refuses.
-      *(edakit-e4)*
+- [ ] TD-58 - **OK for #121, easyeda-mcp-pro 1.6.0:** <https://github.com/tgd1975/edakit/pull/121> – TD-52 to TD-54,
+      checked live; on the OK `merge.py 121` merges it as a minor version, then the branches of TD-38 and TD-39 follow.
+      *(edakit-35)*
 - [ ] TD-57 - **The real cost of the first order:** once an order the skill cart put into a maker's cart is paid,
       `/edakit:cart actual` on its order page or saved invoice – `edakit cart actual` (handbook 8.4, step 5) has run
       on recorded data only; the real cost, the project's fee table and the order record come from it. *(edakit-80)*
@@ -48,20 +45,20 @@ E-1 to E-16 on EasyEDA Pro and M-1 to M-9 on easyeda-mcp-pro, checked live on Ea
 
 At the owner's computer, in this order; each change checked live before it is built.
 
-- [ ] TD-52 - **The switch to 1.6.0:** right after TD-51, branch `mcp-160` merged, the plugin updated in every project
+- [ ] TD-52 - **The switch to 1.6.0:** branch `mcp-160` merged (#121, waits for TD-58; self-test and gate green on 1.6.0), the plugin updated in every project
       that uses EasyEDA (pytree, the bell) and every edakit session's server restarted, the self-test and one gate run
       of the example green; then handbook 2's "Tested with" names 1.6.0.
-- [ ] TD-53 - **M-6, all pages at once:** `easyeda_schematic_components` with `scope: "all_pages"` instead of focusing
+- [ ] TD-53 - **M-6, all pages at once:** checked live – `all_pages` mixes every open schematic, edakit stays page by page; in #121. `easyeda_schematic_components` with `scope: "all_pages"` instead of focusing
       page after page – once TD-52 is done.
-- [ ] TD-54 - **M-6, the BOM's duplicates:** does the BOM of a board-linked schematic still list parts twice on 1.6.0?
+- [ ] TD-54 - **M-6, the BOM's duplicates:** checked live – listed once, the removal goes; in #121. does the BOM of a board-linked schematic still list parts twice on 1.6.0?
       If not, edakit's removal of the duplicates goes.
 - [ ] TD-37 - **E-2, the one click goes:** `pcb parts` writes the Channel ID (`otherProperty["Channel ID"]`) into the
       schematic part as it does the UniqueId, the same value on the PCB part – live on 3.2.209 the DRC was clean without
       the import view; then exit 3 of `route`/`silk` and handbook 7 and 9.4 follow (`edakit/pcb.py` `sync_parts`).
-- [ ] TD-38 - **E-3 and E-7, the PCB tab and the DRC:** `activate_pcb` (`edakit/eda.py`) takes the probe's error on
+- [ ] TD-38 - **E-3 and E-7, the PCB tab and the DRC:** built and checked live on branch `e3-e7-drc`, after #121. `activate_pcb` (`edakit/eda.py`) takes the probe's error on
       3.2.209 as "inactive"; `reload_pcb` before the DRC (`edakit/route.py`) only as the fallback when it reports
       Connection Errors – a live routing run confirms it, also on a PCB never reloaded.
-- [ ] TD-39 - **E-9, local projects through the API:** `local_project_uuid` (`edakit/eda.py`) asks
+- [ ] TD-39 - **E-9, local projects through the API:** built and checked live on branch `e9-local-projects`, after #121. `local_project_uuid` (`edakit/eda.py`) asks
       `DMT_Project.getAllProjectsUuid(<project folder>)` (folders from `DMT_Team.getAllTeamsInfo`) instead of reading
       `config.json` and the `.eprj2` files.
 - [ ] TD-40 - **E-10, E-11 and E-13 taken up:** `edakit part build` modifies the symbol's pins instead of creating them
@@ -147,6 +144,8 @@ sources, data and code untouched; a text that is generated or used elsewhere sta
 Done or dropped, newest first, each with its date and the commit that closed it. What closed before 2026-11-01 is
 taken from the history of this file; an item rewritten on its way is listed once, in its last form.
 
+- [x] TD-51 - **The bridge extension 1.6.0 in EasyEDA:** imported by the owner; `edakit doctor` and the self-test:
+      extension 1.6.0 = server 1.6.0. [2026-11-01]
 - [x] TD-46 - **V.3** The notes lane: `.github/notes.py` lands a session's edits of concepts and TODO.md on the newest
   main without an OK – the diff, three-way, from any worktree; a pull request from notes/<topic>, merged by the script
   once green, no GitHub auto-merge; `paths` holds notes/* to the lane; this tick its first run (#107, 897ae0d).
