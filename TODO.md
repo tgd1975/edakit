@@ -4,7 +4,7 @@ Open work that needs the owner's computer, a maker or the owner's word. The stat
 and plans the sections name; this list is what is left to do of them, in the order it can be done. No item is deleted.
 
 **Layout.** Every item, in every section, open or closed, is a line with a checkbox and an ID unique in this file,
-counted up and never reused – whoever adds an item takes the next free ID and counts it up here. Next free ID: TD-61.
+counted up and never reused – whoever adds an item takes the next free ID and counts it up here. Next free ID: TD-70.
 
 - Open: `- [ ] TD-<n> - **Title:** what and why.` – a step's own name after the dash (`- [ ] TD-31 - **D.4** …`).
 - Done: ticked, the commit that did it, the date at the end, moved to [Closed todos](#closed-todos), newest first –
@@ -29,6 +29,10 @@ to touch.
 
 ## For the owner
 
+- [ ] TD-69 - **Where CI.0 runs:** a machine with GitHub Copilot CLI logged in, Qwen Code, Mistral Vibe with a Mistral
+      API key, OpenCode, and Ollama and llama.cpp with a GPU for Qwen3-Coder-Next and Devstral Small 2 – this session's
+      cloud container has no GPU and no logins; which machine, and whether a Copilot plan and a Mistral key are at hand.
+      *(amazing-newton)*
 - [ ] TD-59 - **OK for #129, #130, #131:** <https://github.com/tgd1975/edakit/pull/129> (TD-37, no click on Import
       Changes), <https://github.com/tgd1975/edakit/pull/130> (TD-38, the DRC reloads only on Connection Errors),
       <https://github.com/tgd1975/edakit/pull/131> (TD-39, local projects through the API) – each checked live on 1.6.0;
@@ -89,6 +93,30 @@ step starts on the owner's word.
 - [ ] TD-49 - **V.6** 1.0.0 on the owner's word once D.2 is built (`merge.py <n> --major`).
 - [ ] TD-50 - **V.7** Later, on the owner's word: `edakit = ">=0.4"` under `[project]` in `edakit.toml`, noted by
       `edakit check` and the SessionStart hook when the running edakit does not meet it.
+
+## Claude independence ([claude-independence.md](docs/concepts/new/claude-independence.md))
+
+Decided on 2026-11-01; nothing built. Each step starts on the owner's word, one per branch; CI.0 first – it decides what
+CI.1 and CI.4 contain. Copilot, Qwen Code, Mistral Vibe and OpenCode at once, self-hosted models through Ollama and
+llama.cpp.
+
+- [ ] TD-61 - **CI.0** Probe before anything is built: the plugin as it is in Copilot CLI, Qwen Code and Mistral Vibe at
+      once, and OpenCode with its files set by hand; add-led, fault-motors, a decision round and the hooks, each with a
+      hosted and a self-hosted model (Ollama, llama.cpp); what breaks is the list for CI.1 and CI.4.
+- [ ] TD-62 - **CI.1** The plugin portable, each change with its test: `edakit handbook` and `edakit root` for the 27
+      plugin paths, the MCP server's start, `lock.py` recognising EasyEDA's tools under every naming and
+      `EDAKIT_SESSION`, the question tool by function, the agents' tool names, new-project per `[project] assistants`.
+- [ ] TD-63 - **CI.2** `edakit agreements --write|--check` and `EDAKIT_CALL_LOG`.
+- [ ] TD-64 - **CI.3** The eval runner across harnesses (`copilot -p`, `qwen -p`, `vibe -p`, `opencode run`), the loop
+      case, the first matrix; supported is every case in two of three runs.
+- [ ] TD-65 - **CI.4** `edakit assistant vibe|opencode --write|--check`: Vibe's agents as TOML and the agreements in
+      `AGENTS.md`; OpenCode's skills, sub-agents, the EasyEDA server with `codemode: false` and a TypeScript plugin for
+      the claim and the agreements.
+- [ ] TD-66 - **CI.5** The browser for the skills cart and release: Chrome DevTools MCP (`--autoConnect`) or the
+      harness's own, beside Claude in Chrome.
+- [ ] TD-67 - **CI.6** new-project asks for the assistants; project-surveyor reports a harness's files a project brings.
+- [ ] TD-68 - **CI.7** The documentation: chapter 11's table of harnesses, the README's supported pairs, "the assistant"
+      in `docs/style.md` and the glossary, the first property of "edakit as a meta-harness".
 
 ## The documentation for its readers ([documentation.md](docs/concepts/new/documentation.md))
 
