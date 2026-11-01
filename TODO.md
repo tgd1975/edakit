@@ -4,7 +4,7 @@ Open work that needs the owner's computer, a maker or the owner's word. The stat
 and plans the sections name; this list is what is left to do of them, in the order it can be done. No item is deleted.
 
 **Layout.** Every item, in every section, open or closed, is a line with a checkbox and an ID unique in this file,
-counted up and never reused – whoever adds an item takes the next free ID and counts it up here. Next free ID: TD-85.
+counted up and never reused – whoever adds an item takes the next free ID and counts it up here. Next free ID: TD-90.
 
 - Open: `- [ ] TD-<n> - **Title:** what and why.` – a step's own name after the dash (`- [ ] TD-31 - **D.4** …`).
 - Done: ticked, the commit that did it, the date at the end, moved to [Closed todos](#closed-todos), newest first –
@@ -78,6 +78,20 @@ Built on 2026-11-01 (#174, edakit 0.4.14); what is left after the owner's review
 - [ ] TD-83 - **The findings of the chapters' reviews:** sources that cite a section for what it does not hold
       (codes.toml, docstrings, skills), statements that look stale against the code – each listed under "Findings" in
       `docs/concepts/new/documentation-review/` –, fixed through a branch each, sources on the owner's word.
+
+## What the 555 blinker left open (walkthrough 2; its gaps in [handbook 13.10](handbook/13-lessons-learned.md))
+
+Noted in the walkthrough's last section until 2026-11-01; each is edakit's to build or decide.
+
+- [ ] TD-85 - **A sign-off note as evidence:** a note counts every mention of a requirement's ID as passing evidence,
+      also "R-4 not met" (M-1, note 9) – documented in handbook 8.7 and tested; changing it is the owner's decision.
+- [ ] TD-86 - **Messages on KiCad:** `route all` still says "nothing written to EasyEDA", stage S of the protocol
+      "EasyEDA schematic = graph".
+- [ ] TD-87 - **`pcb plan` and `hand_solder_keep_mm`:** the plan does not hold pads to it; `route check` does.
+- [ ] TD-88 - **Pours around a tooling hole on KiCad:** they keep EasyEDA's square notch where KiCad could fill around
+      the hole (M-5, note 7).
+- [ ] TD-89 - **The LED model's ideality:** fixed at 2; a datasheet's IV curve gives D1 20–25 mV more at 0.5 mA than
+      the model (M-1).
 
 ## Closed todos
 
