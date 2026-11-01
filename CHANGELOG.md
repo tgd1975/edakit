@@ -7,6 +7,11 @@ written once, by `.github/merge.py`, from the fragments in [changes/](changes/RE
 [versioning.md](docs/concepts/new/versioning.md). Update with `claude plugin marketplace update edakit && claude plugin
 update edakit@edakit`, then `/reload-plugins` or a new session; `edakit --version` names the version that runs.
 
+## 0.3.3 – 2026-11-01
+
+- The proposals Action waits for its tests before a result and lists each proposal as one item in the pull request,
+  with no placeholder left in it (TD-43).
+
 ## 0.3.2 – 2026-11-01
 
 - The proposals Action carries over a commit an earlier triage pushed after its pull request was merged even when the
