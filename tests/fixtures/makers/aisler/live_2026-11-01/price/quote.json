@@ -1,0 +1,162 @@
+{
+ "maker": "aisler",
+ "read": "2026-11-01T10:40:00+01:00",
+ "fields": [
+  {
+   "label": "Dimension / Size",
+   "value": "60mm x 28mm"
+  },
+  {
+   "label": "Layer Count",
+   "value": "2"
+  },
+  {
+   "label": "Minimal Drill Diameter",
+   "value": "0.3mm"
+  },
+  {
+   "label": "Elongated Hole Count",
+   "value": "2"
+  },
+  {
+   "label": "Castellated Hole Count",
+   "value": "0"
+  },
+  {
+   "label": "Sides",
+   "value": "Single-sided (top)"
+  },
+  {
+   "label": "Service",
+   "value": "Amazing Assembly"
+  },
+  {
+   "label": "PCB Thickness",
+   "value": "1.6mm"
+  },
+  {
+   "label": "Surface Finish",
+   "value": "HASL Lead Free"
+  },
+  {
+   "label": "Copper Thickness of outer layers",
+   "value": "35 µm"
+  },
+  {
+   "label": "PCB Color",
+   "value": "Green"
+  },
+  {
+   "label": "Silkscreen",
+   "value": "White"
+  },
+  {
+   "label": "Quantity",
+   "value": "5"
+  },
+  {
+   "label": "Estimated Dispatch",
+   "value": "Wednesday, Nov 25, 2026"
+  }
+ ],
+ "files": [
+  {
+   "name": "odb_main"
+  }
+ ],
+ "parts": [
+  {
+   "part": "CC0805KRX7R9BB104",
+   "designators": [
+    "C1"
+   ],
+   "mark": ""
+  },
+  {
+   "part": "CL21B105KBFNNNE",
+   "designators": [
+    "C2",
+    "C4"
+   ],
+   "mark": ""
+  },
+  {
+   "part": "CL21B103KBANNNC",
+   "designators": [
+    "C3"
+   ],
+   "mark": ""
+  },
+  {
+   "part": "APTD2012LSURCK",
+   "designators": [
+    "D1"
+   ],
+   "mark": ""
+  },
+  {
+   "part": "AO3415A",
+   "designators": [
+    "Q1"
+   ],
+   "mark": ""
+  },
+  {
+   "part": "RC0805FR-07750KL",
+   "designators": [
+    "R1"
+   ],
+   "mark": ""
+  },
+  {
+   "part": "RC0805FR-07200RL",
+   "designators": [
+    "R2"
+   ],
+   "mark": ""
+  },
+  {
+   "part": "0805W8F1002T5E",
+   "designators": [
+    "R3"
+   ],
+   "mark": ""
+  },
+  {
+   "part": "LMC555CMX/NOPB",
+   "designators": [
+    "U1"
+   ],
+   "mark": ""
+  }
+ ],
+ "dnp": [
+  "BT1",
+  "SW1"
+ ],
+ "prices": [
+  {
+   "label": "Net Total",
+   "amount": 348.03,
+   "kind": "pcb"
+  },
+  {
+   "label": "VAT 19%",
+   "amount": 66.13,
+   "kind": "vat"
+  },
+  {
+   "label": "Total",
+   "amount": 414.16,
+   "kind": "total"
+  }
+ ],
+ "currency": "EUR",
+ "lead_time": "Wednesday, Nov 25, 2026",
+ "notes": [
+  "BOM price for 5 (BOM tab): €175.52 – inside the Net Total, which AISLER does not split into board and assembly",
+  "C1, Q1, R3: the exact MPN listed more than once – assigned the line of the release's manufacturer (Yageo; Alpha & Omega Semiconductor; ROYALOHM)",
+  "/checkout opened by its address (the owner's word of 2026-11-01); 'Continue to checkout' on the BOM tab and 'Continue to Checkout' not touched",
+  "VAT 19 % is AISLER's German rate; the rate for the delivery country is set after 'Continue to Checkout'"
+ ]
+}

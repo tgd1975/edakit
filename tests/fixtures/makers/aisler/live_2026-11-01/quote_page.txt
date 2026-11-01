@@ -2,7 +2,7 @@
 Overview: Dimension / Size 60mm x 28mm; Layer Count 2; Minimal Drill Diameter 0.3mm; Elongated Hole Count 2; Castellated Hole Count 0
 Select your stackup and color in the checkout.
 Your production data is ready – Checkout now, starting at just €17.36 (not touched)
-odb_main.zip uploaded as a new revision
+[not page text: odb_main.zip went up by "Add New Revision"; the page names the project odb_main, not the file]
 
 === Assembly ===
 Sides Single-sided (top); Distinct components 9; SMT components 10; THT components 0; Press-fit components 0

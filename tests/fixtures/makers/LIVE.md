@@ -20,3 +20,7 @@ quote_page.txt), edakit cart check (check.md), the regulatory review at the orde
   manufacturer, BT1 and SW1 excluded; /checkout set to Amazing Assembly, 1.6 mm, HASL Lead Free, 35 µm, green, white,
   quantity 5 – ORDER.form passed. Stopped at ORDER.parts: R1 and R2 out of stock at AISLER, so no price; the BOM price
   for 5 was €175.24.
+  The third (run 20261101-102149, aisler/live_2026-11-01/price/): R1 and R2 swapped in the copy for YAGEO
+  RC0805FR-07750KL and RC0805FR-07200RL, M-1, M-5 and M-6 again by the agents; every part assigned (R1, R2 by "mpn"),
+  /checkout at Amazing Assembly, quantity 5: €348.03 net, VAT 19 % €66.13, €414.16, dispatch 2026-11-25. Every check
+  passed, the review "Order: OK"; stopped before "Continue to Checkout".

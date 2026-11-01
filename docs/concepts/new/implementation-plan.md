@@ -67,7 +67,7 @@ starts when the user asks for it.
 | 5.7 | Skill `cart`, live at JLCPCB up to the cart | ordering step 7 | M | no | 5.0, 5.4, 5.5 | written (be8781d), live run open |
 | 5.8 | BOM with MPN, P-12; Eurocircuits | ordering step 8 | M | no | 5.3, 5.7 | built offline (17446f9), Eurocircuits live open |
 | 5.9 | new-project asks for the maker | ordering step 9 | S | no | 5.3, 5.8 | done (be8781d) |
-| 5.10 | ODB++: MCP tool and bridge patch, F-7; AISLER | ordering step 10 | L | yes | 5.0, 5.7 | built offline (6b6ff5e), EasyEDA's export probed in 5.0 (0b), AISLER live 2026-11-01: up to ORDER.parts (two parts out of stock at AISLER), a run up to the price open |
+| 5.10 | ODB++: MCP tool and bridge patch, F-7; AISLER | ordering step 10 | L | yes | 5.0, 5.7 | built offline (6b6ff5e), EasyEDA's export probed in 5.0 (0b), AISLER live 2026-11-01: up to the price on /checkout, every check passed (R1, R2 swapped in the throwaway copy for parts AISLER stocks) |
 | 5.11 | The makers' interfaces, where granted | ordering step 11 | – | no | the makers | open |
 | 5.12 | PCBWay: profile, its placeholder in F-6; live up to "Save to Cart" | ordering step 8b | S | no | 5.0, 5.7, 5.8 | profile and F-6 built (see below), live open |
 

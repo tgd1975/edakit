@@ -449,3 +449,16 @@ def test_aisler_as_the_live_run_read_it():
     job, quote = (json.loads((d / f).read_text()) for f in ("job.json", "quote.json"))
     assert job["match"] == "mpn" and c.b1(job, quote)[0] == []
     assert c.b2(job, quote)[0] == ["0805W8F7503T5E R1: Out of Stock", "0805W8F2000T5E R2: Out of Stock"]
+
+
+def test_aisler_up_to_the_price():
+    """Live run 5.10, its end (2026-11-01, tests/fixtures/makers/aisler/live_2026-11-01/price): R1 and R2 swapped in the
+    throwaway copy for YAGEO parts AISLER stocks, released again – every part assigned by "mpn" or by the release's
+    manufacturer, /checkout at Amazing Assembly, quantity 5, €348.03 net; ORDER.form, ORDER.parts and the review pass,
+    and the skill stops before "Continue to Checkout" (AISLER has no cart)."""
+    from edakit import cart as c
+    d = Path(__file__).parent / "fixtures" / "makers" / "aisler" / "live_2026-11-01" / "price"
+    job, quote = (json.loads((d / f).read_text()) for f in ("job.json", "quote.json"))
+    assert c.b1(job, quote)[0] == [] and c.b2(job, quote)[0] == []
+    assert job["maker"]["cart"] is None and "Continue to Checkout" in job["maker"]["never"]
+    assert (d / "regulatory.md").read_text().rstrip().endswith("Order: OK")
