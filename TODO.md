@@ -65,16 +65,7 @@ when a project must act); every merge that changes edakit a version of its own, 
 notes lane for concepts and TODO.md; the rulesets on main as text; the projects on the newest version, unpinned. Each
 step starts on the owner's word.
 
-- [ ] TD-48 - **V.5** Branches left lying around: 9 `claude/*` and 2 `ccr-*` on origin, the local ones and the
-      worktrees – listed, then merged or deleted on the owner's word; other sessions' branches named with their session.
 - [ ] TD-49 - **V.6** 1.0.0 on the owner's word once D.2 is built (`merge.py <n> --major`).
-- [ ] TD-50 - **V.7** Later, on the owner's word: `edakit = ">=0.4"` under `[project]` in `edakit.toml`, noted by
-      `edakit check` and the SessionStart hook when the running edakit does not meet it.
-- [ ] TD-79 - **merge.py and generated files:** when main moves during the checks and both sides regenerated a
-      generated file – `docs/catalog/index.html`, the handbook's generated sections –, `merge.py` stops at the conflict
-      and the session merges by hand; it could take main's side of a generated file, regenerate it (`docs/catalog/
-      build.py`, `python -m edakit.catalog.handbook --write`) and go on. Found by edakit-35 on #135 and #136, two rounds
-      lost.
 
 ## The documentation for its readers ([documentation.md](docs/concepts/new/documentation.md))
 
@@ -117,6 +108,16 @@ sources, data and code untouched; a text that is generated or used elsewhere sta
 Done or dropped, newest first, each with its date and the commit that closed it. What closed before 2026-11-01 is
 taken from the history of this file; an item rewritten on its way is listed once, in its last form.
 
+- [x] TD-79 - **merge.py and generated files:** a conflict only in generated output – the catalog page, the handbook's
+  generated sections – is resolved and regenerated, a conflict in anybody's text still stops the merge; with it the
+  check version reads the merge base, so a branch behind main is no longer taken for wrongly numbered (#168).
+  [2026-11-01]
+- [x] TD-50 - **V.7** `edakit = ">=0.4"` under `[project]` in edakit.toml: STRUCT.edakit notes an edakit that does not
+  meet it, the working agreements' first line names the edakit that runs, the session hook warns on a mismatch (#169,
+  edakit 0.4.13). [2026-11-01]
+- [x] TD-48 - **V.5** Branches left lying around: eight fully merged ones deleted on origin on the owner's word
+  (features/proposals, rules/proposals, six notes/*); the `claude/*` and `ccr-*` ones were gone already; the rest
+  belongs to open pull requests of other sessions. [2026-11-01]
 - [x] TD-69 - **Where CI.0 runs:** which machine with the harnesses, a GPU for the self-hosted models, a Copilot
       plan and a Mistral key – dropped: comes back with CI.0; a concept's steps come into this list only once it is
       being built. [2026-11-01]
