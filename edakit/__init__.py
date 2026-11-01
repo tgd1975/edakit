@@ -5,4 +5,4 @@ EasyEDA Pro through the easyeda-mcp-pro bridge, routes with Freerouting and rele
 after every stage of the release gate has passed. See handbook/README.md.
 """
 
-__version__ = "0.1.0"
+__version__ = "0.2.0"
