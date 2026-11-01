@@ -450,3 +450,34 @@ def test_a_template_that_kept_its_name_is_left_alone(cfg, capsys):
     mcp = FakeDocs()
     assert eda.keep_schematic_name(mcp, "s-tpl", "generated_main", "p-tpl", panels=True) is False
     assert mcp.renames == [] and capsys.readouterr().out == ""
+
+
+class FakePcbList:
+    """easyeda_pcb_components as easyeda-mcp-pro 1.6.0 answers it: only for the focused PCB and the exact UUID of its
+    project (readProjectScoped) – "current" is refused. EasyEDA has switched to the schematic on its own."""
+
+    def __init__(self):
+        self.active, self.parts = "sch-1", [{"designator": f"R{i}"} for i in range(1, 251)]
+
+    def call(self, tool, timeout=130, **args):
+        if tool == "easyeda_pcb_components":
+            if self.active != "pcb-1" or args["projectId"] != "proj-1":
+                raise eda.MCPError("PCB project identity mismatch: requested project UUID must match the focused PCB")
+            page = self.parts[args["offset"]:args["offset"] + args["limit"]]
+            return {"components": page, "total": len(self.parts)}
+        path, a = args["path"], args["args"]
+        if path == "DMT_SelectControl.getCurrentDocumentInfo":
+            return {"ok": True, "result": {"uuid": self.active}}
+        if path == "DMT_EditorControl.openDocument":
+            self.active = a[0]
+            return {"ok": True, "result": True}
+        if path == "DMT_Project.getCurrentProjectInfo":
+            return {"ok": True, "result": {"uuid": "proj-1", "friendlyName": "demo"}}
+        raise AssertionError(path)
+
+
+def test_the_pcb_parts_are_listed_with_the_pcb_focused_and_the_projects_uuid(cfg, monkeypatch):
+    monkeypatch.setattr(eda, "PCB", {"name": "main", "uuid": "pcb-1"})
+    mcp = FakePcbList()
+    assert [c["designator"] for c in eda.list_pcb_components(mcp)] == [f"R{i}" for i in range(1, 251)]
+    assert mcp.active == "pcb-1"

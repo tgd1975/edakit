@@ -36,11 +36,15 @@ we want instead and where it stands. Nothing here is posted without the owner's 
 
 **Last check, 2026-11-01:**
 
-- easyeda-mcp-pro 1.6.0 (2026-10-28) is the newest; edakit pins 1.4.0. Nothing from 1.4.0 to 1.6.0 meets M-1 to M-4
-  – on `upstream/main` the return depth is still 5, the PDF export still calls the PCB's function first, there is no
-  ODB++, `src/bridge/manager.ts` is untouched – and no issue or pull request there covers them. Since 1.5.1 the
+- easyeda-mcp-pro 1.6.0 (2026-10-28) is the newest; edakit pins it (TD-25; 1.4.0 before). Nothing from 1.4.0 to
+  1.6.0 meets M-1 to M-4 – on `upstream/main` the return depth is still 5, the PDF export still calls the PCB's
+  function first, there is no ODB++, the stale sweep in `src/bridge/manager.ts` is unchanged – and no issue or pull
+  request there covers them. Since 1.5.1 the
   server refuses writes from a bridge extension of another version: raising the pin takes the extension of the same
-  version, imported anew (E-4). The anchors of both patches are still in 1.6.0.
+  version, imported anew (E-4). The anchors of both patches are still in 1.6.0; both applied, the patched extension
+  built (`~/.easyeda-mcp-pro/easyeda-bridge-extension-1.6.0.eext`). Since 1.6.0 the PCB lists
+  (`easyeda_pcb_components`, `_tracks`, `_vias`, `_regions`, `_fills`) answer only with the PCB focused and the
+  project's exact UUID as `projectId` – edakit's `list_pcb_components` passes it.
 - The fork's three branches rebased onto 1.6.0 (`e52d862`); their tests in the table of the branches below.
 - EasyEDA Pro 3.2.209 (2026-10-21) is the newest and, since 2026-11-01, installed (in place from the zip; 3.2.206
   unpacked in `~/Downloads/easyeda_unzipped` as the way back); it brings pro-api 0.3.59 (3.2.206: 0.3.50), the

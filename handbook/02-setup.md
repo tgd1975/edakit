@@ -20,7 +20,7 @@ extension API. edakit uses the same server.
 ## 2.2 Install
 
 1. **EasyEDA Pro** (desktop, not the web version): from easyeda.com. Create or open your project once.
-2. **Node 24** (easyeda-mcp-pro 1.4.0 requires it): `nvm install 24`. The launcher sources nvm itself when started
+2. **Node 24** (easyeda-mcp-pro 1.6.0 requires it): `nvm install 24`. The launcher sources nvm itself when started
    from a desktop client without it in PATH.
 3. **uv** (runs edakit with its dependencies): <https://docs.astral.sh/uv/>.
 4. **ngspice** (stage E): `sudo apt install ngspice` (or your package manager).
@@ -70,8 +70,8 @@ or from a clone `uv run --project /path/to/edakit edakit <command>`.
 
 ## 2.4 The MCP server
 
-`edakit/easyeda/mcp-server.sh` installs easyeda-mcp-pro **pinned** to 1.4.0 into
-`~/.easyeda-mcp-pro/runtime/1.4.0` (once) and starts `node` directly, with safe defaults:
+`edakit/easyeda/mcp-server.sh` installs easyeda-mcp-pro **pinned** to 1.6.0 into
+`~/.easyeda-mcp-pro/runtime/1.6.0` (once) and starts `node` directly, with safe defaults:
 
 | Setting | Value | Why |
 |---|---|---|
@@ -88,7 +88,8 @@ the patched extension (2.5) answers it. Upstream: M-4 in [upstream/README.md](..
 
 **Pinned, not npx:** the tool set and the extension must match, and npx does not pass SIGTERM on – an orphaned server
 then blocks the bridge port. Update deliberately: raise `EASYEDA_MCP_VERSION`, rebuild the patched extension (2.5),
-re-import it, restart EasyEDA.
+re-import it, restart EasyEDA, restart every server. Since 1.5.1 a server whose extension has another version refuses
+every write, export and `easyeda_api_call` and answers only reads – server and extension change together.
 
 The bridge listens on 127.0.0.1 only. The only online calls are read-only part lookups (LCSC product data, JLCPCB's
 public assembly catalogue) – only part numbers leave the machine.
@@ -116,7 +117,7 @@ Re-importing (update, other depth): EasyEDA does not take an import over an inst
 version. **Uninstall the old one, import, restart EasyEDA**; until the restart the old copy keeps running. After that
 restart the menu sometimes is missing, but Auto-Connect stays on and connects. Check: `edakit doctor` says "patched
 extension" – it asks `DMT_Project.getCurrentProjectInfo`, which shows the pages written out instead of `[MaxDepth]` –
-and "bridge extension 1.4.0 = server 1.4.0". It probes the depth only while EasyEDA is free or claimed by you; the
+and "bridge extension 1.6.0 = server 1.6.0". It probes the depth only while EasyEDA is free or claimed by you; the
 version and registry lines come from `easyeda_health_check`, which needs no claim. The patched build keeps the UUID
 and version of the original, so neither EasyEDA's extension manager nor the version tells the two apart – the depth
 does.
