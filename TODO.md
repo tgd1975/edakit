@@ -143,17 +143,14 @@ sources, data and code untouched; a text that is generated or used elsewhere sta
       picks (needs the owner – the repository stays private); a later project's page once it has a result with edakit,
       nothing planned on the gallery; the style guide's project page and `test_style.py` follow.
 
-## The projects take it over ([implementation-plan.md](docs/concepts/done/implementation-plan.md), phase 4)
-
-- [ ] TD-56 - **4.5** A project without `hardware/requirements.toml` fails the gate – once the bell and the tree have
-      one. Waits only for the bell's D-39: its accepted proposal replaces D-32's files after its order (the bell's
-      TD-4); the tree's file (TD-55) and #97 (merged with #89) are done.
-
 ## Closed todos
 
 Done or dropped, newest first, each with its date and the commit that closed it. What closed before 2026-11-01 is
 taken from the history of this file; an item rewritten on its way is listed once, in its last form.
 
+- [x] TD-56 - **4.5** A project without a requirements file does not release: DOCS.file, open like a required
+  sign-off – `edakit check` passes, `--release` and the gate do not; built before the bell's D-39 on the owner's word,
+  the bell has its file (#106, edakit 0.3.0). [2026-11-01]
 - [x] TD-45 - **V.1 and V.2** edakit 0.2.0, the first version: the number in `edakit/__init__.py`, `edakit --version`
   and the manifest's `tools.edakit`, the changelog from 2026-11-01 on, the fragments in `changes/`, `.github/merge.py`
   (merges while main keeps its number – not strict), the checks `paths` and `version`, `release.yml` (tag v0.2.0 and the
