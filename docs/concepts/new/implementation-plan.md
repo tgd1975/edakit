@@ -2,7 +2,7 @@
 
 Status 2026-10-31: plan; phase 1 (1.1 to 1.8), 3.1 to 3.5, 3.7 and the follow-ups below are done; 2.1 to 2.4 and
 3.6 are built and ran live on 2026-10-31 (results under each live run; built from them the same day: 2.2's mode
-"write", M-6 on the electrical hash, the way back after `part build`; open: the bell's T-Display on the data path); 4.3 is written, reviewed and decided – the
+"write", M-6 on the electrical hash, the way back after `part build`; the bell's T-Display on the data path done there, its D-30); 4.3 is written, reviewed and decided – the
 language deferred, TOML with names the form, its plan [circuit-language-plan.md](../done/circuit-language-plan.md)
 built on 2026-10-31 up to L.8, L.9 done in the bell on 2026-11-01. It builds
 three concepts after the user took their decisions on 2026-10-28 (e5caf42, 301fd90):
@@ -443,8 +443,8 @@ script's (`tdisplay_device.py symbol`, without `"symbol"` in the data). **`PCB_P
 the system library and with the footprint alone – while R1 was created; after a build without MH it worked, and then
 with MH in all four forms (round and slot, plated or not) too. The cause is not found; edakit's message should name
 the way out (`schematic create`, `schematic layout`, then `pcb parts`). The slot's direction in the library view and
-the look of the footprint are the owner's to check (TODO.md). The owner decided on 2026-10-31 that a changed footprint voids M-1, not M-6 (TODO.md). By the plan's rule the bell's footprint goes to the data
-path and the symbol stays the script's – in the bell's repository, at the owner's request.
+the look of the footprint the owner checked in EasyEDA on 2026-10-31. The owner decided the same day that a changed footprint voids M-1, not M-6 (built: M-6 on the electrical hash). By the plan's rule the bell's footprint goes to the data
+path and the symbol stays the script's – done in the bell's repository (its D-30, on its main 2026-11-01).
 
 ## Phase 4: in the projects
 

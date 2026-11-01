@@ -67,17 +67,6 @@ run against a maker's page or EasyEDA yet.
       BOM part without `compliance.rohs` on a board for sale; the maker's RoHS and REACH statements in its profile.
       Each becomes a rule only with the skill add-rule, on the owner's word.
 
-## Live runs of design as text (2.1–2.4, 3.6 of the [implementation plan](docs/concepts/new/implementation-plan.md))
-
-Ran on 2026-10-31 in throwaway projects, the footprint checked by the owner in EasyEDA, the throwaway projects and
-the probe's Custom Config removed; the results are under each live run of the plan. The bell's T-Display on the data
-path is done in the bell (2026-11-01, on its main, its D-30).
-
-Built on 2026-10-31 from them: `[routing] drc_rules = "write"`; M-6 on the electrical hash; the way back into the PCB
-after `part build`; the waits after `openProject`, `symbol_differs` in `schematic create`, the panel guard of
-`rename_schematic`, projects found in EasyEDA's folder. led-bar's `[place]` stays as it is: its LED row and U1 are the
-data of tests (`test_pcb`), not a board to order.
-
 ## Walkthrough gaps ([walkthrough-gaps.md](docs/concepts/done/walkthrough-gaps.md))
 
 Built and decided on 2026-10-31; what is left runs live.
