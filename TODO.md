@@ -167,10 +167,10 @@ only once they are built (the owner, 2026-11-01).
 Done or dropped, newest first, each with its date and the commit that closed it. What closed before 2026-11-01 is
 taken from the history of this file; an item rewritten on its way is listed once, in its last form.
 
-- [x] TD-47 - **V.4** main protected: the rulesets main, main-updates and tags and the merge settings as files in
-  `.github/rulesets/` (#119), applied with `.github/rulesets.py apply` on the owner's word once everything in flight had
-  landed – GitHub took the admin role as the bypass of main-updates; the marker tag `protected-2026-11-01` on 71f807f;
-  the skills write a fragment per change (#120). [2026-11-01]
+- [x] TD-47 - **V.4** main protected: the rulesets main and tags and the merge settings as files in `.github/rulesets/`
+  (#119), applied with `.github/rulesets.py apply` on the owner's word once everything in flight had landed; the marker
+  tag `protected-2026-11-01` on 71f807f; the skills write a fragment per change (#120); main-updates dropped an hour
+  later on the owner's word – its bypass needs `--admin` on every merge, which auto mode refuses (#156). [2026-11-01]
 - [x] TD-77 - **K.7** dropped: the launch is not in implementation – the step stays in outreach.md's table until it
       is (the owner: a concept's steps come here only once they are built). [2026-11-01]
 - [x] TD-76 - **K.6** dropped the same way: the launch week stays in outreach.md. [2026-11-01]
