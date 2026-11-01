@@ -1,6 +1,6 @@
-"""The site for GitHub Pages (docs/pages.py): every page of the handbook, the concepts, the skills and the agents is
-on it, a link to a page of the site stays on the site, an image goes onto the site, a link to anything else goes to
-the file on GitHub."""
+"""The site for GitHub Pages (docs/pages.py): every page of the documentation, the concepts, the skills and the agents
+is on it, the navigation is NAV – by reader, two levels, short titles –, a link to a page of the site stays on the site,
+an image goes onto the site, a link to anything else goes to the file on GitHub."""
 
 import importlib.util
 import json
@@ -26,7 +26,34 @@ def test_every_description_is_a_page_of_the_site(tmp_path):
             + [f"catalog/circuits/{p.name}" for p in (ROOT / "docs" / "catalog" / "circuits").glob("*.svg")])
     assert [w for w in want if not (docs / w).is_file()] == []
     cfg = json.loads((out / "mkdocs.yml").read_text(encoding="utf-8"))
-    assert cfg["docs_dir"] == "docs" and {"Rule catalog": "catalog/index.html"} in cfg["nav"]
+    reference = next(g["Reference"] for g in cfg["nav"] if "Reference" in g)
+    assert cfg["docs_dir"] == "docs" and {"Rule catalog": "catalog/index.html"} in reference
+    assert "edakit" in cfg["copyright"] and "issues/new/choose" in cfg["copyright"]   # the version, the feedback line
+
+
+def test_the_navigation_is_by_reader_with_short_titles():
+    """Step D.3 of docs/concepts/new/documentation.md: the groups by reader, two levels, at most fourteen entries a
+    group, titles of at most five words; every page of kind documentation in it; the sources marked."""
+    mod = pages()
+    groups = [g for g, _ in mod.NAV]
+    assert groups == ["Start", "The circuit", "The board", "Extend the rules", "Develop edakit", "Reference",
+                      "Inside edakit"]
+    assert all(len(entries) <= 14 and all(len(title.split()) <= 5 for _, title in entries) for _, entries in mod.NAV)
+    listed = {src for _, entries in mod.NAV for src, _ in entries}
+    docs = {"README.md", *(f"handbook/{p.name}" for p in (ROOT / "handbook").glob("*.md")),
+            *(p.relative_to(ROOT).as_posix() for p in (ROOT / "docs").glob("*.md")), "docs/brand/README.md",
+            "docs/projects/README.md"}
+    assert sorted(d for d in docs - listed if d != "README.md") == []
+    assert all((ROOT / src).is_file() or src in mod.GENERATED for src in listed)
+
+
+def test_a_source_carries_the_source_line_and_the_concepts_an_index(tmp_path):
+    docs = pages().assemble(tmp_path / "pages") / "docs"
+    assert "A source" in (docs / "concepts" / "new" / "documentation.md").read_text(encoding="utf-8")
+    assert "A source" in (docs / "skills" / "cart.md").read_text(encoding="utf-8")
+    assert "A source" not in (docs / "handbook" / "08-release-gate.md").read_text(encoding="utf-8")
+    index = (docs / "concepts" / "index.md").read_text(encoding="utf-8")
+    assert "## Open" in index and "(new/documentation.md)" in index and "prototypes" not in index
 
 
 def test_links_stay_on_the_site_or_go_to_github():

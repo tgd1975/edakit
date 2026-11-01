@@ -1,5 +1,9 @@
 # 10 Reference: edakit.toml, the project files and the commands
 
+For you when you set up or change a project, and for Claude when it looks something up: every key of edakit.toml, the
+board file, the schematic file and the requirements file, what each command reads and writes, and where a project
+keeps its files.
+
 ## 10.1 edakit.toml
 
 Lookup: `--config PATH`, `$EDAKIT_CONFIG`, then `edakit.toml` in the current directory or a parent. Relative paths
@@ -8,18 +12,25 @@ are. What one role decides lives in a file of its own, with one owner and one ha
 
 | File | Content | Written by | Hash |
 |---|---|---|---|
-| `edakit.toml` | project, boards with their EasyEDA documents, where the files are, release settings, the project's scripts and agents | new-project, the user | – |
-| `hardware/requirements.toml` | what the circuit must do: needs and requirements with their evidence (3.6, 10.4), named in `[project] requirements`; required before a release (DOCS.file) | the skill requirements drafts, only the user accepts | circuit |
-| `hardware/graph.toml` | the circuit with its purpose, the hand-over to the layout, the ground net and the check settings (3.1) – in a project that has not converted `hardware/graph.json`, the same graph as JSON | circuit designer | circuit |
+| `edakit.toml` | project, boards with their EasyEDA documents, where the files are, release settings, the project's scripts and agents | new-project, you | – |
+| `hardware/requirements.toml` | what the circuit must do: needs and requirements with their evidence (3.6, 10.4), named in `[project] requirements`; required before a release (DOCS.file) | the skill requirements drafts, only you accept | circuit |
+| `hardware/graph.toml` | the circuit with its purpose, the hand-over to the layout, the ground net and the check settings (3.1); before `edakit graph convert`, the same graph as `hardware/graph.json` | circuit designer | circuit |
 | `hardware/graph.json` beside a TOML graph | the resolved graph, generated: pin numbers, every pin map (3.1) – never edited | `edakit graph json --write`, `edakit graph convert` | – |
 | `hardware/parts/`, `hardware/sim.json` | parts database (4), simulation scenarios (5) | part-selector, circuit designer | circuit |
 | `hardware/schematic.toml` | arrangement of the schematic: blocks, notes, pin table (10.3) | circuit designer | – |
 | `hardware/boards/<name>.toml` | one board: outline, holes, placement, routing, pours, silkscreen (10.2) | PCB designer | layout |
 | `hardware/boards/<name>.geometry.json` | the footprint geometry of the board's parts as placed in the PCB: boxes, pads, holes (7.4) – beside the board file, with its name | `edakit pcb dump` | layout |
 | the SVGs of `[[silk.art]]` | artwork on the silkscreen (7.7), drawn by hand or by a project script | PCB designer | layout |
-| `hardware/signoff.json` | sign-offs and accepted warnings, each bound to the hash of its scope: circuit, electrical (M-6), layout or fab (8.2); an accepted warning with `parts` {designator: LCSC} also to those parts; `rehashed` records a change of the hash method (the gate writes it for `hash_ignore`) | reviewers, the user | – |
+| `hardware/signoff.json` | sign-offs and accepted warnings, each bound to the hash of its scope (8.2) – below | reviewers, you | – |
 | `hardware/firmware.json` | the firmware contract, with `[firmware]` (3.5) | `edakit firmware` | – |
-| `hardware/scripts.lock` | the stamps of the project scripts: per script its `cmd`, the script itself and the hashes of what it reads, at its last run; after an `easyeda` script ran through `edakit run`, what it changed and what is from before it (8.6) | `edakit run`, `edakit scripts stamp`, the steps that run an input first; `pcb dump` and `route all` take off what they made again | – |
+| `hardware/scripts.lock` | the stamps of the project scripts (8.6) – below | `edakit run`, `edakit scripts stamp`, the steps that run an input first | – |
+
+- `hardware/signoff.json` – the scope is circuit, electrical (M-6), layout or fab (8.2); an accepted warning with
+  `parts` {designator: LCSC} is bound to those parts too. `rehashed` records a change of the hash method (the gate
+  writes it for `hash_ignore`).
+- `hardware/scripts.lock` – per script its `cmd`, the script itself and the hashes of what it reads, at its last run;
+  after an `easyeda` script ran through `edakit run`, what it changed and what is from before it (8.6). `pcb dump` and
+  `route all` take off what they made again.
 
 Complete example: [tests/fixtures/led-bar](../tests/fixtures/led-bar/). A key edakit does not know is an error with
 the list of the known ones – a typo does not fall back to a default unnoticed. An edakit.toml that still holds the
@@ -34,15 +45,15 @@ board, the schematic or the checks (the earlier one-file form) is refused with a
 | `quantity` | `5` | boards per order (stock checks PARTS.stock) |
 | `distributors` | `["lcsc"]` | where the agent part-selector searches, in this order: `lcsc`, `rs`, `farnell`, `mouser`, `digikey`, `reichelt` (chapter 4.2) |
 | `lock` | `auto` | EasyEDA claim between Claude sessions: `auto` (when `CLAUDE_CODE_SESSION_ID` is set) or `off` |
-| `agreements` | `true` | the working agreements of handbook 11.4, one line each, in the context of every Claude Code session in the project (plugin hook at session start); `false` turns them off – not the lines of the project's scripts and agents the hook adds after them (11.4) |
-| `graph` | `hardware/graph.json` | the hardware graph: a `.json` file, or a `.toml` file with the same keys and components, nets and cables as tables keyed by designator and name – `[components.R1]`, `[nets."+5V"]` –, read to the same graph; a key twice is an error with its line. The skill new-project writes `hardware/graph.toml`, `edakit graph convert` moves a JSON project to it (3.1). Beside a TOML graph `edakit graph json --write` keeps the resolved `graph.json`, which the pre-commit hook checks (`edakit graph json --check`). A TOML graph counts in the circuit hash with its data (8.2); `edakit convert` has nothing to do on it, `edakit block add` writes into it with its comments kept (14.5) |
+| `agreements` | `true` | the working agreements (11.4), one line each, in the context of every Claude Code session in the project – below |
+| `graph` | `hardware/graph.json` | the hardware graph (3.1): a `.json` file, or a `.toml` file with the same keys – below |
 | `parts` | `hardware/parts` | parts database, one JSON per part (LCSC number or manufacturer part number) |
 | `sim` | `hardware/sim.json` | simulation config (chapter 5) |
 | `sim_plugin` | – | optional Python file with `MODELS` and `checks` (5.1) |
 | `schematic` | `hardware/schematic.toml` | the schematic file (10.3) |
 | `signoff` | `hardware/signoff.json` | the sign-off file (8.2) |
-| `requirements` | – | the requirements file (3.6, 10.4), e.g. `"hardware/requirements.toml"`; a variant names the main project's file and its own, `["../../hardware/requirements.toml", "hardware/requirements.toml"]`. With it `edakit req` lists the file, `edakit check` checks it (DOCS.ref to DOCS.draft), the gate evaluates every requirement (8.7) and the circuit hash covers it. A file named here must exist and be valid, else `edakit req`, `edakit check` and the gate stop. Required: without the key DOCS.file is open – `edakit check` passes, `--release` and the gate do not release (8.7) |
-| `domains` | – | the domains the project switches on besides `core` (`edakit/domains`: `usb`, `radio`, `audio`, `guitar`, `motors`, `power`, `cables`, `mains`), e.g. `["usb"]` – what each switches on, its severities, the facts it requires of the parts, its hints and the reviewers' questions; `edakit domains` lists them. Without the key every domain the graph suggests is on; with it a domain the graph suggests and the list leaves out is a note `STRUCT.domain` and reports nothing |
+| `requirements` | – | the requirements file (3.6, 10.4), e.g. `"hardware/requirements.toml"`; required – below |
+| `domains` | – | the domains the project switches on besides `core`, e.g. `["usb"]` – below |
 | `artifacts` | `build/edakit` | caches, previews, routing files, exports, Gerber exports (not versioned) |
 | `reports` | `build/release` | gate runs |
 | `datasheets` | `<artifacts>/datasheets` | the datasheets `edakit part fetch` keeps, `<key>.pdf` and `<key>.json` (4.6); a folder in the repository versions them |
@@ -50,8 +61,28 @@ board, the schematic or the checks (the earlier one-file form) is refused with a
 | `stock_margin_pct` | `0` | PARTS.stock warns when the assembler's stock is below the need plus this margin |
 | `stock_max_age_days` | `14` | an older snapshot (or snapshot row) is pending in PARTS.stock – it blocks the release, not `edakit check` |
 | `spare_pct` | `0` | `edakit order`: spares on every cart line, in % of `quantity` sets (rounded up) |
-| `toolchain` | `easyeda` | the EDA tool the boards are drawn in: `easyeda` (EasyEDA Pro through the bridge) or `kicad` (KiCad 10: edakit writes one KiCad project per board into `<artifacts>/kicad/<board>/` and calls kicad-cli, chapter 16). With `kicad` the EasyEDA document names of `[boards.<name>]` are refused |
+| `toolchain` | `easyeda` | the EDA tool the boards are drawn in: `easyeda` (EasyEDA Pro through the bridge) or `kicad` (KiCad 10, chapter 16) – below |
 | `edakit` | – | the edakit the project needs: comparisons such as `">=0.4"` or `">=0.4, <0.5"` (`>=`, `>`, `<=`, `<`, `==`), another form is an error; a running edakit that does not meet it is the note STRUCT.edakit of `edakit check`, and the SessionStart hook says so (2.3) |
+
+- `agreements` – the plugin hook adds them at session start; `false` turns them off, not the lines of the project's
+  scripts and agents the hook adds after them (11.4).
+- `graph` – a `.toml` graph holds components, nets and cables as tables keyed by designator and name –
+  `[components.R1]`, `[nets."+5V"]` – and is read to the same graph as the JSON; a key twice is an error with its
+  line. The skill new-project writes `hardware/graph.toml`, `edakit graph convert` moves a JSON project to it (3.1).
+  Beside a TOML graph `edakit graph json --write` keeps the resolved `graph.json`, which the pre-commit hook checks
+  (`edakit graph json --check`). A TOML graph counts in the circuit hash with its data (8.2); `edakit convert` has
+  nothing to do on it, `edakit block add` writes into it with its comments kept (14.5).
+- `requirements` – a variant names the main project's file and its own, as the requirements file shows (10.4). With
+  the key, `edakit req` lists the file, `edakit check` checks it (DOCS.ref to DOCS.draft), the gate evaluates every
+  requirement (8.7) and the circuit hash covers it. A file named here must exist and be valid, else `edakit req`,
+  `edakit check` and the gate stop. Without the key DOCS.file is open: `edakit check` passes, `--release` and the gate
+  do not release (8.7).
+- `domains` – from `edakit/domains`: `usb`, `radio`, `audio`, `guitar`, `motors`, `power`, `cables`, `mains`. What
+  each switches on: its severities, the facts it requires of the parts, its hints and the reviewers' questions;
+  `edakit domains` lists them. Without the key every domain the graph suggests is on; with it a domain the graph
+  suggests and the list leaves out is a note `STRUCT.domain` and reports nothing.
+- `toolchain` – with `kicad`, edakit writes one KiCad project per board into `<artifacts>/kicad/<board>/` and calls
+  kicad-cli, and the EasyEDA document names of `[boards.<name>]` are refused.
 
 The name of the ground net is in the graph (`ground`, default `GND`), with the circuit it belongs to; nets that are
 ground on purpose besides it (an analog ground) in `grounds` (3.1, PATH.unfed) – `edakit block add` adds those of a
@@ -68,43 +99,59 @@ the outputs of a part with behaviour `logic` (3.1, 5.1).
 | `schematic` | `layout_<name>` | board schematic, the PCB is linked to it (EasyEDA only) |
 | `pcb` | `<name>` | PCB document in EasyEDA (EasyEDA only – a KiCad board is `<artifacts>/kicad/<name>/`, 16.3) |
 | `file` | `hardware/boards/<name>.toml` | the board file (10.2); while it does not exist the board has no layout yet – a file named here must exist |
-| `bought` | `false` | `true`: a bought board on a cable (4.5) – in the graph, checks and simulation like any board, made by nobody: no `template`, `schematic`, `pcb`, `file` or board file (each an error); stages S and L/F, the manifest, the `fab` and the layout hash leave it out, layout commands refuse it with `--board` and skip it without, `edakit order` writes no BOM and `edakit cost` no PCB or assembly for it |
-| `wired` | `false` | `true`: a hand-wired board, no PCB of its own – panel parts, jacks, pots, a strip on a cable (4.5): as `bought` in the graph, checks and simulation, made by nobody, with the same errors and the same boards left out; its parts are the project's, each in the carts (`hand_assembly.md`: "hand-wired, no PCB"). Not both keys on one board; STRUCT.board/wired notes a bought board without a module |
+| `bought` | `false` | `true`: a bought board on a cable (4.5) – below |
+| `wired` | `false` | `true`: a hand-wired board, no PCB of its own – panel parts, jacks, pots, a strip on a cable (4.5) – below |
+
+- `bought` – in the graph, checks and simulation like any board, made by nobody: no `template`, `schematic`, `pcb`,
+  `file` or board file (each an error). Stages S and L/F, the manifest, the `fab` and the layout hash leave it out;
+  layout commands refuse it with `--board` and skip it without; `edakit order` writes no BOM and `edakit cost` no PCB
+  or assembly for it.
+- `wired` – as `bought` in the graph, checks and simulation, made by nobody, with the same errors and the same boards
+  left out. Its parts are the project's, each in the carts (`hand_assembly.md`: "hand-wired, no PCB").
+- Not both keys on one board; STRUCT.board/wired notes a bought board without a module.
 
 ### [release]
 
-`layout_files` (further files in the layout hash – the board files, their artwork and the footprint geometry are always
-in it),
-`state_files` (further files in the circuit hash), `hash_ignore` (`[]`: keys left out of the circuit hash at any depth
-of the graph and the parts entries, e.g. `["notes", "sources", "description", "verified", "datasheet"]` – only keys no
-check and no review reads; empty: the bytes are hashed, 8.2), `assembly` ({`sides` (both), `smd_only`, `paste_gap_mm`
-(0.4: SMD pads of different parts on an assembled side, GEO.spacing), `pcba` (one of the planned maker's `classes`,
-JLCPCB's `"economic"` and `"standard"`: the assembler's class of the order, PARTS.stock; default from `sides` by the
-profile's `class_of_sides` – at JLCPCB one side Economic, two Standard –, else the maker's first class)}), `[[stages]]`
-({`id`, `name`, `cmd`, `advisory`, `timeout`, `about`}: project checks of phase export before S, 8.1),
-`archive` (`"none"`: gate runs are build output, nothing of them is committed – what is ordered is published with
-`edakit release publish`; `"git"`: a released run is committed, `edakit release current` names one git does not track
-yet, 8.3), `publish` ({`variants` (`true`: the variants below the project too – folders with an edakit.toml of their
-own), `decisions` (the decision log, e.g. `"docs/decisions.md"`: the release notes list the decisions `## D-…` since
-the previous release; without it none), `credit` (`true`: the notes end with "Released with edakit X.Y.Z" and its
-link; `false`: without)} – `edakit release publish` of this project reads them, a variant's own are not read, 8.3).
+- `layout_files` – further files in the layout hash; the board files, their artwork and the footprint geometry are
+  always in it.
+- `state_files` – further files in the circuit hash.
+- `hash_ignore` (`[]`) – keys left out of the circuit hash at any depth of the graph and the parts entries, e.g.
+  `["notes", "sources", "description", "verified", "datasheet"]` – only keys no check and no review reads; empty: the
+  bytes are hashed (8.2).
+- `assembly` – a table: `sides` (both), `smd_only`, `paste_gap_mm` (0.4: SMD pads of different parts on an assembled
+  side, GEO.spacing), `pcba` – the assembler's class of the order (PARTS.stock), one of the planned maker's
+  `classes`, JLCPCB's `"economic"` and `"standard"`; by default from `sides` by the profile's `class_of_sides` (at
+  JLCPCB one side Economic, two Standard), else the maker's first class.
+- `[[stages]]` – `{id, name, cmd, advisory, timeout, about}`: project checks of phase export before S (8.1).
+- `archive` – `"none"`: gate runs are build output, nothing of them is committed, and what is ordered is published
+  with `edakit release publish`; `"git"`: a released run is committed, and `edakit release current` names one git
+  does not track yet (8.3).
+- `publish` – `edakit release publish` of this project reads it, a variant's own is not read (8.3). `variants`
+  (`true`: the variants below the project too – folders with an edakit.toml of their own); `decisions` (the decision
+  log, e.g. `"docs/decisions.md"`: the release notes list the decisions `## D-…` since the previous release; without
+  it none); `credit` (`true`: the notes end with "Released with edakit X.Y.Z" and its link; `false`: without).
 
 ### [cost]
 
-Optional: the order estimate of `edakit cost` (8.4). Without the table the gate and every command are as before; with
-it the gate has an information row "estimated order cost" in stage P, and above `budget` a warning to accept; an
-estimate edakit cannot make – a rate missing, the project's fee table in another currency – fails, a planned maker
+Optional: the order estimate of `edakit cost` (8.4). Without the table the gate and every command are as before. With
+it the gate has an information row "estimated order cost" in stage P, and above `budget` a warning to accept. An
+estimate edakit cannot make – a rate missing, the project's fee table in another currency – fails; a planned maker
 without a fee table is information.
 
 | Key | Default | Meaning |
 |---|---|---|
-| `fees` | `hardware/fees/<maker>.json` over the shipped `edakit/fees/jlcpcb.json` | the project's own fee table in the shipped table's form, every value with `date` and `source`, laid over the shipped table of the planned maker: per fee the value with the newest date wins, per PCB size the newest price where its `pcb.qty` is the shipped table's; the same currency as the shipped table; the board its PCB prices are for stays the shipped table's `pcb.board`. `edakit cart actual` writes the real costs of the project's orders into it (8.4). A maker without a shipped fee table is not priced, with or without it |
+| `fees` | `hardware/fees/<maker>.json` over the shipped `edakit/fees/jlcpcb.json` | the project's own fee table, laid over the shipped table of the planned maker – below |
 | `budget` | – | the most the whole order may cost, in `currency`; above it `edakit cost` exits 2 and the gate warns |
 | `currency` | `"USD"` | the currency of the estimate |
 | `rates` | `{}` | the value of one unit of another currency in `currency`, e.g. `{ EUR = 1.15 }`; needed for the fee table's USD and for every `[[extra]]` in another currency |
 | `shipping`, `coupon` | `0` | per order, in `currency` |
 | `vat_pct` | `0` | import VAT on the assembler's order (boards + shipping − coupon) |
 | `pcb_price` | the board line of a checked quote of the current release, else the fee table | the quoted price of the PCBs (all `quantity` of them) – a number, or `{ board = price }`; wins over the quote |
+
+`fees`: the table has the shipped table's form and its currency, every value with `date` and `source`. Per fee the
+value with the newest date wins, per PCB size the newest price where its `pcb.qty` is the shipped table's; the board
+its PCB prices are for stays the shipped table's `pcb.board`. `edakit cart actual` writes the real costs of the
+project's orders into it (8.4). A maker without a shipped fee table is not priced, with or without it.
 
 ### [order]
 
@@ -126,22 +173,31 @@ every check runs as before.
 | `tolerance` | `0.10` | per price line, in the maker's currency, before ORDER.quote warns |
 | `profiles` | `{}` | a project's own maker profiles, `{ name = "hardware/makers/name.toml" }`, beside the shipped ones (`jlcpcb`, `pcbway`, `eurocircuits`, `aisler` in `edakit/makers/`) |
 
-A maker's profile holds no defaults of the board: its form's labels and words for edakit's keys (`fields`), the
-values it offers, its limits (`rules`: thicknesses, remark, placeholder, tooling holes per class), the files it takes
-(`files`), its assembly `classes`, whose parts catalogue PARTS.stock asks (`catalogue`), the one cart button the skill
-cart may press and the ones it must not touch (`cart`, `never`), its seat and currency, its fee table (`fees`). Beside
-them: the BOM's columns and the number the maker matches parts by (`bom`, `match` `"lcsc"` or `"mpn"`), its zero
-orientation and the turn per footprint of its own CPL (`cpl`: `zero`, `turns`), what it states about RoHS and REACH
-(`compliance`, 15.5), how a part not to place is marked (`dnp = "omit"`: left out of BOM and CPL, else the job lists
-it), the combinations its form refuses (`excludes`), the fields of the page edakit does not set, each with its reason
-(`ignore`), the uploads its pages name nowhere (`unshown`, ORDER.files holds them by their hash), files that go up in
-the cart (`upload = "after_cart"`, PCBWay) and a part matching only in its review after the cart (`matching =
-"review"`, PCBWay). `recorded` is the day ordering step 0 read the form; `false` marks a profile whose words are not
-yet read off it, and FILES.order names it as information. A field with `more = true` lists only some of the form's
-values (a "More Options" not read): another value is not checked; a field with `when` shows only while another key
-has one of the values it names (a dialog behind an option); a field with `checkout` is asked at checkout only – in
-order.md, not read back before the cart. A key the profile does not know is refused, in a project's own profile too.
-No credentials anywhere: the owner is logged in in their browser, edakit never sees an account.
+A maker's profile holds no defaults of the board. What it holds:
+
+- the form: its labels and words for edakit's keys (`fields`), the values it offers, its limits (`rules`:
+  thicknesses, remark, placeholder, tooling holes per class), the combinations it refuses (`excludes`), the fields of
+  the page edakit does not set, each with its reason (`ignore`);
+- the files it takes (`files`), the uploads its pages name nowhere (`unshown`, ORDER.files holds them by their hash),
+  files that go up in the cart (`upload = "after_cart"`, PCBWay);
+- the BOM's columns and the number the maker matches parts by (`bom`, `match` `"lcsc"` or `"mpn"`), a part matching
+  only in its review after the cart (`matching = "review"`, PCBWay), its zero orientation and the turn per footprint
+  of its own CPL (`cpl`: `zero`, `turns`), how a part not to place is marked (`dnp = "omit"`: left out of BOM and
+  CPL, else the job lists it);
+- its assembly `classes`, whose parts catalogue PARTS.stock asks (`catalogue`), what it states about RoHS and REACH
+  (`compliance`, 15.5);
+- the one cart button the skill cart may press and the ones it must not touch (`cart`, `never`), its seat and
+  currency, its fee table (`fees`).
+
+`recorded` is the day ordering step 0 read the form; `false` marks a profile whose words are not yet read off it, and
+FILES.order names it as information. Per field:
+
+- `more = true` – lists only some of the form's values (a "More Options" not read): another value is not checked;
+- `when` – the field shows only while another key has one of the values it names (a dialog behind an option);
+- `checkout` – asked at checkout only: in order.md, not read back before the cart.
+
+A key the profile does not know is refused, in a project's own profile too. No credentials anywhere: you are logged
+in in your browser, edakit never sees an account.
 
 ### [[extra]]
 
@@ -174,13 +230,15 @@ work without it.
 ### [scripts.&lt;name&gt;]
 
 Optional: a project script that touches edakit's flow – it writes a file edakit reads, derives something from
-edakit's data, changes the project library in EasyEDA, or is a check of its own (8.6). `edakit check` and the gate
-resolve the entries with edakit's steps into one order, report what keeps them from it, and compare each script's
-stamp in `hardware/scripts.lock`: an input outdated or never run is an error, a derive or easyeda script a warning.
-`edakit scripts` lists them. `edakit run` runs input, derive and easyeda scripts – an easyeda script only so, under the
-EasyEDA claim – and records each run; the steps that read what an input writes run it first when it is outdated
-(`--no-scripts`: none); `edakit scripts stamp` records a run made by hand. The gate runs the checks (8.1). Without the
-table nothing changes.
+edakit's data, changes the project library in EasyEDA, or is a check of its own (8.6). Without the table nothing
+changes.
+
+`edakit check` and the gate resolve the entries with edakit's steps into one order, report what keeps them from it,
+and compare each script's stamp in `hardware/scripts.lock`: an input outdated or never run is an error, a derive or
+easyeda script a warning. `edakit scripts` lists them. `edakit run` runs input, derive and easyeda scripts – an
+easyeda script only so, under the EasyEDA claim – and records each run. The steps that read what an input writes run
+it first when it is outdated (`--no-scripts`: none); `edakit scripts stamp` records a run made by hand. The gate runs
+the checks (8.1).
 
 | Key | For | Meaning |
 |---|---|---|
@@ -192,9 +250,15 @@ table nothing changes.
 | `after` | every kind (optional) | other entries of `[scripts]` this one runs after – needed when several write the same file or change the same data |
 | `check` | input, derive, easyeda (optional) | an exact check command, when the stamp is not enough (not run yet) |
 | `id` | check (required) | its ID in the protocol: no stage of the gate (P, G, E, S, L, F), no sign-off (M-…), no code of the catalog, and none twice – `[[release.stages]]` included |
-| `phase` | check (required) | `export`: a stage of the gate, its failure holds up the release; `order`: a line of the protocol's list after uploading, before paying, which M-2 works through; `acceptance`: a line of the acceptance list after delivery, which M-4 works through – neither of the two runs in the gate (8.1, 8.5) |
-| `at` | check (optional) | phase `export` only: `"before S"` (default) – between E and S, where `[[release.stages]]` run – or `"after F"`: after stage F, only in `edakit gate --easyeda`, to read the run's manufacturing files (`gerber:<b>`, in `fab/<b>/` of `$EDAKIT_RUN`) |
+| `phase` | check (required) | `export`, `order` or `acceptance` – below |
+| `at` | check (optional) | phase `export` only: `"before S"` (default) or `"after F"` – below |
 | `advisory` | check (optional) | `true`: a failure is an advisory finding – listed in section 2 of the protocol, it does not hold up the release |
+
+- `phase` – `export`: a stage of the gate, its failure holds up the release; `order`: a line of the protocol's list
+  after uploading, before paying, which M-2 works through; `acceptance`: a line of the acceptance list after delivery,
+  which M-4 works through. Neither of the last two runs in the gate (8.1, 8.5).
+- `at` – `"before S"`: between E and S, where `[[release.stages]]` run; `"after F"`: after stage F, only in
+  `edakit gate --easyeda`, to read the run's manufacturing files (`gerber:<b>`, in `fab/<b>/` of `$EDAKIT_RUN`).
 
 A field of another kind is a finding of `edakit check`, a key no kind has an error of edakit.toml.
 
@@ -209,11 +273,15 @@ Without the table nothing changes.
 |---|---|---|
 | `file` | every agent | the agent file, relative to edakit.toml, e.g. `.claude/agents/pcb-pruefer.md`: it exists, and the `name` in its front matter is the entry's name – the skills start the agent by it |
 | `about` | every agent | one sentence what the agent checks |
-| `signs` | every agent | the sign-off its OK is: an ID of its own, `M-<number>` (`M-7`), or edakit's review it takes over – `M-1`, `M-5`, `M-6` – with `replaces`; never the owner's `M-2` or `M-4`; one agent per sign-off |
+| `signs` | every agent | the sign-off its OK is: an ID of its own, `M-<number>` (`M-7`), or edakit's review it takes over – `M-1`, `M-5`, `M-6` – with `replaces`; never your `M-2` or `M-4`; one agent per sign-off |
 | `replaces` | with `M-1`, `M-5`, `M-6` | the edakit agent it takes the place of, at each of its hook points: `electrical-reviewer` (M-1), `pcb-reviewer` (M-5 – the round reviews too), `regulatory-reviewer` (M-6) |
-| `scope` | with an ID of its own | `circuit`, `layout` or `fab`: the hash its sign-off is bound to (8.2), and where it reviews – the circuit review before the layout, the round review after a layout round, the layout review between the two gate runs (8.6). edakit's review keeps the scope of the sign-off file |
+| `scope` | with an ID of its own | `circuit`, `layout` or `fab`: the hash its sign-off is bound to (8.2), and where it reviews – below |
 | `phase` | every agent | `export`: the release waits for its sign-off; `acceptance`: a line of the acceptance list after delivery (8.5), whatever its scope. edakit's review: `export` |
 | `after` | every agent (optional) | other entries of `[agents]` this one reviews after, at a hook point both review at; not one that reviews only later |
+
+`scope` decides where the agent reviews: `circuit` in the circuit review before the layout, `layout` in the round
+review after a layout round, `fab` in the layout review between the two gate runs (8.6). edakit's review keeps the
+scope of the sign-off file.
 
 A key no agent has is an error of edakit.toml; what an entry signs and where it reviews is checked by `edakit check`.
 
@@ -223,7 +291,11 @@ A key no agent has is an error of edakit.toml; what an entry signs and where it 
 `[[silk.art]]` places and the footprint geometry beside it (`<name>.geometry.json`, written by `pcb dump`, 7.4) – a
 change voids the sign-offs with scope `layout`; the layout review M-5 with scope `fab` (8.2) lapses when the
 manufacturing files change, or the settings of `[order]` that change the board as made: thickness, colours, finish,
-mark. The keys stand at the top of the file, without a prefix (`[place]`, `[[holes]]`):
+mark.
+
+### Keys of the board file
+
+The keys stand at the top of the file, without a prefix (`[place]`, `[[holes]]`):
 
 | Key | Default | Meaning |
 |---|---|---|
@@ -239,54 +311,115 @@ mark. The keys stand at the top of the file, without a prefix (`[place]`, `[[hol
 | `outline` | – | `rect = [w, h]` (+ `origin`, `corner_radius`, `arc_steps`) or `polygon = [[x, y], …]` |
 | `[[holes]]` | `[]` | `x`, `y`, `d` (3.2), `keep` (radius free of parts and copper; default `d`) |
 | `tooling` | – | `holes = [[x, y], …]`, `d` (1.152), `mask` (0.148), `keep` (1.5) |
-| `place` | `{}` | `REF = {x, y, rot, side, lock, auto}` every part of the board (SYNC.plan); `auto = true` marks a spot nobody designed, a row `pcb place` or `pcb autolayout` wrote – a later `pcb place` may move it, every other command treats it as any row (7.4) |
+| `place` | `{}` | `REF = {x, y, rot, side, lock, auto}` every part of the board (SYNC.plan); `auto` – below |
 | `near` | `{}` | `PART = "HOST"` or a list – the layout's own, between fixed parts; the circuit's are `layout.near` of the graph |
-| `uniform` | `{ led = "row" }` | polarised parts that point the same way, per `kind` of the parts entry: `"row"` – parts of the kind side by side on one line (centres within 1 mm) have their plus pin towards the same side; `"+x"`, `"-x"`, `"+y"`, `"-y"` – the cathode or minus pin of every part of the kind points that way, seen from the side the part sits on. A part counts with exactly one pin `anode` or `plus…` and one `cathode` or `minus…`; the table names every kind it checks – without `led` the LEDs are not compared (7.4) |
+| `uniform` | `{ led = "row" }` | polarised parts that point the same way, per `kind` of the parts entry (7.4) – below |
 | `routing` | see below | Freerouting rules |
-| `[[pours]]` | GND on both layers | `net`, `layers`, `plane` (bool), `fanout` (false: with `plane`, every SMD pad of the net on the other layer gets a protected via to the plane and a stub, 7.5), `stitch` (layer; on a layer shared with `pour_regions` also the pieces no net claims, each with a via, 7.6), `priority`, `line_mil`, `pour_only` (false: the net gets no tracks, its pour connects it; on every entry of the net, not with `plane`), `clearance_mm` (0.25: what the computed pour keeps from foreign copper – the EasyEDA copper-area rule), `min_width_mm` (0.25: the narrowest neck it fills); both also for every pour on a shared layer with `pour_regions` |
+| `[[pours]]` | GND on both layers | `net`, `layers`, `plane`, `fanout`, `stitch`, `priority`, `line_mil`, `pour_only`, `clearance_mm`, `min_width_mm` – below |
 | `pour_regions` | `false` | nets that share a pour layer get outlines of their own area, claimed in `priority` order (7.6); no `plane` on such a layer |
 | `pour_min_piece_mm2` | `2.0` | with `pour_regions`: the smallest piece (outside the net's own copper and clearance) that gets an outline |
-| `pour_inset_mm` | edge clearance + 0.1 | how far the pours lie inside the outline (mm): the outline of `pcb pour` and `route pours` and every computed pour; without it `routing.edge_clearance_um` / 1000 + 0.1; along an `[order]` tab zone `tab_copper_mm` + 0.05 instead, where that is more; the tracks keep `edge_clearance_um` either way (7.6) |
-| `silk` | `{}` | `designators` (side), `hide` (sides), `label_h_mm` (1.0), `gap_mm` (0.25), `groups` {label: [refs]}, `unlabelled` ({designator = reason}, none: a part of the `designators` side without a visible designator or group label is an GEO.silk warning), `priority` (["TP"]), `solder_side` (`false`; `true`: the through-hole parts of the other side are labelled on the `designators` side too, 7.7), `place` (`{}`; `REF = {x, y, rot, side}`: a designator at a fixed spot, as `[place]` fixes a part – plan mm, the rotation EasyEDA gets, the side it prints on (the `designators` side); the rest is placed around it, and one on a pad, beyond the board or on a text is a finding, 7.7), `board_label` (`"{title} rev {revision}"`; also `{project}`, `{board}`; `""` = none), `board_label_corner` (`bottom-left`, seen from the printed side), `board_label_h_mm` (1.2), `board_label_side` (the `designators` side; `"top"` or `"bottom"`, 7.7), `board_label_region` (the whole board; a polygon `[[x, y], …]` in plan mm the label must lie in, `board_label_corner` then means its corner, 7.7), `[[art]]` ({`svg`, `x`, `y`, `width_mm`, `rot`, `side`, `fit` (`"content"`: the bounds of the drawn shapes are scaled to `width_mm` and centred on `x`, `y`; `"viewbox"`: the SVG's viewBox is – art drawn in a frame keeps its place in it, 7.7)}), `[[texts]]` ({`text`, `x`, `y`, `h_mm` (1.2), `rot`, `side`, `font` (`default` = stroke font, or a font family EasyEDA knows)}) |
-| `[looks]` | – | the side people look at: `visible` (`"top"` or `"bottom"`, required in the table), `max_track_m` and `max_vias` (optional limits). `route check` prints the track length per side and the vias, and the visible side's row; stage L gives the row too; above a limit a warning (7.5, 8.1); stage L checks the side's print against the board file (GEO.silk: the board label, `[[silk.texts]]` of the side and, with `[silk] designators` on it, designators and group labels; no designator shown there while `designators` is the other side, 7.7). Without the table nothing is reported |
+| `pour_inset_mm` | edge clearance + 0.1 | how far the pours lie inside the outline (mm), 7.6 – below |
+| `silk` | `{}` | designators, board label, artwork and texts on the silkscreen (7.7) – below |
+| `[looks]` | – | the side people look at: `visible` (`"top"` or `"bottom"`, required in the table), `max_track_m` and `max_vias` (optional limits) – below |
 | `[[loops]]` | `[]` | `a`, `b` (pads "D1.2"), `max_mm`, `what` – check GEO.loop; the circuit's are `layout.loops` of the graph |
 | `copper` | see below | copper per layer in the Gerber files, check GEO.pour |
 | `order` | – | every field of the maker's order form as a key (below, 8.4), over `[order]` of edakit.toml; with the table – or with `[cart]` – the gate writes `fab/<board>/order.md` and runs FILES.order |
-| `thickness_mm` | `1.6` | board thickness (mm); the mechanical model `mech_<board>.json` takes the lead protrusion from it (lead `length_mm` − `thickness_mm`, 7.4), and with `order` the order form and the fab hash (8.2) – FILES.order fails a thickness the maker's form does not have (JLCPCB, FR-4, 2 layers: 0.4, 0.6, 0.8, 1.0, 1.2, 1.6, 2.0) |
+| `thickness_mm` | `1.6` | board thickness (mm) – below |
 | `net_classes` | see below | track widths from the simulated currents |
 
-`[routing]`: `clearance_mil` (6.5; also the least gap between pads of different parts, GEO.spacing), `signal_mil` (10),
-`via` ([24, 12]), `edge_clearance_um` (400: tracks and vias from the outline, in the DSN and in Freerouting; the pours:
-`pour_inset_mm`), `passes` (40), `attempts` (5), `layer_cost` ({TOP = [1.0, 1.8], BOTTOM = [1.5, 2.5]}), `classes`
-({NAME = {width_mil, nets}}), `widths` (`"classes"`: the DSN takes the widths of `classes` and `signal_mil`; `"sim"`:
-every class at least the IPC-2221 width of its nets' simulated currents, a net outside the classes that needs more than
-`signal_mil` a class of its own – needs `net_currents.json`, 7.5), `hand_solder_keep_mm` (0 = off: GEO.spacing, vias and
-pads of other nets at least this far, in mm, from the pads of `bom: false` parts on their solder side – a through-hole
-pad's the side its part does not sit on, an SMD pad's its own; `route dsn` writes via keep-outs around them, 7.5),
-`drc_rules` (none: GEO.drc as before; `"check"`: the gate reads the rule set of EasyEDA's DRC with the DRC and GEO.drc
-holds it to these rules – clearance, edge clearance, track widths, via, classes, 7.5; `"write"`: `route all` writes
-that rule set into EasyEDA before its DRC, reads it back after a reload, and the gate checks it as with `"check"`), `[[routing.keepouts]]` ({layer,
-what = "wire"|"all", rect | polygon, windows, window_mm}), `[[routing.fixed_wires]]` ({net, layer, width_mil, points}).
+- `place` – `auto = true` marks a spot nobody designed, a row `pcb place` or `pcb autolayout` wrote: a later
+  `pcb place` may move it, every other command treats it as any row (7.4).
+- `uniform` – `"row"`: parts of the kind side by side on one line (centres within 1 mm) have their plus pin towards
+  the same side; `"+x"`, `"-x"`, `"+y"`, `"-y"`: the cathode or minus pin of every part of the kind points that way,
+  seen from the side the part sits on. A part counts with exactly one pin `anode` or `plus…` and one `cathode` or
+  `minus…`. The table names every kind it checks – without `led` the LEDs are not compared (7.4).
+- `[[pours]]` – `net`, `layers`, `plane` (bool), `fanout` (false: with `plane`, every SMD pad of the net on the other
+  layer gets a protected via to the plane and a stub, 7.5), `stitch` (layer; on a layer shared with `pour_regions`
+  also the pieces no net claims, each with a via, 7.6), `priority`, `line_mil`, `pour_only` (false: the net gets no
+  tracks, its pour connects it; on every entry of the net, not with `plane`), `clearance_mm` (0.25: what the computed
+  pour keeps from foreign copper – the EasyEDA copper-area rule), `min_width_mm` (0.25: the narrowest neck it fills).
+  The last two also hold for every pour on a shared layer with `pour_regions`.
+- `pour_inset_mm` – the outline of `pcb pour` and `route pours` and every computed pour. Without it
+  `routing.edge_clearance_um` / 1000 + 0.1; along an `[order]` tab zone `tab_copper_mm` + 0.05 instead, where that is
+  more. The tracks keep `edge_clearance_um` either way (7.6).
+- `[looks]` – `route check` prints the track length per side and the vias, and the visible side's row; stage L gives
+  the row too; above a limit a warning (7.5, 8.1). Stage L checks the side's print against the board file (GEO.silk:
+  the board label, `[[silk.texts]]` of the side and, with `[silk] designators` on it, designators and group labels; no
+  designator shown there while `designators` is the other side, 7.7). Without the table nothing is reported.
+- `thickness_mm` – the mechanical model `mech_<board>.json` takes the lead protrusion from it (lead `length_mm` −
+  `thickness_mm`, 7.4), and with `order` the order form and the fab hash (8.2). FILES.order fails a thickness the
+  maker's form does not have (JLCPCB, FR-4, 2 layers: 0.4, 0.6, 0.8, 1.0, 1.2, 1.6, 2.0).
 
-`[copper]`: `max_bare_mm` (5: the largest copper-free circle inside the pour outline of a layer that `[[pours]]` pours;
-above it GEO.pour warns), `max_bare_mm2` (20: the largest copper-free piece there in mm² that a pour could fill –
-opened with a disc of 2 × `clearance_mm` + `min_width_mm` of `[[pours]]`; above it GEO.pour warns), `min_cover` (`{TOP = %, BOTTOM = %}`, none: the least copper share of the board area per
-layer; below it GEO.pour warns).
+### [silk]
+
+The silkscreen's keys, described in 7.7:
+
+- `designators` (side), `hide` (sides), `label_h_mm` (1.0), `gap_mm` (0.25), `groups` {label: [refs]}, `priority`
+  (["TP"]);
+- `unlabelled` ({designator = reason}, none): a part of the `designators` side without a visible designator or group
+  label is a GEO.silk warning;
+- `solder_side` (`false`): `true` labels the through-hole parts of the other side on the `designators` side too;
+- `place` (`{}`): `REF = {x, y, rot, side}`, a designator at a fixed spot, as `[place]` fixes a part – plan mm, the
+  rotation EasyEDA gets, the side it prints on (the `designators` side). The rest is placed around it; one on a pad,
+  beyond the board or on a text is a finding;
+- `board_label` (`"{title} rev {revision}"`; also `{project}`, `{board}`; `""` = none), `board_label_corner`
+  (`bottom-left`, seen from the printed side), `board_label_h_mm` (1.2), `board_label_side` (the `designators` side;
+  `"top"` or `"bottom"`), `board_label_region` (the whole board; a polygon `[[x, y], …]` in plan mm the label must lie
+  in, `board_label_corner` then means its corner);
+- `[[art]]` ({`svg`, `x`, `y`, `width_mm`, `rot`, `side`, `fit`}): `fit = "content"` scales the bounds of the drawn
+  shapes to `width_mm` and centres them on `x`, `y`; `"viewbox"` does so with the SVG's viewBox – art drawn in a
+  frame keeps its place in it;
+- `[[texts]]` ({`text`, `x`, `y`, `h_mm` (1.2), `rot`, `side`, `font`}): `font` is `default` (stroke font) or a font
+  family EasyEDA knows.
+
+### [routing], [copper], [net_classes]
+
+`[routing]`, the Freerouting rules:
+
+- `clearance_mil` (6.5) – also the least gap between pads of different parts (GEO.spacing);
+- `signal_mil` (10), `via` ([24, 12]), `passes` (40), `attempts` (5), `layer_cost` ({TOP = [1.0, 1.8], BOTTOM =
+  [1.5, 2.5]}), `classes` ({NAME = {width_mil, nets}});
+- `edge_clearance_um` (400) – tracks and vias from the outline, in the DSN and in Freerouting; the pours keep
+  `pour_inset_mm`;
+- `widths` – `"classes"`: the DSN takes the widths of `classes` and `signal_mil`; `"sim"`: every class at least the
+  IPC-2221 width of its nets' simulated currents, a net outside the classes that needs more than `signal_mil` a class
+  of its own – needs `net_currents.json` (7.5);
+- `hand_solder_keep_mm` (0 = off) – GEO.spacing: vias and pads of other nets at least this far, in mm, from the pads
+  of `bom: false` parts on their solder side – a through-hole pad's the side its part does not sit on, an SMD pad's
+  its own; `route dsn` writes via keep-outs around them (7.5);
+- `drc_rules` (none: GEO.drc as before) – `"check"`: the gate reads the rule set of EasyEDA's DRC with the DRC, and
+  GEO.drc holds it to these rules – clearance, edge clearance, track widths, via, classes (7.5); `"write"`:
+  `route all` writes that rule set into EasyEDA before its DRC, reads it back after a reload, and the gate checks it
+  as with `"check"`;
+- `[[routing.keepouts]]` ({layer, what = "wire"|"all", rect | polygon, windows, window_mm}), `[[routing.fixed_wires]]`
+  ({net, layer, width_mil, points}).
+
+`[copper]`, copper per layer in the Gerber files (GEO.pour warns beyond each limit):
+
+- `max_bare_mm` (5) – the largest copper-free circle inside the pour outline of a layer that `[[pours]]` pours;
+- `max_bare_mm2` (20) – the largest copper-free piece there in mm² that a pour could fill, opened with a disc of
+  2 × `clearance_mm` + `min_width_mm` of `[[pours]]`;
+- `min_cover` (`{TOP = %, BOTTOM = %}`, none) – the least copper share of the board area per layer.
 
 `[net_classes]`: `NAME = {min_a, width_mm}` – class by the largest simulated current, practical minimum width (default
 POWER ≥ 0.3 A 0.6 mm, SUPPLY ≥ 0.1 A 0.4 mm, SIGNAL 0.25 mm). `force = {NET = "CLASS"}` pins a net to a class (e.g. a
 switching node).
 
+### [order] of the board file
+
 `[order]`: every question a maker's order form asks, as a key in edakit's words with edakit's default – the board
 edakit assumes when nothing is said, the same for every maker (8.4). Three layers, the later one wins per key: these
-defaults, `[order]` of edakit.toml (every board, 10.1), `[order]` of the board file. One default depends on the board:
-on a board with `[looks]` `mark` is `"remove"` – no order number on a board people look at, decided in the files and
-so in the fab hash before the gate and M-5, not at the form (the owner's decision of 2026-10-31); order.md names
-`[looks]` as where it comes from, and a `mark` in either `[order]` wins. The maker's profile only
-translates a value into its word (`edakit/makers/<maker>.toml`, `edakit cart fields`); a value the maker does not
-offer is a finding of FILES.order for that maker. "Board": the key changes the board as made – `fab/<board>/order.json`
-has `thickness_mm`, `mask`, `silkscreen`, `finish` and `mark` whenever the board has `[order]`, and every other such key
-where its value differs from the default; so a project that sets none of them keeps its fab hash (8.2).
+defaults, `[order]` of edakit.toml (every board, 10.1), `[order]` of the board file.
+
+One default depends on the board: on a board with `[looks]` `mark` is `"remove"` – no order number on a board people
+look at, decided in the files and so in the fab hash before the gate and M-5, not at the form. order.md names
+`[looks]` as where it comes from, and a `mark` in either `[order]` wins.
+
+The maker's profile only translates a value into its word (`edakit/makers/<maker>.toml`, `edakit cart fields`); a
+value the maker does not offer is a finding of FILES.order for that maker. "Board": the key changes the board as made
+– `fab/<board>/order.json` has `thickness_mm`, `mask`, `silkscreen`, `finish` and `mark` whenever the board has
+`[order]`, and every other such key where its value differs from the default; so a project that sets none of them
+keeps its fab hash (8.2).
 
 | Key | Default | Values | Board |
 |---|---|---|---|
@@ -300,19 +433,28 @@ where its value differs from the default; so a project that sets none of them ke
 | `vias` | `"tented"` | `"untented"`, `"plugged"`, `"epoxy_filled"` | ✓ |
 | `outline_tolerance` | `"regular"` | `"precision"` | ✓ |
 | `gold_fingers`, `castellated`, `edge_plating` | `false` | true or false | ✓ |
-| `mark` | `"default"`; on a board with `[looks]` `"remove"` | `"specify"`: at the maker's placeholder (PCBWay: `WayWayWay`), `"remove"` – the maker's order number; JLCPCB prints none since May 2026 ("Remove Mark" for both `"default"` and `"remove"`, `"specify"` refused), and its former `JLCJLCJLCJLC` on a silkscreen warns | ✓ |
+| `mark` | `"default"`; on a board with `[looks]` `"remove"` | `"specify"`: at the maker's placeholder (PCBWay: `WayWayWay`), `"remove"` – the maker's order number; JLCPCB below | ✓ |
 | `barcode`, `serial_number` | `"none"`, `false` | `"qr"`, `"datamatrix"`; true or false – for traceability, printed by the maker where there is room (JLCPCB since May 2026) | ✓ |
 | `electrical_test`, `quality` | `"flying_probe"`, `"ipc2"` | edakit's words, which each profile translates | – |
 | `confirm_production_file`, `paper_between` | `false` | true or false | – |
 | `packaging` | `"standard"` | edakit's words, which each profile translates (JLCPCB: "With JLCPCB logo") | – |
 | `remark` | `""` | text to the maker (JLCPCB: at most 200 ASCII characters) | – |
-| `tab_zones`, `tab_copper_mm` | `[]`, `1.0` | `{from = [x, y], to = [x, y]}`, two points on the outline in plan mm – the shorter stretch between them; no copper of either side within `tab_copper_mm` of it (FILES.order); the pours keep `tab_copper_mm` + 0.05 mm from it (7.6). `tab_zones` in the board file only | – |
+| `tab_zones`, `tab_copper_mm` | `[]`, `1.0` | `{from = [x, y], to = [x, y]}`, two points on the outline in plan mm – below; `tab_zones` in the board file only | – |
 | `pcba_quantity` | `quantity` | boards assembled, at most `quantity`; another number than `[project] quantity` warns (PARTS.stock counts that many sets) | – |
 | `confirm_placement` | `true` | edakit's choice: the maker shows its placement before it builds, a second look beside M-2 | – |
 | `photo_confirmation`, `depanel`, `function_test` | `false` | true or false | – |
 | `conformal_coating` | `false` | true or false | ✓ |
 | `pcba_packaging` | `"antistatic_bag"` | edakit's words, which each profile translates | – |
-| `customs` | none | `{ category = "DIY", hs_code = "902300" }`: the shipment's customs description, the owner's – an entry of the maker's form (JLCPCB's "Product Description": its profile lists them, `fields.customs`); FILES.order fails one the form does not offer and names the key as information where the form asks it and the key is not set: the skill cart then asks the owner at the cart. Not in order.json – it describes the shipment, not the board | – |
+| `customs` | none | `{ category = "DIY", hs_code = "902300" }`: the shipment's customs description, yours – below | – |
+
+- `mark` – JLCPCB prints none since May 2026: "Remove Mark" for both `"default"` and `"remove"`, `"specify"` refused,
+  and its former `JLCJLCJLCJLC` on a silkscreen warns.
+- `tab_zones` – the shorter stretch of the outline between the two points: no copper of either side within
+  `tab_copper_mm` of it (FILES.order); the pours keep `tab_copper_mm` + 0.05 mm from it (7.6).
+- `customs` – an entry of the maker's form (JLCPCB's "Product Description": its profile lists them,
+  `fields.customs`). FILES.order fails one the form does not offer, and names the key as information where the form
+  asks it and the key is not set: the skill cart then asks you at the cart. Not in order.json – it describes the
+  shipment, not the board.
 
 Not keys of `[order]`, but fields of the form all the same: the thickness (`thickness_mm` of the board file), the
 assembly class and side (`[release] assembly`, the class one of the maker's `classes`), the tooling holes
@@ -322,17 +464,19 @@ the job lists them for a maker whose files still hold them (AISLER's ODB++), the
 
 ## 10.3 The schematic file
 
-`hardware/schematic.toml`: `stub` (10): stub length of the template. `frame` (true): `false` draws the SVG of
-`schematic draw` without the sheet border and the title block (6.5). `style` ("labels"): the drawing of `schematic
-draw` – `"labels"` (stubs and flags), `"wires"` (every connection a wire, routed and coloured) or `"mixed"` (wires,
-labels for buses) –, one word for every board or a table by board, `{main = "labels", panel = "wires"}`; the SVG only
-(6.5). `[layout]`: `rows` (rows → columns → blocks
-`{title, start}`), `power_flags` ({NET = "Ground"|"Power"}), `near` ({CAP = "PART"}), `stacked` (blocks whose trees
-stand one below the other), `[layout.notes]` ({block title = [lines]}), `[layout.pin_table]` (`component`, `block`,
-`prefix`, `notes` {NET = "function"}). A note may quote the design data: `{graph:R1.value}`,
-`{part:C90107.values.vrext_v}`, `{sim:max SIM.state * D2 LED current*}`, optionally with a format, a requirement's text
-`{req:R-1}` (6.6). It changes no hash – the drawing explains the circuit, it is not the circuit. Without the file
-`edakit schematic draw` arranges the schematic by itself (6.5).
+`hardware/schematic.toml`, the arrangement of the schematic. It changes no hash – the drawing explains the circuit, it
+is not the circuit. Without the file `edakit schematic draw` arranges the schematic by itself (6.5).
+
+- `stub` (10) – stub length of the template.
+- `frame` (true) – `false` draws the SVG of `schematic draw` without the sheet border and the title block (6.5).
+- `style` ("labels") – the drawing of `schematic draw`, the SVG only (6.5): `"labels"` (stubs and flags), `"wires"`
+  (every connection a wire, routed and coloured) or `"mixed"` (wires, labels for buses); one word for every board or a
+  table by board, `{main = "labels", panel = "wires"}`.
+- `[layout]` – `rows` (rows → columns → blocks `{title, start}`), `power_flags` ({NET = "Ground"|"Power"}), `near`
+  ({CAP = "PART"}), `stacked` (blocks whose trees stand one below the other), `[layout.notes]` ({block title =
+  [lines]}), `[layout.pin_table]` (`component`, `block`, `prefix`, `notes` {NET = "function"}).
+- A note may quote the design data (6.6): `{graph:R1.value}`, `{part:C90107.values.vrext_v}`,
+  `{sim:max SIM.state * D2 LED current*}`, optionally with a format, a requirement's text `{req:R-1}`.
 
 ## 10.4 The requirements file
 
@@ -366,12 +510,24 @@ status = "accepted"
 | `id` | both, required | `N-<n>` in a `[[need]]`, `R-<n>` in a `[[requirement]]`, without a leading zero; unique across the files of the project, a variant's own included; stable – a dropped entry keeps its number |
 | `text` | both, required | a need in the words of those who want it; a requirement as one statement in the words and at the level of detail of who stated it – the maker, a user, a chosen standard (3.6) –, no number edakit or the design derived: those reach it through `verify` |
 | `who` | need | who wants it |
-| `source` | both | where it was found and who stated it: a document, a decision, the user with a date – an entry inferred from the circuit says so until the owner confirms it; on a requirement next to `from`, which says where it comes from |
+| `source` | both | where it was found and who stated it: a document, a decision, you with a date – an entry inferred from the circuit says so until you confirm it; on a requirement next to `from`, which says where it comes from |
 | `from` | requirement | a list of where it comes from: needs (`N-2`), decisions (`D-8`), a standard (`USB 2.0: 500 mA`), a sign-off (`M-6`) |
 | `binding` | requirement, required | `must`, `should` or `may` |
-| `verify` | requirement | a list of what tests it, one kind per entry: `{ rows = "…" }` rows of the gate protocol, a pattern over "ID scenario item check" as `accept` match them (8.2); `{ signoff = "M-1" }` a manual check, which counts when its `note` names the requirement's ID; `{ script = "…" }` a project script of kind `check` or the id of a `[[release.stages]]` – it passes when the check passed in the gate's run, one of phase `order` or `acceptance` once M-2 or M-4 is signed; `{ accept = "…" }` a step of the acceptance test, on the list of protocol section 6. `edakit req` shows it as written, the gate evaluates it (8.7) |
-| `status` | both | `draft` (written, not approved – also an entry without `status`), `accepted` (only the user sets it), `dropped`; a value that is written must be one of the three. A draft binds nothing yet: DOCS.ref to DOCS.draft only warn about it, the gate lists it and neither blocks nor asks for an acceptance (8.7); from `accepted` on, the findings are errors and the binding counts |
+| `verify` | requirement | a list of what tests it – below; `edakit req` shows it as written, the gate evaluates it (8.7) |
+| `status` | both | `draft` (written, not approved – also an entry without `status`), `accepted` (only you set it), `dropped` – below |
 | `reason` | both | why; required with `dropped` |
+
+`verify`, one kind per entry:
+
+- `{ rows = "…" }` – rows of the gate protocol, a pattern over "ID scenario item check" as `accept` match them (8.2);
+- `{ signoff = "M-1" }` – a manual check, which counts when its `note` names the requirement's ID;
+- `{ script = "…" }` – a project script of kind `check` or the id of a `[[release.stages]]`: it passes when the check
+  passed in the gate's run, one of phase `order` or `acceptance` once M-2 or M-4 is signed;
+- `{ accept = "…" }` – a step of the acceptance test, on the list of protocol section 6.
+
+`status`: a value that is written must be one of the three. A draft binds nothing yet: DOCS.ref to DOCS.draft only
+warn about it, the gate lists it and neither blocks nor asks for an acceptance (8.7). From `accepted` on, the findings
+are errors and the binding counts.
 
 A variant – a project of its own with its own edakit.toml in a folder below the main project – names the main
 project's file and its own: `requirements = ["../../hardware/requirements.toml", "hardware/requirements.toml"]`.
@@ -379,91 +535,735 @@ project's file and its own: `requirements = ["../../hardware/requirements.toml",
 
 ## 10.5 Commands
 
-Every command that reads a project: `--config`, `-v` (MCP traffic). Exit codes: 0 ok, 2 findings, 1 error; 3 from
-`edakit lock` and from `edakit run` of an easyeda script (another session holds EasyEDA), from `edakit cart check`
-(the review of the order is open) and from `route all|drc` and `silk apply|check` when the DRC's only item is EasyEDA
-waiting for the import acknowledgement after writing the Channel IDs (schematic = PCB; *Design → Import Changes* once – 7.5). With uv from snap
-inside Claude Code: `edakit … 2>&1 | cat`. The long commands – `route all`, `gate`, `pcb apply`, `silk apply`,
-`export`, `schematic create|layout` – print `[x.x min] step n/m: <step>` before each step
-(11.3). With `[scripts]`, `pcb place|parts|plan|apply`, `route all`, `silk apply|preview` and `gate` run the input
-scripts that write what they read first, when those are outdated or never ran, and stop when one fails;
-`--no-scripts` runs none (8.6).
+Every command that reads a project: `--config`, `-v` (MCP traffic).
 
-| Command | EasyEDA | Reads | Writes |
-|---|---|---|---|
-| `edakit cart fields [--board B] [--maker M]` | – | `[order]` of edakit.toml and the board file, `thickness_mm`, `[release] assembly`, `[tooling]`, the stock snapshot, `[cart]`, the maker's profile; the Gerber files of the current release (else the newest run) for layers and size | – (prints every field of the maker's form: its label, the maker's word, where it comes from, edakit's key and value) |
-| `edakit cart prepare [--board B] [--maker M]` | – | the current release (manifest, `makers.json`, the board's upload files and `order.json`), the circuit and layout hash now, the sign-off file (M-6), `[cart]`, the maker's profile, the estimate | `<reports>/<run>/fab/<board>/cart/<maker>/job.json`; exit 1 with the reason when the order cannot be placed against the release (8.4) |
-| `edakit cart check [--board B] [--maker M] [--cart]` | – | `job.json`, `quote.json`, `quote_page.txt`, `regulatory.md`, with `--cart` `cart.json` of the order's folder; the manifest | `check.md`, `check.json`; with `--cart` and every check passed the order record `hardware/orders/<date>-<board>-<maker>.json`. Exit 0 passed, warnings and notes included (in `check.md`), 2 a check of ORDER.form to ORDER.review failed, 3 ORDER.form to ORDER.finish passed and the review of the order (ORDER.review) is open |
-| `edakit cart actual [--board B] [--maker M] [--from FILE]` | – | `job.json`, `quote.json`, `actual.json` and `actual_page.txt` of the order's folder – with `--from` a saved order page or invoice (HTML; PDF with pdftotext) whose text edakit reads itself; `[cost]`, the fee table | `actual.md`; the project's fee table (`[cost] fees`, else `hardware/fees/<maker>.json`) with what maps one to one; the order number and the totals in the order record. Exit 2 when ORDER.read fails – the fee table and the order record stay as they are, and `actual.md` says why |
-| `edakit cart compare [--board B]` | – | the current release; per maker of `[cart] makers` its order folder (`job.json`, `quote.json`, `check.json`); `[cost] currency` and `rates` | `<reports>/<run>/fab/<board>/cart/compare.md`; prints the quotes side by side – the board total as quoted and in `[cost] currency`, the order total, the lines a maker marked or did not match, the lead time, whether `edakit cart check` passed on that quote – and the lowest board total; nothing asked of a maker (8.4) |
-| `edakit check [--release] [--coverage] [--json F]` | – | graph, parts (pins, identity STRUCT.identity), pin table; if there: footprint geometry and library footprints (GEO.hole, GEO.formed), library symbols (STRUCT.entry), the footprint data of parts entries with the footprint geometry (PARTS.footprint, SYNC.footprint); `[scripts]`, `[[release.stages]]` and `sim_plugin` with the board files' `[[silk.art]]`, `hardware/scripts.lock` and what the scripts read (8.6); `[agents]` and the agent files (8.6); with `[project] requirements` the requirements files and the sign-off file's manual checks (DOCS.ref, DOCS.need, DOCS.evidence, DOCS.draft; a file missing or not valid: exit 1); `<artifacts>/sim/result.json` while its inputs are unchanged – the cables' currents of the coverage report (3.3), no simulation of its own | – (`--json`: the findings); exit 1 on errors, with `--release` also on pending findings (3.3) |
-| `edakit --version` | – | `edakit/__init__.py`; from a git clone away from the version's tag its commit | – (prints `edakit 0.2.0`, or `edakit 0.2.0+g1a2b3c4` from such a clone – the string a gate run writes into its manifest, 2.3) |
-| `edakit rules [CODE …]` | – | the catalog `edakit/catalog/codes.toml`: engines and codes; an old check ID (G-4) the codes that replace it (10.7; no project needed) | – |
-| `edakit explain CODE …` | – | the catalog: rule, why, fix, sources and severity of a code; an old check ID names its codes (no project needed) | – |
-| `edakit graph show NAME [--json F]` | – | graph, parts entries, the checks of `edakit check` | – (one part or net: type, board, part number and parts entry with kind, limits and values, every pin with name, role and net – or the net's range, fn, cables and pins –, the accepts, and the findings whose place is the name or that may be accepted on it) |
-| `edakit graph json [--write\|--check]` | – | graph, parts entries | – (the resolved graph on stdout: `{"graph": …}` with pin numbers wherever the graph names a pin, every component's pin map – its parts entry's where the graph has none –, the lists in the order of the file); `--write`: beside a TOML graph the generated `hardware/graph.json`, never over a JSON graph (exit 1); `--check`: exit 2 when the committed file differs, with what differs, nothing written – for the pre-commit hook of a project with a TOML graph. The generated file is derived: neither in the circuit hash nor the data name `graph` of the scripts (3.1) |
-| `edakit graph convert [--dry-run]` | – | the JSON graph, parts entries, edakit.toml, sign-off file | `hardware/graph.toml` (components, nets and cables keyed by designator and name, pins by name or role, a pin map only where it differs from the entry's, long text over several lines, the convention `pin_reference` rewritten), `[project] graph` in edakit.toml (a line edit, comments kept), `hardware/graph.json` again as the resolved graph generated from it; refused with what to fix for null, a name twice or a pin that names none, and when the TOML would not read back to the same graph; when the files were the signed ones, the sign-offs of scope 'circuit' keep counting – the new circuit hash goes into the sign-off file, both into `rehashed`; `--dry-run`: the TOML and what would change. Left by hand after it: with `[firmware]` `edakit firmware` (the contract's `state_sha256` is the new circuit hash – convert says so), and the project scripts that read `graph` show as outdated once – `edakit run` or `edakit scripts stamp` (8.6) |
-| `edakit domains [--review R]` | – | graph, parts, `edakit/domains` | – (the domains on and off, suggested; with `--review electrical`, `regulatory` or `pcb` the questions of the enabled domains for that review) |
-| `edakit mutate [--sim] [--json F]` | – | graph, parts, with `--sim` the simulation config | – (mistakes built into a copy one at a time – every part left out, diodes, LEDs and polarized capacitors turned round, resistors ×100 and ÷100, nets shorted to ground – and those that raise no new error, warning or pending finding listed: what no code catches; in memory) |
-| `edakit convert [--write]` | – | graph, parts entries, sign-off file, documents, schematic notes, requirements files | `--write`: the files in the form of the restructuring (limits and values with units, accept by code, locks, codes in quotes and rows patterns), each with its own indent; when they were the signed ones, the sign-offs of scope 'circuit' keep counting – the new circuit hash goes into the sign-off file, both into `rehashed`; without: the list |
-| `edakit block list\|show NAME` | – | the block library (no project needed) | – |
-| `edakit block add NAME --as I [--connect PORT=NET …] [--without DES …] [--board B] [--file F] [--dry-run]` | – | graph, parts, block | graph (formatting kept – a TOML graph with its comments and arrangement –, the block's `graph.grounds` added to `grounds`), missing parts entries; `--without` leaves out optional parts of the block (14.5) |
-| `edakit part lint [KEY …]` | – | parts entries, the schema `edakit/catalog/kinds.toml` – each of an entry's `configs` as the entry it makes | – (PARTS.schema per problem; exit 2 on problems) |
-| `edakit part add [KEY] [--update]` | – | edakit's parts library `edakit/parts/` and its `signed.toml` (4.1) | without KEY – (lists every library entry with kind, MPN and whether it is signed or a draft); with KEY `hardware/parts/<KEY>.json`, the copy with its `library` version – refused where the project has the entry, `--update` replaces it and names what changed |
-| `edakit part sign KEY --by NAME` | – | the library entry | `edakit/parts/signed.toml`: the owner's signature with the entry's SHA-256 (4.1) |
-| `edakit part import LCSC [--update]` | – (internet) | EasyEDA's public component data of that number (4.2) | a new `hardware/parts/<LCSC>.json`, else nothing (`--update`: the fields it lacks); `<artifacts>/library/<LCSC>.json`, `<artifacts>/footprints/<footprint>.json`; exit 2 = the entry differs |
-| `edakit part diff OLD NEW [--json F]` | – | geometry of both (the dump of a placed part, else the footprint data of the entry, else the library footprint of `part import`), their parts entries (roles, `lead`), graph | – (F: the comparison as JSON); exit 0 = drop-in, 2 = something to decide (7.3) |
-| `edakit part footprint KEY [--board B] [--write]` | – | the footprint geometry of a placed part of KEY (`--board`: that board's), else the library footprint of `part import`; with the dump also the library footprint, for shapes and sizes (4.5) | – (prints the footprint as data); `--write`: `footprint_data` and a line of `sources` in the parts entry. Refused for an entry that has the data; exit 2 when PARTS.footprint finds something missing |
-| `edakit part build KEY [--board B] [--write]` | – / ✓ with `--write` | the entry's `footprint_data`, `pins` and `symbol` (PARTS.footprint must pass), the graph (the parts of the board that use it); with `--write` the board's template in EasyEDA, where the carrier is placed (4.5) | – (prints what it would build); `--write`: the copy of the carrier in the project library – footprint, with `"symbol": "box"` symbol –, the project saved; with `[scripts]` the change of `project-library:<b>` in `hardware/scripts.lock` (8.6). Exit 2 when the copy read back differs from the data; not run against EasyEDA yet |
-| `edakit part fetch KEY [--url U] \| --all` | – (internet) | the parts entry (`mpn`, `datasheet.url`, `lcsc`, `verified.datasheet_sha256`); the sources of 4.6 | `<datasheets>/<KEY>.pdf` and `.json` (a failed download keeps the earlier copy, exit 2; variant or changed since the sign-off: exit 2) |
-| `edakit part search "KEYWORDS" [--basic] [--min-stock N] [--limit 25] [--json F]` | – (internet) | JLCPCB's public parts catalogue (4.2) | – (F: the hits); exit 2 = no hits |
-| `edakit part datasheet [--connector C …] [--name N]` | – | graph, parts, sim config, board file (4.5) | `hardware/datasheet/<N>.json` and `.md`; without `--connector` every datasheet renewed |
-| `edakit stock [--board B] [--refresh]` | – | graph, parts, the snapshot; JLCPCB's catalogue and part pages (network) – only with JLCPCB among `[cart] makers` (exit 1 otherwise) | `hardware/stock.json` (`[project] stock`): the parts missing, unread or older than `stock_max_age_days`, with `--refresh` all |
-| `edakit stock --lcsc C…` | – | JLCPCB's catalogue and part pages (no project needed) | – (prints listed, class, stock, MSL, PCBA type, X-ray, attrition) |
-| `edakit cost [--board B] [--json F]` | – | graph, parts, board files (outline, sides, `[order]`: `quantity` PCBs, `pcba_quantity` assembled), the stock snapshot, the fee table of the planned maker with the project's own over it (newest value per fee), the PCB price of a checked quote of the current release, `[cost]`, `[[extra]]` | `<artifacts>/cost.json` (the change since the last estimate is printed; `not_in_price` per board whose `[order]` differs from the fee table's board, 8.4); exit 2 above `budget`, exit 1 for a maker without a fee table; with `--board` that board alone – no order total, no `cost.json`, no budget check |
-| `edakit order [--out DIR]` | – | graph, parts (`order`), board files (side), `[[extra]]`, `spare_pct` | `<artifacts>/order/` or DIR: `bom_<board>.csv` (the SYNC.bom BOM; none for a bought or hand-wired board), `cart_<supplier>.csv`, `hand_assembly.md` |
-| `edakit part own PATH [--name N]` | – | the board's project at PATH: its datasheet, state, git, gate runs | `hardware/parts/<N>.json` |
-| `edakit sim [--json F] [--keep DIR]` | – | graph, parts, sim config, plugin; with `copper` `route/<board>.ses`, `route/<board>_board.json` and the board file's pours | `<artifacts>/sim/net_currents.json`, `<artifacts>/sim/result.json` (the whole result with the hash of its inputs, 6.6 – with `cable_currents`, the highest current through a wire of each cable); with `--keep` each netlist and ngspice log, for a transient run its waveforms (`<run>.dat`) |
-| `edakit docs [--write]` | – | `[docs] files`, the schematic notes, graph, parts; for `sim:` the saved simulation result (or a new run); for `req:` the files of `[project] requirements` | with `--write` the value blocks of `[docs] files` |
-| `edakit firmware [--check]` | – | graph, parts, `[firmware]`; for `state_sha256` the files of the circuit hash | `[firmware] out` (not with `--check`: exit 2 on drift) |
-| `edakit req [ID …]` | – | the files of `[project] requirements` (10.4) | – (prints the needs and requirements with status, binding and `verify` as written – the gate evaluates it, 8.7; with IDs the chain of each, 3.6); exit 1 without the key, with a file missing or not valid, or an ID not in the files |
-| `edakit scripts` | – | `[scripts]`, `[[release.stages]]`, `sim_plugin`, the board files' `[[silk.art]]`, `hardware/scripts.lock`, what the scripts read; `[agents]` and the agent files (8.6) | – (prints every script with kind, state – current, outdated, never run –, about, cmd and its last run; the order; with `[agents]` every agent with what it signs, and who reviews where – each hook point with its agents in the order to start them; exit 2 when a script is outdated or never ran or the entries of `[scripts]` or `[agents]` do not resolve, 1 when the lock cannot be read) |
-| `edakit scripts stamp NAME …` | – | the same | `hardware/scripts.lock`: the stamp of each script named – it ran by hand; refused, writing nothing, for a check, entries that do not resolve, or a script whose `writes` are not there |
-| `edakit run NAME …` | – (an easyeda script changes EasyEDA itself, under the claim) | the same | runs the scripts named in their order, in the project directory (`python` = edakit's), and records each run: its stamp; for an easyeda script also its change of `project-library:<b>` (8.6); `<artifacts>/scripts/<name>.log` per script. Refused for a check, a name not in `[scripts]`, entries that do not resolve; a failed script records nothing and stops the run; exit 2 when a script named is still outdated, 3 when another session holds EasyEDA |
-| `edakit handover [--board B]` | – | graph, parts, sign-offs | – |
-| `edakit schematic create [--board] [--only] [--dry-run] [--save] [--create-project] [--refresh-devices]` | ✓ | graph | template, `device_cache.json`, `schematic_map_<name>.json`; `--save` only when the netlist equals the graph (6.1) |
-| `edakit schematic check [--schematic] [--no-pins] [--json F]` | ✓ read | graph, schematic | – |
-| `edakit schematic copy [--source] [--target] [--save]` | ✓ | schematic | copy |
-| `edakit schematic layout [--dry-run] [--reread] [--force] [--save]` | ✓ / – | graph, schematic, cached geometry | board schematic, `layout_preview_<name>.svg`; `--save` only when the netlist equals the graph (6.1) |
-| `edakit schematic draw [--board] [--out F] [--force] [--no-frame]` | – | graph, parts, the schematic file if there; for a `{sim:…}` note the saved simulation result | `schematic_<board>.svg` (or F) |
-| `edakit pcb dump [--ref]` | ✓ | PCB; the parts entries (which have footprint data) | `hardware/boards/<board>.geometry.json`, beside the board file and versioned (parts end at 0°/TOP; through-hole pads with `hole` [w, l] mm and `plated`; the pads of a part whose entry has footprint data with `shape`, `w`, `h`, `rot`, `layer`); a `<artifacts>/pcb_geometry_<board>.json` from before is moved there (7.4) |
-| `edakit pcb plan` | – | plan, geometry (the dump; for parts not in it the footprint data of their entry, else the library footprints of `part import`), net currents, graph (`layout`, SYNC.plan), parts entries (`body`, `lead` `length_mm`, `mate`) | `pcb_plan_<board>.png/.json`, `pcb_netclasses_<board>.json`, `mech_<board>.json` (7.4) |
-| `edakit pcb place [--rest] [--write] [--only C1,R1]` | – | plan, geometry as `pcb plan` reads it, graph (`layout.near`, decoupling of SYNC.plan), `[near]`; with `--rest` also the graph's nets and `[release] assembly` sides | with `--write`: rows with `auto = true` at the end of `[place]` – with `--rest` for every part of the board without a row, or with an `auto` row: by airline length, then moves and swaps while it falls (7.4) |
-| `edakit pcb parts [--write]` | ✓ | board schematic, PCB, graph | PCB parts, UniqueIds, geometry |
-| `edakit pcb nets [--write]` | ✓ | graph, PCB | pad nets |
-| `edakit pcb apply [--verify-all]` | ✓ | plan, geometry | outline, holes, tooling, fixed parts |
-| `edakit pcb autolayout` | ✓ | graph, board file | positions of the unlocked parts; once they stand still, a row with `auto = true` at the end of `[place]` for every part of the board without one (7.4) |
-| `edakit pcb takeover [--write]` | ✓ read | PCB, graph, board file | with `--write`: a fixed row at the end of `[place]` for every part of the board without one, where EasyEDA has it – once, for a board placed before (7.4) |
-| `edakit pcb tooling` / `pour` | ✓ | plan; `pour` with `pour_regions`: board file and SES of `route` | tooling holes / pours (unfilled) |
-| `edakit route all\|read\|dsn\|route\|check\|apply\|verify [--cleanup]\|pours\|reload\|drc\|save [--passes N] [--threads 4] [--clearance MIL] [--no-optimizer]` | ✓ / – (dsn, route, check offline) | PCB, rules (`--passes`, `--clearance` over `[routing] passes`, `clearance_mil`); `net_currents.json` (check: GEO.width offline; `widths = "sim"`) | `route/<board>_board.json`, `.dsn`, `.ses`, `_routing.png`, `_drc.json`, `_netlist_diff.json` (with an Import Changes item); tracks, vias, pours |
-| `edakit route diagnose [--net N]` | – | `route/<board>_board.json`, the board file's rules, the last SES | `route/<board>_diagnose/` (a PNG per open connection, `congestion.png`, `diagnose.json`), 7.5 |
-| `edakit silk apply\|check` | ✓ | PCB, Gerber export | designators, `silk_<board>_<side>.png`, `gerber_<board>/`; apply: `silk_footprints_<board>/` (the print it found, for GEO.silk) |
-| `edakit silk preview` | – | board file, the last Gerber export (`gerber_<board>/`) | `silk_preview_<board>_<side>.png`: artwork, texts and the fixed designators of `[silk.place]` (exit 2 when one is in the way, 7.7) |
-| `edakit export [--board]` | ✓ read | schematic, PCB, project file | `<artifacts>/export/`; with a maker that takes ODB++ also `odb_<board>.zip` (`easyeda_export_odb`, 2.5; on KiCad kicad-cli, 16.5) |
-| `edakit gate [--easyeda \| --eda]` | – / ✓ | everything; with `[project] requirements` the requirements files (8.7 – a file missing or not valid: exit 1 before a run) | `<reports>/<run>/`, with `stage_<id>.txt` the output of each project check that ran (8.1); a RELEASED run supersedes the earlier ones in their `fab/manifest.json` (8.3) |
-| `edakit release current` | – | the manifests under `reports`; the real cost of its orders (`cart/<maker>/actual.json`); with `[release] archive = "git"` what git tracks of the run | – (with an order's real cost: estimate, quote and actual beside the release; with `archive = "git"` and a run git does not track yet "not in git yet: git add -f …"). Exit 2 without a current release |
-| `edakit release withdraw RUN --reason TEXT` | – | the run's manifest | its `fab/manifest.json`: `status`, `withdrawn` {reason, by, date} |
-| `edakit release verify FILE…\|DIR…` | – | the files (a folder: its `.zip` and `.csv` files), the manifests | – |
-| `edakit release publish [--draft] [--dry-run] [--tag T]` | – (gh, git) | git (a clean tree, HEAD on its remote branch – not with `--draft`); per project and variant below it the current release, its upload files (`release verify`), polarity sheet, manifest and order form; the graph's purpose; with `[release] publish.decisions` the decision log at HEAD and at the previous release's tag; through `gh` the repository's tags and the previous release's `SHA256SUMS` and manifests | `build/publish/<tag>/`: the files, `SHA256SUMS`, `notes.md`; the GitHub release `<tag>` (default today, `-2` … when the remote has it) as a pre-release on HEAD – `--draft` a draft without tag, `--dry-run` nothing uploaded. Exit 2: a file refused or a project without a current release, nothing staged (8.3) |
-| `edakit release publish --built TAG` | – (gh) | – | the release TAG no longer a pre-release: a board of it has been built and works (M-4) |
-| `edakit fab --board B --out DIR [--offline]` | ✓ / – | PCB, exports, `route/<board>_board.json` (GEO.spacing), `silk_strings_<board>.json` and `silk_footprints_<board>/` (GEO.silk), the stock snapshot (`order.md`), with `[routing] drc_rules` the rule set of EasyEDA's DRC (GEO.drc) | `DIR/<board>/`, with `[order]` or `[cart]` also `order.md`, with `[order]` `order.json` (the settings in the fab hash), with `[routing] drc_rules` also `drc_rules.json`; with a maker of `[cart] makers` whose profile takes the MPN BOM `bom_<board>_mpn.csv`, with one whose `[cpl] zero` is its own `cpl_<board>_<maker>.csv` (SYNC.cpl), with one that takes ODB++ `odb_<board>.zip` (SYNC.odb) |
-| `edakit fab diff RUN_A RUN_B [--board B]` | – | `fab/<board>/` of two gate runs: Gerber layers, drill files, BOM, CPL, the order settings (`order.json`) | – |
-| `edakit lock [status\|claim\|release\|yield CHAT\|hook] [--note] [--auto]` | – | – (hook: tool name and, for `easyeda_api_call`, its `path`; library lookups of `READ_ONLY_TOOLS`/`READ_ONLY_API` pass without a claim, 11.2) | `~/.local/state/edakit/easyeda-lock.json` |
-| `edakit proposal template [--feature]\|seal FILE [--out F]\|verify FILE\|-` | – | a rule or feature proposal (no project needed) | seal: the issue body with its SHA-256 |
-| `edakit doctor [--offline]` | ✓ read (not with `--offline`) | tool chain; `BRIDGE_TIMEOUT_MS` of the running easyeda-mcp-pro servers (`/proc/<pid>/environ`); with EasyEDA running, through an own server that claims nothing: `easyeda_bridge_status`, `easyeda_health_check` (connected, extension against server version, registry) and, while the claim is free or yours, `DMT_Project.getCurrentProjectInfo` (`[MaxDepth]` = the original extension) – 2.5, 12 | – |
+- **Exit codes:** 0 ok, 2 findings, 1 error. 3 from `edakit lock` and from `edakit run` of an easyeda script (another
+  session holds EasyEDA), from `edakit cart check` (the review of the order is open), and from `route all|drc` and
+  `silk apply|check` when the DRC's only item is EasyEDA waiting for the import acknowledgement after writing the
+  Channel IDs (schematic = PCB; *Design → Import Changes* once – 7.5).
+- **uv from snap:** inside Claude Code `edakit … 2>&1 | cat`.
+- **Progress:** the long commands – `route all`, `gate`, `pcb apply`, `silk apply`, `export`,
+  `schematic create|layout` – print `[x.x min] step n/m: <step>` before each step (11.3).
+- **Project scripts:** with `[scripts]`, `pcb place|parts|plan|apply`, `route all`, `silk apply|preview` and `gate`
+  run the input scripts that write what they read first, when those are outdated or never ran, and stop when one
+  fails; `--no-scripts` runs none (8.6).
+
+Each command below: its synopsis and help line, generated from the command line itself, then per action what it
+reads and writes and whether it needs EasyEDA (✓ yes, – no). `edakit COMMAND -h` prints the same synopsis.
+
+### edakit --version
+
+`edakit --version` – EasyEDA: no
+
+- **Reads:** `edakit/__init__.py`; from a git clone away from the version's tag its commit
+- **Writes:** – (prints `edakit 0.2.0`, or `edakit 0.2.0+g1a2b3c4` from such a clone – the string a gate run writes into
+  its manifest, 2.3)
+
+### edakit check
+
+<!-- edakit:generated command check -->
+`edakit check [--release] [--json JSON] [--coverage]`
+
+Rule checks on the graph (stages P, G).
+<!-- edakit:end -->
+
+`edakit check [--release] [--coverage] [--json F]` – EasyEDA: no
+
+- **Reads:** graph, parts (pins, identity STRUCT.identity), pin table; if there: footprint geometry and library
+  footprints (GEO.hole, GEO.formed), library symbols (STRUCT.entry), the footprint data of parts entries with the
+  footprint geometry (PARTS.footprint, SYNC.footprint); `[scripts]`, `[[release.stages]]` and `sim_plugin` with the
+  board files' `[[silk.art]]`, `hardware/scripts.lock` and what the scripts read (8.6); `[agents]` and the agent files
+  (8.6); with `[project] requirements` the requirements files and the sign-off file's manual checks (DOCS.ref,
+  DOCS.need, DOCS.evidence, DOCS.draft; a file missing or not valid: exit 1); `<artifacts>/sim/result.json` while its
+  inputs are unchanged – the cables' currents of the coverage report (3.3), no simulation of its own
+- **Writes:** – (`--json`: the findings); exit 1 on errors, with `--release` also on pending findings (3.3)
+
+### edakit rules
+
+<!-- edakit:generated command rules -->
+`edakit rules [ids ...]`
+
+The engines and codes of the catalog.
+<!-- edakit:end -->
+
+`edakit rules [CODE …]` – EasyEDA: no
+
+- **Reads:** the catalog `edakit/catalog/codes.toml`: engines and codes; an old check ID (G-4) the codes that replace it
+  (10.7; no project needed)
+- **Writes:** –
+
+### edakit explain
+
+<!-- edakit:generated command explain -->
+`edakit explain ids [ids ...]`
+
+Rule, why, fix and sources of a code.
+<!-- edakit:end -->
+
+`edakit explain CODE …` – EasyEDA: no
+
+- **Reads:** the catalog: rule, why, fix, sources and severity of a code; an old check ID names its codes (no project
+  needed)
+- **Writes:** –
+
+### edakit graph
+
+<!-- edakit:generated command graph -->
+`edakit graph [--json JSON] [--write] [--check] [--dry-run] {show,json,convert} [name]`
+
+What the graph says about one part or net; the resolved graph as JSON; a JSON graph moved to TOML.
+<!-- edakit:end -->
+
+`edakit graph show NAME [--json F]` – EasyEDA: no
+
+- **Reads:** graph, parts entries, the checks of `edakit check`
+- **Writes:** – (one part or net: type, board, part number and parts entry with kind, limits and values, every pin with
+  name, role and net – or the net's range, fn, cables and pins –, the accepts, and the findings whose place is the name
+  or that may be accepted on it)
+
+`edakit graph json [--write|--check]` – EasyEDA: no
+
+- **Reads:** graph, parts entries
+- **Writes:** – (the resolved graph on stdout: `{"graph": …}` with pin numbers wherever the graph names a pin, every
+  component's pin map – its parts entry's where the graph has none –, the lists in the order of the file); `--write`:
+  beside a TOML graph the generated `hardware/graph.json`, never over a JSON graph (exit 1); `--check`: exit 2 when the
+  committed file differs, with what differs, nothing written – for the pre-commit hook of a project with a TOML graph.
+  The generated file is derived: neither in the circuit hash nor the data name `graph` of the scripts (3.1)
+
+`edakit graph convert [--dry-run]` – EasyEDA: no
+
+- **Reads:** the JSON graph, parts entries, edakit.toml, sign-off file
+- **Writes:** `hardware/graph.toml` (components, nets and cables keyed by designator and name, pins by name or role, a
+  pin map only where it differs from the entry's, long text over several lines, the convention `pin_reference`
+  rewritten), `[project] graph` in edakit.toml (a line edit, comments kept), `hardware/graph.json` again as the resolved
+  graph generated from it; when the files were the signed ones, the sign-offs of scope 'circuit' keep counting – the
+  new circuit hash goes into the sign-off file, both into `rehashed`; `--dry-run`: the TOML and what would change
+- **Refused** with what to fix for null, a name twice or a pin that names none, and when the TOML would not read back
+  to the same graph
+- **Left by hand after it:** with `[firmware]` `edakit firmware` (the contract's `state_sha256` is the new circuit hash
+  – convert says so), and the project scripts that read `graph` show as outdated once – `edakit run` or
+  `edakit scripts stamp` (8.6)
+
+### edakit domains
+
+<!-- edakit:generated command domains -->
+`edakit domains [--review {electrical,regulatory,pcb}]`
+
+The domains of the project: on, off, suggested; the reviewers' questions.
+<!-- edakit:end -->
+
+`edakit domains [--review R]` – EasyEDA: no
+
+- **Reads:** graph, parts, `edakit/domains`
+- **Writes:** – (the domains on and off, suggested; with `--review electrical`, `regulatory` or `pcb` the questions of
+  the enabled domains for that review)
+
+### edakit convert
+
+<!-- edakit:generated command convert -->
+`edakit convert [--write]`
+
+Graph, parts entries and sign-off file into the form of the restructuring.
+<!-- edakit:end -->
+
+`edakit convert [--write]` – EasyEDA: no
+
+- **Reads:** graph, parts entries, sign-off file, documents, schematic notes, requirements files
+- **Writes:** `--write`: the files in the form of the restructuring (limits and values with units, accept by code,
+  locks, codes in quotes and rows patterns), each with its own indent; when they were the signed ones, the sign-offs of
+  scope 'circuit' keep counting – the new circuit hash goes into the sign-off file, both into `rehashed`; without: the
+  list
+
+### edakit mutate
+
+<!-- edakit:generated command mutate -->
+`edakit mutate [--sim] [--json JSON]`
+
+Mistakes built into a copy of the design one at a time: what no code catches.
+<!-- edakit:end -->
+
+`edakit mutate [--sim] [--json F]` – EasyEDA: no
+
+- **Reads:** graph, parts, with `--sim` the simulation config
+- **Writes:** – (mistakes built into a copy one at a time – every part left out, diodes, LEDs and polarized capacitors
+  turned round, resistors ×100 and ÷100, nets shorted to ground – and those that raise no new error, warning or pending
+  finding listed: what no code catches; in memory)
+
+### edakit block
+
+<!-- edakit:generated command block -->
+`edakit block [--as INSTANCE] [--connect PORT=NET [PORT=NET ...]] [--without DES [DES ...]] [--board BOARD] [--file FILE] [--dry-run] {list,show,add} [name]`
+
+Building blocks: list, show, or add one to the graph.
+<!-- edakit:end -->
+
+`edakit block list|show NAME` – EasyEDA: no
+
+- **Reads:** the block library (no project needed)
+- **Writes:** –
+
+`edakit block add NAME --as I [--connect PORT=NET …] [--without DES …] [--board B] [--file F] [--dry-run]` – EasyEDA: no
+
+- **Reads:** graph, parts, block
+- **Writes:** graph (formatting kept – a TOML graph with its comments and arrangement –, the block's `graph.grounds`
+  added to `grounds`), missing parts entries; `--without` leaves out optional parts of the block (14.5)
+
+### edakit part
+
+<!-- edakit:generated command part -->
+`edakit part [--update] [--by BY] [--url URL] [--all] [--json JSON] [--basic] [--min-stock MIN_STOCK] [--limit LIMIT] [--connector CONNECTOR] [--name NAME] [--board BOARD] [--write] {import,diff,fetch,search,datasheet,own,footprint,build,lint,add,sign} [source] [new]`
+
+The library's data of an LCSC number, a footprint swap compared, datasheets, a catalogue search, own parts, own footprints as data, entries of edakit's parts library.
+<!-- edakit:end -->
+
+`edakit part lint [KEY …]` – EasyEDA: no
+
+- **Reads:** parts entries, the schema `edakit/catalog/kinds.toml` – each of an entry's `configs` as the entry it makes
+- **Writes:** – (PARTS.schema per problem; exit 2 on problems)
+
+`edakit part add [KEY] [--update]` – EasyEDA: no
+
+- **Reads:** edakit's parts library `edakit/parts/` and its `signed.toml` (4.1)
+- **Writes:** without KEY – (lists every library entry with kind, MPN and whether it is signed or a draft); with KEY
+  `hardware/parts/<KEY>.json`, the copy with its `library` version – refused where the project has the entry, `--update`
+  replaces it and names what changed
+
+`edakit part sign KEY --by NAME` – EasyEDA: no
+
+- **Reads:** the library entry
+- **Writes:** `edakit/parts/signed.toml`: the signature of NAME with the entry's SHA-256 (4.1)
+
+`edakit part import LCSC [--update]` – EasyEDA: no – (internet)
+
+- **Reads:** EasyEDA's public component data of that number (4.2)
+- **Writes:** a new `hardware/parts/<LCSC>.json`, else nothing (`--update`: the fields it lacks);
+  `<artifacts>/library/<LCSC>.json`, `<artifacts>/footprints/<footprint>.json`; exit 2 = the entry differs
+
+`edakit part diff OLD NEW [--json F]` – EasyEDA: no
+
+- **Reads:** geometry of both (the dump of a placed part, else the footprint data of the entry, else the library
+  footprint of `part import`), their parts entries (roles, `lead`), graph
+- **Writes:** – (F: the comparison as JSON); exit 0 = drop-in, 2 = something to decide (7.3)
+
+`edakit part footprint KEY [--board B] [--write]` – EasyEDA: no
+
+- **Reads:** the footprint geometry of a placed part of KEY (`--board`: that board's), else the library footprint of
+  `part import`; with the dump also the library footprint, for shapes and sizes (4.5)
+- **Writes:** – (prints the footprint as data); `--write`: `footprint_data` and a line of `sources` in the parts entry.
+  Refused for an entry that has the data; exit 2 when PARTS.footprint finds something missing
+
+`edakit part build KEY [--board B] [--write]` – EasyEDA: – / ✓ with `--write`
+
+- **Reads:** the entry's `footprint_data`, `pins` and `symbol` (PARTS.footprint must pass), the graph (the parts of the
+  board that use it); with `--write` the board's template in EasyEDA, where the carrier is placed (4.5)
+- **Writes:** – (prints what it would build); `--write`: the copy of the carrier in the project library – footprint,
+  with `"symbol": "box"` symbol –, the project saved; with `[scripts]` the change of `project-library:<b>` in
+  `hardware/scripts.lock` (8.6). Exit 2 when the copy read back differs from the data; not run against EasyEDA yet
+
+`edakit part fetch KEY [--url U] | --all` – EasyEDA: no – (internet)
+
+- **Reads:** the parts entry (`mpn`, `datasheet.url`, `lcsc`, `verified.datasheet_sha256`); the sources of 4.6
+- **Writes:** `<datasheets>/<KEY>.pdf` and `.json` (a failed download keeps the earlier copy, exit 2; variant or changed
+  since the sign-off: exit 2)
+
+`edakit part search "KEYWORDS" [--basic] [--min-stock N] [--limit 25] [--json F]` – EasyEDA: no – (internet)
+
+- **Reads:** JLCPCB's public parts catalogue (4.2)
+- **Writes:** – (F: the hits); exit 2 = no hits
+
+`edakit part datasheet [--connector C …] [--name N]` – EasyEDA: no
+
+- **Reads:** graph, parts, sim config, board file (4.5)
+- **Writes:** `hardware/datasheet/<N>.json` and `.md`; without `--connector` every datasheet renewed
+
+`edakit part own PATH [--name N]` – EasyEDA: no
+
+- **Reads:** the board's project at PATH: its datasheet, state, git, gate runs
+- **Writes:** `hardware/parts/<N>.json`
+
+### edakit stock
+
+<!-- edakit:generated command stock -->
+`edakit stock [--board BOARD] [--refresh] [--lcsc C [C ...]]`
+
+Ask JLCPCB about every assembled part and write the stock snapshot (PARTS.stock).
+<!-- edakit:end -->
+
+`edakit stock [--board B] [--refresh]` – EasyEDA: no
+
+- **Reads:** graph, parts, the snapshot; JLCPCB's catalogue and part pages (network) – only with JLCPCB among
+  `[cart] makers` (exit 1 otherwise)
+- **Writes:** `hardware/stock.json` (`[project] stock`): the parts missing, unread or older than `stock_max_age_days`,
+  with `--refresh` all
+
+`edakit stock --lcsc C…` – EasyEDA: no
+
+- **Reads:** JLCPCB's catalogue and part pages (no project needed)
+- **Writes:** – (prints listed, class, stock, MSL, PCBA type, X-ray, attrition)
+
+### edakit cost
+
+<!-- edakit:generated command cost -->
+`edakit cost [--board BOARD] [--json JSON]`
+
+Estimate the order: PCB, PCBA fees, parts, extras, shipping, VAT; drivers, budget.
+<!-- edakit:end -->
+
+`edakit cost [--board B] [--json F]` – EasyEDA: no
+
+- **Reads:** graph, parts, board files (outline, sides, `[order]`: `quantity` PCBs, `pcba_quantity` assembled), the
+  stock snapshot, the fee table of the planned maker with the project's own over it (newest value per fee), the PCB
+  price of a checked quote of the current release, `[cost]`, `[[extra]]`
+- **Writes:** `<artifacts>/cost.json` (the change since the last estimate is printed; `not_in_price` per board whose
+  `[order]` differs from the fee table's board, 8.4); exit 2 above `budget`, exit 1 for a maker without a fee table;
+  with `--board` that board alone – no order total, no `cost.json`, no budget check
+
+### edakit order
+
+<!-- edakit:generated command order -->
+`edakit order [--out OUT]`
+
+Assembler's BOM, one cart per other supplier, hand-assembly list for all sets.
+<!-- edakit:end -->
+
+`edakit order [--out DIR]` – EasyEDA: no
+
+- **Reads:** graph, parts (`order`), board files (side), `[[extra]]`, `spare_pct`
+- **Writes:** `<artifacts>/order/` or DIR: `bom_<board>.csv` (the SYNC.bom BOM; none for a bought or hand-wired board),
+  `cart_<supplier>.csv`, `hand_assembly.md`
+
+### edakit cart
+
+<!-- edakit:generated command cart -->
+`edakit cart [--board BOARD] [--maker MAKER] [--cart] [--from SOURCE] {fields,prepare,check,actual,compare}`
+
+The order at the maker: the form's fields, the job of the skill cart, its check, the real cost, the makers' quotes compared – up to the maker's cart, never further.
+<!-- edakit:end -->
+
+`edakit cart fields [--board B] [--maker M]` – EasyEDA: no
+
+- **Reads:** `[order]` of edakit.toml and the board file, `thickness_mm`, `[release] assembly`, `[tooling]`, the stock
+  snapshot, `[cart]`, the maker's profile; the Gerber files of the current release (else the newest run) for layers and
+  size
+- **Writes:** – (prints every field of the maker's form: its label, the maker's word, where it comes from, edakit's key
+  and value)
+
+`edakit cart prepare [--board B] [--maker M]` – EasyEDA: no
+
+- **Reads:** the current release (manifest, `makers.json`, the board's upload files and `order.json`), the circuit and
+  layout hash now, the sign-off file (M-6), `[cart]`, the maker's profile, the estimate
+- **Writes:** `<reports>/<run>/fab/<board>/cart/<maker>/job.json`; exit 1 with the reason when the order cannot be
+  placed against the release (8.4)
+
+`edakit cart check [--board B] [--maker M] [--cart]` – EasyEDA: no
+
+- **Reads:** `job.json`, `quote.json`, `quote_page.txt`, `regulatory.md`, with `--cart` `cart.json` of the order's
+  folder; the manifest
+- **Writes:** `check.md`, `check.json`; with `--cart` and every check passed the order record
+  `hardware/orders/<date>-<board>-<maker>.json`. Exit 0 passed, warnings and notes included (in `check.md`), 2 a check
+  of ORDER.form to ORDER.review failed, 3 ORDER.form to ORDER.finish passed and the review of the order (ORDER.review)
+  is open
+
+`edakit cart actual [--board B] [--maker M] [--from FILE]` – EasyEDA: no
+
+- **Reads:** `job.json`, `quote.json`, `actual.json` and `actual_page.txt` of the order's folder – with `--from` a saved
+  order page or invoice (HTML; PDF with pdftotext) whose text edakit reads itself; `[cost]`, the fee table
+- **Writes:** `actual.md`; the project's fee table (`[cost] fees`, else `hardware/fees/<maker>.json`) with what maps one
+  to one; the order number and the totals in the order record. Exit 2 when ORDER.read fails – the fee table and the
+  order record stay as they are, and `actual.md` says why
+
+`edakit cart compare [--board B]` – EasyEDA: no
+
+- **Reads:** the current release; per maker of `[cart] makers` its order folder (`job.json`, `quote.json`,
+  `check.json`); `[cost] currency` and `rates`
+- **Writes:** `<reports>/<run>/fab/<board>/cart/compare.md`; prints the quotes side by side – the board total as quoted
+  and in `[cost] currency`, the order total, the lines a maker marked or did not match, the lead time, whether
+  `edakit cart check` passed on that quote – and the lowest board total; nothing asked of a maker (8.4)
+
+### edakit sim
+
+<!-- edakit:generated command sim -->
+`edakit sim [--json JSON] [--keep KEEP]`
+
+Simulation (stage E).
+<!-- edakit:end -->
+
+`edakit sim [--json F] [--keep DIR]` – EasyEDA: no
+
+- **Reads:** graph, parts, sim config, plugin; with `copper` `route/<board>.ses`, `route/<board>_board.json` and the
+  board file's pours
+- **Writes:** `<artifacts>/sim/net_currents.json`, `<artifacts>/sim/result.json` (the whole result with the hash of its
+  inputs, 6.6 – with `cable_currents`, the highest current through a wire of each cable); with `--keep` each netlist and
+  ngspice log, for a transient run its waveforms (`<run>.dat`)
+
+### edakit docs
+
+<!-- edakit:generated command docs -->
+`edakit docs [--write]`
+
+Values quoted from the design data in documents and notes (DOCS.quote).
+<!-- edakit:end -->
+
+`edakit docs [--write]` – EasyEDA: no
+
+- **Reads:** `[docs] files`, the schematic notes, graph, parts; for `sim:` the saved simulation result (or a new run);
+  for `req:` the files of `[project] requirements`
+- **Writes:** with `--write` the value blocks of `[docs] files`
+
+### edakit firmware
+
+<!-- edakit:generated command firmware -->
+`edakit firmware [--check]`
+
+The board's firmware contract from the graph ([firmware] in edakit.toml).
+<!-- edakit:end -->
+
+`edakit firmware [--check]` – EasyEDA: no
+
+- **Reads:** graph, parts, `[firmware]`; for `state_sha256` the files of the circuit hash
+- **Writes:** `[firmware] out` (not with `--check`: exit 2 on drift)
+
+### edakit req
+
+<!-- edakit:generated command req -->
+`edakit req [ids ...]`
+
+What the circuit must do: needs and requirements with status, binding and evidence ([project] requirements in edakit.toml).
+<!-- edakit:end -->
+
+`edakit req [ID …]` – EasyEDA: no
+
+- **Reads:** the files of `[project] requirements` (10.4)
+- **Writes:** – (prints the needs and requirements with status, binding and `verify` as written – the gate evaluates it,
+  8.7; with IDs the chain of each, 3.6); exit 1 without the key, with a file missing or not valid, or an ID not in the
+  files
+
+### edakit scripts
+
+<!-- edakit:generated command scripts -->
+`edakit scripts [{stamp}] [names ...]`
+
+The project's scripts ([scripts.<name>]): state and order; stamp records a run.
+<!-- edakit:end -->
+
+`edakit scripts` – EasyEDA: no
+
+- **Reads:** `[scripts]`, `[[release.stages]]`, `sim_plugin`, the board files' `[[silk.art]]`, `hardware/scripts.lock`,
+  what the scripts read; `[agents]` and the agent files (8.6)
+- **Writes:** – (prints every script with kind, state – current, outdated, never run –, about, cmd and its last run; the
+  order; with `[agents]` every agent with what it signs, and who reviews where – each hook point with its agents in the
+  order to start them; exit 2 when a script is outdated or never ran or the entries of `[scripts]` or `[agents]` do not
+  resolve, 1 when the lock cannot be read)
+
+`edakit scripts stamp NAME …` – EasyEDA: no
+
+- **Reads:** the same
+- **Writes:** `hardware/scripts.lock`: the stamp of each script named – it ran by hand; refused, writing nothing, for a
+  check, entries that do not resolve, or a script whose `writes` are not there
+
+### edakit run
+
+<!-- edakit:generated command run -->
+`edakit run NAME [NAME ...]`
+
+Run project scripts ([scripts.<name>]) in their order and record their runs; an easyeda script under the EasyEDA claim.
+<!-- edakit:end -->
+
+`edakit run NAME …` – EasyEDA: no – (an easyeda script changes EasyEDA itself, under the claim)
+
+- **Reads:** the same
+- **Writes:** runs the scripts named in their order, in the project directory (`python` = edakit's), and records each
+  run: its stamp; for an easyeda script also its change of `project-library:<b>` (8.6); `<artifacts>/scripts/<name>.log`
+  per script. Refused for a check, a name not in `[scripts]`, entries that do not resolve; a failed script records
+  nothing and stops the run; exit 2 when a script named is still outdated, 3 when another session holds EasyEDA
+
+### edakit handover
+
+<!-- edakit:generated command handover -->
+`edakit handover [--board BOARD]`
+
+The hand-over from the circuit to the layout: state, sign-offs, requirements.
+<!-- edakit:end -->
+
+`edakit handover [--board B]` – EasyEDA: no
+
+- **Reads:** graph, parts, sign-offs
+- **Writes:** –
+
+### edakit schematic
+
+<!-- edakit:generated command schematic -->
+`edakit schematic [--board BOARD] [--schematic SCHEMATIC] [--source SOURCE] [--target TARGET] [--only ONLY] [--dry-run] [--reread] [--force] [--out OUT] [--no-frame] [--no-pins] [--refresh-devices] [--create-project] [--save] [--json JSON] [--wait WAIT] {create,check,copy,layout,draw}`
+
+Generate, check, copy or lay out a schematic in EasyEDA – or draw it without.
+<!-- edakit:end -->
+
+`edakit schematic create [--board] [--only] [--dry-run] [--save] [--create-project] [--refresh-devices]` – EasyEDA: ✓
+
+- **Reads:** graph
+- **Writes:** template, `device_cache.json`, `schematic_map_<name>.json`; `--save` only when the netlist equals the
+  graph (6.1)
+
+`edakit schematic check [--schematic] [--no-pins] [--json F]` – EasyEDA: ✓ read
+
+- **Reads:** graph, schematic
+- **Writes:** –
+
+`edakit schematic copy [--source] [--target] [--save]` – EasyEDA: ✓
+
+- **Reads:** schematic
+- **Writes:** copy
+
+`edakit schematic layout [--dry-run] [--reread] [--force] [--save]` – EasyEDA: ✓ / –
+
+- **Reads:** graph, schematic, cached geometry
+- **Writes:** board schematic, `layout_preview_<name>.svg`; `--save` only when the netlist equals the graph (6.1)
+
+`edakit schematic draw [--board] [--out F] [--force] [--no-frame]` – EasyEDA: no
+
+- **Reads:** graph, parts, the schematic file if there; for a `{sim:…}` note the saved simulation result
+- **Writes:** `schematic_<board>.svg` (or F)
+
+### edakit pcb
+
+<!-- edakit:generated command pcb -->
+`edakit pcb [--board BOARD] [--write] [--ref REF] [--only ONLY] [--rest] [--verify-all] [--no-scripts] {dump,plan,place,parts,nets,apply,tooling,pour,autolayout,takeover}`
+
+Placement plan, parts and nets sync, fixed parts, tooling holes, pours.
+<!-- edakit:end -->
+
+`edakit pcb dump [--ref]` – EasyEDA: ✓
+
+- **Reads:** PCB; the parts entries (which have footprint data)
+- **Writes:** `hardware/boards/<board>.geometry.json`, beside the board file and versioned (parts end at 0°/TOP;
+  through-hole pads with `hole` [w, l] mm and `plated`; the pads of a part whose entry has footprint data with `shape`,
+  `w`, `h`, `rot`, `layer`); a `<artifacts>/pcb_geometry_<board>.json` from before is moved there (7.4)
+
+`edakit pcb plan` – EasyEDA: no
+
+- **Reads:** plan, geometry (the dump; for parts not in it the footprint data of their entry, else the library
+  footprints of `part import`), net currents, graph (`layout`, SYNC.plan), parts entries (`body`, `lead` `length_mm`,
+  `mate`)
+- **Writes:** `pcb_plan_<board>.png/.json`, `pcb_netclasses_<board>.json`, `mech_<board>.json` (7.4)
+
+`edakit pcb place [--rest] [--write] [--only C1,R1]` – EasyEDA: no
+
+- **Reads:** plan, geometry as `pcb plan` reads it, graph (`layout.near`, decoupling of SYNC.plan), `[near]`; with
+  `--rest` also the graph's nets and `[release] assembly` sides
+- **Writes:** with `--write`: rows with `auto = true` at the end of `[place]` – with `--rest` for every part of the
+  board without a row, or with an `auto` row: by airline length, then moves and swaps while it falls (7.4)
+
+`edakit pcb parts [--write]` – EasyEDA: ✓
+
+- **Reads:** board schematic, PCB, graph
+- **Writes:** PCB parts, UniqueIds, geometry
+
+`edakit pcb nets [--write]` – EasyEDA: ✓
+
+- **Reads:** graph, PCB
+- **Writes:** pad nets
+
+`edakit pcb apply [--verify-all]` – EasyEDA: ✓
+
+- **Reads:** plan, geometry
+- **Writes:** outline, holes, tooling, fixed parts
+
+`edakit pcb autolayout` – EasyEDA: ✓
+
+- **Reads:** graph, board file
+- **Writes:** positions of the unlocked parts; once they stand still, a row with `auto = true` at the end of `[place]`
+  for every part of the board without one (7.4)
+
+`edakit pcb takeover [--write]` – EasyEDA: ✓ read
+
+- **Reads:** PCB, graph, board file
+- **Writes:** with `--write`: a fixed row at the end of `[place]` for every part of the board without one, where EasyEDA
+  has it – once, for a board placed before (7.4)
+
+`edakit pcb tooling` / `pour` – EasyEDA: ✓
+
+- **Reads:** plan; `pour` with `pour_regions`: board file and SES of `route`
+- **Writes:** tooling holes / pours (unfilled)
+
+### edakit route
+
+<!-- edakit:generated command route -->
+`edakit route [--board BOARD] [--net NET] [--passes PASSES] [--threads THREADS] [--clearance CLEARANCE] [--no-optimizer] [--cleanup] [--no-scripts] {all,read,dsn,route,check,diagnose,apply,verify,pours,reload,drc,save}`
+
+Route with Freerouting and write the result into EasyEDA.
+<!-- edakit:end -->
+
+`edakit route all|read|dsn|route|check|apply|verify [--cleanup]|pours|reload|drc|save [--passes N] [--threads 4] [--clearance MIL] [--no-optimizer]`
+– EasyEDA: ✓ / – (dsn, route, check offline)
+
+- **Reads:** PCB, rules (`--passes`, `--clearance` over `[routing] passes`, `clearance_mil`); `net_currents.json`
+  (check: GEO.width offline; `widths = "sim"`)
+- **Writes:** `route/<board>_board.json`, `.dsn`, `.ses`, `_routing.png`, `_drc.json`, `_netlist_diff.json` (with an
+  Import Changes item); tracks, vias, pours
+
+`edakit route diagnose [--net N]` – EasyEDA: no
+
+- **Reads:** `route/<board>_board.json`, the board file's rules, the last SES
+- **Writes:** `route/<board>_diagnose/` (a PNG per open connection, `congestion.png`, `diagnose.json`), 7.5
+
+### edakit silk
+
+<!-- edakit:generated command silk -->
+`edakit silk [--board BOARD] [--no-scripts] {apply,check,preview}`
+
+Designators where there is room, silkscreen check on the Gerber export.
+<!-- edakit:end -->
+
+`edakit silk apply|check` – EasyEDA: ✓
+
+- **Reads:** PCB, Gerber export
+- **Writes:** designators, `silk_<board>_<side>.png`, `gerber_<board>/`; apply: `silk_footprints_<board>/` (the print it
+  found, for GEO.silk)
+
+`edakit silk preview` – EasyEDA: no
+
+- **Reads:** board file, the last Gerber export (`gerber_<board>/`)
+- **Writes:** `silk_preview_<board>_<side>.png`: artwork, texts and the fixed designators of `[silk.place]` (exit 2 when
+  one is in the way, 7.7)
+
+### edakit export
+
+<!-- edakit:generated command export -->
+`edakit export [--board BOARD]`
+
+Documentation and manufacturing files from EasyEDA.
+<!-- edakit:end -->
+
+`edakit export [--board]` – EasyEDA: ✓ read
+
+- **Reads:** schematic, PCB, project file
+- **Writes:** `<artifacts>/export/`; with a maker that takes ODB++ also `odb_<board>.zip` (`easyeda_export_odb`, 2.5; on
+  KiCad kicad-cli, 16.5)
+
+### edakit gate
+
+<!-- edakit:generated command gate -->
+`edakit gate [--easyeda] [--no-scripts]`
+
+Release gate: all stages, test protocol, manufacturing files.
+<!-- edakit:end -->
+
+`edakit gate [--easyeda | --eda]` – EasyEDA: – / ✓
+
+- **Reads:** everything; with `[project] requirements` the requirements files (8.7 – a file missing or not valid: exit 1
+  before a run)
+- **Writes:** `<reports>/<run>/`, with `stage_<id>.txt` the output of each project check that ran (8.1); a RELEASED run
+  supersedes the earlier ones in their `fab/manifest.json` (8.3)
+
+### edakit release
+
+<!-- edakit:generated command release -->
+`edakit release [--reason REASON] [--draft] [--tag TAG] [--dry-run] [--built TAG] {current,withdraw,verify,publish} [items ...]`
+
+The current release: show it, withdraw a run, check the files to upload, publish what is ordered.
+<!-- edakit:end -->
+
+`edakit release current` – EasyEDA: no
+
+- **Reads:** the manifests under `reports`; the real cost of its orders (`cart/<maker>/actual.json`); with
+  `[release] archive = "git"` what git tracks of the run
+- **Writes:** – (with an order's real cost: estimate, quote and actual beside the release; with `archive = "git"` and a
+  run git does not track yet "not in git yet: git add -f …"). Exit 2 without a current release
+
+`edakit release withdraw RUN --reason TEXT` – EasyEDA: no
+
+- **Reads:** the run's manifest
+- **Writes:** its `fab/manifest.json`: `status`, `withdrawn` {reason, by, date}
+
+`edakit release verify FILE…|DIR…` – EasyEDA: no
+
+- **Reads:** the files (a folder: its `.zip` and `.csv` files), the manifests
+- **Writes:** –
+
+`edakit release publish [--draft] [--dry-run] [--tag T]` – EasyEDA: no – (gh, git)
+
+- **Reads:** git (a clean tree, HEAD on its remote branch – not with `--draft`); per project and variant below it the
+  current release, its upload files (`release verify`), polarity sheet, manifest and order form; the graph's purpose;
+  with `[release] publish.decisions` the decision log at HEAD and at the previous release's tag; through `gh` the
+  repository's tags and the previous release's `SHA256SUMS` and manifests
+- **Writes:** `build/publish/<tag>/`: the files, `SHA256SUMS`, `notes.md`; the GitHub release `<tag>` (default today,
+  `-2` … when the remote has it) as a pre-release on HEAD – `--draft` a draft without tag, `--dry-run` nothing uploaded.
+  Exit 2: a file refused or a project without a current release, nothing staged (8.3)
+
+`edakit release publish --built TAG` – EasyEDA: no – (gh)
+
+- **Reads:** –
+- **Writes:** the release TAG no longer a pre-release: a board of it has been built and works (M-4)
+
+### edakit fab
+
+<!-- edakit:generated command fab -->
+`edakit fab [--board BOARD] [--out OUT] [--offline] [{diff}] [runs ...]`
+
+Stages L and F for one board; diff: where the manufacturing files of two runs differ.
+<!-- edakit:end -->
+
+`edakit fab --board B --out DIR [--offline]` – EasyEDA: ✓ / –
+
+- **Reads:** PCB, exports, `route/<board>_board.json` (GEO.spacing), `silk_strings_<board>.json` and
+  `silk_footprints_<board>/` (GEO.silk), the stock snapshot (`order.md`), with `[routing] drc_rules` the rule set of
+  EasyEDA's DRC (GEO.drc)
+- **Writes:** `DIR/<board>/`, with `[order]` or `[cart]` also `order.md`, with `[order]` `order.json` (the settings in
+  the fab hash), with `[routing] drc_rules` also `drc_rules.json`; with a maker of `[cart] makers` whose profile takes
+  the MPN BOM `bom_<board>_mpn.csv`, with one whose `[cpl] zero` is its own `cpl_<board>_<maker>.csv` (SYNC.cpl), with
+  one that takes ODB++ `odb_<board>.zip` (SYNC.odb)
+
+`edakit fab diff RUN_A RUN_B [--board B]` – EasyEDA: no
+
+- **Reads:** `fab/<board>/` of two gate runs: Gerber layers, drill files, BOM, CPL, the order settings (`order.json`)
+- **Writes:** –
+
+### edakit lock
+
+<!-- edakit:generated command lock -->
+`edakit lock [--note NOTE] [--auto] [{status,claim,release,yield,hook}] [chat]`
+
+EasyEDA claim between parallel Claude sessions.
+<!-- edakit:end -->
+
+`edakit lock [status|claim|release|yield CHAT|hook] [--note] [--auto]` – EasyEDA: no
+
+- **Reads:** – (hook: tool name and, for `easyeda_api_call`, its `path`; library lookups of
+  `READ_ONLY_TOOLS`/`READ_ONLY_API` pass without a claim, 11.2)
+- **Writes:** `~/.local/state/edakit/easyeda-lock.json`
+
+### edakit proposal
+
+<!-- edakit:generated command proposal -->
+`edakit proposal [--feature] [--out OUT] {template,seal,verify} [file]`
+
+Rule and feature proposals for the edakit repository: template, seal, verify.
+<!-- edakit:end -->
+
+`edakit proposal template [--feature]|seal FILE [--out F]|verify FILE|-` – EasyEDA: no
+
+- **Reads:** a rule or feature proposal (no project needed)
+- **Writes:** seal: the issue body with its SHA-256
+
+### edakit doctor
+
+<!-- edakit:generated command doctor -->
+`edakit doctor [--offline]`
+
+Check the tool chain.
+<!-- edakit:end -->
+
+`edakit doctor [--offline]` – EasyEDA: ✓ read (not with `--offline`)
+
+- **Reads:** tool chain; `BRIDGE_TIMEOUT_MS` of the running easyeda-mcp-pro servers (`/proc/<pid>/environ`); with
+  EasyEDA running, through an own server that claims nothing: `easyeda_bridge_status`, `easyeda_health_check`
+  (connected, extension against server version, registry) and, while the claim is free or yours,
+  `DMT_Project.getCurrentProjectInfo` (`[MaxDepth]` = the original extension) – 2.5, 12
+- **Writes:** –
 
 With `toolchain = "kicad"` the commands marked ✓ run on the board's KiCad project and kicad-cli instead of EasyEDA –
-what each does there is in 16.4; `pcb autolayout` and `lock` have no KiCad side, `KICAD_CLI` names another kicad-cli.
+what each does there is in the KiCad chapter (16.4); `pcb autolayout` and `lock` have no KiCad side, `KICAD_CLI`
+names another kicad-cli.
 
 ## 10.6 Files in a project
 

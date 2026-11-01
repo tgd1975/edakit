@@ -1,23 +1,24 @@
 # 18 Walkthrough 2: a 555 blinker on KiCad
 
+For you if you draw in KiCad, run a board from cells behind a power switch, or want to see an IC through every step.
+After it you have followed a board on KiCad from the idea to released manufacturing files.
+
 Switch it on and a red LED blinks about once a second, from two AAA cells; switch it off and the cells deliver
-nothing. This chapter takes the board from the idea to the released manufacturing files the way chapter 17 took the
-coin cell board – and tells only what differs. Chapter 17 stays the first reading: who does what, why each step comes
-where it does. The project is [examples/blinker-555](../examples/blinker-555/).
+nothing. The chapter tells only what differs from the coin cell board of chapter 17, which stays the first reading: who
+does what, why each step comes where it does. The project is [examples/blinker-555](../examples/blinker-555/).
 
-What this chapter shows that 17 does not:
+What it shows that chapter 17 does not:
 
-1. **KiCad end to end** (chapter 16): a real board through edakit's KiCad tool chain, with the real LCSC footprints –
-   through-hole pins, a slide switch's pegs, a SOIC-8 –, up to RELEASED and `edakit export`.
+1. **KiCad end to end** (KiCad as the tool chain, chapter 16): a real board through edakit's KiCad tool chain, with the
+   real LCSC footprints – through-hole pins, a slide switch's pegs, a SOIC-8 –, up to RELEASED and `edakit export`.
 2. **An IC with a supply range**, held to cells that run down.
 3. **Cells in series, an end voltage and a power switch**: "off means off" with a number, a current budget per load.
-4. **A circuit whose function is a time.** edakit evaluates what the board does at each DC state; the blink rate is
-   computed in the decision log and counted on the finished board.
-5. **The graph as TOML from the start** (3.1).
+4. **A circuit whose function is a time.** edakit evaluates each DC state of the board; the blink rate is computed in
+   the decision log and counted on the finished board.
+5. **The graph as TOML from the start** (the graph's format, 3.1).
 
-**State 2026-10-31:** the outputs are from real runs on a machine with KiCad 10.0.6, ngspice 47 and Freerouting
-2.4.1, shortened where a `…` stands. As in chapter 17, every gap the run found was closed in edakit on its way
-(18.13).
+> **State 2026-10-31:** the outputs are from real runs with KiCad 10.0.6, ngspice 47 and Freerouting 2.4.1, shortened
+> where a `…` stands. Every gap the run found was closed in edakit on its way (what this example changed, 18.13).
 
 ## 18.1 The steps at a glance
 
@@ -38,14 +39,15 @@ What this chapter shows that 17 does not:
 | 13 | Order | – | decided at the release (18.12) |
 | 14 | Acceptance | you | the blink rate counted at two voltages: the evidence the simulation does not give |
 
-Steps 3 to 12 need ngspice, Freerouting and `kicad-cli` (2.2, 16.2). In this run one session did steps 1 to 12 – the
-layout starting from `edakit handover` alone –, and the reviews ran as agents in contexts of their own.
+Steps 3 to 12 need ngspice, Freerouting and `kicad-cli` (install, 2.2; KiCad's setup, 16.2). One session did steps 1
+to 12, the layout starting from `edakit handover` alone; the reviews ran as agents in contexts of their own.
 
 ## 18.2 Set up
 
-The interview of `/edakit:new-project blinker-555 main` as in 17.2, with KiCad as the answer to the tool chain. The
-board is made by JLCPCB, which assembles the SMD parts on the top side (Economic); the 2×AAA holder and the slide switch
-are through-hole and soldered by hand, the holder on the bottom. Built for oneself in the EU. The answers are D-1:
+The interview of `/edakit:new-project blinker-555 main` runs as in chapter 17 (set up, 17.2), with KiCad as the tool
+chain. JLCPCB makes the board and assembles the SMD parts on the top side (Economic); the 2×AAA holder and the slide
+switch are through-hole and soldered by hand, the holder on the bottom. Built for oneself in the EU; the answers are
+D-1:
 
 ```toml
 [project]
@@ -64,8 +66,8 @@ assembly = { sides = ["top"], smd_only = true }   # Economic PCBA: one side, SMD
 
 `edakit doctor` names KiCad instead of Node, server and bridge: "OK    KiCad 10.0.6 (kicad-cli: /usr/bin/kicad-cli)".
 
-The purpose is `private`. It covers the owner's own use only: a reader who builds the board from this chapter and
-gives it away or sells it has another purpose and needs a review M-6 of their own (chapter 15). That review is
+The purpose is `private`: your own use only. If you build the board from this chapter and give it away or sell it,
+that is another purpose and needs a review M-6 of its own (the regulatory review, chapter 15). That review is
 support, not legal advice: it claims no correctness, and nothing in it is legally guaranteed.
 
 ## 18.3 What it must do
@@ -79,10 +81,10 @@ Two needs and four requirements, every number put to you in one round (`hardware
 | R-3 | must | With SW1 off, D1 is dark and the board draws at most 1 µA from the cells. | rows |
 | R-4 | should | With SW1 on and D1 lit, the board draws at most 5 mA from the cells. | rows |
 
-The end voltage is the owner's word: at 1.0 V per cell an alkaline AAA has given about 90 % of its capacity. R-2 is a
-time, and nothing in edakit computes a time (decision T of the concept): its only evidence is the count at the
-acceptance, so it waits until the boards are in your hand (`edakit gate`: "open after the export"). Two of the
-numbers did not survive the run – R-1 in 18.6, R-4 in 18.8.
+The end voltage is your decision: at 1.0 V per cell an alkaline AAA has given about 90 % of its capacity. R-2 is a
+time, and nothing in edakit computes a time (decision T of the concept). Its only evidence is the count at the
+acceptance, so it waits until the boards are in your hand (`edakit gate`: "open after the export"). Two numbers did
+not survive the run: R-1 changed with the checks' findings (18.6), R-4 with the reviews (18.8).
 
 ## 18.4 Parts
 
@@ -98,9 +100,9 @@ C90760     LMC555CMX/NOPB      Texas Instruments       Extended     18469  SOIC-
 …
 ```
 
-Their datasheets settle it: the TLC555 runs from 2 V – exactly the end voltage, and the cells' internal resistance
-takes the rest –, the LMC555 from 1.5 V (SNAS558M, "1.5 V supply operating voltage ensured"). U1 is the LMC555. Its
-entry is behaviour `logic` (5.1): `icc_a` 250 µA, the supply range for LIM.range, THR, TRIG and CV as `analog`
+The datasheets settle it: the TLC555 runs from 2 V – the end voltage exactly, the cells' internal resistance taking
+the rest –, the LMC555 from 1.5 V (SNAS558M, "1.5 V supply operating voltage ensured"). U1 is the LMC555, its entry
+behaviour `logic` (the netlist, 5.1): `icc_a` 250 µA, the supply range for LIM.range, THR, TRIG and CV as `analog`
 comparator inputs, DIS an output with `drive = "open_drain"`:
 
 ```json
@@ -113,17 +115,17 @@ comparator inputs, DIS an output with `drive = "open_drain"`:
 "limits": {"vdd_max_v": 15, "vdd_op_min_v": 1.5, "vdd_op_max_v": 15, …}
 ```
 
-`r_out_ohm` was one number, 150 Ω, until the review M-1 (18.8).
+`r_out_ohm` was one number, 150 Ω, until the review M-1 (the reviews, 18.8).
 
 **Holder and switch by hand.** The holder is a Keystone 2468 – two AAA cells in series, PC pins Ø 0.79 mm, 53.0 ×
 24.6 × 13 mm, 178 at LCSC (C254917); `body.box` gives its outline for the plan and the silkscreen check. The switch
-is a horizontal SPDT slide switch, SK12D07VG4 (C393937): three terminals 2 mm apart and two pegs of its frame, which
-the graph puts into `nc`. Both have a `lead` per pad for GEO.hole and are soldered by hand (`bom = false`). Their
+is a horizontal SPDT slide switch, SK12D07VG4 (C393937): three terminals 2 mm apart and two frame pegs, which the
+graph puts into `nc`. Both have a `lead` per pad for GEO.hole and are soldered by hand (`bom = false`). Their
 open points go to the acceptance: which knob position closes pin 1, the holder's "+" in pad 2.
 
 ## 18.5 Circuit
 
-The graph is TOML from the first line (3.1): components and nets as tables, pins by role.
+The graph is TOML from the first line: components and nets as tables, pins by role.
 
 ```toml
 [components.U1]
@@ -143,8 +145,8 @@ v = [0, 3.3]
 
 The topology is the CMOS 555's 50 % astable: R1 from OUTPUT charges and discharges C2 between 1/3 and 2/3 of VDD,
 and DIS is free to sink D1 from VDD through R2. A discharge pin is the strongest output a CMOS 555 has at a low supply,
-and the classic astable's current through RA in the dark phase is gone. The simulation has no time: `states` holds U1
-in the phase in which D1 is lit, for every scenario; the dark phase is computed in the decision log (D-7).
+and the classic astable's current through RA in the dark phase is gone. The simulation has no time: in every scenario
+`states` holds U1 in the phase in which D1 is lit; the dark phase is computed in the decision log (D-7).
 
 The cells in `sim.json` are two states of the holder, the switch one load each:
 
@@ -182,25 +184,25 @@ SIM.state – the circuit does what the scenario expects: 1 error
 
 Three of these were edakit's: a load's `expect` knew no battery holder, U1 with SW1 open counted as supplied below
 its range instead of switched off, and LED_K was told to take a pull-up although nothing reads it – D1 is the
-discharge pin's load. All three were fixed before going on (18.13); what stayed was the circuit's.
+discharge pin's load. All three were fixed before going on (what this example changed, 18.13); what stayed was the
+circuit's.
 
 ## 18.6 What the checks found
 
 **The LED at the end voltage (SIM.state, D-3).** At 2.0 V and its highest forward voltage (2.6 V at 20 mA) D1 gets
 8 µA. No red LED reaches 1 mA there by its datasheet with a series resistor: at the end voltage it has 0.1–0.2 V of
-headroom, from fresh cells 1.5 V, and the current a resistor gives scales with it – ten times as much, where R-4 allowed
-five.
+headroom, from fresh cells 1.5 V, and a resistor's current scales with it – ten times as much, where R-4 allowed five.
 
 You chose a low-current LED and a new number for R-1: D1 is a Kingbright APTD2012LSURCK, specified at 2 mA
 (VF 1.5–2.1 V, 60–150 mcd), at 0.5 mA brighter on axis than the first LED at 1 mA, in a narrower beam; R-1 asks for at
 least 0.5 mA down to 1.1 V per cell, 2.2 V for the pair. `sim.json` follows: the cell state `used` at 2.2 V,
 `criteria.led_on_min_a` 0.0005. R2 became 200 Ω – 220 Ω gave 0.498 mA.
 
-**Cells upside down (PATH.reverse, D-4).** Both cells reversed put −3.2 V on U1, rated −0.3 V. In 17.6 the LED
-blocked by itself; here an IC takes it, through its substrate diode, with amps. A Schottky diode would cost 0.15–0.25 V
-of the 2.2 V; a P-MOSFET costs nothing at these currents – if it is fully on at the end voltage. The block
-`reverse-pmos` brings an AO3401A, specified from VGS −2.5 V; Q1 is an AO3415A (C133233), specified from −1.8 V
-(65 mΩ), behind SW1, its gate through R3 to ground. An extra scenario holds it to its job:
+**Cells upside down (PATH.reverse, D-4).** Both cells reversed put −3.2 V on U1, rated −0.3 V. On the coin cell board
+the LED blocked by itself (17.6); here an IC takes it, through its substrate diode, with amps. A Schottky diode would
+cost 0.15–0.25 V of the 2.2 V; a P-MOSFET costs nothing at these currents – if it is fully on at the end voltage. The
+block `reverse-pmos` brings an AO3401A, specified from VGS −2.5 V; Q1 is an AO3415A (C133233), specified from
+−1.8 V (65 mΩ), behind SW1, its gate through R3 to ground. An extra scenario holds it to its job:
 
 ```json
 "reversed": {"v": -3.2, "r": 0.6, "note": "both fresh cells put in upside down – the holder takes them that way"}
@@ -209,19 +211,17 @@ of the 2.2 V; a P-MOSFET costs nothing at these currents – if it is fully on a
 ```
 
 Its first run showed VDD at −0.84 V – behind a blocking Q1 the net hung on 1 pA of leakage and the simulator's
-1 TΩ shunt. A CMOS IC has a diode from its ground to its supply that holds such a node; the behaviour `logic` has it
+1 TΩ shunt. A CMOS IC has a diode from its ground to its supply that holds such a node. The behaviour `logic` has it
 now (18.13), and VDD sits at −0.15 V, D1 dark, 4 pA from the cells.
 
 **The blink rate (D-5).** No check, a computation: with the thresholds at 1/3 and 2/3 of VDD each half period is
-ln 2 · R1 · C2, independent of the supply, so T = 1.386 · R1 · C2.
+ln 2 · R1 · C2, independent of the supply, so T = 1.386 · R1 · C2. The spread is the work: R1 ±1 %, C2 ±10 % (X7R;
+its DC bias at 3.2 V on a 50 V part below 1 %), and U1's thresholds. The datasheet gives the monostable's timing
+accuracy at 1.5 V (0.9–1.25 ms for 1.1 ms), an upper threshold between 0.593 and 0.713 of VDD. Worst case, T lies
+between 0.798 and 1.204 times the nominal.
 
-The spread is the work: R1 ±1 %, C2 ±10 % (X7R; its
-DC bias at 3.2 V on a 50 V part below 1 %), and U1's thresholds – the datasheet gives the monostable's timing accuracy
-at 1.5 V (0.9–1.25 ms for 1.1 ms), an upper threshold between 0.593 and 0.713 of VDD. Worst case T between 0.798 and
-1.204 times the nominal.
-
-With 680 kΩ (no loading fee) that is 53 to 80 flashes a minute; you chose 750 kΩ (a loading
-fee of about 3 USD per order): 57.7 nominal, 47.9 to 72.3 – both edges of R-2's window touched. The count at the
+With 680 kΩ (no loading fee) that is 53 to 80 flashes a minute; you chose 750 kΩ (a loading fee of about 3 USD per
+order): 57.7 nominal, 47.9 to 72.3 – both edges of R-2's window touched. The count at the
 acceptance stays the evidence. The first period after switch-on is longer, 0.82 s dark instead of 0.52 s: C2 starts
 at 0 V.
 
@@ -241,8 +241,8 @@ hardware/stock.json: 9 of 9 assembled parts asked, economic PCBA ([release] asse
   …
 ```
 
-The first `edakit cost` named five Extended parts at 3.07 USD loading fee each; the 10 nF at CV was one of them, and
-a Basic 10 nF in 0805 (C1710) took its place. With the board's size known:
+The first `edakit cost` named five Extended parts at 3.07 USD loading fee each; a Basic 10 nF in 0805 (C1710)
+replaced the one at CV. With the board's size known:
 
 ```text
 board main, 60 × 28 mm: Economic PCBA ([release] assembly.sides top: one side)
@@ -280,26 +280,26 @@ notes for the layout:
   …
 ```
 
-The two reviews ran side by side, each in a context of its own.
+The two reviews ran side by side.
 
-- **electrical-reviewer – M-1.** Nothing blocked; one finding was important. R-4's rows passed only because U1's
-  discharge pin was simulated at 150 Ω – the datasheet's maximum at 1.5 V. At 3.2 V the pin is far stronger (the
-  typical part at 5 V: 15 Ω), and a real board draws 6 to 8 mA while D1 is lit. A logic part's `r_out_ohm` takes a
-  range now, [min, typ, max] at the spread corner (5.1), and `sim.json` runs `"spread": ["min", "max"]`: 7.6 mA from
-  fresh cells. R-1 and 5 mA cannot both hold with a series resistor; you set R-4 to 8 mA (D-9).
+- **electrical-reviewer – M-1.** Nothing blocked; one finding mattered. R-4's rows passed only because U1's discharge
+  pin was simulated at 150 Ω – the datasheet's maximum at 1.5 V. At 3.2 V the pin is far stronger (the typical part
+  at 5 V: 15 Ω), and a real board draws 6 to 8 mA while D1 is lit. A logic part's `r_out_ohm` takes a range now, [min,
+  typ, max] at the spread corner (the netlist, 5.1), and `sim.json` runs `"spread": ["min", "max"]`: 7.6 mA from fresh
+  cells. R-1 and 5 mA cannot both hold with a series resistor; you set R-4 to 8 mA (D-9).
 - **electrical-reviewer, its notes.** Eight, none blocking – among them the hand-over's note on C2, which named the
   wrong pin, and AAA-sized Li-ion cells (10440, 3.7 V each), which fit the holder and would overload Q1, R2 and D1:
   "2x AAA 1.5 V" is printed on the board now.
 - **regulatory-reviewer – M-6.** For the purpose `private`: nothing of placing on the market applies, nothing
   transmits, the electromagnetic requirements are met in substance (an active part, so not "inherently benign"),
-  spent cells and the board go to separate collection. Its result is support, not legal advice: it claims no
-  correctness, and nothing in it is legally guaranteed.
+  spent cells and the board go to separate collection.
 
 Both looked again after D-9 and signed for the new circuit hash, M-1 with "requirements met: R-1, R-3, R-4".
 
 ## 18.9 The gate without a tool chain
 
-`edakit gate` runs P, G and E as in 17.10; with the reviews signed only M-5 and the stages S, L, F are left. R-3 and
+`edakit gate` runs P, G and E as on the coin cell board (17.10); with the reviews signed, only M-5 and the stages S,
+L, F are left. R-3 and
 R-4 pass on their rows, R-1 waits for its acceptance step, R-2 has nothing else:
 
 ```text
@@ -322,8 +322,8 @@ graph v0.1: 12 parts; schematic main.kicad_sch: 12 parts, 10 nets
 schematic = graph: yes
 ```
 
-The KiCad project is build output, rewritten by every step and not versioned (16.3): what the board is, is the board
-file, the plan and the graph.
+The KiCad project is build output, rewritten by every step and not versioned (the KiCad project, 16.3): what the board
+is, is the board file, the plan and the graph.
 
 ## 18.11 Layout
 
@@ -346,10 +346,10 @@ SW1 = { x = 57.8, y = 14, rot = 90, side = "top" }     # body flush with the rig
 D1  = { x = 56.5, y = 24, rot = 0, side = "top" }      # beside SW1: on top, where it is seen
 ```
 
-KiCad has no auto-layout; `edakit pcb place --rest --write` places the other nine by airline length (7.4), C1 as
-U1's decoupling next to its V+. It put them around BT1's pins, which are soldered by hand on this side – moved by hand
-5 mm to the left, and `[routing] hand_solder_keep_mm = 1` keeps other nets' pads that far from BT1's and SW1's joints
-(GEO.spacing, D-8):
+KiCad has no auto-layout: `edakit pcb place --rest --write` places the other nine by airline length (the placement
+plan, 7.4), C1 as U1's decoupling next to its V+. It put them around BT1's pins, which are soldered by hand on this
+side, so they were moved 5 mm to the left by hand. `[routing] hand_solder_keep_mm = 1` keeps other nets' pads that far
+from BT1's and SW1's joints (GEO.spacing, D-8):
 
 ![The placement plan of blinker-555: the holder under the whole board, switch and 555 at the right end](../examples/blinker-555/docs/pcb_plan_main.png)
 
@@ -369,10 +369,10 @@ $ edakit route all
 [ 0.4 min]   DRC: no findings
 ```
 
-It took three tries, each a gap of the KiCad chain or of the real footprints closed on the way (18.13): the first
-`route check` found C1 on two of U1's pads – the library's box of the SOIC-8 ended inside its row of pads, and neither
-`pcb place` nor `pcb plan` saw the overlap –; the second, two SMD pads within 1 mm of BT1's pins; the third DRC found
-SW1's three free pins on a net "unconnected-(SW1-Pad3)" in KiCad's schematic and on none in the PCB.
+It took three tries, each closing a gap of the KiCad chain or of the real footprints (18.13). The first `route check`
+found C1 on two of U1's pads: the library's box of the SOIC-8 ended inside its row of pads, and neither `pcb place` nor
+`pcb plan` saw the overlap. The second found two SMD pads within 1 mm of BT1's pins. The third try's DRC found SW1's
+three free pins on a net "unconnected-(SW1-Pad3)" in KiCad's schematic and on none in the PCB.
 
 ### Silkscreen
 
@@ -396,12 +396,12 @@ footprint beyond the body and so beyond the outline; GEO.silk's warning on it is
 
 ### The layout review
 
-The layout review M-5 – the agent pcb-reviewer, on a gate run's files – found nothing that blocks; six notes (D-10).
-Two you chose to build: tooling holes of our own, else JLCPCB drills its own where it likes, likely on the empty left
-of the visible top, with `[looks] visible = "top"` and a remark for the order form. One hole lies under the holder,
-which is fitted after the assembly. Routed once more, Freerouting left two GND pads room for one thermal spoke, which
-KiCad's DRC counted as starved (18.13). The rest are for the hand assembly: SW1 before BT1, a dab of glue under the
-holder's free end, and at M-2 D1's cathode by the chamfer of its outline:
+The layout review M-5 – the agent pcb-reviewer, on a gate run's files – found nothing that blocks and made six notes
+(D-10). You chose to build two: tooling holes of your own, which JLCPCB would otherwise drill where it likes, likely on
+the empty left of the visible top, with `[looks] visible = "top"` and a remark for the order form. Routed once more,
+Freerouting left two GND pads room for one thermal spoke, which KiCad's DRC counted as starved (18.13). The rest are for
+the hand assembly: SW1 before BT1, a dab of glue under the holder's free end, and at M-2 D1's cathode by the chamfer of
+its outline:
 
 ```toml
 [tooling]                  # JLCPCB Economic PCBA: two non-plated holes of our own, else JLCPCB drills them where it likes (D-10)
@@ -418,11 +418,10 @@ remark = "2 tooling holes added by customer."
 
 `edakit gate --eda` – `--easyeda` is the same flag – runs S, L and F on the KiCad files: SYNC.schematic on kicad-cli's
 netlist and ERC, stage L on `pcb.json` read from the file and KiCad's DRC, stage F on kicad-cli's Gerber, drill and
-position files (16.6).
+position files (the gate on KiCad, 16.6).
 
-It took five runs: the first warned about the knob's print and a rounding at BT1's body (18.13), the next ones waited
-for M-1 and M-6, then for M-5 on their files, and the review's tooling holes gave a new fab hash and M-5 once more.
-The last:
+It took five runs. The first warned about the knob's print and a rounding at BT1's body (18.13); the next waited for
+M-1 and M-6, then for M-5 on their files; the review's tooling holes gave a new fab hash and M-5 once more. The last:
 
 ```text
 $ edakit gate --eda
@@ -439,10 +438,10 @@ requirements: 2 passed, 2 open after the export (section 11 of the protocol)
 | F Manufacturing | BOM from the graph = EasyEDA, JLCPCB stock, pick and place, Gerber set, outline, manifest | 18 | 0 | 0 | 0 | 0 | passed |
 ```
 
-L's warning is the knob's print beyond the outline, accepted with D-8. R-3 and R-4 passed on their rows; R-1 and R-2
-wait for the acceptance. The run's folder holds what goes to JLCPCB – `fab/main/gerber_main.zip`, `bom_main.csv`,
-`cpl_main.csv`, the form's fields in `order.md` ("Tooling holes: Added by Customer – 2 x Ø 1.152 mm", "Mark on PCB:
-Remove Mark") – and `fab/polarity_main.png` for M-2. `edakit export` writes the project's copy:
+L's warning is the knob's print beyond the outline, accepted with D-8. The run's folder holds what goes to JLCPCB –
+`fab/main/gerber_main.zip`, `bom_main.csv`, `cpl_main.csv`, the form's fields in `order.md` ("Tooling holes: Added by
+Customer – 2 x Ø 1.152 mm", "Mark on PCB: Remove Mark") – and `fab/polarity_main.png` for M-2. `edakit export` writes
+the project's copy:
 
 ```text
 $ edakit export
@@ -452,10 +451,11 @@ $ edakit export
   kicad_main.zip                           57 kB
 ```
 
-`kicad_main.zip` keeps the KiCad project of the release, as an EasyEDA project keeps its `.eprj2` (16.3).
+`kicad_main.zip` keeps the KiCad project of the release, as an EasyEDA project keeps its `.eprj2` (the KiCad project,
+16.3).
 
-**Order and acceptance.** This example ends at RELEASED: a walkthrough, no boards ordered – your decision, as the
-order is in chapter 17. A board of your own goes on from here with `edakit cart prepare` (8.4), and M-2 looks at
+**Order and acceptance.** This example ends at RELEASED, no boards ordered: the order is your decision, and chapter 17
+shows it. A board of your own goes on with `edakit cart prepare` (ordering at the manufacturer, 8.4), and M-2 looks at
 JLCPCB's assembly preview with `polarity_main.png` – U1's pin 1, Q1, D1's cathode at the chamfer of its outline.
 
 The hand assembly comes first: SW1, then BT1, its pins trimmed, a dab of glue under its free end (D-10). Then M-4 works
@@ -474,9 +474,9 @@ each was closed in edakit with its test:
   below its range, and one at −0.9 V reversed.
 - **An LED on an open-drain output.** LVL.undefined/open_drain wanted a pull-up on LED_K. A net that holds nothing but
   the outputs and LED cathodes is their load; nothing reads it.
-- **A floating node behind a blocking MOSFET.** VDD sat at −0.84 V on 1 pA into the simulator's 1 TΩ shunt. The
-  behaviour `logic` has a substrate diode from its ground to each supply pin; with the cells reversed and nothing to
-  block them it carries the amps a real IC would.
+- **A floating node behind a blocking MOSFET** (cells upside down, 18.6). The behaviour `logic` has a substrate diode
+  from its ground to each supply pin; with the cells reversed and nothing to block them it carries the amps a real IC
+  would.
 - **A cell upside down delivered "charging" current.** A cell state below 0 V is counted in its own sense now.
 - **The library footprint's box.** EasyEDA's BBox of the SOIC-8 of C90760 ends at 126 mil while its pads reach
   137.8 mil: the box `part import` caches covers every pad now.
@@ -485,16 +485,16 @@ each was closed in edakit with its test:
   they are no net, as the graph has it.
 - **A body as large as its footprint.** BT1's `body.box` from the drawing (53.00 mm) and its library box (53.04 mm)
   differ by a rounding, and the footprint's own outline on the edge was a GEO.silk warning. 0.05 mm are rounding now.
-- **One output resistance for every corner.** U1's discharge pin at its 1.5 V maximum hid R-4's real current
-  (18.8). `r_out_ohm` of a logic part takes [min, typ, max] at the spread corner.
+- **One output resistance for every corner.** U1's discharge pin at its 1.5 V maximum hid R-4's real current (the
+  reviews, 18.8); `r_out_ohm` takes a range now.
 - **A tooling hole under a part fitted by hand.** `pcb plan` held BT1 to the keep-out of a tooling hole; a part with
   `bom: false` is not there while the tooling holes hold the board.
-- **Thermal spokes on KiCad.** Freerouting left two GND pads room for one spoke each, and KiCad's DRC wants two by
-  default. The KiCad project edakit writes asks for one: EasyEDA asks for none, and GEO.copper checks the connection.
+- **Thermal spokes on KiCad.** KiCad's DRC wants two by default, where Freerouting left two GND pads room for one
+  (18.11). The KiCad project edakit writes asks for one: EasyEDA asks for none, and GEO.copper checks the connection.
 
-Open, noted for later: a sign-off note counts every mention of a requirement's ID as passing evidence, also
-"R-4 not met" (M-1, note 9) – the rule is documented (8.7) and tested, and changing it is a decision about edakit;
-messages of `route all` still say "nothing written to EasyEDA" on KiCad, and stage S of the protocol "EasyEDA
-schematic = graph"; `pcb plan` does not hold pads to `hand_solder_keep_mm`, `route check` does; the pours of the KiCad
-tool chain keep EasyEDA's square notch around a tooling hole, where KiCad could fill around it (M-5, note 7); the LED
-model fixes its ideality at 2, and a datasheet's IV curve gives D1 20–25 mV more at 0.5 mA than the model (M-1).
+Open, noted for later: a sign-off note counts every mention of a requirement's ID as passing evidence, also "R-4 not
+met" (M-1, note 9) – the rule is documented (requirements, 8.7) and tested, and changing it is a decision about edakit.
+Messages of `route all` still say "nothing written to EasyEDA" on KiCad, and stage S of the protocol "EasyEDA schematic
+= graph". `pcb plan` does not hold pads to `hand_solder_keep_mm`; `route check` does. The pours of the KiCad tool chain
+keep EasyEDA's square notch around a tooling hole, where KiCad could fill around it (M-5, note 7). The LED model fixes
+its ideality at 2, and a datasheet's IV curve gives D1 20–25 mV more at 0.5 mA than the model (M-1).

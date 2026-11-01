@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Parts schema – edakit rule catalog</title><link rel="icon" type="image/svg+xml" href="../brand/edakit-favicon.svg"><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;600&display=swap"><style>
+:root {
+  /* a reference, read by section: a sidebar of contents, entries in one column, drawings full width */
+  --bg: #f4f6f6; --surface: #ffffff; --ink: #1d2626; --muted: #5d6b6b; --line: #d5dddd; --accent: #0e6c6a;
+  --err: #b42318; --warn: #a15c07; --pend: #6941c6; --note: #475467; --ok: #087443;
+  --display: "IBM Plex Sans", "Helvetica Neue", Arial, sans-serif; --body: "IBM Plex Sans", "Helvetica Neue", Arial, sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #111717; --surface: #182020; --ink: #e3eaea; --muted: #97a6a6; --line: #2c3838; --accent: #5cc4c0;
+  --err: #f97066; --warn: #fdb022; --pend: #b692f6; --note: #98a2b3; --ok: #47cd89; color-scheme: dark; } }
+:root[data-theme="dark"] {
+  --bg: #111717; --surface: #182020; --ink: #e3eaea; --muted: #97a6a6; --line: #2c3838; --accent: #5cc4c0;
+  --err: #f97066; --warn: #fdb022; --pend: #b692f6; --note: #98a2b3; --ok: #47cd89; color-scheme: dark; }
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--ink); font: 15px/1.55 var(--body); }
+a { color: var(--accent); }
+code { font-family: var(--mono); font-size: 0.9em; }
+.layout { display: grid; grid-template-columns: 15rem minmax(0, 1fr); gap: 2rem; max-width: 84rem; margin: 0 auto;
+  padding: 1.5rem 1.25rem 4rem; }
+nav { position: sticky; top: 1rem; align-self: start; max-height: calc(100vh - 2rem); overflow: auto; font-size: 0.9rem; }
+nav ol { list-style: none; padding: 0; margin: 0; display: grid; gap: 0.2rem; }
+nav ol ol { padding-left: 0.9rem; margin: 0.2rem 0 0.4rem; }
+nav a { text-decoration: none; color: var(--ink); }
+nav a:hover, nav a:focus-visible { color: var(--accent); }
+nav a[aria-current="page"] { color: var(--accent); font-weight: 600; }
+nav .label { color: var(--muted); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.04em; }
+nav ol.engines { display: flex; flex-wrap: wrap; gap: 0.2rem 0.7rem; }
+nav ol.engines > li:has(ol.sub) { flex-basis: 100%; }
+header.top h1 { font: 600 2rem/1.15 var(--display); margin: 0 0 0.4rem; text-wrap: balance; }
+header.top p { color: var(--muted); max-width: 70ch; margin: 0; }
+header.top p.brand { margin-bottom: 0.6rem; }
+p.lead { font-size: 1.05rem; }
+:target { scroll-margin-top: 1rem; }
+tr:target td, tr:target th { background: color-mix(in srgb, var(--surface) 80%, var(--accent)); }
+article:target { outline: 2px solid var(--accent); outline-offset: 2px; }
+ul.inline { list-style: none; padding: 0; display: flex; flex-wrap: wrap; gap: 0.3rem 1rem; max-width: none; }
+table.codes tr.sec th { background: transparent; border-bottom: 1px solid var(--ink); padding-top: 0.9rem; font-weight: 400; }
+table.codes td:first-child { white-space: nowrap; }
+.card h3 a { text-decoration: none; }
+h2 { font: 600 1.45rem/1.2 var(--display); margin: 2.6rem 0 0.8rem; padding-top: 0.6rem; border-top: 2px solid var(--ink);
+  text-wrap: balance; }
+h3 { font: 600 1.1rem/1.3 var(--display); margin: 1.6rem 0 0.6rem; }
+h4 { font: 600 1rem/1.3 var(--display); margin: 0; }
+p, li, dd { max-width: 75ch; }
+.muted, .meta { color: var(--muted); }
+.brand a { display: inline-flex; align-items: center; gap: 0.5rem; }
+.brand img { display: block; }
+.meta { font-size: 0.85rem; margin: 0.4rem 0 0; }
+.tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(9.5rem, 1fr)); gap: 0.75rem; margin: 1rem 0; }
+.tile { background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 0.8rem; display: grid; }
+.tile .big { font: 600 1.8rem/1 var(--display); font-variant-numeric: tabular-nums; }
+.tile .of { color: var(--muted); font-size: 0.85rem; }
+.tile .lbl { font-weight: 600; margin-top: 0.3rem; }
+.tile .sub { color: var(--muted); font-size: 0.8rem; }
+.scroll { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; background: var(--surface); font-size: 0.9rem; }
+th, td { text-align: left; vertical-align: top; padding: 0.45rem 0.6rem; border-bottom: 1px solid var(--line); }
+th { font-weight: 600; background: color-mix(in srgb, var(--surface) 85%, var(--accent)); }
+td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+.chips { display: flex; flex-wrap: wrap; gap: 0.3rem; }
+.chip { display: inline-block; font-size: 0.75rem; line-height: 1.5; padding: 0 0.45rem; border-radius: 999px;
+  border: 1px solid currentColor; white-space: nowrap; }
+.chip.error { color: var(--err); } .chip.warning { color: var(--warn); } .chip.pending { color: var(--pend); }
+.chip.note { color: var(--note); } .chip.built { color: var(--ok); } .chip.partial { color: var(--warn); }
+.chip.open { color: var(--muted); } .chip.out { color: var(--muted); text-decoration: line-through; }
+.engine > h3 { border-bottom: 1px solid var(--line); padding-bottom: 0.3rem; }
+article.code { background: var(--surface); border: 1px solid var(--line); border-left: 3px solid var(--accent);
+  border-radius: 4px; padding: 0.8rem 1rem; margin: 0.7rem 0; }
+article.code header { display: flex; flex-wrap: wrap; gap: 0.5rem 1rem; align-items: baseline; justify-content: space-between; }
+article.code .rule { margin: 0.5rem 0; }
+article.code dl, .card dl { display: grid; grid-template-columns: 7.5rem minmax(0, 1fr); gap: 0.3rem 0.8rem; margin: 0.4rem 0 0; }
+dt { font-weight: 600; color: var(--muted); font-size: 0.85rem; }
+dd { margin: 0; }
+ul.details { margin: 0.3rem 0; padding-left: 1.2rem; font-size: 0.9rem; }
+ol.sources, ul.sources { margin: 0; padding-left: 1.2rem; font-size: 0.85rem; }
+.filter { display: flex; gap: 0.6rem; align-items: center; flex-wrap: wrap; }
+.filter input { font: inherit; padding: 0.35rem 0.6rem; border: 1px solid var(--line); border-radius: 4px;
+  background: var(--surface); color: var(--ink); min-width: 16rem; }
+.filter input:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(22rem, 1fr)); gap: 1rem; }
+.card, .table-card, article.circuit { background: var(--surface); border: 1px solid var(--line); border-radius: 6px;
+  padding: 0.9rem 1rem; }
+.card h3, .table-card h3, article.circuit h3 { margin-top: 0; }
+.table-card { margin: 0.8rem 0; }
+ul.review { padding-left: 1.2rem; font-size: 0.88rem; }
+article.circuit { margin: 1rem 0; }
+.drawing { overflow-x: auto; background: #ffffff; border: 1px solid var(--line); border-radius: 4px; margin: 0.6rem 0; }
+.drawing svg { display: block; width: 100%; min-width: 46rem; height: auto; }
+table.faults { margin-top: 0.4rem; }
+table.kv { width: auto; min-width: 24rem; }
+table.kv tr.sec th { background: transparent; border-bottom: 1px solid var(--ink); padding-top: 0.9rem; }
+table.kv .src { font-weight: 400; color: var(--muted); font-size: 0.85rem; margin-left: 0.5rem; }
+table.kv td.val { font-variant-numeric: tabular-nums; }
+table.cand td:first-child { white-space: nowrap; }
+td, dd, li { overflow-wrap: anywhere; }
+footer { color: var(--muted); font-size: 0.85rem; margin-top: 3rem; }
+@media (max-width: 52rem) {
+  .layout { grid-template-columns: minmax(0, 1fr); gap: 1rem; padding: 1rem 1rem 3rem; }
+  nav { position: static; max-height: none; }
+  nav > ol { display: flex; flex-wrap: wrap; gap: 0.3rem 0.9rem; }
+  nav ol ol.sub { display: none; }
+  article.code dl, .card dl { grid-template-columns: minmax(0, 1fr); }
+  .cards { grid-template-columns: minmax(0, 1fr); }
+  table.kv { min-width: 0; }
+}
+@media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto !important; } }
+</style></head><body><div class="layout"><nav aria-label="Rule catalog"><ol><li><a href="index.html" title="Overview">Overview</a></li><li><span class="label">Engines</span><ol class="engines"><li><a href="struct.html" title="STRUCT">STRUCT</a></li><li><a href="sync.html" title="SYNC">SYNC</a></li><li><a href="lim.html" title="LIM – limits">LIM</a></li><li><a href="lvl.html" title="LVL – levels">LVL</a></li><li><a href="req.html" title="REQ – requires">REQ</a></li><li><a href="path.html" title="PATH – paths">PATH</a></li><li><a href="sim.html" title="SIM">SIM</a></li><li><a href="geo.html" title="GEO">GEO</a></li><li><a href="files.html" title="FILES">FILES</a></li><li><a href="parts.html" title="PARTS">PARTS</a></li><li><a href="order.html" title="ORDER">ORDER</a></li><li><a href="docs.html" title="DOCS">DOCS</a></li><li><a href="hint.html" title="HINT">HINT</a></li></ol></li><li><a href="domains.html" title="Domains">Domains</a></li><li><a href="tables.html" title="Tables">Tables</a></li><li><a href="schema.html" aria-current="page" title="Parts schema">Parts schema</a></li><li><a href="circuits.html" title="Reference circuits">Reference circuits</a></li><li><a href="open-designs.html" title="Open designs">Open designs</a></li><li><a href="candidates.html" title="maker-coverage candidates">maker-coverage candidates</a></li><li><a href="before.html" title="Check IDs of before">Check IDs of before</a></li></ol></nav><main><header class="top"><p class="meta brand"><a href="../"><picture><source media="(prefers-color-scheme: dark)" srcset="../brand/edakit-mark-dark.svg"><img src="../brand/edakit-mark.svg" width="28" height="28" alt=""></picture>edakit documentation</a></p><h1>Parts schema</h1></header><p>What a parts entry of each kind may give; <code>edakit part lint</code> holds the entries to it. Every name ends in its unit: <code>_v</code> V, <code>_a</code> A, <code>_w</code> W, <code>_ohm</code> Ω, <code>_f</code> F, <code>_h</code> H, <code>_c</code> °C, <code>_hz</code> Hz, <code>_dbm</code> dBm, <code>_dbi</code> dBi, <code>_mm</code> mm, <code>_n</code> N, <code>_s</code> s, <code>_ns</code> ns, <code>_k_per_w</code> K/W, <code>_ratio</code> 1, <code>_ohm_per_m</code> Ω/m, <code>_per_m</code> 1/m.</p><div class="scroll"><table><thead><tr><th>Kind</th><th>Roles</th><th>Limits</th><th>Values</th></tr></thead><tbody><tr><td>every kind</td><td>–</td><td><code>p_max_w</code>, <code>rth_ja_k_per_w</code>, <code>tj_max_c</code>, <code>t_max_c</code>, <code>t_min_c</code></td><td>–</td></tr><tr><td><code>resistor</code></td><td>–</td><td><code>v_max_v</code></td><td><code>value_ohm</code>, <code>r_max_ohm</code>, <code>tolerance</code></td></tr><tr><td><code>potentiometer</code></td><td><code>end_a</code>, <code>wiper</code>, <code>end_b</code></td><td><code>v_max_v</code></td><td><code>value_ohm</code>, <code>tolerance</code></td></tr><tr><td><code>capacitor</code></td><td><code>plus</code>, <code>minus</code>, <code>1</code>, <code>2</code></td><td><code>v_max_v</code>, <code>vr_max_v</code>, <code>i_ripple_a</code></td><td><code>value_f</code>, <code>dielectric</code>, <code>polarized</code>, <code>tolerance</code>, <code>dc_bias</code>, <code>esr_ohm</code></td></tr><tr><td><code>crystal</code></td><td><code>1</code>, <code>2</code></td><td>–</td><td><code>f_hz</code>, <code>c_load_f</code></td></tr><tr><td><code>inductor</code></td><td>–</td><td><code>i_max_a</code>, <code>i_sat_a</code></td><td><code>value_h</code>, <code>dcr_ohm</code></td></tr><tr><td><code>fuse</code></td><td>–</td><td><code>v_max_v</code>, <code>i_max_a</code>, <code>i_hold_a</code>, <code>i_trip_a</code></td><td><code>r_min_ohm</code>, <code>r_max_ohm</code>, <code>i_hold_vs_temp</code></td></tr><tr><td><code>diode</code></td><td><code>anode</code>, <code>cathode</code></td><td><code>vr_max_v</code>, <code>if_max_a</code>, <code>ifsm_max_a</code></td><td><code>vf_v</code>, <code>vf_at_a</code>, <code>ir_a</code>, <code>ir_at_v</code></td></tr><tr><td><code>led</code></td><td><code>anode</code>, <code>cathode</code></td><td><code>vr_max_v</code>, <code>if_max_a</code></td><td><code>color</code>, <code>vf_typ_v</code>, <code>vf_min_v</code>, <code>vf_max_v</code>, <code>vf_at_a</code>, <code>rs_ohm</code></td></tr><tr><td><code>led_rgb</code></td><td><code>anode</code>, <code>cathode</code>, <code>anode_red</code>, <code>anode_green</code>, <code>anode_blue</code>, <code>cathode_red</code>, <code>cathode_green</code>, <code>cathode_blue</code></td><td><code>vr_max_v</code>, <code>if_max_a</code></td><td><code>vf_typ_v</code>, <code>vf_min_v</code>, <code>vf_max_v</code>, <code>vf_at_a</code>, <code>rs_ohm</code></td></tr><tr><td><code>npn</code></td><td><code>collector</code>, <code>base</code>, <code>emitter</code></td><td><code>vce_max_v</code>, <code>veb_max_v</code>, <code>ic_max_a</code></td><td><code>hfe_min</code>, <code>hfe_max</code>, <code>vce_sat_v</code>, <code>icbo_a</code></td></tr><tr><td><code>pnp</code></td><td><code>collector</code>, <code>base</code>, <code>emitter</code></td><td><code>vce_max_v</code>, <code>veb_max_v</code>, <code>ic_max_a</code></td><td><code>hfe_min</code>, <code>hfe_max</code>, <code>vce_sat_v</code>, <code>icbo_a</code></td></tr><tr><td><code>njfet</code></td><td><code>drain</code>, <code>gate</code>, <code>source</code></td><td><code>vds_max_v</code>, <code>vdg_max_v</code>, <code>vgs_max_v</code>, <code>ig_max_a</code>, <code>id_max_a</code></td><td><code>idss_a</code>, <code>vgs_off_v</code></td></tr><tr><td><code>pjfet</code></td><td><code>drain</code>, <code>gate</code>, <code>source</code></td><td><code>vds_max_v</code>, <code>vdg_max_v</code>, <code>vgs_max_v</code>, <code>ig_max_a</code>, <code>id_max_a</code></td><td><code>idss_a</code>, <code>vgs_off_v</code></td></tr><tr><td><code>nmos</code></td><td><code>drain</code>, <code>gate</code>, <code>source</code>, <code>drain_2</code>, <code>gate_2</code>, <code>source_2</code></td><td><code>vds_max_v</code>, <code>vgs_max_v</code>, <code>id_max_a</code>, <code>is_body_max_a</code></td><td><code>vgs_th_v</code>, <code>rds_on_max_ohm</code>, <code>vsd_v_at_1a</code></td></tr><tr><td><code>pmos</code></td><td><code>drain</code>, <code>gate</code>, <code>source</code>, <code>drain_2</code>, <code>gate_2</code>, <code>source_2</code></td><td><code>vds_max_v</code>, <code>vgs_max_v</code>, <code>id_max_a</code>, <code>is_body_max_a</code></td><td><code>vgs_th_v</code>, <code>rds_on_max_ohm</code>, <code>vsd_v_at_1a</code></td></tr><tr><td><code>switch</code></td><td><code>common</code>, <code>throw_a</code>, <code>throw_b</code>, <code>a</code>, <code>b</code>, <code>common_2</code>, <code>throw_a_2</code>, <code>throw_b_2</code>, <code>common_3</code>, <code>throw_a_3</code>, <code>throw_b_3</code>, <code>common_4</code>, <code>throw_a_4</code>, <code>throw_b_4</code></td><td><code>v_max_v</code>, <code>i_max_a</code>, <code>i_contact_max_a</code>, <code>i_switch_max_a</code></td><td><code>r_on_ohm</code>, <code>force_n</code>, <code>min_load_a</code></td></tr><tr><td><code>dip_switch</code></td><td><code>*</code></td><td><code>v_max_v</code>, <code>i_max_a</code>, <code>i_contact_max_a</code>, <code>i_switch_max_a</code></td><td><code>r_on_ohm</code>, <code>min_load_a</code>, <code>positions</code></td></tr><tr><td><code>button</code></td><td><code>a</code>, <code>b</code></td><td><code>v_max_v</code>, <code>i_max_a</code>, <code>i_contact_max_a</code>, <code>i_switch_max_a</code></td><td><code>r_on_ohm</code>, <code>force_n</code>, <code>min_load_a</code></td></tr><tr><td><code>battery_holder</code></td><td><code>*</code></td><td><code>i_max_a</code>, <code>v_max_v</code></td><td><code>r_contact_ohm</code></td></tr><tr><td><code>buzzer</code></td><td><code>plus</code>, <code>minus</code></td><td><code>v_max_v</code>, <code>i_max_a</code></td><td><code>coil_ohm</code></td></tr><tr><td><code>relay</code></td><td><code>coil_plus</code>, <code>coil_minus</code>, <code>common</code>, <code>no</code>, <code>nc</code>, <code>common_2</code>, <code>no_2</code>, <code>nc_2</code>, <code>common_3</code>, <code>no_3</code>, <code>nc_3</code>, <code>common_4</code>, <code>no_4</code>, <code>nc_4</code></td><td><code>v_coil_max_v</code>, <code>i_max_a</code>, <code>v_max_v</code>, <code>i_contact_max_a</code>, <code>i_switch_max_a</code></td><td><code>coil_ohm</code>, <code>v_operate_v</code>, <code>v_release_v</code>, <code>r_contact_ohm</code>, <code>min_load_a</code></td></tr><tr><td><code>connector</code></td><td><code>*</code></td><td><code>v_max_v</code>, <code>i_max_a</code>, <code>i_contact_max_a</code></td><td><code>pitch_mm</code>, <code>r_contact_ohm</code>, <code>r_source_ohm</code>, <code>usb_c</code></td></tr><tr><td><code>ic</code></td><td><code>*</code></td><td><code>vdd_max_v</code>, <code>vdd_op_min_v</code>, <code>vdd_op_max_v</code>, <code>vin_min_v</code>, <code>vin_max_v</code>, <code>vout_max_v</code>, <code>i_out_max_a</code>, <code>vin_rel_max_v</code>, <code>i_supply_pin_max_a</code>, <code>f_max_hz</code>, <code>r_sense_min_ohm</code>, <code>f_sck_max_hz</code>, <code>f_scl_max_hz</code>, <code>gpio_i_max_a</code>, <code>gpio_i_total_max_a</code></td><td><code>behavior</code>, <code>vout_v</code>, <code>dropout_v</code>, <code>iq_a</code>, <code>efficiency</code>, <code>idd_max_a</code>, <code>iout_gain</code>, <code>iout_accuracy</code>, <code>vout_knee_v</code>, <code>vrext_v</code>, <code>vih_v</code>, <code>vil_v</code>, <code>vih_ratio</code>, <code>vil_ratio</code>, <code>first_bit_to</code>, <code>vout_swing_v</code>, <code>vicm_v</code>, <code>r_out_ohm</code>, <code>comparator</code>, <code>gain_min_ratio</code>, <code>f_clock_hz</code>, <code>vref_v</code>, <code>i_load_min_a</code>, <code>prog_v</code>, <code>icc_a</code>, <code>i_a</code>, <code>i_core_a</code>, <code>i_core_min_a</code>, <code>gpio_r_out_ohm</code>, <code>regulator</code>, <code>vdd_shunt_v</code>, <code>i_shunt_max_a</code>, <code>pd_request_v</code>, <code>r_on_ohm</code>, <code>vgs_th_v</code>, <code>r_on_high_ohm</code>, <code>r_on_low_ohm</code>, <code>v_headroom_v</code>, <code>uvlo_v</code>, <code>v_pre_v</code>, <code>i_pre_ratio</code>, <code>i_term_ratio</code>, <code>v_ovp_v</code>, <code>v_ovp_release_v</code>, <code>v_uvp_v</code>, <code>v_uvp_release_v</code>, <code>v_ocp_v</code>, <code>v_scp_v</code>, <code>vsense_v</code>, <code>duty_max_ratio</code>, <code>ripple_ratio</code></td></tr><tr><td><code>module</code></td><td><code>*</code></td><td><code>vdd_op_min_v</code>, <code>vdd_op_max_v</code>, <code>vin_min_v</code>, <code>vin_max_v</code>, <code>vsys_min_v</code>, <code>vsys_max_v</code>, <code>i_out_max_a</code>, <code>gpio_v_max_v</code>, <code>gpio_i_max_a</code>, <code>gpio_i_total_max_a</code>, <code>f_max_hz</code>, <code>f_sck_max_hz</code>, <code>f_scl_max_hz</code></td><td><code>behavior</code>, <code>regulator</code>, <code>v_io_v</code>, <code>vout_v</code>, <code>dropout_v</code>, <code>efficiency</code>, <code>i_core_a</code>, <code>i_core_min_a</code>, <code>gpio_r_out_ohm</code>, <code>iq_a</code>, <code>vih_v</code>, <code>vil_v</code>, <code>vih_ratio</code>, <code>vil_ratio</code>, <code>usb_c</code>, <code>f_clock_hz</code></td></tr><tr><td><code>motor</code></td><td><code>plus</code>, <code>minus</code></td><td><code>v_max_v</code>, <code>i_max_a</code></td><td><code>coil_ohm</code></td></tr><tr><td><code>solenoid</code></td><td><code>plus</code>, <code>minus</code></td><td><code>v_max_v</code>, <code>i_max_a</code></td><td><code>coil_ohm</code></td></tr><tr><td><code>speaker</code></td><td><code>plus</code>, <code>minus</code></td><td><code>v_max_v</code></td><td><code>impedance_ohm</code></td></tr><tr><td><code>heater</code></td><td>–</td><td><code>v_max_v</code></td><td><code>value_ohm</code></td></tr><tr><td><code>optocoupler</code></td><td><code>anode</code>, <code>cathode</code>, <code>collector</code>, <code>emitter</code>, <code>load_a</code>, <code>load_b</code></td><td><code>if_max_a</code>, <code>vr_max_v</code>, <code>vce_max_v</code>, <code>ic_max_a</code>, <code>v_load_max_v</code>, <code>i_load_max_a</code></td><td><code>vf_v</code>, <code>vf_at_a</code>, <code>ctr_min_ratio</code>, <code>behavior</code>, <code>r_on_ohm</code>, <code>if_on_a</code>, <code>if_off_a</code>, <code>i_leak_a</code></td></tr><tr><td><code>esd_array</code></td><td><code>io1</code>, <code>io2</code>, <code>io3</code>, <code>io4</code>, <code>io5</code>, <code>io6</code>, <code>io7</code>, <code>io8</code>, <code>vbus</code>, <code>gnd</code></td><td><code>vrwm_max_v</code></td><td><code>vbr_min_v</code>, <code>vf_v</code>, <code>vf_at_a</code>, <code>c_io_f</code></td></tr><tr><td><code>led_strip</code></td><td><code>vdd</code>, <code>gnd</code>, <code>din</code>, <code>cin</code>, <code>vdd_end</code>, <code>gnd_end</code>, <code>dout</code>, <code>cout</code></td><td><code>vdd_op_min_v</code>, <code>vdd_op_max_v</code></td><td><code>pixels_per_m</code>, <code>i_pixel_a</code>, <code>i_idle_a</code>, <code>r_vdd_ohm_per_m</code>, <code>r_gnd_ohm_per_m</code></td></tr></tbody></table></div><p>Per pin: <code>v_max_v</code>, <code>v_op_min_v</code>, <code>v_op_max_v</code>, <code>vih_v</code>, <code>vil_v</code>, <code>vih_ratio</code>, <code>vil_ratio</code>, <code>pull_ohm</code>, <code>v_min_v</code>, <code>v_rel_max_v</code>, <code>v_max_powered_v</code>, <code>i_max_a</code>, <code>i_inject_max_a</code>, <code>r_load_min_ohm</code>, <code>c_load_max_f</code>, <code>pull_v</code>, <code>c_in_f</code>; and <code>name</code>, <code>type</code>, <code>role</code>, <code>strap</code>, <code>pull</code>, <code>hint</code>, <code>functions</code>, <code>out_edge</code>, <code>t_pd_ns</code>, <code>needs</code>, <code>drive</code>, <code>float_ok</code>, <code>adc</code>, <code>z_in_ohm</code>, <code>short_proof</code>, <code>clamp</code>, <code>windows</code>, <code>biased</code>, <code>ref</code>, <code>rel_ref</code>, <code>state</code>, <code>print</code>.</p><footer>Written by <code>docs/catalog/build.py</code>; <code>tests/test_catalog_page.py</code> holds it to the catalog.</footer></main></div><script>
+const q = document.getElementById('q');
+if (q) q.addEventListener('input', () => {
+  const s = q.value.trim().toLowerCase();
+  document.querySelectorAll('[data-text]').forEach(a => { a.hidden = s && !a.dataset.text.includes(s); });
+  document.querySelectorAll('.group').forEach(g => { g.hidden = s && !g.querySelector('[data-text]:not([hidden])'); });
+});
+</script></body></html>

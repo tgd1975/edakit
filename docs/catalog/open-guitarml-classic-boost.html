@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>GuitarML Classic Boost v2 – edakit rule catalog</title><link rel="icon" type="image/svg+xml" href="../brand/edakit-favicon.svg"><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;600&display=swap"><style>
+:root {
+  /* a reference, read by section: a sidebar of contents, entries in one column, drawings full width */
+  --bg: #f4f6f6; --surface: #ffffff; --ink: #1d2626; --muted: #5d6b6b; --line: #d5dddd; --accent: #0e6c6a;
+  --err: #b42318; --warn: #a15c07; --pend: #6941c6; --note: #475467; --ok: #087443;
+  --display: "IBM Plex Sans", "Helvetica Neue", Arial, sans-serif; --body: "IBM Plex Sans", "Helvetica Neue", Arial, sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #111717; --surface: #182020; --ink: #e3eaea; --muted: #97a6a6; --line: #2c3838; --accent: #5cc4c0;
+  --err: #f97066; --warn: #fdb022; --pend: #b692f6; --note: #98a2b3; --ok: #47cd89; color-scheme: dark; } }
+:root[data-theme="dark"] {
+  --bg: #111717; --surface: #182020; --ink: #e3eaea; --muted: #97a6a6; --line: #2c3838; --accent: #5cc4c0;
+  --err: #f97066; --warn: #fdb022; --pend: #b692f6; --note: #98a2b3; --ok: #47cd89; color-scheme: dark; }
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--ink); font: 15px/1.55 var(--body); }
+a { color: var(--accent); }
+code { font-family: var(--mono); font-size: 0.9em; }
+.layout { display: grid; grid-template-columns: 15rem minmax(0, 1fr); gap: 2rem; max-width: 84rem; margin: 0 auto;
+  padding: 1.5rem 1.25rem 4rem; }
+nav { position: sticky; top: 1rem; align-self: start; max-height: calc(100vh - 2rem); overflow: auto; font-size: 0.9rem; }
+nav ol { list-style: none; padding: 0; margin: 0; display: grid; gap: 0.2rem; }
+nav ol ol { padding-left: 0.9rem; margin: 0.2rem 0 0.4rem; }
+nav a { text-decoration: none; color: var(--ink); }
+nav a:hover, nav a:focus-visible { color: var(--accent); }
+nav a[aria-current="page"] { color: var(--accent); font-weight: 600; }
+nav .label { color: var(--muted); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.04em; }
+nav ol.engines { display: flex; flex-wrap: wrap; gap: 0.2rem 0.7rem; }
+nav ol.engines > li:has(ol.sub) { flex-basis: 100%; }
+header.top h1 { font: 600 2rem/1.15 var(--display); margin: 0 0 0.4rem; text-wrap: balance; }
+header.top p { color: var(--muted); max-width: 70ch; margin: 0; }
+header.top p.brand { margin-bottom: 0.6rem; }
+p.lead { font-size: 1.05rem; }
+:target { scroll-margin-top: 1rem; }
+tr:target td, tr:target th { background: color-mix(in srgb, var(--surface) 80%, var(--accent)); }
+article:target { outline: 2px solid var(--accent); outline-offset: 2px; }
+ul.inline { list-style: none; padding: 0; display: flex; flex-wrap: wrap; gap: 0.3rem 1rem; max-width: none; }
+table.codes tr.sec th { background: transparent; border-bottom: 1px solid var(--ink); padding-top: 0.9rem; font-weight: 400; }
+table.codes td:first-child { white-space: nowrap; }
+.card h3 a { text-decoration: none; }
+h2 { font: 600 1.45rem/1.2 var(--display); margin: 2.6rem 0 0.8rem; padding-top: 0.6rem; border-top: 2px solid var(--ink);
+  text-wrap: balance; }
+h3 { font: 600 1.1rem/1.3 var(--display); margin: 1.6rem 0 0.6rem; }
+h4 { font: 600 1rem/1.3 var(--display); margin: 0; }
+p, li, dd { max-width: 75ch; }
+.muted, .meta { color: var(--muted); }
+.brand a { display: inline-flex; align-items: center; gap: 0.5rem; }
+.brand img { display: block; }
+.meta { font-size: 0.85rem; margin: 0.4rem 0 0; }
+.tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(9.5rem, 1fr)); gap: 0.75rem; margin: 1rem 0; }
+.tile { background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 0.8rem; display: grid; }
+.tile .big { font: 600 1.8rem/1 var(--display); font-variant-numeric: tabular-nums; }
+.tile .of { color: var(--muted); font-size: 0.85rem; }
+.tile .lbl { font-weight: 600; margin-top: 0.3rem; }
+.tile .sub { color: var(--muted); font-size: 0.8rem; }
+.scroll { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; background: var(--surface); font-size: 0.9rem; }
+th, td { text-align: left; vertical-align: top; padding: 0.45rem 0.6rem; border-bottom: 1px solid var(--line); }
+th { font-weight: 600; background: color-mix(in srgb, var(--surface) 85%, var(--accent)); }
+td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+.chips { display: flex; flex-wrap: wrap; gap: 0.3rem; }
+.chip { display: inline-block; font-size: 0.75rem; line-height: 1.5; padding: 0 0.45rem; border-radius: 999px;
+  border: 1px solid currentColor; white-space: nowrap; }
+.chip.error { color: var(--err); } .chip.warning { color: var(--warn); } .chip.pending { color: var(--pend); }
+.chip.note { color: var(--note); } .chip.built { color: var(--ok); } .chip.partial { color: var(--warn); }
+.chip.open { color: var(--muted); } .chip.out { color: var(--muted); text-decoration: line-through; }
+.engine > h3 { border-bottom: 1px solid var(--line); padding-bottom: 0.3rem; }
+article.code { background: var(--surface); border: 1px solid var(--line); border-left: 3px solid var(--accent);
+  border-radius: 4px; padding: 0.8rem 1rem; margin: 0.7rem 0; }
+article.code header { display: flex; flex-wrap: wrap; gap: 0.5rem 1rem; align-items: baseline; justify-content: space-between; }
+article.code .rule { margin: 0.5rem 0; }
+article.code dl, .card dl { display: grid; grid-template-columns: 7.5rem minmax(0, 1fr); gap: 0.3rem 0.8rem; margin: 0.4rem 0 0; }
+dt { font-weight: 600; color: var(--muted); font-size: 0.85rem; }
+dd { margin: 0; }
+ul.details { margin: 0.3rem 0; padding-left: 1.2rem; font-size: 0.9rem; }
+ol.sources, ul.sources { margin: 0; padding-left: 1.2rem; font-size: 0.85rem; }
+.filter { display: flex; gap: 0.6rem; align-items: center; flex-wrap: wrap; }
+.filter input { font: inherit; padding: 0.35rem 0.6rem; border: 1px solid var(--line); border-radius: 4px;
+  background: var(--surface); color: var(--ink); min-width: 16rem; }
+.filter input:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(22rem, 1fr)); gap: 1rem; }
+.card, .table-card, article.circuit { background: var(--surface); border: 1px solid var(--line); border-radius: 6px;
+  padding: 0.9rem 1rem; }
+.card h3, .table-card h3, article.circuit h3 { margin-top: 0; }
+.table-card { margin: 0.8rem 0; }
+ul.review { padding-left: 1.2rem; font-size: 0.88rem; }
+article.circuit { margin: 1rem 0; }
+.drawing { overflow-x: auto; background: #ffffff; border: 1px solid var(--line); border-radius: 4px; margin: 0.6rem 0; }
+.drawing svg { display: block; width: 100%; min-width: 46rem; height: auto; }
+table.faults { margin-top: 0.4rem; }
+table.kv { width: auto; min-width: 24rem; }
+table.kv tr.sec th { background: transparent; border-bottom: 1px solid var(--ink); padding-top: 0.9rem; }
+table.kv .src { font-weight: 400; color: var(--muted); font-size: 0.85rem; margin-left: 0.5rem; }
+table.kv td.val { font-variant-numeric: tabular-nums; }
+table.cand td:first-child { white-space: nowrap; }
+td, dd, li { overflow-wrap: anywhere; }
+footer { color: var(--muted); font-size: 0.85rem; margin-top: 3rem; }
+@media (max-width: 52rem) {
+  .layout { grid-template-columns: minmax(0, 1fr); gap: 1rem; padding: 1rem 1rem 3rem; }
+  nav { position: static; max-height: none; }
+  nav > ol { display: flex; flex-wrap: wrap; gap: 0.3rem 0.9rem; }
+  nav ol ol.sub { display: none; }
+  article.code dl, .card dl { grid-template-columns: minmax(0, 1fr); }
+  .cards { grid-template-columns: minmax(0, 1fr); }
+  table.kv { min-width: 0; }
+}
+@media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto !important; } }
+</style></head><body><div class="layout"><nav aria-label="Rule catalog"><ol><li><a href="index.html" title="Overview">Overview</a></li><li><span class="label">Engines</span><ol class="engines"><li><a href="struct.html" title="STRUCT">STRUCT</a></li><li><a href="sync.html" title="SYNC">SYNC</a></li><li><a href="lim.html" title="LIM – limits">LIM</a></li><li><a href="lvl.html" title="LVL – levels">LVL</a></li><li><a href="req.html" title="REQ – requires">REQ</a></li><li><a href="path.html" title="PATH – paths">PATH</a></li><li><a href="sim.html" title="SIM">SIM</a></li><li><a href="geo.html" title="GEO">GEO</a></li><li><a href="files.html" title="FILES">FILES</a></li><li><a href="parts.html" title="PARTS">PARTS</a></li><li><a href="order.html" title="ORDER">ORDER</a></li><li><a href="docs.html" title="DOCS">DOCS</a></li><li><a href="hint.html" title="HINT">HINT</a></li></ol></li><li><a href="domains.html" title="Domains">Domains</a></li><li><a href="tables.html" title="Tables">Tables</a></li><li><a href="schema.html" title="Parts schema">Parts schema</a></li><li><a href="circuits.html" title="Reference circuits">Reference circuits</a></li><li><a href="open-designs.html" title="Open designs">Open designs</a><ol class="sub"><li><a href="open-corne-cherry-left.html">Corne keyboard v4, left half</a></li><li><a href="open-corne-cherry-v3-left.html">Corne Cherry keyboard v3, left half</a></li><li><a href="open-esp32-devkitc-v4.html">ESP32-DevKitC V4</a></li><li><a href="open-guitarml-classic-boost.html" aria-current="page">GuitarML Classic Boost v2</a></li><li><a href="open-guitarml-ts-rat-combo.html">GuitarML Tubescreamer/Rat combo</a></li><li><a href="open-sparkfun-logic-level-converter.html">SparkFun Logic Level Converter</a></li></ol></li><li><a href="candidates.html" title="maker-coverage candidates">maker-coverage candidates</a></li><li><a href="before.html" title="Check IDs of before">Check IDs of before</a></li></ol></nav><main><header class="top"><p class="meta brand"><a href="../"><picture><source media="(prefers-color-scheme: dark)" srcset="../brand/edakit-mark-dark.svg"><img src="../brand/edakit-mark.svg" width="28" height="28" alt=""></picture>edakit documentation</a></p><h1>GuitarML Classic Boost v2</h1></header><article class="circuit" id="open-guitarml-classic-boost"><p class="meta">Keith Bloemer (GuitarML), <em>GuitarPedalPCBs</em>, <a href="https://github.com/GuitarML/GuitarPedalPCBs">https://github.com/GuitarML/GuitarPedalPCBs</a> at commit e2fa7e1 (e2fa7e1e22f4939215cfbb1d5a3df2a66068275e, 2026-08-05), the pedal <em>ClassicBoost_1590a</em> (&quot;A simple boost circuit (compare to LPB-1 by Electro-Harmonix)&quot;, its README with the parts list), the schematic <code>ClassicBoost_1590a/ClassicBoost_v2.kicad_sch</code>, read on 2026-10-31 from a read-only clone. The netlist was resolved from the schematic (the instances of project LPB1_Boost) by a reader outside this repository and checked against the board file <code>ClassicBoost_1590a/ClassicBoost_v2.kicad_pcb</code> of the same commit: all 32 pins of the sheet are on the same nets there. · <a href="circuits/open-guitarml-classic-boost.svg">SVG</a></p><div class="drawing"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1287 1014" font-family="DejaVu Sans, Arial, Helvetica, sans-serif" stroke-linecap="round" stroke-linejoin="round">
+<rect width="1287" height="1014" fill="#ffffff"/>
+<polyline points="10,1004 1277,1004 1277,10 10,10 10,1004" fill="none" stroke="#888888" stroke-width="1.5"/>
+<polyline points="887,1004 1277,1004 1277,884 887,884 887,1004" fill="none" stroke="#888888" stroke-width="1.5"/>
+<text x="899" y="906" dy="0.35em" font-size="16" text-anchor="start" fill="#000000" font-weight="bold" xml:space="preserve">Classic Boost v2</text>
+<text x="899" y="930" dy="0.35em" font-size="8" text-anchor="start" fill="#000000" xml:space="preserve">guitarml-classic-boost · board main</text>
+<text x="899" y="948" dy="0.35em" font-size="8" text-anchor="start" fill="#000000" xml:space="preserve">graph v1.0 (2026-10-31) · 327 x 258 mm</text>
+<text x="899" y="966" dy="0.35em" font-size="7" text-anchor="start" fill="#000000" xml:space="preserve">drawn by edakit schematic draw – change the graph, not this drawing</text>
+<polyline points="39.52,484.5 576,484.5 576,40 39.52,40 39.52,484.5" fill="none" stroke="#888888" stroke-width="1" stroke-dasharray="6 4"/>
+<polyline points="639.52,163.5 956,163.5 956,40 639.52,40 639.52,163.5" fill="none" stroke="#888888" stroke-width="1" stroke-dasharray="6 4"/>
+<polyline points="1019.52,163.5 1246,163.5 1246,40 1019.52,40 1019.52,163.5" fill="none" stroke="#888888" stroke-width="1" stroke-dasharray="6 4"/>
+<polyline points="39.52,663.5 306,663.5 306,540 39.52,540 39.52,663.5" fill="none" stroke="#888888" stroke-width="1" stroke-dasharray="6 4"/>
+<polyline points="369.52,663.5 626,663.5 626,540 369.52,540 369.52,663.5" fill="none" stroke="#888888" stroke-width="1" stroke-dasharray="6 4"/>
+<polyline points="689.52,663.5 986,663.5 986,540 689.52,540 689.52,663.5" fill="none" stroke="#888888" stroke-width="1" stroke-dasharray="6 4"/>
+<polyline points="39.52,843.5 466,843.5 466,720 39.52,720 39.52,843.5" fill="none" stroke="#888888" stroke-width="1" stroke-dasharray="6 4"/>
+<polyline points="529.52,843.5 996,843.5 996,720 529.52,720 529.52,843.5" fill="none" stroke="#888888" stroke-width="1" stroke-dasharray="6 4"/>
+<text x="49.52" y="62" dy="0" font-size="16" text-anchor="start" fill="#000000" font-weight="bold" xml:space="preserve">9v1 9 V in</text>
+<text x="649.52" y="62" dy="0" font-size="16" text-anchor="start" fill="#000000" font-weight="bold" xml:space="preserve">Gnd1 ground of the DC jack</text>
+<text x="1029.52" y="62" dy="0" font-size="16" text-anchor="start" fill="#000000" font-weight="bold" xml:space="preserve">In1 into the boost</text>
+<text x="49.52" y="562" dy="0" font-size="16" text-anchor="start" fill="#000000" font-weight="bold" xml:space="preserve">InG1 input jack sleeve</text>
+<text x="379.52" y="562" dy="0" font-size="16" text-anchor="start" fill="#000000" font-weight="bold" xml:space="preserve">Out1 out of the boost</text>
+<text x="699.52" y="562" dy="0" font-size="16" text-anchor="start" fill="#000000" font-weight="bold" xml:space="preserve">OutG1 output jack sleeve</text>
+<text x="49.52" y="742" dy="0" font-size="16" text-anchor="start" fill="#000000" font-weight="bold" xml:space="preserve">SW1 VCC to the footswitch&#x27;s LED pole</text>
+<text x="539.52" y="742" dy="0" font-size="16" text-anchor="start" fill="#000000" font-weight="bold" xml:space="preserve">swGnd1 LED resistor from the footswitch</text>
+<polyline points="206,120 216,120" fill="none" stroke="#16801a" stroke-width="1.2"/>
+<polyline points="216,120 256,120" fill="none" stroke="#16801a" stroke-width="1.2"/>
+<polyline points="296,120 306,120" fill="none" stroke="#16801a" stroke-width="1.2"/>
+<polyline points="306,120 326,120" fill="none" stroke="#16801a" stroke-width="1.2"/>
+<polyline points="366,120 376,120" fill="none" stroke="#16801a" stroke-width="1.2"/>
+<polyline points="376,120 396,120" fill="none" stroke="#16801a" stroke-width="1.2"/>
+<polyline points="436,120 476,120" fill="none" stroke="#16801a" stroke-width="1.2"/>
+<polyline points="376,210 396,210" fill="none" stroke="#16801a" stroke-width="1.2"/>
+<polyline points="426,230 426,240" fill="none" stroke="#16801a" stroke-width="1.2"/>
+<polyline points="426,240 426,260" fill="none" stroke="#16801a" stroke-width="1.2"/>
+<polyline points="426,190 426,160" fill="none" stroke="#16801a" stroke-width="1.2"/>
+<polyline points="376,350 396,350" fill="none" stroke="#16801a" stroke-width="1.2"/>
+<polyline points="376,350 376,210" fill="none" stroke="#16801a" stroke-width="1.2"/>
+<polyline points="376,210 376,120" fill="none" stroke="#16801a" stroke-width="1.2"/>
+<polyline points="306,440 326,440" fill="none" stroke="#16801a" stroke-width="1.2"/>
+<polyline points="366,440 376,440" fill="none" stroke="#16801a" stroke-width="1.2"/>
+<polyline points="376,440 396,440" fill="none" stroke="#16801a" stroke-width="1.2"/>
+<polyline points="436,440 446,440" fill="none" stroke="#16801a" stroke-width="1.2"/>
+<polyline points="446,440 496,440" fill="none" stroke="#16801a" stroke-width="1.2"/>
+<polyline points="516,420 516,380" fill="none" stroke="#16801a" stroke-width="1.2"/>
+<polyline points="306,440 306,120" fill="none" stroke="#16801a" stroke-width="1.2"/>
+<polyline points="1186,120 1226,120" fill="none" stroke="#16801a" stroke-width="1.2"/>
+<polyline points="536,620 576,620" fill="none" stroke="#16801a" stroke-width="1.2"/>
+<polyline points="206,800 236,800" fill="none" stroke="#16801a" stroke-width="1.2"/>
+<polyline points="696,800 706,800" fill="none" stroke="#16801a" stroke-width="1.2"/>
+<polyline points="706,800 726,800" fill="none" stroke="#16801a" stroke-width="1.2"/>
+<polyline points="766,800 776,800" fill="none" stroke="#16801a" stroke-width="1.2"/>
+<polyline points="776,800 796,800" fill="none" stroke="#16801a" stroke-width="1.2"/>
+<circle cx="306" cy="120" r="2.2" fill="#16801a" stroke="#16801a" stroke-width="1.2"/>
+<circle cx="376" cy="120" r="2.2" fill="#16801a" stroke="#16801a" stroke-width="1.2"/>
+<circle cx="376" cy="210" r="2.2" fill="#16801a" stroke="#16801a" stroke-width="1.2"/>
+<text x="231" y="115.5" dy="0.35em" font-size="6" text-anchor="middle" fill="#1f3a9f" xml:space="preserve">+9V_IN</text>
+<text x="311" y="115.5" dy="0.35em" font-size="6" text-anchor="middle" fill="#1f3a9f" xml:space="preserve">VCC</text>
+<text x="236" y="795.5" dy="0.35em" font-size="6" text-anchor="end" fill="#1f3a9f" xml:space="preserve">VCC</text>
+<text x="381" y="115.5" dy="0.35em" font-size="6" text-anchor="middle" fill="#1f3a9f" xml:space="preserve">BASE</text>
+<text x="476" y="115.5" dy="0.35em" font-size="6" text-anchor="end" fill="#1f3a9f" xml:space="preserve">IN_B</text>
+<text x="1226" y="115.5" dy="0.35em" font-size="6" text-anchor="end" fill="#1f3a9f" xml:space="preserve">IN_B</text>
+<text x="421.5" y="245" dy="0.35em" font-size="6" text-anchor="middle" fill="#1f3a9f" transform="rotate(-90 421.5 245)" xml:space="preserve">EMIT</text>
+<text x="421.5" y="160" dy="0.35em" font-size="6" text-anchor="end" fill="#1f3a9f" transform="rotate(-90 421.5 160)" xml:space="preserve">COL</text>
+<text x="381" y="435.5" dy="0.35em" font-size="6" text-anchor="middle" fill="#1f3a9f" xml:space="preserve">COL</text>
+<text x="466" y="435.5" dy="0.35em" font-size="6" text-anchor="middle" fill="#1f3a9f" xml:space="preserve">C2B</text>
+<text x="511.5" y="380" dy="0.35em" font-size="6" text-anchor="end" fill="#1f3a9f" transform="rotate(-90 511.5 380)" xml:space="preserve">OUT_B</text>
+<text x="576" y="615.5" dy="0.35em" font-size="6" text-anchor="end" fill="#1f3a9f" xml:space="preserve">OUT_B</text>
+<text x="711" y="795.5" dy="0.35em" font-size="6" text-anchor="middle" fill="#1f3a9f" xml:space="preserve">LED_R</text>
+<text x="781" y="795.5" dy="0.35em" font-size="6" text-anchor="middle" fill="#1f3a9f" xml:space="preserve">LED_A</text>
+<polyline points="426,300 426,306" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="422,306 430,306" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="423.5,308 428.5,308" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="425,310 427,310" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="436,350 442,350" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="442,354 442,346" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="444,352.5 444,347.5" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="446,351 446,349" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="536,440 542,440" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="542,444 542,436" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="544,442.5 544,437.5" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="546,441 546,439" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="806,120 812,120" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="812,124 812,116" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="814,122.5 814,117.5" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="816,121 816,119" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="206,620 212,620" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="212,624 212,616" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="214,622.5 214,617.5" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="216,621 216,619" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="856,620 862,620" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="862,624 862,616" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="864,622.5 864,617.5" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="866,621 866,619" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="836,800 842,800" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="842,804 842,796" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="844,802.5 844,797.5" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="846,801 846,799" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="206,120 196,120" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polygon points="156,130 196,130 196,110 156,110" fill="#ffffff" stroke="#8b1a1a" stroke-width="1.2"/>
+<text x="193.5" y="120" dy="0.35em" font-size="6" text-anchor="end" fill="#000000" xml:space="preserve">Pin_1</text>
+<text x="197.5" y="117" dy="0.35em" font-size="5" text-anchor="start" fill="#555555" xml:space="preserve">1</text>
+<text x="196" y="104" dy="0.35em" font-size="7" text-anchor="end" fill="#000000" xml:space="preserve">9v1</text>
+<text x="196" y="136" dy="0.35em" font-size="6" text-anchor="end" fill="#000000" xml:space="preserve">TestPoint_THTPad_D2.0mm_Drill1.0mm</text>
+<polyline points="256,120 266,120" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="296,120 286,120" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="266,120 271,120" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="281,120 286,120" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polygon points="271,126 271,114 281,120" fill="#ffffff" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="281,126 281,114" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<text x="276" y="107" dy="0.35em" font-size="7" text-anchor="middle" fill="#000000" xml:space="preserve">D1</text>
+<text x="276" y="133" dy="0.35em" font-size="6" text-anchor="middle" fill="#000000" xml:space="preserve">1N5817</text>
+<polyline points="366,120 356,120" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="326,120 336,120" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polygon points="356,116 336,116 336,124 356,124" fill="#ffffff" stroke="#8b1a1a" stroke-width="1.2"/>
+<text x="346" y="109" dy="0.35em" font-size="7" text-anchor="middle" fill="#000000" xml:space="preserve">R1</text>
+<text x="346" y="131" dy="0.35em" font-size="6" text-anchor="middle" fill="#000000" xml:space="preserve">430k</text>
+<polyline points="436,120 426,120" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="396,120 406,120" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="426,120 418.5,120" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="413.5,120 406,120" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="418.5,113 418.5,127" fill="none" stroke="#8b1a1a" stroke-width="2.4"/>
+<polyline points="413.5,113 413.5,127" fill="none" stroke="#8b1a1a" stroke-width="2.4"/>
+<text x="416" y="106" dy="0.35em" font-size="7" text-anchor="middle" fill="#000000" xml:space="preserve">C1</text>
+<text x="416" y="134" dy="0.35em" font-size="6" text-anchor="middle" fill="#000000" xml:space="preserve">0.1uF</text>
+<polyline points="396,210 413,210" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="413,217 413,203" fill="none" stroke="#8b1a1a" stroke-width="2.4"/>
+<polyline points="426,190 426,200" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="413,207 426,200" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="426,230 426,220" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="413,213 426,220" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polygon points="426,220 422.79,219.63 423.93,217.52" fill="#8b1a1a" stroke="#8b1a1a" stroke-width="1.2"/>
+<text x="401" y="207" dy="0.35em" font-size="5" text-anchor="middle" fill="#555555" xml:space="preserve">2</text>
+<text x="429" y="195" dy="0.35em" font-size="5" text-anchor="start" fill="#555555" xml:space="preserve">3</text>
+<text x="429" y="225" dy="0.35em" font-size="5" text-anchor="start" fill="#555555" xml:space="preserve">1</text>
+<text x="430" y="206" dy="0.35em" font-size="7" text-anchor="start" fill="#000000" xml:space="preserve">Q2</text>
+<text x="430" y="215" dy="0.35em" font-size="6" text-anchor="start" fill="#000000" xml:space="preserve">2N5088</text>
+<polyline points="426,300 426,290" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="426,260 426,270" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polygon points="430,290 430,270 422,270 422,290" fill="#ffffff" stroke="#8b1a1a" stroke-width="1.2"/>
+<text x="415" y="280" dy="0.35em" font-size="7" text-anchor="middle" fill="#000000" transform="rotate(-90 415 280)" xml:space="preserve">R4</text>
+<text x="437" y="280" dy="0.35em" font-size="6" text-anchor="middle" fill="#000000" transform="rotate(-90 437 280)" xml:space="preserve">390</text>
+<polyline points="436,350 426,350" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="396,350 406,350" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polygon points="426,346 406,346 406,354 426,354" fill="#ffffff" stroke="#8b1a1a" stroke-width="1.2"/>
+<text x="416" y="339" dy="0.35em" font-size="7" text-anchor="middle" fill="#000000" xml:space="preserve">R2</text>
+<text x="416" y="361" dy="0.35em" font-size="6" text-anchor="middle" fill="#000000" xml:space="preserve">43k</text>
+<polyline points="366,440 356,440" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="326,440 336,440" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polygon points="356,436 336,436 336,444 356,444" fill="#ffffff" stroke="#8b1a1a" stroke-width="1.2"/>
+<text x="346" y="429" dy="0.35em" font-size="7" text-anchor="middle" fill="#000000" xml:space="preserve">R3</text>
+<text x="346" y="451" dy="0.35em" font-size="6" text-anchor="middle" fill="#000000" xml:space="preserve">10k</text>
+<polyline points="396,440 406,440" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="436,440 426,440" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="406,440 413.5,440" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="418.5,440 426,440" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="413.5,447 413.5,433" fill="none" stroke="#8b1a1a" stroke-width="2.4"/>
+<polyline points="418.5,447 418.5,433" fill="none" stroke="#8b1a1a" stroke-width="2.4"/>
+<text x="416" y="426" dy="0.35em" font-size="7" text-anchor="middle" fill="#000000" xml:space="preserve">C2</text>
+<text x="416" y="454" dy="0.35em" font-size="6" text-anchor="middle" fill="#000000" xml:space="preserve">0.1uF</text>
+<polyline points="536,440 526,440" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="496,440 506,440" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polygon points="526,436 506,436 506,444 526,444" fill="#ffffff" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="516,420 516,432" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polygon points="516,436 514.4,432 517.6,432" fill="#8b1a1a" stroke="#8b1a1a" stroke-width="1.2"/>
+<text x="512" y="427" dy="0.35em" font-size="7" text-anchor="end" fill="#000000" xml:space="preserve">POT1</text>
+<text x="516" y="451" dy="0.35em" font-size="6" text-anchor="middle" fill="#000000" xml:space="preserve">100k</text>
+<polyline points="806,120 796,120" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polygon points="756,130 796,130 796,110 756,110" fill="#ffffff" stroke="#8b1a1a" stroke-width="1.2"/>
+<text x="793.5" y="120" dy="0.35em" font-size="6" text-anchor="end" fill="#000000" xml:space="preserve">Pin_1</text>
+<text x="797.5" y="117" dy="0.35em" font-size="5" text-anchor="start" fill="#555555" xml:space="preserve">1</text>
+<text x="796" y="104" dy="0.35em" font-size="7" text-anchor="end" fill="#000000" xml:space="preserve">Gnd1</text>
+<text x="796" y="136" dy="0.35em" font-size="6" text-anchor="end" fill="#000000" xml:space="preserve">TestPoint_THTPad_D2.0mm_Drill1.0mm</text>
+<polyline points="1186,120 1176,120" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polygon points="1136,130 1176,130 1176,110 1136,110" fill="#ffffff" stroke="#8b1a1a" stroke-width="1.2"/>
+<text x="1173.5" y="120" dy="0.35em" font-size="6" text-anchor="end" fill="#000000" xml:space="preserve">Pin_1</text>
+<text x="1177.5" y="117" dy="0.35em" font-size="5" text-anchor="start" fill="#555555" xml:space="preserve">1</text>
+<text x="1176" y="104" dy="0.35em" font-size="7" text-anchor="end" fill="#000000" xml:space="preserve">In1</text>
+<text x="1176" y="136" dy="0.35em" font-size="6" text-anchor="end" fill="#000000" xml:space="preserve">TestPoint_THTPad_D2.0mm_Drill1.0mm</text>
+<polyline points="206,620 196,620" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polygon points="156,630 196,630 196,610 156,610" fill="#ffffff" stroke="#8b1a1a" stroke-width="1.2"/>
+<text x="193.5" y="620" dy="0.35em" font-size="6" text-anchor="end" fill="#000000" xml:space="preserve">Pin_1</text>
+<text x="197.5" y="617" dy="0.35em" font-size="5" text-anchor="start" fill="#555555" xml:space="preserve">1</text>
+<text x="196" y="604" dy="0.35em" font-size="7" text-anchor="end" fill="#000000" xml:space="preserve">InG1</text>
+<text x="196" y="636" dy="0.35em" font-size="6" text-anchor="end" fill="#000000" xml:space="preserve">TestPoint_THTPad_D2.0mm_Drill1.0mm</text>
+<polyline points="536,620 526,620" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polygon points="486,630 526,630 526,610 486,610" fill="#ffffff" stroke="#8b1a1a" stroke-width="1.2"/>
+<text x="523.5" y="620" dy="0.35em" font-size="6" text-anchor="end" fill="#000000" xml:space="preserve">Pin_1</text>
+<text x="527.5" y="617" dy="0.35em" font-size="5" text-anchor="start" fill="#555555" xml:space="preserve">1</text>
+<text x="526" y="604" dy="0.35em" font-size="7" text-anchor="end" fill="#000000" xml:space="preserve">Out1</text>
+<text x="526" y="636" dy="0.35em" font-size="6" text-anchor="end" fill="#000000" xml:space="preserve">TestPoint_THTPad_D2.0mm_Drill1.0mm</text>
+<polyline points="856,620 846,620" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polygon points="806,630 846,630 846,610 806,610" fill="#ffffff" stroke="#8b1a1a" stroke-width="1.2"/>
+<text x="843.5" y="620" dy="0.35em" font-size="6" text-anchor="end" fill="#000000" xml:space="preserve">Pin_1</text>
+<text x="847.5" y="617" dy="0.35em" font-size="5" text-anchor="start" fill="#555555" xml:space="preserve">1</text>
+<text x="846" y="604" dy="0.35em" font-size="7" text-anchor="end" fill="#000000" xml:space="preserve">OutG1</text>
+<text x="846" y="636" dy="0.35em" font-size="6" text-anchor="end" fill="#000000" xml:space="preserve">TestPoint_THTPad_D2.0mm_Drill1.0mm</text>
+<polyline points="206,800 196,800" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polygon points="156,810 196,810 196,790 156,790" fill="#ffffff" stroke="#8b1a1a" stroke-width="1.2"/>
+<text x="193.5" y="800" dy="0.35em" font-size="6" text-anchor="end" fill="#000000" xml:space="preserve">Pin_1</text>
+<text x="197.5" y="797" dy="0.35em" font-size="5" text-anchor="start" fill="#555555" xml:space="preserve">1</text>
+<text x="196" y="784" dy="0.35em" font-size="7" text-anchor="end" fill="#000000" xml:space="preserve">SW1</text>
+<text x="196" y="816" dy="0.35em" font-size="6" text-anchor="end" fill="#000000" xml:space="preserve">TestPoint_THTPad_D2.0mm_Drill1.0mm</text>
+<polyline points="696,800 686,800" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polygon points="646,810 686,810 686,790 646,790" fill="#ffffff" stroke="#8b1a1a" stroke-width="1.2"/>
+<text x="683.5" y="800" dy="0.35em" font-size="6" text-anchor="end" fill="#000000" xml:space="preserve">Pin_1</text>
+<text x="687.5" y="797" dy="0.35em" font-size="5" text-anchor="start" fill="#555555" xml:space="preserve">1</text>
+<text x="686" y="784" dy="0.35em" font-size="7" text-anchor="end" fill="#000000" xml:space="preserve">swGnd1</text>
+<text x="686" y="816" dy="0.35em" font-size="6" text-anchor="end" fill="#000000" xml:space="preserve">TestPoint_THTPad_D2.0mm_Drill1.0mm</text>
+<polyline points="766,800 756,800" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="726,800 736,800" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polygon points="756,796 736,796 736,804 756,804" fill="#ffffff" stroke="#8b1a1a" stroke-width="1.2"/>
+<text x="746" y="789" dy="0.35em" font-size="7" text-anchor="middle" fill="#000000" xml:space="preserve">R5</text>
+<text x="746" y="811" dy="0.35em" font-size="6" text-anchor="middle" fill="#000000" xml:space="preserve">4.7k</text>
+<polyline points="796,800 806,800" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="836,800 826,800" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="806,800 811,800" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="821,800 826,800" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polygon points="811,806 811,794 821,800" fill="#ffffff" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="821,806 821,794" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="814,793 818,789" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polygon points="819,788 817.94,790.47 816.53,789.06" fill="#8b1a1a" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="819,793 823,789" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polygon points="824,788 822.94,790.47 821.53,789.06" fill="#8b1a1a" stroke="#8b1a1a" stroke-width="1.2"/>
+<text x="816" y="781" dy="0.35em" font-size="7" text-anchor="middle" fill="#000000" xml:space="preserve">LED1</text>
+</svg>
+</div><div class="scroll"><table class="faults"><thead><tr><th>Stage</th><th>Code</th><th>Where</th><th>Judged</th><th>Why</th></tr></thead><tbody><tr><td>check</td><td><a href="docs.html#DOCS.file"><code>DOCS.file</code></a></td><td>edakit.toml</td><td><span class="chip pending">criterion</span></td><td>The transcription has no requirements file: what the published design must do stands in its own documents, not in edakit&#x27;s form. edakit requires the file before a release (handbook 3.6); it is no point of the design.</td></tr><tr><td>check</td><td><a href="parts.html#PARTS.verified"><code>PARTS.verified</code></a>/device</td><td>9v1</td><td><span class="chip pending">criterion</span></td><td>9v1 is a plated pad of the board for a wire (KiCad footprint TestPoint_THTPad_D2.0mm_Drill1.0mm, board reference 9v) – copper, nothing to buy or place: edakit asks every component for an LCSC part or an EasyEDA device.</td></tr><tr><td>check</td><td><a href="parts.html#PARTS.verified"><code>PARTS.verified</code></a>/device</td><td>Gnd1</td><td><span class="chip pending">criterion</span></td><td>Gnd1 is a plated pad of the board for a wire (KiCad footprint TestPoint_THTPad_D2.0mm_Drill1.0mm, board reference Gnd) – copper, nothing to buy or place: edakit asks every component for an LCSC part or an EasyEDA device.</td></tr><tr><td>check</td><td><a href="parts.html#PARTS.verified"><code>PARTS.verified</code></a>/device</td><td>In1</td><td><span class="chip pending">criterion</span></td><td>In1 is a plated pad of the board for a wire (KiCad footprint TestPoint_THTPad_D2.0mm_Drill1.0mm, board reference In) – copper, nothing to buy or place: edakit asks every component for an LCSC part or an EasyEDA device.</td></tr><tr><td>check</td><td><a href="parts.html#PARTS.verified"><code>PARTS.verified</code></a>/device</td><td>InG1</td><td><span class="chip pending">criterion</span></td><td>InG1 is a plated pad of the board for a wire (KiCad footprint TestPoint_THTPad_D2.0mm_Drill1.0mm, board reference InG) – copper, nothing to buy or place: edakit asks every component for an LCSC part or an EasyEDA device.</td></tr><tr><td>check</td><td><a href="parts.html#PARTS.verified"><code>PARTS.verified</code></a>/device</td><td>Out1</td><td><span class="chip pending">criterion</span></td><td>Out1 is a plated pad of the board for a wire (KiCad footprint TestPoint_THTPad_D2.0mm_Drill1.0mm, board reference O) – copper, nothing to buy or place: edakit asks every component for an LCSC part or an EasyEDA device.</td></tr><tr><td>check</td><td><a href="parts.html#PARTS.verified"><code>PARTS.verified</code></a>/device</td><td>OutG1</td><td><span class="chip pending">criterion</span></td><td>OutG1 is a plated pad of the board for a wire (KiCad footprint TestPoint_THTPad_D2.0mm_Drill1.0mm, board reference OG) – copper, nothing to buy or place: edakit asks every component for an LCSC part or an EasyEDA device.</td></tr><tr><td>check</td><td><a href="parts.html#PARTS.verified"><code>PARTS.verified</code></a>/device</td><td>SW1</td><td><span class="chip pending">criterion</span></td><td>SW1 is a plated pad of the board for a wire (KiCad footprint TestPoint_THTPad_D2.0mm_Drill1.0mm, board reference SW) – copper, nothing to buy or place: edakit asks every component for an LCSC part or an EasyEDA device.</td></tr><tr><td>check</td><td><a href="parts.html#PARTS.verified"><code>PARTS.verified</code></a>/device</td><td>swGnd1</td><td><span class="chip pending">criterion</span></td><td>swGnd1 is a plated pad of the board for a wire (KiCad footprint TestPoint_THTPad_D2.0mm_Drill1.0mm, board reference SwG) – copper, nothing to buy or place: edakit asks every component for an LCSC part or an EasyEDA device.</td></tr><tr><td>check</td><td><a href="parts.html#PARTS.verified"><code>PARTS.verified</code></a>/device</td><td>POT1</td><td><span class="chip note">lacks</span></td><td>POT1, the volume (100K, the parts list&#x27;s A100K): the TT Electronics P160 order code that stands in has no LCSC number in the catalogue, and a KiCad design names no EasyEDA device.</td></tr><tr><td>check</td><td><a href="struct.html#STRUCT.prefix"><code>STRUCT.prefix</code></a></td><td>SW1</td><td><span class="chip pending">criterion</span></td><td>SW1 is the schematic&#x27;s own reference of a wire pad – VCC to the footswitch&#x27;s LED pole (board label &#x27;SW&#x27;); KiCad does not tie references to kinds, edakit reads SW as a switch.</td></tr></tbody></table></div><p class="meta">edakit's false alarms on this design, fixed</p><ul><li>The 2N5088&#x27;s base, held by 430 kΩ from VCC and 43 kΩ to ground with 390 Ω under the emitter, judged as floating while &#x27;the firmware is not running&#x27; (LVL.undefined): the board has no IC, so no pin typed VCC or ground as a rail, and a resistor to ground did not count.</li></ul></article><footer>Written by <code>docs/catalog/build.py</code>; <code>tests/test_catalog_page.py</code> holds it to the catalog.</footer></main></div><script>
+const q = document.getElementById('q');
+if (q) q.addEventListener('input', () => {
+  const s = q.value.trim().toLowerCase();
+  document.querySelectorAll('[data-text]').forEach(a => { a.hidden = s && !a.dataset.text.includes(s); });
+  document.querySelectorAll('.group').forEach(g => { g.hidden = s && !g.querySelector('[data-text]:not([hidden])'); });
+});
+</script></body></html>

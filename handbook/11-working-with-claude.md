@@ -1,22 +1,24 @@
 # 11 Working with Claude Code
 
-The toolkit is half code, half agreements about how Claude works. Both came out of a week of daily use; the
-agreements are as important as the scripts.
+This chapter is for you when you work on an edakit project with Claude Code. After it you know what the plugin brings,
+how sessions share EasyEDA, and the agreements every session starts with.
+
+The toolkit is half code, half agreements about how Claude works, and the agreements are as important as the scripts.
 
 ## 11.1 What the plugin brings
 
 | Component | Name | Use |
 |---|---|---|
 | skill | `/edakit:start` | EasyEDA ready, long runs, GUI clicks, crash recovery – before any EasyEDA work |
-| skill | `/edakit:new-project` | set up edakit in a repository – a new project, or one that moves to edakit with hardware files, scripts or agents of its own (then the inventory first): an interview from boards, the schematic's drawing, the maker, assembly, order, money and purpose to firmware, documents and the project's own tools, every key from an answer, written after the user's OK (2.7) |
-| skill | `/edakit:requirements` | what the circuit must do, with the user: needs and requirements with their evidence in `hardware/requirements.toml`, as those involved state them, not as edakit derives them, asked back in a decision round until vague words are the maker's numbers – Claude drafts, the user accepts (3.6) |
+| skill | `/edakit:new-project` | set up edakit in a repository – a new project, or one that moves to edakit with hardware files, scripts or agents of its own (then the inventory first): an interview from boards, the schematic's drawing, the maker, assembly, order, money and purpose to firmware, documents and the project's own tools, every key from an answer, written after your OK (2.7) |
+| skill | `/edakit:requirements` | what the circuit must do, with you: needs and requirements with their evidence in `hardware/requirements.toml`, as those involved state them, not as edakit derives them, asked back in a decision round until vague words are the maker's numbers – Claude drafts, you accept (3.6) |
 | skill | `/edakit:circuit-design` | from requirements to a graph: blocks, parts, computed values, checks, hints, simulation (chapter 14) |
 | skill | `/edakit:hardware-change` | a change from graph to PCB and docs |
 | skill | `/edakit:part-search` | find a part at the project's distributors, create and sign its parts entry |
-| skill | `/edakit:own-part` | the parts entry of a part nobody sells and no edakit project describes – own board, from the bin, made by hand – from the user's documents and measurement (4.5) |
+| skill | `/edakit:own-part` | the parts entry of a part nobody sells and no edakit project describes – own board, from the bin, made by hand – from your documents and measurement (4.5) |
 | skill | `/edakit:pcb-round` | one layout round |
 | skill | `/edakit:release` | the gate, sign-offs, order checklist |
-| skill | `/edakit:cart` | a released board into the maker's cart with Claude in Chrome in the owner's browser – JLCPCB, PCBWay, Eurocircuits, AISLER –: the job of `edakit cart prepare`, every field set and read back, the quote checked (ORDER.form to ORDER.review), the regulatory review of the order, then the cart button and stop – never orders, never pays; afterwards the real cost into the fee table (8.4) |
+| skill | `/edakit:cart` | a released board into the maker's cart with Claude in Chrome in your browser – JLCPCB, PCBWay, Eurocircuits, AISLER –: the job of `edakit cart prepare`, every field set and read back, the quote checked (ORDER.form to ORDER.review), the regulatory review of the order, then the cart button and stop – never orders, never pays; afterwards the real cost into the fee table (8.4) |
 | skill | `/edakit:decision-round` | numbered findings asked as questions, answers picked in the form or written short, numbered decisions |
 | skill | `/edakit:propose-rule` | a check, hint, block or part fact as a sealed issue to the edakit repository, and its outcome back into the decision (chapter 14.4) |
 | skill | `/edakit:propose-feature` | a feature edakit lacks and a project had to build or work around, as a sealed issue to the edakit repository, and its outcome back into the project (11.6) |
@@ -32,61 +34,57 @@ agreements are as important as the scripts.
 | hook | SessionStart | in an edakit project: the working agreements of 11.4 – their first line names the edakit that runs – and the project's own scripts and agents (8.6), one line each, into the session's context; a line when the running edakit does not meet `[project] edakit` (2.3); on KiCad a line on the tool chain, and the path of `bin/edakit` where `edakit` is not on the PATH |
 | bin | `edakit` | the command line on the Bash PATH |
 
-Skills trigger on their description; you can also call them by name. Put project-specific rules (what the user wants
-from the layout, which parts must stay hand-soldered, decision numbering) into the project's own CLAUDE.md or skills –
-the plugin's skills stay generic.
+Skills trigger on their description, or you call them by name. The rules of one project – what you want from the
+layout, which parts must stay hand-soldered, the decision numbering – go into its own CLAUDE.md or skills; the
+plugin's skills stay generic.
 
-A project's own agents that sign what edakit releases are registered in edakit.toml (`[agents.<name>]`, 8.6): one
-that takes over an edakit reviewer – only explicitly, with `replaces`; the reference project's elektrotechniker for
-M-1, pcb-pruefer for M-5 and its round reviews – or one with a sign-off of its own. Every session starts with a line
-for each of them, as for each script of the project (11.4); the skills start them where `edakit scripts` says ("Who
-reviews where"), and the gate counts their sign-offs only when `done_by` names them. The project's skills are not
-registered: Claude Code finds them by itself.
+A project's own agents that sign what edakit releases are registered in edakit.toml as `[agents.<name>]` (project
+scripts and agents, 8.6). One takes over an edakit reviewer – only explicitly, with `replaces` – or has a sign-off of
+its own. Every session starts with a line for each (the session start, 11.4), the skills start them where `edakit
+scripts` says ("Who reviews where"), and the gate counts their sign-offs only when `done_by` names them. The project's
+skills are not registered: Claude Code finds them by itself.
 
 ## 11.2 Parallel sessions share one EasyEDA
 
-Several Claude sessions working at the same time is normal (one routes, one writes docs, one researches a part). But
-there is one EasyEDA per machine, and every script and most MCP tools switch its active tab. A second session's run
-pulls the tab away: in the reference project a 20-minute routing run was lost that way, and writes can land in the
+Several Claude sessions at once are normal, but there is one EasyEDA per machine, and every script and most MCP tools
+switch its active tab. A second session's run pulls the tab away: a run in progress is lost, and writes can land in the
 wrong document.
 
 So EasyEDA is **claimed per session** (`edakit lock`), independent of anything git does:
 
-- The first EasyEDA access claims automatically (the hook for MCP tools, every edakit command for scripts); every
-  access renews it; it expires after 15 minutes without access. Tools that only ask about the connection are free.
+- The first EasyEDA access claims it – the hook for MCP tools, every edakit command for scripts. Every access renews
+  the claim; it expires after 15 minutes without access. Tools that only ask about the connection are free.
 - **Library lookups pass the claim:** the device search (`easyeda_schematic_search_device`) and the device reads
   through `easyeda_api_call` (paths beginning `LIB_Device.search` or `LIB_Device.get`) leave the open document and tab
-  as they are, so they neither take nor renew a claim – a part search runs while another session routes, and it does
-  not block EasyEDA for 15 minutes afterwards. The list is data in `edakit/lock.py` (`READ_ONLY_TOOLS`,
-  `READ_ONLY_API`); an entry joins only with the evidence that the call leaves the active document as it was. (A part
-  lookup once waited 38 minutes behind a layout session.)
-- Another session is refused with who holds EasyEDA and since when. It waits, or asks the holder (ListAgents →
+  as they are. They neither take nor renew a claim, so a part search runs while another session routes and does not
+  block EasyEDA for 15 minutes afterwards. The list is data in `edakit/lock.py` (`READ_ONLY_TOOLS`, `READ_ONLY_API`);
+  an entry joins only with the evidence that the call leaves the active document as it was.
+- Another session is refused with who holds EasyEDA and since when. It waits or asks the holder (ListAgents →
   SendMessage).
-- **Letting a short run in:** a run under 5 minutes on another document need not wait behind a long one. The holder,
-  between two of its own runs and with nothing unsaved it might discard, runs `edakit lock yield <session>`. When the
-  guest releases – or its claim expires – EasyEDA goes **back to the holder**, not free, so a third session cannot
-  snatch the gap. (A 7-minute change once waited 93 minutes before this existed.)
-- **Waiting for the user's click holds nothing:** release EasyEDA while waiting (a session once held it for 49 minutes
-  for a click the user did not know about, running a DRC every minute).
+- **Letting a short run in:** a run under 5 minutes on another document need not wait behind a long one. Between two
+  of its own runs, with nothing unsaved it might discard, the holder runs `edakit lock yield <session>`. When the guest
+  releases or its claim expires, EasyEDA goes **back to the holder**, not free, so a third session cannot snatch the
+  gap.
+- **Waiting for your click holds nothing:** release EasyEDA while waiting.
 
-The state lives in `~/.local/state/edakit/easyeda-lock.json` – machine-wide, because EasyEDA is machine-wide.
+The state is machine-wide, as EasyEDA is: `~/.local/state/edakit/easyeda-lock.json`.
 
-The same thinking applies to git when several sessions share one working tree: one branch switch moves everyone, a
-`git add -A` takes other sessions' files. The reference project used a small coordination tool with a commit lock, an
-active branch and a log book, enforced by a PreToolUse hook on git commands. That tool is not part of edakit (it is not
-EDA-specific), but if you run parallel sessions in one repository, build or adopt something like it.
+Git needs the same thinking when several sessions share one working tree: one branch switch moves everyone, and a
+`git add -A` takes other sessions' files. edakit has no tool for it, as it is not EDA-specific. If you run parallel
+sessions in one repository, build or adopt one – a commit lock, an active branch and a log book, enforced by a
+PreToolUse hook on git commands.
 
 ## 11.3 Long runs
 
-- Say up front how long it will take and which step is the longest; show progress (step n/m, minutes). edakit's long
-  commands print it themselves, one line before each step, flushed at once: `[ 3.2 min] step 4/8: pours` –
-  `route all`, `gate` (each stage and project check, with `--easyeda` each board), `pcb apply`, `silk apply`, `export`
-  (two steps per board) and `schematic create`/`layout` (each phase, followed by its duration and EasyEDA's memory). A
-  Monitor on `step ` lines shows where a run is and since when; a stalled run stalls in the step it last named.
-- Start long runs in the background; wait for the notification or watch the log. **Never wait with `pgrep -f`** on a
-  pattern in the same command line – it finds its own shell and never ends. Write an end line and the PID, wait for
-  either.
-- Do not filter the output of a long run down to a few lines – a silent abort is then invisible.
+- Say up front how long a run takes and which step is the longest, and show progress (step n/m, minutes). edakit's
+  long commands print a line before each step, flushed at once – `[ 3.2 min] step 4/8: pours`: `route all`, `gate`
+  (each stage and project check, with `--easyeda` each board), `pcb apply`, `silk apply`, `export` (two steps per
+  board), `schematic create`/`layout` (each phase, followed by its duration and EasyEDA's memory). A Monitor on
+  `step ` lines shows where a run is and since when; a stalled run stalls in the step it last named.
+- Start long runs in the background, and wait for the notification or watch the log. **Never wait with `pgrep -f`** on
+  a pattern in the same command line – it finds its own shell and never ends. Write an end line and the PID, and wait
+  for either.
+- Do not filter a long run's output down to a few lines – a silent abort is then invisible.
 - `uv` installed as a snap cannot write to files Claude Code hands it as stdout: `… 2>&1 | cat`.
 
 ## 11.4 Working agreements that proved themselves
@@ -205,43 +203,38 @@ registered so that every session knows it – a project that keeps working agree
 
 ## 11.5 Memory and project knowledge
 
-The agreements of 11.4 reach every session through the plugin, so a new project does not meet them again the hard
-way. Claude Code's memory (per project) and the project's CLAUDE.md are the place for the preferences of one project
-that are not in the code. Facts
-that are in the repository (decisions, checks, API behaviour) belong in the repository – the decision log, the
-handbook, comments next to the code they explain. Each quirk in chapter 9 is also written as a comment where edakit
-works around it, so the next person does not "simplify" the workaround away.
+The working agreements (11.4) reach every session through the plugin, so a new project starts with them. Claude Code's
+memory (per project) and the project's CLAUDE.md hold one project's preferences that are not in the code. Facts that
+are in the repository – decisions, checks, API behaviour – belong in the repository: the decision log, the handbook,
+comments next to the code they explain. Each EasyEDA quirk (chapter 9) is also a comment where edakit works around it,
+so the next person does not "simplify" the workaround away.
 
 ## 11.6 When edakit falls short: feature proposals
 
 A project finds what edakit cannot do yet: a false finding (a 0 Ω bridge that the checks do not see through), a crash,
 a part of the circuit the simulation leaves out, a routing or pour capability, a silkscreen it cannot place, a check
-without a test. The project then builds it itself or works around it – and edakit and the project drift apart. The
-loop below brings such a gap back, the same way as a rule (14.4), with its own text and its own triage:
+without a test. It builds the capability itself or works around it, and edakit and the project drift apart. This loop
+brings the gap back the way a rule comes (from a finding to a rule, 14.4), with its own text and triage:
 
-1. **Decision in the project.** Which gaps go to edakit is the user's decision, in the project's log.
+1. **Decision in the project.** Which gaps go to edakit is your decision, in the project's log.
 2. **Proposal.** The skill `propose-feature` writes one issue per capability from `edakit proposal template --feature`:
    Capability (what edakit should do, for any board), Gap (the command and what it says today), Reference (how the
    project does it: file, function, commit, the method in words), Interface (keys in edakit.toml or a board or schematic
    file, fields, options – each with the default that leaves existing projects as they are), Test (how a test shows it
-   without EasyEDA), Origin. Shown to the user before it goes out – the issue is public, a private project's code is not
-   quoted without the user's OK – and sealed like a rule proposal.
-3. **Triage.** The Action `proposals` reads the section Kind and runs the skill `triage-feature`, with the checks and
-   layers of a rule proposal (14.4) – who and the format in the workflow, then Claude's judgement. Safe as for rules;
+   without EasyEDA), Origin. The issue is public: you see it before it goes out, a private project's code is quoted only
+   with your OK, and it is sealed like a rule proposal.
+3. **Triage.** The Action `proposals` reads the section Kind and runs the skill `triage-feature` with the checks and
+   layers of a rule proposal – who and the format in the workflow, then Claude's judgement. Safe as for rules;
    plausible: new, the gap real at this commit; acceptable: a feature and not a rule, general rather than one project's
    taste, fitting (project data in the project's files, not in the code), testable without EasyEDA, one capability,
    clear enough. Result as for rules: **Accepted**, **Rejected** with a reason a person can check, or **Question**.
 4. **Build.** The skill `add-feature`: the gap red in a test first, then the interface with its default, the code –
    whatever needs EasyEDA a thin call around a function that is tested –, the example and the projects at hand
-   unchanged, the handbook. One commit per proposal, all of them in one open pull request from `features/proposals`,
-   pushed by the Action's own job once the commit keeps off the pipeline's paths.
-5. **Back in the project.** The Action cannot clone a private project; the pull request gives the commands that show
-   the gap closed there, and the project runs them against the branch before the user merges. After the merge the
-   project's workaround goes and the decision gets `edakit: #14 built`.
+   unchanged, the handbook. One commit per proposal, all in one open pull request from `features/proposals`, pushed by
+   the Action's own job once the commit keeps off the pipeline's paths.
+5. **Back in the project.** The Action cannot clone a private project, so the pull request gives the commands that show
+   the gap closed there; the project runs them against the branch before the merge. After it the project's workaround
+   goes and the decision gets `edakit: #14 built`.
 
-A gap someone else reports in an issue is welcome too; the repository owner hands it over with a sealed proposal as a
-comment there, as for rules (14.4).
-
-Why it exists: the project edakit came from went on growing after the extraction (0 Ω bridges, a common-anode star
-LED, pour-only nets). Before it can use edakit, those have to come back – one proposal each.
-
+A gap someone else reports in an issue is welcome too: edakit's repository owner hands it over with a sealed proposal
+as a comment there, as for rules (14.4).

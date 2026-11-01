@@ -1,8 +1,12 @@
 # 8 The release gate
 
-Only the gate creates the files that go to the manufacturer, and only the current release may be uploaded: the run
-whose manifest says `"released": true` – a newer released run supersedes it (8.3). The gate runs every check, on the
-files themselves, and writes a test protocol.
+For you when a board goes to the manufacturer. After this chapter you know what the gate checks, how a sign-off is bound
+to a hash, when a run is RELEASED, how a released run reaches the maker's cart, and how a project's own scripts, agents
+and requirements take part.
+
+Only the gate creates the files that go to the manufacturer, and only the current release may be uploaded: the run whose
+manifest says `"released": true` – a newer released run supersedes it (one current release, 8.3). The gate runs every
+check on the files themselves and writes a test protocol.
 
 ```bash
 edakit gate              # P, G, E and the project's checks before S – offline, seconds
@@ -13,7 +17,7 @@ On a KiCad project (`[project] toolchain = "kicad"`) `--easyeda` – or `--eda`,
 KiCad files with kicad-cli (16.6).
 
 Before each stage – each project check, and with `--easyeda` each board of stages L/F – the gate prints
-`[x.x min] step n/m: <stage>` (11.3).
+`[x.x min] step n/m: <stage>` (the progress line, 11.3).
 
 "Guaranteed correct" is not reachable with any tool chain. Reachable is:
 
@@ -34,163 +38,92 @@ Before each stage – each project check, and with `--easyeda` each board of sta
 | F – Manufacturing | BOM, stock, pick and place, Gerber set, order settings per maker; with a maker that takes ODB++ the ODB++ against the released files | SYNC.bom, PARTS.stock, SYNC.cpl, SYNC.odb, FILES |
 | *project checks after F* | e.g. a check of this run's Gerber files | `[scripts.<name>]` with `at = "after F"` – see below |
 
-A bought board on a cable (`bought = true`) or a hand-wired one (`wired = true`, 4.5) is in stages P, G and E like
-any board. Stages S and L/F leave it out with one information row each (`SYNC.schematic` and `L`: "bought
-board – no schematic, PCB or manufacturing files", "hand-wired board – …"); FILES.manifest, the manifest and the
+A bought board on a cable (`bought = true`) or a hand-wired one (`wired = true`, 4.5) is in stages P, G and E like any
+board. Stages S and L/F leave it out with one information row each (`SYNC.schematic` and `L`:
+"bought board – no schematic, PCB or manufacturing files", "hand-wired board – …"). FILES.manifest, the manifest and the
 protocol header ("bought, not made: usb; hand-wired, not made: panel") count the made boards only.
 
 **The radio checks** LIM.eirp, LIM.band (stage G) and PARTS.fact (stage P) grade by the graph's `purpose.use` (chapter
 15): what the firmware or a parts entry can settle – a band or a power the firmware has to keep, a radio nobody stated –
 is a warning for a board that is sold (`"sale"`), accepted in the sign-off file (8.2) or accepted on the component, and
-information for one built for oneself or given away, or without a purpose. They fail only on data that cannot be
-read and, LIM.band, on a part that can transmit in no EU band at all.
+information for one built for oneself or given away, or without a purpose. They fail only on data that cannot be read
+and, LIM.band, on a part that can transmit in no EU band at all.
 
-**Stages S, L and F** (per board, `edakit fab`): the engines SYNC – every artifact equals the graph and the plan –,
-GEO – copper, holes, print, widths and distances on the plan and the Gerber files – and FILES – the manufacturing
-files complete and consistent. Their codes, generated from the catalog (`SYNC.schematic` runs in stage S, `SYNC.bom`,
-`SYNC.cpl`, `SYNC.odb`, `PARTS.stock` and FILES in F, the rest in L; `SYNC.source` and `SYNC.footprint` on footprint
-data already in stage P, `SYNC.scripts` and `SYNC.agents` in G):
+### Stages S, L and F
 
-<!-- edakit:generated codes SYNC GEO FILES -->
-**`SYNC.schematic`** – schematic = graph (error; replaces S-2)  
-Every schematic in EasyEDA has exactly the graph's parts (LCSC number, designator) and nets (pins, no-connects).
+Stages S, L and F run per board (`edakit fab`) with three engines: SYNC holds every artifact to the graph and the plan;
+GEO checks copper, holes, print, widths and distances on the plan and the Gerber files; FILES checks that the
+manufacturing files are complete and consistent. `SYNC.schematic` runs in stage S; `SYNC.bom`, `SYNC.cpl`, `SYNC.odb`,
+`PARTS.stock` and FILES in F; `SYNC.source` and `SYNC.footprint` on footprint data already in stage P; `SYNC.scripts`
+and `SYNC.agents` in G; the rest in L. Their codes, generated from the catalog:
 
-**`SYNC.pcb`** – PCB = graph (error; replaces L-1)  
-The PCB has exactly the graph's parts, every pad carries the graph's net, and every graph pin has a pad.
-- parts in the PCB = graph; every pad carries the graph's net; every graph pin has a pad – why it exists: the import may lose or mismatch parts
+<!-- edakit:generated table SYNC GEO FILES -->
+| Code | Title | Severity |
+| --- | --- | --- |
+| [`SYNC.schematic`](../docs/catalog/sync.html#SYNC.schematic) | schematic = graph | error; replaces S-2 |
+| [`SYNC.pcb`](../docs/catalog/sync.html#SYNC.pcb) | PCB = graph | error; replaces L-1 |
+| [`SYNC.footprint`](../docs/catalog/sync.html#SYNC.footprint) | footprint = its source | error, unknown: note; replaces L-4, L-10, P-10 |
+| [`SYNC.plan`](../docs/catalog/sync.html#SYNC.plan) | board = placement plan | error; replaces L-7, L-12, L-20 |
+| [`SYNC.bom`](../docs/catalog/sync.html#SYNC.bom) | BOM = graph | error; replaces F-1 |
+| [`SYNC.cpl`](../docs/catalog/sync.html#SYNC.cpl) | pick and place = PCB | error; replaces F-3 |
+| [`SYNC.odb`](../docs/catalog/sync.html#SYNC.odb) | ODB++ = the released files | error, other_maker: warning; replaces F-7 |
+| [`SYNC.source`](../docs/catalog/sync.html#SYNC.source) | own part = its source | error, margin: warning, stale: pending, unchecked: note; replaces P-3 |
+| [`SYNC.scripts`](../docs/catalog/sync.html#SYNC.scripts) | project scripts current | error, margin: warning, unchecked: note |
+| [`SYNC.agents`](../docs/catalog/sync.html#SYNC.agents) | project agents complete | error |
+| [`GEO.copper`](../docs/catalog/geo.html#GEO.copper) | copper from the Gerber files | error, margin: warning; replaces L-2 |
+| [`GEO.drc`](../docs/catalog/geo.html#GEO.drc) | DRC | error, margin: warning; replaces L-3 |
+| [`GEO.width`](../docs/catalog/geo.html#GEO.width) | track width | error, margin: warning; replaces L-5 |
+| [`GEO.loop`](../docs/catalog/geo.html#GEO.loop) | short current loops | error, margin: warning; replaces L-11 |
+| [`GEO.mark`](../docs/catalog/geo.html#GEO.mark) | polarity marks | error, margin: warning; replaces L-8 |
+| [`GEO.formed`](../docs/catalog/geo.html#GEO.formed) | formed leads fit one way | error, margin: warning, unknown: note, counter: note; replaces P-8 |
+| [`GEO.pour`](../docs/catalog/geo.html#GEO.pour) | copper per side | warning, margin: warning; replaces L-15 |
+| [`GEO.spacing`](../docs/catalog/geo.html#GEO.spacing) | pads and holes keep their distance | error, margin: warning, apart: warning; replaces L-13, L-14, L-16, L-18 |
+| [`GEO.ring`](../docs/catalog/geo.html#GEO.ring) | annular ring | error, margin: warning; replaces L-16 |
+| [`GEO.keepout`](../docs/catalog/geo.html#GEO.keepout) | keep-out areas free of copper | warning, edge: warning |
+| [`GEO.hole`](../docs/catalog/geo.html#GEO.hole) | hole fits the lead | error, margin: warning, unknown: note; replaces P-7, L-9 |
+| [`GEO.silk`](../docs/catalog/geo.html#GEO.silk) | silkscreen as printed | error, margin: warning, body: warning; replaces L-17, L-19 |
+| [`FILES.sheet`](../docs/catalog/files.html#FILES.sheet) | polarity sheet | error; replaces P-2 |
+| [`FILES.manifest`](../docs/catalog/files.html#FILES.manifest) | files of one run | error; replaces F-4 |
+| [`FILES.set`](../docs/catalog/files.html#FILES.set) | Gerber set | error, margin: warning; replaces F-5 |
+| [`FILES.order`](../docs/catalog/files.html#FILES.order) | order settings = board | error, margin: warning, other_maker: warning, tooling: warning, lead: error; replaces F-6 |
 
-**`SYNC.footprint`** – footprint = its source (error, unknown: note; replaces L-4, L-10, P-10)  
-Every part on the board has the footprint its entry names, every pad sits where the library footprint has the pad of its number (intended swaps in pad_map), and a copy built from footprint data equals that data (pads within 0.02 mm, holes within 0.01 mm).
-- footprint per part = parts database – why it exists: a swapped footprint variant
-- every pad sits where the library footprint has the pad with that number (`pad_map` for intended swaps) – why it exists: a pad swap that was reset by EasyEDA
-- the copy equals the footprint data: the footprint `pcb dump` measured on the board (`<board>.geometry.json`) has the entry's footprint name and the data's pads – the same numbers, each within 0.02 mm of its place (SYNC.plan's tolerance), the same hole within 0.01 mm, and where the dump measured them shape, size, rotation and layer; `accept` on the component. A part not dumped yet, or a dump without holes or shapes, is a note. In the gate SYNC.footprint holds the PCB's pads to the same dump (4.5) – finds e.g.: `U1: the copy differs from the footprint data of C18722937 – pad 3 at (11.430, -8.891) instead of (11.430, -8.790) mm` – a pad changed in the text and the copy in the PCB still the old one, found before anything is routed on it
-
-**`SYNC.plan`** – board = placement plan (error; replaces L-7, L-12, L-20)  
-Fixed parts sit where the plan says (±0.02 mm, rotation, side), the plan has no findings of its own, every part of a made board has a row in it, and it keeps what the circuit hands over (layout.fixed, edge, near, a capacitor next to every supply pin).
-- fixed parts in the PCB = plan (± 0.02 mm, rotation, side); the plan itself without findings – why it exists: a part moved by hand or by the auto-layout
-- the plan keeps the circuit's hand-over: `layout.fixed`, `.edge`, `.near` of the graph, a decoupling capacitor of its own next to every IC (7.4) – why it exists: the auto-layout put a decoupling capacitor 24 mm from its IC; what the circuit designer knew got lost on the way to the layout
-- every part the graph puts on the board has a row in `[place]` of the board file – by hand, from `pcb place`, or written back by `pcb autolayout` with `auto = true` (7.4); a part on a bought or hand-wired board (4.5) is on no made board and needs none. The board file decides it alone; the row names the parts without one: `D1, R2: no row in hardware/boards/main.toml [place] (2 of 17 parts)` – why it exists: what EasyEDA's auto-layout placed was in no file: the layout hash did not cover it, SYNC.plan held it to nothing, the direction check, the mated plugs and the mechanical model did not see it, and after a dump the next auto-layout could put it elsewhere – `pcb autolayout` writes its positions back, `pcb takeover --write` takes a board placed before
-
-**`SYNC.bom`** – BOM = graph (error; replaces F-1)  
-The BOM generated from the graph equals the tool chain's BOM per designator – EasyEDA's, on the KiCad tool chain KiCad's –, and every LCSC number is in the parts database; parts with bom: false are left out on purpose.
-- BOM generated **from the graph** in JLCPCB format = the tool chain's BOM per designator (EasyEDA's, KiCad's on the KiCad tool chain); every LCSC number in the parts database; parts with `bom: false` left out on purpose
-
-**`SYNC.cpl`** – pick and place = PCB (error; replaces F-3)  
-Every BOM part is in the pick-and-place file exactly once with the PCB's side and rotation, and only on the sides [release] assembly allows (Economic PCBA: one side, SMD only). A maker of [cart] makers whose zero orientation of a part is not the footprint's ([cpl] zero of its profile – Eurocircuits: IEC 61188-7) gets cpl_<board>_<maker>.csv, every part turned by its footprint's entry in [cpl.turns]; a footprint the profile does not list, or a turned part on the bottom, keeps its rotation and warns.
-- pick and place: every BOM part exactly once, side and rotation = PCB; sides and SMD-only as `[release] assembly` says (Economic PCBA: one side, SMD only; two SMD sides need Standard PCBA)
-- per maker with a zero orientation of its own: `cpl_<board>_<maker>.csv`, each part turned by `[cpl.turns]` of the profile (fnmatch on EasyEDA's footprint name); a footprint not listed, or a turned part on the bottom (the maker's bottom rule unread): its rotation as it is, a warning for that maker – M-2 checks it in the maker's preview. Not in the fab hash: `cpl_<board>.csv` is, the turns are the profile's
-
-**`SYNC.odb`** – ODB++ = the released files (error, other_maker: warning; replaces F-7)  
-With a maker of [cart] makers that takes ODB++ (files = ["odb"] in its profile – AISLER): odb_<board>.zip, exported by EasyEDA through the patched tool easyeda_export_odb or on the KiCad tool chain by kicad-cli pcb export odb, holds to this run's files – every board layer (copper, solder mask, paste, silkscreen) rasterised as GEO.copper does – EasyEDA's RoundRect mask openings as their rectangle, as the ODB++ has them – and XOR'd with the Gerber layer of the same side: no spot above 0.01 mm² of points farther than one raster point (0.02 mm) from the other layer – an edge that far off is the ODB++'s coarser coordinates (kicad-cli: 0.1 µm against the Gerber's 1 nm) –, no layer in one and not in the other; the drill hits = the drill files (place to 1 µm, diameter, plated or not); the profile = the Gerber outline (0.05 mm); every BOM part exactly once at the place (0.01 mm), rotation (ODB++ clockwise, the CPL counter-clockwise) and side of the CPL, with the part number the maker matches by (its profile's bom.match – AISLER: the MPN of the parts entry, which the KiCad tool chain writes into every footprint as MPN and Manufacturer; no match given: LCSC or MPN); a part with bom: false as the maker's profile says – left out (dnp = "omit"), else listed for the skill to mark; a tooling hole of the KiCad tool chain (a footprint with property edakit = "tooling") only marked .no_pop; the nets of the pins as the graph's, compared as groups of pins. An export that failed or cannot be read fails. A failure for [cart] maker, a warning for another maker.
-
-**`SYNC.source`** – own part = its source (error, margin: warning, stale: pending, unchecked: note; replaces P-3)  
-A board copied from another edakit project (own.what pcb, edakit part own) is that project's current datasheet and was copied from a commit, every datasheet a project writes (hardware/datasheet/) is of its current state, and a board that is not released at the state of its datasheet is a warning.
-- own parts (4.5): a board copied with `edakit part own` is its project's current datasheet, copied from a commit (pending otherwise); a board not released at that state is a warning; the project's own datasheets are of its current state – finds e.g.: a board changed after it was copied into the host
-
-**`SYNC.scripts`** – project scripts current (error, margin: warning, unchecked: note)  
-The project's scripts ([scripts.*] with [[release.stages]] and sim_plugin) resolve with edakit's steps into one order, and every script whose inputs changed ran again (hardware/scripts.lock).
-
-**`SYNC.agents`** – project agents complete (error)  
-Every project agent ([agents.*]) has its agent file, signs only what is its to sign, and names in after only agents that exist.
-
-**`GEO.copper`** – copper from the Gerber files (error, margin: warning; replaces L-2)  
-The copper rasterised from the exported Gerber files connects every net, shorts no two nets and contains every connected pad.
-- copper from the **Gerber files**, rasterised at 0.02 mm, layers joined through plated holes, pads from FlyingProbeTesting.json, nets from the graph: every net connected, no short, every pad present – why it exists: do not trust EasyEDA – check what goes to the factory
-
-**`GEO.drc`** – DRC (error, margin: warning; replaces L-3)  
-EasyEDA's design rule check reports nothing (the PCB reloaded and checked once more when it reports Connection Errors). A "Netlist Error – Import Changes" item is checked on its own: schematic and PCB are compared as edakit pcb parts and pcb nets do. With [routing] drc_rules = "check" or "write" in the board file, the rule set the DRC ran with is the board file's: the clearance and edge clearance, the least track width of every net (signal_mil, the classes of [routing.classes]), the least via and the net classes.
-- EasyEDA DRC 0 (reloaded and run again on Connection Errors), two rows: other kinds; schematic and PCB in sync – an Import Changes item with no difference in `netlist_diff.json` is "EasyEDA waits for the import acknowledgement" (still a fail – `edakit route drc` writes the Channel IDs and checks again; else one click), otherwise the differences and `pcb parts --write` / `pcb nets --write`. With `[routing] drc_rules = "check"` (or `"write"`) a third row: the rule set the DRC ran with (`drc_rules.json`, read right after it) = the board file's – clearance, edge clearance, the least track width of every net, the least via, the net classes (7.5) – named, each difference with both numbers – why it exists: a DRC without findings says only that the board keeps the rules EasyEDA holds: the reference project's ran with 0.102 mm from track to track, while the board was routed with 6.5 mil
-
-**`GEO.width`** – track width (error, margin: warning; replaces L-5)  
-Every track is at least as wide as IPC-2221 asks for 1.5 × the largest simulated current (failure) and as the practical width of its net class (warning); the voltage drop is shown as an upper bound.
-- track width ≥ IPC-2221 for 1.5 × the simulated current (fail), ≥ class width (warn), voltage drop upper bound (info); `route check` measures the same on the SES and the fixed wires before writing (7.5) – why it exists: power tracks too thin
-
-**`GEO.loop`** – short current loops (error, margin: warning; replaces L-11)  
-Each pad pair listed in [[loops]] of the board file or in layout.loops of the graph is connected over tracks within its length limit.
-- short current loops (`[[loops]]` of the board file and `layout.loops` of the graph): shortest path over tracks per pad pair within its limit – why it exists: a switching regulator loop routed 61 mm around the board
-
-**`GEO.mark`** – polarity marks (error, margin: warning; replaces L-8)  
-Every '+' or '-' in the silkscreen – a PCB text, or a '+' a footprint draws as two crossing strokes of 0.3–2 mm in the silk Gerber file – sits next to a pad of that sign: the nearest pad on its side whose pin role has a sign (anode…, plus…, vbus '+'; cathode…, minus… '-') has the same one.
-- every "+" and "−" of the silkscreen next to a pad of that sign: the PCB texts "+", "−", and the "+" a footprint draws as two crossing strokes in the **silk Gerber files** (each 0.3–2 mm, as long as the other, at right angles, middles within 0.1 mm). Each is compared with the nearest pad on its side whose role has a sign – `anode…`, `plus…`, `vbus` "+", `cathode…`, `minus…` "−". Strokes of a PCB text with a "+" are that text (a "+5V" is a label); a cross on the shapes of a `[[silk.art]]` item (within 0.2 mm) is artwork, one between them is judged like any other. `waive: {"GEO.mark": "…"}` on the nearest part lists its sign as waived – why it exists: the footprint of a 5-mm LED printed "+" at the cathode: GEO.mark read only PCB texts and gave the cathode no sign, so nothing saw it; a review did, before five boards would have been assembled with the LED turned (4.4)
-
-**`GEO.formed`** – formed leads fit one way (error, margin: warning, unknown: note, counter: note; replaces P-8)  
-A through-hole part whose plated holes the board's footprint (pcb dump) moves away from its library footprint – a hole more than 0.05 mm from the library's hole of the same number, the two footprints laid on each other by their numbers – and that has three or more plated holes is not laid onto itself by a turn of 90°, 180° or 270° about its holes, every hole within 0.25 mm of a hole, with a pin in the hole of a pin on another net of the graph. Pins on one net do not count, two holes and a part on its library pattern are not judged; without the library footprint of edakit part import it is a note. A turn that lays the library footprint onto itself – one row by nature – lays the board's holes onto the library's pattern with the offsets at other legs: where a part bent at those legs instead puts a pin in the hole of a pin on another net, it is a note that names the legs of that counter-bend and where each pin lands.
-- formed leads fit only one way round: a part whose plated holes the board's footprint (`pcb dump`) moves away from the library footprint of `edakit part import` – a hole more than 0.05 mm (SYNC.footprint's tolerance) from the library's hole of its number, the two laid on each other by their numbers –, with three or more of them, is not laid onto itself by a turn of 90°, 180° or 270°, every hole within 0.25 mm of a hole, with a pin in the hole of a pin on another net; pins on one net do not count, two holes and a part on its library pattern are not judged (its orientation is the print's job, GEO.mark). The pads are matched as `part diff` matches them (7.3). The finding names the turn and the pins: `D31: its formed holes lie on each other turned by 180° – pin 1 (V_LED) in the hole of pin 3 (STAR_G_K), pin 2 (STAR_R_K) in the hole of pin 4 (STAR_B_K)`; `accept` on the component; without the library footprint a note – finds e.g.: an RGB star LED with two legs bent the same way, which went in turned by 180° as easily – anode in a cathode's hole, the star dark –, with a "+" at the anode and every check passed
-- the counter-bend (grade `counter`, a note): a turn of 90°, 180° or 270° that lays the library footprint onto itself – one row always by 180° – lays the board's holes onto the library's pattern with the offsets at other legs; a part bent at those legs goes in turned. Where that puts a pin in the hole of a pin on another net, the note names the legs, their offsets in the footprint's frame (the offset most legs share counts as straight) and where each pin lands: `D31: bent at other legs it goes in turned by 180° – pin 2 by (+0.00, +1.60) mm, pin 3 by (+0.00, -1.60) mm: pin 1 (V_LED) in the hole of pin 3 (STAR_G_K), …`. A counter-bend equal to the board's own bend is the error above, not a note. `accept` `GEO.formed/counter` (or `GEO.formed`) on the component, with the assembly instruction as the reason – finds e.g.: the same star LED with its legs bent the opposite ways, which a solderer holding it turned bends at pins 2 and 3 – it fits turned by 180°, the star dark, green near the supply in reverse
-
-**`GEO.pour`** – copper per side (warning, margin: warning; replaces L-15)  
-Per copper layer the Gerber copper's share of the board area and its largest copper-free circle inside the pour outline are reported; on a layer the board file pours, a copper-free circle above [copper] max_bare_mm (5 mm) is a warning, and so is every copper-free piece a pour could fill (what is left after an opening with a disc of 2 × clearance_mm + min_width_mm, 0.75 mm by default) above [copper] max_bare_mm2 (20 mm²); a share below [copper] min_cover on any layer is one, and on every layer so is a copper piece that touches no pad, via or plated hole (copper inside an NPTH or mounting hole is drilled away).
-- copper per layer on GEO.copper's raster of the **Gerber files**, widened to the outline: the copper share of the board area (without mounting and NPTH holes) and the largest copper-free circle inside the pour outline (the outline `pcb pour` pours, 7.6) – information; on a layer the board file pours (`[[pours]]`, default GND on both) a circle above `[copper] max_bare_mm` (5 mm) warns, so does every copper-free piece a pour could fill – opened with a disc of 2 × `clearance_mm` + `min_width_mm` of its `[[pours]]` (0.75 mm; a narrower gap is the clearance between foreign copper) – above `[copper] max_bare_mm2` (20 mm², the area of the 5 mm circle), with its area, its box and the other side's copper share there, a share below `[copper] min_cover` warns, and on every layer a copper piece that touches no pad (FlyingProbeTesting.json), via or plated hole warns, with its area and place. Copper inside an NPTH or mounting hole is drilled away. One row per layer, so an accepted warning covers its layer – why it exists: EasyEDA drops every pour piece without a pad of its net: half the back of a released board stayed bare (47 % copper, a copper-free circle of Ø 9.7 mm) where ground had no pads, with DRC 0 and every check passed; it was seen by eye before the order
-
-**`GEO.spacing`** – pads and holes keep their distance (error, margin: warning, apart: warning; replaces L-13, L-14, L-16, L-18)  
-Every pad keeps the routing clearance from every pad of another part on another net, SMD pads on an assembled side the paste gap, hand-soldered joints their keep-out, and every two plated holes JLCPCB's hole-to-hole spacing. With layout.apart in the graph: the copper of each pair of nets keeps min_mm apart on every layer, measured on the Gerber files (grade apart, a warning while new).
-- pads of different parts on different nets at least the routing clearance (`clearance_mil`) apart on every copper layer both are on; a pad without a net counts as a net of its own, pads of one part are not compared. Measured as `route check` measures it (7.5), on the pads of `route read` (`<artifacts>/route/<board>_board.json`) – pcb.json has no pad shapes –, and only while every pad there sits where the PCB has it, on its layer and net; otherwise GEO.spacing fails and asks for `route read`. `waive: {"GEO.spacing": "…"}` on one of the two parts or nets lists the pair as waived – why it exists: two resistors stood with their pads 0.09 mm apart: the plan compares boxes, `route check` measured only tracks and vias, and only EasyEDA's DRC could have seen it, after the copper was written
-- on every side that is assembled (`[release] assembly` `sides`), SMD pads of different parts on different nets at least the paste gap (`paste_gap_mm`, 0.4 mm) apart, so that the stencil keeps a web between their prints; a pad without a net counts as a net of its own, pads of one part, through-hole pads and pads on a side that is not assembled are not compared. Measured on the pads of `route read` like GEO.spacing, and only while they are the PCB's. `waive: {"GEO.spacing": "…"}` on one of the two parts or nets lists the pair as waived – why it exists: the paste of a ground pad and a transistor base pad of neighbouring parts was 0.06 mm apart: above every copper rule, a bridge in reflow that the bare-board test cannot see; the layout review found it
-- with `[routing] hand_solder_keep_mm` (0 = off): on the solder side of every pad of a part with `bom: false` – for a through-hole pad the layer the part does not sit on, for an SMD pad its own layer, the side the part sits on – no via and no pad of another net closer than the keep, copper to copper; a pad without a net counts as a net of its own, the part's own pads are not compared, tracks do not count. Pads as `route read` saw them, like GEO.spacing; vias from the via drill file, with the net of the tracks of pcb.json that end on them – a via no track ends on counts as another net's ('via (no track, net unknown)'). `route check` measures the same before writing, and `route dsn` keeps vias away (7.5). `waive: {"GEO.spacing": "…"}` on the joint's part or net, or on the other part or net, lists the pair as waived – why it exists: the layout review found a via 0.25 mm from a hand-soldered LED joint – a bridge would have put 5 V without its resistor on an LED –, a via 0.26 mm between potentiometer pins and a resistor pad 0.37 mm from an LED joint; every check had passed; the SMD pads came in when the walkthrough's coin cell holder, soldered by hand on two SMD tabs, was not looked at – a tab soldered with an iron bridges to a via as a through-hole joint does
-
-**`GEO.ring`** – annular ring (error, margin: warning; replaces L-16)  
-Every plated hole keeps JLCPCB's annular ring on TOP and BOTTOM – a component hole 0.18 mm (2 layers, 1 oz; below 0.20 mm a warning), from the hole's edge to the nearest point without copper in the Gerber files, a via 0.05 mm (via Ø at least hole + 0.1 mm) on its own pad, a pour around it not counted; and every two plated holes, also two of one part, keep JLCPCB's hole-to-hole spacing edge to edge: 0.45 mm when a component hole is one of them, 0.2 mm between two vias.
-- every plated hole keeps JLCPCB's annular ring on TOP and BOTTOM (2 layers, 1 oz): a component hole 0.18 mm, below 0.20 mm a warning per part, a via 0.05 mm (via Ø ≥ hole + 0.1 mm) – measured in the **Gerber files**: a component hole from the hole's edge to the nearest point without copper, so a pad, a track or a pour around the hole counts alike; a via on its own pad, the flash at its centre as EasyEDA and KiCad write a via (a pour is a region, a track a draw), and on the copper around the hole only where a layer flashes no pad there – inside a pour of its own net the copper around the hole reached the measuring limit of 1 mm and hid a pad too small for its hole; and every two plated holes, also two of one part, keep JLCPCB's hole-to-hole spacing edge to edge: 0.45 mm when a component hole is one of them, 0.2 mm between two vias. Vias are the holes of the via drill file, the other plated holes are named by the through-hole pad of pcb.json at their place. Within 0.001 mm counts as kept (EasyEDA keeps mil and writes mm). `waive: {"GEO.ring": "…"}` on a part or net lists its holes as waived – why it exists: an RGB LED at 1.25 mm pitch had its holes widened for its legs (GEO.hole) to 0.80 mm with pads of 1.06 mm: a ring of 0.13 mm, below the fab's minimum of 0.18 mm, passed the gate; via pairs 0.47 mm apart were flagged by a review against a figure from memory, where the fab's table allows 0.2 mm
-
-**`GEO.keepout`** – keep-out areas free of copper (warning, edge: warning)  
-Where a part's entry gives an antenna keep-out (antenna.keepout_mm, in the footprint's frame), the board has no copper inside it on either layer – tracks, pours, pads and vias of any net – placed where the part sits; for a module plugged over a carrier the carrier's copper counts. Where the entry also gives how far inside the board's outer edge the antenna area may lie (antenna.edge_mm, the module maker's layout guide), the area lies at or over the outer outline of the Gerber files, at most that far inside it – a cut-out inside the board is no edge (grade edge). A warning while new.
-- the antenna at the edge (grade edge): the antenna area of `antenna.keepout_mm`, placed where pcb.json has the part, measured against the outer outline of the Gerber outline file with shapely – at or over it passes, inside it the distance to the outside is held to `antenna.edge_mm` (0.05 mm for the outline's rounding); a closed path inside the board (a hole, a cut-out) does not count as the edge, because Espressif asks for the module at the board's edge, not in the middle with a clearance hollowed out on all four sides. Espressif's modules: 1 mm for the ESP32 and ESP32-S3 modules (figures 25 and 26 of their hardware design guidelines, 'Max 1' between the antenna and the board's edge), 0 for the ESP32-C3 modules (figure 21 shows no distance; the text asks for the antenna outside the base board). The clearance of at least 15 mm beside an antenna in a cut-out and inside the housing is not checked – the pcb reviewer asks for it (domain radio) – finds e.g.: a WROOM module placed in the middle of a carrier, its antenna over the carrier's material
-
-**`GEO.hole`** – hole fits the lead (error, margin: warning, unknown: note; replaces P-7, L-9)  
-Every plated hole takes its lead at nominal size (lead in the entry) – on the footprint geometry before the layout, on the drill file in the gate; less than 0.05 mm play in the worst case, or a plated slot narrower than 0.5 mm, is a margin.
-- through-hole leads known and fitting the footprint, before the layout: GEO.hole's test (8.1) on the holes of the footprint geometry – the board's `pcb dump`, else the library footprint of `edakit part import`; plated holes without `lead` in the entry pending, a hole that does not take the lead an error (`accept` on the component), tight in the worst case or a plated slot below 0.5 mm a warning; without geometry a note – finds e.g.: a library footprint drilling 0.70 mm for □0.5 mm legs, found before anything is placed
-- every through hole takes its lead at nominal size (lead data in the component's parts entry – its lcsc, or without one the entry its part names, as for every other check, 3.1); worst case (hole −0.08 mm, lead + tolerance) below 0.05 mm play or plated slots narrower than 0.5 mm: warning per part. GEO.hole runs the same test before the layout, on the footprint geometry (3.3) – why it exists: two parts whose leads would not have fitted the library holes
-
-**`GEO.silk`** – silkscreen as printed (error, margin: warning, body: warning; replaces L-17, L-19)  
-edakit's print lies on no solder-mask opening and inside the outline, every part has a visible designator, the visible side carries only the texts the board file puts there, and no print lies under a body larger than its footprint (body.box of the parts entry) – grade body.
-- the silkscreen from the **Gerber files** (silk, mask, outline), per side. edakit's own print on a solder-mask opening fails: the designators, texts and artwork of `silk apply`, i.e. what is not in the print `silk apply` found before it placed anything (it keeps that in `<artifacts>/silk_footprints_<board>/`). Warnings: other print on an opening, one per part (the part of the nearest pad); print beyond the board outline, one per side; a part of the `designators` side without a visible designator (read with the PCB), group label (`[silk] groups`) or line in `[silk] unlabelled`; a text height edakit prints below 1.0 mm (`label_h_mm`, `board_label_h_mm`, `h_mm` of `[[silk.texts]]`). Spots below 0.0005 mm² are rounding; a side or part counts from 0.001 mm² – why it exists: designators lost after reroutes and a test point never labelled were found on pictures or in a review; the released board passed the gate with footprint print on the mask openings of 11 parts, which JLCPCB clips, and 3.3 mm² of print beyond its outline
-- under a body larger than its footprint (grade body, a warning while new): a part whose parts entry gives `body.box` (4.1, the body seen from above in footprint mm – a coin cell standing out of its holder) covers the print under it. The box is placed where pcb.json has the part; where it reaches beyond the footprint's box (the geometry of `pcb dump`), print on the part's side in the Gerber file – a designator, a text – warns, one row per part with its spots; inside the footprint box lies the footprint's own print, which the Gerber file cannot tell from a designator, and nothing there is looked at. A part without `body.box` gets no row, one without footprint geometry is listed as not checked. `silk apply` places designators beside the body and names a fixed designator ([silk] place) under one – why it exists: in the walkthrough (handbook 17.11) silk apply put BT1's designator right above the holder's footprint box, under the coin cell; the layout review found it, every check had passed
-- with `[looks]` (7.5): every PCB text on the silkscreen of the visible side (pcb.json `strings`) is one the board file puts there – the board label when its side (`board_label_side`, default the `designators` side) is the visible one, the text of a `[[silk.texts]]` entry of that side, and, when `[silk] designators` is that side, a designator of the board or a key of `[silk] groups`; while `[silk] designators` names the other side, no part on the visible side shows its designator (read with the PCB, as GEO.silk). One fail per text or part, with side, text and position: `BOTTOM (visible): D31 shows its designator – [silk] designators is top`, `TOP (visible): text 'TEST' at (15.0, 3.0) mm is neither the board label nor a [[silk.texts]] entry of this side`. The footprints' own print is no PCB text (GEO.mark, GEO.silk), artwork is fills; a "+" placed by hand as a text goes into `[[silk.texts]]`, where GEO.mark still reads it. `waive: {"GEO.silk": "…"}` on a part lists its designator as waived – why it exists: a part placed again after `silk apply` (a footprint change) came back with its designator on the LED side, whose rule was designators off and the version line as the only text; every check passed and the layout review rated it "block"
-
-**`FILES.sheet`** – polarity sheet (error; replaces P-2)  
-Every board gets a polarity sheet drawn from the Gerber data: each polarised part with copper, silkscreen, pad numbers, pin roles and nets, and the signs GEO.mark pairs with it, also beyond the footprint.
-
-**`FILES.manifest`** – files of one run (error; replaces F-4)  
-The upload files of every maker of [cart] makers – JLCPCB's Gerber ZIP, BOM and pick-and-place file without [cart] – come from the same gate run, with their SHA-256 in fab/manifest.json; a file the planned maker takes missing fails, one only another maker takes is a warning named with that maker, and edakit cart prepare stops for it.
-- the upload files of every maker of `[cart] makers` from the same run – JLCPCB's Gerber ZIP, BOM and pick and place without `[cart]`, `bom_<b>_mpn.csv`, `cpl_<b>_<maker>.csv` and `odb_<b>.zip` for the makers that take them; `fab/manifest.json` with SHA-256 per file, the state hashes and the fab hash (8.2); a missing file of a maker other than the planned one a warning
-
-**`FILES.set`** – Gerber set (error, margin: warning; replaces F-5)  
-The Gerber set is complete; outline and mounting holes equal the plan (±0.2 mm); tooling holes are in the NPTH drill file with the mask open and no copper in the opening.
-- Gerber set complete (a missing file is named here, and GEO.copper, GEO.mark, GEO.hole and GEO.silk, which read it, report it as not checked); outline and mounting holes from the outline layer = plan (± 0.2 mm); tooling holes in the NPTH file, mask open, no copper in the opening
-
-**`FILES.order`** – order settings = board (error, margin: warning, other_maker: warning, tooling: warning, lead: error; replaces F-6)  
-With [order] (of the board file or of edakit.toml) or [cart]: per maker of [cart] makers – a finding fails for [cart] maker, JLCPCB without [cart], and warns for every other maker – every field's value is one the maker's form offers (its profile edakit/makers/<maker>.toml; a list the profile marks as read only in part leaves another value unchecked), no combination the profile excludes; the remark fits the form (JLCPCB: at most 200 characters, all ASCII); the board's thickness_mm is a thickness of the form (JLCPCB, FR-4, 2 layers: 0.4, 0.6, 0.8, 1.0, 1.2, 1.6, 2.0 mm); the silkscreen colour is the one the maker prints on the solder mask colour (JLCPCB: black on a white mask, white on every other); mark = "specify" has the maker's placeholder (PCBWay: WayWayWay) on a silkscreen layer, at least its least height in [[silk.texts]] (a height not given there is a warning) – at a maker whose form offers no order number at its place (JLCPCB since May 2026: "Remove Mark" or a 2D barcode) mark = "specify" is a value the form does not offer; a placeholder with another mark is a warning; while the maker's profile reports its order number gone (rules.placeholder_gone), its placeholder on the board or mark = "specify" is a warning; another maker's placeholder on the silkscreen is a finding – PCBWay's WayWayWay at any other maker: the maker prints the letters; a former placeholder (rules.former_placeholder: JLCPCB's JLCJLCJLCJLC, its order number gone since May 2026, seen on its form by ordering step 0 on 2026-10-31) is a warning at every maker, JLCPCB too: the letters are printed as text; an assembly class with fewer tooling holes than the profile names is a warning (JLCPCB: Economic, 2); [order] customs, the shipment's customs category with its HS code, is an entry of the maker's form (JLCPCB's "Product Description") – not set where the form asks it, it is named as information: the owner chooses it at the cart. Independent of the maker: [order] layers and size_mm, where set, are those of the Gerber files; delivery = panel_by_customer fails (the run is one board); pcba_quantity is at most quantity, and another number than [project] quantity is a warning; no copper of either side lies within tab_copper_mm (1.0 mm) of a declared tab zone of the outline, measured on the Gerber files; a finish with lead (HASL that is not lead-free) fails for purpose.use sale or without a purpose, warns for gift and is a note for private (grade lead, as ORDER.finish grades it at the cart). The outline stretches free of copper are listed, a provisional profile is named, and fab/<board>/order.md holds every field of the planned maker's form with its value and where it comes from. Without [order] and [cart] no order.md is written: a board with [tooling] holes and assembled parts, on a class the planned maker asks tooling holes for (JLCPCB: Economic), is a warning (grade tooling) – no file tells the maker that the holes are the customer's.
-- with `[order]` (board file or edakit.toml) or `[cart]` (8.4), per maker of `[cart] makers` – a finding fails for the planned maker and warns for every other one (grade `other_maker`): every field a value the maker's form offers (its profile), no combination it excludes; the remark at most 200 characters, ASCII (JLCPCB); `thickness_mm` a thickness of the form – JLCPCB 0.4, 0.6, 0.8, 1.0, 1.2, 1.6 or 2.0 mm; the silkscreen colour the one the maker prints on the mask colour – JLCPCB black on white, white on every other; `mark = "specify"` with the maker's placeholder (PCBWay: `WayWayWay`) on a silkscreen layer of pcb.json, at least its least height in `[[silk.texts]]` (no height there: warning) – JLCPCB offers no order number at a place since May 2026, so `mark = "specify"` is not a value of its form; the placeholder with another mark (warning); while the profile reports the maker's order number gone, its placeholder or `mark = "specify"` (warning); another maker's placeholder – PCBWay's `WayWayWay` – on the silkscreen; JLCPCB's former placeholder `JLCJLCJLCJLC` at every maker (warning: printed as text); fewer tooling holes than the class needs (warning: JLCPCB drills its own); `customs` an entry of the maker's form – JLCPCB's "Product Description", category and HS code –, not set where the form asks it (information: the owner chooses it at the cart). For every maker: `layers` and `size_mm` where set = the Gerber files; `panel_by_customer` (fail); `pcba_quantity` at most `quantity`, another number than `[project] quantity` (warning); no copper of either side within `tab_copper_mm` of a declared tab zone, measured on the Gerber copper against the Gerber outline (fail, with the distance and the position); a finish with lead, HASL that is not lead-free – fail for `sale` or no purpose (RoHS), warning for `gift` (REACH Art. 33), information for `private` (grade `lead`, as ORDER.finish at the cart; support, not legal advice); the outline stretches free of copper and a provisional profile (information). Without `[order]` and `[cart]`: `[tooling]` holes on an assembled board of a class the planned maker asks tooling holes for – JLCPCB Economic – warn (grade `tooling`): no order.md tells the maker they are the customer's
+Rule, why, fix and sources of each: `edakit explain CODE`, or the code on its page of the catalog.
 <!-- edakit:end -->
 
-With `[looks]` in the board file (7.5), stage L adds a row of its own (ID `L`, no check of the catalog): the visible
-side's track length from pcb.json, every layer's in brackets, and the vias of the via drill file – information, and
-a warning per limit (`max_track_m`, `max_vias`) the side exceeds, accepted or fixed like any warning – and runs
-GEO.silk on the side's print. In the reference
-project the layout review measured the LED side by hand at every round; the row has the numbers in the protocol.
+With `[looks]` in the board file (7.5), stage L adds a row of its own (ID `L`, no check of the catalog) and runs
+GEO.silk on the visible side's print. The row gives the visible side's track length from pcb.json, every layer's in
+brackets, and the vias of the via drill file. It is information, and a warning per limit (`max_track_m`, `max_vias`) the
+side exceeds, accepted or fixed like any warning.
 
-Plus FILES.sheet: a **polarity sheet** per board – every polarised part drawn from the Gerber data with copper,
-silkscreen, pad numbers, pin roles and nets, bottom parts mirrored as seen from below. A tile shows the part's pads and
-the signs GEO.mark pairs with the part, 3 mm around, also a "+" beyond the footprint. It is what the second check
-compares with the datasheet drawings, and what you compare with the maker's assembly preview.
+FILES.sheet draws a **polarity sheet** per board: every polarised part from the Gerber data with copper, silkscreen, pad
+numbers, pin roles and nets, bottom parts mirrored as seen from below. A tile shows the part's pads and the signs
+GEO.mark pairs with the part, 3 mm around, also a "+" beyond the footprint. The second check compares it with the
+datasheet drawings, and you compare it with the maker's assembly preview.
 
-**Seen red.** No EasyEDA run is needed to test stages L and F. `tests/test_fab_run.py` cuts the example down to its
-input stage (J1, D1, C2 on a 30 × 20 mm board) and writes the export for it: the files `edakit fab` collects, the
-footprint geometry, the net currents and the board as `route read` saw it (pads with their shapes, for GEO.spacing).
-`edakit fab --offline` on that export passes every row. Then each entry of
-`FAULTS` builds one fault into a copy: a pad net, a part moved or turned, a short or an open net in the Gerber copper,
-a hole too small in the drill file, a changed LCSC number, a part missing from the pick-and-place file, a tooling
-hole missing from the NPTH file. The check that should find the fault fails (or warns) and names the part, net or
-file. Each test lists every row that fails or warns, so a check that also fires is noticed too. Most faults hit
-one check. A few hit two, because the fault touches both: a part turned by 90° (SYNC.plan, SYNC.cpl), a through-hole pad
-without its hole (GEO.hole, and GND open in GEO.copper), a copper dot in a tooling hole's opening (FILES.set, and a
-loose piece in GEO.pour), a plated slot 1.2 mm long in a round pad of 1.4 mm (GEO.hole, and its ring of 0.1 mm in
-GEO.ring). A new check of L or F gets its fault there.
+### Seen red without EasyEDA
 
-**Project checks.** A project holds up the release with checks of its own: a script registered in edakit.toml as
-`[scripts.<name>]` of kind `check` (8.6, 10.1), or the older `[[release.stages]]` – `{id = "K", name = "Mechanics",
-cmd = ["uv", "run", "mech/check.py", "--json"], advisory = true}` –, which counts as a check of phase `export` before
-S. Every check of phase `export` is a stage of its own, with its `id` – the reference project's stand:
+No EasyEDA run is needed to test stages L and F. `tests/test_fab_run.py` cuts the example down to its input stage (J1,
+D1, C2 on a 30 × 20 mm board) and writes the export for it: the files `edakit fab` collects, the footprint geometry, the
+net currents and the board as `route read` saw it (pads with their shapes, for GEO.spacing). `edakit fab --offline` on
+that export passes every row.
+
+Then each entry of `FAULTS` builds one fault into a copy: a pad net, a part moved or turned, a short or an open net in
+the Gerber copper, a hole too small in the drill file, a changed LCSC number, a part missing from the pick-and-place
+file, a tooling hole missing from the NPTH file. The check that should find the fault fails (or warns) and names the
+part, net or file. Each test lists every row that fails or warns, so a check that also fires is noticed too.
+
+Most faults hit one check. A few hit two, because the fault touches both: a part turned by 90° (SYNC.plan, SYNC.cpl), a
+through-hole pad without its hole (GEO.hole, and GND open in GEO.copper), a copper dot in a tooling hole's opening
+(FILES.set, and a loose piece in GEO.pour), a plated slot 1.2 mm long in a round pad of 1.4 mm (GEO.hole, and its ring
+of 0.1 mm in GEO.ring). A new check of L or F gets its fault there.
+
+### Project checks
+
+A project holds up the release with checks of its own: a script registered in edakit.toml as `[scripts.<name>]` of kind
+`check` (8.6, 10.1), or the older `[[release.stages]]` –
+`{id = "K", name = "Mechanics", cmd = ["uv", "run", "mech/check.py", "--json"], advisory = true}` –, which counts as a
+check of phase `export` before S. Every check of phase `export` is a stage of its own, with its `id` – a real project's
+stand:
 
 ```toml
 [scripts.mechanik]
@@ -202,123 +135,140 @@ phase    = "export"
 advisory = true             # the stand is adapted after delivery anyway (D-37)
 ```
 
-- **Where it runs:** `at = "before S"`, the default, between E and S, where `[[release.stages]]` always ran – in the
-  order `edakit scripts` shows, `after` orders checks among each other; `at = "after F"` after stage F, to read this
-  run's manufacturing files – only in `edakit gate --easyeda`: the offline gate lists it as a stage not run, as S, L
-  and F.
+- **Where it runs:** `at = "before S"`, the default, runs it between E and S, where `[[release.stages]]` always ran, in
+  the order `edakit scripts` shows; `after` orders checks among each other. `at = "after F"` runs it after stage F, to
+  read this run's manufacturing files – only in `edakit gate --easyeda`: the offline gate lists it as a stage not run,
+  as S, L and F.
 - **What it gets:** its `cmd` runs in the project folder, with the gate's environment and `EDAKIT_RUN`, the absolute
-  path of this run's folder `<reports>/<run>/` – its `sim.json` and `graph_checks.json`, after F `fab/<board>/` with
+  path of this run's folder `<reports>/<run>/`: its `sim.json` and `graph_checks.json`, after F also `fab/<board>/` with
   `gerber/`, `gerber_<board>.zip`, `bom_<board>.csv` and `cpl_<board>.csv`, and the files of the other makers of
-  `[cart] makers`. `python` or `python3` as the first word
-  of a `[scripts]` check's `cmd` is edakit's own interpreter, so the check can import edakit; a `[[release.stages]]`
-  runs as written (8.6). It may take 900 s; a `[[release.stages]]` sets its own with `timeout`.
-- **Its result:** stdout and stderr go to `stage_<id>.txt` in the run's folder. The last stdout line may be a JSON
-  list of `[id, check, actual, expected, ok]`, one row each; otherwise one row with the exit code, and 0 passes. The
-  rows stand in section 8 of the protocol, the stage with its counts in section 1, a failed row in section 2.
-- **A failure** blocks the release. With `advisory = true` it is an advisory finding instead: section 2 lists it
-  under "Advisories (do not block the release)", and nobody accepts it.
+  `[cart] makers`. `python` or `python3` as the first word of a `[scripts]` check's `cmd` is edakit's own interpreter,
+  so the check can import edakit; a `[[release.stages]]` runs as written (8.6). It may take 900 s; a
+  `[[release.stages]]` sets its own with `timeout`.
+- **Its result:** stdout and stderr go to `stage_<id>.txt` in the run's folder. The last stdout line may be a JSON list
+  of `[id, check, actual, expected, ok]`, one row each; otherwise one row with the exit code, and 0 passes. The rows
+  stand in section 8 of the protocol, the stage with its counts in section 1, a failed row in section 2.
+- **A failure** blocks the release. With `advisory = true` it is an advisory finding instead: section 2 lists it under
+  "Advisories (do not block the release)", and nobody accepts it.
 - **No stamp:** a check runs in every gate; its `reads` only order it among the scripts (8.6).
-- **After the export** nothing runs in the gate. A check of phase `order` – the owner runs it at the manufacturer,
-  after uploading, before paying – is an unchecked line of section 6 under "after uploading to the manufacturer,
-  before paying", which M-2 works through; one of phase `acceptance` – the reference project's camera test of every
-  delivered tree – a line of the acceptance list "after delivery, per board", which M-4 works through (8.5). Each line
-  has the check's id, name, `about` and command.
-- **Entries that do not resolve** (8.6) run none of their checks: stage G fails and names why. `[[release.stages]]`
-  run as before.
+- **After the export** nothing runs in the gate. A check of phase `order` is an unchecked line of section 6 under
+  "after uploading to the manufacturer, before paying": you run it at the manufacturer, and M-2 works through the list.
+  One of phase `acceptance` – a real project's camera test of every delivered board – is a line of the acceptance list
+  "after delivery, per board", which M-4 works through (acceptance, 8.5). Each line has the check's id, name, `about`
+  and command.
+- **Entries that do not resolve** (8.6) run none of their checks: stage G fails and names why. `[[release.stages]]` run
+  as before.
 
 A mechanics check reads the board – outline, holes, part boxes, heights, lead protrusion, mated plugs – from
-`<artifacts>/mech_<board>.json`, which `edakit pcb plan` writes (7.4); the gate does not run the plan, so a check that
+`<artifacts>/mech_<board>.json`, which `edakit pcb plan` writes (7.4). The gate does not run the plan, so a check that
 needs the file current runs `edakit pcb plan` first.
 
 ## 8.2 Hashes and sign-offs
 
+### The four hashes
+
 Every run records three hashes in the protocol header, and a run with stage F a fourth:
 
-- **circuit** (`state_sha256`): graph (with its ground net and check settings), parts database, simulation config
-  (and plugin, `[release] state_files`), and the requirements files of `[project] requirements` (3.6, 8.7) – a
-  changed requirement voids M-1 and M-6, as a new purpose does: the reviews read the requirements
+- **circuit** (`state_sha256`): graph (with its ground net and check settings), parts database, simulation config (and
+  plugin, `[release] state_files`), and the requirements files of `[project] requirements` (3.6, 8.7) – a changed
+  requirement voids M-1 and M-6, as a new purpose does: the reviews read the requirements
 - **electrical** (`electrical_sha256`): the circuit hash without the footprint data of the parts entries (4.5) – what
-  M-6 is bound to, since a footprint has no regulatory content (the owner's decision of 2026-10-31); a changed pad
-  voids M-1, not M-6. Without footprint data in any entry it covers what the circuit hash covers
-- **layout** (`layout_sha256`): the board files with the artwork they place (`[[silk.art]]`) and the footprint
-  geometry beside them (`<board>.geometry.json`, 7.4), and `[release] layout_files` – of the made boards; a bought
-  or hand-wired board has none. Where a parts entry has footprint data (4.5), the data of every entry a part of a made
-  board uses as well, after the files, as canonical JSON without the keys of `[release] hash_ignore`: a changed pad
-  voids the sign-offs of scope `layout` as a changed geometry does. A project without footprint data keeps its hash; one
-  with it has "footprint data" among what the protocol header says the hash covers. The circuit hash covers the data
-  without more: it takes every parts file, byte for byte or (with `hash_ignore`) as canonical JSON – a changed pad
-  voids M-1 too, which checks polarity at the footprint; the electrical hash leaves it out
-- **fab** (`fab_sha256`): what the manufacturer builds from, per made board – every Gerber layer of
-  `fab/<board>/gerber/` rasterised at 0.02 mm as GEO.copper does, in the frame of the board outline (documentation and
-  drill-drawing layers left out: nobody builds from them), the drill hits (both ends, diameter) rounded to 1 µm and
-  sorted, the rows of `bom_<b>.csv` and `cpl_<b>.csv` sorted; with `[order]` (of the board file or of edakit.toml,
-  8.4) also the order settings that change the board as made – the thickness as ordered (`thickness_mm`), the colours
-  of mask and silkscreen, the finish and the order-number mark, and the other keys that change it where they differ
-  from edakit's default (10.2) –, which stage F writes to `fab/<board>/order.json`; with the method
-  (`fab_method`, "raster 0.02 mm v1"), so that a new method shows. The manifest has it with the hash per board and
-  file (`fab_layers`). The remark and the tab zones stay out: the remark is free text to the maker, and the tab zones
-  reach it only through the remark – neither changes the board as made. A board without `[order]` has no order
-  settings in the hash and keeps the fab hash it had. The files only some makers take – `bom_<board>_mpn.csv`,
-  `cpl_<board>_<maker>.csv`, `odb_<board>.zip` – stay out too: they are written from the hashed files and the parts
-  entries, SYNC.cpl and SYNC.odb hold them to those, and the manifest has their SHA-256.
+  M-6 is bound to, since a footprint has no regulatory content; a changed pad voids M-1, not M-6. Without footprint data
+  in any entry it covers what the circuit hash covers
+- **layout** (`layout_sha256`): the board files with the artwork they place (`[[silk.art]]`) and the footprint geometry
+  beside them (`<board>.geometry.json`, 7.4), and `[release] layout_files` – of the made boards; a bought or hand-wired
+  board has none. Where a parts entry has footprint data (4.5), the data of every entry a part of a made board uses as
+  well, after the files, as canonical JSON without the keys of `[release] hash_ignore`: a changed pad voids the
+  sign-offs of scope `layout` as a changed geometry does. A project without footprint data keeps its hash; one with it
+  has "footprint data" among what the protocol header says the hash covers.
+- **fab** (`fab_sha256`): what the manufacturer builds from, per made board –
+  - every Gerber layer of `fab/<board>/gerber/` rasterised at 0.02 mm as GEO.copper does, in the frame of the board
+    outline (documentation and drill-drawing layers left out: nobody builds from them);
+  - the drill hits (both ends, diameter) rounded to 1 µm and sorted, the rows of `bom_<b>.csv` and `cpl_<b>.csv` sorted;
+  - with `[order]` (of the board file or of edakit.toml, 8.4) also the order settings that change the board as made –
+    the thickness as ordered (`thickness_mm`), the colours of mask and silkscreen, the finish and the order-number mark,
+    and the other keys that change it where they differ from edakit's default (10.2) –, which stage F writes to
+    `fab/<board>/order.json`;
+  - the method (`fab_method`, "raster 0.02 mm v1"), so that a new method shows.
 
-The raw files differ on every export (a date comment, other aperture numbers, another order of objects), the layout
-hash changes with a comment in a board file and does not change when edakit's code, a router option or EasyEDA's pour
+The circuit hash covers the footprint data without more: it takes every parts file, byte for byte or (with
+`hash_ignore`) as canonical JSON – a changed pad voids M-1 too, which checks polarity at the footprint; the electrical
+hash leaves it out.
+
+The manifest has the fab hash with the hash per board and file (`fab_layers`). The remark and the tab zones stay out:
+the remark is free text to the maker, and the tab zones reach it only through the remark – neither changes the board as
+made. A board without `[order]` has no order settings in the hash and keeps the fab hash it had. The files only some
+makers take – `bom_<board>_mpn.csv`, `cpl_<board>_<maker>.csv`, `odb_<board>.zip` – stay out too: they are written from
+the hashed files and the parts entries, SYNC.cpl and SYNC.odb hold them to those, and the manifest has their SHA-256.
+
+Why a fab hash: the raw files differ on every export (a date comment, other aperture numbers, another order of objects),
+and the layout hash changes with a comment in a board file but not when edakit's code, a router option or EasyEDA's pour
 fill changes the copper. The fab hash changes exactly when what the factory builds changes – down to one raster point
 (0.02 mm, below the manufacturer's tolerance), or a colour, the thickness, the finish or the mark the board is ordered
-with. A Pillow update that draws edges differently changes it too: the sign-offs then lapse, a change never passes
+with. A Pillow update that draws edges differently changes it too: the sign-offs then lapse, and a change never passes
 unseen.
 
-Each file belongs to one of them or to none (10.1): edakit.toml, the schematic file and the documents of `[docs] files`
-are in no hash, so a new order quantity, a note in the schematic or a corrected number (6.6) voids no review. A project
-that moved from the one-file edakit.toml (October 2026) records the hashes before and after in `rehashed` of its
-sign-off file: the move changed files, not what they say.
+Each file belongs to one hash or to none (the files of a project, 10.1): edakit.toml, the schematic file and the
+documents of `[docs] files` are in no hash, so a new order quantity, a note in the schematic or a corrected quoted
+number (6.6) voids no review. A project that moved from the one-file edakit.toml records the hashes before and after in
+`rehashed` of its sign-off file: the move changed files, not what they say.
 
 **The footprint geometry in the repository.** The hash takes each file with its path, so CI and a fresh clone compute
-the same hash only from versioned files. The footprint geometry lay among the artifacts until October 2026
-(`<artifacts>/pcb_geometry_<board>.json`, not versioned); `pcb dump` now writes it beside the board file (7.4). A
-geometry not moved yet is hashed where it lies, so nothing lapses before the move; `edakit check`, `pcb plan` and the
-gate (a note in section 6) give the `mv` command. The move changes the layout hash once – the path, not the content:
-sign-offs with scope `layout` are signed again, nothing is rehashed. The circuit and the fab hash stay, so M-1, M-6 and
-M-5 with its default scope `fab` keep counting.
+the same hash only from versioned files. `pcb dump` writes the footprint geometry beside the board file (7.4); older
+projects have it among the artifacts (`<artifacts>/pcb_geometry_<board>.json`, not versioned). A geometry not moved yet
+is hashed where it lies, so nothing lapses before the move; `edakit check`, `pcb plan` and the gate (a note in section
+6) give the `mv` command. The move changes the layout hash once – the path, not the content: sign-offs with scope
+`layout` are signed again, nothing is rehashed. The circuit and the fab hash stay, so M-1, M-6 and M-5 with its default
+scope `fab` keep counting.
 
-**What the circuit hash leaves out.** By default it takes the files byte by byte: a corrected note, a source added
-or the `verified` record a datasheet check writes voids M-1 and M-6. `[release] hash_ignore` lists keys that are
-documentation, e.g. `["notes", "sources", "description", "verified", "datasheet"]`: the graph and every parts entry
-are then hashed as canonical JSON (keys sorted, no whitespace) without these keys, at any depth. A pin, a value, a
-rating or an LCSC number still changes the hash. Only keys that no check and no review reads belong in the list.
-Two things stay whole whatever the list says: `purpose` of the graph and `compliance` of a parts entry (the
-regulatory review M-6 reads them, `purpose.notes` included), and the simulation config, the plugin, `state_files` and
-the requirements files stay bytes – the simulation config's `sources` are its supplies, not references, and the
-reviews read a requirement whole, its `source` and `reason` included. Turning the list on (or changing
-it) changes the hash once: when the sign-off file's `state_sha256` is the hash of the current files with the list
-before (none: the bytes), nothing but the method changed – the gate counts the sign-offs, writes the new hash into the
-file and records both in `rehashed` (`by` "edakit gate", `hash_ignore`, `state_sha256` [old, new]). When the circuit
-changed as well, nothing is rehashed and the sign-offs of scope `circuit` are done again.
+### What the circuit hash leaves out
 
-**A graph in TOML** (`[project] graph` a `.toml` file, 10.1) counts with its data, whatever the list says: it is read
-as the graph and hashed as canonical JSON with the components sorted by designator, the nets and cables by name and
-the pins of a net sorted, the keys of `hash_ignore` left out as from a JSON graph, `purpose` whole. A comment, a blank
-line, a table or a pin moved change nothing; a pin, a value or `purpose.notes` changed voids M-1 and M-6 – a
-regulatory statement belongs in `purpose.notes`, not in a comment. The pin words count as written, not resolved:
-`U1.GP6` and `U1.9` for the same pin are two texts and two hashes, and a rewire through a parts entry – a role
-corrected, so that `D2.anode` names another pad – changes the hash through the entry, which the hash covers already.
-`graph_sha256` in the protocol's header names the file's bytes, comments included. A file that is no valid TOML is
-hashed as bytes, and `edakit check` names its line. The requirements files are TOML too and stay bytes. The
-`hardware/graph.json` generated beside a TOML graph (3.1) is in no hash: it is derived from the TOML and the parts
-entries, both in the circuit hash, and `edakit graph json --check` holds it to them. A JSON graph keeps its hash as
-before. Converting a project (`edakit graph convert`, 3.1) changes the circuit hash once while the circuit stays: when
-the sign-off file's `state_sha256` is the hash of the files before, the sign-offs of scope `circuit` keep counting –
-the new hash goes into the file, both into `rehashed` with `by` "edakit graph convert" –; when the circuit changed as
-well, nothing is carried over.
+By default the circuit hash takes the files byte by byte: a corrected note, a source added or the `verified` record a
+datasheet check writes voids M-1 and M-6. `[release] hash_ignore` lists keys that are documentation, e.g.
+`["notes", "sources", "description", "verified", "datasheet"]`: the graph and every parts entry are then hashed as
+canonical JSON (keys sorted, no whitespace) without these keys, at any depth. A pin, a value, a rating or an LCSC number
+still changes the hash. Only keys that no check and no review reads belong in the list.
 
-The sign-off file (`[project] signoff`, [example](https://github.com/tgd1975/automatic_christmas_bell/blob/main/hardware/signoff.json)) holds manual checks and
+Two things stay whole whatever the list says: `purpose` of the graph and `compliance` of a parts entry (the regulatory
+review M-6 reads them, `purpose.notes` included), and the simulation config, the plugin, `state_files` and the
+requirements files stay bytes – the simulation config's `sources` are its supplies, not references, and the reviews read
+a requirement whole, its `source` and `reason` included.
+
+Turning the list on (or changing it) changes the hash once: when the sign-off file's `state_sha256` is the hash of the
+current files with the list before (none: the bytes), nothing but the method changed – the gate counts the sign-offs,
+writes the new hash into the file and records both in `rehashed` (`by` "edakit gate", `hash_ignore`, `state_sha256`
+[old, new]). When the circuit changed as well, nothing is rehashed and the sign-offs of scope `circuit` are done again.
+
+**A graph in TOML** (`[project] graph` a `.toml` file, 10.1) counts with its data, whatever the list says: it is read as
+the graph and hashed as canonical JSON, the components sorted by designator, the nets and cables by name and the pins of
+a net sorted, the keys of `hash_ignore` left out as from a JSON graph, `purpose` whole. A comment, a blank line, a table
+or a pin moved change nothing; a pin, a value or `purpose.notes` changed voids M-1 and M-6 – a regulatory statement
+belongs in `purpose.notes`, not in a comment.
+
+The pin words count as written, not resolved: `U1.GP6` and `U1.9` for the same pin are two texts and two hashes, and a
+rewire through a parts entry – a role corrected, so that `D2.anode` names another pad – changes the hash through the
+entry, which the hash covers already.
+
+`graph_sha256` in the protocol's header names the TOML file's bytes, comments included. A file that is no valid TOML is
+hashed as bytes, and `edakit check` names its line. The requirements files are TOML too and stay bytes.
+
+The `hardware/graph.json` generated beside a TOML graph (3.1) is in no hash: it is derived from the TOML and the parts
+entries, both in the circuit hash, and `edakit graph json --check` holds it to them. A JSON graph keeps its hash.
+Converting a project (`edakit graph convert`, 3.1) changes the circuit hash once while the circuit stays: when the
+sign-off file's `state_sha256` is the hash of the files before, the sign-offs of scope `circuit` keep counting – the new
+hash goes into the file, both into `rehashed` with `by` "edakit graph convert" –; when the circuit changed as well,
+nothing is carried over.
+
+### The sign-off file
+
+The sign-off file (`[project] signoff`,
+[example](https://github.com/tgd1975/automatic_christmas_bell/blob/main/hardware/signoff.json)) holds manual checks and
 accepted warnings. Each counts only if the hash of its scope (`circuit`, `electrical`, `layout`, `fab`) equals the
-current one. The
-fab hash is known only after stage F: in a run without it (the offline gate) sign-offs with scope `fab` do not count.
-One that is signed is not open either – the gate names the fab hash of the sign-off file it is bound to, which stage F
-checks: "M-5 signed for fab f958da9ad4f8… – checked by stage F (section 6)" among the reasons, and the same in its line
-of section 6. A sign-off that is not signed, not in the file, or signed without a `fab_sha256` stays open.
+current one. The fab hash is known only after stage F: in a run without it (the offline gate) sign-offs with scope `fab`
+do not count. One that is signed is not open either: the gate names the fab hash of the sign-off file it is bound to,
+which stage F checks – "M-5 signed for fab f958da9ad4f8… – checked by stage F (section 6)" among the reasons, and the
+same in its line of section 6. A sign-off that is not signed, not in the file, or signed without a `fab_sha256` stays
+open.
 
 ```json
 {
@@ -347,39 +297,45 @@ of section 6. A sign-off that is not signed, not in the file, or signed without 
 | `order` | after uploading, before paying (M-2: the maker's assembly preview, its part matching, price) | no |
 | `acceptance` | after delivery (M-4: acceptance test of every board) | no |
 
-Scope `fab` suits what is checked on the manufacturing files: the layout review M-5 and the manufacturer's preview
-M-2 (the example and new projects use it). A later gate run whose files and order settings are the same keeps the
-sign-off, whatever changed upstream; a run whose files differ, or a board now ordered black or 1.0 mm thick, voids it.
-Existing sign-off files keep `circuit` and `layout` as they are. What changed between two runs:
+Scope `fab` suits what is checked on the manufacturing files: the layout review M-5 and the manufacturer's preview M-2
+(the example and new projects use it). A later gate run whose files and order settings are the same keeps the sign-off,
+whatever changed upstream; a run whose files differ, or a board now ordered black or 1.0 mm thick, voids it. Existing
+sign-off files keep `circuit` and `layout` as they are. What changed between two runs:
 
 ```bash
 edakit fab diff 20261025-205344 20261025-224607 [--board B]   # run folder names under reports, or their paths
 ```
 
-per board and file `equal` or `changed`: for a Gerber layer the area added and removed and the largest changed spots
-(XOR of the two rasters, labelled as in GEO.copper) with their bounding box in Gerber coordinates, spots under 0.01 mm²
-only counted and summed; drill hits and BOM/CPL rows removed (−) and added (+); the order settings (`order.json`) one by
-one, `- mask = "green"` and `+ mask = "black"`. Exit 0 when everything is equal, 2 otherwise.
+It gives per board and file `equal` or `changed`: for a Gerber layer the area added and removed and the largest changed
+spots (XOR of the two rasters, labelled as in GEO.copper) with their bounding box in Gerber coordinates, spots under
+0.01 mm² only counted and summed; drill hits and BOM/CPL rows removed (−) and added (+); the order settings
+(`order.json`) one by one, `- mask = "green"` and `+ mask = "black"`. Exit 0 when everything is equal, 2 otherwise.
 
-`match` is an fnmatch pattern over "ID scenario item step" as section 3 of the protocol prints it – for a warning of
-the graph checks the ID and the message, e.g. `"SYNC.source M1 ring: ../ring is not released*"` for an own board that is
-not released (4.5). Scope `decision` counts regardless of the hash and must refer to a numbered decision. An
-acceptance about particular parts names them in `parts` ({designator: LCSC number}, or the `part` of a component
-without one): it counts only while every one of them is still that part in the graph. After a swap section 3 of the
-protocol lists it as lapsed ("lapsed: D2 is now C2895549", "D2 is not in the graph") and the warning is not accepted
-until the owner judges it again and updates `parts`. Without `parts` an acceptance counts as before. **Only the
-owner accepts a warning** – it is a decision. **A manual check an agent can do is signed by the agent's result**
-(chapter 11): OK → signed with the agent as `done_by`; not OK → fix the cause, check again.
+**Accepting a warning.** `match` is an fnmatch pattern over "ID scenario item step" as section 3 of the protocol prints
+it – for a warning of the graph checks the ID and the message, e.g. `"SYNC.source M1 ring: ../ring is not released*"`
+for an own board that is not released (4.5). Scope `decision` counts regardless of the hash and must refer to a numbered
+decision.
 
-**Open from the datasheets.** Section 6 of the protocol ends with a list per parts entry of the graph – its
-designators, the `open` points of its `verified` sign-off and its `sources` with the word "assumption" (4.1). A point
-with `when` (`order`, `acceptance`) is also an unchecked line under that phase's manual checks, e.g. "- [ ] C2297
-KT-0805G (D2–D9): VR not specified – 5 V assumed" after M-4, so the acceptance list carries it without copying. The
-list is information: it changes neither the decision nor its reasons, and a project without open points gets none.
+An acceptance about particular parts names them in `parts` ({designator: LCSC number}, or the `part` of a component
+without one): it counts only while every one of them is still that part in the graph. After a swap, section 3 of the
+protocol lists it as lapsed ("lapsed: D2 is now C2895549", "D2 is not in the graph"), and the warning is not accepted
+until you judge it again and update `parts`. Without `parts` an acceptance counts as before.
+
+**Only you accept a warning** – it is a decision. **A manual check an agent can do is signed by the agent's result**
+(working with Claude, chapter 11): OK → signed with the agent as `done_by`; not OK → fix the cause, check again.
+
+**Open from the datasheets.** Section 6 of the protocol ends with a list per parts entry of the graph – its designators,
+the `open` points of its `verified` sign-off and its `sources` with the word "assumption" (4.1). A point with `when`
+(`order`, `acceptance`) is also an unchecked line under that phase's manual checks, e.g.
+"- [ ] C2297 KT-0805G (D2–D9): VR not specified – 5 V assumed" after M-4, so the acceptance list carries it without
+copying. The list is information: it changes neither the decision nor its reasons, and a project without open points
+gets none.
+
+### Three required manual checks
 
 **Three manual checks are required** even when the sign-off file does not list them: the gate adds each one as open
-("M-5 is missing – added as open, every release needs it"), and the run is NOT RELEASED until it is signed. There is
-no key to switch them off.
+("M-5 is missing – added as open, every release needs it"), and the run is NOT RELEASED until it is signed. There is no
+key to switch them off.
 
 | Check | Phase | Scope | What |
 |---|---|---|---|
@@ -390,93 +346,105 @@ no key to switch them off.
 Not everything that can be ordered may be sold or even operated in the EU, and nothing else in the gate looks at that
 (M-6).
 
-A sign-off file that lists one of the three keeps its own phase, scope and text (an older M-5 with scope `layout`
-stays so) – except M-6 of scope `circuit` from before the electrical hash: while the file's `state_sha256` is the
+A sign-off file that lists one of the three keeps its own phase, scope and text (an older M-5 with scope `layout` stays
+so). The exception is M-6 of scope `circuit` from before the electrical hash: while the file's `state_sha256` is the
 current circuit hash, the gate binds it to the electrical hash of the same files (`electrical_sha256`, scope
 `electrical`) and records that in `rehashed`; when the circuit changed meanwhile, it stays on the circuit until it is
-signed again. A project's agents (`[agents.<name>]`, 8.6) add to the list: a sign-off of its own of phase `export` – M-7 of
-the agent optik – is required the same way, in the phase and bound to the hash of the scope the agent's entry gives;
-with `replaces` edakit's review stays required and the project agent signs it. Such a sign-off counts only when its
+signed again.
+
+A project's agents (`[agents.<name>]`, 8.6) add to the list: a sign-off of its own of phase `export` – M-7 of the agent
+optik – is required the same way, in the phase and bound to the hash of the scope the agent's entry gives. With
+`replaces`, edakit's review stays required and the project agent signs it. Such a sign-off counts only when its
 `done_by` names the agent.
 
-The lesson behind M-5: the first released run of the reference project had passed every automatic check, and nobody
-had looked at the layout as a whole. The layout review agent then found a switching regulator loop routed across the
-whole board (now GEO.loop) and that the visible side was crowded with tracks. Since then the layout review is a
-condition of the release, not a tool you may use – in the gate's own list, so that a project whose sign-off file never
-had it is held to it too. It also ends every layout round that changed placement, routing or pours (skill pcb-round), on
-the round's Gerber export, so its findings come before the gate rather than after it: later in the same project a run
-was released with about 45 % of one side bare – EasyEDA had dropped pour islands without a pad, and gate, DRC and layout
-review all passed it, because none of their inputs showed the copper as filled (now GEO.pour). Both reviewers give every
-finding its probability and its cost; a deviation without a realistic consequence is not a finding.
+**Why M-5 is required.** A run can pass every automatic check while nobody has looked at the layout as a whole. So the
+layout review is a condition of the release, not a tool you may use – in the gate's own list, so that a project whose
+sign-off file never had it is held to it too. It also ends every layout round that changed placement, routing or pours
+(skill pcb-round), on the round's Gerber export, so its findings come before the gate rather than after it. Both
+reviewers give every finding its probability and its cost; a deviation without a realistic consequence is not a finding.
 
 ## 8.3 The decision
 
-RELEASED only if every stage ran, no check failed, every warning is accepted, every part is signed, every manual check
-of phase `export` is signed – a project agent's by that agent (8.6), all for the current hashes – and, with
-`[project] requirements`, every requirement `must` the user has accepted has passing evidence and every accepted
-`should` without it is accepted like a warning (8.7); a draft binds nothing yet. Otherwise NOT RELEASED with the
-reasons. Exit 0 / 2. Every project check of phase `export` is a stage (8.1): it has to run – one after F runs only with
-`--easyeda` – and pass, unless it is advisory; a check of phase `order` or `acceptance` does not hold up the release, it
-is a line of section 6.
+A run is RELEASED only if
+
+- every stage ran and no check failed;
+- every warning is accepted, every part is signed, and every manual check of phase `export` is signed – a project
+  agent's by that agent (8.6) –, all for the current hashes;
+- with `[project] requirements`, every requirement `must` you have accepted has passing evidence, and every accepted
+  `should` without it is accepted like a warning (8.7); a draft binds nothing yet.
+
+Otherwise it is NOT RELEASED, with the reasons. Exit 0 / 2. Every project check of phase `export` is a stage (8.1): it
+has to run – one after F runs only with `--easyeda` – and pass, unless it is advisory. A check of phase `order` or
+`acceptance` does not hold up the release; it is a line of section 6.
 
 A finding is judged by its severity in every stage alike, the simulation's comparisons too: an error fails, a warning
-waits for its acceptance in the sign-off file (section 3 of the protocol), a note is information, and a finding
-accepted in the graph is waived with its reason (section 4). Since 2026-10-31 a comparison of stage E whose finding
-is a warning no longer fails the gate; before, every comparison that did not hold failed it, whatever its finding's
-severity (walkthrough-gaps.md).
+waits for its acceptance in the sign-off file (section 3 of the protocol), a note is information, and a finding accepted
+in the graph is waived with its reason (section 4). So a comparison of stage E whose finding is a warning does not fail
+the gate.
 
-The protocol names every check with its words next to the ID ("GEO.hole (hole fits the lead)"), and its section 10, "The
-rules behind the findings", gives rule, reason, fix and sources of every check that failed or warned – from the rule
-catalog (chapter 14.2), so that the protocol can be read without this handbook. With `[project] requirements` a
-section 11, "Requirements", follows it (8.7).
+### The protocol and the run folder
 
-Section 12, "Pictures", shows the circuit and the board, each picture as SVG and PNG in the run's `pictures/`. Every
-run draws the schematic of every board but a bought one – the drawing of `edakit schematic draw` (6.5), its title
-block and style included –; a run with stage F draws each made board from its own Gerber and drill files: as made,
-top and bottom (the bottom seen from below, mirrored) in the colours of the run's order settings – solder mask,
-silkscreen, the finish on open copper (ENIG gold, a HASL silver), copper under the mask a shade of the mask, FR-4
-where the mask is open over no copper; without `[order]` edakit's defaults, green, white, HASL –, then all layers
-over each other, seen from above, in the colours of the EasyEDA editor (`board_<board>_layers`): on black, bottom
-silkscreen, bottom copper and top copper, each letting what lies under it show through – a bottom track under a top
-pour shows as a darker track –, the through-hole pads grey (the pieces of top copper open in the top mask that hold a
-plated hole; a tented via is no pad), the top silkscreen, the holes and the outline; then every layer and drill file
-the maker builds from on its own, as the file draws it. The board's SVG is at scale, 1 mm on paper for
-1 mm of board; its PNG has 40 pixels a millimetre (at most 4000 on the longer side), the schematic's 300 dpi.
-Pictures are documentation: in no hash, and one that cannot be drawn is named in section 12 while the gate goes on.
-`pictures/pictures.json` lists them for `release publish` (8.3).
+The protocol names every check with its words next to the ID ("GEO.hole (hole fits the lead)"). Its section 10,
+"The rules behind the findings", gives rule, reason, fix and sources of every check that failed or warned – from the
+rule catalog (14.2), so that the protocol can be read without this handbook. With `[project] requirements` a section 11,
+"Requirements", follows it (8.7).
+
+Section 12, "Pictures", shows the circuit and the board, each picture as SVG and PNG in the run's `pictures/`:
+
+- Every run draws the schematic of every board but a bought one – the drawing of `edakit schematic draw` (6.5), its
+  title block and style included.
+- A run with stage F draws each made board from its own Gerber and drill files: as made, top and bottom (the bottom seen
+  from below, mirrored) in the colours of the run's order settings – solder mask, silkscreen, the finish on open copper
+  (ENIG gold, a HASL silver), copper under the mask a shade of the mask, FR-4 where the mask is open over no copper;
+  without `[order]` edakit's defaults, green, white, HASL.
+- Then all layers over each other, seen from above, in the colours of the EasyEDA editor (`board_<board>_layers`): on
+  black, bottom silkscreen, bottom copper and top copper, each letting what lies under it show through – a bottom track
+  under a top pour shows as a darker track –, the through-hole pads grey (the pieces of top copper open in the top mask
+  that hold a plated hole; a tented via is no pad), the top silkscreen, the holes and the outline.
+- Then every layer and drill file the maker builds from on its own, as the file draws it.
+
+The board's SVG is at scale, 1 mm on paper for 1 mm of board; its PNG has 40 pixels a millimetre (at most 4000 on the
+longer side), the schematic's 300 dpi. Pictures are documentation: in no hash, and one that cannot be drawn is named in
+section 12 while the gate goes on. `pictures/pictures.json` lists them for `release publish` (below).
 
 Section 2 ends with the information of stages P and G – what `edakit check` prints as a note, such as GEO.hole before
-the first `pcb dump` or PARTS.stock without a stock snapshot – under "Information (does not block the release, needs no
-acceptance)": one line per finding, with the check's words. It changes neither the decision nor section 1's counts;
-the simulation's information is in section 7, that of the other stages in section 8.
+the first `pcb dump` or PARTS.stock without a stock snapshot – under
+"Information (does not block the release, needs no acceptance)": one line per finding, with the check's words. It
+changes neither the decision nor section 1's counts; the simulation's information is in section 7, that of the other
+stages in section 8.
 
 Result folder `<reports>/<YYYYMMDD-hhmmss>/`: `protocol.md`, `graph_checks.json`, `sim.json`, `schematic_<board>.json`,
 `stage_<id>.txt` per project check (8.1), `fab/<board>/` (Gerber ZIP, BOM, CPL, raw data, the files of the other makers
-of `[cart] makers` – `bom_<board>_mpn.csv`, `cpl_<board>_<maker>.csv`, `odb_<board>.zip` –, with `[order]` or
-`[cart]` the order form `order.md`, with `[order]` the order settings `order.json`), `fab/polarity_<board>.png`,
-`pictures/` (section 12: `schematic_<board>`, `board_<board>_top`, `_bottom`, `_layers` and `_<layer>`, each `.svg` and `.png`),
+of `[cart] makers` – `bom_<board>_mpn.csv`, `cpl_<board>_<maker>.csv`, `odb_<board>.zip` –, with `[order]` or `[cart]`
+the order form `order.md`, with `[order]` the order settings `order.json`), `fab/polarity_<board>.png`, `pictures/`
+(section 12: `schematic_<board>`, `board_<board>_top`, `_bottom`, `_layers` and `_<layer>`, each `.svg` and `.png`),
 `fab/manifest.json` and `makers.json` – per maker of `[cart] makers` its role and the findings of its checks, which
 `edakit cart prepare` reads (8.4).
 
 **Gate runs are build output.** A run stays in `<reports>` (`build/release`, which git ignores – the `.gitignore` of
-new-project leaves out `build/`), and nothing of it is committed: a released run of the reference project was
-160 files and about 5 MB – unpacked Gerber files beside the ZIP, the simulation's raw values, raster pictures – that
-nobody reads in a diff. What a release rests on is in the repository already: the sign-offs with the hashes they are
-bound to, M-5 on the fab hash. While the board in EasyEDA stays untouched, the gate exports the same files again – the
-same fab hash; after the order the maker keeps the files for a re-order; and should the EasyEDA state be lost, the
-board is made again from the graph and the board file – routed anew, so M-5 anew. What is ordered is published with
-the order instead (`edakit release publish`, below). A project that wants its released runs in git sets `[release]
-archive = "git"` (default `"none"`, 10.1): a released folder is then committed (`git add -f`) with the superseded
-manifests, `edakit release current` names a released run git does not track yet ("not in git yet: git add -f
-build/release/<run>"), and the protocol names the setting in its header – as it names `none`. Folders a project
-archived before stay as they are: nothing is deleted, and `release current`, `withdraw` and `verify` read them as
-before.
+new-project leaves out `build/`), and nothing of it is committed: a released run of a real project was 160 files and
+about 5 MB – unpacked Gerber files beside the ZIP, the simulation's raw values, raster pictures – that nobody reads in a
+diff.
 
-**One current release.** A project has at most one run that may be uploaded. When the gate decides RELEASED, it
-marks every earlier manifest under `[project] reports` that says `"released": true` as superseded by the new run:
-`"released": false`, `"status": "superseded"`, `"superseded_by": "<run>"`; `decision` keeps what the gate decided.
-With `archive = "git"` the archived folders change – commit them together with the new run. A released run that must
-not be uploaded after all (a review found something, the files were wrong) is withdrawn:
+What a release rests on is in the repository already: the sign-offs with the hashes they are bound to, M-5 on the fab
+hash. While the board in EasyEDA stays untouched, the gate exports the same files again – the same fab hash; after the
+order the maker keeps the files for a re-order; and should the EasyEDA state be lost, the board is made again from the
+graph and the board file – routed anew, so M-5 anew. What is ordered is published with the order instead
+(`edakit release publish`, below).
+
+A project that wants its released runs in git sets `[release] archive = "git"` (default `"none"`, 10.1): a released
+folder is then committed (`git add -f`) with the superseded manifests, `edakit release current` names a released run git
+does not track yet ("not in git yet: git add -f build/release/<run>"), and the protocol names the setting in its header
+– as it names `none`. Folders a project archived before stay as they are: nothing is deleted, and `release current`,
+`withdraw` and `verify` read them as before.
+
+### One current release
+
+A project has at most one run that may be uploaded. When the gate decides RELEASED, it marks every earlier manifest
+under `[project] reports` that says `"released": true` as superseded by the new run: `"released": false`,
+`"status": "superseded"`, `"superseded_by": "<run>"`; `decision` keeps what the gate decided. With `archive = "git"` the
+archived folders change – commit them together with the new run. A released run that must not be uploaded after all (a
+review found something, the files were wrong) is withdrawn:
 
 ```bash
 edakit release current                                  # the run, its time, git commit, graph version, files + SHA-256
@@ -484,20 +452,21 @@ edakit release withdraw 20261025-205344 --reason "back copper missing"   # "stat
 edakit release verify ~/upload/                         # the files about to be uploaded = the current release?
 ```
 
-After a withdrawal there is no current release until the next RELEASED run; earlier runs stay superseded (manifests
-from before this – without `status` – that still say released are superseded by the withdrawn run, so that none of
-them becomes current instead). A manifest without `status` reads as before: the newest one that says released is
-current, and nothing is rewritten until the next RELEASED run. Whatever reads `released` – `edakit part own` for
-the release of an own board (4.5) – skips superseded and withdrawn runs.
+After a withdrawal there is no current release until the next RELEASED run; earlier runs stay superseded. Older
+manifests – without `status` – that still say released are superseded by the withdrawn run, so that none of them becomes
+current instead. A manifest without `status` reads as before: the newest one that says released is current, and nothing
+is rewritten until the next RELEASED run. Whatever reads `released` – `edakit part own` for the release of an own board
+(4.5) – skips superseded and withdrawn runs.
 
 `release verify` takes files or folders (a folder: every `.zip` and `.csv` file in and below it) and compares the
-SHA-256 of each with the manifests: a file of the current release passes; a file of another run is named with that
-run and its status ("from run 20261025-205344 (superseded by 20261025-232212)"); a file of no run is unknown – an
-edited CSV, a renamed export. Exit 0 when every file is of the current release, 2 otherwise, 1 for a file that is not
-there.
+SHA-256 of each with the manifests: a file of the current release passes; a file of another run is named with that run
+and its status ("from run 20261025-205344 (superseded by 20261025-232212)"); a file of no run is unknown – an edited
+CSV, a renamed export. Exit 0 when every file is of the current release, 2 otherwise, 1 for a file that is not there.
 
-**Publishing what is ordered.** `edakit release publish` puts the files of an order on GitHub as a release, with
-notes edakit writes – once every board of the project, and of every variant below it, has its current release:
+### Publishing what is ordered
+
+`edakit release publish` puts the files of an order on GitHub as a release, with notes edakit writes – once every board
+of the project, and of every variant below it, has its current release:
 
 ```bash
 edakit release publish --dry-run          # staging and notes in build/publish/<tag>/, nothing uploaded
@@ -513,216 +482,252 @@ edakit release publish --built 2026-10-31 # a board of that release has been bui
    `[cart] makers` the files of every maker. A file refused, or a project without a current release: exit 2, nothing
    staged, `gh` not called.
 3. **Staging** in `build/publish/<tag>/`: those files, `polarity_<b>.png`, the run's manifest as `manifest_<b>.json`,
-   the order form as `order_<b>.md` where the run has one (`[order]`, `[cart]`), the run's pictures of circuit and
-   board as its `pictures/pictures.json` lists them (SVG and PNG, section 12 of the protocol), and `SHA256SUMS` over
-   all of them –
-   the folder to upload to the maker from; publish names it at the end. `notes.md` beside them is the release's text.
-4. **The notes**, written by edakit: the commit; per board the gate run, the git state of its manifest, the fab hash,
-   and whether the board changed since the previous release – by its fab layers in both manifests, what the maker
-   builds from (the Gerber ZIP's own bytes change with every export, the fab hash does not), and where a manifest has
-   none by the SHA-256 of the upload files in both `SHA256SUMS`; the decisions since the previous release – the
-   headings `## D-…` of the decision log at HEAD that it lacked at that tag (`[release] publish.decisions`, without it
-   none); the purpose from the graph, with the note that the regulatory review M-6 is support, not legal advice; the
-   schematic and the board as made, top and bottom, of every board, shown from the release's own files; how to order;
-   last, "Released with edakit X.Y.Z" with the link to that version – which edakit published the files, and the way
-   to it for whoever reads the release (`[release] publish.credit = false` leaves the line out). Every link is
-   absolute, into the commit or the release – relative links do not work in release notes.
-5. `gh release create <YYYY-MM-DD> --prerelease --target <HEAD>` with the staged files; a tag the remote has already
-   gets `-2`, `-3`. The previous release is the newest one publish made (its title "Manufacturing files …"), drafts
-   left out.
-6. Once a board of this state has been built and works – the acceptance M-4 (8.5) is the natural moment –, `--built
-   <tag>` drops the pre-release mark: `gh release edit <tag> --prerelease=false`.
+   the order form as `order_<b>.md` where the run has one (`[order]`, `[cart]`), the run's pictures of circuit and board
+   as its `pictures/pictures.json` lists them (SVG and PNG, section 12 of the protocol), and `SHA256SUMS` over all of
+   them – the folder to upload to the maker from; publish names it at the end. `notes.md` beside them is the release's
+   text.
+4. **The notes**, written by edakit:
+   - the commit;
+   - per board the gate run, the git state of its manifest, the fab hash, and whether the board changed since the
+     previous release – by its fab layers in both manifests, what the maker builds from (the Gerber ZIP's own bytes
+     change with every export, the fab hash does not), and where a manifest has none by the SHA-256 of the upload files
+     in both `SHA256SUMS`;
+   - the decisions since the previous release – the headings `## D-…` of the decision log at HEAD that it lacked at that
+     tag (`[release] publish.decisions`, without it none);
+   - the purpose from the graph, with the note that the regulatory review M-6 is support, not legal advice;
+   - the schematic and the board as made, top and bottom, of every board, shown from the release's own files;
+   - how to order;
+   - last, "Released with edakit X.Y.Z" with the link to that version – which edakit published the files, and the way to
+     it for whoever reads the release (`[release] publish.credit = false` leaves the line out).
 
-`--draft` makes a draft only the account sees – no tag, no guards –, a test to delete afterwards (`gh release delete
-<tag> --yes`); `--tag T` another tag than the date; `--dry-run` stages, writes the notes and uploads nothing. Exit 0,
-2 (verify refused a file, a project has no current release), 1 (an error: a guard, git, gh). It needs the GitHub CLI
-`gh`, logged in (`gh auth login`); the repository is the one `gh` sees from the project, and the release is as public
-as the repository. Without `gh` or its login one sentence says so. Firmware is not published. The reference project
-built this as a script of its own first and published its four boards – the main board and the variants smd, tht
-and esp32, twelve order files – as a draft with it.
+   Every link is absolute, into the commit or the release – relative links do not work in release notes.
+5. `gh release create <YYYY-MM-DD> --prerelease --target <HEAD>` with the staged files; a tag the remote has already
+   gets `-2`, `-3`. The previous release is the newest one publish made (its title "Manufacturing files …"), drafts left
+   out.
+6. Once a board of this state has been built and works – the acceptance M-4 (8.5) is the natural moment –,
+   `--built <tag>` drops the pre-release mark: `gh release edit <tag> --prerelease=false`.
+
+`--draft` makes a draft only the account sees – no tag, no guards –, a test to delete afterwards
+(`gh release delete <tag> --yes`); `--tag T` another tag than the date; `--dry-run` stages, writes the notes and uploads
+nothing. Exit 0, 2 (verify refused a file, a project has no current release), 1 (an error: a guard, git, gh). It needs
+the GitHub CLI `gh`, logged in (`gh auth login`); the repository is the one `gh` sees from the project, and the release
+is as public as the repository. Without `gh` or its login one sentence says so. Firmware is not published.
 
 ## 8.4 Ordering at the manufacturer (up to the cart; the owner orders and pays)
 
-**The cost before the quote.** `edakit cost` estimates the order for `quantity` boards from the graph, the parts
-entries, the board files, the stock snapshot (4.2) and a dated fee table (`edakit/fees/jlcpcb.json`: JLCPCB's assembly
-fees with the page and the day they were read, bake, edge rails and PCB prices from real carts). JLCPCB's profile is the
-only one that names a fee table: with PCBWay, Eurocircuits or AISLER as `[cart] maker`, `edakit cost` stops (exit 1, in
-the gate a note), and the job of an order at one of them carries no estimate – ORDER.quote holds the board total of its
-quote to `[cost] budget` alone, through `[cost] rates` for the maker's currency. The estimate holds:
+> **State:** ordering step 0 recorded the four forms in real accounts at the makers (`recorded` in each profile), and
+> the skill cart ran live at every maker up to the cart, nothing ordered – on a copy of the example blinker-555 released
+> on the KiCad tool chain (`tests/fixtures/makers/LIVE.md`: 5.7 JLCPCB, 5.12 PCBWay, 5.8 Eurocircuits, 5.10 AISLER up to
+> its price). No order has gone through it yet: step 5 below, `edakit cart actual`, has run on recorded data only.
+> EasyEDA's own ODB++ export went through ordering step 0b on a probe board
+> (`tests/fixtures/makers/aisler/step0b_2026-11-01.md`).
 
-- the class per board – `[release] assembly.pcba` or its sides, raised to Standard by parts on a second side
-  (`side` in `[place]`; a part not placed sits on the first side of `assembly.sides`) and by "Standard Only" parts;
+### The cost before the quote
+
+`edakit cost` estimates the order for `quantity` boards from the graph, the parts entries, the board files, the stock
+snapshot (4.2) and a dated fee table (`edakit/fees/jlcpcb.json`: JLCPCB's assembly fees with the page and the day they
+were read, bake, edge rails and PCB prices from real carts). JLCPCB's profile is the only one that names a fee table:
+with PCBWay, Eurocircuits or AISLER as `[cart] maker`, `edakit cost` stops (exit 1, in the gate a note), and the job of
+an order at one of them carries no estimate – ORDER.quote holds the board total of its quote to `[cost] budget` alone,
+through `[cost] rates` for the maker's currency. The estimate holds:
+
+- the class per board – `[release] assembly.pcba` or its sides, raised to Standard by parts on a second side (`side` in
+  `[place]`; a part not placed sits on the first side of `assembly.sides`) and by "Standard Only" parts;
 - the PCB at its size (under Standard with 5 mm edge rails on the long edges) – the fee table's price for that size,
   between two of its sizes by area, below the smallest at most that size's price (live run 5.7: 10.70 $ for a 60 × 28 mm
   board that JLCPCB quoted at 5.10 $) –, or the quoted `[cost] pcb_price`, or the PCB line of a checked quote (below);
-- the fees line by line: Economic setup and stencil per order and 3.07 $ per Extended type; Standard setup and
-  stencil per assembled side and 1.53 $ per type, Basic included, plus packing; SMT joints; joints JLCPCB solders by
-  hand plus the labour per order; through-hole reflow joints; X-ray per placed part; the bake for MSL ≥ 5; a Standard
-  order Economic could also assemble is topped up to the handling fee's 14.93 $ difference;
+- the fees line by line: Economic setup and stencil per order and 3.07 $ per Extended type; Standard setup and stencil
+  per assembled side and 1.53 $ per type, Basic included, plus packing; SMT joints; joints JLCPCB solders by hand plus
+  the labour per order; through-hole reflow joints; X-ray per placed part; the bake for MSL ≥ 5; a Standard order
+  Economic could also assemble is topped up to the handling fee's 14.93 $ difference;
 - the parts at their price break – Economic exactly the placements, Standard with JLCPCB's attrition;
 - shipping, coupon and VAT (`[cost]`), the items off the board (`[[extra]]`), the budget;
 - what drives the cost (the part or side that forces Standard, each Extended type, a bake, an X-ray part, the edge
   rails), the other class beside it, and the change since the last estimate;
 - per board whose `[order]` orders another board than the fee table prices (`pcb.board`: 1.6 mm, green mask, white
   silkscreen, lead-free HASL), the settings that differ, as not in the price – JLCPCB may charge extra for another
-  thickness or finish, and a colour other than green takes about two days longer:
-  `not in the price: thickness 1 mm, mask black ([order]; the fee table prices 1.6 mm, green mask, white silkscreen,
-  LeadFree HASL)`. edakit prices neither; without `[order]`, or with its defaults, there is no such line.
+  thickness or finish, and a colour other than green takes about two days longer (its quote form, read 2026-10-28):
+  `not in the price: thickness 1 mm, mask black ([order]; the fee table prices 1.6 mm, green mask, white silkscreen, LeadFree HASL)`.
+  edakit prices neither; without `[order]`, or with its defaults, there is no such line.
 
-Without a stock snapshot the parts have no price. On the reference project the estimate came within about 1 $ of
-the cart (USB tree, 2026-10-25: 71.53 $ with the fees of that day against 72.58 $); the fees JLCPCB does not itemise
-(bake, X-ray, hand soldering, packing) are values of their own in the table. Run it when a part, a side or the class
-changes, not after the first quote.
+Without a stock snapshot the parts have no price. On a real project the estimate came within about 1 $ of the cart (one
+board, 2026-10-25: 71.53 $ with the fees of that day against 72.58 $); the fees JLCPCB does not itemise (bake, X-ray,
+hand soldering, packing) are values of their own in the table. Run it when a part, a side or the class changes, not
+after the first quote.
 
-**Everything else in the same go.** `edakit order` writes, for `quantity` sets, the assembler's BOM (the file SYNC.bom
-writes), one cart per other supplier and `hand_assembly.md`. A part bought separately (`bom: false`) goes to the
-component's `supplier`, else the first supplier of its entry's `order`, else LCSC; items off the board are
-`[[extra]]`. Every cart line gets the spares (`[project] spare_pct`, `spare` on the component or item) and is rounded
-up to the supplier's minimum and pack size (`moq`, `step` in `order` or the item). The LCSC cart has the columns of its
-BOM tool ("LCSC Part Number, Quantity, Comment"), the others "Code, Quantity, Item, Designators". A `C99…` number is
-an EasyEDA library entry that LCSC does not sell: no cart line. PARTS.supplier warns about a part bought separately that
-names no supplier – also one that has only such a number. A bought board (`bought = true`, 4.5) gets no BOM: its parts
-are in the carts and in `hand_assembly.md` under the board, marked bought; `edakit cost` prices no PCB and no assembly
-for it. A hand-wired board (`wired = true`) the same way, marked "hand-wired, no PCB".
+### Carts and hand assembly
 
-**The order form as data.** Every question a maker's form asks has an answer in the project – a key of `[order]` with
-edakit's default (10.2) – and the form is filled from the keys, never from what the page happens to preselect. edakit's
-defaults are the board of the reference orders, the same for every maker: FR-4 TG135, 1.6 mm, green mask, white print,
-lead-free HASL, 1 oz, tented vias, regular outline tolerance, flying-probe test, IPC class 2, the placement confirmed by
-the maker before it builds. `[order]` of edakit.toml sets a key for every board, `[order]` of the board file for one
-board; the later wins. Which maker builds the board is `[cart]` (10.1): JLCPCB without it. The maker's profile
-(`edakit/makers/<maker>.toml`) only translates – a value into the form's word – and holds the form's limits; `edakit
-cart fields` prints every field with the maker's word and where its value comes from. The form fields that depend on the
-board are among the keys: `finish`, `mark` (`"default"` – the maker's own way: PCBWay prints its number where it likes,
-JLCPCB and Eurocircuits print none; `"specify"` – at the maker's placeholder, PCBWay's; `"remove"`, edakit's default on
-a board with `[looks]`), `remark`, the tab zones (`tab_zones`, stretches of the outline in plan mm, with
-`tab_copper_mm`) and the colours: `mask` (JLCPCB's "PCB Color": green, purple, red, yellow, blue, white or black) and
-`silkscreen`. The thickness is the board file's `thickness_mm`, the value the mechanical model takes (7.4). Without
-these keys edakit's defaults hold: 1.6 mm, green, white print. JLCPCB prints white on every mask but white, and black on
-white – `silkscreen` states the colour the artwork is drawn for, and FILES.order fails it on a mask that gets the other
-one, as it fails a thickness the form does not offer (FR-4, 2 layers: 0.4, 0.6, 0.8, 1.0, 1.2, 1.6 or 2.0 mm). Every
-colour other than green takes two more days at JLCPCB (its quote form, read 2026-10-28); `edakit cost` prices the fee
-table's board – green, 1.6 mm, lead-free HASL – and names the settings of `[order]` that differ from it as not in the
-price. The board file is in the layout hash, so a changed remark, colour or thickness voids the sign-offs of scope
-`layout`; the settings that change the board as made – thickness, colours, finish and mark, and copper weight, vias,
-material and the other keys marked so in 10.2 where they differ from edakit's default – are in the fab hash as well
-(8.2), so the layout review M-5 of scope `fab` lapses with them too, while a new remark or tab zone leaves it standing.
+`edakit order` writes, for `quantity` sets, the assembler's BOM (the file SYNC.bom writes), one cart per other supplier
+and `hand_assembly.md`. A part bought separately (`bom: false`) goes to the component's `supplier`, else the first
+supplier of its entry's `order`, else LCSC; items off the board are `[[extra]]`. Every cart line gets the spares
+(`[project] spare_pct`, `spare` on the component or item) and is rounded up to the supplier's minimum and pack size
+(`moq`, `step` in `order` or the item).
+
+The LCSC cart has the columns of its BOM tool ("LCSC Part Number, Quantity, Comment"), the others
+"Code, Quantity, Item, Designators". A `C99…` number is an EasyEDA library entry that LCSC does not sell: no cart line.
+PARTS.supplier warns about a part bought separately that names no supplier – also one that has only such a number. A
+bought board (`bought = true`, 4.5) gets no BOM: its parts are in the carts and in `hand_assembly.md` under the board,
+marked bought; `edakit cost` prices no PCB and no assembly for it. A hand-wired board (`wired = true`) the same way,
+marked "hand-wired, no PCB".
+
+### The order form as data
+
+Every question a maker's form asks has an answer in the project – a key of `[order]` with edakit's default (10.2) – and
+the form is filled from the keys, never from what the page happens to preselect. edakit's defaults are the board of a
+real project's orders, the same for every maker: FR-4 TG135, 1.6 mm, green mask, white print, lead-free HASL, 1 oz,
+tented vias, regular outline tolerance, flying-probe test, IPC class 2, the placement confirmed by the maker before it
+builds. `[order]` of edakit.toml sets a key for every board, `[order]` of the board file for one board; the later wins.
+Which maker builds the board is `[cart]` (10.1): JLCPCB without it.
+
+The maker's profile (`edakit/makers/<maker>.toml`) only translates – a value into the form's word – and holds the form's
+limits; `edakit cart fields` prints every field with the maker's word and where its value comes from. The form fields
+that depend on the board are among the keys:
+
+- `finish`;
+- `mark`: `"default"` – the maker's own way: PCBWay prints its number where it likes, JLCPCB and Eurocircuits print
+  none; `"specify"` – at the maker's placeholder, PCBWay's; `"remove"`, edakit's default on a board with `[looks]`;
+- `remark`, and the tab zones (`tab_zones`, stretches of the outline in plan mm, with `tab_copper_mm`);
+- the colours: `mask` (JLCPCB's "PCB Color": green, purple, red, yellow, blue, white or black) and `silkscreen`.
+
+The thickness is the board file's `thickness_mm`, the value the mechanical model takes (7.4). Without these keys
+edakit's defaults hold: 1.6 mm, green, white print. JLCPCB prints white on every mask but white, and black on white –
+`silkscreen` states the colour the artwork is drawn for, and FILES.order fails it on a mask that gets the other one, as
+it fails a thickness the form does not offer (FR-4, 2 layers: 0.4, 0.6, 0.8, 1.0, 1.2, 1.6 or 2.0 mm). `edakit cost`
+names the settings of `[order]` that differ from the fee table's board as not in the price (above).
+
+The board file is in the layout hash, so a changed remark, colour or thickness voids the sign-offs of scope `layout`.
+The settings that change the board as made – thickness, colours, finish and mark, and copper weight, vias, material and
+the other keys marked so in 10.2 where they differ from edakit's default – are in the fab hash as well (8.2). So the
+layout review M-5 of scope `fab` lapses with them too, while a new remark or tab zone leaves it standing.
+
 Every gate run then writes `fab/<board>/order.md` next to the upload files – every field of the planned maker's form in
 the order of its form, with the maker's word and where it comes from (edakit, `[looks]`, edakit.toml, board file, the
-Gerber files, `[project] quantity`, `[release] assembly`, `[tooling]`, the stock snapshot, `[cart]`): layers, size,
-quantity, thickness, the colours of mask and silkscreen, finish, the mark, the remark; PCBA type and side, tooling holes
-"Added by Customer" when the board has `[tooling]`, bake "Yes" when the stock snapshot gives a BOM part MSL ≥ 5; the
-upload files; the tab zones with their nearest copper and every outline stretch with no copper within `tab_copper_mm`
-(Gerber coordinates, what the maker sees); the parts bought separately with their supplier (`edakit order`) – and, with
-`[order]`, `fab/<board>/order.json` with the settings the fab hash takes; FILES.order checks the settings against the
-files, for every maker of `[cart] makers`. Fill the form from order.md of the released run – with M-5 of scope `fab` its
-settings are the ones the review signed – and write tab zones only on stretches it lists as free.
+Gerber files, `[project] quantity`, `[release] assembly`, `[tooling]`, the stock snapshot, `[cart]`):
 
-**Up to the cart: `edakit cart` and the skill cart.** The form is filled from the release, not typed: edakit prepares
-the order and checks what comes back; Claude fills the maker's pages in the owner's browser (Claude in Chrome), puts the
-board into the cart with the maker's cart button and stops there. Nothing orders or pays – no command, skill or API path
-does: the order, the payment and M-2 at the maker are the owner's (the user's decision of 2026-10-30).
+- layers, size, quantity, thickness, the colours of mask and silkscreen, finish, the mark, the remark;
+- PCBA type and side, tooling holes "Added by Customer" when the board has `[tooling]`, bake "Yes" when the stock
+  snapshot gives a BOM part MSL ≥ 5;
+- the upload files;
+- the tab zones with their nearest copper and every outline stretch with no copper within `tab_copper_mm` (Gerber
+  coordinates, what the maker sees);
+- the parts bought separately with their supplier (`edakit order`).
 
-**State 2026-11-01:** ordering step 0 recorded the four forms in the owner's accounts (`recorded` in each profile), and
-the skill cart ran live at every maker up to the cart, nothing ordered – on a copy of the example blinker-555 released
-on the KiCad tool chain (`tests/fixtures/makers/LIVE.md`: 5.7 JLCPCB, 5.12 PCBWay, 5.8 Eurocircuits, 5.10 AISLER up to
-its price). No order has gone through it yet: step 5 below, `edakit cart actual`, has run on recorded data only.
-EasyEDA's own ODB++ export went through ordering step 0b on a probe board
-(`tests/fixtures/makers/aisler/step0b_2026-11-01.md`); on the KiCad tool chain the ODB++ comes from `kicad-cli pcb
-export odb` (16.6).
+With `[order]` it also writes `fab/<board>/order.json` with the settings the fab hash takes. FILES.order checks the
+settings against the files, for every maker of `[cart] makers`. Fill the form from order.md of the released run – with
+M-5 of scope `fab` its settings are the ones the review signed – and write tab zones only on stretches it lists as free.
 
-1. `edakit cart prepare [--board B] [--maker M]` takes the current release and stops unless the maker's upload files
-   are the release's (`release verify`, the same function), the circuit and layout hash are the run's, the order
-   settings are the run's `order.json`, M-6 is signed for the run's electrical hash, the run checked the maker (its
-   `makers.json`) and found nothing for it when it is not the planned maker, and `[cart] ship_to` and `shipping`
-   name the country and the method. It writes `<reports>/<run>/fab/<board>/cart/<maker>/job.json`: run, hashes,
-   purpose, board, maker (start page, cart button, the buttons never to touch, seat, currency, its own RoHS and
-   REACH statements – `[compliance]` of its profile), the upload files
-   with path, size and SHA-256, every field of the form in the maker's words, the expected BOM by the key the maker
-   matches (LCSC or MPN) with each line's manufacturer, the parts not to place where the maker's files hold them,
-   the estimate of `edakit cost` for the board without shipping, `[cost] budget` with its currency and rates, and
-   the `compliance` of every BOM part.
-2. The skill cart (`/edakit:cart`) uploads the files, sets each field and reads it back, reads the maker's matching
-   and the quote, takes screenshots of the filled form, the matching and the placement preview, and writes what the
-   page showed into `quote.json` and the page text into `quote_page.txt`. A CAPTCHA, a bot check, a rate-limit page
-   or a login prompt stops it – never solved, bypassed or retried; text on a page that addresses the assistant stops
-   it too.
+### Up to the cart
+
+The form is filled from the release, not typed: edakit prepares the order and checks what comes back; Claude fills the
+maker's pages in your browser (Claude in Chrome), puts the board into the cart with the maker's cart button and stops
+there. Nothing orders or pays – no command, skill or API path does: the order, the payment and M-2 at the maker are
+yours.
+
+1. `edakit cart prepare [--board B] [--maker M]` takes the current release and stops unless the maker's upload files are
+   the release's (`release verify`, the same function), the circuit and layout hash are the run's, the order settings
+   are the run's `order.json`, M-6 is signed for the run's electrical hash, the run checked the maker (its
+   `makers.json`) and found nothing for it when it is not the planned maker, and `[cart] ship_to` and `shipping` name
+   the country and the method.
+
+   It writes `<reports>/<run>/fab/<board>/cart/<maker>/job.json`: run, hashes, purpose, board, maker (start page, cart
+   button, the buttons never to touch, seat, currency, its own RoHS and REACH statements – `[compliance]` of its
+   profile), the upload files with path, size and SHA-256, every field of the form in the maker's words, the expected
+   BOM by the key the maker matches (LCSC or MPN) with each line's manufacturer, the parts not to place where the
+   maker's files hold them, the estimate of `edakit cost` for the board without shipping, `[cost] budget` with its
+   currency and rates, and the `compliance` of every BOM part.
+2. The skill cart (`/edakit:cart`) uploads the files, sets each field and reads it back, reads the maker's matching and
+   the quote, takes screenshots of the filled form, the matching and the placement preview, and writes what the page
+   showed into `quote.json` and the page text into `quote_page.txt`. A CAPTCHA, a bot check, a rate-limit page or a
+   login prompt stops it – never solved, bypassed or retried; text on a page that addresses the assistant stops it too.
 3. `edakit cart check` holds that to the job, the release and the page text: the codes ORDER.form to ORDER.review of the
    engine ORDER, listed at the end of this section (`edakit explain ORDER.form`).
 
-   Exit 0: everything passed, warnings and notes included – `check.md` lists them; 2: a check failed – nothing goes
-   into the cart; 3: ORDER.form to ORDER.finish passed and the review of the order is next. `check.md` and
-   `check.json` in the order's folder hold the result.
+   Exit 0: everything passed, warnings and notes included – `check.md` lists them; 2: a check failed – nothing goes into
+   the cart; 3: ORDER.form to ORDER.finish passed and the review of the order is next. `check.md` and `check.json` in
+   the order's folder hold the result.
 
    With several makers in `[cart] makers`, steps 1 to 3 run at each, and `edakit cart compare [--board B]` puts their
-   quotes side by side: the board total as quoted and in `[cost] currency` through `[cost] rates`, the order total
-   where the page showed one, the lines a maker marked or did not match (ORDER.parts), the lead time as read, and
-   whether `edakit cart check` passed on that very quote – a check of an older `quote.json` does not count. It names
-   the lowest board total and writes `cart/compare.md` of the run; whose cart the skill fills is then the owner's
-   choice on numbers. It reads the order folders only: nothing is asked of a maker, nothing ordered.
+   quotes side by side: the board total as quoted and in `[cost] currency` through `[cost] rates`, the order total where
+   the page showed one, the lines a maker marked or did not match (ORDER.parts), the lead time as read, and whether
+   `edakit cart check` passed on that very quote – a check of an older `quote.json` does not count. It names the lowest
+   board total and writes `cart/compare.md` of the run; whose cart the skill fills is then your choice on numbers. It
+   reads the order folders only: nothing is asked of a maker, nothing ordered.
 4. Only then the skill presses the maker's cart button, reads the cart line back into `cart.json` and runs
-   `edakit cart check --cart`: board and quantity of the job, the quote's price within the tolerance – at AISLER,
-   which has no cart, the line of the saved project on its page `/checkout` (name, quantity, net price, VAT apart),
-   and the skill stops before "Continue to Checkout". It writes the
-   order record `hardware/orders/<date>-<board>-<maker>.json` – versioned, outside every hash: run, hashes, board,
-   maker, quantity, the regulatory verdict with the numbers and grades of its findings, the cart line. It is what
-   stays of an order when the run folder (not versioned) is gone, and for a board that is sold a part of the technical
-   file (15.2).
-5. After the owner has paid: the skill reads the order page – or a saved order page or invoice, `--from FILE` (HTML or
-   PDF; edakit reads its text itself) – into `actual.json`, and `edakit cart actual` checks ORDER.read on it and writes
-   `actual.md`: estimate, quote and actual line by line, per order shipping, VAT and coupon against `[cost]`. What maps
-   one to one goes into the project's fee table at once (the owner's decision of 2026-10-30) – `[cost] fees` for the
-   planned maker, else `hardware/fees/<maker>.json`, created by the first order: a fee per order or side its value, a
-   fee per unit whose count on the order is edakit's its value per unit in the tier the count falls in, the PCB price
-   for the board's size where quantity and board settings are the ones the table prices (5 boards, 1.6 mm, green, white
-   print, lead-free HASL); a count that differs is named and nothing written; values before coupons, each with the order
-   number as its source and the order's date. A maker without a fee table – PCBWay, Eurocircuits, AISLER – gets the
-   order's lines as read in `hardware/fees/<maker>.json`: no fee model prices them yet. `edakit cost` takes per fee the
-   value with the newest date, from the project's table or the shipped one; values from the owner's orders reach the
-   shipped table through `edakit proposal`. The order record gets the order number and the three totals, and `edakit
-   release current` shows them beside the release. A failed ORDER.read writes neither: `actual.md` says why, exit 2.
+   `edakit cart check --cart`: board and quantity of the job, the quote's price within the tolerance. At AISLER, which
+   has no cart, it checks the line of the saved project on its page `/checkout` (name, quantity, net price, VAT apart),
+   and the skill stops before "Continue to Checkout".
+
+   It writes the order record `hardware/orders/<date>-<board>-<maker>.json` – versioned, outside every hash: run,
+   hashes, board, maker, quantity, the regulatory verdict with the numbers and grades of its findings, the cart line. It
+   is what stays of an order when the run folder (not versioned) is gone, and for a board that is sold a part of the
+   technical file (15.2).
+5. After you have paid: the skill reads the order page – or a saved order page or invoice, `--from FILE` (HTML or PDF;
+   edakit reads its text itself) – into `actual.json`, and `edakit cart actual` checks ORDER.read on it and writes
+   `actual.md`: estimate, quote and actual line by line, per order shipping, VAT and coupon against `[cost]`.
+
+   What maps one to one goes into the project's fee table at once – `[cost] fees` for the planned maker, else
+   `hardware/fees/<maker>.json`, created by the first order: a fee per order or side its value, a fee per unit whose
+   count on the order is edakit's its value per unit in the tier the count falls in, the PCB price for the board's size
+   where quantity and board settings are the ones the table prices (5 boards, 1.6 mm, green, white print, lead-free
+   HASL); a count that differs is named and nothing written; values before coupons, each with the order number as its
+   source and the order's date.
+
+   A maker without a fee table – PCBWay, Eurocircuits, AISLER – gets the order's lines as read in
+   `hardware/fees/<maker>.json`: no fee model prices them yet. `edakit cost` takes per fee the value with the newest
+   date, from the project's table or the shipped one; values from your orders reach the shipped table through
+   `edakit proposal`. The order record gets the order number and the three totals, and `edakit release current` shows
+   them beside the release. A failed ORDER.read writes neither: `actual.md` says why, exit 2.
 
 The board line of a checked quote is the PCB price `edakit cost` takes for the board while fab hash, quantity and maker
 are the quote's – read from `quote.json` of the current release, nothing written into edakit.toml; `[cost] pcb_price`
 still wins. Without Claude in Chrome, or without the files on the computer the browser runs on, the skill prints the job
-as a checklist, the owner fills the form, `quote.json` and `quote_page.txt` – the page text, which ORDER.read holds
-every value to; `edakit cart check` stops without it –, and `edakit cart check` checks them.
+as a checklist; you fill the form, `quote.json` and `quote_page.txt` – the page text, which ORDER.read holds every value
+to; `edakit cart check` stops without it –, and `edakit cart check` checks them.
 
-**Makers.** JLCPCB and PCBWay (China), Eurocircuits (Belgium) and AISLER (Netherlands) have a profile each in
-`edakit/makers/` (`[cart]`, 10.1); ordering step 0 read the four forms in the owner's accounts and recorded them
-(`recorded`, the notes in `tests/fixtures/makers/`). edakit's default thickness of 1.6 mm is not one of Eurocircuits':
-it offers 1.55 mm, a thickness JLCPCB in turn does not offer, and FILES.order finds 1.6 mm there (live run 5.8 stopped
-at "Board thickness") – a board for Eurocircuits gets `thickness_mm = 1.55` in its board file. PCBWay, Eurocircuits and
-AISLER match the parts by manufacturer part number (PARTS.fact/mpn). PCBWay and Eurocircuits read it from
-`bom_<board>_mpn.csv`; both took it, and the CPL in JLCPCB's columns, as edakit writes them. The file's header is the
-one Eurocircuits' import maps by itself – Designator, Quantity, Value, Package, Manufacturer, Manufacturer Part Number:
-a column named "MPN" it left unmapped and took "Comment" for the part number (live run 5.8); PCBWay's engineers read the
-same file by eye. AISLER reads it from the components of the ODB++, by the property its BOM tab is told to use ("mpn",
-live run 5.10): the KiCad tool chain writes MPN and Manufacturer into every footprint (16.6), and SYNC.odb finds a
-component that does not carry its MPN. The CPL's rotations are EasyEDA's, whose footprints JLCPCB's preview draws
-(`[cpl] zero = "footprint"`). Eurocircuits reads IEC 61188-7 – pin 1 lower left – and drew the SOT-23 Q1 at 180° turned
-by 90° (5.8): its profile names that zero in `[cpl] zero` and gives in `[cpl.turns]` per footprint the degrees its
-rotation is ahead, and the gate writes `cpl_<board>_eurocircuits.csv` with them (SYNC.cpl). A footprint not listed keeps
-its rotation and warns: M-2 checks it in the Assembly Editor, and it gets its line. JLCPCB's form offers no order number
-any more – "Mark on PCB" is "Remove Mark" or a 2D barcode (`barcode`: `"qr"`, `"datamatrix"`; `serial_number`, 10.2) –,
-so `mark = "specify"` is not a value of its form, and its former placeholder `JLCJLCJLCJLC` is printed as text at every
-maker: FILES.order warns about it. PCBWay's placeholder `WayWayWay` is text to every other maker, and FILES.order finds
-it there. At PCBWay engineers review the files before payment and the assembly price comes with that review, and so does
-the part matching – ORDER.parts has no lines to hold there, and the parts PCBWay buys show on the order page: the skill
-stops after the upload of the cart, submitting the files is the owner's. Three forms ask for a consent in the owner's
-name – JLCPCB's assembly terms (pre-checked), PCBWay's "Agree" on export control, Eurocircuits' Terms of Sales –: the
-skill stops and asks. The placement preview opens again from the cart at JLCPCB and Eurocircuits; PCBWay shows none;
-AISLER has no cart, and the skill stops before "Continue to Checkout", the order record taken from its `/checkout` page.
+### Makers
+
+JLCPCB and PCBWay (China), Eurocircuits (Belgium) and AISLER (Netherlands) have a profile each in `edakit/makers/`
+(`[cart]`, 10.1); ordering step 0 read the four forms in real accounts and recorded them (`recorded`, the notes in
+`tests/fixtures/makers/`). edakit's default thickness of 1.6 mm is not one of Eurocircuits': it offers 1.55 mm, a
+thickness JLCPCB in turn does not offer, and FILES.order finds 1.6 mm there (live run 5.8 stopped at "Board thickness")
+– a board for Eurocircuits gets `thickness_mm = 1.55` in its board file.
+
+PCBWay, Eurocircuits and AISLER match the parts by manufacturer part number (PARTS.fact/mpn). PCBWay and Eurocircuits
+read it from `bom_<board>_mpn.csv`; both took it, and the CPL in JLCPCB's columns, as edakit writes them. The file's
+header is the one Eurocircuits' import maps by itself – Designator, Quantity, Value, Package, Manufacturer, Manufacturer
+Part Number: a column named "MPN" it left unmapped and took "Comment" for the part number (live run 5.8); PCBWay's
+engineers read the same file by eye.
+
+AISLER reads it from the components of the ODB++, by the property its BOM tab is told to use ("mpn", live run 5.10): the
+KiCad tool chain writes MPN and Manufacturer into every footprint (16.6), and SYNC.odb finds a component that does not
+carry its MPN.
+
+The CPL's rotations are EasyEDA's, whose footprints JLCPCB's preview draws (`[cpl] zero = "footprint"`). Eurocircuits
+reads IEC 61188-7 – pin 1 lower left – and drew the SOT-23 Q1 at 180° turned by 90° (live run 5.8). Its profile names
+that zero in `[cpl] zero` and gives in `[cpl.turns]` per footprint the degrees its rotation is ahead, and the gate
+writes `cpl_<board>_eurocircuits.csv` with them (SYNC.cpl). A footprint not listed keeps its rotation and warns: M-2
+checks it in the Assembly Editor, and it gets its line.
+
+At PCBWay engineers review the files before payment, and the assembly price and the part matching come with that review
+– ORDER.parts has no lines to hold there, and the parts PCBWay buys show on the order page: the skill stops after the
+upload of the cart, and submitting the files is yours. Three forms ask for a consent in your name – JLCPCB's assembly
+terms (pre-checked), PCBWay's "Agree" on export control, Eurocircuits' Terms of Sales –: the skill stops and asks. The
+placement preview opens again from the cart at JLCPCB and Eurocircuits; PCBWay shows none; AISLER has no cart (step 4).
+
 AISLER assembles from ODB++: `odb_<board>.zip` from EasyEDA through the patched MCP server and bridge (2.4, 2.5), on the
-KiCad tool chain from kicad-cli (16.6), held to the released files by SYNC.odb. Eurocircuits and AISLER sit inside the
-EU: there is no import, and for `sale` the owner stays the manufacturer of the product (15.1). PARTS.stock and `edakit
-stock` ask JLCPCB's catalogue only where JLCPCB is among the makers; another maker's stock is what its matching shows,
-checked by ORDER.parts. Each profile also holds what the maker itself states about RoHS and REACH (`[compliance]`, read
-2026-11-01, with the pages): JLCPCB's and PCBWay's boards are RoHS compliant only with a lead-free finish, JLCPCB's
-assembly terms do not promise lead-free solder, AISLER's statement leaves the placed parts out, Eurocircuits makes
-lead-free only. The job hands it to the regulatory review at the order (15.5).
+KiCad tool chain from `kicad-cli pcb export odb` (16.6), held to the released files by SYNC.odb. Eurocircuits and AISLER
+sit inside the EU: there is no import, and for `sale` you stay the manufacturer of the product (15.1). PARTS.stock and
+`edakit stock` ask JLCPCB's catalogue only where JLCPCB is among the makers; another maker's stock is what its matching
+shows, checked by ORDER.parts.
 
-The MCP server cannot order. Lessons from the reference order:
+Each profile also holds what the maker itself states about RoHS and REACH (`[compliance]`, read 2026-11-01, with the
+pages): JLCPCB's and PCBWay's boards are RoHS compliant only with a lead-free finish, JLCPCB's assembly terms do not
+promise lead-free solder, AISLER's statement leaves the placed parts out, Eurocircuits makes lead-free only. The job
+hands it to the regulatory review at the order (15.5).
+
+### Lessons from a real order
+
+The MCP server cannot order.
 
 - Upload the maker's files of the current release only – at JLCPCB `gerber_<b>.zip`, `bom_<b>.csv`, `cpl_<b>.csv`, the
   job lists them for every maker: `edakit release verify` on the files you are about to upload, right before the upload
@@ -732,84 +737,83 @@ The MCP server cannot order. Lessons from the reference order:
   board so the cheap option works (through-hole parts you solder yourself get `bom: false`); PARTS.stock fails a
   "Standard Only" part on an Economic order as soon as `edakit stock` has read it.
 - **Tooling holes:** with your own (7.2) choose "added by customer"; otherwise JLCPCB adds rails or holes. FILES.order
-  warns about an Economic order with fewer than two – in the reference project they were found only in the quote. It
-  also warns about a board with its own tooling holes on an Economic order when neither `[order]` nor `[cart]` is there
-  (grade `tooling`): then no order.md is written, nothing tells the maker the holes are the customer's, and the form
-  stays at "Added by JLCPCB". An `[order]` in the board file – a remark such as "2 tooling holes added by customer", as
-  the example coin-cell-led has it (17.11) – writes order.md with "Added by Customer".
+  warns about an Economic order with fewer than two. It also warns about a board with its own tooling holes on an
+  Economic order when neither `[order]` nor `[cart]` is there (grade `tooling`): then no order.md is written, nothing
+  tells the maker the holes are the customer's, and the form stays at "Added by JLCPCB". An `[order]` in the board file
+  – a remark such as "2 tooling holes added by customer", as the example coin-cell-led has it (17.11) – writes order.md
+  with "Added by Customer".
 - **Moisture-sensitive parts:** JLCPCB bakes MSL ≥ 5 parts for a fee and includes the 48 h in the lead time; its MSL
   classification may differ from the manufacturer's datasheet – PARTS.stock warns with JLCPCB's value from the stock
   snapshot.
 - **Tented vias** if a side is visible (open vias are holes and tin dots).
 - **Order number:** JLCPCB prints none since May 2026 – "Remove Mark", or for traceability a 2D barcode or a serial
-  number (`barcode`, `serial_number` in `[order]`), placed by JLCPCB where there is room; its former placeholder on the
-  silkscreen would be printed as text (FILES.order warns). PCBWay still prints its number at a placeholder, "Specify a
-  location" (`mark = "specify"`, `WayWayWay` on the silkscreen). A board with `[looks]` is ordered with "Remove Mark"
-  unless `[order]` gives `mark`: the choice changes the fab hash, so it is made in the files before the gate run and
-  M-5, not at the form, where it would void M-5 (the owner's decision of 2026-10-31). Without `[order]` the board has no
-  order.json and the mark is in no hash – give the board an `[order]` table.
-- **Remarks** (max. 200 characters, FILES.order): where panel tabs may and may not go, no V-cut on visible edges. The
-  reference remark was written by hand and wrong three times: tabs where a track ran 0.45 mm from the edge, then 202
+  number (`barcode`: `"qr"`, `"datamatrix"`; `serial_number` in `[order]`, 10.2), placed by JLCPCB where there is room.
+  Its form's "Mark on PCB" offers no order number any more, so `mark = "specify"` is not a value of its form, and its
+  former placeholder `JLCJLCJLCJLC` is printed as text at every maker: FILES.order warns about it.
+- **Order number at PCBWay, and with `[looks]`:** PCBWay still prints its number at a placeholder, "Specify a location"
+  (`mark = "specify"`, `WayWayWay` on the silkscreen); `WayWayWay` is text to every other maker, and FILES.order finds
+  it there. A board with `[looks]` is ordered with "Remove Mark" unless `[order]` gives `mark`: the choice changes the
+  fab hash, so it is made in the files before the gate run and M-5, not at the form, where it would void M-5. Without
+  `[order]` the board has no order.json and the mark is in no hash – give the board an `[order]` table.
+- **Remarks** (max. 200 characters, FILES.order): where panel tabs may and may not go, no V-cut on visible edges. A real
+  project's remark, written by hand, was wrong three times: tabs where a track ran 0.45 mm from the edge, then 202
   characters, then a "1.17 mm free" that a new pour 0.55 mm from the edge made false.
 - **M-2** in the assembly preview: rotation and polarity of every polarised part on both sides (compare with the
   polarity sheet), no part missing in the BOM tool, then pay. At JLCPCB "Confirm Parts Placement" opens a dialog:
   without its tick "Do not confirm automatically" the order goes into production 72 hours after it is placed, confirmed
-  or not (live run 5.7) – the tick is the owner's, given at the form.
+  or not (live run 5.7) – the tick is yours, given at the form.
 - If JLCPCB's DFM check reports something the layout review already accepted or an acceptance in the sign-off file names
   (e.g. an annular ring the fab confirmed, GEO.ring), it is in the checklist so nobody panics. GEO.ring holds rings and
   hole spacing to JLCPCB's table, so a via pair 0.47 mm apart is no finding there.
 
-The codes of the order at the maker – generated from the catalog, `edakit/catalog/codes.toml`:
+The codes of the order at the maker, generated from the catalog (`edakit/catalog/codes.toml`):
 
-<!-- edakit:generated codes ORDER -->
-**`ORDER.form`** – form = job (error; replaces B-1)  
-edakit cart check: every field of the job (job.json, from the keys of [order] in the maker's words) is read back from the page with its value (quote.json; case and blanks ignored) – the quantities and, where the job lists parts not to place, their marks included; a field the page shows that is neither in the job nor in the profile's ignore fails.
+<!-- edakit:generated table ORDER -->
+| Code | Title | Severity |
+| --- | --- | --- |
+| [`ORDER.form`](../docs/catalog/order.html#ORDER.form) | form = job | error; replaces B-1 |
+| [`ORDER.parts`](../docs/catalog/order.html#ORDER.parts) | parts = release | error; replaces B-2 |
+| [`ORDER.quote`](../docs/catalog/order.html#ORDER.quote) | quote against the estimate | warning; replaces B-3 |
+| [`ORDER.read`](../docs/catalog/order.html#ORDER.read) | read, not made up | error; replaces B-4 |
+| [`ORDER.files`](../docs/catalog/order.html#ORDER.files) | the same files | error; replaces B-5 |
+| [`ORDER.finish`](../docs/catalog/order.html#ORDER.finish) | lead in the finish | error; replaces B-6 |
+| [`ORDER.review`](../docs/catalog/order.html#ORDER.review) | regulatory review of this order | error, open: pending; replaces B-7 |
 
-**`ORDER.parts`** – parts = release (error; replaces B-2)  
-edakit cart check: the maker's matching (quote.json parts) has exactly the lines of the job's BOM – the same part numbers (LCSC or MPN, as the maker matches), the same designators; a line the maker marked (not matched, out of stock, replaced, another manufacturer, 'Standard Only') fails. A maker that matches the BOM only in its review after the cart (matching = "review" in its profile – PCBWay) shows no lines before it: nothing to hold, and the parts it buys show on the order page (edakit cart actual).
-
-**`ORDER.quote`** – quote against the estimate (warning; replaces B-3)  
-edakit cart check: the board's price lines of the quote without shipping and VAT – PCB, assembly fees, parts – against the estimate of edakit cost for the board in the job, each above [cart] tolerance per price line a warning with both values; the board total above [cost] budget a warning. Without an estimate – a maker without a fee table (PCBWay, Eurocircuits, AISLER), a quote in another currency than the estimate – the board total against the budget alone, in [cost] currency through [cost] rates; without a rate for the quote's currency the budget is named, not compared.
-
-**`ORDER.read`** – read, not made up (error; replaces B-4)  
-edakit cart check: every value of quote.json – the fields, the part numbers and designators, the price amounts, the file names, the lead time – occurs in quote_page.txt, the page text Claude kept.
-
-**`ORDER.files`** – the same files (error; replaces B-5)  
-edakit cart check: the SHA-256 of every upload file is still that of the job and of the current release's manifest, the job's run is still the current release, and the names – and sizes, where the page shows them – of the uploads the page lists are the job's files, none more. Where the files go up in the cart (upload = "after_cart" – PCBWay) their names come with the cart line (cart.json files); an upload the maker's pages name nowhere (unshown – JLCPCB's BOM and CPL) is held by its SHA-256 alone.
-
-**`ORDER.finish`** – lead in the finish (error; replaces B-6)  
-edakit cart check: a surface finish with lead (HASL that is not lead-free) in the job or on the page fails for purpose.use sale or without a purpose, warns for gift and is a note for private – support, not legal advice (handbook 15).
-
-**`ORDER.review`** – regulatory review of this order (error, open: pending; replaces B-7)  
-edakit cart check: regulatory.md, the result of the agent regulatory-reviewer on the order, exists, names the SHA-256 of job.json and quote.json as they are now and ends with the line 'Order: OK'. Without it the check is open (exit 3); another hash, 'Order: not OK' or another last line fails.
+Rule, why, fix and sources of each: `edakit explain CODE`, or the code on its page of the catalog.
 <!-- edakit:end -->
 
-**Future work: wishes to the makers.** Every maker is reached through its pages in the browser. Where a maker opens an
-interface of its own, edakit can do the same over it, without a browser. These are wishes, not tasks: nobody asks the
-makers for them (the owner's decision of 2026-11-01); one is built when a maker offers it.
+### Future work: wishes to makers
+
+Every maker is reached through its pages in the browser. Where a maker opens an interface of its own, edakit can do the
+same over it, without a browser. These are wishes, not tasks: nobody asks the makers for them; one is built when a maker
+offers it.
 
 - **JLCPCB:** its official API, with an interface for the assembly. `edakit cart quote --api` would upload the Gerber
   (`pcb/uploadGerber`), run the pre-review (`pcb/audit/get`) and price the board (`pcb/calculate`), and `edakit stock`
   would read all parts in one call (`component/getComponentDetailByCode`); the keys from `JLCPCB_APP_ID`,
   `JLCPCB_ACCESS_KEY`, `JLCPCB_SECRET_KEY` or the keyring.
 - **PCBWay:** its partner API (api-partner.pcbway.com, an API key, approval only): the quotation of the PCB and the
-  state of an order the owner placed; the assembly keeps its BOM quotation in the browser.
+  state of an order you placed; the assembly keeps its BOM quotation in the browser.
 - **AISLER:** an upload key, for the ODB++ without the browser.
 - **Beta LAYOUT:** access to `api.beta-layout.com`, which answers but has no documentation.
 
-The rules of this section stay as they are: no API path orders or pays (`pcb/create` is never called), and ORDER.form
-to ORDER.review hold what an interface returns as they hold the page (ordering concept, step 12).
+The rules of this section stay as they are: no API path orders or pays (`pcb/create` is never called), and ORDER.form to
+ORDER.review hold what an interface returns as they hold the page (ordering concept, step 12).
 
 ## 8.5 Acceptance (M-4)
 
-After delivery every board gets a short acceptance test: visual check (polarity of every polarised part), supply
-current at the nominal voltage against the simulated value, every LED/output, every input, the firmware's self-test.
-Deviation beyond tolerance → find the cause (model, firmware, assembly) before the board is used.
+After delivery every board gets a short acceptance test: visual check (polarity of every polarised part), supply current
+at the nominal voltage against the simulated value, every LED/output, every input, the firmware's self-test. Deviation
+beyond tolerance → find the cause (model, firmware, assembly) before the board is used.
 
-The list is section 6 of the protocol, "after delivery, per board": M-4, the datasheet points with `when =
-"acceptance"` (8.2), with `[project] requirements` every acceptance step of a requirement with its ID, the project's
-checks of phase `acceptance` (8.1), each with its command, and the sign-offs of the project's agents of phase
-`acceptance` (8.6), each with the agent that signs it – started in its own session after delivery:
+The list is section 6 of the protocol, "after delivery, per board":
+
+- M-4;
+- the datasheet points with `when = "acceptance"` (open from the datasheets, 8.2);
+- with `[project] requirements`, every acceptance step of a requirement with its ID;
+- the project's checks of phase `acceptance` (8.1), each with its command;
+- the sign-offs of the project's agents of phase `acceptance` (8.6), each with the agent that signs it – started in its
+  own session after delivery.
 
 ```text
 - [ ] M-4 Acceptance test of every delivered board: visual check, supply current, every LED, the button
@@ -818,16 +822,17 @@ checks of phase `acceptance` (8.1), each with its command, and the sign-offs of 
 - [ ] A abnahme: Camera test of every board after delivery: each LED at its place – `uv run simulator/pico/pruefstand.py mitlesen`
 ```
 
-M-4 works through it and names the requirements it tested in its note; signed, it lets their acceptance steps pass,
-and the requirements whose evidence is such a check (8.7). A board of a published release that passed it drops the
-release's pre-release mark: `edakit release publish --built <tag>` (8.3). The list "after uploading to the manufacturer,
-before paying" works the same way for M-2: the datasheet points with `when = "order"` and the checks of phase `order`.
+M-4 works through it and names the requirements it tested in its note; signed, it lets their acceptance steps pass, and
+the requirements whose evidence is such a check (8.7). A board of a published release that passed it drops the release's
+pre-release mark: `edakit release publish --built <tag>` (publishing, 8.3). The list
+"after uploading to the manufacturer, before paying" works the same way for M-2: the datasheet points with
+`when = "order"` and the checks of phase `order`.
 
 ## 8.6 Project scripts and agents
 
 A project registers in edakit.toml the scripts that touch edakit's flow (`[scripts.<name>]`, 10.1): one that writes a
-file edakit reads, derives something from edakit's data, changes the project library in EasyEDA, or holds up the
-release as a check of its own. A script that only reads what edakit made – a review package from the release – stays
+file edakit reads, derives something from edakit's data, changes the project library in EasyEDA, or holds up the release
+as a check of its own. A script that only reads what edakit made – a review package from the release – stays
 unregistered, like every other script of the project. Each entry says what its script reads and writes; when it runs
 follows from that and from edakit's steps in their fixed order, so nobody has to write that rule into a skill.
 
@@ -841,17 +846,19 @@ follows from that and from edakit's steps in their fixed order, so nobody has to
 
 **`cmd` and Python.** `cmd` is free: a list, its first word a program, run in the project directory. `python` or
 `python3` as the first word is edakit's own interpreter – the one edakit itself runs in –, whatever python the PATH
-holds, so that the script can `from edakit import …`: `cmd = ["python", "hardware/sockel/sockel.py", "--pruefen"]`.
-That holds wherever edakit runs the entry – `edakit run`, a step that runs an input first, the gate for a check of
-phase export (8.1); the protocol shows `cmd` as written. A script you run by hand – a check of phase order or
-acceptance, or any script outside edakit – gets the python of your shell. **`[[release.stages]]` stay exactly as they
-are:** their `cmd` runs as written,
-`python` the one of the PATH, since existing projects rely on it – a stage that wants edakit's Python becomes a
-`[scripts]` entry of kind `check`.
+holds, so that the script can `from edakit import …`: `cmd = ["python", "hardware/sockel/sockel.py", "--pruefen"]`. That
+holds wherever edakit runs the entry – `edakit run`, a step that runs an input first, the gate for a check of phase
+export (8.1); the protocol shows `cmd` as written. A script you run by hand – a check of phase order or acceptance, or
+any script outside edakit – gets the python of your shell.
 
-`[[release.stages]]` (8.1) take part as checks of phase export before S. The names of edakit's data in `reads` and
-`writes`, each with a hash of what edakit has of it offline – `<b>` is a made board; a bought or hand-wired one
-(4.5) has none of this data:
+**`[[release.stages]]` stay exactly as they are:** their `cmd` runs as written, `python` the one of the PATH, since
+existing projects rely on it – a stage that wants edakit's Python becomes a `[scripts]` entry of kind `check`.
+`[[release.stages]]` (8.1) take part as checks of phase export before S.
+
+### Data names
+
+The names of edakit's data in `reads` and `writes`, each with a hash of what edakit has of it offline – `<b>` is a made
+board; a bought or hand-wired one (4.5) has none of this data:
 
 | Name | What | Made by | Hash of |
 |---|---|---|---|
@@ -865,30 +872,34 @@ are:** their `cmd` runs as written,
 | `release` | the current release (8.3) | `edakit gate`, `edakit release withdraw` | its `fab/manifest.json` |
 | `firmware` | the firmware contract, with `[firmware]` (3.5) | `edakit firmware` | the file `[firmware] out` |
 
-Anything else is a path relative to edakit.toml. A folder holds the files in it, and an edakit file named by its path
-is its data: `hardware/boards/main.toml` is `board:main`, `hardware/boards/main.geometry.json` `footprints:main`,
+Anything else is a path relative to edakit.toml. A folder holds the files in it, and an edakit file named by its path is
+its data: `hardware/boards/main.toml` is `board:main`, `hardware/boards/main.geometry.json` `footprints:main`,
 `build/edakit/route/main.ses` `routing:main`, the files of a gate run's `fab/main/` `gerber:main`.
 
 Data that does not exist yet – no board file, no geometry, no routing, no gate run with stage F, no current release –
 hashes as `absent` until it is made. A run from before the fab hash has no `fab_layers` in its manifest: they are
-computed from its files, as `edakit fab diff` does. The project library is in EasyEDA only, and edakit cannot read it
-offline. What changes it is an `easyeda` script, and that the script ran is what tells edakit: its hash is the last
-change `edakit run` saw an `easyeda` script make (which script, when – kept in `hardware/scripts.lock`, below); before
-the first there is none. So an `easyeda` script writes `project-library:<b>`, never `footprints:<b>`: the geometry is
-edakit's own data, measured anew from the PCB by `pcb dump`.
+computed from its files, as `edakit fab diff` does.
+
+The project library is in EasyEDA only, and edakit cannot read it offline. What changes it is an `easyeda` script, and
+that the script ran is what tells edakit: its hash is the last change `edakit run` saw an `easyeda` script make (which
+script, when – kept in `hardware/scripts.lock`, below); before the first there is none. So an `easyeda` script writes
+`project-library:<b>`, never `footprints:<b>`: the geometry is edakit's own data, measured anew from the PCB by
+`pcb dump`.
+
+### Resolving the entries
 
 `edakit check` resolves the entries with edakit's steps into one order and reports what keeps them from it, as errors
 with the ID `scripts`:
 
 - `kind` and the fields of the kind are there, and no field of another kind
 - every data name is edakit's, with a made board of `[boards]`; `firmware` only with `[firmware]`
-- a script writes files, an input also `board:<b>`, an `easyeda` script changes `project-library:<b>`; graph, parts,
-  sim and edakit's other data – `footprints:<b>` too – are written by edakit or by hand
+- a script writes files, an input also `board:<b>`, an `easyeda` script changes `project-library:<b>`; graph, parts, sim
+  and edakit's other data – `footprints:<b>` too – are written by edakit or by hand
 - scripts that write the same file or change the same data run in a fixed order through `after`; a script that writes
   what it reads gets the version of the one before it
 - an edakit step needs what an input writes – directly or through another input – and nothing a derive writes
-- the steps, the data and `after` make no cycle; the message names the cycle with the data on each edge. Read-backs
-  of a later round do not count: `edakit check` reads the footprints (GEO.hole), `edakit sim` the routing (`copper`),
+- the steps, the data and `after` make no cycle; the message names the cycle with the data on each edge. Read-backs of a
+  later round do not count: `edakit check` reads the footprints (GEO.hole), `edakit sim` the routing (`copper`),
   `pcb place` the footprints
 - a check has an `id` of its own – no stage of the gate, no sign-off, no code of the catalog, none twice with
   `[[release.stages]]` –, a `phase`, and reads `gerber:<b>` only at `"after F"`
@@ -898,20 +909,21 @@ with the ID `scripts`:
 ERROR   scripts  review: in a cycle – review –[stamp]→ edakit gate –[release]→ review
 ```
 
-A derive that reads the release cannot be checked by the gate that writes it. The gate reports the same in stage G,
-with the ID `scripts`: entries that do not resolve fail it – edakit refuses them.
+A derive that reads the release cannot be checked by the gate that writes it. The gate reports the same in stage G, with
+the ID `scripts`: entries that do not resolve fail it – edakit refuses them.
 
-**Stamps.** For every script of kind `input`, `derive` and `easyeda`, `hardware/scripts.lock` keeps what its result was
-made from at its last run: its `cmd`, the script itself and the hash of everything it `reads`. The file is versioned,
-so that the CI sees the stamps too, and it is in no hash (8.2).
+### Stamps
+
+For every script of kind `input`, `derive` and `easyeda`, `hardware/scripts.lock` keeps what its result was made from at
+its last run: its `cmd`, the script itself and the hash of everything it `reads`. The file is versioned, so that the CI
+sees the stamps too, and it is in no hash (8.2).
 
 - **The script itself** is the first word of `cmd` that names a file – relative to edakit.toml, or inside the project
   when it is absolute: `hardware/art/make_art.py` of `["python", "hardware/art/make_art.py"]`, also
   `../../hardware/art/make_art.py` of a variant. Options (`-…`) and the system's programs do not count. A `cmd` that
   names no file – `make art`, `python -m art` – stamps its `reads` only; the script's files then belong in `reads`.
-- **What it reads** hashes as its name says (table above), a file as its bytes, a folder as every file below it with
-  its path in the folder – without `__pycache__`, `*.pyc`, `*.pyo` and names that start with a dot (`.git`, editor
-  files).
+- **What it reads** hashes as its name says (table above), a file as its bytes, a folder as every file below it with its
+  path in the folder – without `__pycache__`, `*.pyc`, `*.pyo` and names that start with a dot (`.git`, editor files).
 
 Compared with its stamp, a script is
 
@@ -921,18 +933,18 @@ Compared with its stamp, a script is
 | outdated | `cmd` changed, a hash changed, `reads` names something the stamp lacks, or it comes after a script that is outdated or never ran – through `after`, or because it reads what that script writes |
 | never run | it has no stamp |
 
-What is absent here is not compared, whatever the stamp says: the routing, the mechanical model, the Gerber data and
-the release live in `build/`, which a fresh clone and the CI do not have, and a file outside the project – a system
-font – may be missing on another machine. A note names it, and the stamp counts again where the data is; data made
-since a stamp that found it absent is a change. A script that reads `project-library:<b>` is not compared there before
+What is absent here is not compared, whatever the stamp says: the routing, the mechanical model, the Gerber data and the
+release live in `build/`, which a fresh clone and the CI do not have, and a file outside the project – a system font –
+may be missing on another machine. A note names it, and the stamp counts again where the data is; data made since a
+stamp that found it absent is a change. A script that reads `project-library:<b>` is not compared there before
 `edakit run` saw an `easyeda` script change the library; after it, it is outdated until it ran again.
 
 | Kind | Outdated or never run: `edakit check` | the gate, stage G |
 |---|---|---|
 | `input` | error | fails – the gate runs it first, unless `--no-scripts` |
-| `derive`, `easyeda` | warning | a warning: the script runs (`edakit run`), or the owner accepts it (`"match": "scripts sockel outdated*"`, 8.2) |
+| `derive`, `easyeda` | warning | a warning: the script runs (`edakit run`), or you accept it (`"match": "scripts sockel outdated*"`, 8.2) |
 | `check`, `sim` | – (no stamp: a check runs in every gate and its result is the gate's protocol, 8.1; the plugin runs inside `edakit sim`) | |
-| a change of the project library, with something from before it (below) | warning | a warning: the steps make it again, or the owner accepts it |
+| a change of the project library, with something from before it (below) | warning | a warning: the steps make it again, or you accept it |
 
 ```text
 ERROR   scripts  kunst outdated: hardware/art/make_art.py changed – Bell, greeting, star and snowflake as shapes for the silkscreen
@@ -941,13 +953,15 @@ NOTE    scripts  baumgrafik: not compared – routing:tree absent here
 
 A current script is a passed row of stage G.
 
-**Running the scripts.** edakit runs `input` scripts itself, `easyeda` scripts on command only (concept
-project-scripts, decision 7). `edakit run NAME …` runs the named `input`, `derive` and `easyeda` scripts – in the order
-`edakit scripts` shows, whatever order they are named in; an `easyeda` script, which has no place in that order, before
-the first step that reads the project library – and records each run as `edakit scripts stamp` does. A check is not
-run so: phase export is the gate's, phase order and acceptance a line of section 6 (8.1). Only the named scripts run;
-one that comes after a script that is not current is still outdated after its run, and `edakit run` says which to run
-with it ("jahr still outdated: after kunst, which never ran – edakit run kunst jahr", exit 2).
+### Running the scripts
+
+edakit runs `input` scripts itself, `easyeda` scripts on command only (concept project-scripts, decision 7).
+`edakit run NAME …` runs the named `input`, `derive` and `easyeda` scripts – in the order `edakit scripts` shows,
+whatever order they are named in; an `easyeda` script, which has no place in that order, before the first step that
+reads the project library – and records each run as `edakit scripts stamp` does. A check is not run so: phase export is
+the gate's, phase order and acceptance a line of section 6 (8.1). Only the named scripts run; one that comes after a
+script that is not current is still outdated after its run, and `edakit run` says which to run with it
+("jahr still outdated: after kunst, which never ran – edakit run kunst jahr", exit 2).
 
 A step that reads what an input writes runs the inputs that are outdated or never ran first, in their order: an input
 that writes what the step reads, and the inputs before it – those it reads from, those `after` names. Which steps:
@@ -958,8 +972,8 @@ that writes what the step reads, and the inputs before it – those it reads fro
 | `silk apply`, `silk preview` | the board file and the SVGs of `[[silk.art]]` of its board – preview shows what apply places |
 | `gate` (with and without `--easyeda`) | every made board's board file and artwork, and the simulation plugin |
 
-The other actions – `pcb dump`, `nets`, `tooling`, `pour`, `autolayout`, the single actions of `route`, `silk check`
-– run none, and neither do `edakit sim` and `edakit firmware`, which read the simulation plugin: they run in the
+The other actions – `pcb dump`, `nets`, `tooling`, `pour`, `autolayout`, the single actions of `route`, `silk check` –
+run none, and neither do `edakit sim` and `edakit firmware`, which read the simulation plugin: they run in the
 pre-commit hook and the CI, where a command that writes files is not wanted – `edakit check` there names an outdated
 input. A step runs no `derive` script: it names the ones before it in the order that are outdated or never ran, with
 `edakit run <name>`. It never runs an `easyeda` script: it names one that changes its board's project library and is
@@ -975,33 +989,38 @@ project scripts before edakit gate (handbook 8.6):
 ```
 
 - **A failed script** – an exit code other than 0, or no file where `writes` names one – records nothing and shows the
-  end of its output; a step does not run then: "edakit silk apply: not run – kunst failed; fix it, or --no-scripts
-  runs the step with the files as they are" (exit 1). A script may run 15 minutes, as a check of the gate.
-- **The way out**, for one run: `--no-scripts` on each of these commands. The step reads the files as they are and
-  names the inputs it did not run; stage G of a gate run so fails on them.
+  end of its output; a step does not run then:
+  "edakit silk apply: not run – kunst failed; fix it, or --no-scripts runs the step with the files as they are" (exit
+  1). A script may run 15 minutes, as a check of the gate.
+- **The way out**, for one run: `--no-scripts` on each of these commands. The step reads the files as they are and names
+  the inputs it did not run; stage G of a gate run so fails on them.
 - **Entries that do not resolve** or a lock that cannot be read: no input runs, the step says so and runs –
   `edakit check` and stage G fail on them.
 - **Inside a script edakit runs**, `EDAKIT_SCRIPT` holds its name: a step the script calls runs no script, and
-  `edakit run` refuses to run that script again. `EDAKIT_CONFIG` names the project's edakit.toml, so that the
-  script's own edakit calls find it.
+  `edakit run` refuses to run that script again. `EDAKIT_CONFIG` names the project's edakit.toml, so that the script's
+  own edakit calls find it.
 
-**An `easyeda` script under the EasyEDA claim.** `edakit run` claims EasyEDA for it as every edakit command that
-touches EasyEDA does (11.2): in a Claude session, with `[project] lock = "auto"`, it claims or renews the session's
+### Scripts of kind easyeda
+
+**Under the EasyEDA claim.** `edakit run` claims EasyEDA for an `easyeda` script as every edakit command that touches
+EasyEDA does (the claim, 11.2): in a Claude session, with `[project] lock = "auto"`, it claims or renews the session's
 claim – the note says `edakit run <name>` –, renews it every minute while the script runs, and keeps it afterwards, as
-the other commands do (`edakit lock release` when the series is done). Another session holds EasyEDA: nothing runs,
-exit 3, with who holds it since when. In a terminal – no session – and with `lock = "off"` nothing is claimed, and the
-script runs.
+the other commands do (`edakit lock release` when the series is done). Another session holds EasyEDA: nothing runs, exit
+3, with who holds it since when. In a terminal – no session – and with `lock = "off"` nothing is claimed, and the script
+runs.
 
 **What an `easyeda` script changed.** When it ran through `edakit run`, the lock records the change of each project
 library it writes: which script, when, by whom, and what is from before it – the parts placed in the PCB with their
-geometry, and the routing of the board. EasyEDA keeps a placed part's old copy of a footprint until the part is
-deleted and recreated (9); `edakit pcb parts --write` recreates the deleted parts from the project library. Until
+geometry, and the routing of the board. EasyEDA keeps a placed part's old copy of a footprint until the part is deleted
+and recreated (chapter 9); `edakit pcb parts --write` recreates the deleted parts from the project library. Until
 `edakit pcb dump` measured every part again (not with `--ref`) and `edakit route all` wrote its routing into EasyEDA
 (exit 0, 2 or 3), `edakit check`, `edakit scripts` and stage G of the gate warn; each of the two steps takes its part
-off and says so. The warning also names the scripts made from them – they read the board's footprints, mechanical
-model, routing or Gerber data: the reference project's tree artwork. Once the steps made the data again, their stamps
-tell them outdated, and an input among them runs before its step (`silk apply`). A script that reads
-`project-library:<b>` itself is outdated at once.
+off and says so.
+
+The warning also names the scripts made from them – they read the board's footprints, mechanical model, routing or
+Gerber data: a real project's tree artwork. Once the steps made the data again, their stamps tell them outdated, and an
+input among them runs before its step (`silk apply`). A script that reads `project-library:<b>` itself is outdated at
+once.
 
 ```text
 WARNING scripts  project-library:main changed by tdisplay (2026-10-28 23:46) – from before it: the parts in the PCB, which keep their old copy until deleted and recreated (edakit pcb parts --write, then edakit pcb dump; after the first change of a copy edakit schematic create --save and schematic layout --save before); the routing (edakit route all)
@@ -1028,18 +1047,23 @@ order: edakit firmware → edakit check → edakit sim → … → edakit route 
 ```
 
 `edakit scripts` exits 0 when every script is current, 2 when one is outdated or never ran, something is from before a
-change of the project library, or the entries do not resolve, 1 when the lock cannot be read. `edakit run` exits 0
-when every named script ran and is current, 2 when one is still outdated, 1 when it refuses – a name not in
-`[scripts]`, a check, entries that do not resolve, a lock that cannot be read – or a script failed, 3 when another
-session holds EasyEDA. `stamp` refuses – and writes nothing – a name that is not in `[scripts]`, a check, entries that
-do not resolve, and a script whose `writes` are not there ("run it first"); it drops the stamps of scripts no longer
-in `[scripts]`. What the author leaves out of `reads` is not noticed – the system font the bell's `make_art.py` draws
-with –, and the entry's `check`, an exact check for when the stamp is not enough, does not run yet.
+change of the project library, or the entries do not resolve, 1 when the lock cannot be read. `edakit run` exits 0 when
+every named script ran and is current, 2 when one is still outdated, 1 when it refuses – a name not in `[scripts]`, a
+check, entries that do not resolve, a lock that cannot be read – or a script failed, 3 when another session holds
+EasyEDA.
 
-**Project agents.** A project registers its own agents in edakit.toml too (`[agents.<name>]`, 10.1). An agent
-delivers a sign-off, and a sign-off is bound to a hash: a project agent signs a sign-off of its own, in addition to
-edakit's, or takes over one of edakit's reviews – only explicitly, with `replaces`. The reference project's two
-reviewers, and an agent with a sign-off of its own:
+`stamp` refuses – and writes nothing – a name that is not in `[scripts]`, a check, entries that do not resolve, and a
+script whose `writes` are not there ("run it first"); it drops the stamps of scripts no longer in `[scripts]`.
+
+What the author leaves out of `reads` is not noticed – the system font the bell's `make_art.py` draws with. The entry's
+`check`, an exact check for when the stamp is not enough, does not run yet.
+
+### Project agents
+
+A project registers its own agents in edakit.toml too (`[agents.<name>]`, 10.1). An agent delivers a sign-off, and a
+sign-off is bound to a hash: a project agent signs a sign-off of its own, in addition to edakit's, or takes over one of
+edakit's reviews – only explicitly, with `replaces`. A real project's two reviewers, and an agent with a sign-off of its
+own:
 
 ```toml
 [agents.elektrotechniker]
@@ -1096,41 +1120,48 @@ Who reviews where – each in its own session; a project agent in place of the e
     none
 ```
 
+### Checking the agents' entries
+
 `edakit check` checks the entries and reports what keeps them from resolving as errors with the ID `agents`; the gate
 fails stage G on them, and passes a row per agent when they resolve:
 
 - `file` exists and is the agent of this name – the `name` in its front matter: the skills start the agent by it and
   `done_by` names it –, and `about`, `signs` and `phase` are there; `phase` is `export` or `acceptance` – in phase
-  `order` the owner checks at the manufacturer, no agent gets there
-- a sign-off of its own has a `scope` (`circuit`, `layout`, `fab`); edakit's review has neither a `scope` – it keeps
-  the one the sign-off file gives it – nor phase `acceptance`; no project agent has the name of an edakit reviewer
+  `order` you check at the manufacturer, no agent gets there
+- a sign-off of its own has a `scope` (`circuit`, `layout`, `fab`); edakit's review has neither a `scope` – it keeps the
+  one the sign-off file gives it – nor phase `acceptance`; no project agent has the name of an edakit reviewer
 - `signs` is a sign-off, `M-<number>`, signed by one agent of the project; edakit's review (M-1, M-5, M-6) only with
-  `replaces` naming the agent that signs it otherwise, and `replaces` only so; never the owner's (M-2, M-4)
-- `after` names other entries of `[agents]`, makes no cycle at a hook point, and names no agent that reviews only
-  later – an agent at the circuit review cannot come after one that reviews the layout
+  `replaces` naming the agent that signs it otherwise, and `replaces` only so; never yours (M-2, M-4)
+- `after` names other entries of `[agents]`, makes no cycle at a hook point, and names no agent that reviews only later
+  – an agent at the circuit review cannot come after one that reviews the layout
 
 ```text
 ERROR   agents  optik: signs M-5, edakit's layout review – only with replaces = "pcb-reviewer", the agent that signs it otherwise
 ```
 
-**The gate requires their sign-offs** (8.2). A sign-off of its own of phase `export` is a condition of the release
-like M-1, M-5 and M-6, bound to the hash of its `scope`: when the sign-off file does not list it, the gate adds it as
-open ("M-7 is missing – added as open, the project agent optik signs it ([agents.optik])"). One of phase `acceptance`
-is a line of the acceptance list after delivery and does not hold up the release. With `replaces` edakit's review
-stays required, and the project agent signs it. The gate holds each of these sign-offs to its agent: it counts only
-when `done_by` names the agent – its name as a word, in any case: "Agent pcb-pruefer (own session)" names
-pcb-pruefer, "agent pcb-reviewer" does not –, and one of its own only in the phase and scope of the agent's entry.
-Signed by another – by edakit's pcb-reviewer once pcb-pruefer took its place – or for another scope, it is open, and
-section 6 has a note why. An open line there names the project agent that signs it: "- [ ] M-5 Layout reviewed … –
-the project agent pcb-pruefer signs it, in place of pcb-reviewer". A requirement may name a project agent's sign-off
-(`signoff = "M-7"`, 8.7). Without `[agents]` nothing changes: edakit's agents review and sign as before, and nobody
-checks who signed them.
+### The agents' sign-offs in the gate
 
-**Who starts what.** edakit's steps run the inputs they read, the gate runs the checks; the rest – a derive or an
-`easyeda` script, the project's agents – Claude starts, where the skills say it at their steps (the flow of the concept
-project-scripts and its hook points). Every session starts with a line per script and agent (11.4); their state, the
-order and who reviews where are in `edakit scripts`. A project without `[scripts]` and `[agents]` has none of this,
-and the skills skip it.
+**The gate requires their sign-offs** (8.2). A sign-off of its own of phase `export` is a condition of the release like
+M-1, M-5 and M-6, bound to the hash of its `scope`: when the sign-off file does not list it, the gate adds it as open
+("M-7 is missing – added as open, the project agent optik signs it ([agents.optik])"). One of phase `acceptance` is a
+line of the acceptance list after delivery and does not hold up the release. With `replaces` edakit's review stays
+required, and the project agent signs it.
+
+The gate holds each of these sign-offs to its agent: it counts only when `done_by` names the agent – its name as a word,
+in any case: "Agent pcb-pruefer (own session)" names pcb-pruefer, "agent pcb-reviewer" does not –, and one of its own
+only in the phase and scope of the agent's entry. Signed by another – by edakit's pcb-reviewer once pcb-pruefer took its
+place – or for another scope, it is open, and section 6 has a note why. An open line there names the project agent that
+signs it: "- [ ] M-5 Layout reviewed … – the project agent pcb-pruefer signs it, in place of pcb-reviewer". A
+requirement may name a project agent's sign-off (`signoff = "M-7"`, 8.7). Without `[agents]` nothing changes: edakit's
+agents review and sign as before, and nobody checks who signed them.
+
+### Who starts what
+
+edakit's steps run the inputs they read, the gate runs the checks; the rest – a derive or an `easyeda` script, the
+project's agents – Claude starts, where the skills say it at their steps (the flow of the concept project-scripts and
+its hook points). Every session starts with a line per script and agent (the working agreements, 11.4); their state, the
+order and who reviews where are in `edakit scripts`. A project without `[scripts]` and `[agents]` has none of this, and
+the skills skip it.
 
 | Where in the flow | What of the project's | Who starts it |
 |---|---|---|
@@ -1144,18 +1175,22 @@ and the skills skip it.
 | before the gate | a derive made from the layout – the stand that fits the board | Claude, `edakit run` (skill release); the inputs it reads the gate runs itself |
 | in the gate | the checks of phase `export`: `at` before S or after F | the gate (8.1) |
 | layout review, between the two gate runs | the agents of scope `fab`; the ones that replace pcb-reviewer and electrical-reviewer – the sign-off counts when `done_by` names the agent | Claude (skill release) |
-| after uploading, after delivery | the checks of phase `order` and `acceptance`, the agents of phase `acceptance` – lines of section 6 | the owner; an agent Claude, in its own session (skill release) |
+| after uploading, after delivery | the checks of phase `order` and `acceptance`, the agents of phase `acceptance` – lines of section 6 | you; an agent Claude, in its own session (skill release) |
 
 When the skill new-project has written the entries, `edakit scripts` shows that they resolve before any script runs;
 entries that do not resolve are fixed first.
 
 ## 8.7 Requirements
 
-With `[project] requirements` (3.6) the gate holds the circuit to what it must do. The file is required: without the
-key DOCS.file is an open point of section 5, and the run is NOT RELEASED, as with a required sign-off missing. A file
-the key names that is missing or not valid stops the gate before its first stage (exit 1, no run folder), as it stops
-`edakit check`. Stage G runs DOCS.ref to DOCS.derived on the file (3.3); a finding about a draft is information there
-– but DOCS.derived, a warning for a draft too. After the stages, every requirement's evidence is evaluated against this run:
+With `[project] requirements` (3.6) the gate holds the circuit to what it must do. The file is required: without the key
+DOCS.file is an open point of section 5, and the run is NOT RELEASED, as with a required sign-off missing. A file the
+key names that is missing or not valid stops the gate before its first stage (exit 1, no run folder), as it stops
+`edakit check`. Stage G runs DOCS.ref to DOCS.derived on the file (3.3); a finding about a draft is information there –
+but DOCS.derived, a warning for a draft too.
+
+### Evidence and binding
+
+After the stages, every requirement's evidence is evaluated against this run:
 
 | `verify` | passes when | otherwise |
 |---|---|---|
@@ -1169,24 +1204,26 @@ What an accepted requirement without passing evidence does to the release, its b
 | Binding | Without passing evidence |
 |---|---|
 | `must` | blocks the release: "1 requirement(s) must without passing evidence: R-4 (section 11)" |
-| `should` | a warning – it holds up the release until the owner accepts it in `accept`, matched over "R-3 <its text>": `{"match": "R-3 *", "scope": "decision", "reason": "D-9: …", "by": "owner", "date": "…"}` |
+| `should` | a warning – it holds up the release until you accept it in `accept`, matched over "R-3 <its text>": `{"match": "R-3 *", "scope": "decision", "reason": "D-9: …", "by": "owner", "date": "…"}` |
 | `may` | information |
 
-What is only tested after the export does not hold up the release: as long as nothing else failed, an acceptance
-step that M-4 has not signed yet, a project check of phase `order` or `acceptance` whose list is not signed yet, or a
+What is only tested after the export does not hold up the release: as long as nothing else failed, an acceptance step
+that M-4 has not signed yet, a project check of phase `order` or `acceptance` whose list is not signed yet, or a
 sign-off of phase `order` or `acceptance` that is still open, leaves the requirement "open after the export".
 
 **A draft binds nothing yet** (`status = "draft"`, or no `status`). It is evaluated like any requirement and listed in
 section 11 with its evidence, marked as a draft – `→ draft, not binding yet – no passing evidence` –, but it never
 blocks the release and needs no acceptance in the sign-off file, whatever its binding. What DOCS.ref to DOCS.draft find
-about it is information in stage G (`edakit check` warns about it, 3.6). Errors and blocking start once the user has set
+about it is information in stage G (`edakit check` warns about it, 3.6). Errors and blocking start once you have set
 `status = "accepted"`. A dropped requirement is listed, not evaluated.
 
+### Section 11 of the protocol
+
 **Section 11 "Requirements"** of the protocol lists every requirement with binding and status, each piece of evidence
-with what it found, and the result; the gate's output has it in one line (`requirements: 2 passed, 1 open after the
-export, 1 draft`) – a draft counts as a draft, whatever its evidence did. It follows section 10, so that every other
-section keeps its number, and a project without the key has none. From the tests' led-bar
-(`tests/test_requirements.py`), offline:
+with what it found, and the result; the gate's output has it in one line
+(`requirements: 2 passed, 1 open after the export, 1 draft`) – a draft counts as a draft, whatever its evidence did. It
+follows section 10, so that every other section keeps its number, and a project without the key has none. From the
+tests' led-bar (`tests/test_requirements.py`), offline:
 
 ```markdown
 - **R-1** must, accepted: Runs from the USB port of a laptop with all eight LEDs on. → open after the export – does not block the release
@@ -1208,8 +1245,8 @@ A requirement whose evidence is a project check – the rule watcher of the test
 ```
 
 **Signing for a requirement.** A reviewer whose check a requirement names in `verify` – the agent electrical-reviewer
-for `signoff = "M-1"`, regulatory-reviewer for `"M-6"`, pcb-reviewer for `"M-5"` – judges it and names the
-requirements it found met in the note it signs with; its result gives the line,
+for `signoff = "M-1"`, regulatory-reviewer for `"M-6"`, pcb-reviewer for `"M-5"` – judges it and names the requirements
+it found met in the note it signs with; its result gives the line,
 `M-1: OK for state 1a2d…; requirements met: R-4, R-5`. An ID in the note is passing evidence, so a requirement the
 review did not find met stays out of the note and is a finding of the review. The sign-off file needs no other field.
 Because the requirements files are in the circuit hash (8.2), a changed requirement voids M-1 and M-6, and the next

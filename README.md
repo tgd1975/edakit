@@ -2,34 +2,35 @@
 
 # edakit
 
-**Circuit design as code.** Everything a board is made of is text in your repository: the circuit, the parts with
-their datasheet sources, placement, routing rules, copper pours and silkscreen per board, every decision and every
-review sign-off. Claude Code does every step from there – checks, simulation, schematic, PCB, routing, release –
-through edakit and EasyEDA Pro. A change is a diff, and the release gate checks it on the files that go to the
-manufacturer. What is not text yet is listed under [Status and limits](#status-and-limits).
+**Circuit design as code.** edakit takes a circuit from an idea to a board ready to order. It is a plugin for Claude
+Code and a command line, and everything it works on is text in your repository.
 
-The documentation as a site – handbook, rule catalog with the reference circuits, concepts, skills, agents:
-<https://tgd1975.github.io/edakit/>.
+You bring the idea, what the board must do, and the decisions on money, purpose and looks. Claude and edakit bring the
+rest: the parts with their datasheets, the values, the rules, the simulation, the schematic and the PCB in EasyEDA Pro
+or KiCad, and the manufacturing files. They take the order up to the cart at JLCPCB, PCBWay, Eurocircuits or AISLER.
+Each maker's quote comes with its price, the parts it has in stock and its lead time, checked by edakit. You order, pay
+and hold the boards.
 
-You describe the circuit once – parts by LCSC number, nets with voltage ranges, pins by name or role (`U1.GP6`,
-`D2.anode`) resolved through the parts entries – in a *hardware graph* written as TOML, with comments where the
-reasons are; edakit generates the resolved JSON beside it, so that a diff shows every connection as pin numbers.
-edakit checks it with rules, simulates every operating case with ngspice, generates the schematic in EasyEDA Pro,
-brings parts and nets into the PCB without dialogs, places the fixed parts from a plan, routes with Freerouting,
-pours, prints the silkscreen, and releases the Gerber, BOM and pick-and-place files for the maker – JLCPCB, PCBWay,
-Eurocircuits or AISLER – only after a gate has
-checked them – against the graph, on the exported files themselves. Nobody draws a wire by hand; everything in the
-EasyEDA project is generated and can be regenerated.
+The [walkthrough](handbook/17-walkthrough.md) shows it on a small board: 14 steps, six of them yours, seven decisions.
+Every step is checked by rules and reviewers, but that is no guarantee. The regulatory review is support, not legal
+advice. In today's words, edakit specializes an agent [harness](docs/architecture.md) for circuit design.
 
-It comes as a **Claude Code plugin** (skills, agents, the pinned EasyEDA MCP server, a hook that lets parallel
-sessions share EasyEDA, one that starts every session with the working agreements and the project's own scripts and
-agents) and as a **Python command line** (`edakit`), plus a **handbook** that explains what, how and why – including
-the ~60 EasyEDA API behaviours that cost us time.
+At least that is the vision, and we are close. [How it works](docs/how-it-works.md#state) says what has run live, what
+has not, and where it goes next.
 
-```text
- parts database ──► hardware graph ──► schematic ──► PCB ──► manufacturing files ──► JLCPCB ──► acceptance
-   (P)              (G, E)             (S)          (L)      (F)                     (M-2)       (M-4)
-```
+- **Makers.** A checked circuit and its drawing, or a board from it: start with the [quickstart](docs/quickstart.md).
+- **Engineers.** A rule of your own for edakit's checks: [adding a rule](docs/adding-a-rule.md).
+- **Developers.** Work on edakit itself: [working on edakit](docs/working-on-edakit.md).
+
+**What it needs.** Claude Code; uv and ngspice; for a board EasyEDA Pro desktop with Node 24, or KiCad 10. Tested on
+Linux; Windows and macOS are untested. An account at the maker you order from.
+
+**What it costs.** The checks, the simulation and the drawings run offline. Claude's part is paid in tokens: six
+typical tasks of the evals cost 0.55 USD together with Sonnet 5.5 and 1.48 USD with Opus 5.5
+([evals](evals/README.md)). The board itself is quoted by each maker side by side.
+
+**What it is not.** No editor of its own: it draws in EasyEDA Pro or KiCad. Two copper layers. The simulation is DC
+operating points with a few transient and AC runs.
 
 ## Install
 
@@ -40,44 +41,33 @@ In Claude Code in the terminal:
 /plugin install edakit@edakit
 ```
 
-The VS Code extension has no `/plugin`; there the same goes through the command line, in a terminal. With only the
-extension installed, `claude` is not on the PATH – it is the binary that comes with the extension,
-`~/.vscode/extensions/anthropic.claude-code-<version>-linux-x64/resources/native-binary/claude`:
-
-```bash
-claude plugin marketplace add tgd1975/edakit
-claude plugin install edakit@edakit
-```
-
-To update, refresh the marketplace and update the plugin, then start a new session (VS Code: a new Claude session or
-*Developer: Reload Window*):
-
-```text
-/plugin marketplace update edakit
-```
-
-```bash
-claude plugin marketplace update edakit && claude plugin update edakit@edakit
-```
-
-An update brings the newest version of edakit. Auto-update for the edakit marketplace can be switched on under
-`/plugin` → Marketplaces (off by default for marketplaces outside Anthropic).
+In VS Code, and to update: [handbook 2.3](handbook/02-setup.md#23-claude-code-the-plugin). Without Claude Code:
+`uvx --from git+https://github.com/tgd1975/edakit edakit <command>`. The rest of the tool chain is in
+[handbook 2](handbook/02-setup.md).
 
 **Versions.** Every change to edakit comes as a version with its own number, such as 0.2.0. The
 [changelog](CHANGELOG.md) says what each one changed. When the middle number goes up, a project has to act, and the
-changelog says what to do. `edakit --version` names the version that runs. A project can also stay on one version
-([handbook 2.3](handbook/02-setup.md#23-claude-code-the-plugin)).
+changelog says what to do. `edakit --version` names the version that runs.
 
-**Two tool chains.** A project draws its boards in EasyEDA Pro (the default) or in KiCad 10 – `toolchain = "kicad"`
-in `[project]` of edakit.toml. On KiCad edakit writes one KiCad project per board and calls kicad-cli: no bridge, no
-claim, no clicks; graph, checks, simulation, plan, routing and gate are the same ([handbook 16](handbook/16-kicad.md);
-tested offline and in CI against KiCad 10, the first real project is open).
+## Try it in two minutes
 
-Needed besides: EasyEDA Pro desktop, Node 24, [uv](https://docs.astral.sh/uv/), ngspice – on KiCad, KiCad 10 instead
-of EasyEDA and Node. Freerouting downloads itself on Linux x64. Then build and import the patched bridge extension
-once and start EasyEDA unthrottled – [handbook/02-setup.md](handbook/02-setup.md).
+In a clone of this repository, without the plugin and without EasyEDA:
 
-Without Claude Code: `uvx --from git+https://github.com/tgd1975/edakit edakit <command>`.
+```bash
+cd examples/coin-cell-led
+uvx --from git+https://github.com/tgd1975/edakit edakit check
+```
+
+It checks the walkthrough's circuit in a fraction of a second and shows a finding that was accepted, with its reason.
+The [quickstart](docs/quickstart.md) goes on from there: a finding explained, the simulation, the drawn schematic.
+
+## Read on
+
+- [How it works](docs/how-it-works.md) – the steps, who does what, the words, the state and the future work.
+- [Projects](docs/projects/README.md) – the boards built with edakit, with their schematics and boards.
+- [The handbook](handbook/README.md) – the guides: the circuit, the board, troubleshooting.
+- [The reference](handbook/10-reference.md) – every key and every command; the [rule catalog](docs/catalog/index.html).
+- The documentation as a site: <https://tgd1975.github.io/edakit/>.
 
 ## What it runs, sends, fetches
 
@@ -93,7 +83,7 @@ edakit runs on your machine and collects no usage data. Your design leaves it on
 **Hooks.** The plugin has two:
 
 - at the start of a session, in a project with an edakit.toml, it adds the working agreements (handbook 11.4) and
-  the project's own scripts and agents to the session – it reads files only (`edakit/agreements.py`);
+  the project's own scripts and agents to the session. It reads files only (`edakit/agreements.py`);
 - before each EasyEDA tool call, it claims EasyEDA for the session, so that two sessions never drive it at once
   (`edakit/lock.py`, state in `~/.local/state/edakit/`).
 
@@ -116,192 +106,6 @@ The checks, the simulation, the drawings, the routing and the gate run offline.
 - `.claude/settings.json`, which enables the edakit marketplace and plugin for every session in the repository;
 - a pre-commit hook in `.githooks/`, with `git config core.hooksPath .githooks`;
 - a CI workflow that runs the same checks on every pull request.
-
-## Use
-
-```bash
-edakit doctor                   # tool chain ready?
-edakit block add led --as STATUS --connect in=LED_STATUS   # a building block with checked parts into the graph
-edakit part import C2297        # symbol pins and footprint of an LCSC number from the library – no EasyEDA
-edakit part diff C17179532 C49284748   # before a swap: how the new footprint lies over the old one
-edakit part fetch C2297         # the datasheet PDF, kept with the project and checked to be of that part
-edakit part search "RGB LED 5mm common cathode"   # JLCPCB's catalogue: number, class, stock – no EasyEDA
-edakit check                    # the engines on the graph (P, G) – < 1 s, findings by code, explained
-edakit graph show R3            # one part or net: what the graph and its parts entry say, the findings on it
-edakit mutate                   # mistakes built into a copy of the design one at a time: what no code catches
-edakit graph json --write       # the resolved graph.json beside the TOML graph: pin numbers; --check reports drift
-edakit graph convert            # a project with a JSON graph moves to hardware/graph.toml once, its sign-offs kept
-edakit domains                  # the domains of rules on for the project (core, usb, radio) and the suggested ones
-edakit stock                    # what JLCPCB says about the assembled parts, dated – check PARTS.stock reads it
-edakit cost                     # the order for `quantity` boards: class, fees, parts, drivers, budget
-edakit order                    # assembler's BOM, a cart per other supplier, hand-assembly list for all sets
-edakit explain REQ.missing      # what a code is about, why, what to do, sources
-edakit sim                      # ngspice: every supply x load x tolerance corner (E) – seconds
-edakit docs --write             # values quoted in documents and schematic notes, from the design data (DOCS.quote)
-edakit firmware                 # the board's firmware contract as JSON from the graph; --check reports drift
-edakit req                      # what the circuit must do: needs, requirements, their evidence; req R-1: one chain
-edakit scripts                  # the project's scripts: current, outdated or never run, the order; run NAME runs them
-edakit schematic draw           # the schematic as SVG from graph and parts – no EasyEDA (enough without a PCB)
-edakit handover                 # what the circuit hands over to the layout – where the PCB designer starts
-edakit schematic create --save  # template schematic from the graph
-edakit schematic layout --save  # readable board schematic: blocks, wires, GPIO table
-edakit pcb parts --write        # parts into the PCB, no "Import Changes" dialog
-edakit pcb place --write        # decoupling capacitors, pull resistors next to their host – offline
-edakit pcb apply                # outline, holes, tooling holes, fixed parts from the plan
-edakit pcb autolayout           # the small parts
-edakit route all                # Freerouting -> EasyEDA, pours, DRC
-edakit route diagnose           # why a connection stays open: walled in, blocked by other nets, or free – offline
-edakit silk apply               # designators where there is room, silkscreen check
-edakit lock                     # who holds EasyEDA; claim, release, yield between parallel sessions
-edakit gate --easyeda           # release gate: protocol, manifest, files for the makers
-edakit fab diff RUN_A RUN_B     # where the manufacturing files of two gate runs differ – raster, drills, BOM, CPL
-edakit release current|withdraw|verify   # the one run that may be uploaded; verify the files right before upload
-edakit release publish          # the order files of every board's current release as a GitHub release (gh)
-edakit cart fields              # every field of the maker's order form from [order], with where it comes from
-edakit cart prepare|check       # the job of the skill cart from the release; ORDER.form to ORDER.review on what it brought back
-edakit cart actual              # the real cost of the order: against estimate and quote, into the fee table
-edakit cart compare             # every maker's quote side by side: price, parts in stock, lead time, checked
-```
-
-In Claude Code the skills do the orchestration: `/edakit:new-project`, `/edakit:requirements`,
-`/edakit:circuit-design`, `/edakit:start`, `/edakit:hardware-change`, `/edakit:part-search`, `/edakit:own-part`,
-`/edakit:pcb-round`, `/edakit:release`, `/edakit:cart`, `/edakit:decision-round`;
-`/edakit:new-project` sets a project up from an interview – boards, the maker, assembly, order, money, purpose,
-firmware, documents, the project's own tools –, every key from an answer, and for a project that moves to edakit the
-agent `project-surveyor` first makes the inventory of what it brings – scripts, agents, skills, hardware data,
-documents, decisions –, each with where it was found, the proposal and its reason; `/edakit:cart` puts a released
-board into the maker's cart with Claude in Chrome, checked by edakit, and never orders or pays;
-`/edakit:requirements` writes what the circuit must do into `hardware/requirements.toml` with the user, and the agent
-`requirements-engineer` reads a project's documents for it – candidates with their source, contradictions, vague
-words, requirements without evidence; the agent `part-selector` finds parts at the project's distributors
-(LCSC/JLCPCB, RS, Farnell, Mouser, DigiKey, Reichelt) and writes their entries; the agent `easyeda-operator` runs one
-long EasyEDA step and returns only its result; the agents `electrical-reviewer`, `regulatory-reviewer` (EU law for the
-board's purpose: RoHS, REACH, radio, batteries – support, not legal advice) and `pcb-reviewer` do the independent
-reviews whose results are the sign-offs – each also judges the requirements its sign-off verifies. Circuit, layout and
-review are separate roles: the circuit designer hands the board over in writing – `layout` in the graph, shown by
-`edakit handover` and kept by the plan check SYNC.plan – the PCB designer works from that in a session of its own,
-and the session that designs does not review ([handbook 14.1](handbook/14-design.md#141-roles)).
-
-What a project teaches goes back with `/edakit:propose-rule`: a part fact, a check or hint, a domain setting, a block
-or the retirement of a check, as an issue here, sealed with its SHA-256. An Action triages it – accepted and built into
-one pull request of rule proposals, rejected with the reason, or a question back
-([handbook 14.4](handbook/14-design.md#144-from-a-finding-to-a-rule)). What a project had to build itself because
-edakit could not goes back with `/edakit:propose-feature`, triaged the same way and built into one pull request of
-feature proposals ([handbook 11.6](handbook/11-working-with-claude.md#116-when-edakit-falls-short-feature-proposals)).
-Issues by others are welcome too; the repository owner hands one to the Action with a sealed comment.
-
-## Walkthrough: a coin cell, a button, an LED
-
-[handbook/17-walkthrough.md](handbook/17-walkthrough.md) takes the smallest board – press a button, a red LED lights
-from a CR2032 – through every step once, from the setup to the delivered boards: who does each step, which command
-or skill, which file it writes, what is checked and what came out. Its project is
-[examples/coin-cell-led](examples/coin-cell-led/).
-
-## Example: the Christmas bell
-
-[automatic_christmas_bell](https://github.com/tgd1975/automatic_christmas_bell) – an Arduino Nano counts down on
-five LEDs, then a servo rings a real bell. It is the second board built with edakit and started as a Fritzing
-breadboard drawing. It was not a push-button run:
-
-- **Gaps closed in edakit:** Taking the bell through EasyEDA showed gaps, and closing them is part of what edakit is
-  today ([handbook 13.6](handbook/13-lessons-learned.md)): pin names checked against the symbols, a new project's
-  default board, LEDs in a row pointing the same way, off-board loads and input levels in the simulation, and a guard
-  against writing into the wrong project.
-- **Manual steps:** Creating the EasyEDA project, and the decisions.
-
-Where it stands:
-
-- **Offline:** `edakit check` 0 errors, `edakit sim` 1112 checks.
-- **Schematic:** equal to the graph (17 parts, 15 nets), ERC clean.
-- **PCB:** 85 × 56 mm from a placement plan, routed by Freerouting (3 vias), DRC 0, silkscreen without findings.
-- **Release gate:** released. Two of its reviews failed first and were fixed:
-  - **GEO.hole:** the first Nano footprint's 0.9 mm holes were too small for the header tails; it was replaced by one
-    with 1.1 mm holes.
-  - **M-5, the layout review:** printed texts below 1 mm and copper close to the mounting holes. Both were fixed in
-    edakit itself.
-- **Decisions:** `docs/decisions.md` shows the numbered-decision workflow, including two decisions the simulation
-  brought up.
-
-## What is in here
-
-| Path | Content |
-|---|---|
-| [handbook/](handbook/README.md) | the approach, setup, graph, parts, simulation, schematic, PCB, release gate, EasyEDA API notes, reference, working with Claude, troubleshooting, lessons learned, designing a circuit, regulatory review, KiCad as the tool chain, the walkthrough |
-| [edakit/](edakit/) | the Python package: checks, simulation, EasyEDA client, schematic, PCB, routing, Gerber analysis, silkscreen, export, release gate, EasyEDA claim, the KiCad tool chain, ordering |
-| [edakit/catalog/](edakit/catalog/) | the catalog: engines and their codes with rule, reason, fix and sources, the parts schema, the defaults and tables (handbook 14.2) |
-| [edakit/domains/](edakit/domains/) | the domains of rules – core, usb, radio, audio, guitar, motors, power, cables, mains: severities, required facts, hints, the reviewers' questions |
-| [edakit/blocks/](edakit/blocks/) | building blocks (LED, button, I2C pull-ups and level shifter, transistor switches, supply inputs and protection, regulator, charger, USB-C, ESP32 module, MIDI, RS-485, motor driver, servo, guitar input, relay bypass, …) and the checked parts entries they use – `edakit block list` |
-| [edakit/makers/](edakit/makers/) | the makers' profiles for ordering: JLCPCB, PCBWay, Eurocircuits, AISLER |
-| [edakit/easyeda/](edakit/easyeda/) | `mcp-server.sh` (pinned easyeda-mcp-pro with safe defaults), `bridge-extension-patch.sh`, `odb-tool-patch.mjs` (the ODB++ export) |
-| [skills/](skills/), [agents/](agents/), [hooks/](hooks/hooks.json), [bin/](bin/) | the Claude Code plugin |
-| [examples/coin-cell-led/](examples/coin-cell-led/README.md) | the project of the walkthrough (handbook 17): a CR2032, a push button, a red LED and its resistor |
-| [examples/blinker-555/](examples/blinker-555/README.md) | the project of walkthrough 2 (handbook 18), drawn in KiCad: two AAA cells, a slide switch, a CMOS 555 and an LED that blinks |
-| [docs/catalog/](docs/catalog/build.py) | the catalog as one page: every code with rule, why, fix and sources, the domains, the tables, the reference circuits drawn as SVG with their seeded faults – written by `docs/catalog/build.py` |
-| [docs/pages.py](docs/pages.py) | assembles the site for GitHub Pages (MkDocs); [docs/concepts/](docs/concepts/) the concepts |
-| [docs/organisation.md](docs/organisation.md) | how the repository is organised: what is documentation, what a source, code, data, generated or test data |
-| [evals/](evals/README.md) | typical tasks on the reference circuits for `claude plugin eval` – with Sonnet and with Opus; the baseline |
-| [tests/](tests/) | negative tests: every check seen red once; [tests/fixtures/led-bar/](tests/fixtures/led-bar/) is the project they build their faults into, [tests/reference.py](tests/reference.py) a reference circuit per domain with its seeded faults, stages L and F on a written export of its input stage ([test_fab_run.py](tests/test_fab_run.py)), [tests/open_designs/](tests/open_designs/) published open designs transcribed with every finding judged |
-| [upstream/](upstream/README.md) | what edakit needs from EasyEDA Pro and easyeda-mcp-pro – each click, patch and workaround as a requirement, its state upstream, the drafts of issues and pull requests |
-
-## Status and limits
-
-- The regulatory review (M-6, [handbook 15](handbook/15-regulatory.md)) is support, not legal advice: it makes no
-  claim to correctness, and nothing in it is legally guaranteed.
-- Ordering ([concept](docs/concepts/done/ordering.md), [handbook 8.4](handbook/08-release-gate.md)): edakit and the
-  skill cart put a released board into the maker's cart and stop there – nothing orders or pays. The makers' profiles
-  (JLCPCB, PCBWay, Eurocircuits, AISLER) are recorded from their forms, read in the owner's accounts up to the cart,
-  and the skill ran live at all four up to the cart, nothing ordered, on a copy of the 555 blinker released on the
-  KiCad tool chain ([live runs](tests/fixtures/makers/LIVE.md)). EasyEDA's ODB++ export ran on a probe board; no order
-  has gone through `edakit cart actual` yet.
-- Text, run live in EasyEDA in throwaway projects ([concept](docs/concepts/done/design-as-text.md),
-  [plan](docs/concepts/done/implementation-plan.md), steps 2.1 to 2.3 and 3.6, results under each live run):
-  - the positions EasyEDA's auto-layout sets, written back into `[place]` as `auto = true` rows, and `pcb place
-    --rest` for every part (handbook 7.4);
-  - own footprints as data in the parts entry (`part footprint`, `part build`, handbook 4.5) – the bell's T-Display
-    is one now; the box symbol of `part build` did not suit the bell, which keeps its script's symbol;
-  - the rule set of EasyEDA's DRC: read and held to the board file with `drc_rules = "check"`, written into EasyEDA
-    with `drc_rules = "write"` (handbook 7.5);
-  - single designators at a fixed spot (`[silk.place]`, handbook 7.7).
-
-  Creating the EasyEDA project stays a click by hand until the API allows it.
-- The circuit as TOML with pins by name or role ([handbook 3.1](handbook/03-hardware-graph.md#31-format),
-  [concept](docs/concepts/done/circuit-language.md)): built and tested on the example and the reference circuits,
-  converted in scratch copies and in the Christmas bell, whose five boards were released on `hardware/graph.toml`. A JSON
-  graph keeps working and hashing as before. A circuit language of edakit's own is deferred
-  ([circuit-dsl](docs/concepts/new/circuit-dsl.md)).
-- The KiCad tool chain ([handbook 16](handbook/16-kicad.md)) is tested against a kicad-cli the tests fake and, in CI,
-  against KiCad 10's container; the 555 blinker of [handbook 18](handbook/18-walkthrough-kicad.md) went through it to
-  a release (16.8).
-- Grown on one real project (EasyEDA Pro 3.2.206, easyeda-mcp-pro 1.4.0, Linux), made generic, then taken through a
-  second one end to end (the Christmas bell). The offline
-  parts (checks, simulation, DSN/Freerouting/check, Gerber analysis, the board and manufacturing checks) are verified
-  against that project's data; the EasyEDA-writing commands are ports of scripts used there daily.
-- Two copper layers. Rectangular or polygonal outlines with straight segments (arcs as point lists).
-- The simulation is DC operating points, plus transient runs of plug, unplug and switch-over where sim.json names
-  them (LIM.v), and small-signal AC runs where sim.json names an expectation and the domain audio or guitar is on;
-  switching spikes and fast edges are left to the acceptance test.
-- The MCP server cannot order, by design.
-- Used components and their licences: [easyeda-mcp-pro](https://github.com/oaslananka/easyeda-mcp-pro) (PolyForm
-  Noncommercial 1.0.0 in the pinned 1.6.0 – check before commercial use; upstream went back to MIT after 1.6.0,
-  from its next release on), EasyEDA Pro (proprietary), Freerouting (GPL-3.0), ngspice (BSD). None of them is
-  bundled.
-
-## Future work
-
-Three changes would alter how a project works; the rest is smaller extensions and fixes.
-
-- **Ordering through the makers' interfaces.** Today Claude in Chrome fills a maker's pages up to the cart. Through
-  the maker's API the same steps would run without a browser: the files uploaded, the quote read, the same checks on
-  what comes back. You still order and pay. What each maker offers: [handbook 8.4](handbook/08-release-gate.md), its
-  part "Future work".
-- **The circuit in a language of its own.** A notation of edakit's own instead of the TOML graph, compiled to the
-  graph the checks read. Blocks take parameters, and a variant's graph is a few lines on top of the main one instead
-  of a full copy. A project would convert once. What it would be and when it is worth building:
-  [circuit-dsl](docs/concepts/new/circuit-dsl.md).
-- **Claude independence.** Today the plugin runs in Claude Code. Made portable, it would also run in GitHub
-  Copilot, Qwen Code and Mistral Vibe, and OpenCode would get the files it reads. The model could run on your own
-  machine, through Ollama or llama.cpp. A pair of assistant and model is named here only once the evals show it
-  works. What it takes: [claude-independence](docs/concepts/new/claude-independence.md).
 
 ## Questions and bugs
 

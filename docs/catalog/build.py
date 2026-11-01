@@ -1,9 +1,10 @@
-"""The catalog as one page: every engine and code with its rule, why, fix and sources, the domains, the tables with
-their sources, the parts schema, the reference circuits drawn by edakit schematic draw with their seeded faults, the
-published open designs with every finding judged, what became of maker-coverage's candidates, and the check IDs of
-before.
+"""The catalog as pages: index.html with the counters, the engines and every code in one filterable list; one page per
+engine (<prefix lower case>.html) with each code's rule, why, fix and sources; the domains, the tables with their
+sources, the parts schema, the reference circuits drawn by edakit schematic draw with their seeded faults (a page each),
+the published open designs with every finding judged (a page each), what became of maker-coverage's candidates, and the
+check IDs of before. PAGES names them in navigation order; docs/pages.py puts them into the site's navigation.
 
-    .venv/bin/python docs/catalog/build.py          writes docs/catalog/index.html and docs/catalog/circuits/*.svg
+    .venv/bin/python docs/catalog/build.py          writes docs/catalog/*.html and docs/catalog/circuits/*.svg
 
 Everything comes from the catalog (edakit/catalog, edakit/domains), tests/reference.py, tests/open_designs/ and
 docs/concepts/done/maker-coverage-status.toml; tests/test_catalog_page.py fails while the files here differ.
@@ -41,8 +42,28 @@ def md(text):
     return re.sub(r"\*\*([^*]+)\*\*", r"<strong>\1</strong>", t)
 
 
+def page_of(name):
+    """The page of a code's engine – the name handbook.page_of links to from the handbook."""
+    return f"{name.split('.')[0].lower()}.html"
+
+
+def href(name):
+    return f"{page_of(name)}#{name}"
+
+
 def code_links(codes):
-    return " ".join(f'<a href="#{c}"><code>{c}</code></a>' for c in codes)
+    return " ".join(f'<a href="{href(c)}"><code>{c}</code></a>' for c in codes)
+
+
+def engine_title(name, e):
+    """The short title of an engine's page: its prefix, and its name where that differs – "LIM – limits"."""
+    return e["prefix"] + ("" if name == e["prefix"] else f" – {name.lower()}")
+
+
+ENGINE_PAGES = [(f'{e["prefix"].lower()}.html', engine_title(n, e)) for n, e in catalog.engines().items()]
+PAGES = [("index.html", "Overview"), *ENGINE_PAGES, ("domains.html", "Domains"), ("tables.html", "Tables"),
+         ("schema.html", "Parts schema"), ("circuits.html", "Reference circuits"), ("open-designs.html", "Open designs"),
+         ("candidates.html", "maker-coverage candidates"), ("before.html", "Check IDs of before")]
 
 
 def chip(sev, label=None):
@@ -116,14 +137,18 @@ def svg_inline(svg):
 
 
 # --- sections ------------------------------------------------------------------------------------------------------------
+ENGINES_ABOUT = ('Each engine decides one kind of relation; a finding\'s code is <code>ENGINE.relation</code>. '
+                 'Severities are the catalog\'s defaults – a project\'s domains may set others; a grade is a sub-case '
+                 'with its own severity, a topic the part of a code a domain switches on.')
+
+
 def engines_section():
+    """The engines as a table, each linking its page; the old anchor engine-<prefix> on its row."""
     per = Counter(catalog.engine_of(c) for c in catalog.codes())
-    rows = "".join(f'<tr><td><a href="#engine-{e["prefix"]}"><code>{e["prefix"]}</code></a></td><td>{escape(name)}</td>'
-                   f'<td>{md(e["decides"])}</td><td class="num">{per[name]}</td></tr>'
+    rows = "".join(f'<tr id="engine-{e["prefix"]}"><td><a href="{e["prefix"].lower()}.html"><code>{e["prefix"]}</code>'
+                   f'</a></td><td>{escape(name)}</td><td>{md(e["decides"])}</td><td class="num">{per[name]}</td></tr>'
                    for name, e in catalog.engines().items())
-    return ('<section id="engines"><h2>Engines</h2><p>Each engine decides one kind of relation; a finding\'s code is '
-            '<code>ENGINE.relation</code>. Severities are the catalog\'s defaults – a project\'s domains may set others; '
-            'a grade is a sub-case with its own severity, a topic the part of a code a domain switches on.</p>'
+    return (f'<section id="engines"><h2>Engines</h2><p>{ENGINES_ABOUT}</p>'
             '<div class="scroll"><table><thead><tr><th>Prefix</th><th>Engine</th><th>Decides</th><th class="num">Codes'
             f'</th></tr></thead><tbody>{rows}</tbody></table></div></section>')
 
@@ -142,7 +167,7 @@ def code_entry(name, e):
                if e.get("details") else "")
     sources = ("<ol class=\"sources\">" + "".join(f"<li>{md(s)}</li>" for s in e.get("sources", [])) + "</ol>"
                if e.get("sources") else '<p class="meta">No source listed.</p>')
-    return (f'<article class="code" id="{escape(name)}" data-text="{escape((name + " " + e["title"] + " " + e["rule"]).lower())}">'
+    return (f'<article class="code" id="{escape(name)}" data-text="{text_of(name, e)}">'
             f'<header><h4><code>{escape(name)}</code> {escape(e["title"])}</h4>'
             f'<div class="chips">{chip(e["severity"])}{grades}</div></header>'
             f'<p class="rule">{md(e["rule"])}</p>{details}'
@@ -150,26 +175,47 @@ def code_entry(name, e):
             f'<dt>Sources</dt><dd>{sources}</dd></dl>{when}{replaces}</article>')
 
 
+FILTER = ('<p class="filter"><label for="q">Filter codes</label> '
+          '<input id="q" type="search" placeholder="LIM.range, pull-up, USB-C …" autocomplete="off"></p>')
+
+
+def text_of(name, e):
+    return escape((name + " " + e["title"] + " " + e["rule"]).lower())
+
+
 def codes_section():
-    parts = ['<section id="codes"><h2>Codes</h2><p class="filter"><label for="q">Filter codes</label> '
-             '<input id="q" type="search" placeholder="LIM.range, pull-up, USB-C …" autocomplete="off"></p>']
+    """Every code in one list – code, title, severity –, each row with the code as its id (the old anchors of the one
+    page land here) and linking the entry on its engine's page."""
+    groups = []
     for eng, e in catalog.engines().items():
         names = [n for n in catalog.codes() if catalog.engine_of(n) == eng]
-        label = f'<code>{e["prefix"]}</code>' + ("" if eng == e["prefix"] else f" {escape(eng)}")
-        parts.append(f'<div class="engine" id="engine-{e["prefix"]}"><h3>{label} '
-                     f'<span class="muted">– {md(e["decides"])}</span></h3>')
-        parts += [code_entry(n, catalog.codes()[n]) for n in names]
-        parts.append("</div>")
+        rows = "".join(f'<tr id="{escape(n)}" data-text="{text_of(n, catalog.codes()[n])}"><td><a href="{href(n)}">'
+                       f'<code>{escape(n)}</code></a></td><td>{escape(catalog.codes()[n]["title"])}</td>'
+                       f'<td>{chip(catalog.codes()[n]["severity"])}</td></tr>' for n in names)
+        groups.append(f'<tbody class="group"><tr class="sec"><th colspan="3"><a href="{e["prefix"].lower()}.html">'
+                      f'<code>{e["prefix"]}</code></a> <span class="muted">– {md(e["decides"])}</span></th></tr>'
+                      f'{rows}</tbody>')
     retired = catalog.retired()
-    if retired:
-        parts.append("<h3>Retired</h3><ul>" + "".join(f"<li><code>{escape(k)}</code> – {md(v)}</li>"
-                                                      for k, v in retired.items()) + "</ul>")
-    return "".join(parts) + "</section>"
+    old = ("<h3>Retired</h3><ul>" + "".join(f"<li><code>{escape(k)}</code> – {md(v)}</li>" for k, v in retired.items())
+           + "</ul>" if retired else "")
+    return (f'<section id="codes"><h2>Codes</h2>{FILTER}<div class="scroll"><table class="codes"><thead><tr><th>Code'
+            f'</th><th>Title</th><th>Severity</th></tr></thead>{"".join(groups)}</table></div>{old}</section>')
+
+
+def engine_body(eng, e):
+    """An engine's page: what it decides, and each of its codes with rule, why, fix and sources."""
+    names = [n for n in catalog.codes() if catalog.engine_of(n) == eng]
+    lead = e["decides"][:1].upper() + e["decides"][1:]
+    return (f'<p class="lead">{md(lead)} – {len(names)} codes.</p><p>{ENGINES_ABOUT}</p>{FILTER}'
+            + "".join(code_entry(n, catalog.codes()[n]) for n in names))
+
+
+DOMAINS_ABOUT = ('A project names its domains in <code>[project] domains</code>; without the key every domain the graph '
+                 'suggests is on. <code>core</code> is always on.')
 
 
 def domains_section():
-    out = ['<section id="domains"><h2>Domains</h2><p>A project names its domains in <code>[project] domains</code>; '
-           'without the key every domain the graph suggests is on. <code>core</code> is always on.</p><div class="cards">']
+    out = ['<div class="cards">']
     for name, f in profile.domains().items():
         d = f.get("domain") or {}
         sug = d.get("suggested_by")
@@ -189,14 +235,14 @@ def domains_section():
         if facts:
             rows.append(("Facts required", md("; ".join(facts))))
         if (f.get("hints") or {}).get("apply"):
-            rows.append(("Hints", " ".join(f'<a href="#{h}"><code>{h}</code></a>' for h in f["hints"]["apply"])))
+            rows.append(("Hints", code_links(f["hints"]["apply"])))
         review = "".join(f"<li><strong>{escape(r)}:</strong> {md(national.fill(q))}</li>"   # without purpose.country
                          for r, qs in (f.get("review") or {}).items() for q in qs)
         body = "".join(f"<dt>{k}</dt><dd>{v}</dd>" for k, v in rows)
         out.append(f'<article class="card" id="domain-{name}"><h3><code>{name}</code></h3><dl>{body}</dl>'
                    + (f'<p class="meta">Reviewers\' questions</p><ul class="review">{review}</ul>' if review else "")
                    + "</article>")
-    return "".join(out) + "</div></section>"
+    return "".join(out) + "</div>"
 
 
 def leaves(node, path=""):
@@ -221,8 +267,7 @@ def sections(t, path=""):
 
 
 def tables_section():
-    out = ['<section id="tables"><h2>Tables</h2><p>The numbers the engines use. Each file names its source; a section '
-           'with a source of its own shows it. Tag <code>r</code>: read from the source.</p>']
+    out = []
     for name in catalog.table_names():
         t = catalog.table(name)
         head = t.get("table") or {}
@@ -238,7 +283,11 @@ def tables_section():
                    f'<p>{md(head.get("about", ""))}</p><p class="meta">Source: {md(head.get("source", "–"))}'
                    + (f' · tag {escape(head["tag"])}' if head.get("tag") else "")
                    + f'</p><div class="scroll"><table class="kv"><tbody>{"".join(body)}</tbody></table></div></article>')
-    return "".join(out) + "</section>"
+    return "".join(out)
+
+
+TABLES_ABOUT = ('The numbers the engines use. Each file names its source; a section with a source of its own shows it. '
+                'Tag <code>r</code>: read from the source.')
 
 
 def kinds_section():
@@ -250,27 +299,41 @@ def kinds_section():
     rows += [f'<tr><td><code>{kind}</code></td><td>{names(d.get("roles", []))}</td><td>{names(d.get("limits", []))}'
              f'</td><td>{names(d.get("values", []))}</td></tr>' for kind, d in k["kinds"].items()]
     units = ", ".join(f"<code>_{u}</code> {escape(v)}" for u, v in k["units"].items())
-    return ('<section id="schema"><h2>Parts schema</h2><p>What a parts entry of each kind may give; '
-            '<code>edakit part lint</code> holds the entries to it. Every name ends in its unit: ' + units + '.</p>'
+    return ('<p>What a parts entry of each kind may give; <code>edakit part lint</code> holds the entries to it. Every '
+            'name ends in its unit: ' + units + '.</p>'
             '<div class="scroll"><table><thead><tr><th>Kind</th><th>Roles</th><th>Limits</th><th>Values</th></tr>'
             f'</thead><tbody>{"".join(rows)}</tbody></table></div><p>Per pin: {names(k["common"]["pin"])}; and '
-            f'{names(k["free"]["pin"])}.</p></section>')
+            f'{names(k["free"]["pin"])}.</p>')
+
+
+CIRCUITS_ABOUT = ('edakit\'s own circuits, one per domain, each added to the example and drawn by <code>edakit schematic '
+                  'draw</code>. Each passes <code>edakit check</code> and <code>edakit sim</code> clean under its domains; '
+                  'each seeded fault raises exactly its codes (<code>tests/test_reference.py</code>). The values are '
+                  'chosen for the test, not taken from datasheets.')
+
+
+def domains_on(doms):
+    return " ".join(f"<code>{d}</code>" for d in doms)
 
 
 def circuits_section(items):
-    out = ['<section id="circuits"><h2>Reference circuits</h2><p>edakit\'s own circuits, one per domain, each added to '
-           'the example and drawn by <code>edakit schematic draw</code>. Each passes <code>edakit check</code> and '
-           '<code>edakit sim</code> clean under its domains; each seeded fault raises exactly its codes '
-           '(<code>tests/test_reference.py</code>). The values are chosen for the test, not taken from datasheets.</p>']
-    for name, about, doms, svg, faults in items:
-        rows = "".join(f'<tr><td>{escape(what)}</td><td>{code_links(sorted(codes))}</td></tr>'
-                       for what, _, codes in faults)
-        table = (f'<table class="faults"><thead><tr><th>Seeded fault</th><th>Codes it raises</th></tr></thead>'
-                 f'<tbody>{rows}</tbody></table>' if faults else "")
-        out.append(f'<article class="circuit" id="circuit-{name}"><h3>{escape(name)}</h3><p>{md(about)}</p>'
-                   f'<p class="meta">Domains on: {" ".join(f"<code>{d}</code>" for d in doms)} · '
-                   f'<a href="circuits/{name}.svg">SVG</a></p><div class="drawing">{svg_inline(svg)}</div>{table}</article>')
-    return "".join(out) + "</section>"
+    """The list of the reference circuits, each linking its page."""
+    out = ['<div class="cards">']
+    for name, about, doms, _, faults in items:
+        out.append(f'<article class="card" id="circuit-{name}"><h3><a href="circuit-{name}.html">{escape(name)}</a></h3>'
+                   f'<p>{md(about)}</p><p class="meta">Domains on: {domains_on(doms)} · {len(faults)} seeded faults · '
+                   f'<a href="circuits/{name}.svg">SVG</a></p></article>')
+    return "".join(out) + "</div>"
+
+
+def circuit_body(name, about, doms, svg, faults):
+    """A reference circuit's page: the drawing and its seeded faults."""
+    rows = "".join(f'<tr><td>{escape(what)}</td><td>{code_links(sorted(codes))}</td></tr>' for what, _, codes in faults)
+    table = (f'<table class="faults"><thead><tr><th>Seeded fault</th><th>Codes it raises</th></tr></thead>'
+             f'<tbody>{rows}</tbody></table>' if faults else "")
+    return (f'<article class="circuit" id="circuit-{name}"><p>{md(about)}</p><p class="meta">Domains on: '
+            f'{domains_on(doms)} · <a href="circuits/{name}.svg">SVG</a></p><div class="drawing">{svg_inline(svg)}</div>'
+            f'{table}</article>')
 
 
 JUDGED_CHIP = {"real": "warning", "lacks": "note", "criterion": "pending", "known gap": "open"}
@@ -282,30 +345,42 @@ def links(html_text):
     return re.sub(r"&lt;(https?://[^&\s]+)&gt;", r'<a href="\1">\1</a>', html_text)
 
 
+OPEN_ABOUT = ('Real designs, transcribed from their published schematics into edakit projects '
+              '(<code>tests/open_designs/</code>, maker-coverage FT-21), with parts entries from the parts\' datasheets. '
+              'Every finding of <code>edakit check</code> and <code>edakit sim</code> is judged: <em>real</em> – a point '
+              'of the design, <em>lacks</em> – a fact the transcription or the datasheets lack, <em>criterion</em> – '
+              'edakit\'s yardstick, not the design\'s, <em>known gap</em> – edakit judges it wrong, not fixed yet. The '
+              'false alarms the designs showed are fixed (<code>tests/test_open_designs.py</code>, '
+              '<code>tests/test_open_design_fixes.py</code>).')
+
+
 def open_designs_section(designs):
-    out = ['<section id="open-designs"><h2>Published open designs</h2><p>Real designs, transcribed from their published '
-           'schematics into edakit projects (<code>tests/open_designs/</code>, maker-coverage FT-21), with parts '
-           'entries from the parts\' datasheets. Every finding of <code>edakit check</code> and <code>edakit sim</code> '
-           'is judged: <em>real</em> – a point of the design, <em>lacks</em> – a fact the transcription or the '
-           'datasheets lack, <em>criterion</em> – edakit\'s yardstick, not the design\'s, <em>known gap</em> – edakit '
-           'judges it wrong, not fixed yet. The false alarms the designs showed are fixed '
-           '(<code>tests/test_open_designs.py</code>, <code>tests/test_open_design_fixes.py</code>).</p>']
-    for name, title, source, svg, j in designs:
-        rows = "".join(
-            f'<tr><td>{stage}</td><td><a href="#{escape(f["code"])}"><code>{escape(f["code"])}</code></a>'
-            + (f'/{escape(f["grade"])}' if f.get("grade") else "") + f'</td><td>{escape(f["place"])}</td>'
-            f'<td>{chip(JUDGED_CHIP.get(f["judged"], "open"), f["judged"])}</td><td>{md(f["why"])}</td></tr>'
-            for stage, key in (("check", "check"), ("sim", "sim")) for f in j.get(key, []))
-        table = (f'<div class="scroll"><table class="faults"><thead><tr><th>Stage</th><th>Code</th><th>Where</th>'
-                 f'<th>Judged</th><th>Why</th></tr></thead><tbody>{rows}</tbody></table></div>' if rows
-                 else "<p>edakit raises nothing beyond notes.</p>")
-        fixed = "".join(f"<li>{md(f['what'])}</li>" for f in j.get("fixed", []))
-        out.append(f'<article class="circuit" id="open-{name}"><h3>{escape(title)}</h3>'
-                   f'<p class="meta">{links(md(source))} · <a href="circuits/open-{name}.svg">SVG</a></p>'
-                   f'<div class="drawing">{svg_inline(svg)}</div>{table}'
-                   + (f'<p class="meta">edakit\'s false alarms on this design, fixed</p><ul>{fixed}</ul>' if fixed else "")
-                   + "</article>")
-    return "".join(out) + "</section>"
+    """The list of the open designs, each linking its page."""
+    out = ['<div class="cards">']
+    for name, title, source, _, j in designs:
+        judged = Counter(f["judged"] for key in ("check", "sim") for f in j.get(key, []))
+        counts = (" ".join(chip(JUDGED_CHIP.get(k, "open"), f"{v} {k}") for k, v in judged.items())
+                  or "nothing beyond notes")
+        out.append(f'<article class="card" id="open-{name}"><h3><a href="open-{name}.html">{escape(title)}</a></h3>'
+                   f'<p class="meta">{links(md(source))}</p><p class="meta">Findings judged: {counts}</p></article>')
+    return "".join(out) + "</div>"
+
+
+def open_design_body(name, title, source, svg, j):
+    """An open design's page: the drawing and every finding judged."""
+    rows = "".join(
+        f'<tr><td>{stage}</td><td><a href="{href(f["code"])}"><code>{escape(f["code"])}</code></a>'
+        + (f'/{escape(f["grade"])}' if f.get("grade") else "") + f'</td><td>{escape(f["place"])}</td>'
+        f'<td>{chip(JUDGED_CHIP.get(f["judged"], "open"), f["judged"])}</td><td>{md(f["why"])}</td></tr>'
+        for stage, key in (("check", "check"), ("sim", "sim")) for f in j.get(key, []))
+    table = (f'<div class="scroll"><table class="faults"><thead><tr><th>Stage</th><th>Code</th><th>Where</th>'
+             f'<th>Judged</th><th>Why</th></tr></thead><tbody>{rows}</tbody></table></div>' if rows
+             else "<p>edakit raises nothing beyond notes.</p>")
+    fixed = "".join(f"<li>{md(f['what'])}</li>" for f in j.get("fixed", []))
+    return (f'<article class="circuit" id="open-{name}"><p class="meta">{links(md(source))} · '
+            f'<a href="circuits/open-{name}.svg">SVG</a></p><div class="drawing">{svg_inline(svg)}</div>{table}'
+            + (f'<p class="meta">edakit\'s false alarms on this design, fixed</p><ul>{fixed}</ul>' if fixed else "")
+            + "</article>")
 
 
 def candidates_section():
@@ -337,10 +412,12 @@ def candidates_section():
                    f'</td><td>{md(e.get("missing", ""))}</td></tr>' for k, e in pf.items())
     groups.append('<h3>Part facts – the parts library</h3><div class="scroll"><table class="cand"><thead><tr><th>Group</th>'
                   f'<th>Status</th><th>Entries</th><th>Missing</th></tr></thead><tbody>{rows}</tbody></table></div>')
-    return ('<section id="candidates"><h2>maker-coverage candidates</h2><p>The candidates of '
-            '<code>docs/concepts/done/maker-coverage.md</code> and what became of them '
-            '(<code>maker-coverage-status.toml</code>). Open where a datasheet or standard could not be read, or where '
-            'the change was not a contained one.</p><div class="tiles">' + "".join(tiles) + "</div>" + "".join(groups) + "</section>")
+    return '<div class="tiles">' + "".join(tiles) + "</div>" + "".join(groups)
+
+
+CANDIDATES_ABOUT = ('The candidates of <code>docs/concepts/done/maker-coverage.md</code> and what became of them '
+                    '(<code>maker-coverage-status.toml</code>). Open where a datasheet or standard could not be read, or '
+                    'where the change was not a contained one.')
 
 
 def old_ids_section():
@@ -348,9 +425,12 @@ def old_ids_section():
         return "PGESLFHB".index(old[0]), int(old[2:])
     rows = "".join(f'<tr><td>{escape(o)}</td><td>{code_links(new)}</td></tr>'
                    for o, new in sorted(catalog.old_map().items(), key=lambda x: key(x[0])))
-    return ('<section id="before"><h2>Check IDs of before</h2><p>The IDs per stage before the restructuring and the '
-            'codes that replace them; <code>edakit explain G-8</code> says the same.</p><div class="scroll"><table>'
-            f'<thead><tr><th>Before</th><th>Now</th></tr></thead><tbody>{rows}</tbody></table></div></section>')
+    return ('<div class="scroll"><table><thead><tr><th>Before</th><th>Now</th></tr></thead>'
+            f'<tbody>{rows}</tbody></table></div>')
+
+
+BEFORE_ABOUT = ('The IDs per stage before the restructuring and the codes that replace them; <code>edakit explain G-8'
+                '</code> says the same.')
 
 
 CSS = """
@@ -379,8 +459,21 @@ nav ol { list-style: none; padding: 0; margin: 0; display: grid; gap: 0.2rem; }
 nav ol ol { padding-left: 0.9rem; margin: 0.2rem 0 0.4rem; }
 nav a { text-decoration: none; color: var(--ink); }
 nav a:hover, nav a:focus-visible { color: var(--accent); }
+nav a[aria-current="page"] { color: var(--accent); font-weight: 600; }
+nav .label { color: var(--muted); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.04em; }
+nav ol.engines { display: flex; flex-wrap: wrap; gap: 0.2rem 0.7rem; }
+nav ol.engines > li:has(ol.sub) { flex-basis: 100%; }
 header.top h1 { font: 600 2rem/1.15 var(--display); margin: 0 0 0.4rem; text-wrap: balance; }
 header.top p { color: var(--muted); max-width: 70ch; margin: 0; }
+header.top p.brand { margin-bottom: 0.6rem; }
+p.lead { font-size: 1.05rem; }
+:target { scroll-margin-top: 1rem; }
+tr:target td, tr:target th { background: color-mix(in srgb, var(--surface) 80%, var(--accent)); }
+article:target { outline: 2px solid var(--accent); outline-offset: 2px; }
+ul.inline { list-style: none; padding: 0; display: flex; flex-wrap: wrap; gap: 0.3rem 1rem; max-width: none; }
+table.codes tr.sec th { background: transparent; border-bottom: 1px solid var(--ink); padding-top: 0.9rem; font-weight: 400; }
+table.codes td:first-child { white-space: nowrap; }
+.card h3 a { text-decoration: none; }
 h2 { font: 600 1.45rem/1.2 var(--display); margin: 2.6rem 0 0.8rem; padding-top: 0.6rem; border-top: 2px solid var(--ink);
   text-wrap: balance; }
 h3 { font: 600 1.1rem/1.3 var(--display); margin: 1.6rem 0 0.6rem; }
@@ -442,7 +535,7 @@ footer { color: var(--muted); font-size: 0.85rem; margin-top: 3rem; }
   .layout { grid-template-columns: minmax(0, 1fr); gap: 1rem; padding: 1rem 1rem 3rem; }
   nav { position: static; max-height: none; }
   nav > ol { display: flex; flex-wrap: wrap; gap: 0.3rem 0.9rem; }
-  nav ol ol { display: none; }
+  nav ol ol.sub { display: none; }
   article.code dl, .card dl { grid-template-columns: minmax(0, 1fr); }
   .cards { grid-template-columns: minmax(0, 1fr); }
   table.kv { min-width: 0; }
@@ -452,61 +545,131 @@ footer { color: var(--muted); font-size: 0.85rem; margin-top: 3rem; }
 
 SCRIPT = """
 const q = document.getElementById('q');
-q.addEventListener('input', () => {
+if (q) q.addEventListener('input', () => {
   const s = q.value.trim().toLowerCase();
-  document.querySelectorAll('article.code').forEach(a => { a.hidden = s && !a.dataset.text.includes(s); });
-  document.querySelectorAll('.engine').forEach(e => {
-    e.hidden = s && !e.querySelector('article.code:not([hidden])');
-  });
+  document.querySelectorAll('[data-text]').forEach(a => { a.hidden = s && !a.dataset.text.includes(s); });
+  document.querySelectorAll('.group').forEach(g => { g.hidden = s && !g.querySelector('[data-text]:not([hidden])'); });
 });
 """
 
+BRAND = ('<p class="meta brand"><a href="../"><picture><source media="(prefers-color-scheme: dark)" '
+         'srcset="../brand/edakit-mark-dark.svg"><img src="../brand/edakit-mark.svg" width="28" height="28" alt="">'
+         '</picture>edakit documentation</a></p>')
 
-def page(items, designs=()):
-    codes = catalog.codes()
-    hints = [n for n in codes if n.startswith("HINT.")]
-    grades = sum(len(e.get("grades") or {}) for e in codes.values())
-    sources = len({s for e in codes.values() for s in e.get("sources", [])})
-    nav_engines = "".join(f'<li><a href="#engine-{e["prefix"]}">{e["prefix"]}</a></li>' for e in catalog.engines().values())
-    nav_circuits = "".join(f'<li><a href="#circuit-{n}">{n}</a></li>' for n, *_ in items)
-    tiles = "".join(f'<div class="tile"><span class="big">{v}</span><span class="lbl">{k}</span></div>' for k, v in (
-        ("Engines", len(catalog.engines())), ("Codes", len(codes)), ("Grades", grades), ("Hints", len(hints)),
-        ("Domains", len(profile.domains())), ("Sources cited", sources), ("Reference circuits", len(items)),
-        ("Open designs", len(designs))))
-    nav_open = "".join(f'<li><a href="#open-{n}">{escape(t)}</a></li>' for n, t, *_ in designs)
-    body = (f'<header class="top"><p class="meta brand"><a href="../"><picture><source media="(prefers-color-scheme: dark)" srcset="../brand/edakit-mark-dark.svg"><img src="../brand/edakit-mark.svg" width="28" height="28" alt=""></picture>edakit documentation</a></p><h1>edakit rule catalog</h1><p>Every rule edakit checks – engine, code, severity, '
-            'rule, why, what to do and its sources –, the domains that switch rules on, the tables of numbers, the parts '
-            'schema, the reference circuits with their seeded faults, published open designs with every finding '
-            'judged, and what became of the maker-coverage candidates. Generated from <code>edakit/catalog</code>, '
-            '<code>edakit/domains</code>, <code>tests/reference.py</code> and <code>tests/open_designs/</code>.</p>'
-            f'</header><div class="tiles">{tiles}</div>'
-            + engines_section() + codes_section() + domains_section() + tables_section() + kinds_section()
-            + circuits_section(items) + (open_designs_section(designs) if designs else "") + candidates_section()
-            + old_ids_section()
-            + '<footer>Written by <code>docs/catalog/build.py</code>; <code>tests/test_catalog_page.py</code> holds it to '
-              'the catalog.</footer>')
-    nav = ('<nav aria-label="Contents"><ol><li><a href="#engines">Engines</a></li><li><a href="#codes">Codes</a>'
-           f'<ol>{nav_engines}</ol></li><li><a href="#domains">Domains</a></li><li><a href="#tables">Tables</a></li>'
-           f'<li><a href="#schema">Parts schema</a></li><li><a href="#circuits">Reference circuits</a><ol>{nav_circuits}'
-           '</ol></li>' + (f'<li><a href="#open-designs">Published open designs</a><ol>{nav_open}</ol></li>'
-                           if designs else "")
-           + '<li><a href="#candidates">maker-coverage candidates</a></li><li><a href="#before">Check IDs of '
-           'before</a></li></ol></nav>')
+
+def nav(current, sub=()):
+    """The catalog's pages, the same on each: current marked, under it sub – [(href, label, is it this page)]."""
+    def item(f, title, label=None):
+        here = f == current
+        current_attr = ' aria-current="page"'
+        inner = "".join(f'<li><a href="{h}"{current_attr if c else ""}>{escape(t)}</a></li>'
+                        for h, t, c in sub) if here and sub else ""
+        mark = ' aria-current="page"' if here and not any(c for *_, c in sub) else ""
+        return (f'<li><a href="{f}"{mark} title="{escape(title)}">{escape(label or title)}</a>'
+                + (f'<ol class="sub">{inner}</ol>' if inner else "") + "</li>")
+    engines = "".join(item(f, t, t.split(" – ")[0]) for f, t in ENGINE_PAGES)
+    names = {f for f, _ in ENGINE_PAGES}
+    rest = [(f, t) for f, t in PAGES if f not in names]
+    return ('<nav aria-label="Rule catalog"><ol>' + item(*rest[0])
+            + f'<li><span class="label">Engines</span><ol class="engines">{engines}</ol></li>'
+            + "".join(item(f, t) for f, t in rest[1:]) + "</ol></nav>")
+
+
+def page(current, title, intro, body, sub=(), h1=None):
+    """A page of the catalog: the brand, the navigation, its title and intro, its body."""
+    head = title if title == "edakit rule catalog" else f"{title} – edakit rule catalog"
     return ('<!DOCTYPE html>\n<html lang="en"><head><meta charset="utf-8"><meta name="viewport" '
-            'content="width=device-width, initial-scale=1"><title>edakit rule catalog</title>'
+            f'content="width=device-width, initial-scale=1"><title>{escape(head)}</title>'
             '<link rel="icon" type="image/svg+xml" href="../brand/edakit-favicon.svg">'
             '<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="stylesheet" '
             'href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;600&display=swap">'
-            f'<style>{CSS}</style></head><body><div class="layout">{nav}<main>{body}</main></div>'
+            f'<style>{CSS}</style></head><body><div class="layout">{nav(current, sub)}<main>'
+            f'<header class="top">{BRAND}<h1>{h1 or escape(title)}</h1>' + (f'<p>{intro}</p>' if intro else "")
+            + f'</header>{body}<footer>Written by <code>docs/catalog/build.py</code>; <code>tests/test_catalog_page.py'
+            '</code> holds it to the catalog.</footer></main></div>'
             f'<script>{SCRIPT}</script></body></html>\n')
 
 
+def index_body(items, designs):
+    """The index: the counters, the engines, every code in one list, and the rest of the catalog by name – every
+    anchor of the one page before (a code, engine-, domain-, table-, circuit-, open-) lands on a row here."""
+    codes = catalog.codes()
+    grades = sum(len(e.get("grades") or {}) for e in codes.values())
+    sources = len({s for e in codes.values() for s in e.get("sources", [])})
+    tiles = "".join(f'<div class="tile"><span class="big">{v}</span><span class="lbl">{k}</span></div>' for k, v in (
+        ("Engines", len(catalog.engines())), ("Codes", len(codes)), ("Grades", grades),
+        ("Hints", sum(1 for n in codes if n.startswith("HINT."))), ("Domains", len(profile.domains())),
+        ("Sources cited", sources), ("Reference circuits", len(items)), ("Open designs", len(designs))))
+
+    def row(label, f, entries):
+        return (f'<h3><a href="{f}">{label}</a></h3><ul class="inline">'
+                + "".join(f'<li id="{i}"><a href="{h}">{t}</a></li>' for i, h, t in entries) + "</ul>")
+    more = ('<section id="more"><h2>The rest of the catalog</h2>'
+            + row("Domains", "domains.html", [(f"domain-{n}", f"domains.html#domain-{n}", f"<code>{n}</code>")
+                                              for n in profile.domains()])
+            + row("Tables", "tables.html", [(f"table-{n}", f"tables.html#table-{n}", f"<code>{n}</code>")
+                                            for n in catalog.table_names()])
+            + '<p><a href="schema.html">Parts schema</a> – what a parts entry of each kind may give.</p>'
+            + row("Reference circuits", "circuits.html", [(f"circuit-{n}", f"circuit-{n}.html", escape(n))
+                                                          for n, *_ in items])
+            + row("Published open designs", "open-designs.html", [(f"open-{n}", f"open-{n}.html", escape(t))
+                                                                 for n, t, *_ in designs])
+            + '<p><a href="candidates.html">maker-coverage candidates</a> – what became of them; '
+              '<a href="before.html">check IDs of before</a> – the codes that replace them.</p></section>')
+    return f'<div class="tiles">{tiles}</div>' + engines_section() + codes_section() + more
+
+
+INDEX_ABOUT = ('Every rule edakit checks – engine, code, severity, rule, why, what to do and its sources –, the domains '
+               'that switch rules on, the tables of numbers, the parts schema, the reference circuits with their seeded '
+               'faults, published open designs with every finding judged, and what became of the maker-coverage '
+               'candidates. Generated from <code>edakit/catalog</code>, <code>edakit/domains</code>, '
+               '<code>tests/reference.py</code> and <code>tests/open_designs/</code>.')
+
+
+def pages(items, designs):
+    """{file name: html} of every page."""
+    titles = dict(PAGES)
+    out = {"index.html": page("index.html", "edakit rule catalog", INDEX_ABOUT, index_body(items, designs))}
+    for eng, e in catalog.engines().items():
+        f = f'{e["prefix"].lower()}.html'
+        names = [n for n in catalog.codes() if catalog.engine_of(n) == eng]
+        out[f] = page(f, titles[f], "", engine_body(eng, e), [(f"#{n}", n, False) for n in names],
+                      h1=f'<code>{e["prefix"]}</code>' + ("" if eng == e["prefix"] else f" {escape(eng.lower())}"))
+    out["domains.html"] = page("domains.html", "Domains", DOMAINS_ABOUT, domains_section())
+    out["tables.html"] = page("tables.html", "Tables", TABLES_ABOUT, tables_section(),
+                              [(f"#table-{n}", n, False) for n in catalog.table_names()])
+    out["schema.html"] = page("schema.html", "Parts schema", "", kinds_section())
+    circuit_nav = [(f"circuit-{n}.html", n, False) for n, *_ in items]
+    out["circuits.html"] = page("circuits.html", "Reference circuits", CIRCUITS_ABOUT, circuits_section(items),
+                                circuit_nav)
+    for it in items:
+        n = it[0]
+        out[f"circuit-{n}.html"] = page("circuits.html", f"{n} – reference circuit", "", circuit_body(*it),
+                                        [(h, t, t == n) for h, t, _ in circuit_nav],
+                                        h1=f'{escape(n)} <span class="muted">– reference circuit</span>')
+    open_nav = [(f"open-{n}.html", t, False) for n, t, *_ in designs]
+    out["open-designs.html"] = page("open-designs.html", "Published open designs", OPEN_ABOUT,
+                                    open_designs_section(designs), open_nav)
+    for d in designs:
+        n, t = d[0], d[1]
+        out[f"open-{n}.html"] = page("open-designs.html", t, "", open_design_body(*d),
+                                     [(h, x, h == f"open-{n}.html") for h, x, _ in open_nav])
+    out["candidates.html"] = page("candidates.html", "maker-coverage candidates", CANDIDATES_ABOUT,
+                                  candidates_section())
+    out["before.html"] = page("before.html", "Check IDs of before", BEFORE_ABOUT, old_ids_section())
+    return out
+
+
 def build(out=OUT):
-    """Write the page and the drawings into out; -> the files written."""
+    """Write the pages and the drawings into out; -> the files written."""
     out = Path(out)
     (out / "circuits").mkdir(parents=True, exist_ok=True)
     items, designs = circuits(), open_designs()
     written = []
+    for name, html in pages(items, designs).items():
+        f = out / name
+        f.write_text(html, encoding="utf-8")
+        written.append(f)
     for name, _, _, svg, _ in items:
         f = out / "circuits" / f"{name}.svg"
         f.write_text(svg, encoding="utf-8")
@@ -515,11 +678,10 @@ def build(out=OUT):
         f = out / "circuits" / f"open-{name}.svg"
         f.write_text(svg, encoding="utf-8")
         written.append(f)
-    f = out / "index.html"
-    f.write_text(page(items, designs), encoding="utf-8")
-    return [f, *written]
+    return written
 
 
 if __name__ == "__main__":
     for f in build(Path(sys.argv[1]) if len(sys.argv) > 1 else OUT):
-        print(f"written: {f.relative_to(ROOT) if f.is_relative_to(ROOT) else f}")
+        print(f"written: {f.relative_to(ROOT) if f.is_relative_to(ROOT) else f}"
+              f" ({f.stat().st_size // 1024} KB)")

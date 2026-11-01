@@ -21,11 +21,11 @@ The working rules for sessions in this repository are in [CLAUDE.md](../CLAUDE.m
 |---|---|---|
 | [README.md](../README.md) | Documentation | The start page – also of the site |
 | [handbook/](../handbook/README.md) | Documentation | The handbook, chapters 1 to 18 |
-| [docs/](.) | Documentation | Documentation beside the handbook – today [brand/](brand/README.md) (logo, colours, type), the [style guide](style.md), the [glossary](glossary.md) and this page – all of `docs/` except `concepts/`, `catalog/` and `pages.py` |
+| [docs/](.) | Documentation | Documentation beside the handbook: the entry pages – the [quickstart](quickstart.md), [how it works](how-it-works.md), the [projects](projects/README.md) with their pictures, the [glossary](glossary.md) –, the reader pages [adding a rule](adding-a-rule.md), [working on edakit](working-on-edakit.md) and [architecture](architecture.md), the [style guide](style.md), [brand/](brand/README.md) (logo, colours, type), `pictures/` and this page – all of `docs/` except `concepts/`, `catalog/` and `pages.py` |
 | [examples/coin-cell-led/](../examples/coin-cell-led/README.md) | Documentation | The project of the walkthrough (handbook 17): its README and `docs/decisions.md` are documentation, its `edakit.toml` and `hardware/` project data the tests hold to the chapter |
 | [examples/blinker-555/](../examples/blinker-555/README.md) | Documentation | The project of walkthrough 2 (handbook 18): its README and `docs/decisions.md` are documentation, its `edakit.toml` and `hardware/` project data the tests hold to the chapter |
 | [docs/concepts/](concepts/) | Source | Concepts – documents with a short life: `new/` what is open, `done/` what is settled and built, `discarded/` what the owner rejected; how a concept moves is in CLAUDE.md |
-| [docs/catalog/](catalog/build.py) | Generated | The catalog as one page (`index.html`, `circuits/*.svg`), written by `docs/catalog/build.py` from the catalog – never edited by hand |
+| [docs/catalog/](catalog/build.py) | Generated | The catalog as pages – an index, one page per engine, the domains, tables, schema, reference circuits and open designs, `circuits/*.svg` –, written by `docs/catalog/build.py` from the catalog – never edited by hand |
 | [docs/pages.py](pages.py) | Code | Assembles the site |
 | [CLAUDE.md](../CLAUDE.md) | Source | The working rules for sessions in this repository |
 | [CHANGELOG.md](../CHANGELOG.md) | Generated | What changed in each version of edakit, for a maker who updates – a section per version, written once by `.github/merge.py` from the fragments |

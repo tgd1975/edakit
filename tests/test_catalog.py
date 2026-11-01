@@ -186,7 +186,7 @@ def test_the_handbook_lists_what_the_catalog_holds():
     from edakit.catalog import handbook
     assert handbook.stale() == []
     shown = "".join(p.read_text(encoding="utf-8") for p in handbook.ROOT.glob("*.md"))
-    assert all(f"**`{name}`**" in shown for name in catalog.codes())          # every code in one of the lists
+    assert all(f"[`{name}`]({handbook.page_of(name)}#{name})" in shown for name in catalog.codes())  # in a table
     assert all(f"`{kind}`" in shown for kind in schema.kinds()["kinds"])
 
 
@@ -208,6 +208,31 @@ def test_the_generator_renders_a_section_anew(tmp_path):
     assert new.endswith("<!-- edakit:end -->\nafter\n")
     page.write_text(new)
     assert handbook.stale(tmp_path) == []
+
+
+def test_the_short_kind_is_a_table_that_links_the_catalog_page():
+    """Step D.4 of docs/concepts/new/documentation.md: a chapter lists its codes as code, title and severity, each code
+    linked to its engine's page of the catalog, which holds the rule, why, fix and sources."""
+    from edakit.catalog import handbook
+    text = handbook.render("table", "FILES ORDER")
+    rows = [ln for ln in text.splitlines() if ln.startswith("| [`")]
+    want = [n for n in catalog.codes() if n.split(".")[0] in ("FILES", "ORDER")]
+    assert [r.split("`")[1] for r in rows] == want
+    e = catalog.codes()["FILES.sheet"]
+    assert f"| [`FILES.sheet`](../docs/catalog/files.html#FILES.sheet) | {e['title']} | {e['severity']}" in text
+    assert e["rule"] not in text and "`edakit explain CODE`" in text
+
+
+def test_every_command_has_its_entry_in_the_reference():
+    """Step D.4 of docs/concepts/new/documentation.md: 10.5 is one entry per subcommand, its synopsis and help line
+    generated from the parser (held by test_the_handbook_lists_what_the_catalog_holds through stale())."""
+    import re
+    from edakit.catalog import handbook
+    text = (handbook.ROOT / "10-reference.md").read_text(encoding="utf-8")
+    section = text.split("## 10.5 ")[1].split("## 10.6 ")[0]
+    assert re.findall(r"<!-- edakit:generated command (\S+) -->", section) == handbook.commands()
+    assert "`edakit cart [--board BOARD]" in handbook.render("command", "cart")
+    assert "[--config CONFIG]" not in handbook.render("command", "check")
 
 
 def test_a_retired_code_explains_itself_and_stays_taken(monkeypatch):

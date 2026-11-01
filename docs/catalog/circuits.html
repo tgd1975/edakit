@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Reference circuits – edakit rule catalog</title><link rel="icon" type="image/svg+xml" href="../brand/edakit-favicon.svg"><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;600&display=swap"><style>
+:root {
+  /* a reference, read by section: a sidebar of contents, entries in one column, drawings full width */
+  --bg: #f4f6f6; --surface: #ffffff; --ink: #1d2626; --muted: #5d6b6b; --line: #d5dddd; --accent: #0e6c6a;
+  --err: #b42318; --warn: #a15c07; --pend: #6941c6; --note: #475467; --ok: #087443;
+  --display: "IBM Plex Sans", "Helvetica Neue", Arial, sans-serif; --body: "IBM Plex Sans", "Helvetica Neue", Arial, sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #111717; --surface: #182020; --ink: #e3eaea; --muted: #97a6a6; --line: #2c3838; --accent: #5cc4c0;
+  --err: #f97066; --warn: #fdb022; --pend: #b692f6; --note: #98a2b3; --ok: #47cd89; color-scheme: dark; } }
+:root[data-theme="dark"] {
+  --bg: #111717; --surface: #182020; --ink: #e3eaea; --muted: #97a6a6; --line: #2c3838; --accent: #5cc4c0;
+  --err: #f97066; --warn: #fdb022; --pend: #b692f6; --note: #98a2b3; --ok: #47cd89; color-scheme: dark; }
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--ink); font: 15px/1.55 var(--body); }
+a { color: var(--accent); }
+code { font-family: var(--mono); font-size: 0.9em; }
+.layout { display: grid; grid-template-columns: 15rem minmax(0, 1fr); gap: 2rem; max-width: 84rem; margin: 0 auto;
+  padding: 1.5rem 1.25rem 4rem; }
+nav { position: sticky; top: 1rem; align-self: start; max-height: calc(100vh - 2rem); overflow: auto; font-size: 0.9rem; }
+nav ol { list-style: none; padding: 0; margin: 0; display: grid; gap: 0.2rem; }
+nav ol ol { padding-left: 0.9rem; margin: 0.2rem 0 0.4rem; }
+nav a { text-decoration: none; color: var(--ink); }
+nav a:hover, nav a:focus-visible { color: var(--accent); }
+nav a[aria-current="page"] { color: var(--accent); font-weight: 600; }
+nav .label { color: var(--muted); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.04em; }
+nav ol.engines { display: flex; flex-wrap: wrap; gap: 0.2rem 0.7rem; }
+nav ol.engines > li:has(ol.sub) { flex-basis: 100%; }
+header.top h1 { font: 600 2rem/1.15 var(--display); margin: 0 0 0.4rem; text-wrap: balance; }
+header.top p { color: var(--muted); max-width: 70ch; margin: 0; }
+header.top p.brand { margin-bottom: 0.6rem; }
+p.lead { font-size: 1.05rem; }
+:target { scroll-margin-top: 1rem; }
+tr:target td, tr:target th { background: color-mix(in srgb, var(--surface) 80%, var(--accent)); }
+article:target { outline: 2px solid var(--accent); outline-offset: 2px; }
+ul.inline { list-style: none; padding: 0; display: flex; flex-wrap: wrap; gap: 0.3rem 1rem; max-width: none; }
+table.codes tr.sec th { background: transparent; border-bottom: 1px solid var(--ink); padding-top: 0.9rem; font-weight: 400; }
+table.codes td:first-child { white-space: nowrap; }
+.card h3 a { text-decoration: none; }
+h2 { font: 600 1.45rem/1.2 var(--display); margin: 2.6rem 0 0.8rem; padding-top: 0.6rem; border-top: 2px solid var(--ink);
+  text-wrap: balance; }
+h3 { font: 600 1.1rem/1.3 var(--display); margin: 1.6rem 0 0.6rem; }
+h4 { font: 600 1rem/1.3 var(--display); margin: 0; }
+p, li, dd { max-width: 75ch; }
+.muted, .meta { color: var(--muted); }
+.brand a { display: inline-flex; align-items: center; gap: 0.5rem; }
+.brand img { display: block; }
+.meta { font-size: 0.85rem; margin: 0.4rem 0 0; }
+.tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(9.5rem, 1fr)); gap: 0.75rem; margin: 1rem 0; }
+.tile { background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 0.8rem; display: grid; }
+.tile .big { font: 600 1.8rem/1 var(--display); font-variant-numeric: tabular-nums; }
+.tile .of { color: var(--muted); font-size: 0.85rem; }
+.tile .lbl { font-weight: 600; margin-top: 0.3rem; }
+.tile .sub { color: var(--muted); font-size: 0.8rem; }
+.scroll { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; background: var(--surface); font-size: 0.9rem; }
+th, td { text-align: left; vertical-align: top; padding: 0.45rem 0.6rem; border-bottom: 1px solid var(--line); }
+th { font-weight: 600; background: color-mix(in srgb, var(--surface) 85%, var(--accent)); }
+td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+.chips { display: flex; flex-wrap: wrap; gap: 0.3rem; }
+.chip { display: inline-block; font-size: 0.75rem; line-height: 1.5; padding: 0 0.45rem; border-radius: 999px;
+  border: 1px solid currentColor; white-space: nowrap; }
+.chip.error { color: var(--err); } .chip.warning { color: var(--warn); } .chip.pending { color: var(--pend); }
+.chip.note { color: var(--note); } .chip.built { color: var(--ok); } .chip.partial { color: var(--warn); }
+.chip.open { color: var(--muted); } .chip.out { color: var(--muted); text-decoration: line-through; }
+.engine > h3 { border-bottom: 1px solid var(--line); padding-bottom: 0.3rem; }
+article.code { background: var(--surface); border: 1px solid var(--line); border-left: 3px solid var(--accent);
+  border-radius: 4px; padding: 0.8rem 1rem; margin: 0.7rem 0; }
+article.code header { display: flex; flex-wrap: wrap; gap: 0.5rem 1rem; align-items: baseline; justify-content: space-between; }
+article.code .rule { margin: 0.5rem 0; }
+article.code dl, .card dl { display: grid; grid-template-columns: 7.5rem minmax(0, 1fr); gap: 0.3rem 0.8rem; margin: 0.4rem 0 0; }
+dt { font-weight: 600; color: var(--muted); font-size: 0.85rem; }
+dd { margin: 0; }
+ul.details { margin: 0.3rem 0; padding-left: 1.2rem; font-size: 0.9rem; }
+ol.sources, ul.sources { margin: 0; padding-left: 1.2rem; font-size: 0.85rem; }
+.filter { display: flex; gap: 0.6rem; align-items: center; flex-wrap: wrap; }
+.filter input { font: inherit; padding: 0.35rem 0.6rem; border: 1px solid var(--line); border-radius: 4px;
+  background: var(--surface); color: var(--ink); min-width: 16rem; }
+.filter input:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(22rem, 1fr)); gap: 1rem; }
+.card, .table-card, article.circuit { background: var(--surface); border: 1px solid var(--line); border-radius: 6px;
+  padding: 0.9rem 1rem; }
+.card h3, .table-card h3, article.circuit h3 { margin-top: 0; }
+.table-card { margin: 0.8rem 0; }
+ul.review { padding-left: 1.2rem; font-size: 0.88rem; }
+article.circuit { margin: 1rem 0; }
+.drawing { overflow-x: auto; background: #ffffff; border: 1px solid var(--line); border-radius: 4px; margin: 0.6rem 0; }
+.drawing svg { display: block; width: 100%; min-width: 46rem; height: auto; }
+table.faults { margin-top: 0.4rem; }
+table.kv { width: auto; min-width: 24rem; }
+table.kv tr.sec th { background: transparent; border-bottom: 1px solid var(--ink); padding-top: 0.9rem; }
+table.kv .src { font-weight: 400; color: var(--muted); font-size: 0.85rem; margin-left: 0.5rem; }
+table.kv td.val { font-variant-numeric: tabular-nums; }
+table.cand td:first-child { white-space: nowrap; }
+td, dd, li { overflow-wrap: anywhere; }
+footer { color: var(--muted); font-size: 0.85rem; margin-top: 3rem; }
+@media (max-width: 52rem) {
+  .layout { grid-template-columns: minmax(0, 1fr); gap: 1rem; padding: 1rem 1rem 3rem; }
+  nav { position: static; max-height: none; }
+  nav > ol { display: flex; flex-wrap: wrap; gap: 0.3rem 0.9rem; }
+  nav ol ol.sub { display: none; }
+  article.code dl, .card dl { grid-template-columns: minmax(0, 1fr); }
+  .cards { grid-template-columns: minmax(0, 1fr); }
+  table.kv { min-width: 0; }
+}
+@media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto !important; } }
+</style></head><body><div class="layout"><nav aria-label="Rule catalog"><ol><li><a href="index.html" title="Overview">Overview</a></li><li><span class="label">Engines</span><ol class="engines"><li><a href="struct.html" title="STRUCT">STRUCT</a></li><li><a href="sync.html" title="SYNC">SYNC</a></li><li><a href="lim.html" title="LIM – limits">LIM</a></li><li><a href="lvl.html" title="LVL – levels">LVL</a></li><li><a href="req.html" title="REQ – requires">REQ</a></li><li><a href="path.html" title="PATH – paths">PATH</a></li><li><a href="sim.html" title="SIM">SIM</a></li><li><a href="geo.html" title="GEO">GEO</a></li><li><a href="files.html" title="FILES">FILES</a></li><li><a href="parts.html" title="PARTS">PARTS</a></li><li><a href="order.html" title="ORDER">ORDER</a></li><li><a href="docs.html" title="DOCS">DOCS</a></li><li><a href="hint.html" title="HINT">HINT</a></li></ol></li><li><a href="domains.html" title="Domains">Domains</a></li><li><a href="tables.html" title="Tables">Tables</a></li><li><a href="schema.html" title="Parts schema">Parts schema</a></li><li><a href="circuits.html" aria-current="page" title="Reference circuits">Reference circuits</a><ol class="sub"><li><a href="circuit-led-bar.html">led-bar</a></li><li><a href="circuit-motors.html">motors</a></li><li><a href="circuit-audio.html">audio</a></li><li><a href="circuit-guitar.html">guitar</a></li><li><a href="circuit-power.html">power</a></li><li><a href="circuit-cables.html">cables</a></li><li><a href="circuit-usb.html">usb</a></li><li><a href="circuit-keyboard.html">keyboard</a></li></ol></li><li><a href="open-designs.html" title="Open designs">Open designs</a></li><li><a href="candidates.html" title="maker-coverage candidates">maker-coverage candidates</a></li><li><a href="before.html" title="Check IDs of before">Check IDs of before</a></li></ol></nav><main><header class="top"><p class="meta brand"><a href="../"><picture><source media="(prefers-color-scheme: dark)" srcset="../brand/edakit-mark-dark.svg"><img src="../brand/edakit-mark.svg" width="28" height="28" alt=""></picture>edakit documentation</a></p><h1>Reference circuits</h1><p>edakit's own circuits, one per domain, each added to the example and drawn by <code>edakit schematic draw</code>. Each passes <code>edakit check</code> and <code>edakit sim</code> clean under its domains; each seeded fault raises exactly its codes (<code>tests/test_reference.py</code>). The values are chosen for the test, not taken from datasheets.</p></header><div class="cards"><article class="card" id="circuit-led-bar"><h3><a href="circuit-led-bar.html">led-bar</a></h3><p>The example of the handbook: a Raspberry Pi Pico 2 drives eight LEDs through a TLC5916 constant-current sink, 5 V through a JST PH connector and a reverse diode, one button. Every reference circuit adds its domain&#x27;s circuit to it.</p><p class="meta">Domains on: <code>core</code> · 0 seeded faults · <a href="circuits/led-bar.svg">SVG</a></p></article><article class="card" id="circuit-motors"><h3><a href="circuit-motors.html">motors</a></h3><p>M1 (33 Ω winding) from +5V to the collector of an S8050 Q20, 1 kΩ from GP8 to the base, 10 kΩ base to emitter; an SS14 across the winding.</p><p class="meta">Domains on: <code>core</code> <code>motors</code> · 2 seeded faults · <a href="circuits/motors.svg">SVG</a></p></article><article class="card" id="circuit-audio"><h3><a href="circuit-audio.html">audio</a></h3><p>U20, a class-D amplifier on +5V with 100 nF, its bridge-tied outputs to the speaker LS20; its input from GP8 through the PWM DAC&#x27;s low-pass R20 1 kΩ / C21 10 nF (C0G) – an AC run expects its corner at 15.9 kHz: flat at 1 kHz, the upper −3 dB corner between 10 and 25 kHz.</p><p class="meta">Domains on: <code>core</code> <code>audio</code> · 2 seeded faults · <a href="circuits/audio.svg">SVG</a></p></article><article class="card" id="circuit-guitar"><h3><a href="circuit-guitar.html">guitar</a></h3><p>An instrument buffer: the jack J20&#x27;s tip on GTR_IN (a pickup that wants at least 1 MΩ), 2.2 MΩ to the reference VREF (10 kΩ / 10 kΩ from +5V, 22 µF), U20 an op-amp follower on +5V with 100 nF; its output coupled through C22 1 µF (film) onto BUF_OUT with R24 100 kΩ to ground – an AC run expects the follower flat at 1 kHz and the coupling&#x27;s corner, 1.6 Hz, below 10 Hz.</p><p class="meta">Domains on: <code>core</code> <code>guitar</code> · 4 seeded faults · <a href="circuits/guitar.svg">SVG</a></p></article><article class="card" id="circuit-power"><h3><a href="circuit-power.html">power</a></h3><p>Three AA cells in BT20 next to USB: through an SS14 D20 onto VIN behind J1, so that neither feeds the other.</p><p class="meta">Domains on: <code>core</code> <code>power</code> · 2 seeded faults · <a href="circuits/power.svg">SVG</a></p></article><article class="card" id="circuit-cables"><h3><a href="circuit-cables.html">cables</a></h3><p>A button SW20 on a hand-wired remote board, wired by cable W20 (1 m of AWG 26) from J21 to J20 on main; on main the line reaches GP8 through 1 kΩ, with 10 kΩ to 3V3.</p><p class="meta">Domains on: <code>core</code> <code>cables</code> · 1 seeded faults · <a href="circuits/cables.svg">SVG</a></p></article><article class="card" id="circuit-usb"><h3><a href="circuit-usb.html">usb</a></h3><p>J20, a USB-C receptacle for data: 5.1 kΩ from each CC pin to GND, D+ and D− of both rows joined to GP8 and GP9 through 27 Ω.</p><p class="meta">Domains on: <code>core</code> <code>usb</code> · 2 seeded faults · <a href="circuits/usb.svg">SVG</a></p></article><article class="card" id="circuit-keyboard"><h3><a href="circuit-keyboard.html">keyboard</a></h3><p>A 2 × 2 key matrix: SW20–SW23 from the rows (GP8, GP9) to an SS14 each, cathodes to the rows, anodes … the columns (GP10, GP11).</p><p class="meta">Domains on: <code>core</code> · 2 seeded faults · <a href="circuits/keyboard.svg">SVG</a></p></article></div><footer>Written by <code>docs/catalog/build.py</code>; <code>tests/test_catalog_page.py</code> holds it to the catalog.</footer></main></div><script>
+const q = document.getElementById('q');
+if (q) q.addEventListener('input', () => {
+  const s = q.value.trim().toLowerCase();
+  document.querySelectorAll('[data-text]').forEach(a => { a.hidden = s && !a.dataset.text.includes(s); });
+  document.querySelectorAll('.group').forEach(g => { g.hidden = s && !g.querySelector('[data-text]:not([hidden])'); });
+});
+</script></body></html>

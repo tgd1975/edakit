@@ -7,7 +7,7 @@ know which files it covers, how each kind of page is written, what you must not 
 ## What it covers
 
 The documentation as [organisation.md](organisation.md) lists it: `README.md`, `handbook/`, `docs/` outside
-`concepts/` and `catalog/`, and the Markdown of `examples/coin-cell-led/`. Nothing else.
+`concepts/` and `catalog/`, and the Markdown of `examples/coin-cell-led/` and `examples/blinker-555/`. Nothing else.
 
 The sources keep their own words, and the documentation follows them:
 
@@ -40,8 +40,9 @@ files, the SessionStart hook reads section 11.4, and six tests hold pages to the
 
 ## Registers
 
-Three, by layer. The entry pages are the start page, the quickstart, "How it works" and the glossary; the guides are
-the handbook's chapters and the reader pages; the reference is chapter 10, chapter 9 and the catalog page.
+Three, by layer. The entry pages are the start page, the quickstart, "How it works", the glossary and the project
+pages; the guides are the handbook's chapters and the reader pages; the reference is chapter 10, chapter 9 and the
+catalog pages.
 
 | | Entry | Guides | Reference |
 | --- | --- | --- | --- |
@@ -73,8 +74,9 @@ shorter wording never trades a meaning: in a section the automation names, the w
 
 ## Words
 
-- "You" for the reader, "Claude" for the session, "edakit" for the tool. "The plugin", "the command line", "the
-  handbook", "the catalog", "the site" for its parts.
+- "You" for the reader, "edakit" for the tool. "The assistant" for the role the session plays; the assistant by name
+  where it is meant – today "Claude", in Claude Code. "The plugin", "the command line", "the handbook", "the catalog",
+  "the site" for its parts.
 - "The owner" – edakit's owner, who decides – on the developer pages only. "The user" in no reader page's own sentence.
   A quoted skill, agreement or catalog text keeps its words.
 - One word per thing, as the [glossary](glossary.md) has it and the skills and the catalog use it: hand-over, sign-off,
@@ -82,6 +84,9 @@ shorter wording never trades a meaning: in a section the automation names, the w
 - British spelling, as written: colour, behaviour, centre, licence. "Catalog" is edakit's own name, "catalogue"
   JLCPCB's.
 - No superlatives, no "simply", no "just", no "the hard way".
+- No buzzwords – "harness", "agentic", "AI-powered", "copilot" and their kind. A page says what happens, not what it
+  is called. The README names "harness" once, as a keyword linked to [architecture](architecture.md), which defines
+  it; no other page uses it. A product's name, such as GitHub Copilot, is no buzzword.
 - A number with its unit and a space: 0.2 mm, 5 V, 100 nF.
 - An en dash ` – ` for an aside, plain declarative sentences.
 - Prose wrapped at 120 characters.
@@ -97,6 +102,13 @@ shorter wording never trades a meaning: in a section the automation names, the w
 - The history – dates, what went wrong in which week – goes to chapter 13. A date a finding or a skill relies on stays:
   the state of the law in chapter 15, the versions in chapter 2.
 - Regulatory content says once that it is support, not legal advice, nothing legally guaranteed (CLAUDE.md).
+
+## A project page
+
+A page of the gallery (`docs/projects/`) is written in the entry register, its length set by its pictures. It explains
+the project to a reader who has never seen it: what it is, the circuit with its drawn schematic and its blocks, the
+board as made, what edakit found, its variants, what it changed in edakit. The pictures are the release's, copied with
+its tag, never drawn by hand; the numbers name their release. The gallery shows what is built, nothing planned.
 
 ## Pictures, code and output
 
@@ -120,6 +132,7 @@ code, block quotes, phrases in quotation marks and section 11.4. In them it coun
 - a date outside chapter 13, chapter 15 (the state of the law), a decision log and the status lines;
 - on the entry pages, a term in bold that the glossary does not have – a bold title of a paragraph or an item is no
   term.
+- a buzzword outside [architecture](architecture.md) and the README's one "harness".
 
 A page that does not meet a rule today is listed in the test as expected to fail, and the test fails once the page
 meets it, so that the entry leaves the list. A new page meets every rule from the start. The rest – meaning, order, the

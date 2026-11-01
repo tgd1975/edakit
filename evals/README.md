@@ -11,6 +11,7 @@ only with the largest model.
 | `coverage` | what went unchecked for lack of data | the codes and the field named; `edakit check --coverage` ran |
 | `add-led` | a status LED on GP8 from the block library, until check and sim are clean | the graph has it; block add, check and sim ran; the `DONE:` line |
 | `requirements-inventory` | the inventory for the requirements file of led-bar with a two-line README (#97) | the README's eight LEDs and USB port are candidates; a candidate read from the circuit says inferred; the list "already checked by edakit"; no candidate edakit derived (judge) |
+| `first-reader` | a reader new to edakit follows the start page and the quickstart to the first finding on the walkthrough's example, with only those pages | `edakit check` ran; PATH.reverse named; what it means and why it is accepted (judge) |
 
 Each case's `scaffold.sh` writes its project into the run's empty workspace with `tests/reference.py` (plain
 `python3`, no edakit needed for that). The graders are regex and tool_used – free – and one judge per fault case and
