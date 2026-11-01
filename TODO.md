@@ -126,7 +126,9 @@ sources, data and code untouched; a text that is generated or used elsewhere sta
       bring, what edakit brings, the walkthrough's count), `docs/quickstart.md` with its test, `docs/how-it-works.md`
       with the pipeline drawing and its loops back, the mechanism without a buzzword, a transcript, the state and the
       future work (three items); the buzzword rule into `docs/style.md` and `tests/test_style.py` ("harness" once at the
-      README's start, as a keyword); `test_plugin.py` pointed at the page that lists skills and agents.
+      README's start, as a keyword); `test_plugin.py` pointed at the page that lists skills and agents; "What it runs,
+      sends, fetches" and the issues line stay on the start page below its first screen (outreach.md, K.2 and K.3), the
+      order at four makers in the case.
 - [ ] TD-30 - **D.3** The site: the navigation as data, by reader and by station (The circuit, The board), short titles;
       `organisation.md` and the brand page on it; "Inside edakit" with its index and the source line; the footer and
       feedback lines; prototypes off the navigation.
@@ -137,8 +139,8 @@ sources, data and code untouched; a text that is generated or used elsewhere sta
 - [ ] TD-33 - **D.6** The reader pages "Adding a rule" and "Working on edakit", and "edakit as a meta-harness"
       (`docs/architecture.md`): the term defined by three properties, the layers, the loops and the files that set them,
       what is bound to Claude Code, the rules for developers.
-- [ ] TD-34 - **D.7** The "is it for me" numbers from the evals; the findings on sources (the plugin's descriptions say
-      "JSON hardware graph") to the owner.
+- [ ] TD-34 - **D.7** The "is it for me" numbers from the evals, for the start page and outreach.md's fact sheet (K.5);
+      the plugin's descriptions were settled by K.2 (TD-71).
 - [ ] TD-35 - **D.9** `docs/projects/`, the gallery: the index with a card per project – the examples' cards lead to
       chapters 17 and 18 –; the bell's page – what it is, the circuit with its drawn schematic and its blocks explained,
       the board as made, what edakit found, its variants main, smd, tht and esp32 side by side, what it changed in
