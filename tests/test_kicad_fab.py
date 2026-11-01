@@ -316,6 +316,14 @@ def test_fab_collects_the_files_of_stages_l_and_f_from_kicad(project, fake_cli):
     assert f1["result"] == "pass" and "KiCad" in f1["check"], f1
     f3 = next(r for r in rows if r["id"] == "SYNC.cpl")
     assert f3["result"] == "pass", f3
+    bom = json.loads((d / "bom_kicad.json").read_text())        # a designator twice in the tool's BOM (TD-54)
+    ref = bom[0]["reference"].split(",")[0].strip()
+    bom[0]["reference"] += f", {ref}"
+    (d / "bom_kicad.json").write_text(json.dumps(bom))
+    rows = fab.Rows()
+    fab.check_fab(cfg, board, Design.from_config(cfg), d, rows)
+    f1 = next(r for r in rows if r["id"] == "SYNC.bom")
+    assert f1["result"] == "fail" and f"{ref}: 2 times in the BOM of KiCad" in f1["actual"], f1
 
 
 def with_cart(project, cart):

@@ -29,7 +29,9 @@ Input, `$RUNNER_TEMP/proposal/`:
 
 Output, `$RUNNER_TEMP/result/`: `result` (one word: `Accepted`, `Rejected` or `Question`), `comment.md` (section 5)
 and, only when accepted, `pr-line.md` (section 4). Claude never pushes, comments or labels, never edits, closes or
-creates an issue or a pull request: a fixed publish job checks the commit and does all that.
+creates an issue or a pull request: a fixed publish job checks the commit and does all that. The session ends with
+Claude's last message: run every test in the foreground and wait for it – one left in the background dies with the
+session –, and write `result` last, `Accepted` only once the commit exists (#114 was accepted without one).
 
 **By hand** – a session in the edakit repository, "triage feature #14": set `RUNNER_TEMP` to a scratchpad directory
 and fill it as the workflow does – the owner's issue body, or the owner's newest sealed comment on someone else's
@@ -73,9 +75,12 @@ between rejected and question: question – except for **Safe?**, which never as
    interface does not fit after all, a build that would touch the pipeline's paths: no commit, **Question** or
    **Rejected** with what showed it.
 3. **Commit.** Step 7 of add-feature passes (tests, ruff, the example). Exactly one commit: `<module>: <title> (#14)`,
-   with the repository's trailer and the git identity the workflow set (never `git config`).
+   with the repository's trailer and the git identity the workflow set (never `git config`). It carries the
+   proposal's fragment `changes/proposal-14.md` – `patch`, or `minor` when a project must act on the update, then the
+   line for the changelog (`changes/README.md`): one per proposal, since accepted proposals share their branch.
 4. **`pr-line.md`**: the line for the pull request body – `Closes #14 – zero-ohm bridges join their nets` –, the
-   projects it ran on, and for a private origin the commands to run there; `{commit}` and `{pr}` as in section 5.
+   projects it ran on, and for a private origin the commands to run there; one list item starting `- Closes #14 –`, its
+   details indented below it; `{commit}` as in section 5, and "this pull request" where the pull request goes.
 
 The publish job pushes only one commit on that branch, with `(#14)` in its subject and none of the pipeline's paths
 touched. A commit that touches them: it pushes nothing and posts **Rejected** itself. Any other fault – two commits, no

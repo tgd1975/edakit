@@ -22,7 +22,10 @@ A requirements file covers the circuit only; what firmware and mechanics must do
 
 - **A concept goes on main.** A concept the owner asks for goes into `docs/concepts/new/` next to the others, not onto
   a branch of its own – the owner follows the repository on GitHub, and a branch is not "in the repository". A concept
-  written against an older main is checked against the current one first.
+  written against an older main is checked against the current one first. It gets there through the notes lane, and
+  so does every change of TODO.md, a ticked todo included: `python3 .github/notes.py "<message>" <files…>`, from any
+  worktree on any branch, in the background – it lands the session's own edits on the newest main without an OK and
+  is merged in about five minutes (`docs/concepts/new/versioning.md`).
 - **A concept moves on once it is settled.** Decided and built in edakit – what is left being live runs, probes at a
   maker or a project taking it over, each kept in `TODO.md` or the implementation plan –, it moves to
   `docs/concepts/done/`; one the owner rejects moves to `docs/concepts/discarded/`, with the decision in its status
@@ -34,7 +37,13 @@ A requirements file covers the circuit only; what firmware and mechanics must do
   project must act when it updates, with what to do, `patch` otherwise – a new rule, a new feature, a fix. The major
   number is the owner's. Such a branch goes onto main as a pull request through `python3 .github/merge.py <n>`, never
   by a local merge: the script numbers it, waits for the checks and merges, and `release.yml` sets the tag. Concepts
-  and TODO.md still go straight to main until the notes lane is built (TD-46).
+  and TODO.md go through the notes lane and are no version.
+- **main is protected** by the rulesets in `.github/rulesets/`: nothing reaches it but a pull request with the checks
+  test, kicad, build, paths and version green, no force push, no deletion, no bypass, only the owner's account merges,
+  and a version's tag is never moved. Every session acts as the owner's account, so this guards against slips and the
+  Actions – the owner's OK for code stays the rule above. A refused push to main ("Repository rule violations") moves
+  its commit to a branch. `python3 .github/rulesets.py` shows whether GitHub has what the files say; a change to them
+  is a pull request, applied after its merge with `python3 .github/rulesets.py apply` on the owner's word.
 - **No branch is left lying around.** When a piece of work is done, list the unmerged branches – local, origin,
   worktrees, and the clones of other sessions, read only. Merge what is finished, rebased and with the tests green, or
   say why a branch of your own stays: waiting for a decision, unfinished. Someone else's branch is one line naming the
@@ -60,7 +69,7 @@ Never loosen the job's `if` or the queue's `--author`, never leave the check to 
 inside Claude's run has spent the tokens already –, and do not suggest another trigger or a condition others can meet
 without being asked.
 
-The owner's decision of 2026-11-01 (`docs/concepts/new/proposals-pipeline.md`):
+The owner's decision of 2026-11-01 (`docs/concepts/done/proposals-pipeline.md`):
 
 - **One further start:** a comment by the owner carrying the seal, on an issue by someone else – the workflow labels
   it `adopted`, and Claude reads only the owner's comments and the triage's results there. A condition only the

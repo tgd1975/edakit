@@ -214,9 +214,9 @@ class Progress:
 # --- project ------------------------------------------------------------------------------------------------------
 
 def open_project(mcp, cfg, create=False):
-    """Make sure the project cfg.project is open. EasyEDA does not list local projects (getAllProjectsUuid is empty),
-    so the UUID is remembered as soon as the project was seen open once; after a restart EasyEDA sits on its start
-    page (all DMT_* calls return null) and the project is reopened by that UUID."""
+    """Make sure the project cfg.project is open: by the UUID remembered when it was last seen open, else found by its
+    name in EasyEDA's project folders (local_project_uuid). After a restart EasyEDA sits on its start page (all DMT_*
+    calls return null) and the project is reopened by that UUID."""
     memo = cfg.artifact("easyeda_project.json")
     info = api(mcp, "DMT_Project.getCurrentProjectInfo")
     if info and info.get("friendlyName") == cfg.project:
@@ -227,13 +227,7 @@ def open_project(mcp, cfg, create=False):
         m = json.loads(memo.read_text())
         uuid = m.get("uuid") if m.get("name", cfg.project) == cfg.project else None
     if not uuid:
-        for u in api(mcp, "DMT_Project.getAllProjectsUuid") or []:
-            pi = api(mcp, "DMT_Project.getProjectInfo", u)
-            if pi and pi.get("friendlyName") == cfg.project:
-                uuid = u
-                break
-    if not uuid:
-        uuid = local_project_uuid(cfg.project)
+        uuid = local_project_uuid(mcp, cfg.project)
     if not uuid and create:
         # The desktop client in local mode refuses it ("请求参数path错误", the path parameter) and returns null.
         uuid = api(mcp, "DMT_Project.createProject", cfg.project)
@@ -243,8 +237,8 @@ def open_project(mcp, cfg, create=False):
                            "name in edakit.toml, then run the command again")
         print(f"  project '{cfg.project}' created")
     if not uuid:
-        raise MCPError(f"project '{cfg.project}' is not open and EasyEDA does not list local projects – open it in "
-                       "EasyEDA once (edakit remembers its UUID)")
+        raise MCPError(f"project '{cfg.project}' is in none of EasyEDA's project folders – create it in EasyEDA "
+                       "(File → New → Project), named exactly like [project] name in edakit.toml")
     print(f"  project {cfg.project} is not open – opening it")
     api(mcp, "DMT_Project.openProject", uuid)
     # Never go on unless the open project is the right one: every step after this writes into whatever is open.
@@ -268,36 +262,14 @@ def wait_for_documents(mcp, wait_s=20):
     return False
 
 
-def easyeda_homes():
-    """EasyEDA Pro's folder of the local client (config.json, projects/): EDAKIT_EASYEDA_HOME, else EasyEDA-Pro in the
-    documents folder."""
-    if home := os.environ.get("EDAKIT_EASYEDA_HOME"):
-        return [Path(home)]
-    return [Path.home() / d / "EasyEDA-Pro" for d in ("Dokumente", "Documents")]
-
-
-def local_project_uuid(name):
-    """The UUID of a local project by its name, from EasyEDA's own files: config.json names the project folders
-    (APP_PROJECT_DIR), each <project>.eprj2 is an SQLite file with the table projects (uuid, name) – read only. None
-    when no file has it. EasyEDA's API lists no local project (getAllProjectsUuid is empty)."""
-    import sqlite3
-    for home in easyeda_homes():
-        try:
-            dirs = json.loads((home / "config.json").read_text(encoding="utf-8")).get("APP_PROJECT_DIR") or []
-        except (OSError, ValueError):
-            continue
-        for d in dirs:
-            for f in sorted(Path(d).glob("*.eprj2")):
-                try:
-                    con = sqlite3.connect(f"file:{f}?mode=ro", uri=True)
-                    try:
-                        rows = con.execute("select uuid, name from projects").fetchall()
-                    finally:
-                        con.close()
-                except sqlite3.Error:
-                    continue
-                if found := next((u for u, n in rows if n == name), None):
-                    return found
+def local_project_uuid(mcp, name):
+    """The UUID of a local project by its name: getAllProjectsUuid lists the projects of one project folder, given as
+    teamUuid – DMT_Team.getAllTeamsInfo lists the folders, each folder's path its uuid (E-9; without it the answer is
+    [] by design). None when no folder has it."""
+    for team in api(mcp, "DMT_Team.getAllTeamsInfo") or []:
+        for u in api(mcp, "DMT_Project.getAllProjectsUuid", team["uuid"]) or []:
+            if (api(mcp, "DMT_Project.getProjectInfo", u) or {}).get("friendlyName") == name:
+                return u
     return None
 
 
@@ -674,9 +646,13 @@ def reload_pcb(mcp):
 
 
 def list_pcb_components(mcp):
+    """The parts of the open PCB. easyeda-mcp-pro 1.6.0 lists them only with the PCB focused and the exact UUID of
+    its project – projectId "current" is refused (bridge pcb-read-operations.ts:135-185, readProjectScoped)."""
+    ensure_pcb_focus(mcp)
+    project = api(mcp, "DMT_Project.getCurrentProjectInfo")["uuid"]
     comps, offset = [], 0
     while True:
-        res = mcp.call("easyeda_pcb_components", projectId=PROJECT, limit=200, offset=offset)
+        res = mcp.call("easyeda_pcb_components", projectId=project, limit=200, offset=offset)
         comps += res["components"]
         offset += len(res["components"])
         if not res["components"] or offset >= res["total"]:

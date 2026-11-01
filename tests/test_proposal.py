@@ -140,7 +140,7 @@ def test_cli_feature_template(capsys):
     assert "### Capability" in capsys.readouterr().out
 
 
-# The Action's queue, the text Claude reads, the check of the commits (docs/concepts/new/proposals-pipeline.md)
+# The Action's queue, the text Claude reads, the check of the commits (docs/concepts/done/proposals-pipeline.md)
 
 OWNER = "tgd1975"
 SEALED = proposal.seal(FILLED)[0]

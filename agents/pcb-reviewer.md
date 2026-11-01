@@ -32,7 +32,9 @@ boards of the project in the current repository. You **change nothing**, neither
   `_layers.png` both copper layers over each other as the EasyEDA editor shows them – a track of one side under a
   pour of the other, overlapping pours, the through-hole pads –; the layers on their own beside them.
 - EasyEDA only if `easyeda_bridge_status` reports connected. A picture can be stale; if it is byte-identical to the
-  previous one, say so instead of drawing conclusions.
+  previous one, say so instead of drawing conclusions. The PCB lists (`easyeda_pcb_components`, `_tracks`, `_vias`,
+  `_regions`) answer only with the PCB focused and `projectId` the project's exact UUID – the `uuid` in
+  `<artifacts>/easyeda_project.json` –, not "current".
 - Track widths: `<artifacts>/sim/net_currents.json` (simulated currents) and the routing classes.
 - The requirements file, if `[project] requirements` names one (`edakit req 2>&1 | cat`): the requirements whose
   `verify` names `signoff = "M-5"` are what the layout must keep – a connector reachable at the edge, nothing on the

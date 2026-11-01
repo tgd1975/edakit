@@ -8,7 +8,7 @@
 # IMPORTANT: in server mode stdout speaks the MCP protocol. Never print anything to stdout.
 set -euo pipefail
 
-EASYEDA_MCP_VERSION="${EASYEDA_MCP_VERSION:-1.4.0}"
+EASYEDA_MCP_VERSION="${EASYEDA_MCP_VERSION:-1.6.0}"
 RUNTIME_DIR="${EASYEDA_MCP_RUNTIME_DIR:-$HOME/.easyeda-mcp-pro/runtime/$EASYEDA_MCP_VERSION}"
 ENTRY="$RUNTIME_DIR/node_modules/easyeda-mcp-pro/dist/index.js"
 
@@ -49,7 +49,7 @@ export ARTIFACT_DIR="${ARTIFACT_DIR:-$PWD/build/easyeda-mcp}"
 export LOG_LEVEL="${LOG_LEVEL:-warn}"
 # Bridge calls may take 120 s instead of 15 s: DRC and copper pours of a large board need longer. The server that holds
 # the bridge port drops pending requests after ITS timeout ("stale sweep") – also requests another server (e.g. a
-# script's) passes through with a longer timeout. So every server needs the same value (checked with 1.4.0).
+# script's) passes through with a longer timeout. So every server needs the same value (checked with 1.4.0, code unchanged on 1.6.0).
 export BRIDGE_TIMEOUT_MS="${BRIDGE_TIMEOUT_MS:-120000}"
 
 exec node "$ENTRY" "$@"

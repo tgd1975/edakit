@@ -62,9 +62,18 @@ jobs:
             gh issue list --label feature-proposal --state all --limit 1000 --json number,title,state,labels
           } | jq -s add > "$P/others.json"
           cp -r .claude/skills "$RUNNER_TEMP/skills"          # main's rules, before the branch is checked out
+      - name: ngspice, pdftotext
+        if: steps.read.outputs.claude == 'true'
+        run: sudo apt-get update && sudo apt-get install -y ngspice poppler-utils
+      - uses: astral-sh/setup-uv@v6
+        if: steps.read.outputs.claude == 'true'
+      - name: Python environment
+        if: steps.read.outputs.claude == 'true'
+        run: uv sync --group dev
       - name: Branch
         # the branch of the open pull request, or a new one from main with what an earlier triage pushed after its
-        # pull request was merged carried over – never overwritten
+        # pull request was merged carried over – never overwritten; a conflict in the generated catalog page alone is
+        # written again by its script, any other stops the run red (#103's commit after the merge of #102)
         if: steps.read.outputs.claude == 'true'
         run: |
           git config user.name "github-actions[bot]"
@@ -77,21 +86,19 @@ jobs:
             git checkout -q -B "$branch" origin/main
             if git rev-parse -q --verify "origin/$branch" > /dev/null; then
               for c in $(git log --right-only --cherry-pick --no-merges --reverse --format=%H "origin/main...origin/$branch"); do
-                git cherry-pick "$c"
+                if ! git cherry-pick "$c"; then
+                  if [ -n "$(git diff --name-only --diff-filter=U | grep -v '^docs/catalog/')" ]; then
+                    git cherry-pick --abort; echo "::error::carrying over $c conflicts beyond the catalog page"; exit 1
+                  fi
+                  uv run python docs/catalog/build.py && git add docs/catalog && git -c core.editor=true cherry-pick --continue
+                fi
+                git log -1 --format='- carried over from a merged pull request: %s' >> "$RUNNER_TEMP/result/carried.md"
               done
             fi
           fi
           jq -n --arg b "$branch" --arg s "$(git rev-parse HEAD)" --arg pr "$pr" \
             '{branch: $b, start: $s, pr: (if $pr == "" then null else ($pr | tonumber) end)}' > "$RUNNER_TEMP/proposal/branch.json"
           cp "$RUNNER_TEMP/proposal/branch.json" "$RUNNER_TEMP/result/"
-      - name: ngspice, pdftotext
-        if: steps.read.outputs.claude == 'true'
-        run: sudo apt-get update && sudo apt-get install -y ngspice poppler-utils
-      - uses: astral-sh/setup-uv@v6
-        if: steps.read.outputs.claude == 'true'
-      - name: Python environment
-        if: steps.read.outputs.claude == 'true'
-        run: uv sync --group dev
       - uses: anthropics/claude-code-action@v1
         id: claude
         if: steps.read.outputs.claude == 'true'
@@ -182,7 +189,7 @@ jobs:
               result=Rejected; comment="$RUNNER_TEMP/rejected.md"
               { echo "**Rejected** – the build changes the pipeline, which a proposal never does, so nothing was pushed:"
                 echo; cat "$RUNNER_TEMP/check.txt"; echo
-                echo "The pipeline's paths: \`edakit/proposal.py\`, PIPELINE (docs/concepts/new/proposals-pipeline.md)."
+                echo "The pipeline's paths: \`edakit/proposal.py\`, PIPELINE (docs/concepts/done/proposals-pipeline.md)."
               } > "$comment"
             fi
           fi
@@ -191,23 +198,24 @@ jobs:
             branch=$(jq -r .branch "$R/branch.json")
             # asked again: the pull request may have been merged while the proposal was built
             pr=$(gh pr list --head "$branch" --state open --json number --jq '.[0].number // empty')
+            # onto the open pull request's branch Claude's commit; without one, onto main everything the build has that
+            # main lacks – what the triage carried over, its catalog page written again, and Claude's commit
             if [ -n "$pr" ]; then
-              git checkout -q -B "$branch" "origin/$branch"
+              git checkout -q -B "$branch" "origin/$branch"; from="$start"
             else
-              git checkout -q -B "$branch" origin/main
-              if git rev-parse -q --verify "origin/$branch" > /dev/null; then
-                for c in $(git log --right-only --cherry-pick --no-merges --reverse --format=%H "origin/main...origin/$branch"); do
-                  git cherry-pick "$c"
-                done
-              fi
+              git checkout -q -B "$branch" origin/main; from=origin/main
             fi
-            for c in $(git rev-list --reverse "$start..refs/triage/build"); do git cherry-pick "$c"; done
+            for c in $(git rev-list --reverse --no-merges "$from..refs/triage/build"); do
+              git cherry-pick "$c" || { echo "::error::$c does not apply – nothing is posted, the proposal waits"; exit 1; }
+            done
             git push --force-with-lease="$branch:$(git rev-parse -q --verify "origin/$branch" || true)" origin "HEAD:refs/heads/$branch"
             sha=$(git rev-parse --short HEAD)
             if [ "$branch" = rules/proposals ]; then title="Rule proposals"; else title="Feature proposals"; fi
-            line=$(sed -e "s/{commit}/$sha/g" "$R/pr-line.md" 2> /dev/null || echo "Closes #$N")
+            line=$(sed -e "s/{commit}/$sha/g" -e "s/{pr}/this pull request/g" "$R/pr-line.md" 2> /dev/null || echo "Closes #$N")
+            case "$line" in "- "*) ;; *) line="- $line" ;; esac          # one list item per proposal
             if [ -z "$pr" ]; then
               printf '%s accepted by the triage, one commit each.\n\n%s\n' "$title" "$line" > "$RUNNER_TEMP/pr.md"
+              cat "$R/carried.md" >> "$RUNNER_TEMP/pr.md" 2> /dev/null || true
               url=$(gh pr create --base main --head "$branch" --title "$title" --body-file "$RUNNER_TEMP/pr.md")
               pr=${url##*/}
             else
