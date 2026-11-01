@@ -473,7 +473,7 @@ chapter's codes, with the same values and the same simulation; the cell's curren
 HINT.debounce left the graph – edakit no longer reports that hint without an MCU reading the button; BT1's entry got the
 outline of holder and cell from its drawing (`body.box`, for the silkscreen check of 17.11). Each time both agents
 looked again and signed for the new hash. M-1 checked the new accept's reason against the cell's data sheet, and one of
-its looks found a hint that repeated what PATH.reverse had already checked (17.13).
+its looks found a hint that repeated what PATH.reverse had already checked (gaps closed, 13.9).
 
 ## 17.10 The gate without EasyEDA
 
@@ -705,30 +705,3 @@ protocol:
 ```
 
 Signed, it lets R-1's acceptance step pass – every requirement then has its evidence.
-
-## 17.13 What this example changed in edakit
-
-Like the Christmas bell (13.6), this board found gaps on its way, and each one was closed in edakit:
-
-- **`edakit part fetch` before the graph.** It failed with a traceback while the project had no graph yet; it reads only
-  the parts database now.
-- **A certificate kept as the datasheet.** LCSC's datasheet address now answers with a page of the shop whose only PDFs
-  are the certificates in its footer; `part fetch` took the first link and kept LCSC's ISO 9001 certificate as the
-  holder's datasheet. A page is now followed only to where it sends the browser, to its viewer or to a link that names
-  the part or says datasheet, and LCSC's page is taken as the file behind it (datasheets, 4.6).
-- **A push button stopped PATH.reverse and PATH.unfed.** A switch passes a reversed source on, and a supply; a push
-  button passed neither, so PATH.reverse named SW1 itself and a supply behind a power button counted as unfed. A push
-  button passes both now, as a switch does; the Christmas bell's results did not change.
-- **The push button of the block library** called pins 2 and 4 `B (internal to A)` and `D (internal to C)`, its symbol
-  `B` and `D`: STRUCT.entry failed as soon as `part import` had cached the symbol. The names follow the symbol now, and
-  the notes and roles say that the pins are connected inside.
-- **A polarity hint for a holder PATH.reverse had checked.** HINT.input_polarity said that nothing checks the polarity
-  of a battery holder not marked reversible – but PATH.reverse starts from every holder by its kind. The electrical
-  reviewer found it in M-1; the hint names unmarked supply connectors only now (JST packs, barrel jacks).
-- **A round board had four points twice.** Each of the circle's four arcs began where the one before ended: four
-  segments of length 0 in the outline EasyEDA and Freerouting got. The outline now drops a point equal to the one
-  before.
-- **The drawings of this chapter on the documentation site** linked to GitHub's page of the file, which is no image; the
-  site carries the images now.
-- `edakit order` said "1 parts by hand", and `edakit block add` still sent you to `edakit hints`, which had gone with
-  the codes.

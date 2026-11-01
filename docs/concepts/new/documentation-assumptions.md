@@ -132,3 +132,15 @@ move to `docs/concepts/done/` with the concept.
 - **`TODO.md`** goes through the notes lane after the merge: TD-29 to TD-35 ticked with the merge, the review of this
   file and the findings of the review files as one item for the owner, TD-79's mention of `docs/catalog/index.html`
   left to the session that holds TD-79.
+
+## After the owner's first look (the same evening)
+
+- **The README's links lead to the site**, not to the Markdown on GitHub, and the coin-cell example's schematic and
+  board stand on the start page (#178).
+- **pytree shows its board and schematic** (the owner: "pytree may show the schematic and so on"): the board drawn by
+  edakit's `release/pictures.py` from the Gerber files of release 20261031-110510, front, back and all layers; the
+  schematic drawn by `edakit schematic draw` from the graph at pytree's commit 8852d23, with today's edakit – pytree is
+  pinned to an older one. The PNGs scaled to 1200 px for the page.
+- **17.13 and 18.13 left the walkthroughs** (the owner: a walkthrough is no story of how edakit came about): their
+  gaps are chapter 13's 13.9 and 13.10 now, the walkthroughs' references point there, and `edakit/part.py`'s docstring
+  names 13.9. 18.13's "Open, noted for later" went to `TODO.md` as an item of its own.

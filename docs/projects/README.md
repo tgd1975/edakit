@@ -12,8 +12,10 @@ together. [The page](christmas-bell.md).
 
 ## pytree
 
+![pytree's front, the LED side](pytree/board_tree_bottom.png)
+
 A programming advent calendar: a Christmas tree of circuit boards whose 30 LEDs wake day by day as Python tasks are
-solved. About 120 parts, the project edakit was grown on. [The page](pytree.md).
+solved. The project edakit was grown on. [The page](pytree.md).
 
 ## The examples
 

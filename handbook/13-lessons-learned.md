@@ -249,7 +249,66 @@ Chapter 9's behaviours were found by trial on EasyEDA Pro 3.2.206 (Linux) with e
 - The coin-cell walkthrough's sign-offs (17.9): a day after the first ones edakit renamed its checks into codes, and
   `edakit convert --write` turned `waive` and `hints` into `accept` and `ratings` into `limits` with the unit in every
   name. The circuit hash changed, both agents looked again – the same values, the same simulation – and M-1 found a
-  hint that repeated PATH.reverse (17.13).
+  hint that repeated PATH.reverse (13.9).
 - The same day the hash changed twice more. First the accept of HINT.debounce left the graph and the cell's current
   limit came in (17.6, D-7); M-1 checked the new accept's reason against the cell's data sheet. Then BT1's entry got
   the outline of holder and cell (`body.box`). Both agents signed each new hash.
+
+## 13.9 What the coin-cell walkthrough changed in edakit
+
+Like the Christmas bell (13.6), the coin-cell board of the walkthrough (chapter 17) found gaps on its way, and each
+one was closed in edakit:
+
+- **`edakit part fetch` before the graph.** It failed with a traceback while the project had no graph yet; it reads only
+  the parts database now.
+- **A certificate kept as the datasheet.** LCSC's datasheet address now answers with a page of the shop whose only PDFs
+  are the certificates in its footer; `part fetch` took the first link and kept LCSC's ISO 9001 certificate as the
+  holder's datasheet. A page is now followed only to where it sends the browser, to its viewer or to a link that names
+  the part or says datasheet, and LCSC's page is taken as the file behind it (datasheets, 4.6).
+- **A push button stopped PATH.reverse and PATH.unfed.** A switch passes a reversed source on, and a supply; a push
+  button passed neither, so PATH.reverse named SW1 itself and a supply behind a power button counted as unfed. A push
+  button passes both now, as a switch does; the Christmas bell's results did not change.
+- **The push button of the block library** called pins 2 and 4 `B (internal to A)` and `D (internal to C)`, its symbol
+  `B` and `D`: STRUCT.entry failed as soon as `part import` had cached the symbol. The names follow the symbol now, and
+  the notes and roles say that the pins are connected inside.
+- **A polarity hint for a holder PATH.reverse had checked.** HINT.input_polarity said that nothing checks the polarity
+  of a battery holder not marked reversible – but PATH.reverse starts from every holder by its kind. The electrical
+  reviewer found it in M-1; the hint names unmarked supply connectors only now (JST packs, barrel jacks).
+- **A round board had four points twice.** Each of the circle's four arcs began where the one before ended: four
+  segments of length 0 in the outline EasyEDA and Freerouting got. The outline now drops a point equal to the one
+  before.
+- **The drawings of this chapter on the documentation site** linked to GitHub's page of the file, which is no image; the
+  site carries the images now.
+- `edakit order` said "1 parts by hand", and `edakit block add` still sent you to `edakit hints`, which had gone with
+  the codes.
+
+## 13.10 What the 555 blinker changed in edakit
+
+The 555 blinker of walkthrough 2 (chapter 18) – the first real board through the KiCad tool chain, and the first on
+cells behind a power switch – found these gaps; each was closed in edakit with its test:
+
+- **A load's budget on a battery holder.** `expect` in a load named sources and nets only; `{"BT1": {"i_max_a": …}}`
+  was SIM.config. It holds the current from the holder's cells now (LIM.i) – R-3's 1 µA and R-4's budget.
+- **A part switched off.** LIM.range held U1 at 0 V with SW1 open to its 1.5 V minimum. A supply within 0.5 V of
+  ground – where the model's own loads are off too – is a row of information, "unpowered"; a part at 1.0 V is still
+  below its range, and one at −0.9 V reversed.
+- **An LED on an open-drain output.** LVL.undefined/open_drain wanted a pull-up on LED_K. A net that holds nothing but
+  the outputs and LED cathodes is their load; nothing reads it.
+- **A floating node behind a blocking MOSFET** (cells upside down, 18.6). The behaviour `logic` has a substrate diode
+  from its ground to each supply pin; with the cells reversed and nothing to block them it carries the amps a real IC
+  would.
+- **A cell upside down delivered "charging" current.** A cell state below 0 V is counted in its own sense now.
+- **The library footprint's box.** EasyEDA's BBox of the SOIC-8 of C90760 ends at 126 mil while its pads reach
+  137.8 mil: the box `part import` caches covers every pad now.
+- **KiCad's nets of no-connect pins.** KiCad nets a pin its schematic marks no-connect as "unconnected-(SW1-Pad3)",
+  and its parity check wanted those nets on the pads. `pcb apply` takes them from KiCad's netlist export; read back
+  they are no net, as the graph has it.
+- **A body as large as its footprint.** BT1's `body.box` from the drawing (53.00 mm) and its library box (53.04 mm)
+  differ by a rounding, and the footprint's own outline on the edge was a GEO.silk warning. 0.05 mm are rounding now.
+- **One output resistance for every corner.** U1's discharge pin at its 1.5 V maximum hid R-4's real current (the
+  reviews, 18.8); `r_out_ohm` takes a range now.
+- **A tooling hole under a part fitted by hand.** `pcb plan` held BT1 to the keep-out of a tooling hole; a part with
+  `bom: false` is not there while the tooling holes hold the board.
+- **Thermal spokes on KiCad.** KiCad's DRC wants two by default, where Freerouting left two GND pads room for one
+  (the layout, 18.11). The KiCad project edakit writes asks for one: EasyEDA asks for none, and GEO.copper checks the
+  connection.
