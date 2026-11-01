@@ -28,6 +28,13 @@ A requirements file covers the circuit only; what firmware and mechanics must do
   `docs/concepts/done/`; one the owner rejects moves to `docs/concepts/discarded/`, with the decision in its status
   line. `docs/concepts/new/` holds only what is open, and every link and path that names a moved file follows it.
 - **Everything else goes through a branch**, and onto main only with the owner's OK.
+- **A merge is a version** (`docs/concepts/new/versioning.md`). A branch that changes what a project reads – anything
+  outside `NO_VERSION` of `.github/versions.py`: tests, CI, `evals/`, `docs/`, `examples/`, `upstream/`, `.claude/`,
+  TODO.md, CLAUDE.md, README.md – carries a fragment `changes/<branch>.md` (`changes/README.md`): `minor` when a
+  project must act when it updates, with what to do, `patch` otherwise – a new rule, a new feature, a fix. The major
+  number is the owner's. Such a branch goes onto main as a pull request through `python3 .github/merge.py <n>`, never
+  by a local merge: the script numbers it, waits for the checks and merges, and `release.yml` sets the tag. Concepts
+  and TODO.md still go straight to main until the notes lane is built (TD-46).
 - **No branch is left lying around.** When a piece of work is done, list the unmerged branches – local, origin,
   worktrees, and the clones of other sessions, read only. Merge what is finished, rebased and with the tests green, or
   say why a branch of your own stays: waiting for a decision, unfinished. Someone else's branch is one line naming the
