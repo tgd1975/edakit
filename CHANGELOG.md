@@ -7,6 +7,11 @@ written once, by `.github/merge.py`, from the fragments in [changes/](changes/RE
 [versioning.md](docs/concepts/done/versioning.md). Update with `claude plugin marketplace update edakit && claude plugin
 update edakit@edakit`, then `/reload-plugins` or a new session; `edakit --version` names the version that runs.
 
+## 0.4.10 – 2026-11-01
+
+- EasyEDA's pours follow the outline and keep every mounting and tooling hole free with a NO_POURS region instead of a notch to the edge, and the tooling holes stay on the board while the pours fill (E-13) – the copper of a board changes at its next `route all|pours`, so its layout sign-off M-5 is asked for again.
+- `part build` modifies the pins of a symbol box in place instead of deleting and creating them (E-11); the orphan-attribute sweep of `schematic layout` stays as a cheap check (E-10).
+
 ## 0.4.9 – 2026-11-01
 
 - `route all|pours` fills one fresh pour per call instead of a net per call and stops when the bridge refuses: easyeda-mcp-pro 1.6.0 refuses every copper rebuild after one it could not verify – the second pour of a net in one call was such a case – until EasyEDA restarts; before, edakit went on with empty pours (M-10).

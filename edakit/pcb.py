@@ -1947,8 +1947,9 @@ def apply(cfg, board, mcp, verify_all=False, step=None):
 
 
 def remove_tooling(mcp):
-    """Delete tooling holes (pads without a part, number TL…). Needed before every pour fill: while a free pad is
-    in the PCB, easyeda_pcb_rebuild_copper fails ("Cannot read properties of undefined (reading 'length')")."""
+    """Delete tooling holes (pads without a part, number TL…) – before tooling sets them anew. Once needed before
+    every pour fill (easyeda_pcb_rebuild_copper failed while a free pad was in the PCB); on 3.2.209 the fill works
+    with them (E-13)."""
     ensure_pcb_focus(mcp)
     comps = [eda.state(c)["PrimitiveId"] for c in api(mcp, "PCB_PrimitiveComponent.getAll") or []]
     old = [st["PrimitiveId"] for st in (eda.state(p) for p in api(mcp, "PCB_PrimitivePad.getAll") or [])
@@ -2002,17 +2003,20 @@ def tab_strips(board, poly):
     return pieces[0]
 
 
-def pour_outline(board):
+def pour_outline(board, notches=True):
     """Pour polygon (plan mm): the outline, set in by pour_inset_mm of the board file – without it by the edge clearance
     of the routing rules + 0.1 mm (EasyEDA itself keeps only about 0.26 mm) –, and along every [order] tab zone by
     tab_copper_mm (tab_strips), without the keep-out circle of every mounting hole, with a notch around every tooling
-    hole. EasyEDA takes a polygon with a hole only as its outer contour, and copper must not lie under the tooling hole
-    – so the notch reaches the edge."""
+    hole. A polygon with a hole counts only by its outer contour, and copper must not lie under the tooling hole – so
+    the notch reaches the edge. notches=False: the outline without them – EasyEDA's pour keeps the holes free with
+    NO_POURS regions instead (keep_regions, E-13)."""
     from shapely.geometry import Point, box
     edge = board.pour_inset_mm
     if edge is None:
         edge = float(board.routing.get("edge_clearance_um", 400)) / 1000 + 0.1
     poly = tab_strips(board, outline_polygon(board).buffer(-edge, join_style="mitre"))
+    if not notches:
+        return [tuple(q) for q in list(poly.exterior.coords)[:-1]]
     for h in board.holes:  # 'keep' = radius free of parts and copper (screw head, washer)
         cut = poly.difference(Point(h["x"], h["y"]).buffer(h["keep"]))
         if cut.geom_type == "Polygon" and not cut.interiors:
@@ -2034,6 +2038,53 @@ def pour_outline(board):
     return [tuple(q) for q in list(poly.exterior.coords)[:-1]]
 
 
+NO_POURS = 7                 # EPCB_PrimitiveRegionRuleType
+KEEP_REGION = "edakit_keep"  # the name of the NO_POURS regions of keep_regions, with _<n>
+
+
+def pour_keepouts(board):
+    """(x, y, r) in plan mm that no pour may cover: the keep circle of every mounting hole, tooling_keep around every
+    tooling hole."""
+    return ([(h["x"], h["y"], h["keep"]) for h in board.holes]
+            + [(tx, ty, board.tooling_keep) for tx, ty in board.tooling])
+
+
+def keep_regions(cfg, board, mcp):
+    """A NO_POURS region on all copper layers around each of pour_keepouts – earlier ones replaced. EasyEDA fills a
+    pour polygon with a hole as its outer contour; it leaves a region free (E-13, 3.2.209). It keeps no region name
+    (RegionName null), so edakit knows its regions by the ids it remembered (<artifacts>/pcb/<board>_keep_regions.json)
+    and by their place: a NO_POURS region on all layers centred on a hole. Returns the number set."""
+    memo = cfg.artifact("pcb", f"{board.name}_keep_regions.json")
+    mine = set(json.loads(memo.read_text())) if memo.exists() else set()
+    keep = pour_keepouts(board)
+    centres = [board.eda_point(x, y) for x, y, _ in keep]
+
+    def ours(st):
+        if st["PrimitiveId"] in mine:
+            return True
+        nums = [v for v in ((st.get("ComplexPolygon") or {}).get("polygon") or []) if not isinstance(v, str)]
+        if len(nums) > 4 and nums[-2:] == nums[:2]:    # the closing point
+            nums = nums[:-2]
+        if st.get("RuleType") != [NO_POURS] or st.get("Layer") != MULTI_LAYER or len(nums) < 6:
+            return False
+        cx, cy = sum(nums[0::2]) / len(nums[0::2]) / MIL_PER_MM, sum(nums[1::2]) / len(nums[1::2]) / MIL_PER_MM
+        return any(math.dist((cx, cy), c) < 0.05 for c in centres)
+    old = [st["PrimitiveId"] for st in map(eda.state, api(mcp, "PCB_PrimitiveRegion.getAll") or []) if ours(st)]
+    if old:
+        api(mcp, "PCB_PrimitiveRegion.delete", old)
+    made = []
+    for n, (x, y, r) in enumerate(keep, 1):
+        ensure_pcb_focus(mcp)
+        pts = [board.eda_point(px, py) for px, py in circle_points(x, y, r)]
+        region = api(mcp, "PCB_PrimitiveRegion.create", MULTI_LAYER, outline_arg(pts), [NO_POURS], f"{KEEP_REGION}_{n}")
+        if not region:
+            raise SystemExit(f"NO_POURS region around ({x}, {y}) not created")
+        made.append(eda.state(region).get("PrimitiveId") or region.get("primitiveId"))
+    memo.parent.mkdir(parents=True, exist_ok=True)
+    memo.write_text(json.dumps([m for m in made if m]))
+    return len(keep)
+
+
 def pour(cfg, board, mcp, keep_islands_on=None, regions=None):
     """Copper pours of [[pours]] in the board file (default GND on both layers) along the outline; old pours of the same
     nets are replaced. keep_islands_on: layer name whose islands are kept (to find them for stitching). regions:
@@ -2044,7 +2095,9 @@ def pour(cfg, board, mcp, keep_islands_on=None, regions=None):
            if eda.state(p).get("Net") in nets]
     if old:
         api(mcp, "PCB_PrimitivePour.delete", old)
-    pts = [board.eda_point(*q) for q in pour_outline(board)]
+    if n := keep_regions(cfg, board, mcp):
+        print(f"  {n} NO_POURS region(s) around the holes")
+    pts = [board.eda_point(*q) for q in pour_outline(board, notches=False)]
     for spec in board.pours:
         for layer_name in spec.get("layers", ["TOP", "BOTTOM"]):
             shapes = (regions or {}).get((spec["net"], layer_name), [pts])

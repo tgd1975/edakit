@@ -4,7 +4,7 @@ Open work that needs the owner's computer, a maker or the owner's word. The stat
 and plans the sections name; this list is what is left to do of them, in the order it can be done. No item is deleted.
 
 **Layout.** Every item, in every section, open or closed, is a line with a checkbox and an ID unique in this file,
-counted up and never reused – whoever adds an item takes the next free ID and counts it up here. Next free ID: TD-80.
+counted up and never reused – whoever adds an item takes the next free ID and counts it up here. Next free ID: TD-81.
 
 - Open: `- [ ] TD-<n> - **Title:** what and why.` – a step's own name after the dash (`- [ ] TD-31 - **D.4** …`).
 - Done: ticked, the commit that did it, the date at the end, moved to [Closed todos](#closed-todos), newest first –
@@ -33,10 +33,6 @@ to touch.
       API key, OpenCode, and Ollama and llama.cpp with a GPU for Qwen3-Coder-Next and Devstral Small 2 – this session's
       cloud container has no GPU and no logins; which machine, and whether a Copilot plan and a Mistral key are at hand.
       *(amazing-newton)*
-- [ ] TD-59 - **OK for #129, #130, #131:** <https://github.com/tgd1975/edakit/pull/129> (TD-37, no click on Import
-      Changes), <https://github.com/tgd1975/edakit/pull/130> (TD-38, the DRC reloads only on Connection Errors),
-      <https://github.com/tgd1975/edakit/pull/131> (TD-39, local projects through the API) – each checked live on 1.6.0;
-      on the OK `merge.py` merges them one after the other. *(edakit-35)*
 - [ ] TD-57 - **The real cost of the first order:** once an order the skill cart put into a maker's cart is paid,
       `/edakit:cart actual` on its order page or saved invoice – `edakit cart actual` (handbook 8.4, step 5) has run
       on recorded data only; the real cost, the project's fee table and the order record come from it. *(edakit-80)*
@@ -46,23 +42,11 @@ to touch.
 E-1 to E-16 on EasyEDA Pro and M-1 to M-9 on easyeda-mcp-pro, checked live on EasyEDA Pro 3.2.209 and posted on
 2026-11-01; what each asks and where it stands is in upstream/README.md – the items here say only what is left to do.
 
-### Live in EasyEDA – edakit's own work
+### To report
 
-At the owner's computer, in this order; each change checked live before it is built.
-
-- [ ] TD-52 - **The switch to 1.6.0:** on main as edakit 0.4.0 (#121), the self-test and the example's gate green; left:
-      the plugin updated in pytree and the bell and their servers restarted; handbook 2's "Tested with" in #131.
-- [ ] TD-37 - **E-2, the one click goes:** the Channel ID written into the schematic parts (`edakit/pcb.py`), built and
-      checked live – #129, waits for TD-59.
-- [ ] TD-38 - **E-3 and E-7, the PCB tab and the DRC:** the probe's error as "inactive", the reload only on Connection
-      Errors (`edakit/eda.py`, `route.py`), built and checked live – #130, waits for TD-59; a full routing run without
-      reload is the next project's.
-- [ ] TD-39 - **E-9, local projects through the API:** `getAllProjectsUuid` per project folder (`edakit/eda.py`), built
-      and checked live – #131, waits for TD-59.
-- [ ] TD-40 - **E-10, E-11 and E-13 taken up:** `edakit part build` modifies the symbol's pins instead of creating them
-      anew (`SCH_PrimitivePin.modify` is saved on 3.2.209); `clear_orphan_attributes` kept as a cheap check or dropped;
-      tooling holes stay on the board while the pours fill, and a hole in a pour becomes a `NO_POURS` region instead of
-      the notch – each checked live first.
+- [ ] TD-80 - **E-17 and M-10 upstream:** drafts in `upstream/` – E-17 to easyeda/easyeda-api-sdk (a rename through the
+      API depends on the project tree having been shown), M-10 to easyeda-mcp-pro (one unverified copper rebuild locks
+      every later one until EasyEDA restarts) –, short as the earlier ones, then the owner's word to post.
 
 ### Waiting for upstream
 
@@ -121,7 +105,8 @@ llama.cpp.
 
 ## The documentation for its readers ([documentation.md](docs/concepts/new/documentation.md))
 
-Decided on 2026-10-31; D.1 (the style guide, the glossary and their tests) built the same day. D.2 to D.7 not before
+Decided on 2026-10-31; D.1 (the style guide, the glossary and their tests) built the same day. D.2, D.7 and D.9 first,
+ahead of the other todos – outreach.md's launch and 1.0.0 wait for them (the owner, 2026-11-01); D.3 to D.6 not before
 the other todos in this list are done: the documentation describes what they leave behind.
 
 Each step starts on the owner's word, one per branch, under the concept's rules for what the automation reads –
@@ -131,7 +116,9 @@ sources, data and code untouched; a text that is generated or used elsewhere sta
       bring, what edakit brings, the walkthrough's count), `docs/quickstart.md` with its test, `docs/how-it-works.md`
       with the pipeline drawing and its loops back, the mechanism without a buzzword, a transcript, the state and the
       future work (three items); the buzzword rule into `docs/style.md` and `tests/test_style.py` ("harness" once at the
-      README's start, as a keyword); `test_plugin.py` pointed at the page that lists skills and agents.
+      README's start, as a keyword); `test_plugin.py` pointed at the page that lists skills and agents; "What it runs,
+      sends, fetches" and the issues line stay on the start page below its first screen (outreach.md, K.2 and K.3), the
+      order at four makers in the case.
 - [ ] TD-30 - **D.3** The site: the navigation as data, by reader and by station (The circuit, The board), short titles;
       `organisation.md` and the brand page on it; "Inside edakit" with its index and the source line; the footer and
       feedback lines; prototypes off the navigation.
@@ -142,8 +129,8 @@ sources, data and code untouched; a text that is generated or used elsewhere sta
 - [ ] TD-33 - **D.6** The reader pages "Adding a rule" and "Working on edakit", and "edakit as a meta-harness"
       (`docs/architecture.md`): the term defined by three properties, the layers, the loops and the files that set them,
       what is bound to Claude Code, the rules for developers.
-- [ ] TD-34 - **D.7** The "is it for me" numbers from the evals; the findings on sources (the plugin's descriptions say
-      "JSON hardware graph") to the owner.
+- [ ] TD-34 - **D.7** The "is it for me" numbers from the evals, for the start page and outreach.md's fact sheet (K.5);
+      the plugin's descriptions were settled by K.2 (TD-71).
 - [ ] TD-35 - **D.9** `docs/projects/`, the gallery: the index with a card per project – the examples' cards lead to
       chapters 17 and 18 –; the bell's page – what it is, the circuit with its drawn schematic and its blocks explained,
       the board as made, what edakit found, its variants main, smd, tht and esp32 side by side, what it changed in
@@ -152,26 +139,31 @@ sources, data and code untouched; a text that is generated or used elsewhere sta
       picks (needs the owner – the repository stays private); a later project's page once it has a result with edakit,
       nothing planned on the gallery; the style guide's project page and `test_style.py` follow.
 
-## Getting edakit known ([outreach.md](docs/concepts/new/outreach.md))
-
-K.2, K.3 and K.9 in implementation since 2026-11-01, as one branch `outreach-k2-k3-k9`, a commit each, one pull
-request. The concept's other steps stay in its table until the launch is implemented – a concept's steps come here
-only once they are built (the owner, 2026-11-01).
-
-- [ ] TD-71 - **K.2** Ready for Anthropic's plugin directory: the README section on what edakit runs, sends and fetches
-      (Freerouting, easyeda-mcp-pro, JLCPCB, datasheets, `gh`, Claude in Chrome, the settings new-project writes, the
-      two hooks); the texts of decision 5 in `plugin.json` and `marketplace.json`, `plugin.json` without a version
-      (versioning.md) – which settles the plugin's text of TD-34.
-- [ ] TD-72 - **K.3** The issue forms – bug with `edakit --version` and `edakit doctor`, question, "built with edakit" –
-      and the line on how issues are answered.
-- [ ] TD-78 - **K.9** "Released with edakit X.Y.Z" in the GitHub release of `edakit release publish`, on by default, a
-      key to turn it off (decision 3).
-
 ## Closed todos
 
 Done or dropped, newest first, each with its date and the commit that closed it. What closed before 2026-11-01 is
 taken from the history of this file; an item rewritten on its way is listed once, in its last form.
 
+- [x] TD-59 - **OK for #129, #130, #131:** given; #129 and #130 went as #135 and #136 (a generated handbook section
+      fixed at its source), #131 as 0.4.2. [2026-11-01]
+- [x] TD-40 - **E-10, E-11 and E-13 taken up:** NO_POURS regions instead of the notch, the tooling holes stay while
+      the pours fill, pins modified in place, the orphan sweep kept – live on coin-cell-led; edakit 0.4.10 (#163).
+      [2026-11-01]
+- [x] TD-39 - **E-9, local projects through the API:** edakit 0.4.2 (#131). [2026-11-01]
+- [x] TD-38 - **E-3 and E-7, the PCB tab and the DRC:** edakit 0.4.6 (#136); a full routing run without reload is the
+      next project's. [2026-11-01]
+- [x] TD-37 - **E-2, the one click goes:** the Channel ID into the schematic parts, old ones fixed by `route drc` –
+      edakit 0.4.4 (#135). [2026-11-01]
+- [x] TD-52 - **The switch to 1.6.0:** edakit 0.4.0 (#121), "Tested with" in 0.4.2; on the way E-17 (0.4.7, #151) and
+      M-10 (0.4.9, #157) found and taken care of; pytree and the bell take the plugin with their next updates. [2026-11-01]
+- [x] TD-78 - **K.9** "Released with edakit X.Y.Z" as the last line of the notes of `edakit release publish`, linked to
+      that version; `[release] publish.credit = false` leaves it out – merged as edakit 0.4.8 (#154, 08a6951).
+      [2026-11-01]
+- [x] TD-72 - **K.3** The issue forms – bug, question, "built with edakit" with the label `gallery` – and "Questions
+      and bugs" in the README; merged as edakit 0.4.8 (#154, 08a6951). [2026-11-01]
+- [x] TD-71 - **K.2** The README's "What it runs, sends, fetches" and the texts of decision 5 in `plugin.json` and
+      `marketplace.json`, `plugin.json` without a version; merged as edakit 0.4.8 (#154, 08a6951) – the plugin's text
+      of TD-34 settled. [2026-11-01]
 - [x] TD-47 - **V.4** main protected: the rulesets main and tags and the merge settings as files in `.github/rulesets/`
   (#119), applied with `.github/rulesets.py apply` on the owner's word once everything in flight had landed; the marker
   tag `protected-2026-11-01` on 71f807f; the skills write a fragment per change (#120); main-updates dropped an hour
