@@ -147,14 +147,13 @@ class Rows(list):
 
 
 def merge_bom(entries):
-    """BOM lines of several schematic pages -> one line per LCSC number. The bridge lists every part of a
-    board-linked schematic twice ("C1, C1"): every designator counts once."""
+    """BOM lines of several schematic pages -> one line per LCSC number. Since easyeda-mcp-pro 1.6.0 the BOM of a
+    board-linked schematic lists every part once (checked live, TD-54): a designator listed twice stays twice, and
+    SYNC.bom reports it."""
     merged = {}
     for e in entries:
         m = merged.setdefault(e.get("lcsc") or e.get("value"), {**e, "reference": [], "quantity": 0})
-        for r in e.get("reference", "").split(", "):
-            if r and r not in m["reference"]:
-                m["reference"].append(r)
+        m["reference"] += [r for r in e.get("reference", "").split(", ") if r]
         m["quantity"] = len(m["reference"])
     return [{**m, "reference": ", ".join(m["reference"])} for m in merged.values()]
 
@@ -1583,10 +1582,13 @@ def check_fab(cfg, board, design, d, rows):
     write_mpn_bom(cfg, design, board, bom, d)          # a maker that matches by MPN (Eurocircuits)
     ours = {ref: r["LCSC Part #"] for r in bom for ref in r["Designator"].split(",")}
     tool = "KiCad" if is_kicad(cfg) else "EasyEDA"
-    eda_bom = {ref.strip(): e["lcsc"] for e in json.loads((d / f"bom_{tool.lower()}.json").read_text())
-               for ref in e["reference"].split(",") if ref.strip() in want}
+    listed = [(ref.strip(), e["lcsc"]) for e in json.loads((d / f"bom_{tool.lower()}.json").read_text())
+              for ref in e["reference"].split(",") if ref.strip() in want]
+    eda_bom = dict(listed)
     diff = [f"{r}: graph {ours.get(r, '–')}, {tool} {eda_bom.get(r, '–')}" for r in sorted(set(ours) | set(eda_bom), key=natural_key)
             if ours.get(r) != eda_bom.get(r) and not (r not in ours and want[r].get("bom") is False)]
+    count = Counter(r for r, _ in listed)
+    diff += [f"{r}: {n} times in the BOM of {tool}" for r, n in sorted(count.items(), key=lambda x: natural_key(x[0])) if n > 1]
     rows.add("F", "SYNC.bom", board.name, f"BOM (from the graph) = BOM of {tool}, LCSC per designator", not diff,
              "; ".join(diff[:10]) or f"{len(ours)} parts in {len(bom)} lines", "equal")
     unknown = sorted({lc for lc in ours.values() if lc not in design.parts})
