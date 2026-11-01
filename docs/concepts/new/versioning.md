@@ -1,21 +1,22 @@
 # Versions and branch protection: what a version of edakit is, how main is protected, how a concept still gets there
 
 Status 2026-11-01: decided. The owner took the four decisions the same day in a decision round in Claude Code's form
-(the table at the end): 0.2.0 first, with 1.0 once the documentation's entry layer is built; the notes lane; every
-merge a version of its own; the projects on the newest version, unpinned. The owner then added three points: a
-changelog from now on; the major number is the owner's to release, minor and patch are Claude's; a new rule is a
-patch, and the rule for the rest kept simple. What Claude decided itself the owner confirmed the same day. Each step
-starts on the owner's word, listed in `TODO.md`. V.1 and V.2 (TD-45) built on the owner's word the same day, on the
-branch `versioning-v1`; building them made three things simpler, written in below: the check `changes` is part of
-`version`, the paths decide which merge is no version (no fragment `none`), and the working rule for merging went into
-CLAUDE.md with V.2 rather than V.4, so that no merge comes past `merge.py` while the rulesets wait. On the owner's
-word the reader's documentation came with V.2 too: README (Install, Versions), handbook 2.3, 10.5 (`--version`), 14.4
-and the glossary's "Version". Written against
-main at `d633a4b`. Asked for by the owner:
-edakit has reached the point where it should work with version numbers and branch protection from now on – a concept
-for both, and, since a concept could then no longer be committed straight to main, an elegant way for concepts to get
-there all the same. V.3 (TD-46) built the same day: `.github/notes.py`, which merges by itself instead of
-GitHub's auto-merge.
+(the table at the end): 0.2.0 first, with 1.0 once the documentation's entry layer is built; the notes lane; every merge
+a version of its own; the projects on the newest version, unpinned. The owner then added three points: a changelog from
+now on; the major number is the owner's to release, minor and patch are Claude's; a new rule is a patch, and the rule
+for the rest kept simple. What Claude decided itself the owner confirmed the same day. Each step starts on the owner's
+word, listed in `TODO.md`. V.1 and V.2 (TD-45) built on the owner's word the same day, on the branch `versioning-v1`;
+building them made three things simpler, written in below: the check `changes` is part of `version`, the paths decide
+which merge is no version (no fragment `none`), and the working rule for merging went into CLAUDE.md with V.2 rather
+than V.4, so that no merge comes past `merge.py` while the rulesets wait. On the owner's word the reader's documentation
+came with V.2 too: README (Install, Versions), handbook 2.3, 10.5 (`--version`), 14.4 and the glossary's "Version".
+Written against main at `d633a4b`. Asked for by the owner: edakit has reached the point where it should work with
+version numbers and branch protection from now on – a concept for both, and, since a concept could then no longer be
+committed straight to main, an elegant way for concepts to get there all the same. V.3 (TD-46) built the same day:
+`.github/notes.py`, which merges by itself instead of GitHub's auto-merge. V.4 (TD-47) built the same day: the rulesets
+and the settings as files with `.github/rulesets.py`, `merge.py` no longer numbering again a pull request without a
+version; the line in the four repository skills that writes a fragment per change, one per proposal, follows in a pull
+request of its own once the batch of proposals being triaged is through.
 
 ## The short answer
 
@@ -206,8 +207,10 @@ rule has handled so far. The option stays open.
 
 ### The rules, as text
 
-The files sit in `.github/rulesets/` and are applied with `gh api`. The protection is then text in the repository like
-everything else. A change to it goes through a pull request and is applied after the merge, on the owner's word.
+The files sit in `.github/rulesets/` – one per ruleset, and `settings.json` for the merge settings. They are applied
+with `python3 .github/rulesets.py apply`, and without `apply` the script shows what differs between the files and
+GitHub. The protection is then text in the repository like everything else. A change to it goes through a pull
+request and is applied after the merge, on the owner's word.
 
 | Ruleset | Target | Rules | Bypass |
 | --- | --- | --- | --- |
