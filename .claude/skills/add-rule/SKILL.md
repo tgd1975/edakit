@@ -125,4 +125,6 @@ the project.
 
 Commit as the repository does (code with tests, then the handbook); push only when the user says so. A proposal
 built by triage-rule is one commit on the branch the workflow prepared, never pushed from here: the workflow pushes it
-after its check.
+after its check. A branch of its own carries its fragment `changes/<branch>.md` – a new rule is a `patch`, `minor` only
+when a project must act on the update (`changes/README.md`) – and goes to main through `python3 .github/merge.py <n>`
+on the owner's word (CLAUDE.md, "A merge is a version").
