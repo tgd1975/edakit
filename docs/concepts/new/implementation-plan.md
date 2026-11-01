@@ -52,8 +52,8 @@ starts when the user asks for it.
 | 3.5 | `req:` as a source of value blocks | requirements order 4 | S | no | 1.5 | done (abf40d4) |
 | 3.6 | Own footprints as data in the parts entry | design-as-text gap 2, decision 5 | L | yes | 1.8 | built offline (8fd8e17), live run 2026-10-31: 3–6 hold, the box symbol does not suit the bell |
 | 3.7 | Project setup: `new-project` with two ways, agent `project-surveyor` | project-setup, decisions 1–6 | M | no | 3.2, 3.4 | done (92db89f) |
-| 4.1 | Bell: requirements file | requirements order 5, decision 9 | M | no | 3.4, the bell's order | done in the bell (2026-11-01, branch `edakit-current`, its D-32) |
-| 4.2 | Bell: entries for `kunst` and `tdisplay` | project-scripts example | S | no | 2.4 | done in the bell (2026-11-01, branch `edakit-current`: `[scripts.kunst]` ×5, `[scripts.tdisplay]`) |
+| 4.1 | Bell: requirements file | requirements order 5, decision 9 | M | no | 3.4, the bell's order | done in the bell (2026-11-01, on its main, its D-32) |
+| 4.2 | Bell: entries for `kunst` and `tdisplay` | project-scripts example | S | no | 2.4 | done in the bell (2026-11-01, on its main: `[scripts.kunst]` ×5, `[scripts.tdisplay]`) |
 | 4.3 | Bell: the circuit as a language and as TOML with names, then the choice | design-as-text decision 8 | M | no | – | written (3f2b9e3, 7bbf3ce); reviewed and decided 2026-10-31: the language deferred, TOML with names the form; what both forms share has a plan of its own, circuit-language-plan.md, built 2026-10-31 (L.1–L.8; L.9 the bell converts, on the owner's word); the language thought further in circuit-dsl.md |
 | 4.4 | Tree: its positions, scripts, agents and requirements | all three | M | yes | the tree's move, 2.1, 3.7 | open |
 | 4.5 | The requirements file becomes required | requirements decision 5 | S | no | 4.1, 4.4 | open |

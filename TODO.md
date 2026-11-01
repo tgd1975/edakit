@@ -71,7 +71,7 @@ run against a maker's page or EasyEDA yet.
 
 Ran on 2026-10-31 in throwaway projects, the footprint checked by the owner in EasyEDA, the throwaway projects and
 the probe's Custom Config removed; the results are under each live run of the plan. The bell's T-Display on the data
-path is done in the bell (2026-11-01, branch `edakit-current`, its D-30).
+path is done in the bell (2026-11-01, on its main, its D-30).
 
 Built on 2026-10-31 from them: `[routing] drc_rules = "write"`; M-6 on the electrical hash; the way back into the PCB
 after `part build`; the waits after `openProject`, `symbol_differs` in `schematic create`, the panel guard of
@@ -92,7 +92,7 @@ Built and decided on 2026-10-31; what is left runs live.
 
 L.1 to L.8 built on 2026-10-31.
 
-L.9 done in the bell on 2026-11-01 (its branch `edakit-current`, edakit bc44fa7): the five boards converted, the
+L.9 done in the bell on 2026-11-01 (on its main, edakit bc44fa7): the five boards converted, the
 sign-offs rehashed, the mentions of `graph.json` renamed, all five RELEASED.
 
 ## KiCad tool chain ([kicad-toolchain.md](docs/concepts/done/kicad-toolchain.md))

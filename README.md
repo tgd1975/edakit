@@ -217,9 +217,9 @@ Where it stands:
   Creating the EasyEDA project and one *Import Changes* stay two clicks by hand until the API allows them.
 - The circuit as TOML with pins by name or role ([handbook 3.1](handbook/03-hardware-graph.md#31-format),
   [concept](docs/concepts/done/circuit-language.md)): built and tested on the example and the reference circuits,
-  converted in scratch copies and in the Christmas bell, whose five boards were released on `hardware/graph.toml`
-  (its branch `edakit-current`). A JSON graph keeps working and hashing as before. A circuit language of edakit's own
-  is deferred ([circuit-dsl](docs/concepts/new/circuit-dsl.md)).
+  converted in scratch copies and in the Christmas bell, whose five boards were released on `hardware/graph.toml`. A JSON
+  graph keeps working and hashing as before. A circuit language of edakit's own is deferred
+  ([circuit-dsl](docs/concepts/new/circuit-dsl.md)).
 - The KiCad tool chain ([handbook 16](handbook/16-kicad.md)) is tested against a kicad-cli the tests fake and, in CI,
   against KiCad 10's container; no board has gone through it to a release yet (16.8 lists what the first run checks).
 - Grown on one real project (EasyEDA Pro 3.2.206, easyeda-mcp-pro 1.4.0, Linux), made generic, then taken through a
