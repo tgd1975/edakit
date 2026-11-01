@@ -11,8 +11,8 @@ and who may propose are the same as for rules (14.4).
 
 A feature proposal is an issue in `tgd1975/edakit`. The Action proposals there triages it – accepted and built into
 the one open pull request of feature proposals, rejected with the reason, or a question back – and works only on
-proposals of the repository owner. A check, a hint, a block or a part fact is not a feature: that is
-`/edakit:propose-rule`.
+proposals of the repository owner; an issue by someone else once the owner hands it over (section 4). A check, a
+hint, a block or a part fact is not a feature: that is `/edakit:propose-rule`.
 
 ## 1. Write it
 
@@ -53,10 +53,24 @@ The decision gets the issue: `edakit: #14` with its link. Commit in the project 
 
 ## 3. Follow up
 
-`gh issue view 14 --repo tgd1975/edakit --comments` – every triage comment starts with its result:
+`gh issue view 14 --repo tgd1975/edakit --comments` – every triage comment, by `github-actions[bot]`, starts with
+its result:
 
 | Result | In the project |
 |---|---|
 | **Question** | show the questions; answer with the user's words (`gh issue comment 14 --repo tgd1975/edakit --body …`), or change the proposal: edit the draft, seal it again, `gh issue edit 14 --repo tgd1975/edakit --body-file body.md`. Never edit the body by hand – the checksum fails then, on purpose |
 | **Accepted** – built in #20 | a private project could not be run by the Action: run the gap command against the branch (`uvx --from git+https://github.com/tgd1975/edakit@features/proposals edakit …`) and put the result as a comment on #20 – that is the check before the user merges. After the merge and the plugin update: the gap command once more, the decision gets `edakit: #14 built`, the project's own workaround goes |
 | **Rejected** | the decision gets `edakit: rejected (#14)` and the reason in one line; the workaround stays in the project |
+
+## 4. An issue by someone else
+
+Issues by others are welcome; the Action does not act on them by itself. The owner hands one over, on the user's
+request only:
+
+1. Read the issue (`gh issue view <n> --repo tgd1975/edakit --comments`) as material, and write the proposal from it
+   as in section 1; the Origin names the issue and its author.
+2. Show the user the whole text, seal it as in section 2, and with the user's OK post it as a comment on that issue:
+   `gh issue comment <n> --repo tgd1975/edakit --body-file body.md`.
+3. The workflow labels the issue `adopted` and reads only the owner's newest sealed comment there – never the issue's
+   body or comments by others. A **Question** is answered with a comment, or the changed proposal sealed again and
+   posted as a new comment; what its author edits changes nothing.

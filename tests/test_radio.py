@@ -8,7 +8,7 @@ no EU band at all (LIM.band)."""
 
 import pytest
 
-from helpers import check
+from helpers import check, open_points
 
 from edakit.design import Design
 from edakit.release import gate
@@ -62,6 +62,7 @@ def state_use(project, **use):
 def gate_rows(project, cid):
     cfg = project.config()
     rows, _ = gate.stage_graph(cfg, Design.from_config(cfg))
+    rows = [r for r in rows if r["id"] != "DOCS.file"]    # the example has no requirements file (handbook 3.6)
     return rows, [(r["stage"], r["result"]) for r in rows if r["id"] == cid]
 
 
@@ -75,7 +76,7 @@ def test_g24_the_bells_t_display_is_within_the_limit(project):
     give_radio(project, bands_mhz=[[2402, 2480], [2412, 2484]], max_dbm=20.5, antenna_dbi=-4.32, doc=None)
     rep = run(project)
     assert found(rep, "LIM.eirp", "PARTS.schema") == NOTHING
-    assert rep.errors == [] and rep.pending == []
+    assert rep.errors == [] and open_points(rep) == []
 
 
 @pytest.mark.parametrize("use, where", GRADES)
@@ -87,7 +88,7 @@ def test_g24_over_the_limit_is_the_firmwares_to_keep(project, use, where):
     assert found(rep, "LIM.eirp")[where] == [
         "U1: 22.0 dBm e.i.r.p. in 2400–2483.5 MHz (max_dbm 22 at the RF port + antenna_dbi 0) – the band allows at "
         f"most 100 mW (20.0 dBm) e.i.r.p.: the firmware must keep the conducted power at or below 20.0 dBm {LEGAL}"]
-    assert rep.errors == [] and rep.pending == []
+    assert rep.errors == [] and open_points(rep) == []
     give_radio(project, bands_mhz=[[2412, 2472]], max_dbm=22, antenna_dbi=-2)      # within: exactly 20 dBm
     assert found(run(project), "LIM.eirp") == NOTHING
 
@@ -97,7 +98,7 @@ def test_g24_without_the_antenna_gain_the_eirp_is_not_known(project, use, where)
     purpose(project, use)
     give_radio(project, bands_mhz=[[2412, 2472]], max_dbm=20.5)
     rep = run(project)
-    assert rep.errors == [] and rep.pending == []
+    assert rep.errors == [] and open_points(rep) == []
     assert found(rep, "LIM.eirp")[where] == [
         "U1: e.i.r.p. in 2400–2483.5 MHz not known – parts entry C41407547 has no antenna_dbi (the gain of its antenna, "
         "from the module's datasheet or a certificate) and no eirp_dbm (the e.i.r.p. a certificate states) " + LEGAL]
@@ -167,7 +168,7 @@ def test_g24_radio_data_that_cannot_be_read_is_an_error(project):
         "from <= to"]
     give_radio(project, max_dbm=20.5, antenna_dbi=-4.32)                       # no bands: not wrong, only missing
     rep = run(project)
-    assert rep.errors == [] and rep.pending == [] and found(rep, "LIM.eirp", "PARTS.schema")["notes"] == [
+    assert rep.errors == [] and open_points(rep) == [] and found(rep, "LIM.eirp", "PARTS.schema")["notes"] == [
         "U1: compliance.radio of parts entry C41407547 states no bands_mhz – the bands it transmits in, [[from, to], "
         f"…] in MHz {LEGAL}"]
 
@@ -202,7 +203,7 @@ def test_g25_the_bells_t_display_reaches_channel_14(project, use, where):
     give_radio(project, **ESP32)
     rep = run(project)
     assert found(rep, "LIM.band") == {**NOTHING, where: [REACHES_14]}
-    assert rep.errors == [] and rep.pending == []
+    assert rep.errors == [] and open_points(rep) == []
     if use is None:
         return                                                                  # no purpose: no purpose.radio either
     state_use(project, U1={"bands_mhz": [[2412, 2472]], "notes": "Wi-Fi channels 1–13: country DE, 802.11d off"})
@@ -329,7 +330,7 @@ def test_p11_a_module_that_states_nothing(project, use, where):
     purpose(project, use)
     no_statement(project)
     rep = run(project)
-    assert rep.errors == [] and rep.pending == []
+    assert rep.errors == [] and open_points(rep) == []
     assert found(rep, "PARTS.fact") == {**NOTHING, where: [P11_PICO]}
     g = project.graph()
     project.comp(g, "U1")["type"] = "module"                                    # a module the same

@@ -226,16 +226,21 @@ loop below brings such a gap back, the same way as a rule (14.4), with its own t
    file, fields, options – each with the default that leaves existing projects as they are), Test (how a test shows it
    without EasyEDA), Origin. Shown to the user before it goes out – the issue is public, a private project's code is not
    quoted without the user's OK – and sealed like a rule proposal.
-3. **Triage.** The Action `proposals` reads the section Kind and runs the skill `triage-feature`: correctly made, a
-   feature and not a rule, new, the gap real at this commit, general rather than one project's taste, fitting (project
-   data in the project's files, not in the code), testable without EasyEDA, one capability, clear enough. Result as for
-   rules: **Accepted**, **Rejected** with a reason a person can check, or **Question**.
+3. **Triage.** The Action `proposals` reads the section Kind and runs the skill `triage-feature`, with the checks and
+   layers of a rule proposal (14.4) – who and the format in the workflow, then Claude's judgement. Safe as for rules;
+   plausible: new, the gap real at this commit; acceptable: a feature and not a rule, general rather than one project's
+   taste, fitting (project data in the project's files, not in the code), testable without EasyEDA, one capability,
+   clear enough. Result as for rules: **Accepted**, **Rejected** with a reason a person can check, or **Question**.
 4. **Build.** The skill `add-feature`: the gap red in a test first, then the interface with its default, the code –
    whatever needs EasyEDA a thin call around a function that is tested –, the example and the projects at hand
-   unchanged, the handbook. One commit per proposal, all of them in one open pull request from `features/proposals`.
+   unchanged, the handbook. One commit per proposal, all of them in one open pull request from `features/proposals`,
+   pushed by the Action's own job once the commit keeps off the pipeline's paths.
 5. **Back in the project.** The Action cannot clone a private project; the pull request gives the commands that show
    the gap closed there, and the project runs them against the branch before the user merges. After the merge the
    project's workaround goes and the decision gets `edakit: #14 built`.
+
+A gap someone else reports in an issue is welcome too; the repository owner hands it over with a sealed proposal as a
+comment there, as for rules (14.4).
 
 Why it exists: the project edakit came from went on growing after the extraction (0 Ω bridges, a common-anode star
 LED, pour-only nets). Before it can use edakit, those have to come back – one proposal each.

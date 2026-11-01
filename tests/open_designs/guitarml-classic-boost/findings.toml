@@ -4,6 +4,12 @@
 # the reason). The domain guitar is on. The audio path's nets are marked signal, the input jack's tip instrument (a pickup, 1 MΩ: the test's figure); spread runs every DC scenario with the 2N5088's hFE at both ends. The simulation finds nothing: the stage sits at 0.36 mA with the collector at 5.0–5.6 V over the spread, the AC run (information) gives 24 dB at 1 kHz into the collector with a pickup in front.
 
 [[check]]
+code = "DOCS.file"
+place = "edakit.toml"
+judged = "criterion"
+why = "The transcription has no requirements file: what the published design must do stands in its own documents, not in edakit's form. edakit requires the file before a release (handbook 3.6); it is no point of the design."
+
+[[check]]
 code = "PARTS.verified"
 grade = "device"
 place = "9v1"

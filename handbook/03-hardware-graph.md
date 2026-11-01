@@ -398,6 +398,10 @@ A parts entry with footprint_data – an own footprint as text (handbook 4.5) �
 Every value block in a Markdown file of [docs] files equals its source – a graph value, a parts entry field, the simulation result or the text of a need or requirement of [project] requirements (req:) – and every source quoted in a block or in a placeholder of the schematic notes exists; a need or requirement quoted is not dropped.
 - documents quote the design data: every value block of `[docs] files` equals its source – a requirement's text too (`req:`, 3.6) –, every source of a block or a schematic-note placeholder exists, a quoted need or requirement is not dropped – run by `edakit docs` and the gate's stage G, not by `edakit check` (6.6) – finds e.g.: a description still on an old graph version, a current that changed with R1, a README with last month's R-4
 
+**`DOCS.file`** – requirements file named (pending)  
+edakit.toml names the project's requirements file in [project] requirements. Without it the point is open, as a required sign-off is: edakit check reports it and passes – a project being set up can still commit –, edakit check --release and the gate do not release.
+- requirements file named: `[project] requirements` in `edakit.toml` names a file (3.6, 10.4) – open, like a required sign-off: `edakit check` passes, `--release` and the gate do not – finds e.g.: a project that never wrote down what its circuit must do
+
 **`DOCS.ref`** – requirement references resolve (error, margin: warning, draft: warning; replaces G-20)  
 In the requirements file of [project] requirements, every reference of a requirement that is not dropped resolves: a need or requirement in from (N-…, R-…) stands in the files, a manual check in from or in verify signoff (M-…) is one of the sign-off file or one the gate requires, a rows pattern that starts with a code names a code of the catalog (one that starts with a check ID of before is a finding naming the codes that replace it), and verify script names an entry [scripts.<name>] of kind check or the id of a [[release.stages]]. A from that names a dropped need or requirement is a warning. About a draft – status draft, or no status – every finding is a warning in edakit check and information in the gate: a draft never blocks; it is an error once the user accepts the requirement.
 - requirement references resolve – DOCS.ref to DOCS.draft only with `[project] requirements` (3.6), on every entry that is not dropped: a need or requirement in `from` (N-…, R-…) is in the files, a manual check in `from` or in `verify` `signoff` (M-…) is one of the sign-off file or a required one (8.2), a `rows` pattern that starts with a code names a code of the catalog – a check ID of before is a finding with the codes that replace it –, a `script` is an entry `[scripts.<name>]` of kind `check` or the id of a `[[release.stages]]`; a `from` that names a dropped need or requirement is a warning. Decisions, standards and words in `from` are not resolved. About a draft every finding is a warning – an error once the user accepts the requirement (3.6) – finds e.g.: `from = ["N-12"]` for N-2, `rows = "LIM.vv *"`, `rows = "E-3 *"`, `signoff = "M-7"`, a requirement that still comes from a dropped need
@@ -507,8 +511,10 @@ script, which reads the JSON and runs after `edakit firmware` (MicroPython can a
 
 ## 3.6 Requirements
 
-The graph says what the circuit is, the decision log why it is so; the requirements file says what it must do. It is
-opt-in: `[project] requirements` in edakit.toml names it, usually `hardware/requirements.toml` (format: 10.4). Two
+The graph says what the circuit is, the decision log why it is so; the requirements file says what it must do.
+`[project] requirements` in edakit.toml names it, usually `hardware/requirements.toml` (format: 10.4). Every project
+has one before it orders: without the key DOCS.file is open, as a required sign-off is – `edakit check` reports it and
+passes, so a project being set up still commits; `edakit check --release` and the gate do not release (8.7). Two
 levels, along the gap between a wish and a circuit:
 
 | Level | ID | Content | Example (the tests' led-bar) |

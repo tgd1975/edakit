@@ -1,15 +1,18 @@
 # The proposals pipeline: checked before it acts, never changed through itself
 
-Status 2026-11-01: decided – the five decisions accepted by the owner the same day in a decision round in Claude Code's
-form, and a sixth on the owner's addition: issues by others are welcome, and the owner hands one to the pipeline with a
-sealed comment (the table at the end); the steps start on the owner's word. Asked for by the owner after a review of the
-pipeline: the pipeline can change anything, so every incoming issue is analysed closely – is it from an authorised
-person (today the owner alone), is it correctly formatted, is it plausible, is it acceptable, is it dangerous, does it
-change this pipeline. The last is an absolute no-go: the pipeline must never be changed through itself. Aligned before
-it was written, on the owner's word: with edakit-93, which built the fixes of the day (702a4f4, 7a20a13, a7a1337),
-merged the proposals pull requests #89, #96, #101 and #102 and handed the pipeline over; and with edakit-a3, whose
-concept `versioning.md` proposes the rulesets on main and a required check of the paths per branch family – this concept
-names the paths the proposals branches never touch and leaves the rulesets to it. Written against main at `557dc01`.
+Status 2026-11-01: done – moved to done/ on the owner's word the same day, every step built or dropped; decided – the
+five decisions accepted by the owner the same day in a decision round in Claude Code's form, and a sixth on the owner's
+addition: issues by others are welcome, and the owner hands one to the pipeline with a sealed comment (the table at the
+end). P.1 to P.5 built on the owner's word the same day (#105, edakit 0.3.1), P.6 run live the same day with its fixes
+(#111, #125); P.7 dropped on the owner's word – the Claude app stays as Claude Code on the web's access (TD-44). Asked
+for by the owner after a review of the pipeline: the pipeline can change anything, so every incoming issue is analysed
+closely – is it from an authorised person (today the owner alone), is it correctly formatted, is it plausible, is it
+acceptable, is it dangerous, does it change this pipeline. The last is an absolute no-go: the pipeline must never be
+changed through itself. Aligned before it was written, on the owner's word: with edakit-93, which built the fixes of the
+day (702a4f4, 7a20a13, a7a1337), merged the proposals pull requests #89, #96, #101 and #102 and handed the pipeline
+over; and with edakit-a3, whose concept `versioning.md` proposes the rulesets on main and a required check of the paths
+per branch family – this concept names the paths the proposals branches never touch and leaves the rulesets to it.
+Written against main at `557dc01`.
 
 ## The short answer
 

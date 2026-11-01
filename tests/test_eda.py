@@ -9,10 +9,12 @@ from edakit import eda
 
 
 class FakeEasyEDA:
-    """Answers easyeda_api_call like the bridge: one project open, createProject as the local desktop client does."""
+    """Answers easyeda_api_call like the bridge: one project open, createProject as the local desktop client does, the
+    local projects listed per project folder (folders: {path: [project names]}), none without the folder."""
 
-    def __init__(self, open_name, create_returns=None, opens=True):
+    def __init__(self, open_name, create_returns=None, opens=True, folders=None):
         self.open_name, self.create_returns, self.opens = open_name, create_returns, opens
+        self.folders = folders if folders is not None else {"/home/u/EasyEDA-Pro/projects": [open_name]}
         self.calls = []
 
     def call(self, tool, timeout=130, **args):
@@ -20,8 +22,12 @@ class FakeEasyEDA:
         self.calls.append(path)
         if path == "DMT_Project.getCurrentProjectInfo":
             return {"ok": True, "result": {"friendlyName": self.open_name, "uuid": f"uuid-{self.open_name}"}}
-        if path == "DMT_Project.getAllProjectsUuid":
-            return {"ok": True, "result": []}           # local projects are never listed
+        if path == "DMT_Team.getAllTeamsInfo":
+            return {"ok": True, "result": [{"itemType": "Team", "name": f, "uuid": f, "identity": 0} for f in self.folders]}
+        if path == "DMT_Project.getAllProjectsUuid":     # only with the folder as teamUuid, as the local client does
+            return {"ok": True, "result": [f"uuid-{n}" for n in self.folders.get(a[0] if a else None, [])]}
+        if path == "DMT_Project.getProjectInfo":
+            return {"ok": True, "result": {"friendlyName": a[0].removeprefix("uuid-"), "uuid": a[0]}}
         if path == "DMT_Project.createProject":
             return {"ok": True, "result": self.create_returns}
         if path == "DMT_Project.openProject":
@@ -48,7 +54,7 @@ def test_create_project_refused_stops_before_any_write(cfg):
 
 
 def test_unknown_project_is_not_opened(cfg):
-    with pytest.raises(eda.MCPError, match="open it in EasyEDA once"):
+    with pytest.raises(eda.MCPError, match="in none of EasyEDA's project folders"):
         eda.open_project(FakeEasyEDA("other"), cfg)
 
 
@@ -230,36 +236,21 @@ def test_a_page_that_never_holds_the_focus_stops_the_read(cfg):
 
 # --- found in the live runs of 2026-10-31 ----------------------------------------------------------------------------
 
-def eprj2(path, uuid, name):
-    """A local EasyEDA project file as far as edakit reads it: the table projects (sqlite)."""
-    import sqlite3
-    c = sqlite3.connect(path)
-    c.execute("create table projects (uuid text, name text)")
-    c.execute("insert into projects values (?, ?)", (uuid, name))
-    c.commit()
-    c.close()
-
-
-def test_a_project_never_opened_is_found_in_easyedas_project_folder(cfg, tmp_path, monkeypatch):
-    """EasyEDA does not list local projects; its config.json names the folders (APP_PROJECT_DIR), and each project
-    file holds its UUID – so edakit opens a project made by hand without asking for it to be opened once."""
-    home = tmp_path / "EasyEDA-Pro"
-    (home / "projects").mkdir(parents=True)
-    (home / "config.json").write_text(json.dumps({"APP_PROJECT_DIR": [str(home / "projects")]}))
-    eprj2(home / "projects" / f"{cfg.project}.eprj2", f"uuid-{cfg.project}", cfg.project)
-    eprj2(home / "projects" / "other.eprj2", "uuid-other", "other")
-    monkeypatch.setenv("EDAKIT_EASYEDA_HOME", str(home))
-    assert eda.local_project_uuid(cfg.project) == f"uuid-{cfg.project}"
-    mcp = FakeEasyEDA("other")
+def test_a_project_never_opened_is_found_in_easyedas_project_folders(cfg):
+    """E-9: getAllProjectsUuid lists the local projects of a folder given as teamUuid (getAllTeamsInfo) – so edakit
+    opens a project made by hand without asking for it to be opened once."""
+    mcp = FakeEasyEDA("other", folders={"/a": ["other"], "/b": ["x", cfg.project]})
+    assert eda.local_project_uuid(mcp, cfg.project) == f"uuid-{cfg.project}"
     assert eda.open_project(mcp, cfg) == f"uuid-{cfg.project}"
     assert json.loads(cfg.artifact("easyeda_project.json").read_text())["uuid"] == f"uuid-{cfg.project}"
 
 
-def test_no_project_file_leaves_the_message_as_it_was(cfg, tmp_path, monkeypatch):
-    monkeypatch.setenv("EDAKIT_EASYEDA_HOME", str(tmp_path / "nothing"))
-    assert eda.local_project_uuid(cfg.project) is None
-    with pytest.raises(eda.MCPError, match="open it in EasyEDA once"):
-        eda.open_project(FakeEasyEDA("other"), cfg)
+def test_a_project_in_no_folder_is_not_opened(cfg):
+    mcp = FakeEasyEDA("other", folders={"/a": ["other"]})
+    assert eda.local_project_uuid(mcp, cfg.project) is None
+    with pytest.raises(eda.MCPError, match="in none of EasyEDA's project folders"):
+        eda.open_project(mcp, cfg)
+    assert "DMT_Project.openProject" not in mcp.calls
 
 
 class SlowDocs(FakeEasyEDA):

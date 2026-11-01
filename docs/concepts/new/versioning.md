@@ -1,14 +1,22 @@
 # Versions and branch protection: what a version of edakit is, how main is protected, how a concept still gets there
 
 Status 2026-11-01: decided. The owner took the four decisions the same day in a decision round in Claude Code's form
-(the table at the end): 0.2.0 first, with 1.0 once the documentation's entry layer is built; the notes lane; every
-merge a version of its own; the projects on the newest version, unpinned. The owner then added three points: a
-changelog from now on; the major number is the owner's to release, minor and patch are Claude's; a new rule is a
-patch, and the rule for the rest kept simple. What Claude decided itself the owner confirmed the same day. Each step
-starts on the owner's word, listed in `TODO.md`. Nothing is built yet. Written against main at `d633a4b`. Asked for by the owner:
-edakit has reached the point where it should work with version numbers and branch protection from now on – a concept
-for both, and, since a concept could then no longer be committed straight to main, an elegant way for concepts to get
-there all the same.
+(the table at the end): 0.2.0 first, with 1.0 once the documentation's entry layer is built; the notes lane; every merge
+a version of its own; the projects on the newest version, unpinned. The owner then added three points: a changelog from
+now on; the major number is the owner's to release, minor and patch are Claude's; a new rule is a patch, and the rule
+for the rest kept simple. What Claude decided itself the owner confirmed the same day. Each step starts on the owner's
+word, listed in `TODO.md`. V.1 and V.2 (TD-45) built on the owner's word the same day, on the branch `versioning-v1`;
+building them made three things simpler, written in below: the check `changes` is part of `version`, the paths decide
+which merge is no version (no fragment `none`), and the working rule for merging went into CLAUDE.md with V.2 rather
+than V.4, so that no merge comes past `merge.py` while the rulesets wait. On the owner's word the reader's documentation
+came with V.2 too: README (Install, Versions), handbook 2.3, 10.5 (`--version`), 14.4 and the glossary's "Version".
+Written against main at `d633a4b`. Asked for by the owner: edakit has reached the point where it should work with
+version numbers and branch protection from now on – a concept for both, and, since a concept could then no longer be
+committed straight to main, an elegant way for concepts to get there all the same. V.3 (TD-46) built the same day:
+`.github/notes.py`, which merges by itself instead of GitHub's auto-merge. V.4 (TD-47) built the same day: the rulesets
+and the settings as files with `.github/rulesets.py`, `merge.py` no longer numbering again a pull request without a
+version; the line in the four repository skills that writes a fragment per change, one per proposal, follows in a pull
+request of its own once the batch of proposals being triaged is through.
 
 ## The short answer
 
@@ -24,13 +32,14 @@ hand and never conflict over the changelog. The marketplace entry points at the 
 installs that version, and the owner's projects follow it unpinned, as they follow main today.
 
 main gets rulesets that are kept as JSON in the repository. Every change comes through a pull request with green
-checks. A pull request must sit on the newest main, because two merges must never get the same number. Nobody may
+checks, and `merge.py` merges only while main still has the number it numbered from, so two merges never get the
+same number. Nobody may
 force-push or delete main, and the owner has no bypass. One fact shapes all of it: every session acts as the owner's
 GitHub account. GitHub cannot tell a session from the owner, so the protection guards against slips and against the
 Actions. It does not lock out the sessions, and the owner's OK for code stays a working rule.
 
 Concepts and the todo list keep their speed through the **notes lane**. A pull request from a branch `notes/<topic>`
-that changes only `docs/concepts/` and `TODO.md` merges itself once its checks are green, with no OK needed, as today,
+that changes only `docs/concepts/` and `TODO.md` is merged as soon as its checks are green, with no OK needed, as today,
 and it is no version. A required check makes sure nothing else slips through that lane. One command lands a session's
 edits there from any worktree and any branch, with the checkout left alone. The concept is on main about five minutes
 later.
@@ -80,7 +89,7 @@ Three numbers, major.minor.patch, starting at 0.2.0:
 | **Major** | the owner | when the owner releases one; Claude may propose it, never set it | 1.0.0 once step D.2 of [documentation.md](documentation.md), the entry layer (start page, quickstart, how it works), is built |
 | **Minor** | Claude | a project must change one of its files or sign again when it updates | a key, file format, command or exit code removed or changed in meaning; a hash computed differently (sign-offs void); a retired code that waivers name; a new seal format |
 | **Patch** | Claude | everything else | a new rule (check, hint, block, parts fact), a severity raised; a new command, key, maker or skill; a fix; the handbook; a prompt's wording |
-| none | Claude | nothing for a project, and everything through the notes lane: no version | a test, CI, a concept, a todo |
+| – | the paths | a merge that changes nothing a project reads, the notes lane among them: no version, no fragment | `tests/`, `.github/`, `evals/`, `docs/`, `examples/`, `upstream/`, `.claude/`, `TODO.md`, `CLAUDE.md`, `README.md` |
 
 So a single question settles the number: does a project have to do something when it updates? The rule stays the
 same before and after 1.0. A minor version brings a way across with it: `edakit convert` where a format changes, and
@@ -132,13 +141,14 @@ It starts now. Its first section, 0.2.0, lists what was merged from 2026-11-01 o
 which already describe each change. Everything before that is 0.1.0, kept in the git history.
 
 Its lines come from **fragments**. Each branch writes one file of its own, `changes/<branch>.md`. The first line is
-`minor`, `patch` or `none`, and the lines after it are the text for the changelog. The merge turns the fragments into
-the version's section and deletes them, so `changes/` on main is always empty. While several sessions work at once,
-every branch writes into a file of its own and none waits for another. `none` says on purpose that a change has
-nothing for a project. Such a merge is no version, and neither is a merge through the notes lane.
+`minor` or `patch`, and the lines after it are the text for the changelog (`changes/README.md`). The merge turns the
+fragments into the version's section and deletes them, so `changes/` on main holds nothing but its README. While
+several sessions work at once, every branch writes into a file of its own and none waits for another. A branch that
+changes nothing a project reads needs none: the list of those paths is `NO_VERSION` in `.github/versions.py`, and such
+a merge is no version, a merge through the notes lane among them.
 
-A required check `changes` fails a pull request that changes code, data, skills, agents, hooks or the handbook but
-carries no fragment. The notes lane is exempt. Every proposal that triage accepts adds its own fragment
+The required check `version` (below) fails a pull request that changes what a project reads but carries no fragment.
+Every proposal that triage accepts adds its own fragment
 (`changes/rule-<issue>.md`, `changes/feature-<issue>.md`), a patch unless a project has to act, which is one line
 more in the triage skills.
 
@@ -158,14 +168,15 @@ proposed (below). So with the owner's OK, a session merges through `.github/merg
    into the changelog's new section and deletes them, and commits that as "edakit 0.2.6".
 4. It pushes the branch, waits for the checks (about 5 minutes) and merges with `--match-head-commit`, so that nothing
    pushed meanwhile slips in.
-5. If main has moved in the meantime, the merge is refused, because the checks are strict. The script then goes back
-   to step 1, and since it rewrites the version's lines anyway, they never conflict.
+5. It merges only while main still has the number it numbered from. A push of `TODO.md` or a concept in the meantime
+   changes nothing. A version merged in the meantime does: then the script goes back to step 1, and since it rewrites
+   the version's lines anyway, they never conflict.
 
 The workflow `release.yml` runs on every push to main. When the package's number has no tag yet, it sets the tag
 `v0.2.6` on that merge commit and opens the GitHub release with the changelog section as its text. A merge without a
-version (notes, `none`) leaves the number alone, and the workflow does nothing. A branch that the proposals workflow
-pushes with its own token starts no checks ([proposals-pipeline.md](proposals-pipeline.md) gives it that token).
-`merge.py`'s push of the numbered commit comes from the owner's account and does start them, so a proposals pull
+version (nothing a project reads) leaves the number alone, and the workflow does nothing. A branch that the proposals
+workflow pushes with its own token starts no checks ([proposals-pipeline.md](../done/proposals-pipeline.md) gives it that
+token). `merge.py`'s push of the numbered commit comes from the owner's account and does start them, so a proposals pull
 request gets its checks at the merge.
 
 A required check `version` guards the button. A pull request that carries fragments is not numbered yet, and the check
@@ -196,29 +207,32 @@ rule has handled so far. The option stays open.
 
 ### The rules, as text
 
-The files sit in `.github/rulesets/` and are applied with `gh api`. The protection is then text in the repository like
-everything else. A change to it goes through a pull request and is applied after the merge, on the owner's word.
+The files sit in `.github/rulesets/` – one per ruleset, and `settings.json` for the merge settings. They are applied
+with `python3 .github/rulesets.py apply`, and without `apply` the script shows what differs between the files and
+GitHub. The protection is then text in the repository like everything else. A change to it goes through a pull
+request and is applied after the merge, on the owner's word.
 
 | Ruleset | Target | Rules | Bypass |
 | --- | --- | --- | --- |
-| `main` | main | a pull request, no approval required (the owner cannot approve their own, and the sessions are the owner); the checks `test`, `kicad`, `build`, `paths`, `changes` and `version` green, strict; no force push; no deletion | nobody, the owner included |
+| `main` | main | a pull request, no approval required (the owner cannot approve their own, and the sessions are the owner); the checks `test`, `kicad`, `build`, `paths` and `version` green, not strict; no force push; no deletion | nobody, the owner included |
 | `main-updates` | main | only the bypass may update the branch | the role Repository admin, only through a pull request: only the owner's account merges into main. The Actions may push branches and open pull requests, but never merge |
 | `tags` | `v*` | no deletion, no update, no force push; creating stays open for the release workflow | nobody: a version once out is never moved |
 
-The repository's settings also allow auto-merge, delete head branches after a merge, and offer only merge commits.
+The repository's settings also delete head branches after a merge and offer only merge commits.
 Squash and rebase merges are off, because the merge message carries the description, as the history shows
 (`merge.py` takes it as `--subject "Merge branch 'cpl-turn': …"`).
 
-- **Strict.** A pull request must sit on the newest main before it is merged. Without that, two branches merged
-  within the same minutes would both carry 0.2.6, since git merges two identical changes to one line without a
-  conflict. The price is a new run of the checks after every merge for each pull request that is about to be merged,
-  and `merge.py` and `notes.py` pay it by themselves.
-- **Skipped counts as passed.** `paths`, `changes` and `version` run only where they apply. GitHub counts a job
+- **Not strict.** A pull request need not sit on the newest main. Two branches merged within the same minutes must
+  not both carry 0.2.6, since git merges two identical changes to one line without a conflict. `merge.py` prevents
+  that: it merges only while main still has the number it numbered from (step 5 above). A strict rule would do the
+  same at a high price. Every push of `TODO.md`, which comes many times an hour, would send each waiting pull request
+  through its checks again. This was found while building TD-45, and it replaces the strict rule the owner confirmed.
+- **Skipped counts as passed.** `paths` and `version` run only where they apply. GitHub counts a job
   skipped by its `if` as successful, so a required check never blocks a pull request it does not concern.
-- **`main-updates`** closes the gap that [proposals-pipeline.md](proposals-pipeline.md) found (its layer 1): today
+- **`main-updates`** closes the gap that [proposals-pipeline.md](../done/proposals-pipeline.md) found (its layer 1): today
   only the prompt keeps the Action from changing main. Whether GitHub accepts the admin role as a bypass on a personal
-  repository, and whether a merge by auto-merge counts as the account that switched it on, is checked when the rules
-  are applied. If either fails, this ruleset is left out and the working rule stays as it is.
+  repository is checked when the rules are applied. If it does not, this ruleset is left out and the working rule
+  stays as it is.
 - **In an emergency** the owner switches a ruleset off in the settings and on again afterwards. That is one click, and
   it shows in the ruleset's history.
 
@@ -234,15 +248,16 @@ The check holds each family of branches to its paths:
 
 The version's own lines (`edakit/__init__.py`, `.claude-plugin/marketplace.json`, `CHANGELOG.md`, `changes/`) lie
 outside the proposals' list, so `merge.py` can number a proposals pull request too. The proposals' list comes from
-[proposals-pipeline.md](proposals-pipeline.md), section "The pipeline's paths". It lives once, in `edakit/proposal.py`
-with a test. The lane's paths live in `.github/notes.py`.
+[proposals-pipeline.md](../done/proposals-pipeline.md), section "The pipeline's paths". It lives once, in `edakit/proposal.py`
+with a test. The lane's paths are `LANE` in `.github/versions.py`.
 
 A branch must not be able to loosen its own check. A workflow on `pull_request` runs the head's version of its file,
 so a branch that edits the check would pass it. So `paths` and `version` run on `pull_request_target`, from main's
 workflow file and main's lists, and read nothing from the pull request but its changed files and, for `version`, the
-number and the changelog's top section. They never check out or run the head's code. When the rules are applied, a
-test confirms that GitHub counts these runs as the required checks on the pull request's head. If not, the jobs write
-their status onto the head commit themselves (`statuses: write`).
+number and the changelog's top section. They never check out or run the head's code. The jobs write their result as
+a commit status named `paths` and `version` onto the pull request's head (`statuses: write`), so the required check
+sits where GitHub and `merge.py` look for it, whatever commit a run on `pull_request_target` is reported on
+(`.github/workflows/pull-request.yml`).
 
 ### What changes for a session
 
@@ -267,13 +282,13 @@ would end up merging the tick of TD-12.
 
 **The notes lane:**
 
-- A pull request from `notes/<topic>` that changes only `docs/concepts/**` and `TODO.md` merges itself once its checks
-  are green. The session switches on auto-merge, and no OK is needed, as today. It needs no fragment and is no
-  version.
+- A pull request from `notes/<topic>` that changes only `docs/concepts/**` and `TODO.md` is merged by `notes.py` as
+  soon as its checks are green. No OK is needed, as today. It needs no fragment and is no version.
 - The required check `paths` (above) fails a `notes/` pull request that touches anything else, so no code reaches
   main through the lane, not even a change to the check itself.
-- Auto-merge runs as the account that switched it on, which is the owner's. So the push to main starts Pages, as
-  today.
+- `notes.py` merges from the owner's account, so the push to main starts Pages, as today. GitHub's auto-merge is not
+  used: it needs a setting, and before the rulesets it would merge before the checks ran (changed while building
+  TD-46).
 - A concept is on main about five minutes after the push, which is the time `test` takes, and on the site after that.
 
 **One command**, `.github/notes.py "<message>" <files…>`, from any worktree on any branch:
@@ -285,12 +300,13 @@ would end up merging the tick of TD-12.
 3. It applies those edits with a three-way merge onto the newest main, in a temporary index. The checkout, its branch
    and its other changes stay as they are. If two sessions changed the same lines, it stops and names them. The
    session pulls and runs it again.
-4. It pushes the commit to `notes/<topic>`, opens the pull request and switches on auto-merge. Then it waits until the
-   pull request is merged. If main moves first, which strict refuses, it brings the branch up to date and waits again.
-   It ends with the merge or with a conflict it names. A session runs it in the background.
-5. It puts the files in the checkout back to its commit. They come back with main: the main clone gets them with
-   `git pull --ff-only`, a code branch with its next rebase. Git refuses to fast-forward over a working tree that holds
-   the same edit uncommitted (tried on 2026-11-01). The edits left in place would block the main clone's next pull.
+4. It pushes the commit to `notes/<topic>`, opens the pull request, waits for the checks and merges it. If main has
+   moved into a conflict in the meantime, it starts again from step 2 on the newest main. It ends with the merge or
+   with a conflict it names. A session runs it in the background.
+5. It puts the files in the checkout back to its commit, unless they were edited again in the meantime. They come back
+   with main: the main clone on main is fast-forwarded by the script, and a code branch gets them with its next
+   rebase. Git refuses to fast-forward over a working tree that holds the same edit uncommitted (tried on
+   2026-11-01). The edits left in place would block the main clone's next pull.
 
 Moving a concept from `new/` to `done/` changes links in the handbook or the README. That lies outside the lane and
 becomes an ordinary pull request with the owner's OK, which fits, since moving a concept means it is settled. The lane
@@ -313,9 +329,9 @@ cache become text:
 | Step | What | Files | Size | Waits for |
 | --- | --- | --- | --- | --- |
 | V.1 | The number in one place (0.2.0); `edakit --version`; the manifest's `tools.edakit` with the commit; the marketplace entry with version and ref; `plugin.json` without; the test that holds them together | `edakit/__init__.py`, `pyproject.toml`, `edakit/cli.py`, `edakit/release/gate.py`, `.claude-plugin/`, `tests/test_version.py` | S | – |
-| V.2 | Changelog, fragments, merge: `CHANGELOG.md`, `changes/README.md` (the rule for the number), `.github/merge.py`, `release.yml`; the checks `paths` and `version` (on `pull_request_target`, their lists read from main) and `changes`. On one branch with V.1: its merge is 0.2.0, the first version, tagged by `release.yml` | `CHANGELOG.md`, `changes/`, `.github/`, `edakit/proposal.py` (the list, with the proposals concept) | M | V.1 |
+| V.2 | Changelog, fragments, merge: `CHANGELOG.md`, `changes/README.md` (the rule for the number), `.github/merge.py`, `.github/versions.py`, `release.yml`; the checks `paths` and `version` (on `pull_request_target`, their lists read from main); the working rule in CLAUDE.md – a fragment per branch, merging through `merge.py`; the reader's documentation: README (Install, Versions), handbook 2.3 (update, pin, `--version`), 10.5, 14.4, the glossary. On one branch with V.1: its merge is 0.2.0, the first version, tagged by `release.yml` | `CHANGELOG.md`, `changes/`, `.github/`, `edakit/proposal.py` (the list, with the proposals concept) | M | V.1 |
 | V.3 | The notes lane: `.github/notes.py`, `paths` for `notes/*` | `.github/` | M | V.2 |
-| V.4 | The rules as text, applied with `gh api` on the owner's word once V.2 and V.3 are on main (the required checks must exist), with the working rules that go with them: CLAUDE.md (Concepts and branches, merging through `merge.py`), `docs/organisation.md` (`changes/`, `CHANGELOG.md`, `.github/rulesets/`), the triage, add-rule and add-feature skills (a fragment per change), README (Install: update, pin) and handbook 2.3 | `.github/rulesets/`, CLAUDE.md, `docs/organisation.md`, `.claude/skills/`, README.md, handbook 2 | M | V.3 |
+| V.4 | The rules as text, applied with `gh api` on the owner's word once V.2 and V.3 are on main (the required checks must exist), with the working rules that go with them: CLAUDE.md (the notes lane, the protection), `docs/organisation.md` (`changes/`, `CHANGELOG.md`, `.github/rulesets/`), the triage, add-rule and add-feature skills (a fragment per change) | `.github/rulesets/`, CLAUDE.md, `docs/organisation.md`, `.claude/skills/` | M | V.3 |
 | V.5 | Branches left lying around: 9 `claude/*` and 2 `ccr-*` on origin, the local ones and worktrees – listed, then merged or deleted on the owner's word; other sessions' branches named with their session | – | S | – |
 | V.6 | 1.0.0: on the owner's word, once D.2 of documentation.md is built (`merge.py --major`) | – | S | D.2 |
 | V.7 | Later: `edakit = ">=0.4"` under `[project]` in `edakit.toml`. `edakit check` notes when the running edakit does not meet it, and the SessionStart hook says which edakit runs, so a project that needs a newer edakit says so | `edakit/config.py`, `edakit/agreements.py`, handbook 10 | M | V.2, the owner's word |
@@ -337,13 +353,14 @@ cache become text:
 | --- | --- | --- | --- | --- |
 | 1 | The scheme and the first number | Semantic versioning from 1.0.0: three numbers, each with a meaning for a project | **0.2.0, and 1.0 once the documentation's entry layer is done**; CalVer (2026.11.0) – says when, not what to do | **0.2.0, 1.0 after D.2** (the owner, 2026-11-01). Added by the owner the same day: the major number is the owner's to release; minor and patch are Claude's; a new rule is a patch; the rest kept simple – minor when a project must act, patch otherwise |
 | 2 | How concepts and TODO.md reach main | **the notes lane**, auto-merge once green | a pull request with the owner's OK, like code; a bypass for the owner, which is one for every session | **the notes lane** (the owner, 2026-11-01) |
-| 3 | When a version is made | on the owner's word, several merges in one | **every merge into main a version of its own**; once a week | **every merge** (the owner, 2026-11-01): numbered by `merge.py` before the merge, the checks strict, a red `version` check before that |
+| 3 | When a version is made | on the owner's word, several merges in one | **every merge into main a version of its own**; once a week | **every merge** (the owner, 2026-11-01): numbered by `merge.py` before the merge, which merges only while main still has the number it numbered from; a red `version` check before that |
 | 4 | The owner's projects | each pins a version in its own repository, and a main channel for live runs | **the newest version, unpinned**; the main channel throughout | **the newest version, unpinned** (the owner, 2026-11-01): no main channel, pinning in the README for whoever wants it, pytree's D-50 its own |
 
 What Claude decided itself, confirmed by the owner on 2026-11-01:
 
 - no approval required;
-- the checks strict (decision 3 makes it necessary);
+- the checks strict (decision 3 makes it necessary) – replaced while building TD-45: not strict, `merge.py` holds the
+  numbers apart ("Not strict" above);
 - merge commits only;
 - no bypass on `main`;
 - the ruleset `main-updates`;
@@ -353,7 +370,7 @@ What Claude decided itself, confirmed by the owner on 2026-11-01:
   not act;
 - the changelog's first section collects the merges from 2026-11-01 on, from their merge messages;
 - fragments, deleted by the merge;
-- a merge through the notes lane or with the kind `none` is no version;
+- a merge that changes nothing a project reads, the notes lane among them, is no version – decided by its paths;
 - the red check `version` until `merge.py` numbers the pull request, so the button cannot merge an unnumbered change;
 - the number in `edakit/__init__.py`, `plugin.json` without a version, the marketplace entry at the tag;
 - no channel for main;
