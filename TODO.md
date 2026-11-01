@@ -1,8 +1,7 @@
 # TODO
 
-Open work that needs the owner's computer, a maker or the owner's word. The state of every step is in
-[docs/concepts/new/implementation-plan.md](docs/concepts/new/implementation-plan.md) and in the concepts the sections
-name; this list is what is left to do of them, in the order it can be done. No item is deleted.
+Open work that needs the owner's computer, a maker or the owner's word. The state of every step is in the concepts
+and plans the sections name; this list is what is left to do of them, in the order it can be done. No item is deleted.
 
 **Layout.** Every item, in every section, open or closed, is a line with a checkbox and an ID unique in this file,
 counted up and never reused – whoever adds an item takes the next free ID and counts it up here. Next free ID: TD-58.
@@ -142,11 +141,22 @@ sources, data and code untouched; a text that is generated or used elsewhere sta
       the steering wheel each after its conversion to edakit (`/edakit:new-project` with the inventory, a project of its
       own), on the owner's word.
 
+## The projects take it over ([implementation-plan.md](docs/concepts/done/implementation-plan.md), phase 4)
+
+- [ ] TD-56 - **4.5** A project without `hardware/requirements.toml` fails the gate – once the bell and the tree have
+      one. Waits only for the bell's D-39: its accepted proposal replaces D-32's files after its order (the bell's
+      TD-4); the tree's file (TD-55) and #97 (merged with #89) are done.
+
 ## Closed todos
 
 Done or dropped, newest first, each with its date and the commit that closed it. What closed before 2026-11-01 is
 taken from the history of this file; an item rewritten on its way is listed once, in its last form.
 
+- [x] TD-55 - **4.4** The tree moved to edakit before its order instead (its EK-5 lifted EK-1), in pytree: D-50 to
+  D-54, merged on its main with pytree#34 – `hardware/boards/tree.toml` written by its script `baumplan`, its scripts
+  under `[scripts]` (`review_paket.py` only reads the release), `elektrotechniker` and `pcb-pruefer` deleted rather
+  than kept with `replaces` – edakit's reviewers signed M-1, M-5 and M-6 –, `hardware/requirements.toml` accepted.
+  [2026-11-01]
 - [x] TD-28 - **When a release brings M-2 to M-4:** merged into TD-26 – the second half of following the same pull
   requests; TD-25 split into TD-25 and TD-51 to TD-54 at the same time. *(edakit-e4)* [2026-11-01]
 - [x] TD-41 - **M-9 (was E-15):** reproduced live on 3.2.209 with the bridge of 1.4.0 (code unchanged on 1.6.0) – not

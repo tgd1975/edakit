@@ -208,7 +208,7 @@ Where it stands:
   KiCad tool chain ([live runs](tests/fixtures/makers/LIVE.md)). EasyEDA's ODB++ export ran on a probe board; no order
   has gone through `edakit cart actual` yet.
 - Text, run live in EasyEDA in throwaway projects ([concept](docs/concepts/done/design-as-text.md),
-  [plan](docs/concepts/new/implementation-plan.md), steps 2.1 to 2.3 and 3.6, results under each live run):
+  [plan](docs/concepts/done/implementation-plan.md), steps 2.1 to 2.3 and 3.6, results under each live run):
   - the positions EasyEDA's auto-layout sets, written back into `[place]` as `auto = true` rows, and `pcb place
     --rest` for every part (handbook 7.4);
   - own footprints as data in the parts entry (`part footprint`, `part build`, handbook 4.5) – the bell's T-Display

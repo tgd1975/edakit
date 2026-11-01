@@ -15,7 +15,7 @@ python3 verify.py glocke-main.toml --root <checkout of the Christmas bell>
   reference project: `PYTREE_ROOT=<path> python3 test_verify.py`. edakit's pytest does not collect them.
 
 The prototype predates the decisions of 2026-10-28. Step 1.2 of the [implementation
-plan](../../../new/implementation-plan.md) builds the real check from it, with these differences:
+plan](../../implementation-plan.md) builds the real check from it, with these differences:
 
 - The board file stays one file (decision 4): an `input` script may write `board:<b>`, which R3 here still reports,
   and `pytree.toml` still splits the board file with `file = […]`.
