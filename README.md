@@ -204,22 +204,22 @@ Where it stands:
   skill cart put a released board into the maker's cart and stop there – nothing orders or pays. Built offline and
   tested on recorded data; the makers' profiles (JLCPCB, PCBWay, Eurocircuits, AISLER) are recorded from their forms,
   read in the owner's accounts up to the cart; the skill and EasyEDA's ODB++ export have not run live yet.
-- Text, but built offline only ([concept](docs/concepts/done/design-as-text.md),
-  [plan](docs/concepts/new/implementation-plan.md), steps 2.1 to 2.3 and 3.6): until their live run in EasyEDA these
-  may still exist only there –
+- Text, run live in EasyEDA in throwaway projects ([concept](docs/concepts/done/design-as-text.md),
+  [plan](docs/concepts/new/implementation-plan.md), steps 2.1 to 2.3 and 3.6, results under each live run):
   - the positions EasyEDA's auto-layout sets, written back into `[place]` as `auto = true` rows, and `pcb place
     --rest` for every part (handbook 7.4);
-  - own footprints and box symbols as data in the parts entry (`part footprint`, `part build`, handbook 4.5);
-  - the rule set of EasyEDA's DRC: read and held to the board file with `drc_rules = "check"`; writing it is open
-    (handbook 7.5);
+  - own footprints as data in the parts entry (`part footprint`, `part build`, handbook 4.5) – the bell's T-Display
+    is one now; the box symbol of `part build` did not suit the bell, which keeps its script's symbol;
+  - the rule set of EasyEDA's DRC: read and held to the board file with `drc_rules = "check"`, written into EasyEDA
+    with `drc_rules = "write"` (handbook 7.5);
   - single designators at a fixed spot (`[silk.place]`, handbook 7.7).
 
   Creating the EasyEDA project and one *Import Changes* stay two clicks by hand until the API allows them.
 - The circuit as TOML with pins by name or role ([handbook 3.1](handbook/03-hardware-graph.md#31-format),
   [concept](docs/concepts/done/circuit-language.md)): built and tested on the example and the reference circuits,
-  converted in scratch copies; no real project has converted yet – the Christmas bell keeps its JSON graph until it
-  does, and a JSON graph keeps working and hashing as before. A circuit language of edakit's own is deferred
-  ([circuit-dsl](docs/concepts/new/circuit-dsl.md)).
+  converted in scratch copies and in the Christmas bell, whose five boards were released on `hardware/graph.toml`
+  (its branch `edakit-current`). A JSON graph keeps working and hashing as before. A circuit language of edakit's own
+  is deferred ([circuit-dsl](docs/concepts/new/circuit-dsl.md)).
 - The KiCad tool chain ([handbook 16](handbook/16-kicad.md)) is tested against a kicad-cli the tests fake and, in CI,
   against KiCad 10's container; no board has gone through it to a release yet (16.8 lists what the first run checks).
 - Grown on one real project (EasyEDA Pro 3.2.206, easyeda-mcp-pro 1.4.0, Linux), made generic, then taken through a
