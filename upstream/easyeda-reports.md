@@ -3,7 +3,7 @@
 Posted at [easyeda/easyeda-api-sdk](https://github.com/easyeda/easyeda-api-sdk/issues) on 2026-11-01 on the
 owner's word, under the account tgd1975, after the live check on EasyEDA Pro 3.2.209 and the check of every call
 against the JSDoc of the client's types ([README.md](README.md), "How EasyEDA takes reports"). What became of each
-requirement is in the tables there.
+requirement is in the tables there. A draft not posted yet says so in its heading.
 
 ## E-1 – [#45](https://github.com/easyeda/easyeda-api-sdk/issues/45)
 
@@ -196,4 +196,37 @@ Feature request: getOpenDatabaseDoublePlusFile in millimetres
 `unit` admits `ESYS_Unit.INCH` only. With `ESYS_Unit.MILLIMETER` the archive still says `UNITS=INCH` in every file; File → Export → ODB++ in the GUI writes millimetres.
 
 **Wish:** `unit` takes `ESYS_Unit.MILLIMETER` as the dialog does, and the method leaves beta.
+````
+
+## E-17 – draft, not posted
+
+Checked on 2026-11-01: 3.2.209 is the newest version, no issue there covers it, the calls follow the docs' example
+(the schematic opened first, `@beta`); the lookup quoted from the client's bundle (pro-ui 3.2.198, `Hg.modifyName`).
+Seen live for `modifySchematicName` with pytree; the other renames use the same lookup in the code.
+
+### Title
+
+```text
+V3.2.209: dmt_Schematic.modifySchematicName returns false until the project tree has been shown once
+```
+
+### Body
+
+````markdown
+**Environment:** EasyEDA Pro 3.2.209, Linux desktop client, local projects (pro-api 0.3.59).
+
+After a start of the client with another tab of the left panel open, every rename returns false, in every project:
+
+```js
+await eda.dmt_EditorControl.openDocument(pageUuid);    // as in the docs' example
+await new Promise(r => setTimeout(r, 1000));
+await eda.dmt_Schematic.modifySchematicName(schematicUuid, 'main');
+// false, name unchanged – after one click on the project tree in the left panel: true, renamed
+```
+
+The handler looks the uuid up in the tree's rows (`rpcCall("getLeftTreeContentData")`, `findIndex(l => l.uuid === i)`, `-1` → `false`), and the tree has no rows before it was shown. `modifySchematicPageName`, `dmt_Pcb.modifyPcbName`, `dmt_Panel.modifyPanelName`, `dmt_Board.modifyBoardName` and `copyBoard` use the same lookup.
+
+**Expected:** renaming works whatever the left panel shows.
+
+**Workaround:** after every start we open the project tree once by hand.
 ````
