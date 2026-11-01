@@ -202,3 +202,27 @@ def test_merge_knows_its_numbering_commit_and_the_checks():
     merge = _load("merge")
     assert merge.NUMBERING.match("edakit 0.2.0") and not merge.NUMBERING.match("edakit 0.2.0: more")
     assert set(merge.REQUIRED) == {"test", "kicad", "build", "paths", "version"}
+
+
+def test_a_branch_behind_main_is_not_taken_for_numbered(tmp_path, capsys, monkeypatch):
+    """The check reads the number the branch started from: main moved on to 0.2.1 after the branch left 0.2.0."""
+    def g(*a):
+        subprocess.run(["git", "-C", str(tmp_path), *a], check=True, capture_output=True)
+    g("init", "-q", "-b", "main")
+    g("config", "user.name", "t")
+    g("config", "user.email", "t@t")
+    (tmp_path / "edakit").mkdir()
+    (tmp_path / v.INIT).write_text('__version__ = "0.2.0"\n')
+    (tmp_path / "tests").mkdir()
+    (tmp_path / "tests" / "t.py").write_text("x\n")
+    g("add", ".")
+    g("commit", "-q", "-m", "0.2.0")
+    g("checkout", "-q", "-b", "work")
+    (tmp_path / "tests" / "t.py").write_text("y\n")
+    g("commit", "-q", "-am", "a test only")
+    g("checkout", "-q", "main")
+    (tmp_path / v.INIT).write_text('__version__ = "0.2.1"\n')
+    g("commit", "-q", "-am", "0.2.1")
+    monkeypatch.setattr(v, "ROOT", tmp_path)
+    assert v.main(["check", "version", "main", "work", "work", "9"]) == 0
+    assert capsys.readouterr().out.startswith("no version")

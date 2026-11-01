@@ -4,7 +4,8 @@
 
 In a worktree of its own, so the session's checkout stays as it is:
 
-1. the branch onto the newest main (a merge of origin/main; an earlier numbering commit at its tip is dropped first);
+1. the branch onto the newest main (a merge of origin/main; an earlier numbering commit at its tip is dropped first;
+   a conflict only in generated output – the catalog page, the handbook's generated sections – is regenerated);
 2. its fragments in changes/ make the number – minor if one says so, else patch; --major only on the owner's word –,
    written into edakit/__init__.py, the marketplace entry and CHANGELOG.md, the fragments deleted, one commit
    "edakit X.Y.Z"; a branch without fragments that changes nothing a project reads is merged without a version;
@@ -76,8 +77,9 @@ def prepare(tree, branch, major):
         r = run("git", "merge", "-q", "--no-edit", "origin/main", cwd=tree, check=False)
         if r.returncode:
             files = run("git", "diff", "--name-only", "--diff-filter=U", cwd=tree).stdout.split()
-            run("git", "merge", "--abort", cwd=tree, check=False)
-            raise SystemExit("conflict with main – rebase the branch yourself: " + " ".join(files))
+            if not resolve_generated(tree, files):
+                run("git", "merge", "--abort", cwd=tree, check=False)
+                raise SystemExit("conflict with main – rebase the branch yourself: " + " ".join(files))
     main_n = v.number(v.show("origin/main", root=tree)(v.INIT))
     n = v.number_tree(tree, main_n, dt.date.today().isoformat(), major=major)
     if n is None:
@@ -91,6 +93,63 @@ def prepare(tree, branch, major):
     run("git", "commit", "-q", "-m", f"edakit {n}", cwd=tree)
     say(f"numbered {n} (main is {main_n})")
     return before, run("git", "rev-parse", "HEAD", cwd=tree).stdout.strip(), main_n, n
+
+
+# Output written by a script, never by hand: when main and the branch both regenerated it, the conflict is no one's –
+# the whole files come from main, the handbook's generated sections from the branch, and both generators then run on
+# the merged sources (docs/catalog/build.py, python -m edakit.catalog.handbook --write).
+GENERATED = ("docs/catalog/index.html", "docs/catalog/circuits/")
+GENERATORS = (("docs/catalog/build.py",), ("-m", "edakit.catalog.handbook", "--write"))
+BEGIN, END = "<!-- edakit:generated", "<!-- edakit:end -->"
+
+
+def only_generated(text):
+    """A handbook file with conflict markers, each conflict taken on the branch's side – or None when a conflict lies
+    outside a generated section, which is somebody's text."""
+    out, inside, block = [], False, None
+    for line in text.splitlines(keepends=True):
+        if block is None:
+            if line.startswith("<<<<<<< "):
+                if not inside:
+                    return None
+                block = {"side": "ours", "ours": []}
+                continue
+            if line.startswith(BEGIN):
+                inside = True
+            elif line.startswith(END):
+                inside = False
+            out.append(line)
+        elif line.startswith("======="):
+            block["side"] = "theirs"
+        elif line.startswith(">>>>>>> "):
+            if any(s.startswith((BEGIN, END)) for s in block["ours"]):
+                return None
+            out += block["ours"]
+            block = None
+        elif block["side"] == "ours":
+            block["ours"].append(line)
+    return None if block is not None else "".join(out)
+
+
+def resolve_generated(tree, files):
+    """Resolve a merge conflict that lies only in generated output; False when any conflict lies elsewhere."""
+    handbook = [f for f in files if f.startswith("handbook/") and f.endswith(".md")]
+    whole = [f for f in files if v.under(f, GENERATED)]
+    if not files or len(handbook) + len(whole) != len(files):
+        return False
+    for f in handbook:
+        resolved = only_generated((tree / f).read_text())
+        if resolved is None:
+            return False
+        (tree / f).write_text(resolved)
+    if whole:
+        run("git", "checkout", "--theirs", "--", *whole, cwd=tree)
+    for args in GENERATORS:
+        run("uv", "run", "--quiet", "python", *args, cwd=tree)
+    run("git", "add", "-A", "--", *[d for d in ("docs/catalog", "handbook") if (tree / d).exists()], cwd=tree)
+    run("git", "commit", "-q", "--no-edit", cwd=tree)
+    say("a conflict in generated output only – regenerated: " + " ".join(files))
+    return True
 
 
 FAILED = ("failure", "error", "cancelled", "timed_out", "action_required")
