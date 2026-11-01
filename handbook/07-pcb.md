@@ -180,7 +180,9 @@ change the graph.
 silkscreen tolerance: below), outline (0.3 mm margin; `edge_ok` for connectors), keep-outs of holes and tooling holes,
 THT pins of one side under parts of the other, `near` distances, the circuit's layout requirements (SYNC.plan),
 **polarised parts that point the same way** – by default LEDs side by side with their anode towards the same side
-(below) –, **mated plugs** clear of the other parts and out through the outline (below); it prints the airline length of
+(below) –, **mated plugs** clear of the other parts and out through the outline (below), **pads of different parts**
+as `route check` measures them on the PCB – the clearance, the paste gap on an assembled side, `hand_solder_keep_mm` at
+a joint soldered by hand (GEO.spacing, 7.5); it prints the airline length of
 the fixed parts (a number to compare placements) and writes `<artifacts>/pcb_plan_<board>.png` and the mechanical model
 `<artifacts>/mech_<board>.json`. Look at the picture before `apply`.
 
@@ -230,8 +232,19 @@ the plan check measures how far one box has to move to clear the other; the pair
 are beyond the tolerance. For parts side by side that is the width of the strip they share; a small part inside a
 larger box lies as deep as its way out, so the tolerance does not hide it. If either part has through-hole pads, the
 tolerance does not apply. Under a module in `on_headers`, its pins decide (above). The default 0 keeps every overlap a
-finding. Keep the value within the silkscreen margin of the footprints in use: the pads themselves are not compared
-here, but by `route check` and the gate – the clearance and, on an assembled side, the paste gap (GEO.spacing, 7.5).
+finding. The pads themselves are compared on their own, whatever the boxes do: the clearance and, on an assembled side,
+the paste gap (GEO.spacing, below).
+
+**Pads of different parts (GEO.spacing).** Two boxes that only touch may still bring two pads too close: a module's
+castellated pads end at its box, an 0805's pads lie 0.19 mm inside theirs – side by side 0.2 mm, half the paste gap.
+`pcb plan` measures the pads of the plan as `route check` measures them on the PCB before it writes anything (7.5):
+pads of different parts on different nets at least the routing clearance apart, SMD pads on an assembled side at least
+the paste gap, pads of other nets `hand_solder_keep_mm` from a joint soldered by hand – the nets of the graph, an
+`accept` GEO.spacing in the graph as there. A pair reads `GEO.spacing R2.1 (3V3) – U1.41 (no net): 0.233 mm apart on
+TOP, below the paste gap 0.400 mm`. The shapes come from the geometry where it has them – footprint data, the library
+footprint, a dump on KiCad –, else from the library footprint `edakit part import` cached, its pad of the same number
+at the same place; an EasyEDA dump measures places only, so without the cache `pcb plan` names the parts whose pads it
+cannot judge, and `route check` measures them on the PCB.
 
 ```toml
 silk_overlap_mm = 0.8        # in hardware/boards/<b>.toml, above the tables
@@ -288,9 +301,11 @@ come first (graph, then board file, each by designator), then the decoupling; ea
 next. The spot lies on the host's side, within `near_mm` of every host, at 0, 90, 180 or 270° on a 0.1 mm grid: the
 part's pad on a net it shares with the host (ground only when that is all they share) as close as possible to the host's
 pin on that net – for a decoupling capacitor its supply pad to the IC's supply pin, and within 0.1 mm of that the ground
-pad nearest to the IC's ground pin. A spot counts only where the plan check (`check_plan` and SYNC.plan) reports nothing
-new: `silk_overlap_mm`, `on_headers` with `header_keep_mm`, outline, hole and tooling keep-outs, THT pins of the
-other side, `edge_mm` – as they are. Parts without a host stay with the auto-layout.
+pad nearest to the IC's ground pin. A spot counts only where the plan check (`check_plan`, SYNC.plan and GEO.spacing)
+reports nothing new: `silk_overlap_mm`, `on_headers` with `header_keep_mm`, outline, hole and tooling keep-outs, THT
+pins of the other side, `edge_mm` – as they are –, and the pads of different parts as `route check` measures them (the
+clearance, the paste gap, `hand_solder_keep_mm`; above): a spot `pcb place` writes is one `route all` does not turn
+down for its pads. Parts without a host stay with the auto-layout.
 
 ```text
 $ edakit pcb place
@@ -314,7 +329,8 @@ host follows that part at once. An IC takes a spot only where its decoupling cap
 capacitor that may decouple an IC waits until the IC stands. The spots lie on the plan grid inside the outline, on a
 side that is assembled (`[release] assembly sides`, top first; without the key both), at 0, 90, 180 or 270°. A spot
 counts only where the plan check reports nothing new, as for the parts next to a host: overlaps, holes, tooling holes,
-keep-outs, THT pins of the other side, the outline, `edge_mm`, mated plugs, `uniform`. Of these spots the part takes
+keep-outs, THT pins of the other side, the outline, `edge_mm`, mated plugs, `uniform`, the pads of different parts
+(GEO.spacing). Of these spots the part takes
 the one where its pads add the least airline length: the minimum spanning tree of each net over its pads, the nets of
 the graph, ground left out. Side, rotation, y and x break ties. The board is searched on a 0.5 mm grid first, then on
 the 0.1 mm grid around the best spots.

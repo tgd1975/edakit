@@ -2,7 +2,9 @@
 
 Status 2026-10-30: built on the branch of decision 6 (steps T.1 to T.10 and T.12, the table under Order) and merged into
 main the same day, before the live tests, at the user's word; tested offline against a kicad-cli the tests fake and in
-CI against KiCad 10 on the led-bar example (handbook 16.8). Open: the live tests with the user. On 2026-10-30 the user
+CI against KiCad 10 on the led-bar example (handbook 16.8). The live tests with the user ran on 2026-10-31 – steps 1 and
+3 to 5 on the 555 blinker of handbook 18, steps 2, 6 and 7 on scratch copies of the led-bar example and the bell's main
+board; what they found (LT-1 to LT-11) is in the section [Live test](#live-test). On 2026-10-30 the user
 decided: edakit places the parts in both tool chains (gap K-1, now the section
 [Placement](#placement-edakit-places-for-both-tool-chains)), and decisions 1, 4, 5, 6 and 7. The user left decision 2 to
 Claude. Claude took decision 3 as recommended because the user left it open; the user accepted the reason the same day.
@@ -388,8 +390,8 @@ is: T.1 changes nothing until `--rest` is given.
 | T.3 | `[project] toolchain`, the KiCad folder `<artifacts>/kicad/<board>/`, config checks, `doctor` per tool chain | S | – | T.2 | built (b2852f2, de2e95d) |
 | T.4 | `kicad/sexp.py`, `kicad/library.py`: footprints and symbols from the parts database; both footprint sources side by side for the fixture's parts (decision 3) | M | – | – | built (b2852f2, ca16159); the side-by-side is dropped: decision 3 stands |
 | T.5 | `kicad/board.py` reads `.kicad_pcb` into `board.json`, `pcb.json` and `geometry.json`, rounded as the EasyEDA side rounds; round-trip tests | M | – | T.4 | built (b2852f2) |
-| T.6 | `gerber.py` for KiCad's Gerber and drill files (K-2), on a recorded KiCad export of the fixture | M | KiCad once | – | built on files written as KiCad writes them (6222f1f); a recorded export is open |
-| T.7 | `kicad/board.py` writes outline, holes, parts, nets and the rule set; the SES as tracks and vias; zones filled through `kicad-cli`; the silkscreen | L | KiCad (probe) | T.5 | built (b2852f2, 6222f1f, 37e3335); probe open |
+| T.6 | `gerber.py` for KiCad's Gerber and drill files (K-2), on a recorded KiCad export of the fixture | M | KiCad once | – | built on files written as KiCad writes them (6222f1f); the recorded export of the live test, 2026-10-31 (`tests/fixtures/kicad-export`) |
+| T.7 | `kicad/board.py` writes outline, holes, parts, nets and the rule set; the SES as tracks and vias; zones filled through `kicad-cli`; the silkscreen | L | KiCad (probe) | T.5 | built (b2852f2, 6222f1f, 37e3335); probe in the live test, 2026-10-31: kicad-cli 10.0.6 fills the zones, DRC 0 |
 | T.8 | `kicad/schematic.py` from `Layout`; S-2 through `kicad-cli` (netlist and ERC) | M | KiCad | T.4 | built (ca16159) |
 | T.9 | `kicad/cli.py`: ERC, DRC, exports; stages L and F on KiCad; `export` with `kicad_<board>.zip` | M | KiCad | T.6, T.7, T.8 | built (6222f1f, 37e3335) |
 | T.10 | Skills, agents, hook, handbook (new chapter 16, 2 setup, 10 reference), README | M | – | T.9 | built |
@@ -419,6 +421,26 @@ test footprints (handbook 16.8). Each on a scratch copy; the bell's repository d
 6. **Placer (T.1).** On copies with rows taken out of `[place]`: `edakit pcb place --rest --write`, then `pcb plan` –
    once on a copy without `toolchain` (EasyEDA, and `route all` there), once on the KiCad copy.
 7. **The bell**, a scratch copy of its main board, steps 2 to 5.
+
+**What the live test found (2026-10-31).** Steps 1 and 3 to 5 ran on the 555 blinker (handbook 18); steps 2, 6 and 7
+on scratch copies – the led-bar example on KiCad and, for step 6, in a throwaway EasyEDA project, and the bell's main
+board on KiCad, its repository untouched. Both schematics equal to the graph with KiCad's ERC at 0, both boards routed
+with KiCad's DRC at 0, the bell's print and polarity marks as EasyEDA has them, every row of L and F run, `kicad_main.zip`
+written. Built in edakit, test first, on the branch `kicad-live-fixes`:
+
+| | Found | Built |
+|---|---|---|
+| LT-1 | The KiCad schematic's notes one line up, under their title; KiCad's stroke font past the frames and the sheet; the frames on KiCad's border | each line a text on the drawing's baseline, as wide as the layout's room; the drawing inside KiCad's border, clear of its title block |
+| LT-2 | A flag pointing left lay over the symbol it names – KiCad draws a label's body by its justification | the justification by the direction |
+| LT-3 | The value the entry's whole MPN; a value the drawing does not show printed over a flag | the drawing's value: value, else the part's name; hidden where the drawing shows none |
+| LT-4 | The placer put R2 0.2 mm from U1's pad – below the paste gap; `pcb plan` did not see it, `route all` refused | the placer and the plan keep the pad spacing `route all` checks |
+| LT-5 | The library's arcs in eight pieces – the LEDs' bodies printed as octagons | pieces of at most 5°, the older cache read again |
+| LT-6 | The bell's J1 without a designator on KiCad – every spot half a stroke on its own outline | a part's box with the stroke of its lines |
+| LT-7 | `doctor`, the gate's stage table and `route all` said EasyEDA on KiCad | KiCad's names |
+| LT-8 | `pcb place` on a new KiCad project stopped for want of the dump | it reads the library as `pcb apply` does |
+| LT-9 | The led-bar example's fixed rows do not fit the real LCSC footprints (LEDs 4 mm apart at 4.2 mm, U1 in a hole's keep-out, J1 off the edge); its Pico's pins 41 and 43 named the other way round from the library's symbol | open (TODO.md): the example is the tests' fixture on test footprints |
+| LT-10 | The first `schematic create` in a new EasyEDA project left the template named after its page, and a panel of its name | the name read again and put back; such a panel named |
+| LT-11 | `schematic copy` – EasyEDA copied another project's schematic, and edakit renamed it | the copy renamed only with its source's parts, otherwise deleted and named |
 
 ## Decisions
 

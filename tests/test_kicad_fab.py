@@ -85,6 +85,28 @@ M30
 """
 
 
+EXPORT = Path(__file__).parent / "fixtures" / "kicad-export" / "led-bar-main"
+
+
+def test_a_recorded_kicad_export_reads_as_the_checks_read_it():
+    """The led-bar example's files as KiCad 10.0.6 wrote them in the live test of 2026-10-31 – placed by pcb place,
+    routed, poured and printed (concept T.6): the outline with the mounting and tooling holes as edakit draws them,
+    the tooling holes in the NPTH file, J1's plated holes, the vias and the poured top layer, as FILES.set and
+    GEO.copper read them."""
+    from shapely.geometry import Polygon
+    assert "GenerationSoftware,KiCad,Pcbnew,10.0" in (EXPORT / gerber.FILES["top"]).read_text()
+    assert gerber.missing(EXPORT, "top", "bottom", "top_silk", "bottom_silk", "top_mask", "bottom_mask", "outline",
+                          "pth", "vias", "npth") == []
+    outline = gerber.outline_shape(EXPORT)
+    assert [round(v, 2) for v in outline.bounds] == [0, 0, 90, 40]
+    holes = sorted((round(c.x, 2), round(c.y, 2)) for c in (Polygon(i).centroid for i in outline.interiors))
+    assert holes == [(3.5, 3.5), (3.5, 36.5), (86.5, 3.5), (86.5, 36.5)]
+    assert sorted((x, y) for x, y, *_ in gerber.parse_holes(EXPORT / gerber.FILES["npth"])) == [(3.5, 36.5), (86.5, 3.5)]
+    assert len(gerber.parse_holes(EXPORT / gerber.FILES["pth"])) == 2               # J1, through-hole
+    assert len(gerber.parse_holes(EXPORT / gerber.FILES["vias"])) == 28
+    assert gerber.shape(gerber.parse_gerber(EXPORT / gerber.FILES["top"])).area > 0.5 * 90 * 40   # the GND pour
+
+
 def test_kicad_macros_and_polygons_become_regions(tmp_path):
     f = tmp_path / "board-F_Cu.gbr"
     f.write_text(KICAD_GTL)
@@ -400,6 +422,15 @@ def test_doctor_asks_kicad_cli_and_not_the_bridge(project, fake_cli, capsys):
     run_cli(project, "doctor", "--offline")
     out = capsys.readouterr().out
     assert "KiCad 10.0.6 (kicad-cli" in out and "Node" not in out and "bridge port" not in out
+    assert "EasyEDA" not in out              # no claim, no history of other sessions' claims (live test, LT-7)
+
+
+def test_the_gate_names_kicads_schematic_and_bom_on_kicad(project):
+    """The stage table said "EasyEDA schematic = graph" and "BOM from the graph = EasyEDA" on KiCad (live test, LT-7)."""
+    from edakit.release import gate
+    cfg = kicad_project(project)
+    texts = " ".join(about for _, _, about in gate.stages_of(cfg))
+    assert "EasyEDA" not in texts and "KiCad schematic = graph" in texts
 
 
 def test_a_session_learns_the_tool_chain(project):

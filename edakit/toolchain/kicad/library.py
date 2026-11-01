@@ -183,7 +183,7 @@ def geometry_of(cfg, design, des, fetch=True, today=None):
     lcsc = design.comps[des].get("lcsc")
     name = entry.get("footprint") or (part.cached(cfg, lcsc) or {}).get("footprint")
     geo = part.cached_footprint(cfg, name)
-    if (geo is None or "silk" not in geo) and fetch and lcsc:
+    if (geo is None or geo.get("silk_version") != part.SILK_VERSION) and fetch and lcsc:
         try:
             lib = part.library_part(lcsc)
             part.write_cache(cfg, lib, today or datetime.date.today().isoformat())

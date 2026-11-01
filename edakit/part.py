@@ -579,7 +579,8 @@ def footprint_geometry(ds, footprint):
                max(y for _, y in corners)]
     else:
         box = [0, 0, 0, 0]
-    geo = {"footprint": footprint, "bbox": [round(v, 2) for v in box], "pads": {}, "silk": footprint_silk(ds, hx, hy)}
+    geo = {"footprint": footprint, "bbox": [round(v, 2) for v in box], "pads": {}, "silk": footprint_silk(ds, hx, hy),
+           "silk_version": SILK_VERSION}
     for n, p in pads:
         geo["pads"].setdefault(n, p)
     nums = [n for n, _ in pads]
@@ -589,6 +590,8 @@ def footprint_geometry(ds, footprint):
 
 
 SILK_LAYERS = {"3": "TOP", "4": "BOTTOM"}   # EasyEDA Standard: top and bottom silkscreen
+SILK_VERSION = 2   # 2: arcs in pieces of at most ARC_STEP_DEG – a cache of another version is read again
+ARC_STEP_DEG = 5
 
 
 def footprint_silk(ds, hx, hy):
@@ -625,8 +628,9 @@ def footprint_silk(ds, hx, hy):
 
 
 def svg_polylines(d):
-    """An SVG path (EasyEDA's canvas units) -> polylines, arcs and curves as points 1/8 of their length apart."""
-    from svgelements import Close, Line, Move, Path
+    """An SVG path (EasyEDA's canvas units) -> polylines; an arc in pieces of at most ARC_STEP_DEG – in eight, an
+    LED's body of 250° printed as an octagon (live test, LT-5) –, a curve as points 1/8 of its length apart."""
+    from svgelements import Arc, Close, Line, Move, Path
     lines = []
     for seg in Path(d):
         if isinstance(seg, Move):
@@ -638,7 +642,8 @@ def svg_polylines(d):
         elif seg.start is not None:
             if not lines:
                 lines.append([(seg.start.x, seg.start.y)])
-            lines[-1] += [(q.x, q.y) for q in (seg.point(k / 8) for k in range(1, 9))]
+            n = max(8, math.ceil(abs(math.degrees(seg.sweep)) / ARC_STEP_DEG)) if isinstance(seg, Arc) else 8
+            lines[-1] += [(q.x, q.y) for q in (seg.point(k / n) for k in range(1, n + 1))]
     return [ln for ln in lines if len(ln) >= 2]
 
 

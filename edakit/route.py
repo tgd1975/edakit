@@ -2187,6 +2187,7 @@ def main(cfg, args):
         sim_widths(cfg, board, rules)
     mcp = None
     kc = is_kicad(cfg)                # the KiCad project: files and kicad-cli instead of the bridge (handbook 16)
+    target = "the KiCad PCB" if kc else "EasyEDA"
     if kc:
         from .toolchain.kicad import board as kicad_board
         from .toolchain.kicad import cli as kicad_cli
@@ -2241,7 +2242,7 @@ def main(cfg, args):
                     if args.action == "all":
                         raise SystemExit(f"after {attempts} attempts nets are still open, clearances too small, a via "
                                          "at a hand-soldered joint (GEO.spacing) or a pour inside another – nothing "
-                                         "written to EasyEDA. More passes (--passes), or check rules/placement."
+                                         f"written to {target}. More passes (--passes), or check rules/placement."
                                          + (" Pads too close as well (above)." if tight else ""))
                     return 2
                 if tight:
@@ -2249,14 +2250,14 @@ def main(cfg, args):
                         pairs = len({(g["a"], g["b"]) if "a" in g else (g["joint"], g["other"]) for g in tight})
                         raise SystemExit(f"{pairs} pad pairs of different parts closer than the clearance (GEO.spacing), "
                                          "the paste gap (GEO.spacing) or the keep of a hand-soldered joint (GEO.spacing) – nothing "
-                                         "written to EasyEDA. Freerouting cannot move a pad: move or turn one of the "
+                                         f"written to {target}. Freerouting cannot move a pad: move or turn one of the "
                                          "two parts in [place] of the board file (fix it there if the auto-layout put "
                                          "it), then place and read the board again.")
                     return 2
                 if thin:
                     if args.action == "all":
                         raise SystemExit(f"{len(thin)} track widths below IPC-2221 for 1.5 x the simulated current "
-                                         "(GEO.width, above) – nothing written to EasyEDA. Widen the class in "
+                                         f"(GEO.width, above) – nothing written to {target}. Widen the class in "
                                          '[routing.classes] or the fixed wire, or route with [routing] widths = "sim".'
                                          + (" Nets are open as well (above)." if open_nets else ""))
                     return 2

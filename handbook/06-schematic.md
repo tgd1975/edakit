@@ -33,7 +33,9 @@ schematic that belongs to a board) → close other schematic tabs (EasyEDA somet
 search every LCSC number once (cache `<artifacts>/device_cache.json`, `--refresh-devices` searches again) → place in
 blocks of 40 (`batch_write`; bigger blocks crashed EasyEDA) → set designators → compare symbol pins with the graph →
 connect nets as stubs (longer stubs on collisions) → connect leftover pins one by one → mark no-connects → compare the
-netlist with the graph → ERC → save.
+netlist with the graph → ERC → save. The template's name is read again after its page got its title and once more
+before the end, and put back if it changed: in a new project the first run once left the template named after its
+page ("LED bar template") and a panel named `generated_main` – a panel of the template's name is named, not touched.
 
 `--save` of `create` and `layout` saves only a schematic whose netlist equals the graph: no differing net, no failed
 connection, no symbol pin mismatch, no part skipped. Otherwise the run says "not saved: 2 differing nets, 0 failed
@@ -67,6 +69,13 @@ edakit schematic layout --dry-run          # plan + <artifacts>/layout_preview_<
 edakit schematic layout --save             # rebuild the board schematic (1–2 min for 120 parts)
 edakit schematic check --schematic layout_main
 ```
+
+`copy` renames the copy only when it holds the source's parts, designator for designator, on all its pages. Once
+`DMT_Schematic.copySchematic` on the template copied another project's schematic (the bell's ESP32 THT template,
+19 parts for a graph of 17); now such a copy is deleted – where it is a free schematic of the open project – and the
+run names what EasyEDA made (its page, the company and graph version of its title block, the parts more and
+missing) and exits 1. A source drawn from another graph version than the current one is named before the copy.
+`layout` builds the board schematic without a copy: in a new project it renames the default board's schematic.
 
 `layout` deletes all wires, flags, rectangles and texts of the page, moves and rotates the parts and wires them again.
 What it arranges stands in the schematic file `hardware/schematic.toml` (10.3):

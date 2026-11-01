@@ -63,7 +63,8 @@ caches from the LCSC data – EasyEDA's footprint, the one JLCPCB's assembly wor
 offsets. KiCad's own library is not used: a footprint from it would need a correction of turn and origin, and maybe of
 its pad numbers, for every part JLCPCB places (concept, decision 3). A part whose LCSC footprint is wrong or missing
 gets `footprint_data`, started by `edakit part footprint KEY --write` from the LCSC footprint (4.5). A part whose
-footprint is not cached yet is read from the library at the first `pcb apply` (cache only, the entry is not touched).
+footprint is not cached yet is read from the library at the first `pcb place`, `pcb plan` or `pcb apply` (cache only,
+the entry is not touched) – a new KiCad project places before its first apply.
 The cache holds the library's silkscreen too – lines, circles, arcs, filled regions, the strokes of texts – so polarity
 marks print as the library draws them (GEO.mark). A cache from an older edakit lacks it and is read again. Pads: `RECT`
 → rect, `ELLIPSE` → circle or oval, `OVAL` → oval, `POLYGON` → custom with its corners; holes as round or oval drills

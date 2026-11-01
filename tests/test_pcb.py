@@ -436,6 +436,67 @@ def test_place_rest_names_a_part_without_a_spot(project, capsys):
     assert "\nD5 = " in f.read_text() and "SW1 = " not in f.read_text()      # the others are written
 
 
+# --- pcb place and pcb plan keep GEO.spacing as `route check` measures it (the KiCad live test, LT-4): the geometry
+# with the copper of every pad – the module's castellated pads flush with its box, the SOIC's box over its pads, 0805
+# boxes 0.19 mm outside their pads. Boxes that only touch leave 0.2 mm between such pads: `--rest` put R2 0.01 mm
+# from U1.43, `route all` turned it down (paste gap 0.4 mm), `pcb plan` had not seen it.
+
+def copper_geo():
+    geo = led_bar_geo()
+    for ref, fp in geo.items():
+        for p in fp["pads"].values():
+            if p["tht"]:
+                p.update(shape="ELLIPSE", w=70, h=70, rot=0, layer="MULTI")
+            elif ref == "U1":
+                p.update(shape="RECT", w=63, h=126, rot=0 if abs(p["y"]) > 300 else 90, layer="TOP")
+            elif ref == "U2":
+                p.update(shape="RECT", w=59, h=24, rot=0, layer="TOP")
+            else:
+                p.update(shape="RECT", w=44.6, h=54.2, rot=0, layer="TOP")
+    geo["U2"]["bbox"] = [-3.7 * MIL, -5.2 * MIL, 3.7 * MIL, 5.2 * MIL]
+    ys = [p["y"] for p in geo["U1"]["pads"].values()]
+    geo["U1"]["bbox"][1:] = min(ys) - 63, 25 * MIL + 63, max(ys) + 63
+    for ref in ("R1", "R2", "C1", "C2", *(f"D{i}" for i in range(2, 10))):
+        geo[ref]["bbox"] = [-69, -36, 70, 36]
+        for n, p in geo[ref]["pads"].items():
+            p["x"] = 39.37 if n == "2" else -39.37
+    return geo
+
+
+def paste_pairs(cfg, geo):
+    """The pad pairs of different parts closer than the paste gap on top, measured as `route check` measures the PCB:
+    every pad of the plan's parts at its place, with its net of the graph."""
+    board, design = cfg.board(), Design.from_config(cfg)
+    pads = []
+    for ref, p in board.place.items():
+        for n, q in geo[ref]["pads"].items():
+            x, y = board.transform((q["x"], q["y"]), p.x, p.y, p.rot, p.side)
+            pads.append({"ref": ref, "num": n, "net": design.pin_net.get(f"{ref}.{n}", ""), "x": x * MIL,
+                         "y": y * MIL, "rot": (q["rot"] + p.rot) % 360, "shape": [q["shape"], q["w"], q["h"]],
+                         "layer": {"TOP": 1, "BOTTOM": 2, "MULTI": 12}[q["layer"]]})
+    return [(g["a"], g["b"]) for g in route.pad_gaps({"pads": pads}, 0.4 * MIL, smd_on=("TOP",))]
+
+
+def test_plan_names_pads_of_two_parts_closer_than_the_paste_gap(project):
+    geo = copper_geo()
+    place_project(project, drop=("R2",), geo=geo,
+                  add='R2 = { x = 57.4, y = 11.96, rot = 0, side = "top" }\n')   # its box 0.05 mm from U1's at pad 41
+    cfg = project.config()
+    assert paste_pairs(cfg, geo) == [("R2.1", "U1.41")]
+    assert pcb.plan(cfg, cfg.board()) == [
+        "GEO.spacing R2.1 (3V3) – U1.41 (no net): 0.233 mm apart on TOP, below the paste gap 0.400 mm"]
+
+
+def test_place_keeps_the_paste_gap_next_to_a_host_and_by_airline_length(project, capsys):
+    geo = copper_geo()
+    place_project(project, drop=("C1", "R1", "C2", "D1", "R2"), geo=geo)
+    capsys.readouterr()
+    assert cli.main(["pcb", "place", "--rest", "--write", "--config", str(project.root / "edakit.toml")]) == 0
+    cfg = project.config()
+    assert all(cfg.board().place[r].auto for r in ("C1", "R1", "C2", "D1", "R2"))
+    assert paste_pairs(cfg, geo) == [] and pcb.plan(cfg, cfg.board()) == []
+
+
 # --- the auto-layout's positions into [place], the takeover of a board placed before (step 2.1) ---------------------
 
 # Recorded: easyeda_pcb_components of the Christmas bell's SMD board in its gate run 20261026-123018 (fab/smd/pcb.json),

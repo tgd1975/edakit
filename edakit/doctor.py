@@ -255,6 +255,7 @@ def main(cfg, args):
             bridge_part(cfg, line, getattr(args, "verbose", False))
         else:
             line("INFO", "bridge not asked: EasyEDA does not run")
-    with lock.state() as s:
-        print("INFO  " + lock.status_text(s, os.environ.get("CLAUDE_CODE_SESSION_ID")).replace("\n", "\n      "))
+    if not kc:                        # a KiCad project never claims EasyEDA (handbook 16)
+        with lock.state() as s:
+            print("INFO  " + lock.status_text(s, os.environ.get("CLAUDE_CODE_SESSION_ID")).replace("\n", "\n      "))
     return 1 if bad else 0

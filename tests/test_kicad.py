@@ -11,7 +11,7 @@ from test_pcb import led_bar_geo
 from edakit import config
 from edakit.config import ConfigError
 from edakit.design import Design
-from edakit.part import file_name
+from edakit.part import SILK_VERSION, file_name
 from edakit.toolchain import is_kicad
 from edakit.toolchain.kicad import board as kb
 from edakit.toolchain.kicad import library, sexp
@@ -47,6 +47,7 @@ def kicad_project(project, rows=None):
                 p.update(shape="RECT", w=40, h=50, rot=0, layer="TOP")
         b = fp["bbox"]
         fp["silk"] = [{"layer": "TOP", "points": [[b[0], b[1]], [b[2], b[1]]], "width": 6, "fill": False}]
+        fp["silk_version"] = SILK_VERSION     # a cache of today's edakit: not read from the library again
         (d / file_name(name)).write_text(json.dumps(fp))
     return project.config()
 
@@ -406,6 +407,126 @@ def test_the_schematic_puts_pins_and_wire_ends_on_kicads_grid(project):
     assert ends and off == []
 
 
+def test_a_new_kicad_project_places_before_its_first_apply(project, monkeypatch):
+    """pcb place on KiCad read only the dump and part import's cache – a new project has neither, and it stopped
+    with "geometry.json is missing" where pcb apply reads the library itself (live test, LT-8)."""
+    from edakit import pcb
+    from edakit.toolchain.kicad import library
+    cfg = kicad_project(project)
+    design = Design.from_config(cfg)
+    pcb.geometry_file(cfg, cfg.board()).unlink(missing_ok=True)
+    f = cfg.artifacts / "footprints" / file_name(design.part("U2")["footprint"])
+    kept = f.read_text()
+    f.unlink()
+    asked = []
+
+    def read_library(cfg_, design_, des, fetch=True, today=None):
+        asked.append((des, fetch))
+        f.write_text(kept)
+    monkeypatch.setattr(library, "geometry_of", read_library)
+    geo = pcb.plan_geometry(cfg, cfg.board(), design, ["U2", "R1"])
+    assert asked == [("U2", True)] and set(geo) == {"U2", "R1"} and geo["U2"]["source"] == "library"
+
+
+def test_a_parts_box_takes_its_outline_with_the_stroke(project):
+    """The box silk apply keeps designators off holds the silkscreen lines with their stroke, as EasyEDA's bounding
+    box does: without it every spot of the bell's J1 lay half a stroke on its own outline (live test, LT-6)."""
+    cfg = kicad_project(project)
+    board = cfg.board()
+    path, _ = kb.write_parts(cfg, board)
+    pcb = kb.Pcb.load(path)
+    ref, fp = next((r, f) for r, f in kb.parts(pcb) if r == "C1")
+    lines = [d for d in fp if isinstance(d, list) and d and d[0] == "fp_line"
+             and str(sexp.value(d, "layer", "")).endswith(".SilkS")]
+    assert lines
+    width = sexp.floats(sexp.first(lines[0], "stroke"), "width")[0]
+    x0, y0, _, _ = kb.footprint_at(fp)
+    top = max(-(y0 + y) for d in lines for y in (sexp.floats(d, "start")[1], sexp.floats(d, "end")[1]))
+    assert kb.part_boxes(cfg, board, pcb)[ref][3] >= top + width / 2 - 1e-6
+
+
+def schematic_root(project):
+    from edakit.toolchain.kicad import schematic as ks
+    cfg = kicad_project(project)
+    path, _ = ks.write(cfg, cfg.board())
+    return cfg, sexp.loads(path.read_text())
+
+
+def notes(root):
+    """[(x, y, text, height, width)] of the sheet's titles and notes (set on their baseline, unlike the pin names),
+    mm, y down."""
+    out = []
+    for t in sexp.find(root, "text"):
+        eff = sexp.first(t, "effects")
+        if "bottom" not in (sexp.first(eff, "justify") or []):
+            continue
+        at, size = sexp.floats(t, "at"), sexp.floats(sexp.first(eff, "font"), "size")
+        out.append((at[0], at[1], t[1], size[0], size[1]))
+    return out
+
+
+def test_a_flag_points_away_from_the_pin_it_names(project):
+    """KiCad draws a label's body by its justification, whatever the angle – left runs right or up, right runs left
+    or down: a ground flag at a pin on the left (180°) with "left" lay over the LED it names (live test, LT-2)."""
+    _, root = schematic_root(project)
+    labels = list(sexp.find(root, "global_label"))
+    assert {sexp.floats(lab, "at")[2] for lab in labels} >= {0, 180}
+    for lab in labels:
+        angle, just = sexp.floats(lab, "at")[2], sexp.first(sexp.first(lab, "effects"), "justify")[1]
+        assert just == ("left" if angle in (0, 90) else "right"), (lab[1], angle, just)
+
+
+def test_titles_and_notes_stand_line_by_line_inside_their_frames(project):
+    """Each line a text of its own on the drawing's baseline, the title above the notes, no line wider than the
+    frame the layout sized for it: KiCad set the whole note top-justified on the baseline – one line up, under the
+    title – and its stroke font ran past the frame and the sheet (live test, LT-1)."""
+    from edakit.toolchain.kicad import schematic as ks
+    _, root = schematic_root(project)
+    frames = []
+    for pl in sexp.find(root, "polyline"):
+        xy = [(float(q[1]), float(q[2])) for q in sexp.find(sexp.first(pl, "pts"), "xy")]
+        frames.append((min(x for x, _ in xy), min(y for _, y in xy), max(x for x, _ in xy), max(y for _, y in xy)))
+    texts = notes(root)
+    assert texts and all("\n" not in t for _, _, t, _, _ in texts)
+    for frame in frames:
+        inside = sorted((y, x, t, h, w) for x, y, t, h, w in texts
+                        if frame[0] <= x <= frame[2] and frame[1] <= y <= frame[3])
+        assert inside, frame
+        title, rest = inside[0], inside[1:]
+        for y, x, t, h, w in inside:
+            assert x + len(t) * w * ks.KICAD_ADVANCE <= frame[2], t
+        for y, x, t, h, w in rest:                       # the title's line ends above the first note's capitals
+            assert y - (1 + ks.BASELINE) * h >= title[0] - ks.BASELINE * title[3], (title[2], t)
+        assert all(b[0] - a[0] >= a[3] for a, b in zip(rest, rest[1:]))   # lines a capital height apart at least
+
+
+def test_the_drawing_lies_inside_kicads_border_and_clear_of_its_title_block(project):
+    """KiCad draws its border 12 mm in and its title block, 108 x 32 mm, in the lower right corner: the drawing's
+    frames sat on the border (live test, LT-1)."""
+    _, root = schematic_root(project)
+    w, h = map(float, sexp.first(root, "paper")[2:4])
+    xy = [(float(q[1]), float(q[2])) for pl in sexp.find(root, "polyline")
+          for q in sexp.find(sexp.first(pl, "pts"), "xy")]
+    xy += [tuple(sexp.floats(s, "at")[:2]) for s in sexp.find(root, "symbol") if sexp.first(s, "lib_id")]
+    assert all(12 < x < w - 12 and 12 < y < h - 12 for x, y in xy)
+    assert not [(x, y) for x, y in xy if x > w - 120 and y > h - 44]
+
+
+def test_the_value_is_the_one_the_drawing_shows(project):
+    """A part without a value shows its name in the graph, as the drawing does – the bell's Nano showed its entry's
+    whole MPN, which ran into the next part's label (live test, LT-3); schematic and PCB show the same."""
+    f = project.root / "hardware" / "parts" / f"{project.graph()['graph']['components'][2]['lcsc']}.json"
+    entry = json.loads(f.read_text())
+    entry["mpn"] = "SC1631 (Raspberry Pi Pico 2, RP2350, castellated module)"
+    f.write_text(json.dumps(entry, indent=1))
+    _, root = schematic_root(project)
+    design = Design.from_config(project.config())
+    syms = [s for s in sexp.find(root, "symbol") if sexp.first(s, "lib_id")]
+    values = {next(c[2] for c in sexp.find(s, "property") if c[1] == "Reference"):
+              next(c[2] for c in sexp.find(s, "property") if c[1] == "Value") for s in syms}
+    assert values["U1"] == design.comps["U1"]["part"] and values["R1"] == design.comps["R1"]["value"]
+
+
 def test_the_library_silkscreen_of_easyeda_standard_is_cached_in_mil_y_up():
     """part.footprint_silk on the shapes EasyEDA Standard writes for a footprint's print (10 mil units, y down,
     absolute): a line, a circle, an arc, a filled region and the strokes of a "+" – the designator's text is left out."""
@@ -425,6 +546,17 @@ def test_the_library_silkscreen_of_easyeda_standard_is_cached_in_mil_y_up():
     assert sorted(map(tuple, (tuple(map(tuple, s["points"])) for s in plus))) == [((-20.0, 0.0), (20.0, 0.0)),
                                                                                   ((0.0, 20.0), (0.0, -20.0))]
     assert all(s["layer"] == "TOP" for s in silk) and len(silk) == 6     # copper (layer 1) and the designator out
+
+
+def test_an_arc_of_the_library_print_is_drawn_in_pieces_of_at_most_five_degrees():
+    """An LED's body is one arc of about 250°: in eight pieces it printed as an octagon (live test, LT-5)."""
+    import math
+    from edakit.part import footprint_silk
+    ds = {"shape": ["ARC~1~3~~M 4010,3000 A 10,10 0 1 0 4000,2990~~gge7~0"]}      # 270°, radius 10 units (100 mil)
+    pts = footprint_silk(ds, 4000, 3000)[0]["points"]
+    steps = [math.dist(a, b) for a, b in zip(pts, pts[1:])]
+    assert len(pts) >= 270 / 5 + 1
+    assert max(steps) <= 2 * 100 * math.sin(math.radians(2.5)) + 0.05     # the chord of 5° on 100 mil
 
 
 @pytest.mark.parametrize("form", ['(net "GND")', '(net_name "GND")', '(net 7) (net_name "GND")'])
