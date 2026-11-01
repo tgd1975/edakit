@@ -915,6 +915,41 @@ def test_each_fault_is_found_by_its_check(project, fault, expected):
             [(r["result"], r["actual"]) for r in rows if r["id"] == cid]
 
 
+def by_mpn(*refs):
+    """The components refs bought elsewhere: no lcsc, their parts entry found by its mpn = the component's part (#88)."""
+    def fault(ex, project):
+        graph(project, lambda g: [project.comp(g, r).pop("lcsc") for r in refs])
+    return fault
+
+
+def test_a_through_hole_part_keyed_by_its_mpn_has_its_lead(project):
+    rows = run(project, by_mpn("J1"))
+    assert findings(rows) == []
+    by = {(r["id"], r["check"]): r["actual"] for r in rows}
+    assert by["GEO.hole", "lead size of every through-hole part in the parts database (field lead)"] == "all"
+    assert by["GEO.hole", "hole takes the lead at nominal size (diagonal or edge, or manufacturer's value)"] == "2 holes"
+
+
+def test_a_hole_too_small_for_the_lead_of_a_part_keyed_by_its_mpn(project):
+    def fault(ex, p):
+        by_mpn("J1")(ex, p)
+        ex.pth[:] = [h[:2] + (0.5,) for h in ex.pth]
+    rows = run(project, fault)
+    assert findings(rows) == [("GEO.hole", "fail")]
+    assert any(r["id"] == "GEO.hole" and "J1.1: hole 0.50 mm for diagonal 0.71 mm" in r["actual"] for r in rows)
+
+
+def test_the_polarity_of_a_part_keyed_by_its_mpn_is_checked(project):
+    """GEO.mark reads the pin roles from the same entry: D1 bought elsewhere (outside the BOM of JLCPCB)."""
+    def fault(ex, p):
+        by_mpn("D1")(ex, p)
+        ex.bom = [e for e in ex.bom if e["reference"] != "D1"]
+        ex.pcb["strings"][0].update(Text="−")
+    rows = run(project, fault)
+    assert findings(rows) == [("GEO.mark", "fail")]
+    assert any(r["id"] == "GEO.mark" and "nearest pad D1.2 is anode" in r["actual"] for r in rows)
+
+
 def test_a_waived_pad_pair_is_listed_with_its_reason(project):
     def waived(ex, p):
         crowd(ex, p)

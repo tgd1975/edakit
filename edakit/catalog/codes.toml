@@ -1005,7 +1005,7 @@ severity = "error"
 grades = { margin = "warning", unknown = "note" }
 details = [
   "through-hole leads known and fitting the footprint, before the layout: GEO.hole's test (8.1) on the holes of the footprint geometry – the board's `pcb dump`, else the library footprint of `edakit part import`; plated holes without `lead` in the entry pending, a hole that does not take the lead an error (`accept` on the component), tight in the worst case or a plated slot below 0.5 mm a warning; without geometry a note – finds e.g.: a library footprint drilling 0.70 mm for □0.5 mm legs, found before anything is placed",
-  "every through hole takes its lead at nominal size (lead data in the parts database); worst case (hole −0.08 mm, lead + tolerance) below 0.05 mm play or plated slots narrower than 0.5 mm: warning per part. GEO.hole runs the same test before the layout, on the footprint geometry (3.3) – why it exists: two parts whose leads would not have fitted the library holes",
+  "every through hole takes its lead at nominal size (lead data in the component's parts entry – its lcsc, or without one the entry its part names, as for every other check, 3.1); worst case (hole −0.08 mm, lead + tolerance) below 0.05 mm play or plated slots narrower than 0.5 mm: warning per part. GEO.hole runs the same test before the layout, on the footprint geometry (3.3) – why it exists: two parts whose leads would not have fitted the library holes",
 ]
 replaces = ["P-7", "L-9"]
 sources = [
