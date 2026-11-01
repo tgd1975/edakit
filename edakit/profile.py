@@ -125,6 +125,13 @@ def build(design, cfg=None):
                      ", but [project] domains does not name it – its findings are not reported", "edakit/domains",
                      f"add \"{n}\" to [project] domains, or accept STRUCT.domain {n} with the reason")
              for n in hint if n not in enabled]
+    required = getattr(cfg, "edakit", None) if cfg is not None else None
+    if required:
+        from .version import meets, version
+        if not meets(required):
+            notes.append(Finding("STRUCT.edakit", "G", "[project] edakit",
+                                 f"edakit {version()} runs, the project asks for {required!r}", "edakit.toml",
+                                 "update the plugin (handbook 2.3), or run the edakit the project names"))
     purpose = design.graph.get("purpose") or {}
     return ProjectProfile(enabled, purpose.get("use"), notes, national.country(purpose))
 

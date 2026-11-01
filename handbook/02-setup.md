@@ -81,6 +81,10 @@ the repository: `"source": { "source": "github", "repo": "tgd1975/edakit", "ref"
 `uvx --from git+https://github.com/tgd1975/edakit@v0.2.0 edakit <command>`. Skills, agents and the command line are
 then of the same version. To move up, read the changelog, change both tags, run the gate and commit.
 
+A project can also say which edakit it needs: `edakit = ">=0.4"` under `[project]` in edakit.toml (10.1). When the
+running edakit does not meet it, `edakit check` notes STRUCT.edakit, and the session hook says so at the start of a
+session. The first line of the working agreements names the edakit that runs.
+
 ## 2.4 The MCP server
 
 `edakit/easyeda/mcp-server.sh` installs easyeda-mcp-pro **pinned** to 1.6.0 into
