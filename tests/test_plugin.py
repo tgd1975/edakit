@@ -180,6 +180,47 @@ def test_the_requirements_engineer_reads_everything_and_changes_nothing():
         assert words in result, words
 
 
+def test_a_requirement_is_what_someone_stated_not_what_edakit_derived():
+    """Requirements are the inputs that steer the pipeline (#97): what the maker, a user or a standard the maker chose
+    states, at the level of detail given – not a simulated value, a check result, the derating, a part's limit or a
+    choice of the designer. sim.json, the parts' limits and the protocol's rows are sources of evidence only, read
+    after the candidates; a circuit without a file is lifted to the device's boundary, each candidate marked
+    inferred; what edakit's catalog checks on every board is listed apart, not as a candidate."""
+    skill = flat((ROOT / "skills" / "requirements" / "SKILL.md").read_text(encoding="utf-8"))
+    agent_path = ROOT / "agents" / "requirements-engineer.md"
+    agent = flat(agent_path.read_text(encoding="utf-8"))
+    for text in (skill, agent):
+        for words in ("who stated it", "a choice the maker made is a requirement",
+                      "one the designer or edakit made is not", "evidence only", "forward", "reverse",
+                      "would anyone notice if it were different", "inferred", "already checked by edakit",
+                      "at the level of detail"):
+            assert words in text, words
+        assert "a design choice is no requirement" not in text
+    sources = section(agent_path, "Sources")
+    assert "often a requirement whose evidence exists already" not in sources
+    evidence = sources.split("sources of evidence only")[1]
+    for words in ("sim.json", "parts", "protocol", "edakit sim --json"):
+        assert words in evidence, words
+    result = section(agent_path, "Result")
+    assert "already checked by edakit" in result and "inferred" in result
+    for chapter, heading in (("03-hardware-graph.md", "3.6 Requirements"), ("10-reference.md", "10.4 The requirements file")):
+        text = section(ROOT / "handbook" / chapter, heading)
+        assert "a choice the maker made is a requirement" in text or "who stated it" in text, chapter
+        assert "one testable sentence with quantity, limit and condition" not in text, chapter
+
+
+def test_the_requirements_inventory_has_an_eval():
+    """The eval of #97: led-bar with a short README, the inventory – graded on the README's inputs, inferred
+    candidates, and no candidate edakit derived."""
+    case = ROOT / "evals" / "requirements-inventory"
+    assert "inventory" in (case / "prompt.md").read_text(encoding="utf-8")
+    assert "README.md" in (case / "scaffold.sh").read_text(encoding="utf-8")
+    graders = {p.stem: p.read_text(encoding="utf-8") for p in (case / "graders").glob("*.md")}
+    assert {"names-the-leds", "names-the-usb-port", "marks-inferred", "lists-checked-apart",
+            "nothing-derived"} <= set(graders)
+    assert "`requirements-inventory`" in (ROOT / "evals" / "README.md").read_text(encoding="utf-8")
+
+
 def test_a_new_project_may_have_a_requirements_file():
     files = section(ROOT / "skills" / "new-project" / "SKILL.md", "3. Files")
     assert "hardware/requirements.toml" in files and "optional" in files and "skill requirements" in files

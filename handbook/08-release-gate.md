@@ -110,7 +110,7 @@ Each pad pair listed in [[loops]] of the board file or in layout.loops of the gr
 
 **`GEO.mark`** – polarity marks (error, margin: warning; replaces L-8)  
 Every '+' or '-' in the silkscreen – a PCB text, or a '+' a footprint draws as two crossing strokes of 0.3–2 mm in the silk Gerber file – sits next to a pad of that sign: the nearest pad on its side whose pin role has a sign (anode…, plus…, vbus '+'; cathode…, minus… '-') has the same one.
-- every "+" and "−" of the silkscreen next to a pad of that sign: the PCB texts "+", "−", and the "+" a footprint draws as two crossing strokes in the **silk Gerber files** (each 0.3–2 mm, as long as the other, at right angles, middles within 0.1 mm). Each is compared with the nearest pad on its side whose role has a sign – `anode…`, `plus…`, `vbus` "+", `cathode…`, `minus…` "−". Strokes of a PCB text with a "+" are that text (a "+5V" is a label); a cross inside the box of a `[[silk.art]]` item is artwork. `waive: {"GEO.mark": "…"}` on the nearest part lists its sign as waived – why it exists: the footprint of a 5-mm LED printed "+" at the cathode: GEO.mark read only PCB texts and gave the cathode no sign, so nothing saw it; a review did, before five boards would have been assembled with the LED turned (4.4)
+- every "+" and "−" of the silkscreen next to a pad of that sign: the PCB texts "+", "−", and the "+" a footprint draws as two crossing strokes in the **silk Gerber files** (each 0.3–2 mm, as long as the other, at right angles, middles within 0.1 mm). Each is compared with the nearest pad on its side whose role has a sign – `anode…`, `plus…`, `vbus` "+", `cathode…`, `minus…` "−". Strokes of a PCB text with a "+" are that text (a "+5V" is a label); a cross on the shapes of a `[[silk.art]]` item (within 0.2 mm) is artwork, one between them is judged like any other. `waive: {"GEO.mark": "…"}` on the nearest part lists its sign as waived – why it exists: the footprint of a 5-mm LED printed "+" at the cathode: GEO.mark read only PCB texts and gave the cathode no sign, so nothing saw it; a review did, before five boards would have been assembled with the LED turned (4.4)
 
 **`GEO.formed`** – formed leads fit one way (error, margin: warning, unknown: note; replaces P-8)  
 A through-hole part whose plated holes the board's footprint (pcb dump) moves away from its library footprint – a hole more than 0.05 mm from the library's hole of the same number, the two footprints laid on each other by their numbers – and that has three or more plated holes is not laid onto itself by a turn of 90°, 180° or 270° about its holes, every hole within 0.25 mm of a hole, with a pin in the hole of a pin on another net of the graph. Pins on one net do not count, two holes and a part on its library pattern are not judged; without the library footprint of edakit part import it is a note.
@@ -137,7 +137,7 @@ Where a part's entry gives an antenna keep-out (antenna.keepout_mm, in the footp
 **`GEO.hole`** – hole fits the lead (error, margin: warning, unknown: note; replaces P-7, L-9)  
 Every plated hole takes its lead at nominal size (lead in the entry) – on the footprint geometry before the layout, on the drill file in the gate; less than 0.05 mm play in the worst case, or a plated slot narrower than 0.5 mm, is a margin.
 - through-hole leads known and fitting the footprint, before the layout: GEO.hole's test (8.1) on the holes of the footprint geometry – the board's `pcb dump`, else the library footprint of `edakit part import`; plated holes without `lead` in the entry pending, a hole that does not take the lead an error (`accept` on the component), tight in the worst case or a plated slot below 0.5 mm a warning; without geometry a note – finds e.g.: a library footprint drilling 0.70 mm for □0.5 mm legs, found before anything is placed
-- every through hole takes its lead at nominal size (lead data in the parts database); worst case (hole −0.08 mm, lead + tolerance) below 0.05 mm play or plated slots narrower than 0.5 mm: warning per part. GEO.hole runs the same test before the layout, on the footprint geometry (3.3) – why it exists: two parts whose leads would not have fitted the library holes
+- every through hole takes its lead at nominal size (lead data in the component's parts entry – its lcsc, or without one the entry its part names, as for every other check, 3.1); worst case (hole −0.08 mm, lead + tolerance) below 0.05 mm play or plated slots narrower than 0.5 mm: warning per part. GEO.hole runs the same test before the layout, on the footprint geometry (3.3) – why it exists: two parts whose leads would not have fitted the library holes
 
 **`GEO.silk`** – silkscreen as printed (error, margin: warning, body: warning; replaces L-17, L-19)  
 edakit's print lies on no solder-mask opening and inside the outline, every part has a visible designator, the visible side carries only the texts the board file puts there, and no print lies under a body larger than its footprint (body.box of the parts entry) – grade body.
@@ -1139,10 +1139,10 @@ section keeps its number, and a project without the key has none. From the tests
 (`tests/test_requirements.py`), offline:
 
 ```markdown
-- **R-1** must, accepted: With all eight LEDs on, the board draws at most 500 mA from J1 at 4.75 to 5.25 V. → open after the export – does not block the release
+- **R-1** must, accepted: Runs from the USB port of a laptop with all eight LEDs on. → open after the export – does not block the release
   - rows `LIM.i * J1 current from the supply` – 12 rows: 12 passed
   - accept: on the USB port of a laptop: all eight LEDs on, the port stays on – after delivery: M-4 not signed yet (section 6)
-- **R-4** must, draft: From power-up until the firmware drives LED_OE low, no LED carries more than 10 µA. → draft, not binding yet – no passing evidence
+- **R-4** must, draft: No LED lights up when the bar is plugged in, before the firmware runs. → draft, not binding yet – no passing evidence
   - rows `SIM.state * D? LED dark` – 48 rows: 48 passed
   - signoff M-1 – not signed for this state (section 6)
 ```

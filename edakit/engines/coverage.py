@@ -23,6 +23,7 @@ from collections import defaultdict
 from dataclasses import dataclass
 
 from ..circuit import is_number, limits, polarized, si, values, wire_mm2, wire_ohm_per_m
+from ..convert import COLORS
 from ..findings import Finding
 
 # a wire with less current carries only the solver's leakage – gmin 1e-12 S and rshunt 1e12 Ω give picoamperes per
@@ -87,6 +88,14 @@ class Gap:
         return f"{self.code}: {self.place} – {self.missing}"
 
 
+def _per_color(kind, r):
+    """[(" for <colour>", its limits)] of an RGB LED – each colour's own table, else the entry's, as engines/sim.py
+    holds each colour; [("", r)] of any other part. All colours without their own table: the entry's limits once."""
+    if kind != "led_rgb" or not any(isinstance(r.get(c), dict) for c in COLORS):
+        return [("", r)]
+    return [(f" for {c}", r.get(c, r)) for c in COLORS]
+
+
 def _thresholds(part, info):
     return all(any(f"{k}_{x}" in src for src in (info, values(part)) for x in ("v", "ratio")) for k in ("vil", "vih"))
 
@@ -143,10 +152,13 @@ def coverage(design, prof=None, sim=None):
             continue
         key, kind, r, p = design.entry_key(des), part.get("kind"), limits(part), values(part)
         for code, names, what in LIMITS_OF.get(kind, []):
-            if not any(n in r for n in names):
-                found[(code, key, f"no {' or '.join(names)} – {what} is not held to a limit")].append(des)
+            for color, rr in _per_color(kind, r):
+                if not any(n in rr for n in names):
+                    found[(code, key, f"no {' or '.join(names)}{color} – {what} is not held to a limit")].append(des)
         if polarized(part) and "vr_max_v" not in r:
             found[("LIM.v", key, "no vr_max_v – its reverse voltage is not held to a limit")].append(des)
+        if kind == "buzzer" and "coil_ohm" in p and "i_max_a" not in r:   # a coil the simulation drives (#90)
+            found[("LIM.i", key, "no i_max_a – its coil current is not held to a limit")].append(des)
         if kind in DISSIPATES and "rth_ja_k_per_w" not in r:
             found[("LIM.t", key, "no rth_ja_k_per_w – no junction temperature")].append(des)
         from ..radio import radios

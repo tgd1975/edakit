@@ -315,8 +315,8 @@ def to_plan(board, c):
     return board.from_eda(c["x"] * MM, c["y"] * MM, c["rotation"], c["layer"])
 
 
-def pin_role(design, comp, num):
-    return (design.parts.get(comp.get("lcsc") or "", {}).get("pins") or {}).get(num, {}).get("role")
+def pin_role(design, des, num):
+    return ((design.part(des) or {}).get("pins") or {}).get(num, {}).get("role")
 
 
 def role_sign(role):
@@ -532,14 +532,17 @@ def check_rows(board, design, rows):
 
 
 TEXT_REACH_MM = 1.2   # GEO.mark: how far from its anchor, per character, the strokes of a PCB text may lie
+ART_REACH_MM = 0.2    # GEO.mark: how far from an artwork's own shapes a cross is still its print (silk apply closes gaps of 0.2 mm)
 
 
 def polarity_signs(cfg, board, d, data):
     """GEO.mark: the signs of the silkscreen as [(sign, x, y, silk layer, how)] in mm – the PCB texts "+", "−", "-", and the
     "+" a footprint draws as two crossing strokes, read from the silk Gerber files (gerber.plus_signs). A drawn "+"
-    near a PCB text with a "+" is that text's print (a "+" text counts once, a "+5V" is a label); one inside the box
-    of a [[silk.art]] item is artwork. -> (signs, silk files missing)."""
+    near a PCB text with a "+" is that text's print (a "+" text counts once, a "+5V" is a label); one on the shapes of
+    a [[silk.art]] item (within ART_REACH_MM) is artwork – not one merely inside the item's box, so an artwork spanning
+    the board leaves the signs between its shapes to be judged. -> (signs, silk files missing)."""
     from shapely.geometry import Point
+    from shapely.ops import unary_union
 
     from .. import silk
     signs = [("+" if s["Text"] == "+" else "−", s["X"] * MM, s["Y"] * MM, s["Layer"], "text")
@@ -553,8 +556,8 @@ def polarity_signs(cfg, board, d, data):
                  if s["Layer"] == layer and "+" in s["Text"]]
         drawn = [p for p in drawn if not any(math.dist(p, t[:2]) <= t[2] for t in texts)]
         if drawn and board.silk.get("art"):
-            art = [g.envelope for g in silk.art_items(cfg, board, side)]
-            drawn = [p for p in drawn if not any(a.covers(Point(p)) for a in art)]
+            art = unary_union(silk.art_items(cfg, board, side)).buffer(ART_REACH_MM)
+            drawn = [p for p in drawn if not art.covers(Point(p))]
         signs += [("+", x, y, layer, "drawn") for x, y in drawn]
     return signs, lost
 
@@ -562,7 +565,7 @@ def polarity_signs(cfg, board, d, data):
 def polar_parts(design, want, on_pcb):
     """GEO.mark: the parts of the graph (want) in the PCB (on_pcb) with a pin whose role has a sign (role_sign)."""
     return {r for r in want if r in on_pcb and any(role_sign(p.get("role")) for p in
-                                                  (design.parts.get(want[r].get("lcsc") or "", {}).get("pins") or {}).values())}
+                                                  ((design.part(r) or {}).get("pins") or {}).values())}
 
 
 def mark_pads(design, want, on_pcb, polar, signs):
@@ -572,7 +575,7 @@ def mark_pads(design, want, on_pcb, polar, signs):
     out = []
     for _, x, y, layer, _ in signs:
         pads = [(ref, p) for ref in sorted(polar) for p in on_pcb[ref]["pads"]
-                if p["Layer"] in (SILK[layer], MULTI) and role_sign(pin_role(design, want[ref], p["PadNumber"]))]
+                if p["Layer"] in (SILK[layer], MULTI) and role_sign(pin_role(design, ref, p["PadNumber"]))]
         out.append(min(pads, key=lambda rp: math.hypot(rp[1]["X"] * MM - x, rp[1]["Y"] * MM - y)) if pads else None)
     return out
 
@@ -594,7 +597,7 @@ def check_polarity_marks(cfg, board, design, d, data, want, on_pcb, rows):
             wrong.append(f"'{sign}' at ({x:.1f}, {y:.1f}) mm: no polarised pad on this side")
             continue
         ref, p = at
-        role = pin_role(design, want[ref], p["PadNumber"])
+        role = pin_role(design, ref, p["PadNumber"])
         if role_sign(role) != sign:
             text = f"'{sign}' at ({x:.1f}, {y:.1f}) mm: nearest pad {ref}.{p['PadNumber']} is {role}"
             reason = accept_reason(want[ref], "GEO.mark")
@@ -808,7 +811,7 @@ def check_pad_layout(board, design, on_pcb, want, geo, rows):
         g = geo.get(ref, {}).get("pads")
         if ref not in want or not g or geo[ref].get("footprint") != c["footprintName"]:
             continue
-        pad_map = design.parts.get(want[ref].get("lcsc") or "", {}).get("pad_map", {})
+        pad_map = (design.part(ref) or {}).get("pad_map", {})
         same = geo[ref].get("pads_same_number", {})
         x, y, rot, side = to_plan(board, c)
         for pad in c["pads"]:
@@ -1047,7 +1050,7 @@ def check_drills(board, design, d, rows):
         pads = [p for p in c["pads"] if p["tht"]]
         if not pads or c.get("designator") not in want:
             continue
-        leads = design.parts.get(want[c["designator"]].get("lcsc") or "", {}).get("lead")
+        leads = (design.part(c["designator"]) or {}).get("lead")
         if not leads:
             nodata.append(c["designator"])
             continue

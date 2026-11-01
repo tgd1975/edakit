@@ -438,7 +438,9 @@ or lower a code's severity (14.2). Exit 1 on errors, with `--release` also on pe
 
 **What went unchecked.** A code that needs a datasheet value skips a part without it: LIM.v a capacitor without
 `v_max_v`, LIM.t every part without `rth_ja_k_per_w`, LVL.threshold an input without `vih`/`vil`, LIM.range an IC
-without its operating range or an op-amp without `vicm_v`. `edakit check` names these gaps in one line above its last
+without its operating range or an op-amp without `vicm_v`, LIM.i a magnetic buzzer (`coil_ohm`) without `i_max_a`. An RGB LED is read per colour, as the simulation holds it
+(5.1): each colour by its own `limits.<color>`, a colour without its own table by the entry's limits – a gap names the
+colour that lacks the value (`LIM.i: D10 – no if_max_a for green – …`). `edakit check` names these gaps in one line above its last
 (`not checked for lack of data: LIM.t 11 parts, LVL.threshold 1 part – edakit check --coverage`), `--coverage` lists
 them per code with the designators and the field that is missing, and the gate protocol lists them in its section 2.
 A gap is no finding – nothing was found, since nobody looked; it closes when the entry gets the value from its
@@ -513,7 +515,19 @@ levels, along the gap between a wish and a circuit:
 | Level | ID | Content | Example (the tests' led-bar) |
 |---|---|---|---|
 | need | N-… | what someone wants, in their words: who, in which situation, what for | N-1 "The bar runs from a USB charger or from the USB port of a laptop." |
-| requirement | R-… | one testable sentence with quantity, limit and condition, bound as `must`, `should` or `may` | R-1 "With all eight LEDs on, the board draws at most 500 mA from J1 at 4.75 to 5.25 V." |
+| requirement | R-… | one statement of what the circuit must do, in the words and at the level of detail of who stated it, bound as `must`, `should` or `may` | R-1 "Runs from the USB port of a laptop with all eight LEDs on." |
+
+**Inputs, not outputs.** A requirement is what someone involved states – the maker, a user, a standard or law the
+maker chooses –, from the customer's view and at the level of detail they give it ("a servo must be driven" as much
+as "pin X never above Y"). Nothing edakit generates or the circuit designer derives is one: not a simulated value, a
+check result, the derating, a part's limit or a choice the design made on its own. The test is who stated it: a
+choice the maker made is a requirement (the LED colours, two buttons, a module on headers); one the designer or edakit
+made is not (the regulator, a series resistor's 330 Ω). The numbers that follow – the current that keeps a power bank
+on, the voltage at a servo's start – stay in sim.json and the graph's notes and reach the requirement as its evidence
+(`rows`): R-1 above names no current, its rows `LIM.i * J1 current from the supply` test it against the 500 mA of
+USB 2.0. What edakit's catalog checks on every board (the parts' limits, the levels, the radio law of M-6) needs no
+requirement – the gate fails on it anyway. A project designed before its file gets inferred drafts: its parts lifted
+to what a person sees, presses, plugs in, hears, each marked inferred until the owner says yes.
 
 `source` says where an entry was found – a document, a decision –, `from` where a requirement comes from: a need, a
 decision (D-8), a standard (USB 2.0: 500 mA), a sign-off (M-6). `verify` says what tests it: rows of the gate
@@ -523,12 +537,12 @@ stable, as in the rule catalog: a requirement that no longer holds stays in the 
 `reason`. Claude drafts – `status = "draft"`, which is also what an entry without `status` is –, only the user sets
 `accepted`; a change to an accepted requirement is a decision in the decision log.
 
-**Who writes it.** The skill `requirements`, in the conversation with the user: it collects what the circuit must do,
-asks back in one decision round until vague words are numbers and contradictions are decided, writes drafts and has
+**Who writes it.** The skill `requirements`, in the conversation with the user: it collects what those involved state the circuit must do,
+asks back in one decision round until vague words are the maker's numbers and contradictions are decided, writes drafts and has
 the user approve them – approving a requirement is one of the user's real decisions (11.4). It writes this file and
 the decision log, never the graph. In a project with documents the agent `requirements-engineer` makes the inventory
-first: it reads every document in its own context, changes nothing, and returns candidates with the place it found
-them, contradictions, vague words and requirements without evidence; on a finished file it gives a second opinion.
+first: it reads every document in its own context, changes nothing, and returns candidates with who stated them,
+what edakit already checks on every board, contradictions, vague words and requirements without evidence; on a finished file it gives a second opinion.
 The circuit designer reads the file instead of asking for the requirements (skill circuit-design), a new function
 starts with its requirement, and each reviewer judges the requirements its sign-off verifies (8.7). The roles: 14.1.
 

@@ -213,7 +213,8 @@ Handbook: [8.3 The decision](../handbook/08-release-gate.md#83-the-decision).
 
 ### Requirement
 
-One testable sentence with quantity, limit and condition, numbered `R-…` in the requirements file. It is bound as
+What the circuit must do, as the maker, a user or a chosen standard states it, numbered `R-…` in the requirements
+file. Nothing edakit or the design derived is one. It is bound as
 `must`, `should` or `may`.
 Handbook: [3.6 Requirements](../handbook/03-hardware-graph.md#36-requirements).
 

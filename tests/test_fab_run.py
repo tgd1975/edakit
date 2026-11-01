@@ -922,6 +922,41 @@ def test_each_fault_is_found_by_its_check(project, fault, expected):
             [(r["result"], r["actual"]) for r in rows if r["id"] == cid]
 
 
+def by_mpn(*refs):
+    """The components refs bought elsewhere: no lcsc, their parts entry found by its mpn = the component's part (#88)."""
+    def fault(ex, project):
+        graph(project, lambda g: [project.comp(g, r).pop("lcsc") for r in refs])
+    return fault
+
+
+def test_a_through_hole_part_keyed_by_its_mpn_has_its_lead(project):
+    rows = run(project, by_mpn("J1"))
+    assert findings(rows) == []
+    by = {(r["id"], r["check"]): r["actual"] for r in rows}
+    assert by["GEO.hole", "lead size of every through-hole part in the parts database (field lead)"] == "all"
+    assert by["GEO.hole", "hole takes the lead at nominal size (diagonal or edge, or manufacturer's value)"] == "2 holes"
+
+
+def test_a_hole_too_small_for_the_lead_of_a_part_keyed_by_its_mpn(project):
+    def fault(ex, p):
+        by_mpn("J1")(ex, p)
+        ex.pth[:] = [h[:2] + (0.5,) for h in ex.pth]
+    rows = run(project, fault)
+    assert findings(rows) == [("GEO.hole", "fail")]
+    assert any(r["id"] == "GEO.hole" and "J1.1: hole 0.50 mm for diagonal 0.71 mm" in r["actual"] for r in rows)
+
+
+def test_the_polarity_of_a_part_keyed_by_its_mpn_is_checked(project):
+    """GEO.mark reads the pin roles from the same entry: D1 bought elsewhere (outside the BOM of JLCPCB)."""
+    def fault(ex, p):
+        by_mpn("D1")(ex, p)
+        ex.bom = [e for e in ex.bom if e["reference"] != "D1"]
+        ex.pcb["strings"][0].update(Text="−")
+    rows = run(project, fault)
+    assert findings(rows) == [("GEO.mark", "fail")]
+    assert any(r["id"] == "GEO.mark" and "nearest pad D1.2 is anode" in r["actual"] for r in rows)
+
+
 def test_a_waived_pad_pair_is_listed_with_its_reason(project):
     def waived(ex, p):
         crowd(ex, p)
@@ -1027,6 +1062,22 @@ def test_a_cross_in_the_artwork_is_not_read(project):
     rows = run(project, art)
     assert findings(rows) == []
     assert not [r for r in rows if r["id"] == "GEO.mark"]                    # no sign left to compare
+
+
+def test_a_sign_inside_the_artworks_box_but_off_its_shapes_is_judged(project):
+    """#92: an artwork spanning the whole board – two corner squares, its box the board and more – leaves the signs
+    between its shapes to GEO.mark; only a cross on the artwork's own shapes is artwork."""
+    def art(ex, p):
+        plus_at(*CATHODE, text=False)(ex, p)
+        (p.root / "corners.svg").write_text('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10">'
+                                            '<rect x="0" y="0" width="1" height="1" fill="black"/>'
+                                            '<rect x="9" y="9" width="1" height="1" fill="black"/></svg>')
+        board_file(p, 'edge_ok = ["J1"]', 'edge_ok = ["J1"]\n\n[[silk.art]]\nsvg = "corners.svg"\n'
+                   "x = 15\ny = 10\nwidth_mm = 30")
+    rows = run(project, art)
+    assert findings(rows) == [("GEO.mark", "fail")]
+    assert "'+' at (15.2, 10.9) mm: nearest pad D1.1 is cathode" in \
+        next(r for r in rows if r["id"] == "GEO.mark")["actual"]
 
 
 def test_a_waived_sign_is_listed_with_its_reason(project):

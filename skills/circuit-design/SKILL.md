@@ -116,7 +116,8 @@ A supply that comes and goes – USB plugged and unplugged, a switch-over to cel
 the plug-in, the unplug and the switch-over ramp, with the rail's lowest voltage and the inrush as `expect`; LIM.v holds
 the MCU above its minimum once it has started.
 A board people touch (requirements: what a person touches): `touch_c` with its limit from the product's standard
-(IEC 62368-1 TS1: 48 °C for longer than a minute) – LIM.t holds every part with `rth_ja_k_per_w` on it to that limit.
+(IEC 62368-1 TS1: 48 °C for longer than a minute) – LIM.t holds every part with `rth_ja_k_per_w` on it to that limit, at the scenarios' `ambient_c`; a limit stated
+for another room temperature names it (`{"max_c": 60, "ambient_c": 25}`, handbook 5.2).
 A requirement that simulation rows verify (`edakit req`) needs its scenario here – sim.json is yours, the pattern in
 its `verify` belongs to the requirements file.
 

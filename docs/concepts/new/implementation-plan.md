@@ -56,7 +56,7 @@ starts when the user asks for it.
 | 4.2 | Bell: entries for `kunst` and `tdisplay` | project-scripts example | S | no | 2.4 | done in the bell (2026-11-01, on its main: `[scripts.kunst]` ×5, `[scripts.tdisplay]`) |
 | 4.3 | Bell: the circuit as a language and as TOML with names, then the choice | design-as-text decision 8 | M | no | – | written (3f2b9e3, 7bbf3ce); reviewed and decided 2026-10-31: the language deferred, TOML with names the form; what both forms share has a plan of its own, circuit-language-plan.md, built 2026-10-31 (L.1–L.8; L.9, the bell converting, done there 2026-11-01); the language thought further in circuit-dsl.md |
 | 4.4 | Tree: its positions, scripts, agents and requirements | all three | M | yes | the tree's move, 2.1, 3.7 | open |
-| 4.5 | The requirements file becomes required | requirements decision 5 | S | no | 4.1, 4.4 | open |
+| 4.5 | The requirements file becomes required | requirements decision 5 | S | no | 4.1, 4.4, requirements as inputs (#97) and the bell's file rewritten after it (its D-39) | open – the first files are the examples others copy |
 | 5.0 | Probes: the makers' pages in the owner's browser, EasyEDA's ODB++ | ordering steps 0, 0b | – | yes (0b) | the owner's Chrome | done: step 0 (2026-10-31, branch `makers-step0`), 0b (2026-11-01, branch `makers-step0b`) |
 | 5.1 | The order form as fields, `order.md` from them | ordering step 1 | S | no | – | done (d58f4ae) |
 | 5.2 | Every field of the form as a key, edakit's defaults, `edakit cart fields` | ordering step 2 | M | no | 5.0, 5.1 | done (d58f4ae) – the keys of the reference orders; 5.0 adds what the forms show |

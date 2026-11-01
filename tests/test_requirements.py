@@ -13,7 +13,7 @@ LED_BAR = """\
 id = "N-1"
 text = "The bar runs from a USB charger or from the USB port of a laptop."
 who = "whoever uses the bar"
-source = "README.md, sim.json J1"
+source = "README.md: the supply"
 status = "accepted"
 
 [[need]]
@@ -39,7 +39,7 @@ reason = "the TLC5916 and the Pico 2 want 5 V: a cell needs a boost converter, w
 
 [[requirement]]
 id = "R-1"
-text = "With all eight LEDs on, the board draws at most 500 mA from J1 at 4.75 to 5.25 V."
+text = "Runs from the USB port of a laptop with all eight LEDs on."
 source = "README.md"
 from = ["N-1", "USB 2.0: 500 mA per port"]
 binding = "must"
@@ -49,7 +49,8 @@ status = "accepted"
 
 [[requirement]]
 id = "R-2"
-text = "A supply plugged into J1 the wrong way round reaches only the anode of D1."
+text = "A supply plugged in the wrong way round damages nothing."
+source = "README.md: a diode against reverse polarity"
 from = ["N-1"]
 binding = "must"
 verify = [{ rows = "PATH.reverse *" }]
@@ -57,7 +58,7 @@ status = "accepted"
 
 [[requirement]]
 id = "R-3"
-text = "Every LED that is on carries at least 7.5 mA (80 % of the 9.45 mA R1 sets) at 4.75 to 5.25 V."
+text = "Every LED that is on can be read in a lit room."
 from = ["N-2"]
 binding = "should"
 verify = [{ rows = "SIM.state * D? LED current *" }]
@@ -65,7 +66,7 @@ status = "accepted"
 
 [[requirement]]
 id = "R-4"
-text = "From power-up until the firmware drives LED_OE low, no LED carries more than 10 µA."
+text = "No LED lights up when the bar is plugged in, before the firmware runs."
 from = ["N-3"]
 binding = "must"
 verify = [{ rows = "SIM.state * D? LED dark" }, { signoff = "M-1" }]
@@ -103,9 +104,9 @@ def test_req_lists_needs_and_requirements_with_status_binding_and_evidence(proje
     assert re.search(r"N-1 +accepted +The bar runs from a USB charger", out)
     assert re.search(r"N-4 +dropped +The bar also runs from one Li-ion cell", out)
     assert "a cell needs a boost converter" in out                         # a dropped entry stays with its reason
-    assert re.search(r"R-1 +accepted +must +With all eight LEDs on", out)
+    assert re.search(r"R-1 +accepted +must +Runs from the USB port", out)
     assert re.search(r"R-3 +accepted +should +Every LED that is on", out)
-    assert re.search(r"R-4 +draft +must +From power-up", out)
+    assert re.search(r"R-4 +draft +must +No LED lights up", out)
     for evidence in ("rows LIM.i * J1 current from the supply", "accept on the USB port of a laptop", "rows PATH.reverse *",
                      "signoff M-1"):
         assert evidence in out                                              # verify as written
@@ -117,7 +118,7 @@ def test_req_id_shows_the_chain_from_where_it_comes_from_to_what_verifies_it(pro
     toml = with_requirements(project)
     assert req(toml, "R-1") == 0
     out = capsys.readouterr().out
-    origin, text = out.index("The bar runs from a USB charger"), out.index("With all eight LEDs on")
+    origin, text = out.index("The bar runs from a USB charger"), out.index("Runs from the USB port of a laptop")
     evidence = out.index("LIM.i * J1 current from the supply")
     assert origin < text < evidence and "USB 2.0: 500 mA per port" in out
     assert "on the USB port of a laptop" in out and "not evaluated" in out
@@ -138,7 +139,7 @@ def test_req_unknown_id(project, capsys):
     toml = with_requirements(project)
     assert req(toml, "R-1", "R-9") == 1
     out = capsys.readouterr().out
-    assert "R-9: not in the requirements file" in out and "With all eight LEDs on" in out
+    assert "R-9: not in the requirements file" in out and "Runs from the USB port of a laptop" in out
 
 
 def test_without_the_key_there_is_no_requirements_file(project, capsys):
@@ -153,6 +154,15 @@ def test_a_file_named_in_the_key_must_exist(project, capsys):
     (project.root / "hardware" / "requirements.toml").unlink()
     assert req(toml) == 1
     assert "hardware/requirements.toml: not found" in capsys.readouterr().err
+
+
+def test_the_example_is_in_the_makers_words():
+    """The example others copy (#97): every requirement says what the maker wants, with no number edakit or the
+    design derived – the numbers stay in sim.json and reach the requirement as its rows."""
+    texts = re.findall(r'^text = "(.*)"$', LED_BAR.split("[[requirement]]", 1)[1], re.M)
+    assert texts[0] == "Runs from the USB port of a laptop with all eight LEDs on."
+    assert not [t for t in texts if re.search(r"\d+(\.\d+)? ?(m?A|µA|V|%)", t)]
+    assert "sim.json" not in LED_BAR
 
 
 def test_the_example_reads_without_problems(project):
@@ -173,7 +183,7 @@ def test_a_requirement_names_where_it_was_found(project, capsys):
     """source on a requirement: where it was found, as on a need; from stays where it comes from."""
     toml = with_requirements(project)
     assert req(toml) == 0
-    assert re.search(r"R-1 +accepted +must +With all eight LEDs on.*\n +source: README.md\n"
+    assert re.search(r"R-1 +accepted +must +Runs from the USB port.*\n +source: README.md\n"
                      r" +from: N-1, USB 2.0: 500 mA per port\n", capsys.readouterr().out)
     assert req(toml, "R-1") == 0
     assert re.search(r"\n  source +README.md\n  from +N-1 ", capsys.readouterr().out)

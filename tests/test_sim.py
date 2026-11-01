@@ -203,6 +203,26 @@ def test_relay_pulls_in_and_releases(project):
     assert any(c["item"] == "X1" and c["check"].startswith("relay releases") for c in failing(simulate(project, sim)))
 
 
+def test_buzzer_coil_current_is_held_to_its_rating(project):
+    """#90: a buzzer's coil current against the i_max_a of its entry – 5 V across 42 Ω is above 80 mA when it is on."""
+    from test_checks import BUZZER, add_flyback, coil_stage
+    part = json.loads(json.dumps(BUZZER))
+    part["limits"]["i_max_a"] = 0.08
+    coil_stage(project, part, ("plus", "minus"))
+    add_flyback(project)
+    sim = json.loads((project.root / "hardware" / "sim.json").read_text())
+    sim["mcu"]["U1"]["outputs"].append("DRIVE")
+    sim["loads"]["all_on"]["gpio"]["DRIVE"] = 1
+    out = simulate(project, sim)
+    rows = [c for c in out["checks"] if c["item"] == "X1" and c["check"].startswith("coil current")]
+    assert rows and all(c["id"] == "LIM.i" for c in rows)
+    assert {c["result"] for c in rows if "all_on" in c["scenario"]} == {"fail"}
+    assert {c["result"] for c in rows if "idle" in c["scenario"]} == {"pass"}
+    part["limits"]["i_max_a"] = 0.15                              # rated above the coil's static current
+    project.save_part(part["lcsc"], part)
+    assert not failing(simulate(project, sim))
+
+
 def test_zero_ohm_bridges(project):
     from test_checks import bridged
     bridged(project)                                              # R10–R12: 0 Ω, D9 reaches OUT7 through R12

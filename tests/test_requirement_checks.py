@@ -184,9 +184,11 @@ DERIVED = "names nobody who stated it"
     ('source = "README.md"\nfrom = ["N-1", "USB', 'source = "edakit.toml"\nfrom = ["N-1", "USB',
      "R-1: names nobody who stated it – source names 'edakit.toml'"),
     # without source: from – a requirement or a manual check is nobody
-    ('from = ["N-1"]\nbinding = "must"\nverify = [{ rows = "PATH', 'from = ["R-1", "M-1"]\nbinding = "must"\nverify = [{ rows = "PATH',
+    ('source = "README.md: a diode against reverse polarity"\nfrom = ["N-1"]\nbinding = "must"\nverify = [{ rows = "PATH',
+     'from = ["R-1", "M-1"]\nbinding = "must"\nverify = [{ rows = "PATH',
      "R-2: names nobody who stated it – no source, from names R-1, M-1"),
-    ('from = ["N-1"]\nbinding = "must"\nverify = [{ rows = "PATH', 'binding = "must"\nverify = [{ rows = "PATH',
+    ('source = "README.md: a diode against reverse polarity"\nfrom = ["N-1"]\nbinding = "must"\nverify = [{ rows = "PATH',
+     'binding = "must"\nverify = [{ rows = "PATH',
      "R-2: names nobody who stated it – no source, no from"),
 ])
 def test_derived_a_requirement_names_who_stated_it(project, capsys, old, new, message):
@@ -566,17 +568,17 @@ def test_the_protocol_lists_each_requirement_with_its_evidence(project, monkeypa
     eleven = section(text, 11)
     assert eleven.startswith("Requirements\n\nFrom `hardware/requirements.toml`, each requirement with its evidence "
                              "in this run")
-    assert ("- **R-1** must, accepted: With all eight LEDs on, the board draws at most 500 mA from J1 at 4.75 to "
-            "5.25 V. → open after the export – does not block the release\n"
+    assert ("- **R-1** must, accepted: Runs from the USB port of a laptop with all eight LEDs on. "
+            "→ open after the export – does not block the release\n"
             "  - rows `LIM.i * J1 current from the supply` – 12 rows: 12 passed\n"
             "  - accept: on the USB port of a laptop: all eight LEDs on, the port stays on – after delivery: M-4 not "
             "signed yet (section 6)\n") in eleven
-    assert "- **R-2** must, accepted: A supply plugged into J1 the wrong way round reaches only the anode of D1. → passed\n" \
+    assert "- **R-2** must, accepted: A supply plugged in the wrong way round damages nothing. → passed\n" \
            "  - rows `PATH.reverse *` – 1 row: 1 passed\n" in eleven
     assert "  - rows `SIM.state * D? LED current *` – 48 rows: 48 passed\n" in eleven
     # R-4 is a draft: listed with its evidence as evaluated, it binds nothing yet – no reason, no acceptance (G-23)
-    assert ("- **R-4** must, draft: From power-up until the firmware drives LED_OE low, no LED carries more than "
-            "10 µA. → draft, not binding yet – no passing evidence\n"
+    assert ("- **R-4** must, draft: No LED lights up when the bar is plugged in, before the firmware runs. "
+            "→ draft, not binding yet – no passing evidence\n"
             "  - rows `SIM.state * D? LED dark` – 48 rows: 48 passed\n"
             "  - signoff M-1 – not signed for this state (section 6)\n") in eleven
     reasons = decision(text)
@@ -640,7 +642,7 @@ def test_the_requirements_file_counts_in_the_circuit_hash(project):
     cfg = project.config()
     assert gate.state_files(cfg)[-1] == project.root / "hardware" / "requirements.toml"
     h = gate.header(cfg)
-    rewrite(project, "at most 500 mA", "at most 400 mA")
+    rewrite(project, "all eight LEDs on.", "all eight LEDs lit.")
     h2 = gate.header(project.config())
     assert h2["state_sha256"] != h["state_sha256"] and h2["layout_sha256"] == h["layout_sha256"]
 
@@ -675,7 +677,7 @@ def test_a_variant_counts_the_main_projects_file(project):
     cfg = config.load(toml)
     assert gate.state_files(cfg)[-2:] == cfg.requirements
     h = gate.state_hash(cfg)
-    rewrite(project, "at most 500 mA", "at most 400 mA")                    # the main project's file
+    rewrite(project, "all eight LEDs on.", "all eight LEDs lit.")                    # the main project's file
     assert gate.state_hash(config.load(toml)) != h
 
 
@@ -688,7 +690,7 @@ def test_the_firmware_contract_drifts_with_the_requirements(project, monkeypatch
     monkeypatch.delenv("EDAKIT_CONFIG", raising=False)
     assert cli.main(["firmware"]) == 0 and cli.main(["firmware", "--check"]) == 0
     capsys.readouterr()
-    rewrite(project, "at most 500 mA", "at most 400 mA")
+    rewrite(project, "all eight LEDs on.", "all eight LEDs lit.")
     assert cli.main(["firmware", "--check"]) == 2
     out = capsys.readouterr().out
     assert "drift" in out and "state_sha256" in out

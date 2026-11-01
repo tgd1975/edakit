@@ -9,7 +9,7 @@ agreements are as important as the scripts.
 |---|---|---|
 | skill | `/edakit:start` | EasyEDA ready, long runs, GUI clicks, crash recovery – before any EasyEDA work |
 | skill | `/edakit:new-project` | set up edakit in a repository – a new project, or one that moves to edakit with hardware files, scripts or agents of its own (then the inventory first): an interview from boards, the schematic's drawing, the maker, assembly, order, money and purpose to firmware, documents and the project's own tools, every key from an answer, written after the user's OK (2.7) |
-| skill | `/edakit:requirements` | what the circuit must do, with the user: needs and requirements with their evidence in `hardware/requirements.toml`, asked back in a decision round until vague words are numbers – Claude drafts, the user accepts (3.6) |
+| skill | `/edakit:requirements` | what the circuit must do, with the user: needs and requirements with their evidence in `hardware/requirements.toml`, as those involved state them, not as edakit derives them, asked back in a decision round until vague words are the maker's numbers – Claude drafts, the user accepts (3.6) |
 | skill | `/edakit:circuit-design` | from requirements to a graph: blocks, parts, computed values, checks, hints, simulation (chapter 14) |
 | skill | `/edakit:hardware-change` | a change from graph to PCB and docs |
 | skill | `/edakit:part-search` | find a part at the project's distributors, create and sign its parts entry |

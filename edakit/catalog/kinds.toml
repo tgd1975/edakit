@@ -194,7 +194,7 @@ values = ["r_contact_ohm"]
 
 [kinds.buzzer]
 roles = ["plus", "minus"]
-limits = ["v_max_v"]
+limits = ["v_max_v", "i_max_a"]
 values = ["coil_ohm"]
 
 [kinds.relay]                                # a second contact set (DPDT): common_2, no_2, nc_2 – each set switched

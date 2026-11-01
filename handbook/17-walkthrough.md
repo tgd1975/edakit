@@ -65,8 +65,8 @@ that touches `hardware/`), `.gitignore` (`build/`) and `.claude/settings.json`, 
 
 ## 17.3 What it must do
 
-`/edakit:requirements` turns the idea into needs – who wants what, in their words – and requirements: one testable
-sentence each, with a number, and what tests it (3.6). It asks back until vague words are numbers ("lights" becomes
+`/edakit:requirements` turns the idea into needs – who wants what, in their words – and requirements: one statement
+each, as you state it, and what tests it (3.6). It asks back until vague words are your numbers ("lights" becomes
 1 mA, "a used cell" 2.5 V, the end voltage Rayovac rates the CR2032's capacity to):
 
 ```toml

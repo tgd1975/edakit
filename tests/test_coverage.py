@@ -4,6 +4,7 @@
 from edakit import cli, engines
 from edakit.design import Design
 from edakit.engines.coverage import coverage, summary
+from test_sim import RGB, rgb_led
 
 
 def gaps(project):
@@ -24,6 +25,35 @@ def test_a_limit_the_entry_lacks_is_a_gap(project):
     part["limits"].pop("v_max_v")
     project.save_part("C45783", part)
     assert "LIM.v: C2 – no v_max_v – its voltage is not held to a limit (C45783)" in [g.line() for g in gaps(project)]
+
+
+def test_an_rgb_led_is_held_per_colour(project):
+    """An RGB LED with if_max_a per colour (limits.red.if_max_a …) is no gap of LIM.i – the simulation holds each
+    colour to its own limit, as edakit sim reads it (proposal #91)."""
+    rgb_led(project)
+    assert not any("D10" in g.place for g in gaps(project) if g.code == "LIM.i")
+
+
+def test_an_rgb_led_colour_without_its_limit_is_named(project):
+    rgb_led(project)
+    part = project.part(RGB["lcsc"])
+    part["limits"]["green"].pop("if_max_a")
+    project.save_part(RGB["lcsc"], part)
+    lines = [g.line() for g in gaps(project) if g.code == "LIM.i"]
+    assert lines == ["LIM.i: D10 – no if_max_a for green – its forward current is not held to a limit (C7371895)"]
+
+
+def test_an_rgb_led_with_one_limit_for_all_colours(project):
+    """Flat limits hold every colour, as in the simulation (a colour without its own table takes the entry's)."""
+    rgb_led(project)
+    part = project.part(RGB["lcsc"])
+    part["limits"] = {"if_max_a": 0.02, "vr_max_v": 5}
+    project.save_part(RGB["lcsc"], part)
+    assert not any("D10" in g.place for g in gaps(project) if g.code == "LIM.i")
+    part["limits"] = {"vr_max_v": 5}
+    project.save_part(RGB["lcsc"], part)
+    assert [g.line() for g in gaps(project) if g.code == "LIM.i"] == [
+        "LIM.i: D10 – no if_max_a – its forward current is not held to a limit (C7371895)"]
 
 
 def test_thresholds_close_the_gap(project):
@@ -51,3 +81,18 @@ def test_the_protocol_lists_the_gaps(project, monkeypatch):
     two = text.split("## 2 ")[1].split("\n## ")[0]
     assert "Not checked for lack of data – no finding, nobody looked" in two
     assert "- LVL.threshold: U2 – inputs without thresholds" in two
+
+
+def test_a_buzzer_coil_without_its_current_limit_is_named(project):
+    """#90: the simulation holds a buzzer's coil current to i_max_a – a coil without it is a gap, a piezo (no coil_ohm,
+    not simulated) is none."""
+    from test_checks import BUZZER, coil_stage
+    coil_stage(project, BUZZER, ("plus", "minus"))
+    assert "LIM.i: X1 – no i_max_a – its coil current is not held to a limit (C409842)" in [
+        g.line() for g in gaps(project)]
+    part = dict(BUZZER, limits={"v_max_v": 7, "i_max_a": 0.15})
+    project.save_part(part["lcsc"], part)
+    assert not any("X1" in g.place for g in gaps(project) if g.code == "LIM.i")
+    piezo = dict(BUZZER, values={})
+    project.save_part(piezo["lcsc"], piezo)
+    assert not any("X1" in g.place for g in gaps(project) if g.code == "LIM.i")

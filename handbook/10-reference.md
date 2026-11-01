@@ -334,13 +334,13 @@ covers it byte for byte (8.2). A key edakit does not know is an error, as in eda
 id = "N-1"
 text = "The bar runs from a USB charger or from the USB port of a laptop."
 who = "whoever uses the bar"
-source = "README.md, sim.json J1"
+source = "README.md: the supply"
 status = "accepted"
 
 [[requirement]]
 id = "R-1"
-text = "With all eight LEDs on, the board draws at most 500 mA from J1 at 4.75 to 5.25 V."
-source = "sim.json: the note of source J1"
+text = "Runs from the USB port of a laptop with all eight LEDs on."
+source = "README.md"
 from = ["N-1", "USB 2.0: 500 mA per port"]
 binding = "must"
 verify = [{ rows = "LIM.i * J1 current from the supply" },
@@ -351,9 +351,9 @@ status = "accepted"
 | Key | In | Meaning |
 |---|---|---|
 | `id` | both, required | `N-<n>` in a `[[need]]`, `R-<n>` in a `[[requirement]]`, without a leading zero; unique across the files of the project, a variant's own included; stable – a dropped entry keeps its number |
-| `text` | both, required | a need in the words of those who want it; a requirement as one testable sentence: quantity with unit, limit, condition |
+| `text` | both, required | a need in the words of those who want it; a requirement as one statement in the words and at the level of detail of who stated it – the maker, a user, a chosen standard (3.6) –, no number edakit or the design derived: those reach it through `verify` |
 | `who` | need | who wants it |
-| `source` | both | where it was found: a document, a decision; on a requirement next to `from`, which says where it comes from |
+| `source` | both | where it was found and who stated it: a document, a decision, the user with a date – an entry inferred from the circuit says so until the owner confirms it; on a requirement next to `from`, which says where it comes from |
 | `from` | requirement | a list of where it comes from: needs (`N-2`), decisions (`D-8`), a standard (`USB 2.0: 500 mA`), a sign-off (`M-6`) |
 | `binding` | requirement, required | `must`, `should` or `may` |
 | `verify` | requirement | a list of what tests it, one kind per entry: `{ rows = "…" }` rows of the gate protocol, a pattern over "ID scenario item check" as `accept` match them (8.2); `{ signoff = "M-1" }` a manual check, which counts when its `note` names the requirement's ID; `{ script = "…" }` a project script of kind `check` or the id of a `[[release.stages]]` – it passes when the check passed in the gate's run, one of phase `order` or `acceptance` once M-2 or M-4 is signed; `{ accept = "…" }` a step of the acceptance test, on the list of protocol section 6. `edakit req` shows it as written, the gate evaluates it (8.7) |

@@ -325,6 +325,7 @@ def stress(s):
                 s.q(des, "i", abs(i), "A", kind, des, "average current")
             elif kind == "buzzer":
                 s.q(des, "v", abs(a - b), "V", kind, des, "coil voltage")
+                s.q(des, "i", abs(i), "A", kind, des, "coil current")
             elif kind == "relay_coil":
                 s.q(des, "v_coil", abs(a - b), "V", kind, des, "coil voltage")
             elif kind == "capacitor":
@@ -445,9 +446,21 @@ def junction(s, des, p, r, what=None):
                                                                   f"criteria's {s.crit['tj_max_c']:g} °C)")])
     board = (s.n.comps.get(des) or {}).get("board")
     lim = (s.sim.get("touch_c") or {}).get(board)
-    if lim is not None:
+    if lim is None:
+        return
+    room = lim.get("ambient_c") if isinstance(lim, dict) else None     # the room the touch limit applies at
+    if room is None:
         s.q(des, "tj", tj, "°C", "", des, f"temperature where people touch (board {board})", entry=False,
-            lims=[Limit(max=lim, source=f"touch_c of sim.json for board {board}")])
+            lims=[Limit(max=touch_max(lim), source=f"touch_c of sim.json for board {board}")])
+    else:
+        s.q(des, "tj", room + p * rth, "°C", "", des, f"temperature where people touch at {room:g} °C room (board "
+            f"{board})", entry=False, lims=[Limit(max=lim["max_c"], source=f"touch_c of sim.json for board {board}, "
+                                                                            f"at {room:g} °C room")])
+
+
+def touch_max(lim):
+    """The limit of a touch_c entry: the plain number or its max_c."""
+    return lim["max_c"] if isinstance(lim, dict) else lim
 
 
 # --- function: what the circuit does in the scenario -----------------------------------------------------------------
