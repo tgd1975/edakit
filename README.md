@@ -246,6 +246,19 @@ Where it stands:
   Noncommercial 1.0.0 – check before commercial use), EasyEDA Pro (proprietary), Freerouting (GPL-3.0), ngspice (BSD).
   None of them is bundled.
 
+## Future work
+
+Two changes would alter how a project works; the rest is smaller extensions and fixes.
+
+- **Ordering through the makers' interfaces.** Today Claude in Chrome fills a maker's pages up to the cart. Through
+  the maker's API the same steps would run without a browser: the files uploaded, the quote read, the same checks on
+  what comes back. You still order and pay. What each maker offers: [handbook 8.4](handbook/08-release-gate.md), its
+  part "Future work".
+- **The circuit in a language of its own.** A notation of edakit's own instead of the TOML graph, compiled to the
+  graph the checks read. Blocks take parameters, and a variant's graph is a few lines on top of the main one instead
+  of a full copy. A project would convert once. What it would be and when it is worth building:
+  [circuit-dsl](docs/concepts/new/circuit-dsl.md).
+
 ## Licence
 
 MIT – see [LICENSE](LICENSE).
