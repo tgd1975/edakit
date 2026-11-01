@@ -190,7 +190,7 @@ RED = {
                                               "08-release-gate", "10-reference", "17-walkthrough")},
     "paragraphs": {"README.md", "examples/coin-cell-led/docs/decisions.md",
                    "examples/blinker-555/docs/decisions.md"} | {f"handbook/{c}.md" for c in (
-        "01-approach", "02-setup", "03-hardware-graph", "04-parts-database", "05-simulation", "06-schematic", "07-pcb",
+        "01-approach", "03-hardware-graph", "04-parts-database", "05-simulation", "06-schematic", "07-pcb",
         "08-release-gate", "10-reference", "14-design", "15-regulatory", "16-kicad", "17-walkthrough")},
     "references": set(),
     "words": {"README.md"} | {f"handbook/{c}.md" for c in (

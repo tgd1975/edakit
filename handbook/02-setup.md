@@ -1,5 +1,8 @@
 # 2 Setup
 
+For everyone who installs edakit. After this chapter the tool chain runs, `edakit doctor` finds it ready, and a first
+project is set up.
+
 Tested with EasyEDA Pro 3.2.209 on Linux (Ubuntu), easyeda-mcp-pro 1.6.0, Node 24, Python 3.11–3.14, ngspice 45,
 Freerouting 2.4.1, Claude Code 2.1.3xx. Windows and macOS should work for everything except the bundled Freerouting
 download (set `FREEROUTING_JAR`) – untested.
@@ -12,30 +15,29 @@ Claude Code ──stdio──► easyeda-mcp-pro ◄──WebSocket 127.0.0.1:49
 edakit ──────stdio──► easyeda-mcp-pro (its own instance, the same bridge connection)
 ```
 
-EasyEDA Pro has no command line and no HTTP API. It can be automated only through its **extension API**, which
-exists inside the running editor. [easyeda-mcp-pro](https://github.com/oaslananka/easyeda-mcp-pro) brings an
-extension that connects to a local MCP server; the server exposes 115 tools plus a controlled generic call into the
-extension API. edakit uses the same server.
+EasyEDA Pro has no command line and no HTTP API; only its **extension API**, inside the running editor, automates
+it. [easyeda-mcp-pro](https://github.com/oaslananka/easyeda-mcp-pro) brings an extension that connects to a local MCP
+server with 115 tools plus a controlled generic call into the extension API. edakit uses the same server.
 
 ## 2.2 Install
 
 1. **EasyEDA Pro** (desktop, not the web version): from easyeda.com. Create or open your project once.
-2. **Node 24** (easyeda-mcp-pro 1.6.0 requires it): `nvm install 24`. The launcher sources nvm itself when started
-   from a desktop client without it in PATH.
+2. **Node 24** (easyeda-mcp-pro 1.6.0 requires it): `nvm install 24`. Started from a desktop client without nvm in
+   PATH, the launcher sources nvm itself.
 3. **uv** (runs edakit with its dependencies): <https://docs.astral.sh/uv/>.
 4. **ngspice** (stage E): `sudo apt install ngspice` (or your package manager).
-   **pdftotext** (optional, poppler-utils): `edakit part fetch` checks with it whether a datasheet has a text layer
-   and names its part number (4.6).
+   **pdftotext** (optional, poppler-utils): with it `edakit part fetch` (datasheets, 4.6) checks whether a datasheet
+   has a text layer and names its part number.
 5. **Freerouting**: nothing to do on Linux x64 – `edakit route` downloads the pinned release (with its own Java)
    to `~/.local/share/freerouting/` and checks its SHA-256. Elsewhere: download `freerouting-2.4.1.jar`, install
-   Java 21+, set `FREEROUTING_JAR`. (Java 17 is too old for Freerouting 2.x.)
+   Java 21+ (Java 17 is too old for Freerouting 2.x), set `FREEROUTING_JAR`.
 6. **For ordering** (the skill cart, 8.4): Chrome with Claude in Chrome, signed in at the makers and allowed on their
    domains only – best a Chrome profile of its own, without a saved card –, on the computer that holds the release's
    files. `edakit cart actual --from` a PDF invoice needs pdftotext.
 
 With `toolchain = "kicad"` (chapter 16) steps 1 and 2 and sections 2.4 to 2.6 are not needed; instead **KiCad 10**
-from KiCad's PPA: `sudo add-apt-repository ppa:kicad/kicad-10.0-releases && sudo apt install kicad` – `edakit doctor`
-asks kicad-cli for its version (16.2).
+from KiCad's PPA: `sudo add-apt-repository ppa:kicad/kicad-10.0-releases && sudo apt install kicad`. `edakit doctor`
+asks kicad-cli for its version (the KiCad setup, 16.2).
 
 ## 2.3 Claude Code: the plugin
 
@@ -44,17 +46,17 @@ asks kicad-cli for its version (16.2).
 /plugin install edakit@edakit
 ```
 
-In the VS Code extension, which has no `/plugin`: `claude plugin marketplace add tgd1975/edakit` and
-`claude plugin install edakit@edakit` in a terminal – with only the extension installed, `claude` is
-`~/.vscode/extensions/anthropic.claude-code-<version>-linux-x64/resources/native-binary/claude`. How to update:
-README, Install.
+The VS Code extension has no `/plugin`: run `claude plugin marketplace add tgd1975/edakit` and
+`claude plugin install edakit@edakit` in a terminal. With only the extension installed, `claude` is
+`~/.vscode/extensions/anthropic.claude-code-<version>-linux-x64/resources/native-binary/claude`. How to update: the
+README, section Install.
 
-This installs the skills (`/edakit:start`, `/edakit:hardware-change`, …), the agents, the MCP server `easyeda`
-(tools `mcp__plugin_edakit_easyeda__*`), the EasyEDA claim hook, the session hook that brings the working agreements
-(11.4) and the project's own scripts and agents (8.6) into every session of an edakit project, and the command `edakit`
-on the Bash PATH. Confirm the MCP server when Claude Code asks (or `/mcp` → easyeda).
+The plugin brings the skills (`/edakit:start`, `/edakit:hardware-change`, …), the agents, the MCP server `easyeda`
+(tools `mcp__plugin_edakit_easyeda__*`), the EasyEDA claim hook and the command `edakit` on the Bash PATH. Its session
+hook brings the working agreements (11.4) and the project's own scripts and agents (8.6) into every session of an
+edakit project. Confirm the MCP server when Claude Code asks (or `/mcp` → easyeda).
 
-To give every session in a project the plugin automatically, put this into the project's `.claude/settings.json`:
+For the plugin in every session of a project, put this into the project's `.claude/settings.json`:
 
 ```json
 {
@@ -68,16 +70,18 @@ To give every session in a project the plugin automatically, put this into the p
 Without Claude Code (CI, a terminal): `uvx --from git+https://github.com/tgd1975/edakit edakit <command>`,
 or from a clone `uv run --project /path/to/edakit edakit <command>`.
 
-**Versions.** Every change to edakit comes as a version with its own number, and the plugin installs the newest one.
-The minor number goes up when a project has to act on an update – its lines in [CHANGELOG.md](../CHANGELOG.md) begin
-with **When updating:** and say what to do, such as which sign-offs to renew. The patch number goes up for everything
-else: a new rule, a new command, a fix. The major number marks a milestone of edakit itself.
+### Versions
 
-`edakit --version` prints the version that runs. Run from a git clone that is not on the version's tag, it adds the
-commit, as in `0.2.0+g1a2b3c4`. Every gate run writes the same string into its manifest, under `tools.edakit`.
+Every change to edakit comes as a version with its own number, and the plugin installs the newest one. The minor
+number goes up when a project has to act on an update: its lines in [CHANGELOG.md](../CHANGELOG.md) begin with
+**When updating:** and say what to do, such as which sign-offs to renew. The patch number goes up for everything else –
+a new rule, a new command, a fix. The major number marks a milestone of edakit itself.
 
-A project that wants to stay on one version names it in two places. In `.claude/settings.json` it adds the tag beside
-the repository: `"source": { "source": "github", "repo": "tgd1975/edakit", "ref": "v0.2.0" }`. In CI it runs
+`edakit --version` prints the version that runs; from a git clone away from the version's tag it adds the commit, as
+in `0.2.0+g1a2b3c4`. Every gate run writes the same string into its manifest, under `tools.edakit`.
+
+A project that stays on one version names its tag in two places: in `.claude/settings.json` beside the repository,
+`"source": { "source": "github", "repo": "tgd1975/edakit", "ref": "v0.2.0" }`, and in CI as
 `uvx --from git+https://github.com/tgd1975/edakit@v0.2.0 edakit <command>`. Skills, agents and the command line are
 then of the same version. To move up, read the changelog, change both tags, run the gate and commit.
 
@@ -95,9 +99,9 @@ then of the same version. To move up, read the changelog, change both tags, run 
 | `BRIDGE_TIMEOUT_MS` | `120000` | DRC and pour fills of a large board take longer than the default 15 s |
 
 After the install `mcp-server.sh` adds the tool `easyeda_export_odb` to the installed server, once
-(`odb-tool-patch.mjs`, idempotent): the ODB++ export for a maker that assembles from it (AISLER, 8.4, SYNC.odb). It
-calls the bridge method `board.exportGerbers` with `format: "odb"`, so the server's method registry stays as it is;
-the patched extension (2.5) answers it. Upstream: M-4 in [upstream/README.md](../upstream/README.md).
+(`odb-tool-patch.mjs`, idempotent): the ODB++ export for a maker that assembles from it (AISLER; ordering, 8.4;
+SYNC.odb). It calls the bridge method `board.exportGerbers` with `format: "odb"`, so the server's method registry stays
+as it is; the patched extension (2.5) answers it. Upstream: M-4 in [upstream/README.md](../upstream/README.md).
 
 **Pinned, not npx:** the tool set and the extension must match, and npx does not pass SIGTERM on – an orphaned server
 then blocks the bridge port. Update deliberately: raise `EASYEDA_MCP_VERSION`, rebuild the patched extension (2.5),
@@ -105,7 +109,7 @@ re-import it, restart EasyEDA, restart every server. Since 1.5.1 a server whose 
 every write, export and `easyeda_api_call` and answers only reads – server and extension change together.
 
 The bridge listens on 127.0.0.1 only. The only online calls are read-only part lookups (LCSC product data, JLCPCB's
-public assembly catalogue) – only part numbers leave the machine.
+public assembly catalogue): only part numbers leave the machine.
 
 ## 2.5 The bridge extension, patched
 
@@ -116,24 +120,25 @@ schematic as PDF. Build the patched one:
 bash <plugin or clone>/edakit/easyeda/bridge-extension-patch.sh      # -> ./easyeda-bridge-extension.eext
 ```
 
-The script takes the extension from the pinned server, raises the depth to 12, adds the schematic PDF path and the
-ODB++ export (`PCB_ManufactureData.getOpenDatabaseDoublePlusFile`, marked so that `easyeda_export_odb` tells it from a
-Gerber ZIP), checks the bundle still parses, and renames it "MCP Pro Bridge (depth 12, schematic PDF, ODB++)". If the
-extension changed upstream it stops instead of patching blindly. `edakit doctor` names whether the server has
-`easyeda_export_odb` – a warning only with a maker that takes ODB++; an extension without the handler shows in SYNC.odb
-("Bridge did not return an ODB++ archive").
+The script takes the extension from the pinned server and raises the depth to 12. It adds the schematic PDF path and
+the ODB++ export (`PCB_ManufactureData.getOpenDatabaseDoublePlusFile`, marked so that `easyeda_export_odb` tells it
+from a Gerber ZIP), checks the bundle still parses, and renames it "MCP Pro Bridge (depth 12, schematic PDF, ODB++)".
+If the extension changed upstream, it stops instead of patching blindly. `edakit doctor` names whether the server has
+`easyeda_export_odb` – a warning only with a maker that takes ODB++; an extension without the handler shows in
+SYNC.odb ("Bridge did not return an ODB++ archive").
 
-Import in EasyEDA: *Settings → Extensions → Extension Manager → Import*. It asks for the permission "External
+Import in EasyEDA: *Settings → Extensions → Extension Manager → Import*; it asks for the permission "External
 Interactions" itself. Then the menu **MCP Bridge** appears; choose **Enable Auto-Connect**.
 
 Re-importing (update, other depth): EasyEDA does not take an import over an installed copy with the same UUID and
 version. **Uninstall the old one, import, restart EasyEDA**; until the restart the old copy keeps running. After that
-restart the menu sometimes is missing, but Auto-Connect stays on and connects. Check: `edakit doctor` says "patched
-extension" – it asks `DMT_Project.getCurrentProjectInfo`, which shows the pages written out instead of `[MaxDepth]` –
-and "bridge extension 1.6.0 = server 1.6.0". It probes the depth only while EasyEDA is free or claimed by you; the
-version and registry lines come from `easyeda_health_check`, which needs no claim. The patched build keeps the UUID
-and version of the original, so neither EasyEDA's extension manager nor the version tells the two apart – the depth
-does.
+restart the menu is sometimes missing, but Auto-Connect stays on and connects.
+
+Check with `edakit doctor`: "patched extension" – it asks `DMT_Project.getCurrentProjectInfo`, whose answer shows the
+pages written out instead of `[MaxDepth]` –, and "bridge extension 1.6.0 = server 1.6.0". It probes the depth only
+while EasyEDA is free or claimed by you; the version and registry lines come from `easyeda_health_check`, which needs
+no claim. The patched build keeps the UUID and version of the original, so neither EasyEDA's extension manager nor the
+version tells the two apart – the depth does.
 
 ## 2.6 EasyEDA without background throttling
 
@@ -146,10 +151,15 @@ sed 's|^Exec=.*|Exec=/opt/apps/easyeda-pro/easyeda-pro %f --no-sandbox --gtk-ver
   /usr/share/applications/easyeda-pro.desktop > ~/.local/share/applications/easyeda-pro.desktop
 ```
 
-From a shell inside VS Code or Claude Code start it only with `env -u ELECTRON_RUN_AS_NODE setsid /opt/apps/easyeda-pro/
-easyeda-pro --no-sandbox --gtk-version=3 --disable-background-timer-throttling --disable-renderer-backgrounding
---disable-backgrounding-occluded-windows` – VS Code's shells carry `ELECTRON_RUN_AS_NODE`, and EasyEDA then behaves like
-Node. Check: `edakit doctor` ("EasyEDA unthrottled").
+From a shell inside VS Code or Claude Code start it only like this – VS Code's shells carry `ELECTRON_RUN_AS_NODE`,
+and EasyEDA then behaves like Node:
+
+```bash
+env -u ELECTRON_RUN_AS_NODE setsid /opt/apps/easyeda-pro/easyeda-pro --no-sandbox --gtk-version=3 \
+  --disable-background-timer-throttling --disable-renderer-backgrounding --disable-backgrounding-occluded-windows
+```
+
+Check: `edakit doctor` ("EasyEDA unthrottled").
 
 ## 2.7 A project
 
@@ -161,32 +171,42 @@ edakit check && edakit sim            # offline, seconds
 ```
 
 The skill sets the project up from an interview, not from the example's defaults. It asks for the boards – one or
-several, a bought board on a cable or a hand-wired one (4.5), variants –, how each board's schematic is drawn – with
-labels, every connection a wire, or mixed (`style`, 6.5) –, who assembles, the order, a budget, the purpose, the
-requirements, firmware that follows the graph, documents that quote values, and the project's own scripts and agents.
+several, a bought board on a cable or a hand-wired one (own parts, 4.5), variants –, how each board's schematic is
+drawn (`style`, 6.5: with labels, every connection a wire, or mixed), who assembles, the order, a budget, the purpose,
+the requirements, firmware that follows the graph, documents that quote values, and the project's own scripts and
+agents.
+
 Each answer sets its keys; the skill proposes every file and key with its reason and writes only after your OK. In
 Claude Code the interview is a form with options – up to four questions at a time, your own words for the rest –,
-elsewhere one decision round in text. The graph it writes is `hardware/graph.toml`, with the resolved
-`hardware/graph.json` generated beside it (3.1), and the pre-commit hook it writes runs on every commit that touches
-`hardware/`: `edakit check`, `edakit sim` and `edakit graph json --check` – which fails when the generated file no
-longer matches the TOML (`edakit graph json --write` brings it along) –, with `[firmware]` also `edakit firmware
---check`, with `[docs]` `edakit docs`. The purpose – private, a gift or for sale – decides how deep the regulatory
-review M-6 goes (chapter 15); the review is support, not legal advice: nothing in it is legally guaranteed, and it
-claims no correctness.
+elsewhere one decision round in text.
 
-**Moving a project to edakit.** A repository without edakit.toml but with hardware files, scripts or agents of its
-own – a netlist, parts, a board, gate runs, `.claude/agents/` – takes the same skill. First the agent
-`project-surveyor` makes the inventory, beside the agent `requirements-engineer`: per place – hardware data, the
-EasyEDA project and released runs, scripts, agents, skills, documents with values, decisions, hooks and CI – what it
-found and where, the proposal (a key, an entry of `[scripts]` or `[agents]`, a file) and its reason, the
-contradictions between the project's documents and what it could not read. Its proposals are the interview's answers
-to confirm. The project's files stay where they lie and edakit.toml names them; the project's own skills are listed
-with their edakit counterpart and what they do beyond it – keeping or deleting each is your decision, the setup
-deletes none.
+The graph it writes is `hardware/graph.toml`, with the resolved `hardware/graph.json` generated beside it (the graph's
+format, 3.1). The pre-commit hook it writes runs on every commit that touches `hardware/`: `edakit check`,
+`edakit sim` and `edakit graph json --check` – which fails when the generated file no longer matches the TOML
+(`edakit graph json --write` brings it along) –, with `[firmware]` also `edakit firmware --check`, with `[docs]`
+`edakit docs`.
 
-Then create the EasyEDA project by hand (File → New → Project, named as `[project] name`); edakit finds it in
-EasyEDA's project folder, remembers its UUID and reopens it after an EasyEDA restart (9.2). Then follow
-chapters 6–8. Daily: start EasyEDA → open the project → work.
+The purpose – private, a gift or for sale – decides how deep the regulatory review M-6 goes (chapter 15); the review is
+support, not legal advice: nothing in it is legally guaranteed, and it claims no correctness.
+
+### Moving a project to edakit
+
+A repository without edakit.toml but with hardware files, scripts or agents of its own – a netlist, parts, a board,
+gate runs, `.claude/agents/` – takes the same skill. First the agent `project-surveyor` makes the inventory, beside the
+agent `requirements-engineer`. Per place – hardware data, the EasyEDA project and released runs, scripts, agents,
+skills, documents with values, decisions, hooks and CI – it names what it found and where, the proposal (a key, an
+entry of `[scripts]` or `[agents]`, a file) and its reason. It adds the contradictions between the project's documents
+and what it could not read.
+
+Its proposals are the interview's answers to confirm. The project's files stay where they lie and edakit.toml names
+them. The project's own skills are listed with their edakit counterpart and what they do beyond it – keeping or
+deleting each is your decision, the setup deletes none.
+
+### The EasyEDA project
+
+After the skill, create the EasyEDA project by hand (File → New → Project, named as `[project] name`); edakit finds
+it in EasyEDA's project folder, remembers its UUID and reopens it after an EasyEDA restart (editor state, 9.2). Then
+follow chapters 6–8. Daily: start EasyEDA → open the project → work.
 
 ## 2.8 Licences of the parts you combine
 
