@@ -221,6 +221,8 @@ Handbook: [8.6 Project scripts and agents](../handbook/08-release-gate.md#86-pro
 ### Proposal
 
 A rule or a feature that a project asks edakit for. The skills propose-rule and propose-feature file it as an issue.
+An Action triages the repository owner's proposals; an issue by someone else is welcome and reaches it once the owner
+posts a sealed proposal there.
 Handbook: [11.6 When edakit falls short: feature proposals](../handbook/11-working-with-claude.md#116-when-edakit-falls-short-feature-proposals),
 [14.4 From a finding to a rule](../handbook/14-design.md#144-from-a-finding-to-a-rule).
 
