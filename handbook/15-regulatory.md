@@ -54,7 +54,8 @@ an imported power supply or cell is its importer.
   bands, its power at the RF port and the gain of its antenna – or the e.i.r.p. a certificate states – and the EU
   declaration of conformity (`compliance.radio`, 4.1); LIM.eirp compares the e.i.r.p. with the band's limit. A part that
   does not transmit says `"none"`; PARTS.fact asks every module and microcontroller for one or the other, and every
-  part of a board that is given away or sold for its REACH statement (PARTS.fact/reach, graded as 15.4 says). What
+  part of a board that is given away or sold for its REACH statement (PARTS.fact/reach, graded as 15.4 says), and
+  every part the BOM lists for its RoHS status (PARTS.fact/rohs: information, for a board that is sold a warning). What
   nobody states is open, not fine.
 - **Per own board** (4.5) – its `compliance` collects what its parts entries state, with the parts that state nothing.
   An own board is no module with certificates of its own: it is part of the product, and whoever gives the product
@@ -77,8 +78,9 @@ when the sign-off file does not list it (8.2). With a requirements file the revi
 `verify` names `signoff = "M-6"` – a board that must not transmit – and names the ones it found met in its note
 (8.7). The agent's findings are numbered – **block** (may not be sold or operated like this), **important**,
 **note** – each with the rule, its source and a proposal, and they go into the decision round with the electrical
-review. What a program could decide – a part without a RoHS status – the agent marks as a candidate (14.4); a
-band outside the EU's is LIM.band already, an e.i.r.p. over the band's limit LIM.eirp.
+review. What a program could decide the agent marks as a candidate (14.4); a BOM part without a RoHS status is
+PARTS.fact/rohs already, one without a REACH statement PARTS.fact/reach, a band outside the EU's LIM.band, an e.i.r.p.
+over the band's limit LIM.eirp.
 
 **What the firmware has to keep is graded by the purpose.** The law of 15.2 stays as it is: operating radio equipment
 that does not comply is prohibited also privately. Only edakit's grading follows its job – edakit builds circuits
@@ -97,9 +99,9 @@ result for the run's circuit hash, and looks only at the difference:
 
 | What | Why it matters |
 |---|---|
-| the surface finish and the other keys of the form | in the layout and fab hash, not in the circuit hash: leaded HASL is lead in the product (ORDER.finish grades it: fail for `sale`, warning for `gift`, note for `private`), a coating or another material is part of the product |
+| the surface finish and the other keys of the form | in the layout and fab hash, not in the circuit hash: leaded HASL is lead in the product (FILES.order/lead at the release and ORDER.finish at the cart grade it: fail for `sale`, warning for `gift`, note for `private`), a coating or another material is part of the product |
 | the quantity against the purpose | 50 boards for `private` asks whether the purpose is still true – a new purpose is a new M-6 |
-| where the maker sits | outside the EU (JLCPCB, PCBWay) and `sale`: the owner imports the boards and is the manufacturer – name and address, technical file, registrations before the first sale (15.2); inside the EU (Eurocircuits, AISLER): no import, the owner stays the manufacturer (15.1), the maker's declarations are input for the technical file |
+| where the maker sits | outside the EU (JLCPCB, PCBWay) and `sale`: the owner imports the boards and is the manufacturer – name and address, technical file, registrations before the first sale (15.2); inside the EU (Eurocircuits, AISLER): no import, the owner stays the manufacturer (15.1); either way the maker's own RoHS and REACH statements – `[compliance]` of its profile (`edakit/makers/<maker>.toml`, 8.4), in `job.json` – are input for the technical file, and the review names what they leave out |
 | parts the owner supplies to the maker | imported by the owner when bought outside the EU |
 | a cell, a power supply in the matching | batteries regulation, the supply's own conformity, transport of lithium cells |
 | declarations the form asks for | what the shipment is declared as (customs description and value; `[order] customs`, 10.2) |

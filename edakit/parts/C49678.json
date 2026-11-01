@@ -105,5 +105,9 @@
   "open": [
    "the DC-bias and ESR curves are YAGEO's simulation of the typical part (Y-SIM), not a specification: no spread between parts"
   ]
+ },
+ "compliance": {
+  "rohs": true,
+  "source": "LCSC product data C49678 (isEnvironment), read 2026-11-01"
  }
 }

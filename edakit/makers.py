@@ -30,6 +30,9 @@ maker takes and refuses:
                        the order (ORDER.parts)
     dnp                how a part not to place is marked: "omit" (left out of BOM and CPL); otherwise the job lists it
     seat, currency     where the maker sits (the regulatory review at the order), its currency
+    compliance         what the maker itself states about RoHS (rohs) and REACH (reach) for what it makes, each with
+                       its scope (PCB, PCBA) and the document it offers, and the pages read (sources) – the regulatory
+                       review at the order cites it from the job (handbook 15.5); "nothing found" where it states none
     fees               the fee table edakit cost prices with (edakit/fees/<fees>.json)
 
 [cart] maker is the maker the board is planned for, [cart] makers every maker whose checks and files the gate runs
@@ -52,8 +55,9 @@ UPLOAD = {"gerber": "gerber_{b}.zip", "bom": "bom_{b}.csv", "bom_mpn": "bom_{b}_
           "odb": "odb_{b}.zip"}
 PROFILE_KEYS = ("name", "recorded", "start", "seat", "currency", "catalogue", "fees", "files", "classes", "dnp",
                 "cart", "never", "ignore", "excludes", "bom", "cpl", "rules", "fields", "about", "sources", "unshown",
-                "upload", "matching")
+                "upload", "matching", "compliance")
 CPL_KEYS = ("columns", "unit", "rotation", "zero", "turns")
+COMPLIANCE_KEYS = ("rohs", "reach", "sources")
 FIELD_KEYS = ("section", "label", "words", "unit", "values", "more", "when", "checkout")
 RULE_KEYS = ("thicknesses_mm", "thicknesses_for", "remark_max", "placeholder", "placeholder_min_mm", "placeholder_gone",
              "former_placeholder",
@@ -279,6 +283,13 @@ def problems(key, data):
         out.append(f"maker {key}: recorded must be the date ordering step 0 recorded the form, or false")
     out += [f"maker {key}: rules: unknown key '{k}' (known: {', '.join(RULE_KEYS)})" for k in data.get("rules") or {}
             if k not in RULE_KEYS]
+    if "compliance" in data:
+        c = data["compliance"]
+        if not isinstance(c, dict) or any(k not in c for k in COMPLIANCE_KEYS) or set(c) - set(COMPLIANCE_KEYS) or not (
+                isinstance(c["rohs"], str) and isinstance(c["reach"], str) and isinstance(c["sources"], list) and c["sources"]
+                and all(isinstance(v, str) for v in c["sources"])):
+            out.append(f"maker {key}: compliance must be a table of rohs and reach (the maker's statement, or \"nothing "
+                       "found\") and sources (the pages read, a list of strings)")
     for name, f in (data.get("fields") or {}).items():
         if f is False:
             continue

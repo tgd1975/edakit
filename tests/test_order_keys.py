@@ -270,6 +270,9 @@ def test_the_shipped_profiles_are_valid():
     way = makers.load("pcbway")
     assert way.word("mark", "remove") == "Yes (extra+$ 1.5)" and not way.has("confirm_placement")
     assert all(m.recorded for m in map(makers.load, ("aisler", "eurocircuits", "pcbway")))
+    for key in makers.shipped():                       # the maker's own RoHS and REACH statements, with the pages read
+        c = makers.load(key).data["compliance"]
+        assert c["rohs"] and c["reach"] and all("2026-" in src for src in c["sources"]), key
 
 
 def test_a_profile_with_an_unknown_key_is_refused(tmp_path):
@@ -278,6 +281,9 @@ def test_a_profile_with_an_unknown_key_is_refused(tmp_path):
     with pytest.raises(makers.MakerError) as e:
         makers.load("own", {"own": str(tmp_path / "own.toml")})
     assert "files: unknown file 'pdf'" in str(e.value) and "fields.mask: unknown key 'colours'" in str(e.value)
+    (tmp_path / "own.toml").write_text('name = "Own"\n[compliance]\nrohs = "RoHS compliant"\n')
+    with pytest.raises(makers.MakerError, match="compliance must be a table of rohs and reach"):
+        makers.load("own", {"own": str(tmp_path / "own.toml")})
 
 
 @pytest.mark.parametrize("cart, msg", [

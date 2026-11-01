@@ -11,12 +11,18 @@ about = "what every board needs: structure, artifacts, limits and levels of the 
 [severity.sale]                      # a board that is sold: what the firmware or the data can settle, accepted
 "PARTS.fact/radio" = "warning"       # in the sign-off file
 "PARTS.fact/reach" = "warning"
+"PARTS.fact/rohs" = "warning"
 
 [severity.gift]                      # lead in the finish: REACH Art. 33 asks to name it to a consumer who asks
 "ORDER.finish" = "warning"
+"FILES.order/lead" = "warning"
 
 [severity.private]
 "ORDER.finish" = "note"
+"FILES.order/lead" = "note"
+
+[facts]
+bom = ["compliance.rohs"]            # required of every part the BOM lists (bom not false): true, false or the exemption
 
 [facts.type]                         # required per graph type: a missing fact is PARTS.fact/<its last name>
 module = ["compliance.radio"]        # its bands and power, or "none" – the regulatory review (M-6) reads it

@@ -56,5 +56,9 @@
     "when": "order"
    }
   ]
+ },
+ "compliance": {
+  "rohs": true,
+  "source": "LCSC product data C84256 (isEnvironment), read 2026-11-01"
  }
 }

@@ -27,6 +27,15 @@ classes = ["assembly"]                 # the service "Amazing Assembly" (also: B
 never = ["Order", "Buy", "Checkout", "Checkout now", "Continue to Checkout", "Pay", "Place order", "Confirm order"]
 excludes = []
 
+[compliance]                           # what the maker itself states, read 2026-11-01 – the regulatory review at the order
+                                       # cites it from the job (handbook 15.5)
+rohs = "PCB and stencils: 'all circuit boards and stencils supplied meet the guidelines of the European Directive 2011/65/EU' (a declaration signed by the CEO, 2026-02-25). PCBA: 'components placed are project specific and hence cannot be guaranteed to comply with RoHS' – the RoHS status per component on request (compliance@aisler.net); solder paste lead-free; the form offers HASL Lead Free and ENIG (ordering step 0)"
+reach = "'none of the materials falling into the criteria defined in Article 59 of REACH exceed 0.1% by net weight in our end-products' (a declaration signed by the CEO, 2026-02-25) – board and assembly not told apart"
+sources = [
+  "https://community.aisler.net/t/rohs-reach-compliance/85 – AISLER's knowledge base on its community site, a staff post of 2026-10-13 with the two signed declarations (read 2026-11-01)",
+  "https://community.aisler.net/t/assembly-portfolio/4674 – 'Solder paste: Leadfree RoHS' (posted 2025-01-14, read 2026-11-01)",
+]
+
 [bom]                                  # no BOM upload: the parts come in the ODB++
 match = "mpn"                          # AISLER assigns by manufacturer part number and knows no LCSC number (5.10, 2026-11-01)
 

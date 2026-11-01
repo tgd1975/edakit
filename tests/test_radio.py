@@ -31,7 +31,7 @@ def found(rep, *codes):
 def give_radio(project, **radio):
     """U1's parts entry (the Pico 2, C41407547) with compliance.radio – as if it were a module that transmits."""
     part = project.part("C41407547")
-    part["compliance"] = {"radio": radio}
+    part.setdefault("compliance", {})["radio"] = radio
     project.save_part("C41407547", part)
 
 
@@ -345,7 +345,7 @@ def test_p11_none_or_a_radio_is_a_statement(project):
 
 def test_p11_other_parts_state_it_only_when_they_transmit(project):
     """U2, the TLC5916 (type ic), and the passives state nothing and are not asked for it."""
-    assert "compliance" not in project.part("C90107")
+    assert "radio" not in project.part("C90107")["compliance"]                 # its RoHS status only
     assert found(run(project), "PARTS.fact", "PARTS.schema") == NOTHING
 
 

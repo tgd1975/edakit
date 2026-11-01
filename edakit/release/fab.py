@@ -95,7 +95,8 @@ assembly preview at JLCPCB.
   FILES.order  with [order] or [cart], per maker of [cart] makers (fails for the planned maker, warns for another one):
        every field a value of the maker's form, the remark, thickness_mm and the colours of mask and silkscreen as its
        form has them, mark = its placeholder on the silkscreen – JLCPCB's placeholder at a maker without one –, its
-       tooling holes; for every maker layers and size where set, the quantities, no copper near the edge in a tab zone
+       tooling holes; for every maker layers and size where set, the quantities, no copper near the edge in a tab zone,
+       a finish with lead graded by purpose
        (order_sheet.py); without both, an Economic board's own tooling holes warn – no order.md tells the maker
 Last stdout line: JSON list of rows {stage, id, item, check, actual, expected, result}. Exit 0 / 2 / 1.
 

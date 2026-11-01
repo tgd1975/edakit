@@ -33,13 +33,6 @@ makers' profiles (JLCPCB, PCBWay, Eurocircuits, AISLER), the checks per maker, `
 actual` with B-1 to B-7, the order record, the skill cart, the review at the order, ODB++ with F-7. Run live at the
 four makers on 2026-10-31 and 2026-11-01, into the cart and nothing ordered ([LIVE.md](tests/fixtures/makers/LIVE.md)).
 
-### Needs the owner's word
-
-- [ ] The check candidates of the review at the order (implementation plan, 5.5): lead graded by purpose already at
-      the release (F-6); a line of the page text that addresses the assistant as a finding of `edakit cart check`; a
-      BOM part without `compliance.rohs` on a board for sale; the maker's RoHS and REACH statements in its profile.
-      Each becomes a rule only with the skill add-rule, on the owner's word.
-
 ## What edakit needs from EasyEDA Pro and easyeda-mcp-pro ([upstream/README.md](upstream/README.md))
 
 The requirements E-1 to E-16 on EasyEDA Pro and M-1 to M-8 on easyeda-mcp-pro, gathered on 2026-11-01 under the

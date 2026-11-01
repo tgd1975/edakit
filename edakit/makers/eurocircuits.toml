@@ -33,6 +33,16 @@ excludes = []
 
 # Fields the page shows that edakit does not set, each with its reason. The skill leaves them as Eurocircuits sets
 # them; ORDER.form names any other one as a question the maker added.
+[compliance]                           # what the maker itself states, read 2026-11-01 – the regulatory review at the order
+                                       # cites it from the job (handbook 15.5)
+rohs = "PCB and PCBA: a group certificate of compliance (March 2026, no signature): 'all components and all homogeneous subcomponents manufactured by the Eurocircuits Group comply with the directive 2011/65/EC [sic] … amended by Directive (EU) 2015/863'; the finishes lead-free HAL, ENIG and immersion silver – 'All of these are Lead-free and can be used for RoHS designs'; assembly with SAC 305, lead-free"
+reach = "The same certificate: 'the products we supply are fully compliant with … EC 1907/2006' and 'no products from the SVHC list … nor mixtures of these products are present in the chemicals used by the Eurocircuits Group' – nothing on the 0.1 % of Art. 33 in the boards"
+sources = [
+  "https://www.eurocircuits.com/content/uploads/2026/03/Eurocircuits-Group-Certificates-of-Compliance-March-2026.pdf, from https://www.eurocircuits.com/downloads/ (read 2026-11-01)",
+  "https://www.eurocircuits.com/technical-guidelines/pcb-manufacturing-technology/which-surface-finish-fits-your-design/ (read 2026-11-01)",
+  "https://www.eurocircuits.com/services/pcb-assembly-capabilities/ (read 2026-11-01)",
+]
+
 [ignore]
 "Select a Service" = "Eurocircuits chooses the service by the board (PCB proto, STANDARD pool) after the upload"
 "Unit" = "mm, Eurocircuits' default"

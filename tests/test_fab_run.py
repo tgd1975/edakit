@@ -671,6 +671,14 @@ def thickness(mm, order=None):
     return fault
 
 
+def leaded(use):
+    """[order] finish = "HASL(with lead)" in the board file, purpose.use of the graph = use (None: no purpose)."""
+    def fault(ex, project):
+        graph(project, lambda g: g["graph"]["purpose"].update(use=use) if use else g["graph"].pop("purpose"))
+        ordered(ex, project, {"finish": "HASL(with lead)"})
+    return fault
+
+
 FAULTS = [
     # SYNC.pcb
     ("a pad on another net", lambda ex, p: ex.pad("D1.1").update(Net="VIN"),
@@ -910,6 +918,13 @@ FAULTS = [
      [("FILES.order", "fail", "1.57 mm (thickness_mm) – not a thickness of JLCPCB's form")]),
     ("white print on a white mask", lambda ex, p: ordered(ex, p, {"mask": "white", "silkscreen": "white"}),
      [("FILES.order", "fail", 'silkscreen = "white" on a white mask – JLCPCB prints black on it')]),
+    ("a leaded finish on a board for sale", leaded("sale"),
+     [("FILES.order", "fail", "HASL(with lead): lead in the product, purpose sale – RoHS")]),
+    ("a leaded finish without a purpose", leaded(None),                    # as for sale, as ORDER.finish at the cart
+     [("FILES.order", "fail", "HASL(with lead): lead in the product, purpose sale – RoHS")]),
+    ("a leaded finish on a gift", leaded("gift"),
+     [("FILES.order", "warn", "HASL(with lead): lead in the product, purpose gift – lead is a substance of very high "
+                              "concern")]),
 ]
 
 
@@ -1253,7 +1268,8 @@ def test_the_order_form_of_the_clean_export(project):
     assert len(REMARK) <= 200 and any(r["actual"] == f"{len(REMARK)} characters, ASCII" for r in f6)
     assert {(r["check"], r["actual"]) for r in f6} >= {
         ("board thickness JLCPCB makes (FR-4, 2 layers)", "1.6 mm (thickness_mm)"),       # JLCPCB's defaults
-        ("silkscreen colour JLCPCB prints on the solder mask", "white on a green mask")}
+        ("silkscreen colour JLCPCB prints on the solder mask", "white on a green mask"),
+        ("finish without lead, graded by purpose ([order] finish, purpose.use)", "LeadFree HASL: no lead")}
     sheet = (project.root / "build" / "fab" / "main" / "order.md").read_text()
     assert "| PCB Thickness | 1.6 mm | edakit |\n| PCB Color | Green | edakit |\n| Silkscreen | White | edakit |\n" \
            "| Surface Finish | LeadFree HASL | edakit |" in sheet                   # in the order of JLCPCB's form
@@ -1267,6 +1283,14 @@ def test_the_order_form_of_the_clean_export(project):
                  "| BOM / CPL | bom_main.csv (2 lines) / cpl_main.csv |", "| Gerber | gerber_main.zip |",
                  "(30.0, 0.0) → (30.0, 20.0), 20.0 mm", "| J1 | C131337 B2B-PH-K-S(LF)(SN) | lcsc | C131337 |"):
         assert text in sheet, text
+
+
+def test_a_leaded_finish_for_oneself_is_information(project):
+    """Grade lead: a board built for oneself with leaded HASL – information, as ORDER.finish at the cart."""
+    rows = run(project, leaded("private"))
+    assert findings(rows) == []
+    assert ("info", "HASL(with lead): lead in the product, purpose private – for yourself: a note (handbook 15.1)") in {
+        (r["result"], r["actual"]) for r in rows if r["id"] == "FILES.order"}
 
 
 def test_the_order_form_lists_only_the_free_edges(project):

@@ -231,3 +231,122 @@ grade = "reach"
 place = "C84256"
 judged = "lacks"
 why = "A board that is sold names the SVHCs above 0.1 % (REACH Art. 33); the transcription took no supplier REACH statement for this part."
+
+[[check]]
+code = "PARTS.fact"
+grade = "rohs"
+place = "C105167"
+judged = "lacks"
+why = "A board that is sold states the RoHS status of every part it lists (RoHS 2011/65/EU); the transcription took none for this part."
+
+[[check]]
+code = "PARTS.fact"
+grade = "rohs"
+place = "C124187"
+judged = "lacks"
+why = "A board that is sold states the RoHS status of every part it lists (RoHS 2011/65/EU); the transcription took none for this part."
+
+[[check]]
+code = "PARTS.fact"
+grade = "rohs"
+place = "C140692"
+judged = "lacks"
+why = "A board that is sold states the RoHS status of every part it lists (RoHS 2011/65/EU); the transcription took none for this part."
+
+[[check]]
+code = "PARTS.fact"
+grade = "rohs"
+place = "C17414"
+judged = "lacks"
+why = "A board that is sold states the RoHS status of every part it lists (RoHS 2011/65/EU); the transcription took none for this part."
+
+[[check]]
+code = "PARTS.fact"
+grade = "rohs"
+place = "C17477"
+judged = "lacks"
+why = "A board that is sold states the RoHS status of every part it lists (RoHS 2011/65/EU); the transcription took none for this part."
+
+[[check]]
+code = "PARTS.fact"
+grade = "rohs"
+place = "C17552"
+judged = "lacks"
+why = "A board that is sold states the RoHS status of every part it lists (RoHS 2011/65/EU); the transcription took none for this part."
+
+[[check]]
+code = "PARTS.fact"
+grade = "rohs"
+place = "C17604"
+judged = "lacks"
+why = "A board that is sold states the RoHS status of every part it lists (RoHS 2011/65/EU); the transcription took none for this part."
+
+[[check]]
+code = "PARTS.fact"
+grade = "rohs"
+place = "C2150"
+judged = "lacks"
+why = "A board that is sold states the RoHS status of every part it lists (RoHS 2011/65/EU); the transcription took none for this part."
+
+[[check]]
+code = "PARTS.fact"
+grade = "rohs"
+place = "C26011"
+judged = "lacks"
+why = "A board that is sold states the RoHS status of every part it lists (RoHS 2011/65/EU); the transcription took none for this part."
+
+[[check]]
+code = "PARTS.fact"
+grade = "rohs"
+place = "C29277"
+judged = "lacks"
+why = "A board that is sold states the RoHS status of every part it lists (RoHS 2011/65/EU); the transcription took none for this part."
+
+[[check]]
+code = "PARTS.fact"
+grade = "rohs"
+place = "C318884"
+judged = "lacks"
+why = "A board that is sold states the RoHS status of every part it lists (RoHS 2011/65/EU); the transcription took none for this part."
+
+[[check]]
+code = "PARTS.fact"
+grade = "rohs"
+place = "C393940"
+judged = "lacks"
+why = "A board that is sold states the RoHS status of every part it lists (RoHS 2011/65/EU); the transcription took none for this part."
+
+[[check]]
+code = "PARTS.fact"
+grade = "rohs"
+place = "C49678"
+judged = "lacks"
+why = "A board that is sold states the RoHS status of every part it lists (RoHS 2011/65/EU); the transcription took none for this part."
+
+[[check]]
+code = "PARTS.fact"
+grade = "rohs"
+place = "C503587"
+judged = "lacks"
+why = "A board that is sold states the RoHS status of every part it lists (RoHS 2011/65/EU); the transcription took none for this part."
+
+[[check]]
+code = "PARTS.fact"
+grade = "rohs"
+place = "C5274290"
+judged = "lacks"
+why = "A board that is sold states the RoHS status of every part it lists (RoHS 2011/65/EU); the transcription took none for this part."
+
+[[check]]
+code = "PARTS.fact"
+grade = "rohs"
+place = "C6186"
+judged = "lacks"
+why = "A board that is sold states the RoHS status of every part it lists (RoHS 2011/65/EU); the transcription took none for this part."
+
+[[check]]
+code = "PARTS.fact"
+grade = "rohs"
+place = "C84256"
+judged = "lacks"
+why = "A board that is sold states the RoHS status of every part it lists (RoHS 2011/65/EU); the transcription took none for this part."

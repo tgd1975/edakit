@@ -471,7 +471,8 @@
   "spice": {},
   "compliance": {
     "radio": "none",
-    "source": "Raspberry Pi Pico 2 Datasheet, release 5 (build 2026-07-03, d4e0f1799616), chapter 1: RP2350A with 4 MB flash, micro-USB, SWD port and power supply – no transmitter"
+    "source": "Raspberry Pi Pico 2 Datasheet, release 5 (build 2026-07-03, d4e0f1799616), chapter 1: RP2350A with 4 MB flash, micro-USB, SWD port and power supply – no transmitter; RoHS: LCSC product data C41407547 (isEnvironment), read 2026-11-01",
+    "rohs": true
   },
   "sources": [
     "pin names from the Raspberry Pi Pico 2 pinout (RP-008301-DS-1) and datasheet (RP-008299-DS); the EasyEDA symbol names the GP pins by all their functions, numbers TP2–TP6 like pins 2–6 and swaps SWCLK and SWDIO (symbol_differs)",
