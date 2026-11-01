@@ -172,9 +172,9 @@ proposed (below). So with the owner's OK, a session merges through `.github/merg
 
 The workflow `release.yml` runs on every push to main. When the package's number has no tag yet, it sets the tag
 `v0.2.6` on that merge commit and opens the GitHub release with the changelog section as its text. A merge without a
-version (nothing a project reads) leaves the number alone, and the workflow does nothing. A branch that the proposals workflow
-pushes with its own token starts no checks ([proposals-pipeline.md](proposals-pipeline.md) gives it that token).
-`merge.py`'s push of the numbered commit comes from the owner's account and does start them, so a proposals pull
+version (nothing a project reads) leaves the number alone, and the workflow does nothing. A branch that the proposals
+workflow pushes with its own token starts no checks ([proposals-pipeline.md](proposals-pipeline.md) gives it that
+token). `merge.py`'s push of the numbered commit comes from the owner's account and does start them, so a proposals pull
 request gets its checks at the merge.
 
 A required check `version` guards the button. A pull request that carries fragments is not numbered yet, and the check
