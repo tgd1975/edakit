@@ -97,7 +97,7 @@ the import acknowledgement" (exit 3) request that click as the start skill descr
      placed before edakit wrote these back – SYNC.plan names its parts without a row – takes over its positions once,
      before any dump: `edakit pcb takeover --write`, fixed rows where the parts stand, the tracks stay on their pads
      (handbook 7.4)
-   - `edakit route all 2>&1 | cat` (read → DSN → Freerouting → check → apply → pours → reload → DRC; exit 0 = DRC 0, 3 =
+   - `edakit route all 2>&1 | cat` (read → DSN → Freerouting → check → apply → pours → DRC; exit 0 = DRC 0, 3 =
      only the import acknowledgement pending). Open connections are yellow in `<artifacts>/route/<board>_routing.png`.
      Never EasyEDA's autorouter.
    - `edakit silk apply 2>&1 | cat` (designators where there is room; silkscreen on pads = 0; DRC). Through-hole parts

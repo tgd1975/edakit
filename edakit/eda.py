@@ -615,12 +615,21 @@ def ensure_pcb_focus(mcp, tries=10):
     raise MCPError(f"PCB {PCB['name']} cannot be focused (active: {info})")
 
 
+def pcb_answers(mcp):
+    """The probe of activate_pcb: the rule configuration's name. Inactive: empty – or, on 3.2.209 with another tab
+    active, the call throws ("指定的主题消息在对应的画布内没有相关订阅", E-3)."""
+    try:
+        return bool(api(mcp, "PCB_Drc.getCurrentRuleConfigurationName"))
+    except MCPError:
+        return False
+
+
 def activate_pcb(mcp):
     """The PCB editor answers PCB_Drc.check, getDsnFile and exports only after EasyEDA reported its tab as active.
-    That report comes only on a tab switch; openDocument on the current tab does not help. Probe: the rule
-    configuration name (empty = inactive). Remedy: switch to the start page and back."""
+    That report comes only on a tab switch; openDocument on the current tab does not help. Probe: pcb_answers.
+    Remedy: switch to the start page and back."""
     for _ in range(3):
-        if api(mcp, "PCB_Drc.getCurrentRuleConfigurationName"):
+        if pcb_answers(mcp):
             return
         print("  PCB tab counts as inactive in EasyEDA – switching away and back")
         api(mcp, "DMT_EditorControl.openDocument", "tab_page1")
@@ -636,8 +645,9 @@ def save_pcb(mcp):
 
 
 def reload_pcb(mcp):
-    """Save, close the PCB tab and open it again. Needed before the DRC: right after many API changes the DRC reports
-    false 'Connection Error's on correct tracks (320 of them, minutes later still); reloaded from disk: 0."""
+    """Save, close the PCB tab and open it again. Once needed before the DRC: right after many API changes the DRC
+    reported false 'Connection Error's on correct tracks (320 of them, minutes later still); reloaded from disk: 0. On
+    3.2.209 not seen (E-7) – route all reloads only when its DRC reports Connection Errors (drc_reloading)."""
     if not save_pcb(mcp):
         raise MCPError("saving the PCB failed")
     info = api(mcp, "DMT_SelectControl.getCurrentDocumentInfo")
@@ -691,6 +701,20 @@ def drc(mcp, out=None):
                        "bridge-extension-patch.sh)")
     if out:
         Path(out).write_text(json.dumps(res, indent=1))
+    return found
+
+
+CONNECTION_ERROR = "Connection Error"
+
+
+def drc_reloading(mcp, out=None, say=print):
+    """The DRC, and once more after reload_pcb when it reports Connection Errors – the false ones of an unsaved PCB
+    after many API changes (E-7, not seen on 3.2.209), or real ones the second run reports again."""
+    found = drc(mcp, out)
+    if n := sum(f.get("errorType") == CONNECTION_ERROR for f in found):
+        say(f"DRC: {n} Connection Error(s) – the PCB saved and reloaded, the DRC once more (E-7)")
+        reload_pcb(mcp)
+        found = drc(mcp, out)
     return found
 
 

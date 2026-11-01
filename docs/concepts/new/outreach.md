@@ -1,9 +1,10 @@
 # Getting edakit known: for whom, where it is shown, what it costs the owner
 
 Status 2026-11-01: decided – the owner took the three decisions the same day in a decision round in Claude Code's
-form, each as recommended, and confirmed what Claude decided itself (the table at the end). K.1 built the same day on
-the owner's word: the repository's description, topics and homepage set with `gh api`, the social preview made
-(`outreach/social-preview.png`) for the owner to upload. Each further step starts on the owner's word, listed in
+form, each as recommended, and confirmed what Claude decided itself (the table at the end); a fifth the same evening,
+the plugin's text, and on the owner's word K.2, K.3 and K.9 as one branch and one pull request. K.1 built the same
+day on the owner's word: the repository's description, topics and homepage set with `gh api`, the social preview made
+(`outreach/social-preview.png`) and uploaded by the owner. Each further step starts on the owner's word, listed in
 `TODO.md`. Written against main at `bef46c2`, checked against `4e7064a` (claude-independence.md decided meanwhile: one
 more occasion under K.8). Asked for by the owner: a concept for how edakit gets out to people – where to post, where to
 register and list it, for makers, users and developers alike –, at low effort, since the owner has put enough time
@@ -248,8 +249,8 @@ them.
 
 | Step | What | Who | Size | Waits for |
 | --- | --- | --- | --- | --- |
-| K.1 | The repository's front: description, topics (`easyeda`, `kicad`, `pcb`, `pcb-design`, `jlcpcb`, `electronics`, `hardware-as-code`, `claude-code`, `claude-code-plugin`, `ngspice`, `freerouting`), the site as homepage – with `gh api`; the social preview (1280 × 640) from the brand and the bell's board, uploaded by the owner. Built 2026-11-01 but the upload: [outreach/social-preview.png](outreach/social-preview.png), the bell's board from its release of 2026-11-01 | Claude, the owner's click | S | – |
-| K.2 | Ready for the directory: the README section on what edakit runs, sends and fetches; `plugin.json` with `version` and the owner's description | Claude, a branch, a patch | S | – (or with D.2) |
+| K.1 | The repository's front: description, topics (`easyeda`, `kicad`, `pcb`, `pcb-design`, `jlcpcb`, `electronics`, `hardware-as-code`, `claude-code`, `claude-code-plugin`, `ngspice`, `freerouting`), the site as homepage – with `gh api`; the social preview (1280 × 640) from the brand and the bell's board, uploaded by the owner. Done 2026-11-01: [outreach/social-preview.png](outreach/social-preview.png), the bell's board from its release of 2026-11-01 | Claude, the owner's click | S | – |
+| K.2 | Ready for the directory: the README section on what edakit runs, sends and fetches; `plugin.json` with `version`, and the texts of decision 5 in `plugin.json` and `marketplace.json` | Claude, a branch, a patch | S | – (or with D.2) |
 | K.3 | The issue forms: bug, question, "built with edakit"; the line on how issues are answered | Claude, a branch | S | – |
 | K.4 | The directory submission at claude.ai/directory/manage: the repository at its tag, the data-handling answers from the kit, new versions by webhook | the owner | 15 min | K.2 |
 | K.5 | The kit in `docs/concepts/new/outreach/`: the fact sheet (numbers from a fresh run, links, limits, the expected questions with the facts for each answer), the texts for Hackaday, Adafruit, r/ClaudeAI, the KiCad forum, OSHWLab, the line for awesome-claude-code, the pictures; notes for the Show HN, not its text | Claude | M | D.2, D.7, D.9 |
@@ -257,6 +258,10 @@ them.
 | K.7 | Two weeks later: the referrers read, the table per place into this concept, what worked named | Claude | S | K.6 |
 | K.8 | Then, per occasion: a project in the gallery posted where its crowd is; a release that changes how a project works, posted where K.7 found readers – among them another assistant supported ([claude-independence.md](claude-independence.md)), which opens the places of its users; no schedule | the owner, Claude's draft | S each | – |
 | K.9 | "Released with edakit" in the GitHub release of `edakit release publish`, with a key to turn it off | Claude, a branch, a patch | S | decision 3 |
+
+K.2, K.3 and K.9 go as one branch, `outreach-k2-k3-k9`, a commit per step, one fragment and one pull request – one
+version, one OK, on the owner's word of 2026-11-01: they belong together, K.2 and K.3 both change the README, and three
+pull requests would be three runs of the checks and three versions for one subject.
 
 The kit is a source, like the rest of this folder, and lands through the notes lane; the site shows it before it is
 posted, which does no harm.
@@ -272,6 +277,7 @@ recommendation.
 | 2 | Which places in the owner's own name | Show HN and r/ClaudeAI, besides the forms | the forms and r/ClaudeAI, no Show HN; the forms only (directory, awesome-claude-code, Hackaday, Adafruit) – no writing of the owner's own, much less reach; all of them and the electronics forums | accepted |
 | 3 | "Released with edakit" in a project's GitHub release | on by default, one key turns it off | a snippet in the documentation that a project may copy; nothing | accepted |
 | 4 | What Claude decided itself | K.1 now; issues only, no Discussions; the directory with new versions by webhook; OSHWLab through the bell's session, on the owner's word; the "Not" list; the kit in `outreach/`; the measures | K.1 at the launch only | confirmed |
+| 5 | The plugin's text – `displayName` and `description` in `.claude-plugin/plugin.json`, the two descriptions in `.claude-plugin/marketplace.json`: the first text in `/plugin` and the directory, today "From a JSON hardware graph … with EasyEDA Pro" (documentation.md, finding 7) | the repository's description of K.1, one wording everywhere: displayName "edakit – circuit design as code"; description "Circuit design as code: the circuit as text in your repository, checked by rules and an ngspice simulation, drawn as schematic and PCB in EasyEDA Pro or KiCad, routed with Freerouting and released through a gate on the manufacturing files – skills, agents and the edakit command line."; marketplace.json "edakit: circuit design as code for Claude Code – checks, simulation, schematic, PCB, release gate." and "Skills, agents, the EasyEDA MCP server and the edakit command line – EasyEDA Pro or KiCad." | short: "Circuit design as code with Claude Code: checks, simulation, schematic, PCB and a release gate – EasyEDA Pro or KiCad."; corrected only: TOML for JSON, KiCad added | accepted |
 
 ## Sources
 
