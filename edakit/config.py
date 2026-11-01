@@ -44,6 +44,8 @@ POUR_MIN_PIECE_MM2 = 2.0         # pour_regions: the smallest piece of a shared 
 HEADER_KEEP_MM = 1.27            # on_headers: the plastic of a 2.54 mm pin header, half its width around each pin
 PASTE_GAP_MM = 0.4               # [release] assembly paste_gap_mm: SMD pads of different parts, assembled side (GEO.spacing)
 MAX_BARE_MM = 5.0                # [copper] max_bare_mm: largest copper-free circle on a poured layer (GEO.pour)
+MAX_BARE_MM2 = 20.0              # [copper] max_bare_mm2: largest copper-free piece on a poured layer (GEO.pour) – the
+                                 # area of the 5 mm circle, π × 2.5² = 19.6 mm²
 UNIFORM = {"led": "row"}         # uniform: LEDs side by side point the same way – the plan check without the key
 UNIFORM_WAYS = ("row", "+x", "-x", "+y", "-y")
 THICKNESS_MM = 1.6               # board thickness: the order (FILES.order) and the lead protrusion of the mechanical model
@@ -182,7 +184,7 @@ class Board:
     loops: list = field(default_factory=list)         # [(pad a, pad b, max mm, what)] short current loops (GEO.loop)
     net_classes: dict = field(default_factory=lambda: dict(DEFAULT_NET_CLASSES))  # by falling min_a
     force_class: dict = field(default_factory=dict)   # net -> class, whatever its current
-    copper: dict = field(default_factory=lambda: _copper("", {}))  # [copper]: max_bare_mm, min_cover (GEO.pour)
+    copper: dict = field(default_factory=lambda: _copper("", {}))  # [copper]: max_bare_mm, max_bare_mm2, min_cover
     order: dict | None = None                         # [order]: the order form fields of this board (FILES.order); None: none
     uniform: dict | None = None                       # kind -> "row" | "+x" | "-x" | "+y" | "-y"; None: UNIFORM
     looks: dict | None = None                         # [looks]: visible ("top" | "bottom"), max_track_m, max_vias
@@ -424,20 +426,24 @@ def _net_classes(nc):
 
 
 def _copper(name, c):
-    """[copper] of a board file (GEO.pour): max_bare_mm (largest copper-free circle on a poured layer, mm) and min_cover
-    {layer: least copper share in % of the board area}; without it no share is required."""
+    """[copper] of a board file (GEO.pour): max_bare_mm (largest copper-free circle on a poured layer, mm), max_bare_mm2
+    (largest copper-free piece there, mm²) and min_cover {layer: least copper share in % of the board area}; without it
+    no share is required."""
     if not isinstance(c, dict):
         raise ConfigError(f"board {name}: [copper] must be a table")
-    if lost := [k for k in c if k not in ("max_bare_mm", "min_cover")]:
-        raise ConfigError(f"board {name}: [copper] unknown key '{lost[0]}' (known: max_bare_mm, min_cover)")
+    if lost := [k for k in c if k not in ("max_bare_mm", "max_bare_mm2", "min_cover")]:
+        raise ConfigError(f"board {name}: [copper] unknown key '{lost[0]}' (known: max_bare_mm, max_bare_mm2, min_cover)")
     bare = float(c.get("max_bare_mm", MAX_BARE_MM))
     if bare <= 0:
         raise ConfigError(f"board {name}: copper.max_bare_mm must be positive")
+    bare2 = float(c.get("max_bare_mm2", MAX_BARE_MM2))
+    if bare2 <= 0:
+        raise ConfigError(f"board {name}: copper.max_bare_mm2 must be positive")
     cover = c.get("min_cover", {})
     if not isinstance(cover, dict) or not set(cover) <= {"TOP", "BOTTOM"} or not all(
             isinstance(v, (int, float)) and 0 <= v <= 100 for v in cover.values()):
         raise ConfigError(f"board {name}: copper.min_cover must be {{TOP = %, BOTTOM = %}} with values from 0 to 100")
-    return {"max_bare_mm": bare, "min_cover": {k: float(v) for k, v in cover.items()}}
+    return {"max_bare_mm": bare, "max_bare_mm2": bare2, "min_cover": {k: float(v) for k, v in cover.items()}}
 
 
 def silkscreen_on(mask):
