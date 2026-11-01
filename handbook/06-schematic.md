@@ -124,7 +124,8 @@ edakit schematic draw                          # <artifacts>/schematic_<board>.s
 edakit schematic draw --out docs/schematic.svg
 ```
 
-The graph and the parts database are enough – no EasyEDA, no bridge, about a second. The arrangement is the one of
+The graph and the parts database are enough – no EasyEDA, no bridge, about a second. Every gate run draws it too, as
+SVG and PNG beside its protocol (8.3, section 12). The arrangement is the one of
 `layout` (6.3): blocks with titles and notes, placement by topology, real wires, flags, GPIO table. Only the symbols
 come from the parts database instead of EasyEDA's library:
 
