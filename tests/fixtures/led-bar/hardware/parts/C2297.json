@@ -51,5 +51,9 @@
     "open": [
       "VR not specified – 5 V assumed"
     ]
+  },
+  "compliance": {
+    "rohs": true,
+    "source": "LCSC product data C2297 (isEnvironment), read 2026-11-01"
   }
 }

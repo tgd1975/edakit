@@ -31,3 +31,24 @@ grade = "reach"
 place = "C52895"
 judged = "lacks"
 why = "A board that is sold names the SVHCs above 0.1 % (REACH Art. 33); the transcription took no supplier REACH statement for this part."
+
+[[check]]
+code = "PARTS.fact"
+grade = "rohs"
+place = "C17414"
+judged = "lacks"
+why = "A board that is sold states the RoHS status of every part it lists (RoHS 2011/65/EU); the transcription took none for this part."
+
+[[check]]
+code = "PARTS.fact"
+grade = "rohs"
+place = "C492405"
+judged = "lacks"
+why = "A board that is sold states the RoHS status of every part it lists (RoHS 2011/65/EU); the transcription took none for this part."
+
+[[check]]
+code = "PARTS.fact"
+grade = "rohs"
+place = "C52895"
+judged = "lacks"
+why = "A board that is sold states the RoHS status of every part it lists (RoHS 2011/65/EU); the transcription took none for this part."

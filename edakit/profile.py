@@ -87,11 +87,12 @@ class ProjectProfile(Profile):
         self.claimed = {k for n in names() for k in (domains()[n].get("switch") or {}).get("on", [])}
         self.switched = {k for f in files for k in (f.get("switch") or {}).get("on", [])}
         self.hints = {h for f in files for h in (f.get("hints") or {}).get("apply", [])}
-        self.facts = {"type": {}, "kind": {}, "purpose": {}}
+        self.facts = {"type": {}, "kind": {}, "purpose": {}, "bom": []}
         for f in files:
             for by in ("type", "kind", "purpose"):
                 for k, facts in ((f.get("facts") or {}).get(by) or {}).items():
                     self.facts[by].setdefault(k, []).extend(x for x in facts if x not in self.facts[by].get(k, []))
+            self.facts["bom"] += [x for x in (f.get("facts") or {}).get("bom", []) if x not in self.facts["bom"]]
         self.review = {r: [q for f in files for q in (f.get("review") or {}).get(r, [])] for r in REVIEWERS}
         self.notes = list(notes)
 

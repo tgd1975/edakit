@@ -44,5 +44,9 @@
       "table 7: 0805 max. working voltage 150 V"
     ],
     "open": []
+  },
+  "compliance": {
+    "rohs": true,
+    "source": "LCSC product data C17604 (isEnvironment), read 2026-11-01"
   }
 }

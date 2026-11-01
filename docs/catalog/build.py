@@ -184,7 +184,8 @@ def domains_section():
                     for k, v in t.items()})
         if sev:
             rows.append(("Severities", " ".join(f"<code>{escape(k)}</code> {chip(v)}" for k, v in sev.items())))
-        facts = [f"{kind}: {', '.join(v)}" for table in (f.get("facts") or {}).values() for kind, v in table.items()]
+        facts = [f"{kind}: {', '.join(v)}" for by, table in (f.get("facts") or {}).items()
+                 for kind, v in (table.items() if isinstance(table, dict) else [(f"every {by.upper()} part", table)])]
         if facts:
             rows.append(("Facts required", md("; ".join(facts))))
         if (f.get("hints") or {}).get("apply"):

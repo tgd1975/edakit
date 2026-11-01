@@ -237,7 +237,7 @@ def prepare(cfg, args):
                   "never": list({w.casefold(): w for w in reversed([*NEVER, *m.data.get("never", [])])}.values())[::-1],
                   "ignore": m.data.get("ignore", {}), "unshown": m.data.get("unshown", []),
                   "upload": m.data.get("upload", "before_cart"), "matching": m.data.get("matching", "page"),
-                  "seat": m.seat, "currency": m.currency,
+                  "seat": m.seat, "currency": m.currency, "compliance": m.data.get("compliance"),
                   "role": "planned" if m.key == makers.planned(cfg) else "other"},
         "quantity": o["quantity"] if o else cfg.quantity, "pcba_quantity": o["pcba_quantity"] if o else cfg.quantity,
         "files": [{"name": n, "path": str((d / n).resolve()), "size": (d / n).stat().st_size, "sha256": sha_of(d / n)}
@@ -460,12 +460,18 @@ def uploads_shown(job, files):
 
 
 def b6(job, quote):
-    """Lead in the finish, graded by purpose: sale fails (RoHS), gift warns (REACH Art. 33), private is a note."""
+    """Lead in the finish of the job or on the page (lead)."""
     finish = next((f for f in job["fields"] if f["key"] == "finish"), None)
     read = next((q.get("value") for q in quote.get("fields", []) if finish and norm(q.get("label", "")) ==
                  norm(finish["label"])), None)
-    words = [str(x) for x in (finish and finish.get("raw"), finish and finish.get("value"), read) if x]
-    use = ((job.get("purpose") or {}).get("use") or "sale") if isinstance(job.get("purpose"), dict) else "sale"
+    return lead([str(x) for x in (finish and finish.get("raw"), finish and finish.get("value"), read) if x],
+                job.get("purpose"))
+
+
+def lead(words, purpose):
+    """Lead in the finish, graded by purpose – ORDER.finish at the cart, FILES.order/lead at the release: sale, or no
+    purpose, fails (RoHS), gift warns (REACH Art. 33), private is a note. -> (pass|fail|warn|info, text)"""
+    use = ((purpose or {}).get("use") or "sale") if isinstance(purpose, dict) else "sale"
     if not any(has_lead(w) for w in words):
         return "pass", f"{words[0] if words else 'no finish'}: no lead"
     level = {"sale": "fail", "gift": "warn"}.get(use, "info")

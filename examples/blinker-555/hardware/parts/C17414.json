@@ -45,10 +45,14 @@
   ],
   "open": []
  },
+ "compliance": {
+  "rohs": true,
+  "source": "LCSC product data C17414 (isEnvironment), read 2026-11-01"
+ },
  "library": {
   "key": "C17414",
-  "sha256": "d0068055ed27e9e9d669cfd8de5319b8cc1e5bade7627784c020c5ad5b79f446",
+  "sha256": "1f1fd81dc04498e0639f5e097123c1ba3b99964fca7f3cc7632c5f67e2f86bdb",
   "signed": false,
-  "date": "2026-10-31"
+  "date": "2026-11-01"
  }
 }
