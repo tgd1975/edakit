@@ -198,21 +198,21 @@ RULES = {                                            # rule: (check, the pages i
 # chapters; a page that meets its rule fails here until it leaves the list.
 RED = {
     "sentences": set(),
-    "sections": {f"handbook/{c}.md" for c in ("03-hardware-graph", "04-parts-database", "05-simulation", "07-pcb",
+    "sections": {f"handbook/{c}.md" for c in ("04-parts-database", "05-simulation", "07-pcb",
                                               "08-release-gate", "10-reference", "11-working-with-claude",
                                               "17-walkthrough")},
     "chapters": {f"handbook/{c}.md" for c in ("04-parts-database", "05-simulation", "07-pcb",
                                               "08-release-gate", "10-reference", "17-walkthrough")},
     "paragraphs": {"examples/coin-cell-led/docs/decisions.md",
                    "examples/blinker-555/docs/decisions.md"} | {f"handbook/{c}.md" for c in (
-        "01-approach", "03-hardware-graph", "04-parts-database", "05-simulation", "07-pcb",
+        "01-approach", "04-parts-database", "05-simulation", "07-pcb",
         "08-release-gate", "10-reference", "17-walkthrough")},
     "references": set(),
     "words": {f"handbook/{c}.md" for c in (
-        "01-approach", "03-hardware-graph", "04-parts-database", "07-pcb", "08-release-gate",
+        "01-approach", "04-parts-database", "07-pcb", "08-release-gate",
         "09-easyeda-api", "10-reference", "12-troubleshooting", "13-lessons-learned")},
     "dates": {"examples/coin-cell-led/README.md", "examples/blinker-555/README.md"} | {f"handbook/{c}.md" for c in (
-        "01-approach", "03-hardware-graph", "04-parts-database", "07-pcb", "08-release-gate", "09-easyeda-api",
+        "01-approach", "04-parts-database", "07-pcb", "08-release-gate", "09-easyeda-api",
         "10-reference", "17-walkthrough")},
     "bold": set(),
     "buzzwords": set(),

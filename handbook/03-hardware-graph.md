@@ -1,12 +1,15 @@
 # 3 The hardware graph
 
+For you when you write or change a project's circuit: after this chapter you can write the graph, read its findings,
+and keep the firmware contract and the requirements file beside it.
+
 The graph is a pin-level netlist. It is the **only** place where parts, values and connections are decided. It is
-written as TOML, `hardware/graph.toml`, with pins by name or role and comments where a reader needs the reason, or as
-JSON, `hardware/graph.json` – the form every project had until October 2026, kept until the project converts;
-`[project] graph` in edakit.toml names the file (10.1), and both forms read to the same graph. Example: [the Christmas
-bell's graph](https://github.com/tgd1975/automatic_christmas_bell/blob/main/hardware/graph.json) (JSON); the snippets
-below come from the [test project](../tests/fixtures/led-bar/hardware/graph.json), in TOML as `edakit graph convert`
-writes it, shortened.
+TOML, `hardware/graph.toml`, with pins by name or role and comments where a reader needs the reason. The older form,
+JSON in `hardware/graph.json`, is kept until the project converts; both read to the same graph. `[project] graph` in
+edakit.toml names the file (10.1). Example: [the Christmas bell's
+graph](https://github.com/tgd1975/automatic_christmas_bell/blob/main/hardware/graph.json) (JSON). The snippets below
+come from the [test project](../tests/fixtures/led-bar/hardware/graph.json), in TOML as `edakit graph convert` writes
+it, shortened.
 
 ## 3.1 Format
 
@@ -78,19 +81,24 @@ r_ohm_per_wire = 0.065
 "U1.GP3" = "LED_SDI"
 ```
 
-Components, nets and cables are tables keyed by designator and name – `[components.U2]`, `[nets."+5V"]`, the name in
-quotes where it has more than letters, digits, `_` and `-` –, read in the order of the file. Every other key is the
-JSON's, a map as a table of its own (`[purpose]`, `[layout]`, `[locks.pins]`), inline (`pins = {1 = "1", 2 = "2"}`) or
-as dotted keys (`accept."LVL.undefined" = "…"`). A component states no `pins`: its parts entry gives numbers and names,
-and a pin map is written only where the graph's differs (the `pins` row below). Nets, `nc`, locks, loop ends and
-cables name pins by name or role (below). `#` starts a comment – the reason a reader needs beside the wiring; a long
-text runs over several lines as `"""\`, where a line-ending backslash joins the next line with the blank before it. A
-key or table twice is an error with its line, TOML has no null, and a net is one table with all its pins: `[nets.GND]`
-once – an array of tables, `[[nets]]`, is refused. A graph without component or net tables has none yet (a new
-project's, 2.7).
+### Tables, keys and comments
 
-The same graph in JSON – a project that has not converted, and the `hardware/graph.json` edakit generates beside a
-TOML graph (below), there with pin numbers and every component's pin map:
+Components, nets and cables are tables keyed by designator and name (`[components.U2]`), read in the order of the
+file; a name with more than letters, digits, `_` and `-` stands in quotes (`[nets."+5V"]`). Every other key is the
+JSON's; a map is a table of its own (`[purpose]`, `[locks.pins]`), inline (`pins = {1 = "1", 2 = "2"}`) or dotted
+keys (`accept."LVL.undefined" = "…"`). A component states no `pins`: its parts entry gives numbers and names, and a
+pin map is written only where the graph's differs. `#` starts a comment – the reason a reader needs beside the
+wiring.
+
+A long text runs over several lines as `"""\`, where a line-ending backslash joins the next line with the blank before
+it. A key or table twice is an error with its line, and TOML has no null. A net is one table with all its pins,
+`[nets.GND]` once; an array of tables, `[[nets]]`, is refused. A graph without component or net tables has none yet,
+as in a new project (2.7).
+
+### The JSON form
+
+The same graph in JSON, as a project that has not converted keeps it and as edakit generates it beside a TOML graph
+(below) – there with pin numbers and every component's pin map:
 
 ```json
 {"graph": {
@@ -116,6 +124,8 @@ TOML graph (below), there with pin numbers and every component's pin map:
   "locks": {"pins": {"U1.4": "LED_CLK", "U1.5": "LED_SDI"}}
 }}
 ```
+
+### Fields
 
 The fields are the same in both forms; the table writes them as the JSON does (`bom: false` is `bom = false` in TOML):
 
@@ -161,82 +171,96 @@ The fields are the same in both forms; the table writes them as the JSON does (`
 | `locks` | what the firmware relies on: `pins` (`{"U1.4": "LED_SDI"}` – pins on their nets, STRUCT.lock), `doc_pin_table` (`{component, file, prefix, regex}` – a pin table in the documentation, STRUCT.lock); part of the circuit hash, STRUCT.ref checks the names |
 | `conventions` | how the graph is written, for whoever reads it: `pin_reference`, `v`, `accept` in the example – free text no check reads (3.2) |
 
-**A pin by number, name or role.** Wherever the graph names a pin – the `pins` of a net, `nc`, `locks.pins`, the ends
-of `layout.loops`, the `pins` of a cable – it may write the symbol's pin number (`U1.9`), the pin's name (`U1.GP6`,
-the names of the pin map) or its role in the parts entry (`D2.anode`; the role of the config the part runs in, 4.1).
-edakit reads a word as the pin number first, then the name of one pin, then the role of one pin, then a name or role
-several pins share, which stands for all of them: `U1.GND` is every GND pin of the Pico, wherever they stand in the
-net, `SW1.a` both pins of a button's side. Where one pin is meant – a loop end, a cable's wire – a word that names
-several is STRUCT.pin, and so is a word that names no pin of its part, with the net or the place it stands in; the
-rest is checked all the same. The checks, the simulation, the schematic, the hand-over and the firmware contract read
-the numbers the words stand for. A finding names a pin by the same rule the other way: the first of its name and role
-that names only this pin – the name first on an IC or a module, whose names are the datasheet's, the role first
-elsewhere (`D2.anode (1)`, a symbol's name may mislead) –, with the number in brackets where the two differ; a name
-with a blank (the Pico's TP1, "GND (USB)"), a word that says no more than the number (`R4.1`, a connector's role
-`pin3`) and a name several pins share give the number. A name that misleads stays the symbol's – the Nano whose symbol
-labels pin 14 PB4 although D11 is PB3 on the chip is written `U1.PB4` with a note –; there is no alias per pin.
+### A pin by number, name or role
 
-**The JSON generated beside a TOML graph.** `edakit graph json` prints the resolved graph – `{"graph": …}` as a JSON
-graph has it, pin numbers wherever a pin is named, every component's pin map (its entry's where the graph has none),
-the lists in the order of the file. `edakit graph json --write` keeps it beside the TOML as `hardware/graph.json`,
-committed with it: a rewire through a parts entry – a role corrected, `D2.anode` now on pad 2 – changes no line of the
-TOML but shows in the generated file as pin numbers, in the diff the review M-1 reads. So two files change with every
-edit of the circuit, as with the firmware contract (3.5): the TOML, then `edakit graph json --write`; the pre-commit
-hook runs `edakit graph json --check`, which exits 2 with what differs, keyed by designator and net, when the committed
-file no longer matches (3.4). The generated file is derived and never edited – `--write` refuses to write over a JSON
-graph, which is the source itself: the circuit hash (8.2) and the scripts' data name `graph` (8.6) take the TOML, and
-project scripts and tools that read the graph as JSON read the generated file as before.
+Wherever the graph names a pin – the `pins` of a net or a cable, `nc`, `locks.pins`, the ends of `layout.loops` – it
+may write the symbol's number (`U1.9`), the name of the pin map (`U1.GP6`) or the role the parts entry gives for the
+config the part runs in (`D2.anode`; configs, 4.1). edakit reads a word as the pin number first, then the name of one
+pin, then the role of one pin. Last comes a name or role several pins share, which stands for all of them: `U1.GND`
+is every GND pin of the Pico, wherever they stand in the net, `SW1.a` both pins of a button's side.
 
-**Moving a project to TOML.** `edakit graph convert` translates a JSON graph once; `--dry-run` prints the TOML and
-what would change. It writes `hardware/graph.toml` – components, nets and cables keyed in the order of the JSON, pins by
-the word rule above (a name several pins share, `U1.GND`, where all of them stand in the net), the pin maps left out
-where they equal the entries', long text over several lines, the convention `pin_reference` rewritten (3.2) –, sets
-`[project] graph` in edakit.toml with its comment kept, and writes the resolved `hardware/graph.json` in place of the
-source. A graph with null, a name twice or a pin that names none is refused with what to fix in the JSON (`edakit
-check` names them too), and nothing is written unless the TOML reads back to the same graph. It writes no comment but
-the two lines at the top: the reasons in `notes` stay there, and comments come by hand. The circuit hash changes once
-(8.2) –
-when the files were the signed ones, the sign-offs of scope `circuit` keep counting: the new hash goes into the
-sign-off file, both into `rehashed`. Two things follow the new hash once, by hand: with `[firmware]` the contract's
-`state_sha256` (convert says so; `edakit firmware` and commit the contract, else its `--check` in the hook fails), and
-the project scripts that read `graph` (8.6) show as outdated until `edakit run <name>` runs them or `edakit scripts
-stamp <name>` records them as they are – what they read did not change, only its hash.
+Where one pin is meant – a loop end, a cable's wire – a word that names several is STRUCT.pin. So is a word that names
+no pin of its part, reported with the net or place it stands in; the rest is checked all the same. The checks, the
+simulation, the schematic, the hand-over and the firmware contract read the numbers the words stand for.
+
+A finding names a pin the other way: by the first of its name and role that names only this pin, the number in
+brackets where they differ. The name comes first on an IC or a module, whose names are the datasheet's, the role
+elsewhere – `D2.anode (1)`, since a symbol's name may mislead. It gives the number for a name with a blank (the Pico's
+TP1, "GND (USB)"), a word that says no more than the number (`R4.1`, a connector's role `pin3`) and a shared name. A
+name that misleads stays the symbol's, with a note: the Nano whose symbol labels pin 14 PB4, although D11 is PB3 on
+the chip, is written `U1.PB4`. There is no alias per pin.
+
+### The JSON generated beside a TOML graph
+
+`edakit graph json` prints the resolved graph: `{"graph": …}` as a JSON graph has it, pin numbers wherever a pin is
+named, every component's pin map (its entry's where the graph has none), the lists in the order of the file.
+`edakit graph json --write` keeps it beside the TOML as `hardware/graph.json`, committed with it. A rewire through a
+parts entry – a role corrected, `D2.anode` now on pad 2 – changes no line of the TOML but shows in the generated file
+as pin numbers, in the diff the review M-1 reads.
+
+So every edit of the circuit changes two files, as with the firmware contract (3.5): the TOML, then
+`edakit graph json --write`. The pre-commit hook runs `edakit graph json --check`, which exits 2 with what differs,
+keyed by designator and net, when the committed file no longer matches (the working rules, 3.4). The generated file is
+derived and never edited; `--write` refuses to write over a JSON graph, which is the source itself. The circuit hash
+(8.2) and the scripts' data name `graph` (8.6) take the TOML. Project scripts and tools that read the graph as JSON
+read the generated file as before.
+
+### Moving a project to TOML
+
+`edakit graph convert` translates a JSON graph once; `--dry-run` prints the TOML and what would change. It writes
+`hardware/graph.toml` – components, nets and cables keyed in the order of the JSON, pins by the word rule above (a
+shared name, `U1.GND`, where all its pins stand in the net), pin maps left out where they equal the entries', long text
+over several lines, the convention `pin_reference` rewritten (3.2). It sets `[project] graph` in edakit.toml, its
+comment kept, and writes the resolved `hardware/graph.json` in place of the source.
+
+A graph with null, a name twice or a pin that names none is refused with
+what to fix in the JSON; `edakit check` names them too. Nothing is written unless the TOML reads back to the same
+graph. Its only comments are the two lines at the top: the reasons stay in `notes`, comments come by hand.
+
+The circuit hash changes once (8.2). Where the files were the signed ones, the sign-offs of scope `circuit` keep
+counting: the new hash goes into the sign-off file, the old and the new into `rehashed`. Two things follow the new hash
+once, by hand. With `[firmware]`, the contract's `state_sha256`: convert says so; run `edakit firmware` and commit the
+contract, else its `--check` in the hook fails. The project scripts that read `graph` (8.6) show as outdated until
+`edakit run <name>` runs them or `edakit scripts stamp <name>` records them as they are – only the hash of what they
+read changed.
 
 ## 3.2 Conventions that save trouble
 
-- **Pins by role or name, numbers from the EasyEDA symbol.** Write a pin as the datasheet and the firmware know it –
-  the role where the part has one (`D2.anode`, `Q1.gate`), the name on an IC or a module (`U1.GP6`) –, not as a number
-  looked up, which is where wrong pins and reversed LEDs come from. The parts entry says which number a word stands for,
-  and the numbers are the EasyEDA symbol's, not the datasheet's. They usually agree; for LEDs and diodes they often do
-  not (anode = 1 for one LED, = 2 for another of the same shape). `edakit part import C2297` reads them from the
-  library without EasyEDA (4.2) and keeps the symbol, so STRUCT.entry compares the pins with it; inside EasyEDA,
-  `edakit schematic create --only U3` and `easyeda_schematic_component_pins` show the placed symbol. Write the roles
-  into the parts entry. Code that needs "the cathode" asks for the role, never for the pin name.
-- **The graph says how it names pins.** `conventions.pin_reference` tells a reader how to read `U1.GP6`: in a graph by
-  names and roles `"'<designator>.<pin>' with the pin's name or role, else its symbol number – the parts entry says
-  which pin that is"` – the text `edakit graph convert` writes –, in a graph by numbers `"'<designator>.<pin>' with
+- **Pins by role or name, numbers from the EasyEDA symbol.** Write a pin as the datasheet and the firmware know it:
+  the role where the part has one (`D2.anode`, `Q1.gate`), the name on an IC or a module (`U1.GP6`). A number looked
+  up is where wrong pins and reversed LEDs come from. The parts entry says which number a word stands for, and the
+  numbers are the EasyEDA symbol's, not the datasheet's. They usually agree; for LEDs and diodes they often do not
+  (anode = 1 for one LED, = 2 for another of the same shape). Write the roles into the parts entry; code that needs
+  "the cathode" asks for the role, never for the pin name.
+
+  `edakit part import C2297` reads the numbers from the library without EasyEDA (finding parts, 4.2) and keeps the
+  symbol, so STRUCT.entry compares the pins with it. Inside EasyEDA, `edakit schematic create --only U3` and
+  `easyeda_schematic_component_pins` show the placed symbol.
+- **The graph says how it names pins.** `conventions.pin_reference` tells a reader how to read `U1.GP6`. In a graph by
+  names and roles it is the text `edakit graph convert` writes, `"'<designator>.<pin>' with the pin's name or role,
+  else its symbol number – the parts entry says which pin that is"`; in a graph by numbers `"'<designator>.<pin>' with
   the pin numbers of the EasyEDA/LCSC symbol"`. No check reads it; it keeps the graph readable without this handbook.
 - **Net names are stable identifiers** used by firmware, simulation config and docs. Rename deliberately.
-- **Voltage ranges are worst case.** `v` is what LIM.v compares with the pin limits and what the simulation checks every
-  scenario against. Think about the unloaded supply, the reversed supply, a programming cable plugged in at the same
-  time.
-- **Decisions in the graph.** "Why 2 k?" – `notes = "D-9: I_OUT = 9.45 mA"`. The decision log has the reasoning. A
-  `#` comment in a TOML graph says what a reader needs beside the wiring ("LED 1 of the bar"); no check reads it and
+- **Voltage ranges are worst case.** LIM.v compares `v` with the pin limits, and the simulation checks every scenario
+  against it. Think of the unloaded supply, the reversed supply, a programming cable plugged in at the same time.
+- **Decisions in the graph.** "Why 2 k?" – `notes = "D-9: I_OUT = 9.45 mA"`; the decision log has the reasoning. A
+  `#` comment in a TOML graph says what a reader needs beside the wiring ("LED 1 of the bar"). No check reads it and
   the circuit hash leaves it out (8.2), so a decision or a statement for a review goes into `notes` or `purpose.notes`.
 - **One part, one LCSC number.** A footprint variant is a different part.
 
 ## 3.3 Rule checks (stages P and G)
 
 `edakit check` runs in well under a second; put it into the pre-commit hook and CI. Every finding carries a code
-`ENGINE.relation` – the engine that found it and the relation it found violated, `LIM.v` a voltage beyond its limit,
-`REQ.missing` a part without what it requires – with a severity (error, warning, pending, note), sometimes a grade
-(`margin`, `unknown`, …) and a topic (`REQ.missing:cc`); chapter 14.2 has the model. What a code holds, why, what to
-do and the sources: `edakit rules` (the engines and their codes), `edakit explain LIM.v` (one code). Every code that
-fails is explained once below the findings. `edakit domains` shows which domains of rules are on for the project
-(14.2).
+`ENGINE.relation`: the engine that found it and the relation it found violated – `LIM.v` a voltage beyond its limit,
+`REQ.missing` a part without what it requires. It has a severity (error, warning, pending, note), sometimes a grade
+(`margin`, `unknown`, …) and a topic (`REQ.missing:cc`); the catalog (14.2) has the model. What a code holds, why, what
+to do and the sources: `edakit rules` for the engines and their codes, `edakit explain LIM.v` for one. Every code that
+fails is explained once below the findings. `edakit domains` shows which domains of rules are on for the project (14.2).
 
-The codes of the graph engines – generated from the catalog, `edakit/catalog/codes.toml`; LIM and LVL judge the
-simulation's values in stage E as well (5.3), the hints are in 14.3:
+### The codes
+
+The codes of the graph engines, generated from the catalog (`edakit/catalog/codes.toml`). LIM and LVL judge the
+simulation's values in stage E as well (the simulation's checks, 5.3); the hints are in 14.3:
 
 <!-- edakit:generated table STRUCT LIM LVL REQ PATH PARTS DOCS -->
 | Code | Title | Severity |
@@ -292,69 +316,85 @@ simulation's values in stage E as well (5.3), the hints are in 14.3:
 Rule, why, fix and sources of each: `edakit explain CODE`, or the code on its page of the catalog.
 <!-- edakit:end -->
 
-**0 Ω bridges.** A resistor whose parts entry has `value_ohm: 0` is copper – the usual way to cross a track on a board
-with all tracks on one side. The nets it joins are one net for the engines LVL, REQ, PATH and the fuse limits of
-LIM.i: a pull-up behind a bridge holds its input, a capacitor to a ground net behind a bridge decouples, two outputs
-on either side clash. A finding names the joined net after the ground net if that is one of them, else after the
-first of them in the graph; an `accept` on any of them counts. STRUCT, the voltages of LIM.v, PARTS and the hot loop
-of REQ.missing see every net and the bridge as the graph has them (the pads of `layout.loops` lie on one net of the
-graph).
-`edakit check` lists the joined nets above its last line:
+### 0 Ω bridges
+
+A resistor whose parts entry has `value_ohm: 0` is copper – the usual way to cross a track on a board with all tracks
+on one side. The nets it joins are one net for the engines LVL, REQ, PATH and the fuse limits of LIM.i: a pull-up
+behind a bridge holds its input, a capacitor to a ground net behind a bridge decouples, two outputs on either side
+clash. A finding names the joined net after the ground net if that is one of them, else after the first of them in
+the graph; an `accept` on any of them counts.
+
+STRUCT, the voltages of LIM.v, PARTS and the hot loop of REQ.missing see every net and the bridge as the graph has
+them; the pads of `layout.loops` lie on one net of the graph. `edakit check` lists the joined nets above its last
+line:
 `joined by 0 Ω bridges, checked as one net: GND = GND_B (R11); 3V3 = 3V3_B = 3V3_C (R10, R13)`.
 
-Severities: `error` (must be fixed), `warning` (the gate wants it accepted in the sign-off file, 8.2), `pending` (an
-open sign-off, blocks only the release), `note` (information). A finding accepted in the graph – `accept` on the net
-or the component, keyed by its code (3.1) – shows `(accepted)` with the reason. The profile of the project can raise
-or lower a code's severity (14.2). Exit 1 on errors, with `--release` also on pending findings. The design hints
-(HINT, chapter 14.3) are notes and never block.
+### Severities
 
-**What went unchecked.** A code that needs a datasheet value skips a part without it: LIM.v a capacitor without
-`v_max_v`, LIM.t every part without `rth_ja_k_per_w`, LVL.threshold an input without `vih`/`vil`, LIM.range an IC
-without its operating range or an op-amp without `vicm_v`, LIM.i a magnetic buzzer (`coil_ohm`) without `i_max_a`. An RGB LED is read per colour, as the simulation holds it
-(5.1): each colour by its own `limits.<color>`, a colour without its own table by the entry's limits – a gap names the
-colour that lacks the value (`LIM.i: D10 – no if_max_a for green – …`). `edakit check` names these gaps in one line above its last
-(`not checked for lack of data: LIM.t 11 parts, LVL.threshold 1 part – edakit check --coverage`), `--coverage` lists
-them per code with the designators and the field that is missing, and the gate protocol lists them in its section 2.
-A gap is no finding – nothing was found, since nobody looked; it closes when the entry gets the value from its
-datasheet. The same list names what the simulation does not model over time (5.1): a charger, a cell's protection, a
-USB PD sink – its end of charge, its release voltages and delays, its negotiation – as `not simulated` under SIM.state,
-with the hint that names the risk; the one line ends with them (`…; not simulated over time: U3 (charger), U4
-(protection) – edakit check --coverage`). These gaps stay: decision 17 of rules-at-scale.md gives such behaviour no
-state model. And it names every cable without `i_max_a` that carries current in the simulation (decision 22): a
-wire's rating comes from the wire's own datasheet, none from its gauge, and what would pass unseen is a wire that heats
-while its voltage drop and its connectors pass – 12–24 V at amperes, short thin leads, a thin wire in a contact rated
-for a thicker one. The line gives the cable's highest current over the scenarios, its wire and scenario, and the loss
-it causes in a metre of the wire, I² × R of the wire's copper (`LIM.i: cable W1 – no i_max_a – up to 2 A (wire 8,
-usb-max/all_on/vf-max), I² × R: 211.3 mW per metre of wire (AWG 22 copper at 20 °C) – its current is not held to the
-wire's rating`) – a number, no verdict, no threshold; with `r_ohm_per_wire` and no `length_m` the loss in the whole
-wire. The currents come from the simulation `edakit sim` saved for this state (the gate: its own run); `edakit check`
-runs none, and without a current one the cable is named with its current not known. The one line ends with `cables
-without i_max_a: W1`.
+A finding is an `error` (must be fixed), a `warning` (the gate wants it accepted in the sign-off file, 8.2), `pending`
+(an open sign-off, blocks only the release) or a `note` (information). A finding accepted in the graph – `accept` on
+the net or the component, keyed by its code (the fields, 3.1) – shows `(accepted)` with the reason. The profile of the
+project can raise or lower a code's severity (14.2). Exit 1 on errors, with `--release` also on pending findings. The
+design hints (HINT, chapter 14.3) are notes and never block.
 
-Polarity (is the LED the right way round?) is not a graph rule but a simulation result: a reversed LED shows up in
-stage E as "LED reversed" or as a dark LED (chapter 5), and SIM.driver makes sure no LED escapes it. G-7 was the graph's
-polarity check before the codes; it was retired.
+### What went unchecked
+
+A code that needs a datasheet value skips a part without it: LIM.v a capacitor without `v_max_v`, LIM.t every part
+without `rth_ja_k_per_w`, LVL.threshold an input without `vih`/`vil`, LIM.range an IC without its operating range or
+an op-amp without `vicm_v`, LIM.i a magnetic buzzer (`coil_ohm`) without `i_max_a`. An RGB LED is read per colour, as
+the simulation holds it (5.1): each colour by its own `limits.<color>`, a colour without its own table by the entry's
+limits. A gap names the colour that lacks the value (`LIM.i: D10 – no if_max_a for green – …`).
+
+`edakit check` names these gaps in one line above its last (`not checked for lack of data: LIM.t 11 parts,
+LVL.threshold 1 part – edakit check --coverage`). `--coverage` lists them per code with the designators and the field
+that is missing, and the gate protocol lists them in its section 2. A gap is no finding – nothing was found, since
+nobody looked; it closes when the entry gets the value from its datasheet.
+
+The same list names what the simulation does not model over time (5.1): a charger, a cell's protection, a USB PD sink
+– its end of charge, its release voltages and delays, its negotiation. They show as `not simulated` under SIM.state,
+with the hint that names the risk, and end the one line (`…; not simulated over time: U3 (charger), U4 (protection) –
+edakit check --coverage`). These gaps stay: decision 17 of rules-at-scale.md gives such behaviour no state model.
+
+The list also names every cable without `i_max_a` that carries current in the simulation (decision 22). A wire's
+rating comes from the wire's own datasheet, none from its gauge. What would pass unseen is a wire that heats while its
+voltage drop and its connectors pass – 12–24 V at amperes, short thin leads, a thin wire in a contact rated for a
+thicker one.
+
+The line gives the cable's highest current over the scenarios, its wire and scenario, and the loss it causes in a metre
+of the wire, I² × R of the wire's copper – a number, no verdict, no threshold. An example: `LIM.i: cable W1 – no i_max_a
+– up to 2 A (wire 8, usb-max/all_on/vf-max), I² × R: 211.3 mW per metre of wire (AWG 22 copper at 20 °C) – its current
+is not held to the wire's rating`.
+
+With `r_ohm_per_wire` and no `length_m` the line gives the loss in the whole wire. The currents come from the simulation
+`edakit sim` saved for this state; the gate uses its own run. `edakit check` runs none, and without a current one the
+cable is named with its current not known. The one line ends with `cables without i_max_a: W1`.
+
+### Polarity
+
+Polarity – is the LED the right way round? – is not a graph rule but a simulation result. A reversed LED shows up in
+stage E as "LED reversed" or as a dark LED (chapter 5), and SIM.driver makes sure no LED escapes it. G-7, the graph's
+polarity check before the codes, is retired.
 
 ## 3.4 Working rules
 
-1. Change the graph – the file `[project] graph` names, beside a TOML graph never the generated `graph.json` –, never
-   the schematic or the PCB. The hardware-change skill walks through the rest.
+1. Change the graph, never the schematic or the PCB – the file `[project] graph` names, beside a TOML graph never the
+   generated `graph.json`. The hardware-change skill walks through the rest.
 2. Every new LCSC number gets its parts entry first (part-search skill). A new function starts from a building block
    where one fits (`edakit block`, chapter 14.5).
-3. `edakit check` and `edakit sim` before every commit that touches `hardware/` – the pre-commit hook does it, with a
-   TOML graph also `edakit graph json --check` (3.1).
+3. `edakit check` and `edakit sim` before every commit that touches `hardware/`. The pre-commit hook runs them, with a
+   TOML graph also `edakit graph json --check` (the generated JSON, 3.1).
 4. A finding is fixed or accepted with a reason. Never edit a check to make a finding go away.
 5. Generated files (firmware pin tables, the circuit description's parts list) are regenerated from the graph, never
-   edited, and committed together with the graph change – the resolved `hardware/graph.json` beside a TOML graph with
+   edited, and committed together with the graph change: the resolved `hardware/graph.json` beside a TOML graph with
    `edakit graph json --write` (3.1), the firmware contract with `edakit firmware` (3.5).
 
 ## 3.5 The firmware contract
 
 Opt-in: with `[firmware]` in edakit.toml (10.1), `edakit firmware` writes what the firmware must know about the board
-as neutral JSON (default `hardware/firmware.json`), and `edakit firmware --check` exits 2 when the committed file no
-longer matches – for the pre-commit hook, next to `edakit check` and `edakit sim`. Without the table nothing changes.
-It runs the other way round from STRUCT.lock: there the firmware is the reference and `locks.pins` hold the graph to it;
-here the graph is the reference and the firmware follows. A project may use both.
+as neutral JSON (default `hardware/firmware.json`). `edakit firmware --check` exits 2 when the committed file no longer
+matches – for the pre-commit hook, next to `edakit check` and `edakit sim`. Without the table nothing changes. It runs
+the other way round from STRUCT.lock: there the firmware is the reference and `locks.pins` hold the graph to it; here
+the graph is the reference and the firmware follows. A project may use both.
 
 | Key | Content |
 |---|---|
@@ -370,21 +410,20 @@ here the graph is the reference and the firmware follows. A project may use both
 | `chains` | from an MCU net through the roles `sdi` → `sdo`: `data`, `parts` in shift order, `read_back` (the last `sdo` on an MCU pin), `common` (MCU nets every part of the chain shares: clock, latch, enable) and `first_bit_to` (the part fact `values.first_bit_to`, `"unknown"` without it) |
 | `channels` | `{channel, chain, driver, output, pin, net, leds}` for every output with the role `out0` … `outN`, the LEDs traced as SIM.state/SIM.driver trace them: cathode on the output directly, behind 0 Ω bridges or behind a balancing resistor (5.3); `channel` = the outputs of the drivers before it in its chain + its number. A reversed LED is listed under `reversed` |
 
-Only roles decide which pin is a cathode, a data input or output 3 – never a pin name (in the origin project an
-exporter once found a cathode by the name "K" and nearly wrote a wrong channel table). The one exception is the GPIO
+Only roles decide which pin is a cathode, a data input or output 3 – never a pin name. The one exception is the GPIO
 number, taken from the MCU pin's name. A driver in a chain whose outputs have only the role `out` is an error: the
 channel order needs the numbers.
 
 The contract has no firmware format. Turning it into source – a MicroPython module, a C header – is the project's own
-script, which reads the JSON and runs after `edakit firmware` (MicroPython can also read the JSON as it is).
+script, which reads the JSON and runs after `edakit firmware`; MicroPython can also read the JSON as it is.
 
 ## 3.6 Requirements
 
 The graph says what the circuit is, the decision log why it is so; the requirements file says what it must do.
-`[project] requirements` in edakit.toml names it, usually `hardware/requirements.toml` (format: 10.4). Every project
-has one before it orders: without the key DOCS.file is open, as a required sign-off is – `edakit check` reports it and
-passes, so a project being set up still commits; `edakit check --release` and the gate do not release (8.7). Two
-levels, along the gap between a wish and a circuit:
+`[project] requirements` in edakit.toml names it, usually `hardware/requirements.toml` (its format, 10.4). Every
+project has one before it orders. Without the key DOCS.file is open, as a required sign-off is: `edakit check` reports
+it and passes, so a project being set up still commits; `edakit check --release` and the gate do not release (8.7).
+Two levels, along the gap between a wish and a circuit:
 
 | Level | ID | Content | Example (the tests' led-bar) |
 |---|---|---|---|
@@ -392,33 +431,38 @@ levels, along the gap between a wish and a circuit:
 | requirement | R-… | one statement of what the circuit must do, in the words and at the level of detail of who stated it, bound as `must`, `should` or `may` | R-1 "Runs from the USB port of a laptop with all eight LEDs on." |
 
 **Inputs, not outputs.** A requirement is what someone involved states – the maker, a user, a standard or law the
-maker chooses –, from the customer's view and at the level of detail they give it ("a servo must be driven" as much
-as "pin X never above Y"). Nothing edakit generates or the circuit designer derives is one: not a simulated value, a
+maker chooses. It takes the customer's view and the level of detail they give it ("a servo must be driven" as much as
+"pin X never above Y"). Nothing edakit generates or the circuit designer derives is one: not a simulated value, a
 check result, the derating, a part's limit or a choice the design made on its own. The test is who stated it: a
 choice the maker made is a requirement (the LED colours, two buttons, a module on headers); one the designer or edakit
-made is not (the regulator, a series resistor's 330 Ω). The numbers that follow – the current that keeps a power bank
-on, the voltage at a servo's start – stay in sim.json and the graph's notes and reach the requirement as its evidence
-(`rows`): R-1 above names no current, its rows `LIM.i * J1 current from the supply` test it against the 500 mA of
-USB 2.0. What edakit's catalog checks on every board (the parts' limits, the levels, the radio law of M-6) needs no
-requirement – the gate fails on it anyway. A project designed before its file gets inferred drafts: its parts lifted
-to what a person sees, presses, plugs in, hears, each marked inferred until the owner says yes.
+made is not (the regulator, a series resistor's 330 Ω).
 
-`source` says where an entry was found – a document, a decision –, `from` where a requirement comes from: a need, a
+The numbers that follow – the current that keeps a power bank on, the voltage at a servo's start – stay in sim.json
+and the graph's notes. They reach the requirement as its evidence (`rows`): R-1 above names no current, and its rows
+`LIM.i * J1 current from the supply` test it against the 500 mA of USB 2.0. What edakit's catalog checks on every
+board (the parts' limits, the levels, the radio law of M-6) needs no requirement – the gate fails on it anyway. A
+project designed before its file gets inferred drafts: its parts lifted to what a person sees, presses, plugs in,
+hears, each marked inferred until you say yes.
+
+`source` says where an entry was found – a document, a decision. `from` says where a requirement comes from: a need, a
 decision (D-8), a standard (USB 2.0: 500 mA), a sign-off (M-6). `verify` says what tests it: rows of the gate
 protocol, a manual check, a project script, a step of the acceptance test. The file covers the circuit only – what the
-boards must do and withstand; what firmware and mechanics must do stays in the project's own documents. IDs are
-stable, as in the rule catalog: a requirement that no longer holds stays in the file with `status = "dropped"` and its
-`reason`. Claude drafts – `status = "draft"`, which is also what an entry without `status` is –, only the user sets
-`accepted`; a change to an accepted requirement is a decision in the decision log.
+boards must do and withstand; what firmware and mechanics must do stays in the project's own documents.
 
-**Who writes it.** The skill `requirements`, in the conversation with the user: it collects what those involved state the circuit must do,
-asks back in one decision round until vague words are the maker's numbers and contradictions are decided, writes drafts and has
-the user approve them – approving a requirement is one of the user's real decisions (11.4). It writes this file and
-the decision log, never the graph. In a project with documents the agent `requirements-engineer` makes the inventory
-first: it reads every document in its own context, changes nothing, and returns candidates with who stated them,
-what edakit already checks on every board, contradictions, vague words and requirements without evidence; on a finished file it gives a second opinion.
-The circuit designer reads the file instead of asking for the requirements (skill circuit-design), a new function
-starts with its requirement, and each reviewer judges the requirements its sign-off verifies (8.7). The roles: 14.1.
+IDs are stable, as in the rule catalog: a requirement that no longer holds stays in the file with its `reason` and
+`status = "dropped"`. Claude drafts with `status = "draft"`, which is also what an entry without `status` is; only you
+set `accepted`. A change to an accepted requirement is a decision in the decision log.
+
+**Who writes it.** The skill `requirements`, in the conversation with you. It collects what those involved state the
+circuit must do and asks back in one decision round until vague words are the maker's numbers and contradictions are
+decided. It writes drafts and has you approve them – approving a requirement is one of your real decisions (the
+working agreements, 11.4). It writes this file and the decision log, never the graph.
+
+In a project with documents the agent `requirements-engineer` makes the inventory first. It reads every document in
+its own context, changes nothing, and returns candidates with who stated them, what edakit already checks on every
+board, contradictions, vague words and requirements without evidence; on a finished file it gives a second opinion.
+The circuit designer reads the file instead of asking for the requirements (skill circuit-design), and a new function
+starts with its requirement. Each reviewer judges the requirements its sign-off verifies (8.7); the roles: 14.1.
 
 ```bash
 edakit req        # needs and requirements: status, binding, and the evidence as written in verify
@@ -430,18 +474,17 @@ edakit req N-1    # the requirements a need leads to, with their evidence
 
 - **`edakit check`** (3.3) – and the gate's stage G – checks the file: every reference resolves (DOCS.ref), every
   accepted need has a requirement (DOCS.need), every requirement has evidence (DOCS.evidence), and a draft warns until
-  the user decides (DOCS.draft). A requirement names someone who stated it (DOCS.derived): its `source` a decision, a
-  need, a document of the project that is not design data, or a date – without `source` its `from` a need, a decision
-  or a standard; one that names only graph, parts entries, `sim.json`, the sign-off file or a datasheet is derived
-  from the design, not stated, and warns – for a draft as for an accepted requirement, in the gate too.
+  you decide (DOCS.draft). A requirement names someone who stated it (DOCS.derived): its `source` a decision, a need,
+  a document of the project that is not design data, or a date – without `source` its `from` a need, a decision or a
+  standard. One that names only graph, parts entries, `sim.json`, the sign-off file or a datasheet is derived from the
+  design, not stated, and warns – for a draft as for an accepted requirement, in the gate too.
 - **A draft never blocks.** Every finding about a draft is a warning – a reference that does not resolve yet, no
   evidence yet –, so an unfinished file passes `edakit check` and the pre-commit hook; in the gate the findings are
-  information. Errors and blocking start once the user has set `status = "accepted"`.
-- **The gate** evaluates every requirement's evidence against its run (8.7): `must` without passing evidence blocks
-  the release, `should` is a warning the owner accepts, `may` informs – for an accepted requirement; a draft is
-  evaluated as well and binds nothing yet. Section 11 of the protocol lists every requirement with its evidence and
-  the result, a draft marked as one; the acceptance steps (`accept`) join the list of section 6 that M-4 works
-  through.
+  information. Errors and blocking start once you have set `status = "accepted"`.
+- **The gate** evaluates every requirement's evidence against its run (8.7). For an accepted requirement, `must`
+  without passing evidence blocks the release, `should` is a warning you accept, `may` informs; a draft is evaluated
+  as well and binds nothing yet. Section 11 of the protocol lists every requirement with its evidence and the result,
+  a draft marked as one; the acceptance steps (`accept`) join the list of section 6 that M-4 works through.
 - **The circuit hash** covers the file byte for byte, `[release] hash_ignore` does not reach into it (8.2): a changed
   requirement voids M-1 and M-6 – the reviews read the requirements –, and with `[firmware]` the contract shows drift
   (3.5).
