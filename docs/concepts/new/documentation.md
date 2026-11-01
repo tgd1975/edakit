@@ -3,10 +3,12 @@
 Status 2026-10-31: decided – the eight decisions and what Claude decided itself accepted by the owner the same day, and
 a ninth and a tenth added by the owner the same evening (the circuit alone as a station; condensing as a rule, with its
 measure); an eleventh and a twelfth on 2026-11-01 – the case for edakit on the start page, confirmed by the owner with
-the vision line added, and a gallery of the projects built with edakit, placed by Claude and to be confirmed, in a
-decision round in Claude Code's form (the table at the end); D.1 built the same evening (`docs/style.md`,
-`docs/glossary.md`, `tests/test_style.py`, `tests/test_references.py`); each step D.2 to D.7 starts on the owner's word,
-one per branch, listed in `TODO.md`. Written against main at `8fba5f2`. Asked for by the owner: the pages are
+the vision line added, and a gallery of the projects built with edakit, a page per project with its schematic and board
+pictures, accepted with the owner's additions, in a decision round in Claude Code's form (the table at the end); D.1
+built the same evening (`docs/style.md`, `docs/glossary.md`, `tests/test_style.py`, `tests/test_references.py`); each
+step D.2 to D.7 and D.9 starts on the owner's word, one per branch, listed in `TODO.md`. Written against main at
+`8fba5f2`; the gallery checked against main at `a6ae71a` – its pictures are the release protocol's section 12 (since
+`741cc9a`), and chapter 18, the second walkthrough, joins "The board". Asked for by the owner: the pages are
 comprehensive but confusing, so unreadable – a concept for how the documentation should look, be organised and be
 written, who its readers are, the language and its style, what is missing for it to be understood, everything needed so
 that others use edakit. With one condition the owner set while it was written: everything `docs/organisation.md` does
@@ -99,8 +101,8 @@ Measured on main at `8fba5f2`, the site built locally (`python3 docs/pages.py`, 
   protection, D-7 the cell's current). The forward voltages, a coin cell's pulse rating, what a reversed cell reaches,
   the footprints, the Gerber files and the order form came from edakit and Claude.
 - **No project to look at.** The README names the bell with its numbers and the example with its files; the reference
-  project is private and nameless; nowhere is a built board to be seen at a glance – a photo, the drawn schematic, the
-  plan – with three lines on what it is and what it taught edakit.
+  project is private and nameless; nowhere is a built board to be seen – a photo, the drawn schematic, the board as made
+  – with what it is, how it is built and what it taught edakit.
 - **No glossary.** Sign-off (143 mentions), M-1 to M-6 (201), stage, hand-over, claim, domain, engine, code, hint,
   block, gate run, release: each is explained where it is introduced, and a reader who arrives at chapter 8 by search
   has not been there.
@@ -208,15 +210,35 @@ The sources stay on the site, at its end, as "Inside edakit", untouched.
   of 17.1's "Who" column, step by step, with the count that backs the start page's case, and chapter 1's "what it does
   not give you" –, the decision round shown once as a shortened transcript; what is text and what still exists only in
   EasyEDA – the README's "Status and limits", kept current as it is today.
-- **Projects** (`docs/projects.md`): one entry per project built with edakit – a picture (the board in the hand, or the
-  drawn schematic and the plan, both generated from the project's files), three lines (what it does, its size in boards,
-  parts and nets, the maker and the state – released, ordered, delivered –, what it taught edakit), the link where the
-  repository is public. Entries: the example; the bell; pytree, the reference project of chapter 13, with the
-  information and the pictures the owner picks – the repository stays private, the entry is the one place the project is
-  described and chapter 13 refers to it by name –; later the tiny jukebox, the pedal and the steering wheel, each when
-  it has converted to edakit (`/edakit:new-project` with the inventory) and on the owner's word. The pictures live in
-  `docs/projects/<name>/`; the numbers of the example come from its files, held by a test, the others name their date
-  and commit.
+- **Projects** (`docs/projects/`): the projects built with edakit, each on a page of its own – there are two today, and
+  each is worth a page. The index (`docs/projects/README.md`) shows a card per project: its board as made, one line, the
+  link; the two examples (`examples/coin-cell-led`, `examples/blinker-555`) are cards whose page is their walkthrough,
+  chapters 17 and 18. A project page explains the project to a reader who has never seen it, with the pictures edakit
+  makes:
+  - **What it is** – what the device does and for whom, its boards, the maker, where it stands: released, ordered,
+    delivered, with the date and the release.
+  - **The circuit** – the drawn schematic, and its blocks explained in plain words: what each does and why it is built
+    that way, from the graph's labels and the decision log.
+  - **The board** – top, bottom and the layers as made; size, layers, parts, nets, vias; what the maker assembles and
+    what is soldered by hand; how it was placed and routed.
+  - **What edakit found** – the findings that changed the design, each with its code and the link to the catalog, and
+    the decisions they led to: the case of the start page, shown on a real project.
+  - **Variants**, where a project has them – the boards side by side and a table of what differs. The bell is one
+    circuit as main, smd, tht and esp32 (its D-11 to D-15): the same function with hand-soldered parts, with parts the
+    maker assembles, with another module – each a variant in edakit's sense, a project of its own below the main one,
+    released and published together.
+  - **What it changed in edakit** – the gaps it closed (chapter 13).
+
+  The pictures are the release's: the gate draws the circuit and the board into section 12 of the protocol (`pictures/`,
+  SVG and PNG), and `edakit release publish` puts them into the project's GitHub release (8.3). They are copied from
+  there into `docs/projects/<name>/` with the release's tag, never drawn by hand, and renewed with the next release; a
+  photo of the delivered board where there is one. The numbers name their release. pytree, the reference project of
+  chapter 13: the repository stays private, its page holds the information and the pictures the owner picks from its
+  release, and it is the one description of the reference project – chapter 13 refers to it by name. A project gets its
+  page once it has a result with edakit – a released board, or at the circuit station a checked and drawn circuit. The
+  gallery shows what is built and nothing that is planned: which project converts next is the owner's and `TODO.md`'s,
+  not the gallery's. A project page is written in the entry register, its length set by its pictures – a kind of page of
+  its own in the style guide (D.9).
 - **Glossary** (`docs/glossary.md`): every term in one or two sentences, with the chapter that treats it, in the words
   the skills and the catalog use – the two stations and the hand-wired board among them. The first use on an entry page
   links to it.
@@ -228,7 +250,7 @@ The navigation, two levels, groups named after what the reader does:
 | Group | Pages (the files as they are) |
 | --- | --- |
 | The circuit | The approach (1), Setup (2), Working with Claude (11), Designing a circuit (14), Hardware graph (3), Parts (4), Simulation (5), Regulatory review (15) – the station ends with the drawn schematic (6.5, linked from the group's index) and the hand-over (`edakit handover`, 14.1): a result on its own, or the board's input |
-| The board | Schematic (6), PCB (7), Release gate (8), KiCad (16), Walkthrough (17), Troubleshooting (12), Lessons learned (13) |
+| The board | Schematic (6), PCB (7), Release gate (8), KiCad (16), Walkthrough (17), Walkthrough on KiCad (18), Troubleshooting (12), Lessons learned (13) |
 | Extend the rules | *Adding a rule* (new: from 14.4, the skill add-rule and `docs/organisation.md` – the catalog's files, a code's fields, the negative test, the generated sections, the run against the reference circuits, the proposal from a project), Propose a rule, Propose a feature (the skills' pages) |
 | Develop edakit | *Working on edakit* (new: `docs/organisation.md` on the site, extended by the concepts' lifecycle, the tests, the evals, how the site is built; CLAUDE.md beside it as a source page), Brand |
 | Reference | Project files and keys (10.1–10.4, 10.6), Commands (10.5), EasyEDA API (9), Rule catalog (one page per engine, the domains, the tables, the reference circuits, the open designs), Check IDs of before (10.7) |
@@ -377,7 +399,9 @@ documentation review's (`docs/organisation.md`).
 7. **The marketplace text.** `.claude-plugin/plugin.json` says "From a JSON hardware graph" – the graph is TOML since
    L.8. The plugin's and the marketplace's descriptions are the first text a reader sees in `/plugin`. They are a
    source: the review reports them, the owner changes them.
-8. **Contributing, said plainly** on the developer page: issues and pull requests are welcome and the owner merges; rule
+8. **Boards to look at** – the gallery (decision 12): a reader judges a tool by what has been built with it, and two
+   real projects with their pictures say more than a list of features.
+9. **Contributing, said plainly** on the developer page: issues and pull requests are welcome and the owner merges; rule
    and feature proposals come from projects through the plugin, and only the owner's are triaged by the Action.
 
 ## Steps
@@ -392,7 +416,7 @@ documentation review's (`docs/organisation.md`).
 | D.6 | The reader pages: "Adding a rule", "Working on edakit" with CLAUDE.md beside it | M | D.3 |
 | D.7 | The "is it for me" numbers from the evals; the findings on sources (the plugin's descriptions) to the owner | S | – |
 | D.8 | "What changed", if decided | S | D.3 |
-| D.9 | `docs/projects.md` with the example and the bell; pytree's entry with what the owner picks; the later projects as they convert | S, then S per project | D.2; pytree the owner |
+| D.9 | `docs/projects/`: the index with its cards; the bell's page with its variants, from the pictures of its current release; pytree's page with what the owner picks; the style guide's project page and `test_style.py` following; a later project's page once it has a result with edakit | M, then S–M per project | D.2; pytree the owner |
 
 D.1 to D.4, D.6, D.7 and D.9 are about six sessions; D.5 is one session per large chapter and the review after it. The
 first usable result is after D.3: a newcomer enters through the start page and the quickstart and reaches the guides
@@ -408,6 +432,8 @@ through a navigation that tells them where they are, with the chapters still as 
   lines, no paragraph over 120 words; no section over 80 lines without a subheading; sentences at most 25 words on
   average; no bare "(N.N)"; no "the reference project" and no "the user" in a reader page's own sentences; no date
   outside chapter 13, the status lines and the dates the automation relies on.
+- The projects: every page with the schematic and the board as made from a named release, its blocks and its findings
+  explained; nothing planned on the gallery.
 - The navigation: two levels, at most fourteen entries per group, titles of at most five words.
 - The reference: no cell over 25 words; the commands' synopses equal the command line (test); no catalog page over 300
   KB.
@@ -462,14 +488,14 @@ recommendation.
 | 2 | The sources on the site | kept, as the last group "Inside edakit" with an index and a source line added by the site, the texts untouched | off the site, links to GitHub; as today | accepted |
 | 3 | The spelling | British as written; "catalog" edakit's own name, "catalogue" JLCPCB's; the exceptions in documentation unified, sources as they are | American | accepted |
 | 4 | The voice | "you" for the reader, "Claude" for the session; "the user" and "the owner" leave the reader pages' own sentences, quoted sources keep their words | as today | accepted |
-| 5 | The history and the private projects | dates and the story leave the guides for chapter 13; "the reference project" described once – since decision 12 in its gallery entry as pytree, which chapter 13 refers to by name – and named nowhere else; the example and the open designs are the examples; dates the automation relies on stay | stays inline, as today | accepted |
+| 5 | The history and the private projects | dates and the story leave the guides for chapter 13; "the reference project" described once – since decision 12 on its project page as pytree, which chapter 13 refers to by name – and named nowhere else; the example and the open designs are the examples; dates the automation relies on stay | stays inline, as today | accepted |
 | 6 | The README | one screen: what, for whom, needs, not, install, try it, next; the command block to the reference, the repository map to organisation.md, "Status and limits" to "How it works"; `test_plugin.py` follows | as today, with a shorter head | accepted |
 | 7 | The command reference | entries: the synopsis generated from the parser and held by a test, reads, writes and exit codes hand-written beneath; the help texts changed only in `cli.py` through a branch | the table as today; fully generated (loses reads and writes) | accepted |
 | 8 | "What changed" from the merge commits on the site | not built until a reader asks: the commit messages are written for the owner | built with D.3 | accepted |
 | 9 | The circuit alone as a station (the owner's addition: "we can also make only a circuit SVG – maybe that is the maker anyway") | two groups, "The circuit" and "The board", instead of "Use it"; chapter 14 to the circuit; the quickstart is the station and says so; the pipeline drawing shows the cut | one group with the station on its index page only; a sentence in the maker's row only | accepted |
 | 10 | Condensing as a rule (the owner's addition: "it would be advisable to condense the texts – a style question") | the same statements in a third fewer words per chapter, no chapter over 500 lines, no paragraph over 120 words, no statement lost – the review's list proves it, and where a chapter does not give the third the statements win | the rules without a number; a target per chapter set at its branch | accepted |
 | 11 | The case for edakit (the owner's addition: "a big argument for edakit is that one needs relatively little knowledge to design a correct circuit and order the PCB, up to assembly – a selling point too"; where, the owner left to Claude) | on the start page, in its first lines, as a statement a reader can check – you bring the idea, what the board must do and the decisions on money, purpose and looks; edakit and Claude bring the rest – with the walkthrough's count (14 steps, six yours, seven decisions) and its limit in the same breath: not a guarantee, the regulatory review support, not legal advice; the evidence table on How it works; the quickstart ends with what the reader did not need | a slogan on the start page; the case nowhere, the facts alone | accepted, with the owner's addition: after the case one sentence that calls it the vision – "at least that is the vision, and we are close" – and links the state, so that no false expectation is raised |
-| 12 | A gallery of projects (the owner's addition: "a kind of gallery with project presentations – pytree, even though the repository is private: some information and pictures can go out; the bell; later the tiny jukebox, the pedal and the steering wheel, once converted") | `docs/projects.md` in the entry layer: a picture, three lines and the link per project; the example and the bell now, pytree with what the owner picks, the others as they convert; pytree's entry the one description of the reference project | the projects in chapter 13 only; links on the start page only | placed by Claude, to be confirmed |
+| 12 | A gallery of projects (the owner's addition: "a kind of gallery with project presentations – pytree, even though the repository is private: some information and pictures can go out; the bell; later the tiny jukebox, the pedal and the steering wheel, once converted") | `docs/projects/` in the entry layer: an index with a card per project and a page per project – what it is, the circuit with its drawn schematic and its blocks explained, the board as made, what edakit found, its variants, what it changed in edakit –, the pictures from the project's release; the bell and pytree, pytree with what the owner picks and its page the one description of the reference project; the examples as cards to their walkthroughs; a page once a project has a result with edakit | the projects in chapter 13 only; links on the start page only; a picture and three lines per project (Claude's first proposal) | accepted, with the owner's additions: schematic and board pictures and more explanation – "otherwise it would be very dry" –, a page per project since there are two, the bell's board variants shown ("not uninteresting"); which project converts next is "none of the gallery's business" |
 
 Decided by Claude and confirmed by the owner on 2026-10-31: MkDocs Material stays; chapter files and numbers stay;
 sources, data and code untouched, with the rules of the section "What the automation reads"; `tests/test_references.py`;
@@ -496,4 +522,8 @@ offline and held by a test; the first reader as an eval case; the pipeline drawi
   section lengths by line; cross-references as "(N.N)" and bare "N.N"; the words counted by plain search over
   `README.md` and `handbook/`; the references to the handbook as `handbook N` and `handbook/NN-` over the `.py`, `.md`,
   `.toml`, `.sh` and `.json` files of `edakit/`, `skills/`, `agents/` and `.claude/`.
+- For the gallery, main at `a6ae71a`: handbook 8.3 (section 12 of the protocol, `edakit release publish`),
+  [circuit-dsl.md](circuit-dsl.md) (the bell's four configurations, its D-11 to D-15),
+  [docs/glossary.md](../../glossary.md) (variant, station), [docs/style.md](../../style.md) (the entry register's
+  length).
 - `examples/coin-cell-led`: `edakit check` in 0.2 s, `edakit explain PATH.reverse`, on 2026-10-31.

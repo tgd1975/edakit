@@ -138,10 +138,13 @@ sources, data and code untouched; a text that is generated or used elsewhere sta
 - [ ] TD-33 - **D.6** The reader pages "Adding a rule" and "Working on edakit".
 - [ ] TD-34 - **D.7** The "is it for me" numbers from the evals; the findings on sources (the plugin's descriptions say
       "JSON hardware graph") to the owner.
-- [ ] TD-35 - **D.9** `docs/projects.md`, the gallery: the example and the bell now; pytree's entry with the information
-      and the pictures the owner picks (needs the owner – the repository stays private); the tiny jukebox, the pedal and
-      the steering wheel each after its conversion to edakit (`/edakit:new-project` with the inventory, a project of its
-      own), on the owner's word.
+- [ ] TD-35 - **D.9** `docs/projects/`, the gallery: the index with a card per project – the examples' cards lead to
+      chapters 17 and 18 –; the bell's page – what it is, the circuit with its drawn schematic and its blocks explained,
+      the board as made, what edakit found, its variants main, smd, tht and esp32 side by side, what it changed in
+      edakit – from the pictures of its current release (section 12 of the protocol; where the release has none, the
+      bell's session draws them at its next gate run); pytree's page with the information and the pictures the owner
+      picks (needs the owner – the repository stays private); a later project's page once it has a result with edakit,
+      nothing planned on the gallery; the style guide's project page and `test_style.py` follow.
 
 ## The projects take it over ([implementation-plan.md](docs/concepts/done/implementation-plan.md), phase 4)
 
