@@ -106,9 +106,10 @@ A new project comes with one empty default board (Board1 = Schematic1 + PCB1). T
 renames it to the board of edakit.toml (board name, `schematic`, `pcb`) and fills the schematic from the graph; any
 other board setup is left alone and must match edakit.toml.
 
-One case remains: when a part was freshly placed in the schematic from the library, the DRC shows "Netlist Error –
-Import Changes" until the import view was opened once in the GUI. That is the one click to ask for (start skill,
-section 3).
+A part freshly placed in the schematic from the library once left the DRC at "Netlist Error – Import Changes" until
+the import view was opened in the GUI: the import compares the Channel ID, which a part placed through the API lacks.
+`pcb parts --write` writes the PCB part's Channel ID into the schematic part as well, so no click is needed (E-2,
+7.5).
 
 ## 7.4 The placement plan
 
@@ -666,12 +667,15 @@ and anything unplanned is deleted – old tracks have come back after a reload b
 reloaded: 0. On 3.2.209 not seen (E-7) – `route all`, `silk apply` and the gate run the DRC at once and save, close and
 reopen the PCB only when it reports Connection Errors, then run it once more.
 
-**Import Changes.** After parts were placed in the schematic, EasyEDA's DRC reports "Netlist Error – Import
-Changes" until its import view has been opened once – also when schematic and PCB are equal. `route drc` (and
-`route all`, `silk apply`/`check`, the gate's GEO.drc) then compares them itself, as `pcb parts` and `pcb nets` do
-without `--write`, writes the result to `route/<board>_netlist_diff.json` and says which case it is: no difference →
-"EasyEDA waits for the import acknowledgement: open Design → Import Changes once, it shows no changes", exit **3** when
-that is the only item; differences → the parts and pads with `pcb parts --write` or `pcb nets --write`, exit 2. In the
+**Import Changes.** EasyEDA's DRC reports "Netlist Error – Import Changes" when schematic and PCB differ – and when a
+schematic part lacks its PCB part's Channel ID, also with both equal: a part placed through the API before edakit
+wrote it (E-2). `route drc` (and `route all`, `silk apply`/`check`, the gate's GEO.drc) then compares them itself, as
+`pcb parts` and `pcb nets` do without `--write`, writes the result to `route/<board>_netlist_diff.json` and says which
+case it is: differences → the parts and pads with `pcb parts --write` or `pcb nets --write`, exit 2; no difference →
+`route` and `silk` write every PCB part's Channel ID into its schematic part, reload the PCB and run the DRC once more
+(live on 3.2.209: clean); only if the item is still there "EasyEDA waits for the import acknowledgement: open Design →
+Import Changes once, it shows no changes", exit **3** when that is the only item. The gate writes nothing: its GEO.drc
+fails then, and `edakit route drc` before it fixes that. In the
 reference project the item alone held the gate at GEO.drc in ten runs, once for 2¾ h while the first diagnosis was
 wrong.
 

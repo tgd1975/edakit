@@ -2144,11 +2144,12 @@ def create_component(mcp, project, ref, device, x, y):
 
 def sync_parts(cfg, board, mcp, write=False):
     """PCB parts = parts of the board schematic, without the "Import Changes" dialog (importChanges(uuid, true) opens
-    it anyway). Schematic and PCB part are linked through the same UniqueId (ggeN). Missing parts are created (device
-    from the project library, designator, UniqueId, the COMPLETE OtherProperty of the schematic part with a new
-    Channel ID, pad nets from the graph) and parked next to the board; swapped ones (other LCSC number or footprint)
-    are replaced the same way; extra ones deleted; unlinked ones linked. Without write only shown.
-    Then: dump/plan, apply, auto-layout, route."""
+    it anyway). Schematic and PCB part are linked through the same UniqueId (ggeN) and carry the same Channel ID
+    ($1IN) – the import compares it, so with both written into the schematic part as well the DRC needs no import
+    view (E-2, live on 3.2.209). Missing parts are created (device from the project library, designator, UniqueId,
+    the COMPLETE OtherProperty of the schematic part with its Channel ID, pad nets from the graph) and parked next to
+    the board; swapped ones (other LCSC number or footprint) are replaced the same way; extra ones deleted; unlinked
+    ones linked. Without write only shown. Then: dump/plan, apply, auto-layout, route."""
     project = api(mcp, "DMT_Project.getCurrentProjectInfo")["uuid"]
     found, sch_uuid, sch, pcb = parts_diff(mcp, board)
     missing, extra, swapped, unlinked, props = (found[k] for k in PARTS_DIFF)
@@ -2166,7 +2167,17 @@ def sync_parts(cfg, board, mcp, write=False):
         n = max(used, default=0) + 1
         used.add(n)
         return n
-    sch_uid = {}
+    sch_write = {}     # schematic part's PrimitiveId -> {"uniqueId", "otherProperty"} it gets from the PCB side
+
+    def link(st, uid, channel):
+        """The schematic part st gets the UniqueId and Channel ID its PCB part has."""
+        other = st.get("OtherProperty") or {}
+        if st.get("UniqueId") != uid or other.get("Channel ID") != channel:
+            sch_write[st["PrimitiveId"]] = {"uniqueId": uid, "otherProperty": {**other, "Channel ID": channel}}
+
+    def channel_of(st, old):
+        return ((st.get("OtherProperty") or {}).get("Channel ID") or (old.get("OtherProperty") or {}).get("Channel ID")
+                or f"$1I{fresh(used_ch)}")
     ensure_pcb_focus(mcp)
     if extra:
         api(mcp, "PCB_PrimitiveComponent.delete", [pcb[r]["PrimitiveId"] for r in extra])
@@ -2175,11 +2186,9 @@ def sync_parts(cfg, board, mcp, write=False):
     for k, ref in enumerate(missing + swapped):
         st, old = sch[ref], pcb.get(ref) or {}
         uid = st.get("UniqueId") or old.get("UniqueId") or f"gge{fresh(used_uid)}"
-        if st.get("UniqueId") != uid:
-            sch_uid[st["PrimitiveId"]] = uid
         # the schematic's Channel ID wins: the import dialog compares it (a swap once kept the old PCB one)
-        channel = ((st.get("OtherProperty") or {}).get("Channel ID") or (old.get("OtherProperty") or {}).get("Channel ID")
-                   or f"$1I{fresh(used_ch)}")
+        channel = channel_of(st, old)
+        link(st, uid, channel)
         ensure_pcb_focus(mcp)
         if old:
             api(mcp, "PCB_PrimitiveComponent.delete", [old["PrimitiveId"]])  # its tracks stay
@@ -2198,28 +2207,32 @@ def sync_parts(cfg, board, mcp, write=False):
         print(f"  created: {ref} ({st.get('SupplierId')}, {uid}, {channel})")
     for ref in unlinked:
         uid = sch[ref].get("UniqueId") or pcb[ref].get("UniqueId") or f"gge{fresh(used_uid)}"
-        if sch[ref].get("UniqueId") != uid:
-            sch_uid[sch[ref]["PrimitiveId"]] = uid
-        if pcb[ref].get("UniqueId") != uid:
+        channel = channel_of(sch[ref], pcb[ref])
+        link(sch[ref], uid, channel)
+        if pcb[ref].get("UniqueId") != uid or (pcb[ref].get("OtherProperty") or {}).get("Channel ID") != channel:
             ensure_pcb_focus(mcp)
-            api(mcp, "PCB_PrimitiveComponent.modify", pcb[ref]["PrimitiveId"], {"uniqueId": uid})
+            api(mcp, "PCB_PrimitiveComponent.modify", pcb[ref]["PrimitiveId"],
+                {"uniqueId": uid, "otherProperty": {**(pcb[ref].get("OtherProperty") or {}), "Channel ID": channel}})
         print(f"  linked: {ref} ({uid})")
     for ref in props:
+        channel = channel_of(sch[ref], pcb[ref])     # an empty one of the schematic never blanks the PCB's
+        link(sch[ref], sch[ref].get("UniqueId") or pcb[ref].get("UniqueId"), channel)
         ensure_pcb_focus(mcp)
         api(mcp, "PCB_PrimitiveComponent.modify", pcb[ref]["PrimitiveId"],
-            {"otherProperty": {**(pcb[ref].get("OtherProperty") or {}), **(sch[ref].get("OtherProperty") or {})}})
+            {"otherProperty": {**(pcb[ref].get("OtherProperty") or {}), **(sch[ref].get("OtherProperty") or {}),
+                               "Channel ID": channel}})
         if bom_differs(sch[ref], pcb[ref]):
             api(mcp, "PCB_PrimitiveComponent.modify", pcb[ref]["PrimitiveId"],
                 {"addIntoBom": bool(sch[ref]["AddIntoBom"])})
         print(f"  properties from the schematic: {ref}")
-    if sch_uid:
-        for page in {sch[r]["_page"] for r in sch if sch[r]["PrimitiveId"] in sch_uid}:
+    if sch_write:
+        for page in {sch[r]["_page"] for r in sch if sch[r]["PrimitiveId"] in sch_write}:
             eda.focus_page(mcp, sch_uuid, page)
             for st in sch.values():
-                if st["_page"] == page and st["PrimitiveId"] in sch_uid:
-                    api(mcp, "SCH_PrimitiveComponent.modify", st["PrimitiveId"], {"uniqueId": sch_uid[st["PrimitiveId"]]})
+                if st["_page"] == page and st["PrimitiveId"] in sch_write:
+                    api(mcp, "SCH_PrimitiveComponent.modify", st["PrimitiveId"], sch_write[st["PrimitiveId"]])
             api(mcp, "SCH_Document.save")
-        print(f"  UniqueId written back into the schematic: {len(sch_uid)}, schematic saved")
+        print(f"  UniqueId and Channel ID written back into the schematic: {len(sch_write)}, schematic saved")
         eda.open_pcb(mcp, board.pcb)
     sync_nets(cfg, mcp, write=True)  # before measuring: the geometry carries the pad nets
     if created:  # geometry of the new parts (they sit at 0°/TOP like after dump)
@@ -2282,16 +2295,49 @@ def drc_exit(found, diff):
     return 2
 
 
+def link_channels(board, mcp):
+    """Every schematic part gets the UniqueId and Channel ID of its PCB part, as the import view gives them (E-2). The
+    API reads no Channel ID of a schematic part, so all linked ones are written; an unlinked part is pcb parts'."""
+    sch_uuid, sch = schematic_parts(mcp, board)
+    eda.open_pcb(mcp, board.pcb)
+    pcb = {st["Designator"]: st for c in api(mcp, "PCB_PrimitiveComponent.getAll") or []
+           if (st := eda.state(c)).get("Designator")}
+    n = 0
+    for page in {st["_page"] for st in sch.values()}:
+        eda.focus_page(mcp, sch_uuid, page)
+        for ref, st in sch.items():
+            p = pcb.get(ref) or {}
+            channel = (p.get("OtherProperty") or {}).get("Channel ID")
+            if st["_page"] != page or not channel or not p.get("UniqueId") or \
+                    st.get("UniqueId") not in (None, "", p["UniqueId"]):
+                continue
+            api(mcp, "SCH_PrimitiveComponent.modify", st["PrimitiveId"],
+                {"uniqueId": p["UniqueId"], "otherProperty": {**(st.get("OtherProperty") or {}), "Channel ID": channel}})
+            n += 1
+        api(mcp, "SCH_Document.save")
+    eda.open_pcb(mcp, board.pcb)
+    return n
+
+
 def drc_report(cfg, board, mcp, found, out=None, say=print):
     """Print the DRC; with an Import Changes item compare schematic and PCB (written to out) and say which case it is.
-    Returns drc_exit."""
+    An item without a difference – a schematic part without its PCB part's Channel ID, placed before edakit wrote it
+    (E-2) – is fixed by link_channels and the DRC run once more; what is left is exit 3. Returns drc_exit."""
     say(f"  {eda.describe_drc(found)}")
     items, diff = import_items(found), None
     if items:
         diff = netlist_diff(cfg, board, mcp)
+        if import_verdict(items, diff)[1] == ACKNOWLEDGE:
+            say(f"  Import Changes without a difference: the PCB's Channel IDs written into {link_channels(board, mcp)} "
+                "schematic parts (E-2), the PCB reloaded, the DRC once more")
+            eda.reload_pcb(mcp)     # right after the writes the DRC still reported the item; a fresh one did not
+            found = eda.drc(mcp)
+            say(f"  {eda.describe_drc(found)}")
+            items = import_items(found)
         if out:
             out.write_text(json.dumps(diff, indent=1, ensure_ascii=False))
-        say(f"  {import_verdict(items, diff)[1]}")
+        if items:
+            say(f"  {import_verdict(items, diff)[1]}")
     return drc_exit(found, diff)
 
 

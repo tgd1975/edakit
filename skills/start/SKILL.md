@@ -70,11 +70,11 @@ bridge, no claim. `edakit doctor 2>&1 | cat` shows the line for kicad-cli (KiCad
 
 ## 3. Dialogs in EasyEDA's GUI
 
-Some things only a human can click (e.g. after parts were newly placed in the schematic, the DRC shows "Netlist Error –
-Import Changes" until the import view was opened once). Avoid dialogs: parts go into the PCB with
-`edakit pcb parts --write`, nets with `edakit pcb nets --write`. edakit compares schematic and PCB when the DRC has
-that item: "EasyEDA waits for the import acknowledgement" (exit 3 of `route all|drc` and `silk apply|check`, a fail
-row of GEO.drc) means nothing differs and only the click is left; a list of parts or pads means fix those first, do not
+Some things only a human can click. Avoid dialogs: parts go into the PCB with `edakit pcb parts --write` (with the
+Channel ID in the schematic part, so the DRC needs no import view – E-2), nets with `edakit pcb nets --write`. edakit
+compares schematic and PCB when the DRC reports "Netlist Error – Import Changes" and, with nothing different, writes
+the Channel IDs and checks again; "EasyEDA waits for the import acknowledgement" (exit 3 of `route all|drc` and
+`silk apply|check`, a fail row of GEO.drc) means even that left the item and only the click is left; a list of parts or pads means fix those first, do not
 ask for the click. If a click is unavoidable:
 
 1. Prepare everything so that the click is a plain **OK** – never ask the user to read, copy or judge dialog contents.
