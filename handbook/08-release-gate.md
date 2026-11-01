@@ -1142,11 +1142,11 @@ entries that do not resolve are fixed first.
 
 ## 8.7 Requirements
 
-With `[project] requirements` (3.6) the gate holds the circuit to what it must do. A file the key names that is
-missing or not valid stops the gate before its first stage (exit 1, no run folder), as it stops `edakit check`. Stage
-G runs DOCS.ref to DOCS.derived on the file (3.3); a finding about a draft is information there – but DOCS.derived,
-a warning for a draft too. After the stages, every
-requirement's evidence is evaluated against this run:
+With `[project] requirements` (3.6) the gate holds the circuit to what it must do. The file is required: without the
+key DOCS.file is an open point of section 5, and the run is NOT RELEASED, as with a required sign-off missing. A file
+the key names that is missing or not valid stops the gate before its first stage (exit 1, no run folder), as it stops
+`edakit check`. Stage G runs DOCS.ref to DOCS.derived on the file (3.3); a finding about a draft is information there
+– but DOCS.derived, a warning for a draft too. After the stages, every requirement's evidence is evaluated against this run:
 
 | `verify` | passes when | otherwise |
 |---|---|---|

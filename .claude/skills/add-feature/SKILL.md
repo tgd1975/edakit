@@ -65,5 +65,8 @@ uvx ruff check edakit tests
 cd tests/fixtures/led-bar && uv run --project ../../.. edakit check && uv run --project ../../.. edakit sim
 ```
 
-Commit as the repository does; push only when the user says so. A proposal built by triage-feature is one commit,
-pushed to `features/proposals`.
+Commit as the repository does; push only when the user says so. A proposal built by triage-feature is one commit on
+the branch the workflow prepared, never pushed from here: the workflow pushes it after its check. A branch of its own
+carries its fragment `changes/<branch>.md` – `patch`, or `minor` when a project must act on the update
+(`changes/README.md`) – and goes to main through `python3 .github/merge.py <n>` on the owner's word (CLAUDE.md, "A
+merge is a version").
