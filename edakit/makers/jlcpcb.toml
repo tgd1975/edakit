@@ -26,6 +26,7 @@ catalogue = "jlcpcb"              # PARTS.stock and edakit stock ask JLCPCB's as
 fees = "jlcpcb"                   # edakit/fees/jlcpcb.json, the fee table of edakit cost
 files = ["gerber", "bom", "cpl"]  # gerber_<b>.zip, bom_<b>.csv, cpl_<b>.csv
 unshown = ["bom", "cpl"]          # the pages name the Gerber upload only, as the project (gerber_main); BOM and CPL nowhere
+unshown_bare = ["gerber"]         # a bare board's quote page names no upload; its cart line does (gerber_tht_Y11, 2026-11-01)
 classes = ["economic", "standard"]
 dnp = "omit"                      # a part not to place is left out of BOM and CPL (SYNC.bom, SYNC.cpl)
 cart = "Save to Cart"
@@ -69,6 +70,8 @@ sources = [
 "Assembly remark" = "not used"
 "I agree to the Terms and Conditions of JLCPCB assembly Service" = "pre-checked by JLCPCB; a consent the owner gives"
 "Remark" = "Quote & Order's remark: not used"
+"PCB Assembly" = "the switch of the assembly: on with a BOM (the skill switches it on), off for a bare board"
+"Stencil" = "not ordered: the assembly brings its own, a bare board needs none"
 
 [bom]
 columns = ["Comment", "Designator", "Footprint", "LCSC Part #"]
@@ -296,6 +299,7 @@ words = { antistatic_bag = "Antistatic bubble film" }
 [fields.customs]                  # Quote & Order's "Product Description", a cascader: category, then the entry with its HS
 section = "Shipping"              # code – [order] customs { category, hs_code } picks the entry; those without one (Others) not
 label = "Product Description"
+assembly = true                   # a bare board saves to the cart from the quote page, which has no such field (2026-11-01)
 values = [
     "Sensor\\Controller\\Precision Instrument / Temperature Sensor - HS Code 902590",
     "Sensor\\Controller\\Precision Instrument / Humidity Sensor - HS Code 902590",

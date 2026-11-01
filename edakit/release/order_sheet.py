@@ -274,7 +274,8 @@ def form(cfg, design, board, d, maker, o=None, bom=None, found=None):
         if key == "delivery" and o.get("panel"):
             p = o["panel"]
             note = f"panel {p['x']} x {p['y']}, rails {p['rails_mm']:g} mm"
-        at_checkout = bool((maker.field(key) or {}).get("checkout"))    # asked at checkout: not read back before the cart
+        spec = maker.field(key) or {}           # asked at checkout – or, on a bare board, only with assembly: not read back
+        at_checkout = bool(spec.get("checkout") or (spec.get("assembly") and not bom))
         out.append(item(maker, key, raw, source, note, read=key == "bake" and raw is None, checkout=at_checkout))
     return out
 

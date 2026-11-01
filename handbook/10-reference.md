@@ -184,7 +184,8 @@ A maker's profile holds no defaults of the board. What it holds:
   thicknesses, remark, placeholder, tooling holes per class), the combinations it refuses (`excludes`), the fields of
   the page edakit does not set, each with its reason (`ignore`);
 - the files it takes (`files`), the uploads its pages name nowhere (`unshown`, ORDER.files holds them by their hash),
-  files that go up in the cart (`upload = "after_cart"`, PCBWay);
+  those a bare board's form names nowhere either (`unshown_bare`: JLCPCB's Gerber, which its cart line names), files
+  that go up in the cart (`upload = "after_cart"`, PCBWay);
 - the BOM's columns and the number the maker matches parts by (`bom`, `match` `"lcsc"` or `"mpn"`), a part matching
   only in its review after the cart (`matching = "review"`, PCBWay), its zero orientation and the turn per footprint
   of its own CPL (`cpl`: `zero`, `turns`), how a part not to place is marked (`dnp = "omit"`: left out of BOM and
@@ -199,7 +200,8 @@ FILES.order names it as information. Per field:
 
 - `more = true` – lists only some of the form's values (a "More Options" not read): another value is not checked;
 - `when` – the field shows only while another key has one of the values it names (a dialog behind an option);
-- `checkout` – asked at checkout only: in order.md, not read back before the cart.
+- `checkout` – asked at checkout only: in order.md, not read back before the cart;
+- `assembly` – asked only with assembly on (JLCPCB's Quote & Order): for a bare board a `checkout` field.
 
 A key the profile does not know is refused, in a project's own profile too. No credentials anywhere: you are logged
 in in your browser, edakit never sees an account.

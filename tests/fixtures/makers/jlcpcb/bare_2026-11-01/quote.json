@@ -1,0 +1,180 @@
+{
+ "maker": "jlcpcb",
+ "read": "2026-11-01T23:27:06+01:00",
+ "fields": [
+  {
+   "label": "Base Material",
+   "value": "FR-4"
+  },
+  {
+   "label": "Layers",
+   "value": "2"
+  },
+  {
+   "label": "Dimensions",
+   "value": "85 x 56 mm"
+  },
+  {
+   "label": "PCB Qty",
+   "value": "5"
+  },
+  {
+   "label": "Product Type",
+   "value": "Industrial/Consumer electronics"
+  },
+  {
+   "label": "Different Design",
+   "value": "1"
+  },
+  {
+   "label": "Delivery Format",
+   "value": "Single PCB"
+  },
+  {
+   "label": "PCB Thickness",
+   "value": "1.6mm"
+  },
+  {
+   "label": "PCB Color",
+   "value": "Green"
+  },
+  {
+   "label": "Silkscreen",
+   "value": "White"
+  },
+  {
+   "label": "Material Type",
+   "value": "FR4 TG135"
+  },
+  {
+   "label": "Surface Finish",
+   "value": "LeadFree HASL"
+  },
+  {
+   "label": "Outer Copper Weight",
+   "value": "1 oz"
+  },
+  {
+   "label": "Via Covering",
+   "value": "Tented"
+  },
+  {
+   "label": "Via Plating Method",
+   "value": "Not Specified"
+  },
+  {
+   "label": "Min via hole size/diameter",
+   "value": "0.3mm/(0.4/0.45mm)"
+  },
+  {
+   "label": "Board Outline Tolerance",
+   "value": "±0.2mm(Regular)"
+  },
+  {
+   "label": "Confirm Production file",
+   "value": "No"
+  },
+  {
+   "label": "Mark on PCB",
+   "value": "Remove Mark"
+  },
+  {
+   "label": "Electrical Test",
+   "value": "Flying Probe Fully Test"
+  },
+  {
+   "label": "Gold Fingers",
+   "value": "No"
+  },
+  {
+   "label": "Castellated Holes",
+   "value": "No"
+  },
+  {
+   "label": "Edge Plating",
+   "value": "No"
+  },
+  {
+   "label": "Blind Slots",
+   "value": "No"
+  },
+  {
+   "label": "UL Marking",
+   "value": "No"
+  },
+  {
+   "label": "Humidity Indicator Card",
+   "value": "No"
+  },
+  {
+   "label": "4-Wire Kelvin Test",
+   "value": "No"
+  },
+  {
+   "label": "Paper between PCBs",
+   "value": "No"
+  },
+  {
+   "label": "Appearance Quality",
+   "value": "IPC Class 2 Standard"
+  },
+  {
+   "label": "Silkscreen Technology",
+   "value": "Ink-jet Printing Silkscreen"
+  },
+  {
+   "label": "Package Box",
+   "value": "With JLCPCB logo"
+  },
+  {
+   "label": "Inspection Report",
+   "value": "No"
+  },
+  {
+   "label": "PCB Remark",
+   "value": ""
+  },
+  {
+   "label": "PCB Build Time",
+   "value": "2 days"
+  },
+  {
+   "label": "Shipping Method",
+   "value": "DHL Express"
+  }
+ ],
+ "files": [],
+ "parts": [],
+ "dnp": [],
+ "prices": [
+  {
+   "label": "Special Offer",
+   "amount": 4.0,
+   "kind": "pcb"
+  },
+  {
+   "label": "Via Covering",
+   "amount": 0.0,
+   "kind": "pcb"
+  },
+  {
+   "label": "Surface Finish",
+   "amount": 1.2,
+   "kind": "pcb"
+  },
+  {
+   "label": "Shipping Estimate",
+   "amount": 23.44,
+   "kind": "shipping"
+  }
+ ],
+ "currency": "USD",
+ "lead_time": "2 days",
+ "notes": [
+  "Calculated Price $5.20 Web Price (Desktop Price $3.20); DHL Express 2-4 business days, weight 0.20kg",
+  "Product Description (customs) is not on the bare board's form (no PCBA, so no Quote & Order step) – it comes at checkout, the owner's; [order] customs = DIY 902300",
+  "PCB Assembly and Stencil switched off: bare board, everything hand-soldered",
+  "price panel hung after the first Surface Finish click; HASL(with lead) and back to LeadFree HASL made it recalculate",
+  "the quote page names no upload; the cart line names the Gerber"
+ ]
+}
