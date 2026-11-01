@@ -11,7 +11,7 @@ Start with `edakit doctor`.
 | DRC, pour fill or export hang; EasyEDA hardly busy | EasyEDA runs throttled because its window is covered | save, quit, start unthrottled (chapter 2.6); `edakit doctor` shows it |
 | "bad option: --no-sandbox" when starting EasyEDA | `ELECTRON_RUN_AS_NODE` inherited from VS Code | `env -u ELECTRON_RUN_AS_NODE …` |
 | every `DMT_*` call returns null | EasyEDA shows its start page (focus `tab_page1`) | open the project; edakit reopens it by its remembered UUID |
-| "project is not open and EasyEDA does not list local projects" | edakit never saw the project open | open it once in EasyEDA |
+| "project … is in none of EasyEDA's project folders" | no local project of that name | create it in EasyEDA (File → New → Project) with the name of `[project] name` |
 | answers contain `[MaxDepth]`, DRC details empty; `edakit doctor`: "original extension" | original bridge extension | build and import the patched one (chapter 2.5): uninstall old, import, restart; `edakit doctor` says "patched extension" when the new one runs |
 | `edakit doctor`: "bridge extension … against server …" or "method registry … differs" | the extension is of another easyeda-mcp-pro version than the pinned server | rebuild the patched extension from the pinned server (2.5) and import it |
 | `PCB_Drc.check` returns null / undefined | the PCB tab counts as inactive | edakit switches to the start page and back; or click the PCB tab once |
