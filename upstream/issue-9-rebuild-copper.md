@@ -1,10 +1,10 @@
-# Issue – draft (M-10)
+# Issue #818 – as posted (M-10)
 
-Not posted. Checked on 2026-11-01: easyeda-mcp-pro 1.6.0 is the newest release, the rebuild code unchanged on
-`upstream/main` (`9601584`); no issue there covers it – #480 is the creation of copper zones, #596 the tool itself.
-Found live on coin-cell-led the same day (GND poured on top and bottom), short as the rule for texts upstream asks.
-Only a net's pours in one call – a refill of a filled pour is not edakit's case and stays out (the owner,
-2026-11-01). The pull request goes with it ([pr-9-rebuild-copper.md](pr-9-rebuild-copper.md)).
+Posted on 2026-11-01 (https://github.com/oaslananka/easyeda-mcp-pro/issues/818) on the owner's word, with the pull request #819
+([pr-9-rebuild-copper.md](pr-9-rebuild-copper.md)). Checked before: easyeda-mcp-pro 1.6.0 the newest release, the
+rebuild code unchanged on `upstream/main`; no issue there covered it – #480 is the creation of copper zones, #596 the
+tool itself. Found live on coin-cell-led the same day (GND poured on top and bottom). Only a net's pours in one call –
+a refill of a filled pour is not edakit's case and stays out (the owner, 2026-11-01).
 
 ### Title
 

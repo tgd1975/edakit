@@ -198,9 +198,9 @@ Feature request: getOpenDatabaseDoublePlusFile in millimetres
 **Wish:** `unit` takes `ESYS_Unit.MILLIMETER` as the dialog does, and the method leaves beta.
 ````
 
-## E-17 – draft, not posted
+## E-17 – [#52](https://github.com/easyeda/easyeda-api-sdk/issues/52)
 
-Checked on 2026-11-01: 3.2.209 is the newest version, no issue there covers it, the calls follow the docs' example
+Posted on 2026-11-01 on the owner's word, the same evening as the others. Checked before: 3.2.209 is the newest version, no issue there covers it, the calls follow the docs' example
 (the schematic opened first, `@beta`); the lookup quoted from the client's bundle (pro-ui 3.2.198, `Hg.modifyName`).
 Seen live for `modifySchematicName` with pytree; the other renames use the same lookup in the code.
 
