@@ -5,7 +5,7 @@ Open work that needs the owner's computer, a maker or the owner's word. The stat
 name; this list is what is left to do of them, in the order it can be done. No item is deleted.
 
 **Layout.** Every item, in every section, open or closed, is a line with a checkbox and an ID unique in this file,
-counted up and never reused – whoever adds an item takes the next free ID and counts it up here. Next free ID: TD-51.
+counted up and never reused – whoever adds an item takes the next free ID and counts it up here. Next free ID: TD-55.
 
 - Open: `- [ ] TD-<n> - **Title:** what and why.` – a step's own name after the dash (`- [ ] TD-31 - **D.4** …`).
 - Done: ticked, the commit that did it, the date at the end, moved to [Closed todos](#closed-todos), newest first –
@@ -14,6 +14,9 @@ counted up and never reused – whoever adds an item takes the next free ID and 
   Code – goes into a section "For the owner" at the top, one line each, the session at the end:
   `- [ ] TD-<n> - **What:** command or link – why. *(session)*`. An item further down that waits for the owner
   stays where its step is.
+- One item, one piece of work: one thing to do, by one hand, at one time, done when one statement is true – no
+  collecting tank. Short and plain: what, why, where; history and details stay in the file the section names. A
+  part that waits for something else or is someone else's is an item of its own.
 - Headings group open items; once none is left under one, the heading and its text go, and it comes back with the
   next item that belongs there.
 
@@ -27,33 +30,30 @@ to touch.
 
 ## What edakit needs from EasyEDA Pro and easyeda-mcp-pro ([upstream/README.md](upstream/README.md))
 
-The requirements E-1 to E-16 on EasyEDA Pro and M-1 to M-9 on easyeda-mcp-pro, gathered on 2026-11-01 under the
-owner's rules there: no click because of the API, no self-extended MCP server, the latest state checked first.
+E-1 to E-16 on EasyEDA Pro and M-1 to M-9 on easyeda-mcp-pro, checked live on EasyEDA Pro 3.2.209 and posted on
+2026-11-01; what each asks and where it stands is in upstream/README.md – the items here say only what is left to do.
 
-- [ ] TD-25 - **On the owner's computer – the newest versions live:** EasyEDA Pro 3.2.209 is installed and E-1 to E-16
-      are checked on it (2026-11-01, upstream/README.md). Left: easyeda-mcp-pro 1.6.0 (the pin is 1.4.0) with the
-      patched extension of the same version – every session's server restarts with it, since 1.5.1 a server refuses
-      writes from an extension of another version; the self-test, one gate run of the example; M-6: `scope: "all_pages"`
-      of `easyeda_schematic_components` instead of focusing page after page, and the BOM's duplicates. Then the pin
-      raised in `mcp-server.sh`.
-- [ ] TD-26 - **The seven issues with their pull requests at easyeda-mcp-pro, posted on 2026-11-01** – #792/#793 (stale
-      sweep), #794/#795 (schematic PDF), #796/#797 (return depth), #798/#799 (ODB++), #800/#802 (createProject),
-      #801/#803 (pick-and-place as CSV), #804/#805 (mirror and BOM flags when placing, M-9): follow them, answer review comments on the fork's branches, rebase when `main`
-      moves; the comment "I agree to the Contributor Permission v1 in CONTRIBUTOR-LICENSING.md", when the maintainer
-      asks for it, from the owner. M-6 not posted – #539 has met it as far as EasyEDA's API lets it
-      (upstream/README.md).
-- [ ] TD-28 - **When a release brings M-2 to M-4:** pin raised, the original extension, `bridge-extension-patch.sh` and
-      `odb-tool-patch.mjs` removed, handbook 2.4, 2.5 and 9.1 follow. With M-9 (#805) `place` in `edakit/schematic.py`
-      may pass `addIntoBom` on create again, handbook 9.3 follows.
-- [ ] TD-36 - **Follow the reports at EasyEDA:** #45 to #51 and our comments to #36 and #38 – answer questions; when a
-      release fixes one, check it live, take it up and say so in upstream/README.md. EasyEDA's first answer is often
-      "update to the latest version".
+### Live in EasyEDA – edakit's own work
+
+At the owner's computer, in this order; each change checked live before it is built.
+
+- [ ] TD-25 - **easyeda-mcp-pro 1.6.0 prepared:** on a branch, `EASYEDA_MCP_VERSION` in `edakit/easyeda/mcp-server.sh`
+      from 1.4.0 to 1.6.0, both patches applied to 1.6.0 (their anchors are still there), the patched bridge extension
+      built. Not merged yet: since 1.5.1 a server refuses writes from an extension of another version.
+- [ ] TD-51 - **The bridge extension 1.6.0 in EasyEDA:** the old one uninstalled, the patched 1.6.0 imported, "External
+      interaction" allowed, EasyEDA restarted – the owner's clicks (E-4); goes to "For the owner" once TD-25 is done.
+- [ ] TD-52 - **The switch to 1.6.0:** right after TD-51, TD-25's branch merged, every edakit session's server
+      restarted, the self-test and one gate run of the example green.
+- [ ] TD-53 - **M-6, all pages at once:** `easyeda_schematic_components` with `scope: "all_pages"` instead of focusing
+      page after page – once TD-52 is done.
+- [ ] TD-54 - **M-6, the BOM's duplicates:** does the BOM of a board-linked schematic still list parts twice on 1.6.0?
+      If not, edakit's removal of the duplicates goes.
 - [ ] TD-37 - **E-2, the one click goes:** `pcb parts` writes the Channel ID (`otherProperty["Channel ID"]`) into the
       schematic part as it does the UniqueId, the same value on the PCB part – live on 3.2.209 the DRC was clean without
       the import view; then exit 3 of `route`/`silk` and handbook 7 and 9.4 follow (`edakit/pcb.py` `sync_parts`).
-- [ ] TD-38 - **E-3 and E-7, the PCB tab and the DRC:** `ensure_pcb_active` (`edakit/eda.py`) takes the probe's error on
-      3.2.209 as "inactive"; save, close and reopen before the DRC only as the fallback when it reports Connection
-      Errors – a live routing run confirms it, also on a PCB never reloaded.
+- [ ] TD-38 - **E-3 and E-7, the PCB tab and the DRC:** `activate_pcb` (`edakit/eda.py`) takes the probe's error on
+      3.2.209 as "inactive"; `reload_pcb` before the DRC (`edakit/route.py`) only as the fallback when it reports
+      Connection Errors – a live routing run confirms it, also on a PCB never reloaded.
 - [ ] TD-39 - **E-9, local projects through the API:** `local_project_uuid` (`edakit/eda.py`) asks
       `DMT_Project.getAllProjectsUuid(<project folder>)` (folders from `DMT_Team.getAllTeamsInfo`) instead of reading
       `config.json` and the `.eprj2` files.
@@ -61,6 +61,19 @@ owner's rules there: no click because of the API, no self-extended MCP server, t
       anew (`SCH_PrimitivePin.modify` is saved on 3.2.209); `clear_orphan_attributes` kept as a cheap check or dropped;
       tooling holes stay on the board while the pours fill, and a hole in a pour becomes a `NO_POURS` region instead of
       the notch – each checked live first.
+
+### Waiting for upstream
+
+Nothing to do until there is an answer or a release; whichever session learns of one takes it.
+
+- [ ] TD-26 - **easyeda-mcp-pro, #792 to #805** (M-1 to M-5, M-7, M-9; no answer yet): answer review comments on the
+      fork's branches, rebase when `main` moves; the comment "I agree to the Contributor Permission v1 in
+      CONTRIBUTOR-LICENSING.md" from the owner when the maintainer asks. When a release brings M-2 to M-4: the pin
+      raised, the original extension, `bridge-extension-patch.sh` and `odb-tool-patch.mjs` removed, handbook 2.4, 2.5
+      and 9.1 follow; with M-9 `place` in `edakit/schematic.py` passes `addIntoBom` on create again, handbook 9.3.
+- [ ] TD-36 - **EasyEDA, #45 to #51 and our comments to #36 and #38:** answer questions; when a release fixes one,
+      check it live, take it up and say so in upstream/README.md. EasyEDA's first answer is often "update to the latest
+      version".
 
 ## The proposals pipeline ([proposals-pipeline.md](docs/concepts/new/proposals-pipeline.md))
 
@@ -128,6 +141,8 @@ sources, data and code untouched; a text that is generated or used elsewhere sta
 Done or dropped, newest first, each with its date and the commit that closed it. What closed before 2026-11-01 is
 taken from the history of this file; an item rewritten on its way is listed once, in its last form.
 
+- [x] TD-28 - **When a release brings M-2 to M-4:** merged into TD-26 – the second half of following the same pull
+  requests; TD-25 split into TD-25 and TD-51 to TD-54 at the same time. *(edakit-e4)* [2026-11-01]
 - [x] TD-41 - **M-9 (was E-15):** reproduced live on 3.2.209 with the bridge of 1.4.0 (code unchanged on 1.6.0) – not
   "Invalid device": the bridge drops `mirror`, `addIntoBom` and `addIntoPcb` of a placed part and reports `applied`;
   posted as #804 with the pull request #805 from the fork's `fix/place-component-flags`; edakit's `place` takes every
