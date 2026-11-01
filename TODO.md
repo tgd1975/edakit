@@ -156,7 +156,7 @@ taken from the history of this file; an item rewritten on its way is listed once
 
 - [x] TD-25 - **easyeda-mcp-pro 1.6.0 prepared:** branch `mcp-160`, the pin raised, both patches applied, the patched
   extension built to `~/.easyeda-mcp-pro/easyeda-bridge-extension-1.6.0.eext`; on the way 1.6.0's one break for
-  edakit – the PCB lists refuse projectId "current" – met in `list_pcb_components` (4c1ec99, not merged).
+  edakit – the PCB lists refuse projectId "current" – met in `list_pcb_components` (branch `mcp-160`, not merged).
   *(edakit-e4)* [2026-11-01]
 - [x] TD-55 - **4.4** The tree moved to edakit before its order instead (its EK-5 lifted EK-1), in pytree: D-50 to
   D-54, merged on its main with pytree#34 – `hardware/boards/tree.toml` written by its script `baumplan`, its scripts
