@@ -34,13 +34,11 @@ run against a maker's page or EasyEDA yet.
       the review; one `bom_<b>_mpn.csv` serves PCBWay and Eurocircuits – both took it.
 - [x] **Eurocircuits, AISLER, the cart:** Eurocircuits "Add to basket" on its Summary page; AISLER has no cart – the
       skill stops before "Continue to Checkout".
-- [ ] **Step 0b (5.0), under the EasyEDA claim, on a throwaway board:** build and import the bridge extension with
-      ODB++ (`bash edakit/easyeda/bridge-extension-patch.sh`; `mcp-server.sh` patches the server itself), export with
-      `easyeda_export_odb` and by hand (File > Export > ODB++) and compare: component layers with packages, pins and
-      part numbers; the parts kept out of EasyEDA's BOM left out or not; the rotation sense (F-7 assumes ODB++'s
-      clockwise). No component layers: KiCad as the converter for AISLER, or no AISLER. Seen on 2026-10-31: AISLER
-      takes kicad-cli's ODB++ of led-bar with every part, offers edakit's properties as BOM columns ("edakit", "lcsc",
-      MPN), leaves the tooling holes out; D1 (SS34) needed a part by hand, the LEDs were matched by value only.
+- [x] **Step 0b (5.0)** (2026-11-01, a probe board in EasyEDA, branch `makers-step0b`): EasyEDA's ODB++ – through
+      `easyeda_export_odb` and by hand – has component layers with package, pins and the MPN as device name, turns
+      clockwise as F-7 assumes, and keeps a part with `bom: false` in it without a mark (the skill marks it). SYNC.odb
+      drew EasyEDA's RoundRect mask openings as obrounds – fixed for SYNC.odb, the fab hash unchanged; both exports pass
+      it now. Record `tests/fixtures/makers/aisler/step0b_2026-11-01.md`.
 - [x] **JLCPCB's customs "Product Description" as a key of `[order]`** (the owner's decision of 2026-11-01), built
       on 2026-11-01: `customs = { category, hs_code }`, outside order.json and the fab hash; JLCPCB's profile lists
       the 62 entries with an HS code, FILES.order fails one it does not offer and names a missing key as information;

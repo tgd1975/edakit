@@ -52,6 +52,10 @@ ORDER = """
 [order]                          # tooling holes of its own on an Economic board: order.md tells JLCPCB (FILES.order)
 remark = "2 NPTH tooling holes added by customer."
 """
+RR_D = 0.1016                      # EasyEDA's RoundRect on the mask layers: corners of this diameter (ordering step 0b)
+ROUNDRECT_MACRO = ("%AMRoundRect*1,1,$1,$2,$3*1,1,$1,$4,$5*1,1,$1,0-$2,0-$3*1,1,$1,0-$4,0-$5*20,1,$1,$2,$3,$4,$5,0*"
+                   "20,1,$1,$4,$5,0-$2,0-$3,0*20,1,$1,0-$2,0-$3,0-$4,0-$5,0*20,1,$1,0-$4,0-$5,$2,$3,0*"
+                   "4,1,4,$2,$3,$4,$5,0-$2,0-$3,0-$4,0-$5,$2,$3,0*%")
 PLUS = (10.8, 10.9)                # "+" on the top silkscreen, next to D1's anode
 CATHODE = (15.2, 10.9)             # 1.9 mm above D1.1, D1's cathode
 BOARD = f"""# The input stage of the example on a board of its own (tests/test_fab_run.py)
@@ -125,8 +129,10 @@ class Layer(list):
                 _, w, pts, _ = item
                 body += [f"D{code(('C', w, w))}*", f"X{um(pts[0][0])}Y{um(pts[0][1])}D02*"]
                 body += [f"X{um(x)}Y{um(y)}D01*" for x, y in pts[1:]]
-        head = ["%FSLAX46Y46*%", "%MOMM*%"] + [f"%ADD{c}{k},{a:.6f}" + ("" if k == "C" else f"X{b:.6f}") + "*%"
-                                              for (k, a, b), c in aps.items()]
+        head = ["%FSLAX46Y46*%", "%MOMM*%"] + [ROUNDRECT_MACRO] * any(k == "RR" for k, _, _ in aps) + [
+            f"%ADD{c}{k},{a:.6f}" + ("" if k == "C" else f"X{b:.6f}") + "*%" if k != "RR" else
+            f"%ADD{c}RoundRect,{RR_D}X{-(a - RR_D) / 2:.6f}X{(b - RR_D) / 2:.6f}X{(a - RR_D) / 2:.6f}X{(b - RR_D) / 2:.6f}*%"
+            for (k, a, b), c in aps.items()]
         return "\n".join(head + body + ["M02*"]) + "\n"
 
     def drop(self, tag):

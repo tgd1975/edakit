@@ -256,7 +256,10 @@ def export_odb(cfg, mcp, board, d):
     if not res.get("exported"):
         (d / ODB_ERROR).write_text(f"easyeda_export_odb: {res.get('error') or res}")
         return
-    raw = Path(res["artifact_path"]).read_bytes()
+    artifact = Path(res["artifact_path"])
+    raw = artifact.read_bytes()
+    if artifact.resolve().parent == Path(d).resolve() and artifact.resolve() != target.resolve():
+        artifact.unlink()       # EasyEDA names the file "undefined" (no file name in the bridge's call): not a run file
     if raw[:2] == b"PK":
         target.write_bytes(raw)
         return
@@ -1733,7 +1736,7 @@ def check_odb(cfg, board, design, d, rows):
             bad.append(f"{f.name}: no layer of the ODB++ is the {' '.join(role) if role else 'same'}")
             continue
         seen.add(lay.name)
-        found = [s for s in spots(beyond_edge(r.render(gerber.parse_gerber(f)), odb.render(r, lay.features)), r)
+        found = [s for s in spots(beyond_edge(r.render(gerber.parse_gerber(f), rr_box=True), odb.render(r, lay.features)), r)
                  if s[0] >= SPOT_MM2]
         if found:
             a, (x0, x1, y0, y1) = found[0]
