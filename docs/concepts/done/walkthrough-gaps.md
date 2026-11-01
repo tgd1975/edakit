@@ -113,4 +113,5 @@ Found on the way:
 - **`fab/<board>/current`** in every run with stage F – a copy of `cpl_easyeda.xlsx` that EasyEDA's pick-and-place
   export leaves under the project ID `current`; not in the manifest, not uploaded (the bell's runs have it too).
 - **VBAT on the visible top**: Freerouting took it as a 14.5 mm diagonal from SW1 to BT1.1 across the open lower
-  right – the pcb-reviewer's note on looks, for the owner.
+  right – the pcb-reviewer's note on looks; left as it is (the owner's decision of 2026-11-01), the limits of
+  `[looks]` warn should a re-route make it longer.
