@@ -52,11 +52,12 @@ E-1 to E-16 on EasyEDA Pro and M-1 to M-9 on easyeda-mcp-pro, checked live on Ea
 
 Nothing to do until there is an answer or a release; whichever session learns of one takes it.
 
-- [ ] TD-26 - **easyeda-mcp-pro, #792 to #805** (M-1 to M-5, M-7, M-9; no answer yet): answer review comments on the
-      fork's branches, rebase when `main` moves; the comment "I agree to the Contributor Permission v1 in
-      CONTRIBUTOR-LICENSING.md" from the owner when the maintainer asks. When a release brings M-2 to M-4: the pin
-      raised, the original extension, `bridge-extension-patch.sh` and `odb-tool-patch.mjs` removed, handbook 2.4, 2.5
-      and 9.1 follow; with M-9 `place` in `edakit/schematic.py` passes `addIntoBom` on create again, handbook 9.3.
+- [ ] TD-26 - **easyeda-mcp-pro, #792 to #805** (M-1 to M-5, M-7, M-9): fixed on upstream's main by the maintainer
+      (#809, #810, #812, #814, #815 – 2026-11-01), our pull requests closed, nothing to answer; not in 1.6.0. When a
+      release brings them: the pin raised, the original extension, `bridge-extension-patch.sh` and `odb-tool-patch.mjs`
+      removed, handbook 2.4, 2.5 and 9.1 follow; with M-9 `place` in `edakit/schematic.py` passes `addIntoBom` on
+      create again, handbook 9.3; M-1's `BRIDGE_TIMEOUT_MS`, M-5's name check and M-7's xlsx reading checked whether
+      they can go – upstream's `maxDepth` and `easyeda_export_odb` against edakit's calls first.
 - [ ] TD-36 - **EasyEDA, #45 to #51 and our comments to #36 and #38:** answer questions; when a release fixes one,
       check it live, take it up and say so in upstream/README.md. EasyEDA's first answer is often "update to the latest
       version".
