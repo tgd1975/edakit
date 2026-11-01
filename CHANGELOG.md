@@ -7,6 +7,14 @@ written once, by `.github/merge.py`, from the fragments in [changes/](changes/RE
 [versioning.md](docs/concepts/new/versioning.md). Update with `claude plugin marketplace update edakit && claude plugin
 update edakit@edakit`, then `/reload-plugins` or a new session; `edakit --version` names the version that runs.
 
+## 0.4.2 – 2026-11-01
+
+- A project never opened is found by its name through EasyEDA's API – `getAllProjectsUuid` with each project folder of `DMT_Team.getAllTeamsInfo` (E-9) – instead of reading EasyEDA's `config.json` and `.eprj2` files; `EDAKIT_EASYEDA_HOME` is gone.
+
+## 0.4.1 – 2026-11-01
+
+- The concept of the proposals pipeline moved to docs/concepts/done/; comments and links follow it.
+
 ## 0.4.0 – 2026-11-01
 
 - **When updating:** in EasyEDA Pro uninstall the old bridge extension, import `~/.easyeda-mcp-pro/easyeda-bridge-extension-1.6.0.eext` (built by `bridge-extension-patch.sh`, handbook 2.5), allow "External Interactions", restart EasyEDA and every MCP server – easyeda-mcp-pro is pinned to 1.6.0 now, and since 1.5.1 a server whose extension has another version refuses every write, export and `easyeda_api_call`.
@@ -28,7 +36,7 @@ update edakit@edakit`, then `/reload-plugins` or a new session; `edakit --versio
 - The proposals Action judges with a token that cannot write, and a fixed job checks each build against the
   pipeline's paths before anything is pushed: the pipeline never changes through itself. The queue triages a proposal
   once even when several are filed together. Issues by others are welcome – the owner hands one over with a sealed
-  proposal as a comment (`propose-rule`, `propose-feature`) (TD-42, docs/concepts/new/proposals-pipeline.md).
+  proposal as a comment (`propose-rule`, `propose-feature`) (TD-42, docs/concepts/done/proposals-pipeline.md).
 
 ## 0.3.0 – 2026-11-01
 

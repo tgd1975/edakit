@@ -1,6 +1,6 @@
 # 2 Setup
 
-Tested with EasyEDA Pro 3.2.206 on Linux (Ubuntu), easyeda-mcp-pro 1.4.0, Node 24, Python 3.11–3.14, ngspice 45,
+Tested with EasyEDA Pro 3.2.209 on Linux (Ubuntu), easyeda-mcp-pro 1.6.0, Node 24, Python 3.11–3.14, ngspice 45,
 Freerouting 2.4.1, Claude Code 2.1.3xx. Windows and macOS should work for everything except the bundled Freerouting
 download (set `FREEROUTING_JAR`) – untested.
 

@@ -175,7 +175,7 @@ proposed (below). So with the owner's OK, a session merges through `.github/merg
 The workflow `release.yml` runs on every push to main. When the package's number has no tag yet, it sets the tag
 `v0.2.6` on that merge commit and opens the GitHub release with the changelog section as its text. A merge without a
 version (nothing a project reads) leaves the number alone, and the workflow does nothing. A branch that the proposals
-workflow pushes with its own token starts no checks ([proposals-pipeline.md](proposals-pipeline.md) gives it that
+workflow pushes with its own token starts no checks ([proposals-pipeline.md](../done/proposals-pipeline.md) gives it that
 token). `merge.py`'s push of the numbered commit comes from the owner's account and does start them, so a proposals pull
 request gets its checks at the merge.
 
@@ -229,7 +229,7 @@ Squash and rebase merges are off, because the merge message carries the descript
   through its checks again. This was found while building TD-45, and it replaces the strict rule the owner confirmed.
 - **Skipped counts as passed.** `paths` and `version` run only where they apply. GitHub counts a job
   skipped by its `if` as successful, so a required check never blocks a pull request it does not concern.
-- **`main-updates`** closes the gap that [proposals-pipeline.md](proposals-pipeline.md) found (its layer 1): today
+- **`main-updates`** closes the gap that [proposals-pipeline.md](../done/proposals-pipeline.md) found (its layer 1): today
   only the prompt keeps the Action from changing main. Whether GitHub accepts the admin role as a bypass on a personal
   repository is checked when the rules are applied. If it does not, this ruleset is left out and the working rule
   stays as it is.
@@ -248,7 +248,7 @@ The check holds each family of branches to its paths:
 
 The version's own lines (`edakit/__init__.py`, `.claude-plugin/marketplace.json`, `CHANGELOG.md`, `changes/`) lie
 outside the proposals' list, so `merge.py` can number a proposals pull request too. The proposals' list comes from
-[proposals-pipeline.md](proposals-pipeline.md), section "The pipeline's paths". It lives once, in `edakit/proposal.py`
+[proposals-pipeline.md](../done/proposals-pipeline.md), section "The pipeline's paths". It lives once, in `edakit/proposal.py`
 with a test. The lane's paths are `LANE` in `.github/versions.py`.
 
 A branch must not be able to loosen its own check. A workflow on `pull_request` runs the head's version of its file,

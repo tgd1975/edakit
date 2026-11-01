@@ -1,6 +1,6 @@
 name: Proposals
 
-# Triage of proposals (issues sealed with `edakit proposal seal`, docs/concepts/new/proposals-pipeline.md, handbook
+# Triage of proposals (issues sealed with `edakit proposal seal`, docs/concepts/done/proposals-pipeline.md, handbook
 # 14.4 and 11.6): rule proposals by the repository skill triage-rule into the one open pull request from
 # rules/proposals, feature proposals (Kind feature) by triage-feature into the one from features/proposals – accepted
 # and built, rejected with the reason, or a question. Only the repository owner starts it: a sealed issue of the

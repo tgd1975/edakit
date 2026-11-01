@@ -189,7 +189,7 @@ jobs:
               result=Rejected; comment="$RUNNER_TEMP/rejected.md"
               { echo "**Rejected** – the build changes the pipeline, which a proposal never does, so nothing was pushed:"
                 echo; cat "$RUNNER_TEMP/check.txt"; echo
-                echo "The pipeline's paths: \`edakit/proposal.py\`, PIPELINE (docs/concepts/new/proposals-pipeline.md)."
+                echo "The pipeline's paths: \`edakit/proposal.py\`, PIPELINE (docs/concepts/done/proposals-pipeline.md)."
               } > "$comment"
             fi
           fi
