@@ -2,8 +2,9 @@
 
 Open work that needs the owner's computer, a maker or the owner's word. The state of every step is in
 [docs/concepts/new/implementation-plan.md](docs/concepts/new/implementation-plan.md) and in the concepts the sections
-name; this list is what is left to do of them, in the order it can be done. Tick an item off with the commit that
-does it.
+name; this list is what is left to do of them, in the order it can be done. An item that is done is ticked with its
+date and the commit that does it and moves to [Closed todos](#closed-todos) at the end, newest first – by whichever
+session learns it; one that is dropped says so. No item is deleted.
 
 **Taking an item.** Several sessions work on edakit at once. Before a session starts an item, it lists the others
 (`ListAgents`, `git worktree list`), asks each running edakit session which item it holds, and takes one that nobody
@@ -16,16 +17,11 @@ to touch.
 ## For the owner
 
 What only the owner can do – an account, a payment, an OK, hardware in hand, a click in Claude Code –, one line each
-(`- [ ] TD-<n> **What:** command or link – why. *(session)*`), ticked off at once; the session that wrote a line deletes
-it once ticked. Every line has an ID that is counted up and never reused; next free ID: TD-3. The items further down
-that wait for the owner stay where their step is.
+(`- [ ] TD-<n> **What:** command or link – why. *(session)*`), ticked off at once with the date and moved to
+[Closed todos](#closed-todos). Every line has an ID that is counted up and never reused, closed ones included; next
+free ID: TD-3. The items further down that wait for the owner stay where their step is.
 
-- [x] TD-1 **Update the edakit plugin:** in Claude Code `/plugin` → edakit → Update, then `/reload-plugins` or a restart in
-  every running session – installed is 868e942 of 31.10.; `/reload-plugins` alone only reloads that one. Why: the
-  bell's hook and Makefile use the plugin, and 868e942 knows neither W.2–W.4 nor the electrical hash M-6 now hangs on.
-  *(edakit-be, automatic-christmas-bell-b3)*
-- [x] TD-2 **Read the circuit-language sketch in peace:** `docs/concepts/new/circuit-language.md` (the bell as a language
-  and as TOML), six open decisions. No date, nothing waits on it. *(edakit-29)*
+Nothing open.
 
 ## Ordering at the manufacturer (phase 5, [ordering.md](docs/concepts/done/ordering.md))
 
@@ -79,3 +75,49 @@ sources, data and code untouched; a text that is generated or used elsewhere sta
       pictures the owner picks (needs the owner – the repository stays private); the tiny jukebox, the pedal and the
       steering wheel each after its conversion to edakit (`/edakit:new-project` with the inventory, a project of its
       own), on the owner's word.
+
+## Closed todos
+
+Done or dropped, newest first, each with its date and the commit that closed it. What closed before 2026-11-01 is
+taken from the history of this file; an item rewritten on its way is listed once, in its last form.
+
+- [x] 2026-11-01 TD-2 **Read the circuit-language sketch in peace:** read by the owner; the sketch itself was closed on
+  2026-10-31 (bd227e3) and lives on in circuit-language-plan.md and circuit-dsl.md (6df3b09). *(edakit-29)*
+- [x] 2026-11-01 TD-1 **Update the edakit plugin:** the owner updated it to 8c6652c and reloaded (aec84ee).
+  *(edakit-be, automatic-christmas-bell-b3)*
+- [x] 2026-11-01 **The check candidates of the review at the order (5.5):** decided and built – FILES.order/lead,
+  PARTS.fact/rohs, the makers' RoHS and REACH statements (2f659d6).
+- [x] 2026-11-01 **5.11, the makers' interfaces:** dropped – future work, nobody asks the makers (the owner's
+  decision); handbook 8.4 names them (545ee3a).
+- [x] 2026-11-01 **Step 0 (5.0), the makers' forms:** the four profiles recorded, JLCPCB's order number gone, PCBWay's
+  upload after "Save to Cart", Eurocircuits' "Add to basket", AISLER without a cart; branch makers-step0 merged
+  (dcc0dfb, ce3e897).
+- [x] 2026-11-01 **Step 0b (5.0), EasyEDA's ODB++ on a probe board:** component layers with package, pins and MPN,
+  turned as F-7 assumes; SYNC.odb's RoundRect mask openings fixed (6062591, ce3e897).
+- [x] 2026-11-01 **5.7, 5.12:** the skill cart live at JLCPCB and PCBWay, into the cart, nothing ordered (ce3e897).
+- [x] 2026-11-01 **5.8:** the skill cart live at Eurocircuits, into the basket, nothing ordered (ce3e897).
+- [x] 2026-11-01 **5.10:** AISLER live, stopped before "Continue to Checkout", nothing ordered (ce3e897).
+- [x] 2026-11-01 **CPL rotations per maker:** `[cpl] zero` and `[cpl.turns]` in the makers' profiles (ce3e897).
+- [x] 2026-11-01 **JLCPCB's customs "Product Description":** the key `customs` of `[order]` (ce3e897).
+- [x] 2026-11-01 **The ODB++ export upstream (M-4):** branch feat/odb-export built in the fork (2395015), issue and
+  pull request posted as #798/#799 with M-1 to M-3; following them is the open item above.
+- [x] 2026-11-01 **The example coin-cell-led at its next `edakit gate --easyeda`:** routed and released again, A4, A5,
+  B1, B3, B7 and C4 hold, M-5 signed for the new fab hash (e3e1290).
+- [x] 2026-11-01 **LT-9, the led-bar example on real footprints:** the placement plan fits its LCSC footprints, the
+  Pico 2's pins in `symbol_differs` (dc07193).
+- [x] 2026-11-01 **The KiCad live test with the owner:** all seven steps, LT-1 to LT-11 in the concept (4dbf4fc).
+- [x] 2026-11-01 **The bell's L.9 and its T-Display on the data path:** done in the bell's session, its branch
+  edakit-current (2dd5f55).
+- [x] 2026-10-31 **The notices after the merge into main:** the bell and pytree-27 told of F-6's placeholder warning
+  and the walkthrough gaps' changes to their gate; the plugin follows main at 868e942 (59b62db).
+- [x] 2026-10-31 **Live runs of design as text:** 2.2 (`[routing] drc_rules` "write"), 3.6 (the way back into the
+  PCB), M-6 not voided by a footprint, and what was found on the way – built (bc44fa7).
+- [x] 2026-10-31 **The owner's look at the footprint in EasyEDA:** looked at, the throwaway projects edakit-probe-*
+  deleted (14e98bc).
+- [x] 2026-10-31 **B2, the hole unit of `PCB_PrimitivePad.create`:** read back in live run 3.6 (59e0939).
+- [x] 2026-10-31 **W.2 to W.5, the wired schematic:** merged into main, the concept done (81cd5f2, 2d475fc, d379775,
+  868e942).
+- [x] 2026-10-31 **D.1, the style guide and the glossary:** with test_style.py and test_references.py (2b37669).
+- [x] 2026-10-31 **Walkthrough 2, the 555 blinker on KiCad:** the run up to RELEASED (123389b); boards not ordered –
+  the owner's decision at the release (7999d5a).
+- [x] 2026-10-31 **ODB++ on the KiCad tool chain:** `kicad-cli` exports it for a maker that takes it (82039a8).
