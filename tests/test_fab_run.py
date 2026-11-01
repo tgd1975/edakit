@@ -1399,3 +1399,19 @@ def test_a_waived_designator_on_the_visible_side(project):
     w = next(r for r in rows if r["result"] == "waived")
     assert w["reason"] == "test: the label is wanted there"
     assert "C2 shows its designator – [silk] designators is bottom" in w["check"]
+
+
+def test_an_export_the_server_wrote_into_the_run_folder_leaves_no_copy(tmp_path):
+    """EasyEDA's pick-and-place export lands in the run folder under the project ID ("current"); taken as
+    cpl_easyeda.xlsx it does not stay beside it. An export elsewhere stays where the server keeps it."""
+    d = tmp_path / "fab" / "main"
+    d.mkdir(parents=True)
+    (d / "current").write_bytes(b"xlsx")
+    fab.take_export(d / "current", d / "cpl_easyeda.xlsx")
+    assert sorted(p.name for p in d.iterdir()) == ["cpl_easyeda.xlsx"]
+    assert (d / "cpl_easyeda.xlsx").read_bytes() == b"xlsx"
+    elsewhere = tmp_path / "server" / "board.zip"
+    elsewhere.parent.mkdir()
+    elsewhere.write_bytes(b"zip")
+    fab.take_export(elsewhere, d / "gerber_main.zip")
+    assert elsewhere.exists() and (d / "gerber_main.zip").read_bytes() == b"zip"

@@ -174,6 +174,15 @@ def board_bom(mcp, board):
 
 # --- collect from EasyEDA -----------------------------------------------------------------------------------------
 
+def take_export(src, dest):
+    """An export file of the server as dest: a copy – and gone from where it was when the server wrote it into dest's
+    folder (the pick-and-place export lands in the run folder under the project ID, "current")."""
+    src, dest = Path(src), Path(dest)
+    shutil.copy(src, dest)
+    if src.parent.resolve() == dest.parent.resolve() and src.name != dest.name:
+        src.unlink()
+
+
 def collect(cfg, board, d, verbose=False):
     from .. import eda, pcb
     (d / "netlist_diff.json").unlink(missing_ok=True)
@@ -216,7 +225,7 @@ def collect(cfg, board, d, verbose=False):
         res = mcp.call("easyeda_export_pick_place", projectId="current", format="csv", timeout=120)
         if not res.get("exported"):
             raise SystemExit(f"pick-and-place export failed: {res}")
-        shutil.copy(res["file_path"], d / "cpl_easyeda.xlsx")  # EasyEDA delivers xlsx even when csv is asked for
+        take_export(res["file_path"], d / "cpl_easyeda.xlsx")  # EasyEDA delivers xlsx even when csv is asked for
         (d / "bom_easyeda.json").write_text(json.dumps(board_bom(mcp, board), indent=1, ensure_ascii=False))
         if pcb.import_items(found):   # last: the comparison focuses the schematic pages
             try:
