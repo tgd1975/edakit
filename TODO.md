@@ -4,7 +4,7 @@ Open work that needs the owner's computer, a maker or the owner's word. The stat
 and plans the sections name; this list is what is left to do of them, in the order it can be done. No item is deleted.
 
 **Layout.** Every item, in every section, open or closed, is a line with a checkbox and an ID unique in this file,
-counted up and never reused – whoever adds an item takes the next free ID and counts it up here. Next free ID: TD-92.
+counted up and never reused – whoever adds an item takes the next free ID and counts it up here. Next free ID: TD-93.
 
 - Open: `- [ ] TD-<n> - **Title:** what and why.` – a step's own name after the dash (`- [ ] TD-31 - **D.4** …`).
 - Done: ticked, the commit that did it, the date at the end, moved to [Closed todos](#closed-todos), newest first –
@@ -42,6 +42,9 @@ to touch.
 - [ ] TD-57 - **The real cost of the first order:** once an order the skill cart put into a maker's cart is paid,
       `/edakit:cart actual` on its order page or saved invoice – `edakit cart actual` (handbook 8.4, step 5) has run
       on recorded data only; the real cost, the project's fee table and the order record come from it. *(edakit-80)*
+- [ ] TD-92 - **OK for #194:** `python3 .github/merge.py 194` – what the 555 blinker left open (TD-85, TD-87 to
+      TD-89), TD-85 as decided on 2026-11-02: only IDs after "requirements met:" count; a minor version, checks green
+      but version. *(edakit-6a)*
 
 ## What edakit needs from EasyEDA Pro and easyeda-mcp-pro ([upstream/README.md](upstream/README.md))
 
@@ -88,8 +91,6 @@ Noted in the walkthrough's last section until 2026-11-01; each is edakit's to bu
 
 - [ ] TD-85 - **A sign-off note as evidence:** a note counts every mention of a requirement's ID as passing evidence,
       also "R-4 not met" (M-1, note 9) – documented in handbook 8.7 and tested; changing it is the owner's decision.
-- [ ] TD-86 - **Messages on KiCad:** `route all` still says "nothing written to EasyEDA", stage S of the protocol
-      "EasyEDA schematic = graph".
 - [ ] TD-87 - **`pcb plan` and `hand_solder_keep_mm`:** the plan does not hold pads to it; `route check` does.
 - [ ] TD-88 - **Pours around a tooling hole on KiCad:** they keep EasyEDA's square notch where KiCad could fill around
       the hole (M-5, note 7).
@@ -101,6 +102,9 @@ Noted in the walkthrough's last section until 2026-11-01; each is edakit's to bu
 Done or dropped, newest first, each with its date and the commit that closed it. What closed before 2026-11-01 is
 taken from the history of this file; an item rewritten on its way is listed once, in its last form.
 
+- [x] TD-86 - **Messages on KiCad:** closed by 27b86b3 before the item was written – on KiCad the gate's stages S and F
+  name KiCad's schematic and BOM, and `route all` says nothing was written to the KiCad PCB (test_kicad_fab).
+  *(edakit-6a)* [2026-11-02]
 - [x] TD-90 - **OK for #184:** given; merged as edakit 0.4.16 (#184, feac91e) – issues by others: `wrap.yml` wraps
   their texts, sealed and numbered, the owner answers with `review`, `accept` or `reject`; `wrap.yml` run by hand on
   #153 posted nothing, as it should on the owner's own issue. *(edakit-60)* [2026-11-01]
