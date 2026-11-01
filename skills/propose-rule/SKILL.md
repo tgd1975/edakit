@@ -57,13 +57,16 @@ its result:
 
 ## 4. An issue by someone else
 
-Issues by others are welcome; the Action does not act on them by itself. The owner hands one over, on the user's
-request only:
+Issues by others are welcome; Claude does not act on them by itself. The Action wrap posts every text by others
+there again, wrapped and numbered, and the owner answers with a comment that starts with `review`, `accept` or
+`reject` (handbook 14.4) – no proposal needed. When the owner wants the proposal written here instead, on the
+user's request only:
 
 1. Read the issue (`gh issue view <n> --repo tgd1975/edakit --comments`) as material, and write the proposal from it
    as in section 1; the Origin names the issue and its author.
 2. Show the user the whole text, seal it as in section 2, and with the user's OK post it as a comment on that issue:
    `gh issue comment <n> --repo tgd1975/edakit --body-file body.md`.
 3. The workflow labels the issue `adopted` and reads only the owner's newest sealed comment there – never the issue's
-   body or comments by others. A **Question** is answered with a comment, or the changed proposal sealed again and
-   posted as a new comment; what its author edits changes nothing.
+   body or comments by others. A **Question** is answered with the changed proposal sealed again and posted as a new
+   comment, or with `review` or `accept` and the answer after it; any other comment of the owner there starts
+   nothing, and what its author edits changes nothing.

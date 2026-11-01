@@ -4,8 +4,10 @@ name: Proposals
 # 14.4 and 11.6): rule proposals by the repository skill triage-rule into the one open pull request from
 # rules/proposals, feature proposals (Kind feature) by triage-feature into the one from features/proposals – accepted
 # and built, rejected with the reason, or a question. Only the repository owner starts it: a sealed issue of the
-# owner, the owner's answer to a question, a sealed comment of the owner on an issue by someone else (which hands it
-# over, label adopted), or by hand (gh workflow run proposals.yml). Every run triages the proposal that started it –
+# owner, the owner's answer to a question there, on an issue by someone else the owner's command review or accept
+# (triage-request: a review, or the build) or the owner's sealed comment – either hands the issue over, label adopted
+# –, or by hand (gh workflow run proposals.yml). The texts of others there reach Claude only as wrap.yml wrapped them,
+# and only those before the command; the owner's reject is wrap.yml's. Every run triages the proposal that started it –
 # unless a triage answered it since – and every other one still waiting, one after another through proposal.yml, at
 # most eight: accepted proposals share their branch, and GitHub keeps one run waiting and cancels the one before it.
 # Claude only reads; a fixed job of proposal.yml checks its commit against the pipeline's paths before anything is
@@ -32,17 +34,17 @@ concurrency:
     (github.event.action == 'edited' && github.event.changes.body && !contains(github.event.issue.labels.*.name, 'accepted')) ||
     (github.event_name == 'issue_comment' && contains(github.event.issue.labels.*.name, 'needs-info')))) ||
     (github.event_name == 'issue_comment' && github.event.issue.user.login != github.repository_owner &&
-    contains(github.event.comment.body, 'edakit-proposal v')) ||
-    (github.event_name == 'issue_comment' && contains(github.event.issue.labels.*.name, 'adopted') &&
-    contains(github.event.issue.labels.*.name, 'needs-info')))))
+    (contains(github.event.comment.body, 'edakit-proposal v') ||
+    startsWith(github.event.comment.body, 'review') || startsWith(github.event.comment.body, 'accept'))))))
     ) && 'proposals' || format('proposals-not-{0}', github.run_id) }}
   cancel-in-progress: false
 
 jobs:
   queue:
     # started by the owner: by hand; on an issue (not a pull request) with a sealed proposal by the owner – on edits
-    # only for the body and not after it was built, on comments only while the triage waits for an answer; on a sealed
-    # comment of the owner on an issue by someone else, and the owner's answers there
+    # only for the body and not after it was built, on comments only while the triage waits for an answer; on an issue
+    # by someone else a comment of the owner that carries the seal or starts with review or accept – any other comment
+    # of the owner there starts nothing (edakit/proposal.py reads the command exactly: 'reviewed' is none)
     if: >-
       ${{ github.event.sender.login == github.repository_owner &&
       (github.event_name == 'workflow_dispatch' ||
@@ -53,9 +55,8 @@ jobs:
       (github.event.action == 'edited' && github.event.changes.body && !contains(github.event.issue.labels.*.name, 'accepted')) ||
       (github.event_name == 'issue_comment' && contains(github.event.issue.labels.*.name, 'needs-info')))) ||
       (github.event_name == 'issue_comment' && github.event.issue.user.login != github.repository_owner &&
-      contains(github.event.comment.body, 'edakit-proposal v')) ||
-      (github.event_name == 'issue_comment' && contains(github.event.issue.labels.*.name, 'adopted') &&
-      contains(github.event.issue.labels.*.name, 'needs-info'))))) }}
+      (contains(github.event.comment.body, 'edakit-proposal v') ||
+      startsWith(github.event.comment.body, 'review') || startsWith(github.event.comment.body, 'accept')))))) }}
     runs-on: ubuntu-24.04
     permissions:
       contents: read
@@ -82,12 +83,16 @@ jobs:
           gh label create rejected --color b60205 --description "rejected with the reason" --force
           gh label create adopted --color c5def5 --description "an issue by someone else the owner handed to the pipeline" --force
       - name: Adopted
-        # an issue by someone else, handed over by the owner's sealed comment: from now on the queue lists it
+        # an issue by someone else, handed over by the owner's command or sealed comment: from now on the queue lists it
         if: github.event_name == 'issue_comment' && github.event.issue.user.login != github.repository_owner
-        run: gh issue edit "$N" --add-label adopted
+        run: |
+          gh issue view "$N" --json number,author,body,labels,comments > "$RUNNER_TEMP/trigger.json"
+          case "$(python3 -m edakit.proposal start "$RUNNER_TEMP/trigger.json")" in
+            review|accept|triage) gh issue edit "$N" --add-label adopted ;;
+          esac
       - name: Queue
         # the open issues of the owner and the adopted ones; the last edit of the body of every question, so that
-        # sealing again counts as an answer; the comments of the issue that started the run – then edakit/proposal.py
+        # sealing again counts as an answer; the issue that started the run with its comments – then edakit/proposal.py
         id: queue
         run: |
           cd "$RUNNER_TEMP"
@@ -101,8 +106,8 @@ jobs:
           done | jq -s . > edits.json
           jq --slurpfile e edits.json '[.[] | . as $i | . + ([$e[0][] | select(.number == $i.number)][0] // {})]' \
             open.json > issues.json
-          if [ -n "$N" ]; then gh issue view "$N" --json comments --jq .comments > comments.json; else echo '[]' > comments.json; fi
-          echo "proposals=$(PYTHONPATH="$GITHUB_WORKSPACE" python3 -m edakit.proposal queue issues.json comments.json)" >> "$GITHUB_OUTPUT"
+          if [ -n "$N" ]; then gh issue view "$N" --json number,author,body,labels,comments > trigger.json; else echo null > trigger.json; fi
+          echo "proposals=$(PYTHONPATH="$GITHUB_WORKSPACE" python3 -m edakit.proposal queue issues.json trigger.json)" >> "$GITHUB_OUTPUT"
 
   # one proposal after another: the triage of the next starts after the publish of the one before
   p1:
