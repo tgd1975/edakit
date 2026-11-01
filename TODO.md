@@ -29,10 +29,6 @@ to touch.
 
 ## For the owner
 
-- [ ] TD-60 - **OK for #138:** <https://github.com/tgd1975/edakit/pull/138> (the rule proposal #103, GEO.pour:
-      bare area per side) – the triage built it for #102, but it reached `rules/proposals` after that merge and was
-      left without a pull request; rebased, fragment added, 2876 tests green. On the OK `merge.py 138`.
-      *(branch housekeeping)*
 - [ ] TD-59 - **OK for #129, #130, #131:** <https://github.com/tgd1975/edakit/pull/129> (TD-37, no click on Import
       Changes), <https://github.com/tgd1975/edakit/pull/130> (TD-38, the DRC reloads only on Connection Errors),
       <https://github.com/tgd1975/edakit/pull/131> (TD-39, local projects through the API) – each checked live on 1.6.0;
@@ -129,6 +125,8 @@ sources, data and code untouched; a text that is generated or used elsewhere sta
 Done or dropped, newest first, each with its date and the commit that closed it. What closed before 2026-11-01 is
 taken from the history of this file; an item rewritten on its way is listed once, in its last form.
 
+- [x] TD-60 - **OK for #138:** given; the rule proposal #103 (GEO.pour, bare area per side) merged as edakit
+      0.4.3 (3cc88ba), #103 closed. [2026-11-01]
 - [x] TD-44 - **The Claude GitHub app uninstalled:** dropped on the owner's word – the app is Claude Code on the web's
       access to the repositories; the proposals Action no longer fetches its token (0.3.1), and main's ruleset (TD-47)
       keeps it off main. [2026-11-01]
