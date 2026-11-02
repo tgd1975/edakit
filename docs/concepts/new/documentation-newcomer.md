@@ -1,7 +1,8 @@
 # The documentation for a newcomer: two manuals, ten steps, a navigation that shows them
 
 Status 2026-11-02: decided – the seven decisions taken by the owner the same day in a decision round in Claude Code's
-form (the table at the end): six as recommended, the newcomer's test as the eval alone, without a person; what Claude
+form (the table at the end): six as recommended, the newcomer's test as the eval alone, without a person – and
+decision 6 taken again the same day after the eval's runs: no folding, ever; what Claude
 had set itself – the budgets, the shape of a steps page, the ten pages, the tabs, the order of the steps – confirmed.
 N.1 and N.3 built the same day on the owner's word (#215); N.2, N.4 and N.5's eval case built the same day on the
 owner's word (#222, edakit 1.0.1); the eval's run waits for a cloud session – on this machine the Bash sandbox cannot
@@ -17,7 +18,14 @@ thirteen pages opened (twelve counted; `handbook/02-setup.md` read from an offse
 battery and no switch, and no page says to write the entries by hand; how a switch opens in `sim.json` and how to
 model a 9 V cell are only implied; how to accept PATH.reverse for a keyed connector is not described; where `edakit`
 lives when the plugin is not active is not said. It wrote every file by hand from the handbook and ran no skill,
-taking the prompt's bar on edakit's code for one on the skills too. Asked for by the
+taking the prompt's bar on edakit's code for one on the skills too; a second run with that bar lifted from the skills
+(`382fc62`, #236): 0.875 (0.76 USD, 40 turns), the skills new-project, requirements and circuit-design run, `DONE: 7
+components, 6 nets, 6 parts entries; 10 note; requirements: 1 need, 1 requirement`, fourteen pages – the start page,
+the quickstart, the steps index and the steps `01` to `07`, the handbook's chapters 2, 3, 4 and 10 (eleven counted: 4
+and 10 read through grep) –, and as missing: `edakit` not on PATH though the docs say the plugin puts it there; no way
+shown to list the parts library by kind; no toggle or slide switch and no 9 V connector in it; whether `[boards.main]`
+with a title alone is enough without a board; the writes of `.claude/settings.json` and the git hook path failed
+without a fallback; which `rows` patterns `SIM.state` evidence takes. Asked for by the
 owner the day after the documentation concept was built ("I am still not happy with the documentation; it is more
 compact after the revision, but when somebody new looks at it, they run away – think about what we could do so that it
 is not so overwhelming, and write a concept"). Written against main at `37a0745`, with
@@ -179,7 +187,8 @@ placement plan's keys (7.4, 360 lines), a project's scripts and agents (8.6, 375
 (`???`, enabled in `docs/pages.py` already) would fold them under their heading. The text stays in the file, in its
 section, with its anchors – the assistant reads the same Markdown –, and the rendered page shows the chapter's way
 first. A presentation change, not a trim; one chapter per branch, the review as for D.5. Not now: the steps are tried
-first, and this comes only if the eval's second case still fails or needs a chapter to pass (decision 6).
+first, and this comes only if the eval's second case still fails or needs a chapter to pass (decision 6). Decided
+against on 2026-11-02, after the runs: the owner does not want folding – the reference blocks stay as they are.
 
 ## How a steps page is written
 
@@ -202,7 +211,7 @@ The entry register of the style guide holds, with these additions, into `docs/st
 | N.3 | The entry lightened: the start page's first screen, How it works without "The words", the glossary's "ten words first", the term budget counted | S | the decisions |
 | N.4 | The handbook declared complete: the line on its index, "The short way" in each chapter's first paragraph | S | N.2 |
 | N.5 | The newcomer's test: the second eval case, its numbers into the status line | S | N.2 |
-| N.6 | Folded reference blocks in 4, 7 and 8, if N.5 still fails or needs a chapter | M | N.5, the owner's word |
+| N.6 | Folded reference blocks in 4, 7 and 8, if N.5 still fails or needs a chapter – dropped, decision 6 of 2026-11-02: no folding | – | – |
 
 N.1 and N.3 are one session and change what a newcomer sees first; N.2 is the substance. About four sessions to N.5.
 Each step starts on the owner's word and comes into `TODO.md` when it does; N.1 and N.3 were built on 2026-11-02
@@ -263,7 +272,7 @@ recommended.
 | 3 | The navigation | tabs by reader, eight entries a sidebar, the handbook its own tab, Inside edakit behind one page under Develop, the catalog out of Start | collapsible groups as today with the steps added; the handbook off the navigation, search only | 2026-11-02: as recommended |
 | 4 | The entry | the first screen with the pictures and the two-minute command, at most 120 words before the first picture; "The words" to the glossary's head; a term budget of three per steps page | the pages as decided in documentation.md, the steps added only | 2026-11-02: as recommended |
 | 5 | The newcomer's test | the eval's second case and one person picked by the owner, the result in the status line | the eval alone; no test, the owner's own look | 2026-11-02: the eval alone – no person's try, the owner's own look stands in for it |
-| 6 | Folding the reference blocks of 4, 7 and 8 | later, only if the newcomer's test still stops in a chapter | with N.2; never | 2026-11-02: as recommended – later, on the owner's word, if the eval's second case still fails or needs a chapter |
+| 6 | Folding the reference blocks of 4, 7 and 8 | later, only if the newcomer's test still stops in a chapter | with N.2; never | 2026-11-02: as recommended – later, on the owner's word, if the eval's second case still fails or needs a chapter; the same day, after the runs: never – the owner does not want folding |
 | 7 | TD-81's rule 5 | kept strict: the handbook is the assistant's and the look-up reader's and no longer has to shrink | loosened per chapter for 10 to 15 % | 2026-11-02: as recommended – kept strict, TD-81 closed with it |
 
 What Claude had set itself was confirmed the same day: the budgets – a steps page of at most 400 words, the index
