@@ -455,7 +455,7 @@ IDs are stable, as in the rule catalog: a requirement that no longer holds stays
 set `accepted`. A change to an accepted requirement is a decision in the decision log.
 
 **Who writes it.** The skill `requirements`, in the conversation with you. It collects what those involved state the
-circuit must do and asks back in one decision round until vague words are the maker's numbers and contradictions are
+circuit must do and asks back in one decision round until vague words are your numbers and contradictions are
 decided. It writes drafts and has you approve them – approving a requirement is one of your real decisions (the
 working agreements, 11.4). It writes this file and the decision log, never the graph.
 

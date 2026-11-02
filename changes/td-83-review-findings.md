@@ -4,7 +4,8 @@ patch
   supply colours (6.5); DOCS.derived in the requirement checks (10.1, 10.4, 10.5); the lock file's
   `$XDG_STATE_HOME` and `EDAKIT_LOCK_FILE` (11.2); KiCad's coordinates converted from mil (16.3); the REACH fact's
   grade in 15.3; footprint data's live run and the slot direction (4.5); every server's `BRIDGE_TIMEOUT_MS` the same
-  (2.4); the permission "External Interaction" (2.5). The `compliance` field says it is support, not legal advice.
+  (2.4); the permission "External Interaction" (2.5); "your numbers" for what the requirements skill asks back
+  (3.6, 11.1, 14.1). The `compliance` field says it is support, not legal advice.
   Section 8.4 is "you order and pay". The engines table of 14.2 is generated from the catalog, and ORDER's `decides`
   names `read` and `confirm`.
 - Sources name the section that holds what they cite: LIM.v and the derating table 5.3, PARTS.fact's lead 4.1, the

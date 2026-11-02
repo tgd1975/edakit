@@ -14,7 +14,7 @@ before – from "five LEDs, a servo, USB power" to a graph – and the knowledge
   asks you in its interview and writes after your OK (a project, 2.7).
 - **Requirements engineer** – a session with the skill `requirements`, and the agent `requirements-engineer` in its
   own context. The skill collects with you what those involved state the circuit must do – inputs, not edakit's
-  outputs. It asks back in a decision round until vague words are the maker's numbers, writes drafts into the
+  outputs. It asks back in a decision round until vague words are your numbers, writes drafts into the
   requirements file and has you approve them; it never writes the graph. The agent reads every document of the
   project and changes nothing. It returns candidates with who stated them (inferred ones marked), what edakit already
   checks on every board, contradictions, vague words and requirements without evidence: the first inventory and a
