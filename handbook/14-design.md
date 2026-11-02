@@ -6,6 +6,8 @@ before – from "five LEDs, a servo, USB power" to a graph – and the knowledge
 
 ## 14.1 Roles
 
+![Roles and sessions: you decide; requirements, circuit designer, hand-over, PCB designer and order each in a session of its own, with their agents; the reviewers in sessions of their own, changing nothing](../docs/pictures/roles.svg)
+
 - **Project surveyor** – the agent `project-surveyor` in its own context, for the skill `new-project`. For a project
   that moves to edakit it reads the repository – hardware data, scripts, agents, skills, documents, decisions, hooks –
   and returns per place candidates with where it found them, a proposal and its reason. It changes nothing; the skill
@@ -314,6 +316,8 @@ is a candidate. The reference circuits per domain (`tests/reference.py`) carry t
 with exactly its codes.
 
 ### The proposals Action
+
+![How a proposal becomes a change: your sealed issue starts the Action proposals; an issue by someone else is wrapped and waits for your command; Claude triages read-only, a fixed job checks the commit, you merge the pull request](../docs/pictures/proposals.svg)
 
 Claude only reads. The triage runs with a token that cannot write and follows main's copies of the skills rather than
 the branch's. It gets the proposal's text, the repository owner's comments and the triage's earlier results – of what

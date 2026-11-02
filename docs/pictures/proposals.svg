@@ -1,0 +1,72 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 392" width="900" height="392" font-family="IBM Plex Sans, Helvetica, Arial, sans-serif" role="img" aria-labelledby="t d">
+  <title id="t">How a proposal becomes a change of edakit</title>
+  <desc id="d">Your own sealed issue, filed from a project with propose-rule or propose-feature, starts the Action proposals. An issue by someone else goes to the Action wrap first: no Claude and no secret; every text is posted again as plain text, numbered and sealed. Only your command starts anything there: reject closes the issue at once without Claude; review and accept go to the Action proposals. Its queue holds only your issues and your commands. Claude triages with a token that cannot write and leaves its result as files and at most one commit. A fixed job checks the commit against the pipeline's paths – a change of the pipeline is rejected – and publishes it into the pull request of its kind. You merge.</desc>
+  <style>
+    .bg { fill: #f4f6f6; } .station { fill: #ffffff; stroke: #d5dcdc; }
+    .box { fill: #ffffff; stroke: #0e6c6a; stroke-width: 1.6; } .you { fill: #fbeee2; stroke: #b8691f; stroke-width: 1.4; }
+    .ink { fill: #1d2626; } .muted { fill: #5d6b6b; } .accent { fill: #0e6c6a; } .copper { fill: #b8691f; }
+    .arrow { stroke: #0e6c6a; stroke-width: 1.6; fill: none; } .loop { stroke: #b8691f; stroke-width: 1.4; fill: none; }
+    @media (prefers-color-scheme: dark) {
+      .bg { fill: #111717; } .station { fill: #182020; stroke: #2c3838; }
+      .box { fill: #182020; stroke: #5cc4c0; } .you { fill: #2a2118; stroke: #e0954f; }
+      .ink { fill: #e3eaea; } .muted { fill: #97a6a6; } .accent { fill: #5cc4c0; } .copper { fill: #e0954f; }
+      .arrow { stroke: #5cc4c0; } .loop { stroke: #e0954f; }
+    }
+  </style>
+  <defs>
+    <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="accent"/></marker>
+    <marker id="l" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="copper"/></marker>
+  </defs>
+  <rect class="bg" x="0" y="0" width="900" height="392" rx="10"/>
+
+  <g text-anchor="middle">
+    <!-- your issue -->
+    <rect class="you" x="20" y="30" width="180" height="56" rx="6"/>
+    <text class="ink" x="110" y="53" font-size="12.5" font-weight="600">Your sealed issue</text>
+    <text class="muted" x="110" y="71" font-size="11">propose-rule, propose-feature</text>
+    <!-- someone else -->
+    <rect class="station" x="20" y="130" width="180" height="56" rx="6"/>
+    <text class="ink" x="110" y="153" font-size="12.5" font-weight="600">An issue by someone else</text>
+    <text class="muted" x="110" y="171" font-size="11">anyone may open one</text>
+    <rect class="box" x="230" y="130" width="190" height="56" rx="6"/>
+    <text class="ink" x="325" y="153" font-size="12.5" font-weight="600">Action wrap</text>
+    <text class="muted" x="325" y="171" font-size="11">no Claude, no secret</text>
+    <rect class="you" x="450" y="130" width="140" height="56" rx="6"/>
+    <text class="ink" x="520" y="153" font-size="12.5" font-weight="600">Your command</text>
+    <text class="muted" x="520" y="171" font-size="11">review · accept · reject</text>
+    <!-- the pipeline -->
+    <rect class="box" x="620" y="30" width="260" height="56" rx="6"/>
+    <text class="ink" x="750" y="53" font-size="12.5" font-weight="600">Action proposals</text>
+    <text class="muted" x="750" y="71" font-size="11">its queue: only your issues and commands</text>
+    <rect class="box" x="620" y="130" width="260" height="56" rx="6"/>
+    <text class="ink" x="750" y="153" font-size="12.5" font-weight="600">Claude triages</text>
+    <text class="muted" x="750" y="171" font-size="11">a token that cannot write; files, one commit</text>
+    <rect class="box" x="620" y="230" width="260" height="56" rx="6"/>
+    <text class="ink" x="750" y="253" font-size="12.5" font-weight="600">A fixed job</text>
+    <text class="muted" x="750" y="271" font-size="11">the commit against the pipeline's paths</text>
+    <rect class="you" x="620" y="320" width="260" height="56" rx="6"/>
+    <text class="ink" x="750" y="343" font-size="12.5" font-weight="600">The pull request of its kind</text>
+    <text class="muted" x="750" y="361" font-size="11">you merge</text>
+  </g>
+  <text class="muted" x="325" y="208" font-size="11" text-anchor="middle">each text in a code block, numbered, sealed</text>
+
+  <!-- arrows -->
+  <line class="arrow" x1="200" y1="58" x2="618" y2="58" marker-end="url(#a)"/>
+  <text class="muted" x="410" y="51" font-size="11" text-anchor="middle">starts a run</text>
+  <line class="arrow" x1="200" y1="158" x2="228" y2="158" marker-end="url(#a)"/>
+  <line class="arrow" x1="420" y1="158" x2="448" y2="158" marker-end="url(#a)"/>
+  <path class="arrow" d="M520,130 L520,104 L690,104 L690,88" marker-end="url(#a)"/>
+  <text class="muted" x="528" y="100" font-size="11">review, accept</text>
+  <line class="arrow" x1="750" y1="86" x2="750" y2="128" marker-end="url(#a)"/>
+  <line class="arrow" x1="750" y1="186" x2="750" y2="228" marker-end="url(#a)"/>
+  <line class="arrow" x1="750" y1="286" x2="750" y2="318" marker-end="url(#a)"/>
+  <path class="loop" d="M520,186 L520,226" marker-end="url(#l)"/>
+  <text class="copper" x="520" y="242" font-size="11" text-anchor="middle">reject: closed at once,</text>
+  <text class="copper" x="520" y="257" font-size="11" text-anchor="middle">without Claude</text>
+
+  <!-- what holds -->
+  <text class="muted" x="20" y="306" font-size="12">Claude reads only your texts, the wrapped texts before your</text>
+  <text class="muted" x="20" y="323" font-size="12">command and the triage's results. A commit that touches the</text>
+  <text class="muted" x="20" y="340" font-size="12">pipeline is not pushed: the proposal is rejected – the pipeline</text>
+  <text class="muted" x="20" y="357" font-size="12">is never changed through itself.</text>
+</svg>

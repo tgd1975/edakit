@@ -1,0 +1,68 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 356" width="760" height="356" font-family="IBM Plex Sans, Helvetica, Arial, sans-serif" role="img" aria-labelledby="t d">
+  <title id="t">What edakit sim computes</title>
+  <desc id="d">The scenarios are supplies times loads times corners times spread – for the led-bar of the tests three supplies, two loads and two LED corners, twelve scenarios – plus extra scenarios. ngspice computes a DC operating point for each, from a netlist built from the graph and the parts entries. The checks SIM, LIM and LVL hold every part to its ratings with derating, every pin to its levels, every LED on or off and every rail in its range. Each scenario gets a row: ok, fail, warn or waived – stage E of the gate. Beside them, transient runs follow plug, unplug and switch-over, judged by LIM.v, and AC runs check where a load names what it expects; spikes and fast edges are left to the acceptance test.</desc>
+  <style>
+    .bg { fill: #f4f6f6; } .station { fill: #ffffff; stroke: #d5dcdc; }
+    .box { fill: #ffffff; stroke: #0e6c6a; stroke-width: 1.6; } .you { fill: #fbeee2; stroke: #b8691f; stroke-width: 1.4; }
+    .ink { fill: #1d2626; } .muted { fill: #5d6b6b; } .accent { fill: #0e6c6a; } .copper { fill: #b8691f; }
+    .arrow { stroke: #0e6c6a; stroke-width: 1.6; fill: none; }
+    @media (prefers-color-scheme: dark) {
+      .bg { fill: #111717; } .station { fill: #182020; stroke: #2c3838; }
+      .box { fill: #182020; stroke: #5cc4c0; } .you { fill: #2a2118; stroke: #e0954f; }
+      .ink { fill: #e3eaea; } .muted { fill: #97a6a6; } .accent { fill: #5cc4c0; } .copper { fill: #e0954f; }
+      .arrow { stroke: #5cc4c0; }
+    }
+  </style>
+  <defs>
+    <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="accent"/></marker>
+  </defs>
+  <rect class="bg" x="0" y="0" width="760" height="356" rx="10"/>
+
+  <text class="muted" x="20" y="24" font-size="12" font-weight="600">hardware/sim.json – the led-bar of the tests</text>
+  <!-- factors -->
+  <g>
+    <rect class="station" x="20" y="34" width="230" height="44" rx="6"/>
+    <text class="ink" x="34" y="53" font-size="12.5" font-weight="600">supplies <tspan class="muted" font-weight="400">– 3</tspan></text>
+    <text class="muted" x="34" y="69" font-size="11">usb-min · usb-nom · usb-max</text>
+    <rect class="station" x="20" y="96" width="230" height="44" rx="6"/>
+    <text class="ink" x="34" y="115" font-size="12.5" font-weight="600">loads <tspan class="muted" font-weight="400">– 2</tspan></text>
+    <text class="muted" x="34" y="131" font-size="11">idle · all_on</text>
+    <rect class="station" x="20" y="158" width="230" height="44" rx="6"/>
+    <text class="ink" x="34" y="177" font-size="12.5" font-weight="600">corners <tspan class="muted" font-weight="400">– 2</tspan></text>
+    <text class="muted" x="34" y="193" font-size="11">the LEDs' forward voltage at min · max</text>
+    <rect class="station" x="20" y="220" width="230" height="44" rx="6"/>
+    <text class="ink" x="34" y="239" font-size="12.5" font-weight="600">spread</text>
+    <text class="muted" x="34" y="255" font-size="11">the transistors' corners, where it matters</text>
+  </g>
+  <g class="accent" font-size="15" font-weight="600" text-anchor="middle">
+    <text x="135" y="92">×</text><text x="135" y="154">×</text><text x="135" y="216">×</text>
+  </g>
+  <path class="arrow" d="M250,149 L270,149 L270,92 L288,92" marker-end="url(#a)"/>
+
+  <!-- the run -->
+  <g>
+    <rect class="box" x="290" y="62" width="210" height="60" rx="6"/>
+    <text class="ink" x="306" y="85" font-size="12.5" font-weight="600">scenarios</text>
+    <text class="muted" x="306" y="103" font-size="11">3 × 2 × 2 = 12, plus extra_scenarios</text>
+    <rect class="box" x="540" y="62" width="200" height="60" rx="6"/>
+    <text class="ink" x="556" y="85" font-size="12.5" font-weight="600">ngspice</text>
+    <text class="muted" x="556" y="103" font-size="11">a DC operating point each,</text>
+    <text class="muted" x="556" y="116" font-size="11">from the graph and the parts</text>
+    <rect class="box" x="540" y="160" width="200" height="74" rx="6"/>
+    <text class="ink" x="556" y="183" font-size="12.5" font-weight="600">checks SIM, LIM, LVL</text>
+    <text class="muted" x="556" y="201" font-size="11">ratings with derating, levels,</text>
+    <text class="muted" x="556" y="216" font-size="11">every LED on or off, every rail</text>
+    <rect class="box" x="290" y="160" width="210" height="74" rx="6"/>
+    <text class="ink" x="306" y="183" font-size="12.5" font-weight="600">a row per scenario</text>
+    <text class="muted" x="306" y="201" font-size="11">ok · fail · warn · waived</text>
+    <text class="muted" x="306" y="216" font-size="11">stage E of the gate</text>
+  </g>
+  <line class="arrow" x1="500" y1="92" x2="538" y2="92" marker-end="url(#a)"/>
+  <line class="arrow" x1="640" y1="122" x2="640" y2="158" marker-end="url(#a)"/>
+  <line class="arrow" x1="540" y1="197" x2="502" y2="197" marker-end="url(#a)"/>
+
+  <!-- beside -->
+  <rect class="station" x="20" y="284" width="720" height="56" rx="8"/>
+  <text x="36" y="307" font-size="12"><tspan class="accent" font-weight="600">Beside them: </tspan><tspan class="ink">transient runs follow plug, unplug and switch-over, judged by LIM.v; AC runs</tspan></text>
+  <text class="ink" x="36" y="326" font-size="12">check where a load names what it expects. Spikes and fast edges are left to the acceptance test.</text>
+</svg>

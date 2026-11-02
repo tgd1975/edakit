@@ -1,0 +1,92 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 396" width="900" height="396" font-family="IBM Plex Sans, Helvetica, Arial, sans-serif" role="img" aria-labelledby="t d">
+  <title id="t">Roles and sessions</title>
+  <desc id="d">You decide: you answer the decision rounds on warnings, requirements, looks and operation, money and what becomes a check. Sessions in order: requirements engineer with the skill requirements, writing the requirements file; circuit designer with circuit-design and hardware-change, writing graph, simulation config and schematic file; the hand-over, layout in the graph; PCB designer with pcb-round, writing the board file; the gate; the order with the skill cart in your browser. Agents in their own context: requirements-engineer, part-selector writing the parts entries, easyeda-operator. Reviewers, each in a session of its own, changing nothing: electrical-reviewer for M-1, regulatory-reviewer for M-6 – support, not legal advice –, pcb-reviewer for M-5, a project reviewer for M-7. No role checks its own work; a file has one owner.</desc>
+  <style>
+    .bg { fill: #f4f6f6; } .station { fill: #ffffff; stroke: #d5dcdc; }
+    .box { fill: #ffffff; stroke: #0e6c6a; stroke-width: 1.6; } .you { fill: #fbeee2; stroke: #b8691f; stroke-width: 1.4; }
+    .agent { fill: #ffffff; stroke: #0e6c6a; stroke-width: 1.2; stroke-dasharray: 5 3; }
+    .ink { fill: #1d2626; } .muted { fill: #5d6b6b; } .accent { fill: #0e6c6a; } .copper { fill: #b8691f; }
+    .arrow { stroke: #0e6c6a; stroke-width: 1.6; fill: none; } .thin { stroke: #0e6c6a; stroke-width: 1.2; stroke-dasharray: 3 3; fill: none; }
+    @media (prefers-color-scheme: dark) {
+      .bg { fill: #111717; } .station { fill: #182020; stroke: #2c3838; }
+      .box { fill: #182020; stroke: #5cc4c0; } .you { fill: #2a2118; stroke: #e0954f; } .agent { fill: #182020; stroke: #5cc4c0; }
+      .ink { fill: #e3eaea; } .muted { fill: #97a6a6; } .accent { fill: #5cc4c0; } .copper { fill: #e0954f; }
+      .arrow { stroke: #5cc4c0; } .thin { stroke: #5cc4c0; }
+    }
+  </style>
+  <defs>
+    <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="accent"/></marker>
+  </defs>
+  <rect class="bg" x="0" y="0" width="900" height="396" rx="10"/>
+
+  <!-- you -->
+  <rect class="you" x="20" y="16" width="860" height="40" rx="8"/>
+  <text x="36" y="41" font-size="13"><tspan class="copper" font-weight="600">You decide: </tspan><tspan class="ink">the decision rounds on warnings, requirements, looks and operation, money, what becomes a check</tspan></text>
+
+  <!-- sessions -->
+  <g text-anchor="middle">
+    <rect class="box" x="20" y="80" width="150" height="70" rx="6"/>
+    <text class="ink" x="95" y="102" font-size="12.5" font-weight="600">Requirements</text>
+    <text class="muted" x="95" y="119" font-size="11">skill requirements</text>
+    <text class="accent" x="95" y="137" font-size="11">requirements.toml</text>
+    <rect class="box" x="200" y="80" width="180" height="70" rx="6"/>
+    <text class="ink" x="290" y="102" font-size="12.5" font-weight="600">Circuit designer</text>
+    <text class="muted" x="290" y="119" font-size="11">circuit-design, hardware-change</text>
+    <text class="accent" x="290" y="137" font-size="11">graph, sim.json, schematic file</text>
+    <rect class="station" x="410" y="80" width="110" height="70" rx="6"/>
+    <text class="ink" x="465" y="102" font-size="12.5" font-weight="600">Hand-over</text>
+    <text class="muted" x="465" y="119" font-size="11">edakit handover</text>
+    <text class="accent" x="465" y="137" font-size="11">layout in the graph</text>
+    <rect class="box" x="550" y="80" width="170" height="70" rx="6"/>
+    <text class="ink" x="635" y="102" font-size="12.5" font-weight="600">PCB designer</text>
+    <text class="muted" x="635" y="119" font-size="11">skill pcb-round</text>
+    <text class="accent" x="635" y="137" font-size="11">hardware/boards/&lt;name&gt;.toml</text>
+    <rect class="box" x="750" y="80" width="130" height="70" rx="6"/>
+    <text class="ink" x="815" y="102" font-size="12.5" font-weight="600">Order</text>
+    <text class="muted" x="815" y="119" font-size="11">skill cart</text>
+    <text class="accent" x="815" y="137" font-size="11">in your browser</text>
+  </g>
+  <line class="arrow" x1="170" y1="115" x2="198" y2="115" marker-end="url(#a)"/>
+  <line class="arrow" x1="380" y1="115" x2="408" y2="115" marker-end="url(#a)"/>
+  <line class="arrow" x1="520" y1="115" x2="548" y2="115" marker-end="url(#a)"/>
+  <line class="arrow" x1="720" y1="115" x2="748" y2="115" marker-end="url(#a)"/>
+  <text class="muted" x="735" y="108" font-size="10.5" text-anchor="middle">gate</text>
+
+  <!-- agents -->
+  <g text-anchor="middle">
+    <rect class="agent" x="20" y="180" width="150" height="46" rx="6"/>
+    <text class="ink" x="95" y="199" font-size="11.5">requirements-engineer</text>
+    <text class="muted" x="95" y="215" font-size="10.5">inventory, second opinion</text>
+    <rect class="agent" x="200" y="180" width="180" height="46" rx="6"/>
+    <text class="ink" x="290" y="199" font-size="11.5">part-selector</text>
+    <text class="muted" x="290" y="215" font-size="10.5">writes the parts entries</text>
+    <rect class="agent" x="550" y="180" width="170" height="46" rx="6"/>
+    <text class="ink" x="635" y="199" font-size="11.5">easyeda-operator</text>
+    <text class="muted" x="635" y="215" font-size="10.5">one long EasyEDA step</text>
+  </g>
+  <line class="thin" x1="95" y1="150" x2="95" y2="180"/>
+  <line class="thin" x1="290" y1="150" x2="290" y2="180"/>
+  <line class="thin" x1="635" y1="150" x2="635" y2="180"/>
+  <text class="muted" x="740" y="200" font-size="11">dashed: agents in</text>
+  <text class="muted" x="740" y="215" font-size="11">a context of their own</text>
+
+  <!-- reviewers -->
+  <rect class="station" x="20" y="248" width="860" height="96" rx="10"/>
+  <text class="accent" x="36" y="270" font-size="13.5" font-weight="600">Reviewers – each in a session of its own, changing nothing</text>
+  <g text-anchor="middle">
+    <rect class="box" x="200" y="282" width="180" height="48" rx="6"/>
+    <text class="ink" x="290" y="302" font-size="12">electrical-reviewer</text>
+    <text class="muted" x="290" y="319" font-size="11">M-1: circuit and hand-over</text>
+    <rect class="box" x="36" y="282" width="150" height="48" rx="6"/>
+    <text class="ink" x="111" y="302" font-size="12">regulatory-reviewer</text>
+    <text class="muted" x="111" y="319" font-size="11">M-6, not legal advice</text>
+    <rect class="box" x="550" y="282" width="170" height="48" rx="6"/>
+    <text class="ink" x="635" y="302" font-size="12">pcb-reviewer</text>
+    <text class="muted" x="635" y="319" font-size="11">M-5: rounds, gate files</text>
+    <rect class="box" x="740" y="282" width="126" height="48" rx="6"/>
+    <text class="ink" x="803" y="302" font-size="12">project reviewer</text>
+    <text class="muted" x="803" y="319" font-size="11">M-7, its own</text>
+  </g>
+  <text class="muted" x="20" y="370" font-size="12">No role checks its own work: a reviewer starts without the decisions. A file has one owner, and its hash says</text>
+  <text class="muted" x="20" y="387" font-size="12">which sign-offs a change voids – a new placement voids the layout review, not the circuit's.</text>
+</svg>
