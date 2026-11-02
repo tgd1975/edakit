@@ -38,7 +38,11 @@ to touch.
       --ablation none --runs 1 --model claude-sonnet-5-5 --max-cost-usd 6 --no-publish`; the session writes score and
       pages opened into the status line of `docs/concepts/new/documentation-newcomer.md` and closes TD-98. A run as
       root on 2026-11-02 scored 0.33 (0.90 USD, 62 turns) and does not count: Bash could not write the workspace, so
-      no `hardware/graph.json`; ngspice missing, the parts catalogue denied by the proxy. *(edakit-c1)*
+      no `hardware/graph.json`; ngspice missing, the parts catalogue denied by the proxy. A run as `eval` the same day
+      (with ngspice, the CA bundle under `/usr/local/share/ccr/`, the token as `CLAUDE_CODE_OAUTH_TOKEN`) scored 0.83
+      (1.18 USD, 94 turns) and does not count either: Bash was read-only in the workspace and in its own `$TMPDIR`
+      again, while bubblewrap as `eval` binds writably on its own – root was not the cause; why the sandbox of `claude
+      plugin eval` is read-only is open. *(edakit-c1)*
 - [ ] TD-99 - **Decide on parts on hand (PartsLedger):** a decision round in Claude Code's form on
       `docs/concepts/new/parts-on-hand.md` – eight decisions, recommendations first: the maker's bin as a source of
       hand-soldered parts, only the rest ordered, the way back into the bin, PartsLedger's name; nothing is built
