@@ -7,6 +7,12 @@ written once, by `.github/merge.py`, from the fragments in [changes/](changes/RE
 [versioning.md](docs/concepts/done/versioning.md). Update with `claude plugin marketplace update edakit && claude plugin
 update edakit@edakit`, then `/reload-plugins` or a new session; `edakit --version` names the version that runs.
 
+## 1.0.5 – 2026-11-02
+
+- The handbook shows six more diagrams: the graph and the files around it (2.7), what `edakit sim` computes (5.2), the
+  way from the current release to the boards (8.4), roles and sessions (14.1) and how a proposal becomes a change
+  (14.4); the architecture page shows edakit's three layers.
+
 ## 1.0.4 – 2026-11-02
 
 - KiCad is described as the other choice beside EasyEDA Pro, the default: handbook 16.1 "EasyEDA Pro or KiCad" says

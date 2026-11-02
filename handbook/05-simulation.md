@@ -286,6 +286,8 @@ Scenarios = supplies × loads × corners (LED forward voltage at min/max) × spr
 `extra_scenarios` (e.g. "programming cable plugged in, external supply off"; `"info": true` turns failures into
 information).
 
+![What edakit sim computes: supplies × loads × corners × spread make the scenarios, ngspice computes a DC operating point for each, the checks SIM, LIM and LVL judge it, a row per scenario goes into stage E](../docs/pictures/scenarios.svg)
+
 ### The spread of the transistors
 
 The bias of a discrete stage – a booster, a fuzz, a phaser, a MOSFET driven from a 3.3 V output – rests on parameters

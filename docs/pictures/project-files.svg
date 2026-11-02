@@ -1,0 +1,66 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 860 352" width="860" height="352" font-family="IBM Plex Sans, Helvetica, Arial, sans-serif" role="img" aria-labelledby="t d">
+  <title id="t">The graph and the files around it</title>
+  <desc id="d">The hardware graph, hardware/graph.toml, is the only place where parts, values and connections are decided: components with designator, part and LCSC number, nets with their pins by name or role and their voltage range, the purpose, and the layout – the hand-over. A component's LCSC number names its entry in the parts database, hardware/parts, with limits, pins and roles, model and footprint data. The board file, hardware/boards/name.toml, places the components by designator: placement plan, routing, silkscreen. The requirements file says what the circuit must do and is checked against the graph; the simulation config, hardware/sim.json, holds supplies, loads and corners and reads nets and parts. Schematic, PCB, BOM, CPL and Gerber files are generated and checked against the graph.</desc>
+  <style>
+    .bg { fill: #f4f6f6; } .station { fill: #ffffff; stroke: #d5dcdc; }
+    .box { fill: #ffffff; stroke: #0e6c6a; stroke-width: 1.6; } .you { fill: #fbeee2; stroke: #b8691f; stroke-width: 1.4; }
+    .gen { fill: none; stroke: #9aa8a8; stroke-width: 1.2; stroke-dasharray: 5 3; }
+    .ink { fill: #1d2626; } .muted { fill: #5d6b6b; } .accent { fill: #0e6c6a; } .copper { fill: #b8691f; }
+    .arrow { stroke: #0e6c6a; stroke-width: 1.6; fill: none; }
+    @media (prefers-color-scheme: dark) {
+      .bg { fill: #111717; } .station { fill: #182020; stroke: #2c3838; }
+      .box { fill: #182020; stroke: #5cc4c0; } .you { fill: #2a2118; stroke: #e0954f; } .gen { stroke: #5d6b6b; }
+      .ink { fill: #e3eaea; } .muted { fill: #97a6a6; } .accent { fill: #5cc4c0; } .copper { fill: #e0954f; }
+      .arrow { stroke: #5cc4c0; }
+    }
+  </style>
+  <defs>
+    <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="accent"/></marker>
+  </defs>
+  <rect class="bg" x="0" y="0" width="860" height="352" rx="10"/>
+
+  <!-- the graph -->
+  <rect class="box" x="300" y="104" width="260" height="140" rx="8" stroke-width="2.2"/>
+  <text class="accent" x="316" y="129" font-size="14" font-weight="600">hardware graph</text>
+  <text class="muted" x="316" y="146" font-size="11">hardware/graph.toml</text>
+  <text class="ink" x="316" y="170" font-size="11.5">components: designator, part, lcsc</text>
+  <text class="ink" x="316" y="188" font-size="11.5">nets: pins by name or role, range v</text>
+  <text class="ink" x="316" y="206" font-size="11.5">purpose · layout, the hand-over</text>
+  <text class="muted" x="316" y="229" font-size="11">where parts, values, nets are decided</text>
+
+  <!-- around it -->
+  <g>
+    <rect class="station" x="20" y="20" width="220" height="64" rx="6"/>
+    <text class="ink" x="34" y="41" font-size="12.5" font-weight="600">requirements file</text>
+    <text class="muted" x="34" y="57" font-size="11">hardware/requirements.toml</text>
+    <text class="ink" x="34" y="74" font-size="11">what the circuit must do</text>
+    <rect class="station" x="620" y="20" width="220" height="64" rx="6"/>
+    <text class="ink" x="634" y="41" font-size="12.5" font-weight="600">simulation config</text>
+    <text class="muted" x="634" y="57" font-size="11">hardware/sim.json</text>
+    <text class="ink" x="634" y="74" font-size="11">supplies, loads, corners</text>
+    <rect class="station" x="20" y="134" width="220" height="80" rx="6"/>
+    <text class="ink" x="34" y="155" font-size="12.5" font-weight="600">parts database</text>
+    <text class="muted" x="34" y="171" font-size="11">hardware/parts/&lt;lcsc&gt;.json</text>
+    <text class="ink" x="34" y="189" font-size="11">limits, pins and roles,</text>
+    <text class="ink" x="34" y="204" font-size="11">model, footprint data</text>
+    <rect class="station" x="620" y="134" width="220" height="80" rx="6"/>
+    <text class="ink" x="634" y="155" font-size="12.5" font-weight="600">board file</text>
+    <text class="muted" x="634" y="171" font-size="11">hardware/boards/&lt;name&gt;.toml</text>
+    <text class="ink" x="634" y="189" font-size="11">placement plan, routing,</text>
+    <text class="ink" x="634" y="204" font-size="11">silkscreen</text>
+  </g>
+  <line class="arrow" x1="300" y1="174" x2="242" y2="174" marker-end="url(#a)"/>
+  <text class="muted" x="271" y="166" font-size="11" text-anchor="middle">lcsc</text>
+  <line class="arrow" x1="618" y1="174" x2="562" y2="174" marker-end="url(#a)"/>
+  <text class="muted" x="590" y="166" font-size="11" text-anchor="middle">places</text>
+  <path class="arrow" d="M240,52 L360,52 L360,102" marker-end="url(#a)"/>
+  <text class="muted" x="250" y="46" font-size="11">checked against it</text>
+  <path class="arrow" d="M620,52 L500,52 L500,102" marker-end="url(#a)"/>
+  <text class="muted" x="610" y="46" font-size="11" text-anchor="end">reads nets, parts</text>
+
+  <!-- generated -->
+  <line class="arrow" x1="430" y1="244" x2="430" y2="282" marker-end="url(#a)"/>
+  <text class="muted" x="438" y="268" font-size="11">generated from it, checked against it</text>
+  <rect class="gen" x="20" y="284" width="820" height="48" rx="6"/>
+  <text class="ink" x="430" y="313" font-size="12.5" text-anchor="middle">schematic · PCB · BOM · CPL · Gerber files – in the EDA program and in build/, never by hand</text>
+</svg>

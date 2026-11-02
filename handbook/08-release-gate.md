@@ -638,6 +638,8 @@ maker's pages in your browser (Claude in Chrome), puts the board into the cart w
 there. Nothing orders or pays – no command, skill or API path does: the order, the payment and M-2 at the maker are
 yours – M-2 on the reading of step 5, signed on your word.
 
+![From the current release to the boards: edakit prepares and checks, Claude fills the maker's form in your browser and stops at the cart, you order and pay; then confirm, invoice and the acceptance test](../docs/pictures/order.svg)
+
 1. `edakit cart prepare [--board B] [--maker M]` takes the current release and stops unless the maker's upload files are
    the release's (`release verify`, the same function), the circuit and layout hash are the run's, the order settings
    are the run's `order.json`, M-6 is signed for the run's electrical hash, the run checked the maker (its

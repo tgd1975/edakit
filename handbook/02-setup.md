@@ -202,6 +202,8 @@ Each answer sets its keys; the skill proposes every file and key with its reason
 Claude Code the interview is a form with options – up to four questions at a time, your own words for the rest –,
 elsewhere one decision round in text.
 
+![The hardware graph and the files around it: the parts database by LCSC number, the board file by designator, the requirements checked against it, the simulation config reading it, and what is generated from it](../docs/pictures/project-files.svg)
+
 The graph it writes is `hardware/graph.toml`, with the resolved `hardware/graph.json` generated beside it (the graph's
 format, 3.1). The pre-commit hook it writes runs on every commit that touches `hardware/`: `edakit check`,
 `edakit sim` and `edakit graph json --check` – which fails when the generated file no longer matches the TOML

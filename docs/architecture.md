@@ -21,6 +21,8 @@ Code is one. edakit is a meta-harness in three senses, each checkable in the rep
 
 ## Three layers
 
+![edakit's three layers: Claude Code runs, the plugin inside it steers, the checking core decides and works on the project's files, the EDA program and a project's own scripts and agents](pictures/architecture.svg)
+
 | Layer | What it brings | Bound to |
 | --- | --- | --- |
 | Claude Code | the loop, the tools, permissions, sub-agents, hooks | Claude Code |
