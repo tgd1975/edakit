@@ -77,9 +77,9 @@ its header picture.
 **The limits, said in every post:**
 
 - tested on Linux;
-- EasyEDA Pro as a desktop program with a patched bridge, KiCad 10 without one;
+- EasyEDA Pro as a desktop program with the bridge extension of easyeda-mcp-pro, KiCad 10 without one;
 - two copper layers, DC operating points and a few transient runs;
-- easyeda-mcp-pro is licensed PolyForm Noncommercial, so a company comes through the KiCad tool chain;
+- easyeda-mcp-pro is MIT since 1.7.0 (PolyForm Noncommercial up to 1.6.0), edakit pins 1.8.0;
 - the regulatory review is support, not legal advice.
 
 The communities punish hype about AI and respect a limit said first.
@@ -127,7 +127,7 @@ A visitor arrives once. What they find decides, so these are the launch's condit
 
    What the directory checks and edakit meets today:
    - a README of at least 40 words and a licence (MIT);
-   - launchers pinned (`easyeda-mcp-pro@1.6.0`, `uv run` in the plugin);
+   - launchers pinned (`easyeda-mcp-pro@1.8.0`, `uv run` in the plugin);
    - 3.3 MiB as an archive, under the 50 MiB limit;
    - no credentials in the files.
 

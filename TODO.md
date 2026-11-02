@@ -29,10 +29,6 @@ to touch.
 
 ## For the owner
 
-- [ ] TD-107 - **The bridge extension 1.8.0, when no session needs EasyEDA:** say "jetzt" to edakit-80 – it ends the
-      easyeda-mcp-pro servers of the sessions; then in EasyEDA uninstall the old extension, import
-      `~/.easyeda-mcp-pro/ext-1.8.0/easyeda-bridge-extension.eext`, allow "External Interactions", quit and restart
-      EasyEDA – for the live checks of #250 (TD-26, TD-84). *(edakit-80)*
 - [ ] TD-108 - **A photo of the delivered tree:** one picture of the lit tree in its hill into pytree's `docs/img/` –
       it replaces the render on `docs/projects/pytree.md`. *(edakit-ce)*
 
@@ -41,7 +37,7 @@ to touch.
 E-1 to E-17 on EasyEDA Pro and M-1 to M-10 on easyeda-mcp-pro, checked live on EasyEDA Pro 3.2.209 and posted on
 2026-11-01; what each asks and where it stands is in upstream/README.md – the items here say only what is left to do.
 
-- [ ] TD-105 - **E-18 (a saved schematic, opened again, puts a pin on a second net):** check it live on the newest
+- [ ] TD-105 - **E-18 (a pin on a second net while another schematic of the project is open):** check it live on the newest
       EasyEDA Pro and against the API docs, then report it upstream on the owner's "posten?" – entered unreported with
       #117 (edakit 1.0.6); the cause found live on `tree` and E-18 rewritten with #256 (edakit 1.0.14): another
       schematic of the project open. *(edakit-80)*
@@ -50,16 +46,6 @@ E-1 to E-17 on EasyEDA Pro and M-1 to M-10 on easyeda-mcp-pro, checked live on E
 
 Nothing to do until there is an answer or a release; whichever session learns of one takes it.
 
-- [ ] TD-26 - **easyeda-mcp-pro, #792 to #805** (M-1 to M-5, M-7, M-9): released in 1.7.0 (2026-11-02); built in
-      #250 (pin 1.8.0, both patches gone), its live checks wait for TD-107. Before: fixed on upstream's main by the maintainer
-      (#809, #810, #812, #814, #815 – 2026-11-01), our pull requests closed, nothing to answer; not in 1.6.0. When a
-      release brings them: the pin raised, the original extension, `bridge-extension-patch.sh` and `odb-tool-patch.mjs`
-      removed, handbook 2.4, 2.5 and 9.1 follow; with M-9 `place` in `edakit/schematic.py` passes `addIntoBom` on
-      create again, handbook 9.3; M-1's `BRIDGE_TIMEOUT_MS`, M-5's name check and M-7's xlsx reading checked whether
-      they can go – upstream's `maxDepth` and `easyeda_export_odb` against edakit's calls first.
-- [ ] TD-84 - **easyeda-mcp-pro, #818 and #819** (M-10, a net's pours in one call): answer review comments, rebase the
-      fork's `fix/rebuild-copper-batch-reconcile` when `main` moves. When a release brings it: `fill` in
-      `edakit/route.py` may rebuild a net's pours in one call again, handbook 7, 9 and 12 follow.
 - [ ] TD-36 - **EasyEDA, #45 to #52 and our comments to #36 and #38:** answer questions; when a release fixes one,
       check it live, take it up and say so in upstream/README.md. EasyEDA's first answer is often "update to the latest
       version".
@@ -72,6 +58,12 @@ Nothing to do until there is an answer or a release; whichever session learns of
 Done or dropped, newest first, each with its date and the commit that closed it. What closed before 2026-11-01 is
 taken from the history of this file; an item rewritten on its way is listed once, in its last form.
 
+- [x] TD-107 - **The bridge extension 1.8.0:** swapped by the owner, the old servers ended; #250's live checks on
+      coin-cell-led green (doctor, create with `bom: false`, pours, DRC, gate S/L/F, export). [2026-11-02]
+- [x] TD-84 - **easyeda-mcp-pro, #818 and #819** (M-10): #819 released in 1.7.0; `fill` rebuilds a net's pours in one
+      call again, live on coin-cell-led (#250, edakit 1.1.0). [2026-11-02]
+- [x] TD-26 - **easyeda-mcp-pro, #792 to #805** (M-1 to M-5, M-7, M-9): released in 1.7.0; edakit pins 1.8.0, both
+      patches gone, the workarounds taken up, checked against the source and live (#250, edakit 1.1.0). [2026-11-02]
 - [x] TD-106 - **#117 on `tree` (pytree):** run by pytree-29 – with #232 the check differed before and after the
       gate; the cause was the board's schematic `layout_tree` left open, not the save. Fixed in #256 (edakit 1.0.14),
       live on `tree`: with `layout_tree` open the check matches. [2026-11-02]
