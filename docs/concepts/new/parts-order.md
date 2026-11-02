@@ -1,8 +1,9 @@
 # The parts order: LCSC's cart, several projects in one, shipped with the boards
 
 Status 2026-11-02: decided the same day in a decision round in Claude Code's form – decisions 1 to 3 as recommended,
-5 against the recommendation (the skill enters the warehouse address), 4 decided by Claude and confirmed. Nothing built
-yet; each step starts on the owner's word.
+5 against the recommendation (the skill enters the warehouse address), 4 decided by Claude and confirmed. Each step
+starts on the owner's word: step 1 merged (#203); steps 2 and 3 built on the owner's word the same day, branch
+`parts-order-lcsc` – their live run waits for the next parts order.
 
 ## Why
 
@@ -122,7 +123,15 @@ combining and names the cheapest one that meets a date the project gives.
 ## Order of work
 
 1. `edakit order --with` (decision 1) – built 2026-11-02, branch `order-basket`; the reserve needed nothing new.
-2. `edakit/suppliers/lcsc.toml`, `edakit order check`, the skill cart's LCSC part (decision 3) – a live run at the next
-   parts order, nothing ordered.
-3. The combined shipment in the job and in the skill (decision 5) – handbook 8.4 and the skill's "Never" changed with
-   it.
+2. `edakit/suppliers/lcsc.toml`, `edakit order check`, the skill cart's LCSC part (decision 3) – built 2026-11-02,
+   branch `parts-order-lcsc`: `edakit order` writes `basket.json`, the check is ORDER.basket, the skill's mode
+   `parts`. The profile is provisional: the BOM tool's page (`https://www.lcsc.com/bom`, read 2026-11-02) is drawn by
+   JavaScript, so "Add to Cart" comes from the first order and the skill presses it only after the owner confirmed the
+   label. A live run at the next parts order, nothing ordered, records the labels.
+3. The combined shipment in the job and in the skill (decision 5) – built 2026-11-02 on the same branch: `[combine]`
+   in the profile (the address and conditions from LCSC's help page, read 2026-11-02, the warehouse's recipient
+   instead of the owner's name), `combine` in the job at JLCPCB when the basket has LCSC lines, both carts' weights
+   and the routes printed by `edakit order check`, after combining the cheapest of LCSC's methods arriving by the new
+   key `[cart] needed_by`; the skill's mode `combine`, handbook 8.4 and the skill's "Never" changed with it. Not in
+   `order.md`, as proposal 4 had it: that file is a release file inside the fab hash, written at the gate run – the
+   step lives in the job and its print, which come after the release.
