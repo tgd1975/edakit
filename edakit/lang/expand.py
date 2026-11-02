@@ -287,8 +287,10 @@ def expand_use(use, defn, ctx):
         out.append(new)
         ctx.nets.setdefault(name, []).append(new)
 
+    given = {a.name for a in use.params}
     jobs = [Job(d, use, defn, dict(rename), {p: target.get(p) for p in ports}, params,
-                f"def {defn.name}, use {instance}") for d in defn.body if isinstance(d, m.Derive)]
+                f"def {defn.name}, use {instance}") for d in defn.body if isinstance(d, m.Derive)
+            and (not getattr(defn, "library", False) or any(a.text in given for a in d.args))]
     return out, jobs, errors
 
 

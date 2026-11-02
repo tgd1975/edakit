@@ -474,11 +474,32 @@ def derive_set(cfg, block, instance, sets, choices, comps, names):
     return records, lines
 
 
+def write_circuit(cfg, statement):
+    """The usage into a .circuit source, compiled before it stays: a source that no longer compiles is put back, and
+    the resolved graph.json beside it is written again."""
+    from .config import ConfigError
+    from .graph_form import design_of, generated_path, indent_of, render, resolved
+    from .lang.write import insert_use
+    path = Path(cfg.graph)
+    before = path.read_text(encoding="utf-8")
+    path.write_text(insert_use(before, statement), encoding="utf-8")
+    try:
+        source = load_graph(path)
+    except ConfigError as e:
+        path.write_text(before, encoding="utf-8")
+        raise BlockError(f"{cfg.relative(path)}: the usage would not compile – the file is left as it was:\n{e}") from None
+    from .design import load_parts
+    out = generated_path(cfg)
+    g = resolved(source, design_of(path, load_parts(cfg.parts_dirs or cfg.parts), list(cfg.boards), source))
+    out.write_text(render(g, indent_of(out)), encoding="utf-8")
+
+
 def add(cfg, name, instance, connect, board=None, file=None, dry_run=False, without=(), sets=None, choices=None,
         lines=None):
     block = load(name, file)
     toml = Path(cfg.graph).suffix == ".toml"
-    if toml:                                      # read as every reader does, written with the line editor
+    circuit = Path(cfg.graph).suffix == ".circuit"
+    if toml or circuit:                           # read as every reader does, written with the line editor
         data = graph = load_graph(cfg.graph)
     else:
         data = json.loads(cfg.graph.read_text(encoding="utf-8"))
@@ -500,6 +521,17 @@ def add(cfg, name, instance, connect, board=None, file=None, dry_run=False, with
             lines += said
         lcsc = sorted({c["lcsc"] for c in comps if c.get("lcsc")}, key=natural_key)
     copy = parts_to_copy(lcsc, cfg.parts, comps)
+    if circuit:
+        from .lang.write import use_text
+        text = use_text(block, instance, connect, comps, names["rename"], sets, without)
+        if lines is not None:
+            lines.append(("would write" if dry_run else "writes") + f" into {cfg.relative(cfg.graph)}:\n" + text.rstrip())
+        if not dry_run:
+            from . import library as parts_library
+            for n in copy:
+                parts_library.copy_into(cfg.parts, n)
+            write_circuit(cfg, text)
+        return block, comps, new_nets, extended, attrs, copy, missing
     if not dry_run:
         if toml:
             write_toml(cfg, graph, toml_form(comps), new_nets, extended, attrs, grounds, records)

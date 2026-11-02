@@ -34,3 +34,4 @@ patch
   uses; a project with one folder hashes as before.
 - T.15: requirements may be written in the notation (`hardware/requirements.circuit`); a requirement gains
   `subject` and `require`, a part or net `satisfies` and `decision` – DOCS.ref resolves all four.
+- T.16: `edakit block add` on a `.circuit` graph writes a `use` statement after the parts and the resolved graph.json.

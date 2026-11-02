@@ -47,6 +47,7 @@ def library():
         errors += src.errors
         for d in src.statements:
             if isinstance(d, m.Def):
+                d.library = True                      # edakit's: it derives only where a usage sets a parameter
                 out[d.name] = d
     if errors:
         raise CompileError(errors)
