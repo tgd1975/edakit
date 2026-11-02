@@ -4,7 +4,7 @@ Open work that needs the owner's computer, a maker or the owner's word. The stat
 and plans the sections name; this list is what is left to do of them, in the order it can be done. No item is deleted.
 
 **Layout.** Every item, in every section, open or closed, is a line with a checkbox and an ID unique in this file,
-counted up and never reused – whoever adds an item takes the next free ID and counts it up here. Next free ID: TD-112.
+counted up and never reused – whoever adds an item takes the next free ID and counts it up here. Next free ID: TD-113.
 
 - Open: `- [ ] TD-<n> - **Title:** what and why.` – a step's own name after the dash (`- [ ] TD-31 - **D.4** …`).
 - Done: ticked, the commit that did it, the date at the end, moved to [Closed todos](#closed-todos), newest first –
@@ -33,6 +33,10 @@ to touch.
       it replaces the render on `docs/projects/pytree.md`. *(edakit-ce)*
 - [ ] TD-110 - **OK for #265:** the parts at LCSC and the combined shipment (parts-order.md, steps 2 and 3) – merged
       with `python3 .github/merge.py 265` on your word. *(edakit-4f)*
+- [ ] TD-112 - **OK for #267:** the gaps of the newcomer's eval closed – a 9 V snap and a slide switch in the library,
+      the smallest edakit.toml, edakit off the PATH, refused writes in new-project and `hook install`, SIM.state's
+      rows; then documentation-newcomer.md moves to `done/`. Merged with `python3 .github/merge.py 267` on your word.
+      *(edakit-df)*
 
 ## The parts order ([docs/concepts/new/parts-order.md](docs/concepts/new/parts-order.md))
 
