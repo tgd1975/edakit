@@ -1,7 +1,7 @@
 # 1 The approach: one source, generated EDA, a check at every hand-over
 
-For anyone who wants to know why edakit works as it does: after it you know the pipeline, its ten principles and what
-it cannot promise.
+For anyone who wants to know why edakit works as it does: after it you know the pipeline, its ten principles and what it
+cannot promise. The short way: [the steps](../docs/steps/README.md).
 
 ## The idea in one paragraph
 

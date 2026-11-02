@@ -33,7 +33,7 @@ The [quickstart](https://tgd1975.github.io/edakit/quickstart/) goes on from ther
 the drawn schematic.
 
 - **Makers.** A checked circuit and its drawing, or a board from it: start with the
-  [quickstart](https://tgd1975.github.io/edakit/quickstart/).
+  [quickstart](https://tgd1975.github.io/edakit/quickstart/), then follow [the steps](https://tgd1975.github.io/edakit/steps/).
 - **Engineers.** A rule of your own for edakit's checks:
   [adding a rule](https://tgd1975.github.io/edakit/adding-a-rule/).
 - **Developers.** Work on edakit itself: [working on edakit](https://tgd1975.github.io/edakit/working-on-edakit/).

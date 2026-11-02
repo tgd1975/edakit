@@ -1,7 +1,7 @@
 # 15 Regulatory review (M-6)
 
-For you when a board is sold, given away or transmits: after this chapter you can state its purpose, give the
-regulatory review what it needs and read its sign-off M-6.
+For you when a board is sold, given away or transmits: after this chapter you can state its purpose, give the regulatory
+review what it needs and read its sign-off M-6. The short way: [Have it reviewed](../docs/steps/08-have-it-reviewed.md).
 
 Not everything that can be ordered may be sold, given away or even switched on in the EU. A soldered-in lithium cell in
 a board that is sold, for one – no check of the circuit sees that. The agent `regulatory-reviewer` checks circuit and

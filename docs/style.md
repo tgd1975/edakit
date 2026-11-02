@@ -121,6 +121,28 @@ the project to a reader who has never seen it: what it is, the circuit with its 
 board as made, what edakit found, its variants, what it changed in edakit. The pictures are the release's, copied with
 its tag, never drawn by hand; the numbers name their release. The gallery shows what is built, nothing planned.
 
+## A steps page
+
+The steps (`docs/steps/`) are the person's manual: what you do, what you are asked, what you decide and what you get,
+one page per step of the walkthrough's table. The handbook is the complete one, for the assistant and for looking
+things up ([documentation-newcomer](concepts/new/documentation-newcomer.md)). A steps page is written in the entry
+register, with these additions:
+
+- **A budget.** At most 400 words, the index at most 300, all of them together at most 4,000. A page that would take
+  more is two steps.
+- **A title with a verb**, what you do, and a first line that says what you have after the step.
+- **Three terms at most,** each linked to the glossary at its first use. A word the glossary has counts as a term,
+  linked or not, so a page says "the shop" where it does not link "maker".
+- **No aside.** A second sentence instead of an en dash; at most 20 words a sentence on average, none over 30.
+- **Two links at the end,** under "Read on": the walkthrough's step and the chapter. No other link into the handbook,
+  and no cross-reference by number.
+- **Quoted, not restated.** A command's output comes from a real run on the example, and a test runs it again; a
+  question stands in a block quote in the skill's own words; a number only as an output or the walkthrough shows it.
+  A steps page states no limit and no rule of its own: those are the handbook's.
+
+Nothing the automation reads – `edakit/`, `skills/`, `agents/`, `.claude/` – names a steps page, so the steps can
+change freely. `tests/test_steps_pages.py` holds their shape, budgets, outputs, questions and that rule.
+
 ## Pictures, code and output
 
 - One picture per guide page where it is faster than a paragraph: the pipeline, a drawn schematic, a placement plan, a
@@ -145,7 +167,8 @@ code, block quotes, phrases in quotation marks and section 11.4. In them it coun
   term;
 - a buzzword outside [architecture](architecture.md) and the README's one "harness";
 - the budgets: the start page's words before the first picture and the line of its two-minute command, the words and
-  the glossary terms of How it works, the glossary links of the quickstart and of a steps page.
+  the glossary terms of How it works, the glossary links of the quickstart and of a steps page;
+- on a steps page, a glossary term it does not link, a sentence over 30 words and an aside.
 
 A page that does not meet a rule today is listed in the test as expected to fail, and the test fails once the page
 meets it, so that the entry leaves the list. A new page meets every rule from the start. The rest – meaning, order, the

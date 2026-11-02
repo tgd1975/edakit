@@ -1,7 +1,7 @@
 # 12 Troubleshooting
 
-For you when a command, a check or EasyEDA fails. Find the symptom – often the message as it is printed – and the
-table gives its cause and the fix. Start with `edakit doctor`.
+For you when a command, a check or EasyEDA fails. Find the symptom – often the message as it is printed – and the table
+gives its cause and the fix. Start with `edakit doctor`. The short way: [the steps](../docs/steps/README.md).
 
 | Symptom | Cause | Fix |
 |---|---|---|

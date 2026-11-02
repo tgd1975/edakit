@@ -3,7 +3,8 @@
 If you want to see one whole project before you start your own, this chapter takes a board of four parts – press a
 button and a red LED lights, from a CR2032 coin cell – from the idea to the delivered boards, in the order things
 happen. Each step says who does it – you, Claude in a skill, an agent in a session of its own, a command –, which file
-it writes, what is checked and what came out. The project is [examples/coin-cell-led](../examples/coin-cell-led/).
+it writes, what is checked and what came out. The project is [examples/coin-cell-led](../examples/coin-cell-led/). The
+short way: [the steps](../docs/steps/README.md).
 
 The outputs are from real runs between 29 and 31 October 2026, shortened where a `…` stands; the order and the delivered
 boards (17.12) are described, not shown.

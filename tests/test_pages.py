@@ -39,17 +39,18 @@ def test_every_description_is_a_page_of_the_site(tmp_path):
 
 
 def test_the_navigation_is_tabs_by_reader_with_short_titles():
-    """Step N.1 of docs/concepts/new/documentation-newcomer.md: tabs by reader, at most eight entries a tab but for the
-    handbook, titles of at most five words; every page of kind documentation in a tab, the sources in none – they
-    stand behind "Inside edakit" and stay on the site."""
+    """Steps N.1 and N.2 of docs/concepts/new/documentation-newcomer.md: tabs by reader, at most eight entries a tab
+    but for the handbook, titles of at most five words; every page of kind documentation in a tab, the steps among
+    them, the sources in none – they stand behind "Inside edakit" and stay on the site."""
     mod = pages()
     tabs = [g for g, _ in mod.NAV]
-    assert tabs == ["Start", "Extend", "Develop", "Handbook", "Reference"]
+    assert tabs == ["Start", "A circuit", "A board", "Extend", "Develop", "Handbook", "Reference"]
     assert all(len(entries) <= mod.SIDEBAR for tab, entries in mod.NAV if tab != "Handbook")
     assert all(len(title.split()) <= 5 for _, entries in mod.NAV for _, title in entries)
     listed = {src for _, entries in mod.NAV for src, _ in entries}
     docs = {"README.md", *(f"handbook/{p.name}" for p in (ROOT / "handbook").glob("*.md")),
             *(p.relative_to(ROOT).as_posix() for p in (ROOT / "docs").glob("*.md")), "docs/brand/README.md",
+            *(p.relative_to(ROOT).as_posix() for p in (ROOT / "docs" / "steps").glob("*.md")),
             "docs/projects/README.md"}
     assert sorted(docs - listed) == []
     assert all((ROOT / src).is_file() for src in listed)

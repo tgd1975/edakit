@@ -1,7 +1,8 @@
 # 9 EasyEDA Pro API and MCP server: how they really behave
 
 For anyone who calls EasyEDA Pro's API directly or wants to know why edakit's code looks the way it does. After this
-chapter you know how the API and the MCP server behave, and how edakit works around each point.
+chapter you know how the API and the MCP server behave, and how edakit works around each point. The short way: [Lay out
+the board](../docs/steps/09-lay-out-the-board.md).
 
 The behaviour is that of EasyEDA Pro 3.2.206 (Linux) with easyeda-mcp-pro 1.4.0. A sentence starting "3.2.209:" is what
 the live check on EasyEDA Pro 3.2.209 found, each call checked against the JSDoc of the client's types first. What

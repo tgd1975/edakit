@@ -1,7 +1,8 @@
 # 3 The hardware graph
 
-For you when you write or change a project's circuit: after this chapter you can write the graph, read its findings,
-and keep the firmware contract and the requirements file beside it.
+For you when you write or change a project's circuit: after this chapter you can write the graph, read its findings, and
+keep the firmware contract and the requirements file beside it. The short way: [Say what it must
+do](../docs/steps/03-say-what-it-must-do.md) and [Design the circuit](../docs/steps/04-design-the-circuit.md).
 
 The graph is a pin-level netlist. It is the **only** place where parts, values and connections are decided. It is
 TOML, `hardware/graph.toml`, with pins by name or role and comments where a reader needs the reason. The older form,
@@ -83,12 +84,11 @@ r_ohm_per_wire = 0.065
 
 ### Tables, keys and comments
 
-Components, nets and cables are tables keyed by designator and name (`[components.U2]`), read in the order of the
-file; a name with more than letters, digits, `_` and `-` stands in quotes (`[nets."+5V"]`). Every other key is the
-JSON's; a map is a table of its own (`[purpose]`, `[locks.pins]`), inline (`pins = {1 = "1", 2 = "2"}`) or dotted
-keys (`accept."LVL.undefined" = "…"`). A component states no `pins`: its parts entry gives numbers and names, and a
-pin map is written only where the graph's differs. `#` starts a comment – the reason a reader needs beside the
-wiring.
+Components, nets and cables are tables keyed by designator and name (`[components.U2]`), read in the order of the file;
+a name with more than letters, digits, `_` and `-` stands in quotes (`[nets."+5V"]`). Every other key is the JSON's; a
+map is a table of its own (`[purpose]`, `[locks.pins]`), inline (`pins = {1 = "1", 2 = "2"}`) or dotted keys
+(`accept."LVL.undefined" = "…"`). A component states no `pins`: its parts entry gives numbers and names, and a pin map
+is written only where the graph's differs. `#` starts a comment – the reason a reader needs beside the wiring.
 
 A long text runs over several lines as `"""\`, where a line-ending backslash joins the next line with the blank before
 it. A key or table twice is an error with its line, and TOML has no null. A net is one table with all its pins,

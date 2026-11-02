@@ -2,7 +2,8 @@
 
 For whoever writes, checks or looks up a parts entry – by hand, or with the skills part-search and own-part and the
 agent part-selector. After this chapter you can find a part, write and sign off its entry, keep its datasheet with the
-project, and enter a part nobody sells.
+project, and enter a part nobody sells. The short way: [Settle parts and
+cost](../docs/steps/06-settle-parts-and-cost.md).
 
 Each part has one JSON file in `hardware/parts/`, named
 

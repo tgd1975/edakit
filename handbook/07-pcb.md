@@ -1,7 +1,8 @@
 # 7 PCB (stage L)
 
-For whoever lays out a board – you or the assistant. After it you can write the placement plan, route with
-Freerouting, pour the copper, place the silkscreen and read what each step reports.
+For whoever lays out a board – you or the assistant. After it you can write the placement plan, route with Freerouting,
+pour the copper, place the silkscreen and read what each step reports. The short way: [Lay out the
+board](../docs/steps/09-lay-out-the-board.md).
 
 The PCB is built in layers, each repeatable and each checking itself: parts and nets from the board schematic (without
 dialogs), a **placement plan** for what matters (in the board file `hardware/boards/<name>.toml`, 10.2), EasyEDA's

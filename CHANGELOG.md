@@ -7,6 +7,11 @@ written once, by `.github/merge.py`, from the fragments in [changes/](changes/RE
 [versioning.md](docs/concepts/done/versioning.md). Update with `claude plugin marketplace update edakit && claude plugin
 update edakit@edakit`, then `/reload-plugins` or a new session; `edakit --version` names the version that runs.
 
+## 1.0.1 – 2026-11-02
+
+- The steps: ten short pages from the plugin's install to the ordered board – what you do, what Claude asks, what you
+  decide – in the site's new tabs "A circuit" and "A board"; each handbook chapter names its step as the short way.
+
 ## 1.0.0 – 2026-11-02
 
 - **1.0.0.** The first boards are ordered: pytree's tree, assembled, from the JLCPCB cart the skill cart filled and

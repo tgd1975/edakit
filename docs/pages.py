@@ -1,9 +1,9 @@
 """edakit's documentation as one site for GitHub Pages, assembled into build/pages and built by MkDocs. The navigation
-is data – NAV, a table of tab, file and short title, by reader (docs/concepts/new/documentation-newcomer.md, step N.1):
-Start, Extend, Develop, Handbook and Reference as tabs across the top, the sidebar showing the current tab alone, at
-most eight entries but for the handbook. The sources – the concepts, skills, agents, evals and the rules of a session –
-are on the site behind "Inside edakit" under Develop and an index each, not in the navigation, every page of them
-marked as a source.
+is data – NAV, a table of tab, file and short title, by reader (docs/concepts/new/documentation-newcomer.md, steps N.1
+and N.2): Start, A circuit, A board, Extend, Develop, Handbook and Reference as tabs across the top, the sidebar showing
+the current tab alone, at most eight entries but for the handbook. The sources – the concepts, skills, agents, evals
+and the rules of a session – are on the site behind "Inside edakit" under Develop and an index each, not in the
+navigation, every page of them marked as a source.
 
     python3 docs/pages.py                       assembles build/pages (the Markdown, the catalog, mkdocs.yml)
     uvx --with mkdocs-material==9.6.23 --from mkdocs==1.6.1 mkdocs build --strict -f build/pages/mkdocs.yml
@@ -47,8 +47,8 @@ def title_of(text, fallback):
 
 
 # The navigation: (tab, [(repo path, title of at most five words)]); a tab's first page is its index page where it is
-# one (README.md, handbook/README.md). The tabs "A circuit" and "A board" come with the steps (documentation-newcomer.md,
-# step N.2). The handbook's chapters stand as its index orders them, 9 and 10 under Reference.
+# one (README.md, handbook/README.md). "A circuit" and "A board" are the steps, the person's manual, in the order of the
+# walkthrough. The handbook's chapters stand as its index orders them, 9 and 10 under Reference.
 NAV = [
     ("Start", [
         ("README.md", "Start"),
@@ -56,6 +56,21 @@ NAV = [
         ("docs/how-it-works.md", "How it works"),
         ("docs/projects/README.md", "Projects"),
         ("docs/glossary.md", "Glossary"),
+    ]),
+    ("A circuit", [
+        ("docs/steps/README.md", "The steps"),
+        ("docs/steps/01-install.md", "1 Install the tools"),
+        ("docs/steps/02-start-a-project.md", "2 Start a project"),
+        ("docs/steps/03-say-what-it-must-do.md", "3 What it must do"),
+        ("docs/steps/04-design-the-circuit.md", "4 Design the circuit"),
+        ("docs/steps/05-decide-on-what-was-found.md", "5 Decide on the findings"),
+        ("docs/steps/06-settle-parts-and-cost.md", "6 Parts and cost"),
+        ("docs/steps/07-draw-and-hand-over.md", "7 Draw and hand over"),
+    ]),
+    ("A board", [
+        ("docs/steps/08-have-it-reviewed.md", "8 Have it reviewed"),
+        ("docs/steps/09-lay-out-the-board.md", "9 Lay out the board"),
+        ("docs/steps/10-order-the-board.md", "10 Order the board"),
     ]),
     ("Extend", [
         ("docs/adding-a-rule.md", "Adding a rule"),
@@ -109,8 +124,8 @@ def site_path(src):
     special = {"README.md": "index.md", "handbook/README.md": "handbook/index.md", "evals/README.md": "evals.md",
                "CHANGELOG.md": "changelog.md", "CLAUDE.md": "inside/claude.md",
                "docs/brand/README.md": "brand/index.md", "docs/concepts/README.md": "concepts/index.md",
-               "docs/projects/README.md": "projects/index.md", "skills/README.md": "skills/index.md",
-               "agents/README.md": "agents/index.md"}
+               "docs/projects/README.md": "projects/index.md", "docs/steps/README.md": "steps/index.md",
+               "skills/README.md": "skills/index.md", "agents/README.md": "agents/index.md"}
     if src in special:
         return special[src]
     if src.startswith("skills/") and src.endswith("/SKILL.md"):

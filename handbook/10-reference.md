@@ -1,8 +1,8 @@
 # 10 Reference: edakit.toml, the project files and the commands
 
 For you when you set up or change a project, and for Claude when it looks something up: every key of edakit.toml, the
-board file, the schematic file and the requirements file, what each command reads and writes, and where a project
-keeps its files.
+board file, the schematic file and the requirements file, what each command reads and writes, and where a project keeps
+its files. The short way: [the steps](../docs/steps/README.md).
 
 ## 10.1 edakit.toml
 
