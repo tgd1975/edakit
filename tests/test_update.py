@@ -143,3 +143,61 @@ def test_the_requirements_of_the_projects_edakit_toml_files(tmp_path):
     (tmp_path / "variants" / "b").mkdir(parents=True)
     (tmp_path / "variants" / "b" / "edakit.toml").write_text('[project]\nname = "b"\n')
     assert u.required(tmp_path) == [("edakit.toml", ">=1.0")]
+
+
+def _project(tmp_path):
+    (tmp_path / "edakit.toml").write_text('[project]\nname = "a"\nquantity = 5\n\n[boards.main]\nfile = "x"\n')
+    (tmp_path / "variants" / "b").mkdir(parents=True)
+    (tmp_path / "variants" / "b" / "edakit.toml").write_text('[project]\nname = "b"\nedakit = ">=1.0"\n')
+    (tmp_path / ".github" / "workflows").mkdir(parents=True)
+    (tmp_path / ".github" / "workflows" / "ci.yml").write_text(
+        "steps:\n  - run: uvx --from git+https://github.com/tgd1975/edakit edakit check\n"
+        "  - run: uvx --from git+https://github.com/tgd1975/edakit@v1.0.2 edakit sim\n")
+    (tmp_path / "hardware").mkdir()
+    (tmp_path / "hardware" / "edakit.sh").write_text(
+        'EDAKIT_REV=027a4587e0275505d723bbe74632cd3d845f82a9\nexec uvx --from "git+https://github.com/tgd1975/edakit@$EDAKIT_REV" edakit\n')
+    (tmp_path / ".claude").mkdir()
+    (tmp_path / ".claude" / "settings.json").write_text(json.dumps({"extraKnownMarketplaces": {"edakit": {
+        "source": {"source": "github", "repo": "tgd1975/edakit", "ref": "v1.0.3"}}}, "enabledPlugins": {}}))
+    return tmp_path
+
+
+def test_pin_names_one_version_everywhere_and_takes_the_ref_out_of_the_settings(tmp_path):
+    root = _project(tmp_path)
+    changes = u.pin(root, "1.0.9")
+    assert all(c["file"] for c in changes)
+    u.apply(root, changes)
+    assert 'edakit = "==1.0.9"' in (root / "edakit.toml").read_text()
+    assert (root / "edakit.toml").read_text().index("==1.0.9") < (root / "edakit.toml").read_text().index("[boards")
+    assert 'edakit = "==1.0.9"' in (root / "variants" / "b" / "edakit.toml").read_text()
+    ci = (root / ".github" / "workflows" / "ci.yml").read_text()
+    assert ci.count("tgd1975/edakit@v1.0.9 edakit") == 2                 # the unpinned call pinned as well
+    assert "EDAKIT_REV=v1.0.9" in (root / "hardware" / "edakit.sh").read_text()
+    settings = json.loads((root / ".claude" / "settings.json").read_text())
+    assert "ref" not in settings["extraKnownMarketplaces"]["edakit"]["source"]   # it held every project of the user
+    assert {p["version"] for p in u.pins(root, {})} == {"1.0.9"}
+    assert u.pin(root, "1.0.9") == []                                    # nothing left to change
+
+
+def test_unpin_follows_the_updates_and_keeps_a_lower_bound(tmp_path):
+    root = _project(tmp_path)
+    u.apply(root, u.pin(root, "1.0.9"))
+    u.apply(root, u.unpin(root))
+    assert 'edakit = ">=1.0.9"' in (root / "edakit.toml").read_text()
+    ci = (root / ".github" / "workflows" / "ci.yml").read_text()
+    assert "edakit@" not in ci and ci.count("git+https://github.com/tgd1975/edakit edakit") == 2
+    assert "EDAKIT_REV=main" in (root / "hardware" / "edakit.sh").read_text()
+    assert u.pins(root, {}) == []                                        # main is no pin
+    assert u.unpin(root) == []
+
+
+def test_edakit_version_pin_without_write_changes_nothing(tmp_path, monkeypatch, capsys):
+    root = _project(tmp_path)
+    before = (root / "edakit.toml").read_text()
+    monkeypatch.chdir(root)
+    monkeypatch.setenv("CLAUDE_CONFIG_DIR", str(tmp_path / "claude"))
+    assert cli.main(["version", "pin", "1.0.9", "--offline"]) == 0
+    out = capsys.readouterr().out
+    assert "edakit.toml" in out and "--write" in out and (root / "edakit.toml").read_text() == before
+    assert cli.main(["version", "pin", "1.0.9", "--offline", "--write"]) == 0
+    assert "==1.0.9" in (root / "edakit.toml").read_text()

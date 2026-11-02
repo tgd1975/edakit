@@ -23,7 +23,7 @@ The toolkit is half code, half agreements about how Claude works, and the agreem
 | skill | `/edakit:decision-round` | numbered findings asked as questions, answers picked in the form or written short, numbered decisions |
 | skill | `/edakit:propose-rule` | a check, hint, block or part fact as a sealed issue to the edakit repository, and its outcome back into the decision (chapter 14.4) |
 | skill | `/edakit:propose-feature` | a feature edakit lacks and a project had to build or work around, as a sealed issue to the edakit repository, and its outcome back into the project (11.6) |
-| skill | `/edakit:version` | which edakit runs, the plugin per scope, the newest version and what the changelog says in between – its **When updating:** lines first –, the project's pins; the update on your word (2.3) |
+| skill | `/edakit:version` | which edakit runs, the plugin per scope, the newest version and what the changelog says in between – its **When updating:** lines first –, the project's pins; the update on your word; `pin` and `unpin` – one version in every edakit.toml and CI call, or following the updates again (2.3) |
 | agent | `edakit:requirements-engineer` | reads every document of a project for what its circuit must do and returns candidates with their source, contradictions, vague words and requirements without evidence – the first inventory and a second opinion on the requirements file, in its own context; changes nothing (3.6) |
 | agent | `edakit:project-surveyor` | reads a repository that moves to edakit and returns per place – hardware data, EasyEDA project and released runs, scripts, agents, skills, documents with values, decisions, guard rails – candidates with where it found them, a proposal and its reason, the answers the repository gives to the setup's interview, contradictions and what it could not read – the inventory of the skill new-project, in its own context; changes nothing (2.7) |
 | agent | `edakit:part-selector` | finds a part at the project's distributors (a profile each) and writes its parts entry, in its own context (chapter 4.2) |
@@ -33,7 +33,7 @@ The toolkit is half code, half agreements about how Claude works, and the agreem
 | agent | `edakit:pcb-reviewer` | independent layout review (read-only EasyEDA tools); its result is the sign-off M-5 |
 | MCP | `easyeda` | easyeda-mcp-pro, pinned, safe defaults |
 | hook | PreToolUse on the easyeda tools | claims EasyEDA for the session, refuses when another session holds it |
-| hook | SessionStart | in an edakit project: the working agreements of 11.4 – their first line names the edakit that runs – and the project's own scripts and agents (8.6), one line each, into the session's context; a line when the running edakit does not meet `[project] edakit` (2.3); on KiCad a line on the tool chain, and the path of `bin/edakit` where `edakit` is not on the PATH |
+| hook | SessionStart | in an edakit project: the working agreements of 11.4 – their first line names the edakit that runs – and the project's own scripts and agents (8.6), one line each, into the session's context; a line when the running edakit does not meet `[project] edakit` (2.3), and one when the pre-commit hook is missing, has no edakit block or an older one, or git does not run it (`edakit hook install`, 2.7); on KiCad a line on the tool chain, and the path of `bin/edakit` where `edakit` is not on the PATH |
 | bin | `edakit` | the command line on the Bash PATH |
 
 Skills trigger on their description, or you call them by name. The rules of one project – what you want from the

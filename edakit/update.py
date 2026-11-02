@@ -12,6 +12,7 @@ import json
 import os
 import re
 import subprocess
+import sys
 import urllib.error
 import urllib.request
 from pathlib import Path
@@ -25,6 +26,8 @@ TAG = re.compile(r"^refs/tags/v(\d+\.\d+\.\d+)(\^\{\})?$")
 SECTION = re.compile(r"^## (\d+\.\d+\.\d+)(?:\s+[–-]\s+(\S+))?\s*$")
 WHEN = "- **When updating:**"
 PINNED = re.compile(r"tgd1975/edakit(?:\.git)?@([^\s\"'#)]+)")
+GIT_URL = re.compile(r"git\+https://github\.com/tgd1975/edakit(?:\.git)?(?:@([^\s\"'#)]+))?")
+FOLLOW = {"main", "HEAD", "master"}    # a ref that follows the newest version: no pin
 SCOPES = {"local": 0, "project": 1, "user": 2, "managed": 3}   # the most specific installation wins
 TEXT_MAX = 200_000
 RUNS = {".sh", ".bash", ".zsh", ".yml", ".yaml", ".ps1", ".bat", ".cmd"}      # files that start edakit, not documents
@@ -165,7 +168,7 @@ def pins(root, tagmap):
         for i, line in enumerate(text.splitlines(), 1):
             for m in PINNED.finditer(line):
                 ref = _resolve(m.group(1), text)
-                if ref.startswith("$"):            # $(…) or a variable set elsewhere: reads a pin, is none
+                if ref.startswith("$") or ref in FOLLOW:   # $(…), a variable set elsewhere, main: no pin
                     continue
                 out.append({"where": f"{f.relative_to(root)}:{i}", "ref": ref, "version": ref_version(ref, tagmap)})
     return out
@@ -185,6 +188,127 @@ def required(root):
         if asked:
             out.append((str(f.relative_to(root)), asked))
     return out
+
+
+# --- pin and unpin ---------------------------------------------------------------------------------------------
+
+def _project_key(text, value):
+    """edakit.toml's text with [project] edakit = value – the line replaced, or added at the table's end."""
+    m = re.search(r"^\[project\][^\n]*\n", text, re.M)
+    if not m:
+        return f'[project]\nedakit = "{value}"\n\n' + text
+    nxt = re.search(r"^\[", text[m.end():], re.M)
+    end = m.end() + (nxt.start() if nxt else len(text) - m.end())
+    section = text[m.end():end]
+    k = re.search(r"^(\s*edakit\s*=\s*)(\"[^\"]*\"|'[^']*')", section, re.M)
+    if k:
+        section = section[:k.start(2)] + f'"{value}"' + section[k.end(2):]
+    else:
+        body = section.rstrip("\n")
+        section = (body + "\n" if body else "") + f'edakit = "{value}"\n' + "\n" * (len(section) - len(body) - 1
+                                                                                  if body else 0)
+    return text[:m.end()] + section + text[end:]
+
+
+def _asked(text):
+    m = re.search(r"^\[project\][^\n]*\n(.*?)(?=^\[|\Z)", text, re.M | re.S)
+    k = m and re.search(r"^\s*edakit\s*=\s*[\"']([^\"']*)[\"']", m.group(1), re.M)
+    return k.group(1) if k else None
+
+
+def _settings_without_ref(root):
+    out = []
+    for name in ("settings.json", "settings.local.json"):
+        f = root / ".claude" / name
+        try:
+            data = json.loads(f.read_text(encoding="utf-8"))
+            source = data["extraKnownMarketplaces"]["edakit"]["source"]
+        except (OSError, ValueError, KeyError, TypeError):
+            continue
+        if "ref" in source:
+            ref = source.pop("ref")
+            out.append({"file": f".claude/{name}", "text": json.dumps(data, indent=2, ensure_ascii=False) + "\n",
+                        "what": [f"the marketplace's ref {ref} taken out – a ref there holds the plugin for every "
+                                 "project on the machine, not for this one (handbook 2.3)"]})
+    return out
+
+
+def _calls(root, number):
+    """The changes of the files that start edakit: every git+…/tgd1975/edakit call at v<number>, or without a ref
+    for None – a `$NAME` changed where it is set."""
+    out = []
+    for f in _files(root):
+        if not _runs(f, root):
+            continue
+        try:
+            text = f.read_text(encoding="utf-8")
+        except (OSError, UnicodeDecodeError):
+            continue
+        if "tgd1975/edakit" not in text:
+            continue
+        new, what = text, []
+        for m in reversed(list(GIT_URL.finditer(text))):
+            ref, line = m.group(1), text.count("\n", 0, m.start()) + 1
+            var = re.fullmatch(r"\$\{?(\w+)\}?", ref or "")
+            if var:
+                setter = re.compile(rf"^(\s*(?:export\s+)?{var.group(1)}=)[\"']?([^\s\"'#]+)[\"']?", re.M)
+                s = setter.search(new)
+                want = f"v{number}" if number else "main"
+                if s and s.group(2) != want:
+                    new = new[:s.start()] + s.group(1) + want + new[s.end():]
+                    what.append(f"{var.group(1)}={want} (was {_short(s.group(2))})")
+                continue
+            if ref and ref.startswith("$"):
+                continue                                   # $(…): reads a pin elsewhere
+            pinned = ref and ref not in FOLLOW
+            if number and ref != f"v{number}":
+                url = m.group(0).split("@")[0] + f"@v{number}"
+            elif not number and pinned:
+                url = m.group(0).split("@")[0]
+            else:
+                continue
+            new = new[:m.start()] + url + new[m.end():]
+            what.append(f"line {line}: " + (f"at v{number}" if number else "follows the newest")
+                        + (f" (was {_short(ref)})" if pinned else ""))
+        if new != text:
+            out.append({"file": str(f.relative_to(root)), "text": new, "what": list(reversed(what))})
+    return out
+
+
+def _tomls(root, change):
+    out = []
+    for f in _files(root):
+        if f.name != "edakit.toml":
+            continue
+        text = f.read_text(encoding="utf-8")
+        value = change(_asked(text))
+        if value and value != _asked(text):
+            was = _asked(text)
+            out.append({"file": str(f.relative_to(root)), "text": _project_key(text, value),
+                        "what": [f'[project] edakit = "{value}"' + (f' (was "{was}")' if was else "")]})
+    return out
+
+
+def pin(root, number):
+    """The changes that pin the project at edakit <number>: [project] edakit = "==<number>" in every edakit.toml, every
+    call in CI and scripts at v<number>, the settings' ref out – [{file, text, what}]."""
+    root = Path(root)
+    return _tomls(root, lambda _: f"=={number}") + _calls(root, number) + _settings_without_ref(root)
+
+
+def unpin(root):
+    """The changes that let the project follow the updates: "==x" becomes ">=x", the calls lose their ref."""
+    root = Path(root)
+
+    def lower(asked):
+        m = re.fullmatch(r"\s*==\s*(\d+(?:\.\d+){0,2})\s*", asked or "")
+        return f">={m.group(1)}" if m else None
+    return _tomls(root, lower) + _calls(root, None) + _settings_without_ref(root)
+
+
+def apply(root, changes):
+    for c in changes:
+        (Path(root) / c["file"]).write_text(c["text"], encoding="utf-8")
 
 
 # --- the report ---------------------------------------------------------------------------------------------------
@@ -295,6 +419,7 @@ def gather(cwd, offline=False):
         try:
             tagmap = tags(_ls_remote())
             state["newest"] = newest(tagmap)
+            state["tags"] = tagmap
         except (OSError, subprocess.TimeoutExpired) as e:
             state["offline"] = f"no network: {e}"
     if (root / ".git").exists():
@@ -310,7 +435,50 @@ def gather(cwd, offline=False):
     return state
 
 
+def _target(state, target):
+    """The number `pin` names: current – the edakit in effect here –, latest – the newest tag –, or a number."""
+    here = next((x for x in state["installed"] if x["here"]), None)
+    if target in (None, "current"):
+        return (here or {}).get("version") or state["running"].split("+")[0]
+    if target == "latest":
+        if not state.get("newest"):
+            raise ValueError(f"the newest version is unknown ({state.get('offline') or 'no network'})")
+        return state["newest"]
+    m = re.fullmatch(r"v?(\d+\.\d+\.\d+)", target)
+    if not m:
+        raise ValueError(f"{target!r}: current, latest or a version such as 1.0.9")
+    if state.get("tags") and m.group(1) not in state["tags"].values():
+        raise ValueError(f"{m.group(1)}: no such version tag on GitHub (newest {state.get('newest')})")
+    return m.group(1)
+
+
+def main_pin(args, state):
+    root = Path(state["root"])
+    try:
+        changes = unpin(root) if args.action == "unpin" else pin(root, number := _target(state, args.target))
+    except ValueError as e:
+        print(f"edakit version {args.action}: {e}", file=sys.stderr)
+        return 1
+    head = "follow the updates" if args.action == "unpin" else f"pin edakit {number}"
+    if not changes:
+        print(f"{head}: nothing to change")
+        return 0
+    print(f"{head}:")
+    for c in changes:
+        for w in c["what"]:
+            print(f"  {c['file']}: {w}")
+    if args.write:
+        apply(root, changes)
+        print("written – then edakit check, and commit" + ("" if args.action == "unpin" else
+              "; the plugin keeps following its own updates: the session start and edakit check name a mismatch"))
+    else:
+        print("dry run – nothing written; --write writes it")
+    return 0
+
+
 def main(args):
+    if getattr(args, "action", None):
+        return main_pin(args, gather(Path.cwd(), offline=args.offline))
     state = gather(Path.cwd(), offline=args.offline)
     lines, findings = report(state)
     if state.get("changes_error"):

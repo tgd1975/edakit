@@ -577,12 +577,13 @@ kicad-cli.
 ### edakit version
 
 <!-- edakit:generated command version -->
-`edakit version [--offline] [--json JSON]`
+`edakit version [--write] [--offline] [--json JSON] [{pin,unpin}] [target]`
 
 What runs, what the plugin installed per scope, the newest version and what changed since – its When updating lines first –, where the project pins edakit.
 <!-- edakit:end -->
 
-`edakit version [--offline] [--json JSON]` – EasyEDA: no; network: the tags and the newest changelog from GitHub
+`edakit version [pin [current|latest|X.Y.Z] | unpin] [--write] [--offline] [--json JSON]` – EasyEDA: no; network: the
+tags and the newest changelog from GitHub
 
 - **Reads:** the running edakit; Claude Code's `~/.claude/plugins/installed_plugins.json` (or under
   `$CLAUDE_CONFIG_DIR`): edakit per scope, the one a session in this repository uses marked "in effect here"; `git
@@ -593,6 +594,35 @@ What runs, what the plugin installed per scope, the newest version and what chan
   their **When updating:** lines first, the pins and the update command for the scope in effect; `--json`: the same
   as data. Exit 2 when the edakit in effect is behind the newest, the pins disagree or differ from what runs, or a
   requirement is not met; `--offline` or no network: the newest version stays unknown, 2.3)
+- **pin** – **Writes** with `--write`, else lists: `[project] edakit = "==X"` in every edakit.toml of the repository;
+  every `git+https://github.com/tgd1975/edakit` call in the files that start edakit at `@vX` – an unpinned one too, a
+  `$NAME` changed where it is set –; the marketplace's `ref` out of `.claude/settings.json`, which would hold the
+  plugin for every project on the machine. X: `current` (default) the edakit in effect here, `latest` the newest tag, or a
+  version tag that exists
+- **unpin** – **Writes** with `--write`, else lists: `==X` becomes `>=X`, the calls lose their ref (a `$NAME` becomes
+  `main`), the settings' `ref` goes
+
+### edakit hook
+
+<!-- edakit:generated command hook -->
+`edakit hook [{check,install,run}]`
+
+The project's pre-commit hook: edakit's block written or renewed (install), what is missing (check), the steps of the staged configurations (run – the block calls it).
+<!-- edakit:end -->
+
+`edakit hook [check|install|run]` – EasyEDA: no
+
+- **check** (default) – **Reads:** the pre-commit hook in `core.hooksPath` or `.githooks/`, edakit's block in it, the
+  git config. **Writes:** – (each of missing, no block, outdated, inactive; exit 2 when one is found – the line the
+  session start prints, 2.7)
+- **install** – **Reads:** the same. **Writes:** edakit's block into the hook – a new hook, after the header of one the
+  project has, or the older block renewed –, the hook made executable, `git config core.hooksPath` when unset; names
+  every line outside the block that runs edakit itself, for the project to take out
+- **run** – what the block calls. **Reads:** the staged paths, every edakit.toml of the repository and the files each
+  names. **Writes:** what its steps write. A configuration runs when its edakit.toml, its `hardware/`, the main
+  project's `hardware/` or a file it names is staged: `edakit check`, `edakit sim`, with a TOML graph `edakit graph
+  json --check`, with `[firmware]` `edakit firmware --check`, with `[docs]` `edakit docs`; exit 2 when a step fails,
+  which blocks the commit
 
 ### edakit check
 

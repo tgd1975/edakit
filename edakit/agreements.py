@@ -192,14 +192,32 @@ def running(path):
     return []
 
 
+def hooked(path):
+    """The line for a project whose pre-commit hook does not run edakit's steps (edakit hook check), else none."""
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+    try:
+        from edakit import hook as h
+    finally:
+        sys.path.pop(0)
+    root = h.toplevel(Path(path).parent) if Path(path).parent.is_dir() else None
+    if root is None or (root / "edakit" / "hook.py").is_file():   # edakit's own examples: no project of their own
+        return []
+    problems = h.check(root)
+    if not problems:
+        return []
+    return ["The pre-commit hook does not run edakit's steps – " + "; ".join(p["text"] for p in problems)
+            + ": `edakit hook install` writes or renews edakit's block and activates it, on the owner's word "
+            "(handbook 2.7)."]
+
+
 def hook(data):
     """The hook's output for the hook JSON `data`, or None for no output."""
     path = find_project(data.get("cwd") or os.getcwd())
     if path is None:
         return None
     wanted, entries = read(path)
-    lines = (([digest()] if wanted else []) + running(path) + ([KICAD] if kicad(path) else []) + registered(entries)
-             + command())
+    lines = (([digest()] if wanted else []) + running(path) + hooked(path) + ([KICAD] if kicad(path) else [])
+             + registered(entries) + command())
     if not lines:
         return None
     return {"hookSpecificOutput": {"hookEventName": "SessionStart", "additionalContext": "\n".join(lines)}}
