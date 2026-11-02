@@ -3,6 +3,42 @@
 The words of edakit, one or two sentences each, with the handbook section that treats the term. They are the words
 the skills, the agents and the catalog use. The rules for writing are in the [style guide](style.md).
 
+## The ten words first
+
+These ten carry the rest of the site; [How it works](how-it-works.md) and the quickstart use them. Each has its
+entry below, with the handbook section that treats it.
+
+**Hardware graph.** The circuit as text: parts by LCSC number, nets with their voltage ranges, pins by name or role.
+It is the one source the checks, the simulation and the drawings read.
+
+**Parts entry.** One file per part with the limits and values from its datasheet, and the datasheet's source. A part
+without an entry is not checked.
+
+**Code.** The name of a rule, such as `LIM.v` for a voltage within its limit. `edakit explain` gives its rule, why and
+what to do.
+
+**Finding.** What a check reports: a code, a place and what to do. It is an error, a warning or a note.
+
+**Sign-off.** A manual check signed by a reviewer or by you, bound to the hash of the files it judged. A change to
+those files makes it count no longer.
+
+**Gate run.** One run of the release gate over its stages – P parts, G graph, E simulation, S schematic, L layout,
+F manufacturing files. It writes a test protocol and, if every stage passes, the manufacturing files.
+
+**Release.** The one gate run whose files may go to the maker. It is current until a newer one replaces it or it is
+withdrawn.
+
+**Domain.** A set of rules a project switches on for what it contains, such as `usb`, `radio` or `motors`. `core` is
+always on.
+
+**Building block.** A piece of circuit with checked parts, such as an LED with its resistor or a USB-C input.
+`edakit block add` puts it into the graph.
+
+**Hand-over.** What the circuit designer hands to the PCB designer in writing: the boards, the parts that sit together,
+the notes for the layout. `edakit handover` shows it.
+
+## All the words
+
 ### Accept
 
 You answer a finding you have seen with `accept` and a reason, keyed by its code. Accepted in the graph, the finding

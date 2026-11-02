@@ -8,8 +8,37 @@
 [![Docs](https://github.com/tgd1975/edakit/actions/workflows/pages.yml/badge.svg?branch=main)](https://tgd1975.github.io/edakit/)
 
 **Circuit design as code.** edakit takes a circuit from an idea to a board ready to order. It is a plugin for Claude
-Code and a command line, and everything it works on is text in your repository. The documentation:
+Code and a command line, and everything it works on is text in your repository. In today's words, it specializes an
+agent [harness](https://tgd1975.github.io/edakit/architecture/) for circuit design. The documentation:
 <https://tgd1975.github.io/edakit/>.
+
+| The circuit, drawn by `edakit schematic draw` | The board, from its Gerber files |
+| --- | --- |
+| ![The walkthrough's schematic: a CR2032, a push button, a red LED and its resistor](examples/coin-cell-led/docs/schematic.svg) | ![The walkthrough's round board, top side](examples/coin-cell-led/docs/silk_main_top.png) |
+
+The walkthrough's example: a coin cell, a button and a red LED – every file of it is text in
+[examples/coin-cell-led](examples/coin-cell-led/).
+
+## Try it in two minutes
+
+In a clone of this repository, without the plugin and without EasyEDA:
+
+```bash
+cd examples/coin-cell-led
+uvx --from git+https://github.com/tgd1975/edakit edakit check
+```
+
+It checks the walkthrough's circuit in a fraction of a second and shows a finding that was accepted, with its reason.
+The [quickstart](https://tgd1975.github.io/edakit/quickstart/) goes on from there: a finding explained, the simulation,
+the drawn schematic.
+
+- **Makers.** A checked circuit and its drawing, or a board from it: start with the
+  [quickstart](https://tgd1975.github.io/edakit/quickstart/).
+- **Engineers.** A rule of your own for edakit's checks:
+  [adding a rule](https://tgd1975.github.io/edakit/adding-a-rule/).
+- **Developers.** Work on edakit itself: [working on edakit](https://tgd1975.github.io/edakit/working-on-edakit/).
+
+## What it does
 
 You bring the idea, what the board must do, and the decisions on money, purpose and looks. Claude and edakit bring the
 rest: the parts with their datasheets, the values, the rules, the simulation, the schematic and the PCB in EasyEDA Pro
@@ -19,24 +48,10 @@ and hold the boards.
 
 The [walkthrough](https://tgd1975.github.io/edakit/handbook/17-walkthrough/) shows it on a small board: 14 steps, six of
 them yours, seven decisions. Every step is checked by [rules](https://tgd1975.github.io/edakit/catalog/) and reviewers,
-but that is no guarantee. The regulatory review is support, not legal advice. In today's words, edakit specializes an
-agent [harness](https://tgd1975.github.io/edakit/architecture/) for circuit design.
+but that is no guarantee. The regulatory review is support, not legal advice.
 
 At least that is the vision, and we are close. [How it works](https://tgd1975.github.io/edakit/how-it-works/#state) says
 what has run live, what has not, and where it goes next.
-
-| The circuit, drawn by `edakit schematic draw` | The board, from its Gerber files |
-| --- | --- |
-| ![The walkthrough's schematic: a CR2032, a push button, a red LED and its resistor](examples/coin-cell-led/docs/schematic.svg) | ![The walkthrough's round board, top side](examples/coin-cell-led/docs/silk_main_top.png) |
-
-The walkthrough's example: a coin cell, a button and a red LED – every file of it is text in
-[examples/coin-cell-led](examples/coin-cell-led/).
-
-- **Makers.** A checked circuit and its drawing, or a board from it: start with the
-  [quickstart](https://tgd1975.github.io/edakit/quickstart/).
-- **Engineers.** A rule of your own for edakit's checks:
-  [adding a rule](https://tgd1975.github.io/edakit/adding-a-rule/).
-- **Developers.** Work on edakit itself: [working on edakit](https://tgd1975.github.io/edakit/working-on-edakit/).
 
 **What it needs.** Claude Code; uv and ngspice; for a board EasyEDA Pro desktop with Node 24, or KiCad 10. Tested on
 Linux; Windows and macOS are untested. An account at the maker you order from.
@@ -60,24 +75,8 @@ In Claude Code in the terminal:
 In VS Code, and to update:
 [handbook 2.3](https://tgd1975.github.io/edakit/handbook/02-setup/#23-claude-code-the-plugin). Without Claude Code:
 `uvx --from git+https://github.com/tgd1975/edakit edakit <command>`. The rest of the tool chain is in
-[handbook 2](https://tgd1975.github.io/edakit/handbook/02-setup/).
-
-**Versions.** Every change to edakit comes as a version with its own number, such as 0.2.0. The
-[changelog](https://tgd1975.github.io/edakit/changelog/) says what each one changed. When the middle number goes up, a
-project has to act, and the changelog says what to do. `edakit --version` names the version that runs.
-
-## Try it in two minutes
-
-In a clone of this repository, without the plugin and without EasyEDA:
-
-```bash
-cd examples/coin-cell-led
-uvx --from git+https://github.com/tgd1975/edakit edakit check
-```
-
-It checks the walkthrough's circuit in a fraction of a second and shows a finding that was accepted, with its reason.
-The [quickstart](https://tgd1975.github.io/edakit/quickstart/) goes on from there: a finding explained, the simulation,
-the drawn schematic.
+[handbook 2](https://tgd1975.github.io/edakit/handbook/02-setup/). Which version runs, and what a new one changes for a
+project: [How it works](https://tgd1975.github.io/edakit/how-it-works/#state), "Versions".
 
 ## Read on
 

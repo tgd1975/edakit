@@ -2,10 +2,11 @@
 docs/organisation.md lists it: the entry pages' sentences, sections without a subheading, chapters over 500 lines and
 paragraphs over 120 words, bare cross-references, "the user" and "the reference project" in a page's own sentences,
 dates outside the history, bold terms the glossary does not have, buzzwords outside docs/architecture.md and the
-README's one "harness". It reads documentation only.
+README's one "harness", and the budgets of the lightest pages (docs/concepts/new/documentation-newcomer.md, decision
+4). It reads documentation only.
 
 A page that does not meet a rule today stands in RED: its test is expected to fail and fails once the page meets the
-rule, so that the page leaves RED (steps D.2 and D.5 of docs/concepts/new/documentation.md). A new page meets every
+rule, so that the page leaves RED (steps D.2 and D.5 of docs/concepts/done/documentation.md). A new page meets every
 rule from the start."""
 
 import re
@@ -31,6 +32,12 @@ DATE = re.compile(rf"\b20\d\d-\d\d-\d\d\b|\b(?:\d{{1,2}}(?:–\d{{1,2}})? )?(?:{
 BUZZ = re.compile(r"\b(?:[Hh]arness(?:es)?|[Aa]gentic|AI-powered|copilots?)\b")   # "GitHub Copilot" is a name
 BUZZ_PAGE = "docs/architecture.md"          # the one page that uses "harness", defined
 STATUS = re.compile(r"^\s*(?:\*\*)?(?:State|Status)\b|^\s*!!!")
+BUDGET_WORDS = {"docs/how-it-works.md": 1100}         # words of the page, as wc -w counts them
+BUDGET_TERMS = {"docs/how-it-works.md": 15}           # glossary terms the page uses, linked or not
+BUDGET_LINKS = {"docs/quickstart.md": 6}              # distinct glossary links; a steps page STEPS_LINKS
+STEPS_LINKS = 3
+FIRST_PICTURE_WORDS, FIRST_SCREEN_LINES = 120, 40     # the start page: before its first picture, its two-minute command
+TRY_IT = "edakit check"
 
 
 def documentation():
@@ -172,6 +179,37 @@ def bold_terms(page, text):
     return out
 
 
+def glossary_terms_used(text):
+    """The glossary's terms a page uses, as whole words, a plural allowed; "Claude Code" is a name, not the term."""
+    t = own(text).replace("Claude Code", "Claude").lower()
+    heads = re.findall(r"^### (.+)$", GLOSSARY.read_text(encoding="utf-8"), re.M)
+    return sorted(h for h in heads if re.search(rf"(?<![\w-]){re.escape(h.strip().lower())}(?:e?s)?(?![\w-])", t))
+
+
+def budgets(page, text):
+    """The budgets of the lightest pages (docs/style.md, "Budgets"): words and glossary terms of How it works, glossary
+    links of the quickstart and of a steps page, the start page's first screen."""
+    out = []
+    if page in BUDGET_WORDS and len(text.split()) > BUDGET_WORDS[page]:
+        out.append(f"{len(text.split())} words (at most {BUDGET_WORDS[page]})")
+    if page in BUDGET_TERMS and len(used := glossary_terms_used(text)) > BUDGET_TERMS[page]:
+        out.append(f"{len(used)} glossary terms (at most {BUDGET_TERMS[page]}): {', '.join(used)}")
+    limit = BUDGET_LINKS.get(page, STEPS_LINKS if page.startswith("docs/steps/") else None)
+    if limit is not None and len(links := set(re.findall(r"glossary\.md#([\w-]+)", text))) > limit:
+        out.append(f"{len(links)} glossary links (at most {limit})")
+    if page == "README.md":
+        pictures = [m for m in re.finditer(r"!\[[^\]]*\]\(([^)\s]+)\)", text)
+                    if not re.search(r"badge|shields\.io|docs/brand/", m.group(1))]
+        before = len(re.findall(r"[\w'’-]+", own(text[:pictures[0].start()]))) if pictures else None
+        if before is None or before > FIRST_PICTURE_WORDS:
+            out.append(f"{before} words before the first picture (at most {FIRST_PICTURE_WORDS})")
+        lines = text.splitlines()
+        at = next((i for i, ln in enumerate(lines, 1) if TRY_IT in ln and not ln.startswith(("#", "-", "|"))), None)
+        if at is None or at > FIRST_SCREEN_LINES:
+            out.append(f"the two-minute command on line {at} (within the first {FIRST_SCREEN_LINES})")
+    return out
+
+
 def buzzwords(page, text):
     """A buzzword in a page's own sentences: none outside docs/architecture.md, "harness" once in the README."""
     if page == BUZZ_PAGE:
@@ -193,6 +231,7 @@ RULES = {                                            # rule: (check, the pages i
     "dates": (dates, lambda pages: pages),
     "bold": (bold_terms, lambda pages: [p for p in pages if p in ENTRY]),
     "buzzwords": (buzzwords, lambda pages: pages),
+    "budgets": (budgets, lambda pages: [p for p in pages if p in ENTRY or p.startswith("docs/steps/")]),
 }
 
 # Today's pages that do not meet a rule yet – measured on main when D.1 was built. D.2 rewrites the README, D.5 the
@@ -209,6 +248,7 @@ RED = {
         "08-release-gate", "10-reference", "17-walkthrough")},
     "bold": set(),
     "buzzwords": set(),
+    "budgets": set(),
 }
 
 
@@ -247,6 +287,16 @@ def test_the_rules_find_what_they_count():
     assert bold_terms("x", "A **sign-off** and a **wobble** here. **Volume.** The title.") == ["wobble"]
     assert buzzwords("x", "An agentic harness. GitHub Copilot is a name.") == ["line 1: agentic", "line 1: harness"]
     assert buzzwords("README.md", "A harness.") == [] and buzzwords("docs/architecture.md", "A harness, harnesses.") == []
+    assert budgets("docs/how-it-works.md", " ".join(["word"] * 1101)) == ["1101 words (at most 1100)"]
+    assert glossary_terms_used("A finding, two findings, Claude Code, the sign-off file.") == ["Finding", "Sign-off",
+                                                                                               "Sign-off file"]
+    assert budgets("docs/quickstart.md", " ".join(f"[t](glossary.md#t{i})" for i in range(7))) == [
+        "7 glossary links (at most 6)"]
+    assert budgets("docs/steps/1-install.md", "[a](glossary.md#a) [b](glossary.md#b) [a](glossary.md#a)") == []
+    short = "# x\n\nOne line.\n\n```bash\nedakit check\n```\n\n![p](examples/x.png)\n"
+    assert budgets("README.md", short) == []
+    assert budgets("README.md", " ".join(["word"] * 121) + "\n\n![p](examples/x.png)\n") == [
+        "121 words before the first picture (at most 120)", "the two-minute command on line None (within the first 40)"]
 
 
 def test_the_glossary_links_land_on_a_section():

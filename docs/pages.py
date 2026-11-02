@@ -1,7 +1,9 @@
 """edakit's documentation as one site for GitHub Pages, assembled into build/pages and built by MkDocs. The navigation
-is data – NAV, a table of group, file and short title, by reader (docs/concepts/new/documentation.md, step D.3): the
-start, the circuit, the board, extending the rules, developing edakit, the reference, and at the end the sources as
-"Inside edakit" – the concepts, skills and agents behind an index each, every page of them marked as a source.
+is data – NAV, a table of tab, file and short title, by reader (docs/concepts/new/documentation-newcomer.md, step N.1):
+Start, Extend, Develop, Handbook and Reference as tabs across the top, the sidebar showing the current tab alone, at
+most eight entries but for the handbook. The sources – the concepts, skills, agents, evals and the rules of a session –
+are on the site behind "Inside edakit" under Develop and an index each, not in the navigation, every page of them
+marked as a source.
 
     python3 docs/pages.py                       assembles build/pages (the Markdown, the catalog, mkdocs.yml)
     uvx --with mkdocs-material==9.6.23 --from mkdocs==1.6.1 mkdocs build --strict -f build/pages/mkdocs.yml
@@ -44,47 +46,48 @@ def title_of(text, fallback):
     return m.group(1).strip() if m else fallback
 
 
-# The navigation: (group, [(repo path, title of at most five words)]); a group's first page may be its index.
+# The navigation: (tab, [(repo path, title of at most five words)]); a tab's first page is its index page where it is
+# one (README.md, handbook/README.md). The tabs "A circuit" and "A board" come with the steps (documentation-newcomer.md,
+# step N.2). The handbook's chapters stand as its index orders them, 9 and 10 under Reference.
 NAV = [
     ("Start", [
+        ("README.md", "Start"),
         ("docs/quickstart.md", "Quickstart"),
         ("docs/how-it-works.md", "How it works"),
-        ("docs/catalog/index.html", "Rule catalog"),
         ("docs/projects/README.md", "Projects"),
         ("docs/glossary.md", "Glossary"),
     ]),
-    ("The circuit", [
-        ("handbook/README.md", "The handbook"),
-        ("handbook/01-approach.md", "The approach"),
-        ("handbook/02-setup.md", "Setup"),
-        ("handbook/11-working-with-claude.md", "Working with Claude"),
-        ("handbook/14-design.md", "Designing a circuit"),
-        ("handbook/03-hardware-graph.md", "Hardware graph"),
-        ("handbook/04-parts-database.md", "Parts"),
-        ("handbook/05-simulation.md", "Simulation"),
-        ("handbook/15-regulatory.md", "Regulatory review"),
-    ]),
-    ("The board", [
-        ("handbook/06-schematic.md", "Schematic"),
-        ("handbook/07-pcb.md", "PCB"),
-        ("handbook/08-release-gate.md", "Release gate"),
-        ("handbook/16-kicad.md", "KiCad"),
-        ("handbook/17-walkthrough.md", "Walkthrough"),
-        ("handbook/18-walkthrough-kicad.md", "Walkthrough on KiCad"),
-        ("handbook/12-troubleshooting.md", "Troubleshooting"),
-        ("handbook/13-lessons-learned.md", "Lessons learned"),
-    ]),
-    ("Extend the rules", [
+    ("Extend", [
         ("docs/adding-a-rule.md", "Adding a rule"),
         ("skills/propose-rule/SKILL.md", "Propose a rule"),
         ("skills/propose-feature/SKILL.md", "Propose a feature"),
     ]),
-    ("Develop edakit", [
+    ("Develop", [
         ("docs/working-on-edakit.md", "Working on edakit"),
         ("docs/architecture.md", "edakit as a meta-harness"),
         ("docs/organisation.md", "Organisation"),
         ("docs/style.md", "Style guide"),
         ("docs/brand/README.md", "Brand"),
+        ("docs/inside-edakit.md", "Inside edakit"),
+    ]),
+    ("Handbook", [
+        ("handbook/README.md", "The handbook"),
+        ("handbook/01-approach.md", "1 The approach"),
+        ("handbook/02-setup.md", "2 Setup"),
+        ("handbook/11-working-with-claude.md", "11 Working with Claude"),
+        ("handbook/14-design.md", "14 Designing a circuit"),
+        ("handbook/03-hardware-graph.md", "3 Hardware graph"),
+        ("handbook/04-parts-database.md", "4 Parts"),
+        ("handbook/05-simulation.md", "5 Simulation"),
+        ("handbook/15-regulatory.md", "15 Regulatory review"),
+        ("handbook/06-schematic.md", "6 Schematic"),
+        ("handbook/07-pcb.md", "7 PCB"),
+        ("handbook/08-release-gate.md", "8 Release gate"),
+        ("handbook/16-kicad.md", "16 KiCad"),
+        ("handbook/17-walkthrough.md", "17 Walkthrough"),
+        ("handbook/18-walkthrough-kicad.md", "18 Walkthrough on KiCad"),
+        ("handbook/12-troubleshooting.md", "12 Troubleshooting"),
+        ("handbook/13-lessons-learned.md", "13 Lessons learned"),
     ]),
     ("Reference", [
         ("handbook/10-reference.md", "Files, keys and commands"),
@@ -92,15 +95,10 @@ NAV = [
         ("docs/catalog/index.html", "Rule catalog"),
         ("CHANGELOG.md", "Changelog"),
     ]),
-    ("Inside edakit", [
-        ("docs/concepts/README.md", "Concepts"),
-        ("skills/README.md", "Skills"),
-        ("agents/README.md", "Agents"),
-        ("evals/README.md", "Evals"),
-        ("CLAUDE.md", "Rules of a session"),
-    ]),
 ]
+SIDEBAR = 8                      # entries a tab shows at most, the handbook's excepted
 GENERATED = {"docs/concepts/README.md", "skills/README.md", "agents/README.md"}   # indexes written by this script
+INSIDE = ("docs/concepts/README.md", "skills/README.md", "agents/README.md", "evals/README.md", "CLAUDE.md")
 SOURCE = ('!!! note "A source"\n    This page is a source of edakit – a concept, a prompt or the rules of a session –, '
           'shown as it is in the repository. Read it as such; the guides say what edakit does.\n')
 ISSUES = f"{REPO}/issues/new/choose"
@@ -135,11 +133,13 @@ def concepts():
 
 def sources():
     """[(repo path, site path, section)] of every Markdown page of the site: the navigation's pages in its order, then
-    the pages reached from an index – the concepts, skills, agents, the prototypes' READMEs and the project pages."""
-    out = [("README.md", "index.md", None)]
+    the pages reached from "Inside edakit" and its indexes – the concepts, skills, agents, evals, the rules of a
+    session, the prototypes' READMEs – and the project pages."""
+    out = []
     for group, pages in NAV:
         out += [(src, site_path(src), group) for src, _ in pages if src.endswith(".md")]
-    more = [p.relative_to(ROOT).as_posix() for p in sorted((ROOT / "docs" / "concepts").rglob("*.md"))]
+    more = list(INSIDE)
+    more += [p.relative_to(ROOT).as_posix() for p in sorted((ROOT / "docs" / "concepts").rglob("*.md"))]
     more += [f"skills/{p.parent.name}/SKILL.md" for p in sorted((ROOT / "skills").glob("*/SKILL.md"))]
     more += [f"agents/{p.name}" for p in sorted((ROOT / "agents").glob("*.md")) if p.name != "README.md"]
     more += [p.relative_to(ROOT).as_posix() for p in sorted((ROOT / "docs" / "projects").glob("*.md"))
@@ -235,8 +235,8 @@ def rewrite(text, src, site, mapped, media=None):
             rel = resolved.relative_to(ROOT).as_posix()
         except ValueError:
             return m.group(0)
-        if rel in mapped:
-            new = _relpath(mapped[rel], site)
+        if rel in mapped or rel + "/README.md" in mapped:       # a page, or a folder whose README is one
+            new = _relpath(mapped.get(rel) or mapped[rel + "/README.md"], site)
             return f"{m.group(1)}{new}{'#' + anchor if anchor else ''}{m.group(3)}"
         if rel.startswith("docs/brand/") and rel != "docs/brand/README.md":
             # the logo files and the theme's stylesheet are on the site
@@ -280,7 +280,7 @@ def config(nav):
         "use_directory_urls": True,
         "theme": {
             "name": "material",
-            "features": ["navigation.sections", "navigation.top", "search.highlight",
+            "features": ["navigation.tabs", "navigation.indexes", "navigation.top", "search.highlight",
                          "content.code.copy", "toc.follow"],
             "logo": "brand/edakit-mark-mono-white.svg",
             "favicon": "brand/edakit-favicon.svg",
@@ -329,7 +329,7 @@ def assemble(out=ROOT / "build" / "pages"):
         f = docs / site
         f.parent.mkdir(parents=True, exist_ok=True)
         f.write_text(rewrite(text, src, site, mapped, media), encoding="utf-8")
-    nav = [{"Home": "index.md"}]
+    nav = []
     for group, entries in NAV:
         nav.append({group: [{title: (site_path(src) if src.endswith(".md") else "catalog/index.html")}
                             for src, title in entries]})
