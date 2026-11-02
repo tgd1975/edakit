@@ -295,7 +295,7 @@ open.
 | Phase | When | Blocks the release |
 |---|---|---|
 | `export` | before the files are released (M-1 second datasheet check, M-6 regulatory review, M-5 layout review) | yes |
-| `order` | after uploading, before paying (M-2: the maker's assembly preview, its part matching, price) | no |
+| `order` | after uploading, before paying (M-2: the maker's assembly preview, its part matching, price – at JLCPCB the placement its engineer adjusts after the order: `edakit cart confirm`, 8.4 step 5) | no |
 | `acceptance` | after delivery (M-4: acceptance test of every board) | no |
 
 Scope `fab` suits what is checked on the manufacturing files: the layout review M-5 and the manufacturer's preview M-2
@@ -520,7 +520,8 @@ is as public as the repository. Without `gh` or its login one sentence says so. 
 > the skill cart ran live at every maker up to the cart, nothing ordered – on a copy of the example blinker-555 released
 > on the KiCad tool chain (`tests/fixtures/makers/LIVE.md`: 5.7 JLCPCB, 5.12 PCBWay, 5.8 Eurocircuits, 5.10 AISLER up to
 > its price). The first order went through it on 2026-11-02: pytree's tree, five assembled, from the JLCPCB cart the
-> skill filled and checked. Step 5 below, `edakit cart actual`, has run on recorded data only.
+> skill filled and checked. Step 5 below, `edakit cart confirm`, was read by hand at the first order (2026-11-02) and
+> its command ran on that reading; step 6, `edakit cart actual`, has run on recorded data only.
 > EasyEDA's own ODB++ export went through ordering step 0b on a probe board
 > (`tests/fixtures/makers/aisler/step0b_2026-11-01.md`).
 
@@ -631,7 +632,7 @@ M-5 of scope `fab` its settings are the ones the review signed – and write tab
 The form is filled from the release, not typed: edakit prepares the order and checks what comes back; Claude fills the
 maker's pages in your browser (Claude in Chrome), puts the board into the cart with the maker's cart button and stops
 there. Nothing orders or pays – no command, skill or API path does: the order, the payment and M-2 at the maker are
-yours.
+yours – M-2 on the reading of step 5, signed on your word.
 
 1. `edakit cart prepare [--board B] [--maker M]` takes the current release and stops unless the maker's upload files are
    the release's (`release verify`, the same function), the circuit and layout hash are the run's, the order settings
@@ -671,7 +672,23 @@ yours.
    hashes, board, maker, quantity, the regulatory verdict with the numbers and grades of its findings, the cart line. It
    is what stays of an order when the run folder (not versioned) is gone, and for a board that is sold a part of the
    technical file (15.2).
-5. After you have paid: the skill reads the order page – or a saved order page or invoice, `--from FILE` (HTML or PDF;
+### After the order
+
+5. After the order, what the maker asks to confirm (`[confirm]` of its profile; JLCPCB: "Confirm Production file", a
+   dialog with the Top and Bottom render, and "Confirm Parts Placement", which opens a second browser window). The
+   skill's mode `confirm` reads the renders against the run's pictures and the placement as the maker's engineer
+   adjusted it – JLCPCB's viewer, opened in a tab of the skill's own – part by part against the polarity sheet
+   (FILES.sheet), and writes `confirm.json` and the page text.
+
+   `edakit cart confirm` checks it: ORDER.read, ORDER.parts on the placement's part numbers, ORDER.confirm – the
+   counts, every polarised part read and judged right, the production file as released – and writes `confirm.md`.
+   With `--sign BY` and every check passed it writes M-2 into the sign-off file for the order's fab hash, `--note`
+   appended (e.g. "requirements met: R-31"). The sign-off is your word, and so are the confirming clicks: Submit in
+   the dialog on your word, the second window on your screen.
+
+   After the order, `confirm` and `actual` read the order's run: the current release's job, or – when a newer release
+   has none for the board at the maker – the run the order record names, which the order was placed against.
+6. After you have paid: the skill reads the order page – or a saved order page or invoice, `--from FILE` (HTML or PDF;
    edakit reads its text itself) – into `actual.json`, and `edakit cart actual` checks ORDER.read on it and writes
    `actual.md`: estimate, quote and actual line by line, per order shipping, VAT and coupon against `[cost]`.
 
@@ -779,6 +796,10 @@ The MCP server cannot order.
   polarity sheet), no part missing in the BOM tool, then pay. At JLCPCB "Confirm Parts Placement" opens a dialog:
   without its tick "Do not confirm automatically" the order goes into production 72 hours after it is placed, confirmed
   or not (live run 5.7) – the tick is yours, given at the form.
+- **The placement that counts comes after the order**, "adjusted by our engineer", and `edakit cart confirm` reads it
+  (step 5). The first order (2026-11-02) found every polarised part as the sheet – JLCPCB marks pin 1 with a dot and
+  a diode's anode with a "+" – and the production file as released. "Confirm Parts Placement" opens a second browser
+  window the skill cannot see: that click is yours.
 - If JLCPCB's DFM check reports something the layout review already accepted or an acceptance in the sign-off file names
   (e.g. an annular ring the fab confirmed, GEO.ring), it is in the checklist so nobody panics. GEO.ring holds rings and
   hole spacing to JLCPCB's table, so a via pair 0.47 mm apart is no finding there.
@@ -795,6 +816,7 @@ The codes of the order at the maker, generated from the catalog (`edakit/catalog
 | [`ORDER.files`](../docs/catalog/order.html#ORDER.files) | the same files | error; replaces B-5 |
 | [`ORDER.finish`](../docs/catalog/order.html#ORDER.finish) | lead in the finish | error; replaces B-6 |
 | [`ORDER.review`](../docs/catalog/order.html#ORDER.review) | regulatory review of this order | error, open: pending; replaces B-7 |
+| [`ORDER.confirm`](../docs/catalog/order.html#ORDER.confirm) | the maker's confirmations as released and as the sheet | error |
 
 Rule, why, fix and sources of each: `edakit explain CODE`, or the code on its page of the catalog.
 <!-- edakit:end -->

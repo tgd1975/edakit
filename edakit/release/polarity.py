@@ -122,6 +122,12 @@ def tile(ref, comp, part, pcb_comp, layers, pin_net, marks=()):
     return img
 
 
+def is_polar(part):
+    """Whether a parts entry is a polarised part of the sheet – a kind of POLAR, or a polarised capacitor (electrolytic,
+    tantalum); the same parts edakit cart confirm expects read in the maker's placement (M-2)."""
+    return part.get("kind") in POLAR or (part.get("kind") == "capacitor" and (part.get("values") or {}).get("polarized"))
+
+
 def sheet(cfg, board, design, d):
     pcb = json.loads((d / "pcb.json").read_text())
     data = {c["designator"]: c for c in pcb["components"] if c.get("designator")}
@@ -129,10 +135,8 @@ def sheet(cfg, board, design, d):
     g = d / "gerber"
     layers = {"T": (gerber.parse_gerber(g / gerber.FILES["top"]), gerber.parse_gerber(g / gerber.FILES["top_silk"])),
               "B": (gerber.parse_gerber(g / gerber.FILES["bottom"]), gerber.parse_gerber(g / gerber.FILES["bottom_silk"]))}
-    def polar(part):  # electrolytic and tantalum capacitors count as well
-        return part.get("kind") in POLAR or (part.get("kind") == "capacitor" and (part.get("values") or {}).get("polarized"))
     comps = [c for c in design.board_comps(board.name).values() if c["designator"] in data
-             and polar(design.part(c["designator"]) or {})]
+             and is_polar(design.part(c["designator"]) or {})]
     comps.sort(key=lambda c: (not c.get("verify"), design.part(c["designator"])["kind"], c["designator"]))
     tiles = [tile(c["designator"], c, design.part(c["designator"]), data[c["designator"]], layers, design.pin_net,
                   marks.get(c["designator"], ())) for c in comps]

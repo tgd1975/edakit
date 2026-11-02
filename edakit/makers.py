@@ -36,6 +36,10 @@ maker takes and refuses:
                        its scope (PCB, PCBA) and the document it offers, and the pages read (sources) – the regulatory
                        review at the order cites it from the job (handbook 15.5); "nothing found" where it states none
     fees               the fee table edakit cost prices with (edakit/fees/<fees>.json)
+    confirm            the confirmations the maker asks for after the order (edakit cart confirm, the skill cart's mode
+                       confirm): page (the order history), production_file and placement (the buttons, each with what
+                       it opens), viewer (the placement as the maker's engineer adjusted it, readable in a tab of the
+                       skill's own), pin1 and anode (how the viewer marks them); none: the maker asks nothing after the order
 
 [cart] maker is the maker the board is planned for, [cart] makers every maker whose checks and files the gate runs
 and writes. A check that holds a board to a maker (PARTS.stock, FILES.order, PARTS.fact/mpn, SYNC.odb) fails for the planned maker and warns for
@@ -57,7 +61,8 @@ UPLOAD = {"gerber": "gerber_{b}.zip", "bom": "bom_{b}.csv", "bom_mpn": "bom_{b}_
           "odb": "odb_{b}.zip"}
 PROFILE_KEYS = ("name", "recorded", "start", "seat", "currency", "catalogue", "fees", "files", "classes", "dnp",
                 "cart", "never", "ignore", "excludes", "bom", "cpl", "rules", "fields", "about", "sources", "unshown",
-                "unshown_bare", "upload", "matching", "compliance")
+                "unshown_bare", "upload", "matching", "compliance", "confirm")
+CONFIRM_KEYS = ("page", "production_file", "placement", "viewer", "pin1", "anode")
 CPL_KEYS = ("columns", "unit", "rotation", "zero", "turns")
 COMPLIANCE_KEYS = ("rohs", "reach", "sources")
 FIELD_KEYS = ("section", "label", "words", "unit", "values", "more", "when", "checkout", "assembly")
@@ -292,6 +297,11 @@ def problems(key, data):
                 and all(isinstance(v, str) for v in c["sources"])):
             out.append(f"maker {key}: compliance must be a table of rohs and reach (the maker's statement, or \"nothing "
                        "found\") and sources (the pages read, a list of strings)")
+    if "confirm" in data:
+        c = data["confirm"]
+        if not isinstance(c, dict) or not all(isinstance(v, str) and v for v in c.values()) or set(c) - set(CONFIRM_KEYS):
+            out.append(f"maker {key}: confirm must be a table of {', '.join(CONFIRM_KEYS)}, each a string – what the "
+                       "maker asks for after the order, as ordering step 0 recorded it")
     for name, f in (data.get("fields") or {}).items():
         if f is False:
             continue

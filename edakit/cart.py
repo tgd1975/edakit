@@ -3,6 +3,7 @@
     edakit cart fields  [--board B] [--maker M]          every field of the maker's form: value, where it comes from
     edakit cart prepare [--board B] [--maker M]          the job of the skill cart, from the current release
     edakit cart check   [--board B] [--maker M] [--cart] ORDER.form to ORDER.review on what the skill brought back; --cart: the cart line
+    edakit cart confirm [--board B] [--maker M] [--sign BY] [--note T]   the maker's confirmations after the order (M-2)
     edakit cart actual  [--board B] [--maker M] [--from FILE]   the real cost of the order
     edakit cart compare [--board B]                      the quotes of every maker of [cart] makers side by side
 
@@ -20,8 +21,13 @@ release and the page text Claude kept. The files of an order live next to the up
         regulatory.md     the agent regulatory-reviewer on the order, unchanged (ORDER.review)
         check.md          the result of edakit cart check
         cart.json         the cart line as read back after the cart button (--cart)
+        confirm.json, confirm_page.txt, confirm.md, confirm_check.json   what the maker asked to confirm after the
+                          order, as the skill read it, and edakit cart confirm's result; --sign writes M-2
         actual.json, actual_page.txt, actual.md   the real cost after the owner ordered and paid
     <reports>/<run>/fab/<board>/cart/compare.md       edakit cart compare: every maker's quote side by side
+
+After the order, confirm and actual read the order's run: the current release's job, or – when a newer release has
+none for the board at the maker – the job of the run the order record names, which the order was placed against.
 
 Exit codes: 0 = ok, 2 = findings (the order stops), 1 = error; edakit cart check 3 = ORDER.form to ORDER.finish passed, the regulatory
 review of the order (ORDER.review) is open.
@@ -43,10 +49,12 @@ JOB, QUOTE, PAGE, SCREENS = "job.json", "quote.json", "quote_page.txt", "screens
 REVIEW, CHECK, CHECK_JSON, CART = "regulatory.md", "check.md", "check.json", "cart.json"
 COMPARE = "compare.md"
 ACTUAL, ACTUAL_PAGE, ACTUAL_MD = "actual.json", "actual_page.txt", "actual.md"
+CONFIRM, CONFIRM_PAGE, CONFIRM_MD, CONFIRM_CHECK = "confirm.json", "confirm_page.txt", "confirm.md", "confirm_check.json"
 ORDERS = Path("hardware") / "orders"   # the order records, versioned, outside every hash
 CHECKS = {"ORDER.form": "form = job", "ORDER.parts": "parts = release", "ORDER.quote": "quote against the estimate",
           "ORDER.read": "read, not made up", "ORDER.files": "the same files", "ORDER.finish": "lead in the finish",
-          "ORDER.review": "regulatory review of this order"}
+          "ORDER.review": "regulatory review of this order",
+          "ORDER.confirm": "the maker's confirmations as released and as the sheet"}
 NEVER = ("Order", "Buy", "Checkout", "Pay", "Submit order", "Place order")   # the skill's fixed list, besides the profile's
 GRADES = ("block", "important", "note")
 OK_LINE, NOT_OK_LINE = "Order: OK", "Order: not OK"
@@ -249,6 +257,7 @@ def prepare(cfg, args):
                   "unshown": [*m.data.get("unshown", []), *([] if bom else m.data.get("unshown_bare", []))],
                   "upload": m.data.get("upload", "before_cart"), "matching": m.data.get("matching", "page"),
                   "seat": m.seat, "currency": m.currency, "compliance": m.data.get("compliance"),
+                  "confirm": m.data.get("confirm"),
                   "role": "planned" if m.key == makers.planned(cfg) else "other"},
         "quantity": o["quantity"] if o else cfg.quantity, "pcba_quantity": o["pcba_quantity"] if o else cfg.quantity,
         "files": [{"name": n, "path": str((d / n).resolve()), "size": (d / n).stat().st_size, "sha256": sha_of(d / n)}
@@ -611,8 +620,23 @@ def record(cfg, out, job, quote, cart, done):
     return path
 
 
-def load_order(cfg, args, need=(QUOTE, PAGE)):
-    """(board, maker, folder, job, the files of need) of the current release's order; CartError when one is missing."""
+def ordered_run(cfg, board, maker):
+    """The run of the newest order record of the board at the maker whose job is still there – the run the order was
+    placed against; None without one."""
+    for path in sorted((cfg.root / ORDERS).glob(f"*-{board}-{maker}.json"), reverse=True):
+        try:
+            run = json.loads(path.read_text(encoding="utf-8")).get("run")
+        except (OSError, json.JSONDecodeError):
+            continue
+        if run and (folder(cfg, run, board, maker) / JOB).exists():
+            return run
+    return None
+
+
+def load_order(cfg, args, need=(QUOTE, PAGE), ordered=False):
+    """(board, maker, folder, job, the files of need) of the current release's order; CartError when one is missing.
+    ordered: after the order (confirm, actual) – when the current release has no job for the board at the maker, the
+    run the order record names, which the order was placed against."""
     from .release import gate
     board = cfg.board(args.board, made=True)
     m = maker_of(cfg, args.maker)
@@ -620,6 +644,8 @@ def load_order(cfg, args, need=(QUOTE, PAGE)):
     if cur is None:
         raise CartError("no current release")
     out = folder(cfg, cur[0], board.name, m.key)
+    if ordered and not (out / JOB).exists() and (run := ordered_run(cfg, board.name, m.key)):
+        out = folder(cfg, run, board.name, m.key)
     if not (out / JOB).exists():
         raise CartError(f"no job for board {board.name} at {m.name} in run {cur[0]} – edakit cart prepare first")
     job = json.loads((out / JOB).read_text(encoding="utf-8"))
@@ -630,6 +656,153 @@ def load_order(cfg, args, need=(QUOTE, PAGE)):
         got.append(json.loads((out / n).read_text(encoding="utf-8")) if n.endswith(".json") else
                    (out / n).read_text(encoding="utf-8"))
     return board, m, out, job, got
+
+
+# --- edakit cart confirm -----------------------------------------------------------------------------------------------
+
+M2_TEXT = ("At the maker after the order: the placement as its engineer adjusted it – rotation and polarity of every "
+           "polarised part (polarity_<board>.png); the BOM without missing parts; the production file as released")
+
+
+def polarised(cfg, job):
+    """The designators of the job's BOM that are on the polarity sheet (FILES.sheet): the parts edakit cart confirm
+    expects read in the maker's placement."""
+    from .release.polarity import is_polar
+    design = Design.from_config(cfg)
+    return [d for line in job["bom"] for d in line["designators"] if is_polar(design.part(d) or {})]
+
+
+def b4_confirm(confirm, page):
+    """ORDER.read on the confirmations: every designator and part number of the placement and its counts in the page text."""
+    pl = confirm.get("placement") or {}
+    values = [*(x.get("designator") for x in pl.get("parts", [])), *(x.get("part") for x in pl.get("parts", [])),
+              *(pl.get(k) for k in ("assembled", "unassembled"))]
+    values = [v for v in values if v not in (None, "")]
+    lost = list(dict.fromkeys(str(v) for v in values if not page_has(page, v)))
+    return [f"not in {CONFIRM_PAGE}: {', '.join(lost[:12])}"] if lost else [], f"{len(values)} values, each in the page"
+
+
+def b2_confirm(job, confirm):
+    """ORDER.parts on the placement: every designator of the job's BOM in the maker's placement with the job's part
+    number, none the job does not place."""
+    shown = {x["designator"]: x for x in (confirm.get("placement") or {}).get("parts", []) if x.get("designator")}
+    bad = []
+    for line in job["bom"]:
+        for d in designators(line["designators"]):
+            x = shown.get(d)
+            if x is None:
+                bad.append(f"{line['part']} {d}: not in the maker's placement")
+            elif norm(str(x.get("part") or "")) != norm(str(line["part"])):
+                bad.append(f"{line['part']} {d}: the maker's placement has {x.get('part') or 'no part number'}")
+    placed = {d for line in job["bom"] for d in line["designators"]}
+    if extra := sorted(set(shown) - placed, key=natural_key):
+        bad.append(f"in the maker's placement, not in the job: {', '.join(extra[:12])}")
+    return bad, f"{len(placed)} parts, each with the job's part number"
+
+
+def b8(job, confirm, polar):
+    """ORDER.confirm: the production file as released where the maker asked for it (both renders seen), the placement's
+    counts the job's, every polarised part of the sheet read with its pin 1 and judged right, no part judged wrong,
+    no DFM finding."""
+    bad, seen = [], []
+    pf = confirm.get("production_file") or {}
+    if pf.get("asked"):
+        if not pf.get("as_released"):
+            bad.append("production file: " + ("; ".join(pf.get("notes") or []) or "not as released"))
+        if lost := [r for r in ("top", "bottom") if r not in [str(x).lower() for x in pf.get("renders", [])]]:
+            bad.append(f"production file: the {' and '.join(lost)} render not seen")
+    pl = confirm.get("placement") or {}
+    placed = [d for line in job["bom"] for d in line["designators"]]
+    if pl.get("asked", True):
+        if pl.get("assembled") != len(placed):
+            bad.append(f"{pl.get('assembled')} parts assembled, the job places {len(placed)}")
+        if pl.get("unassembled"):
+            bad.append(f"{pl['unassembled']} parts unassembled")
+        shown = {x.get("designator"): x for x in pl.get("parts", [])}
+        for d in polar:
+            x = shown.get(d)
+            if x is None:                       # ORDER.parts names it
+                continue
+            if x.get("ok") is False:
+                bad.append(f"{d}: {x.get('note') or 'judged wrong'}")
+            elif not x.get("pin1"):
+                bad.append(f"{d}: pin 1 not read")
+            elif x.get("ok") is not True:
+                bad.append(f"{d}: read, not judged (ok)")
+            else:
+                seen.append(f"{d} pin 1 {x['pin1']}" + (f", {x['sign']}" if x.get("sign") else ""))
+        bad += [f"{d}: {x.get('note') or 'judged wrong'}" for d, x in shown.items()
+                if d not in polar and x.get("ok") is False]
+        bad += [f"DFM: {w}" for w in pl.get("dfm") or []]
+    text = ("production file as released; " if pf.get("asked") else "") + f"{len(placed)} parts placed, " \
+        + (f"{len(polar)} polarised parts as the sheet: " + "; ".join(seen) if polar else "no polarised part")
+    return bad, text
+
+
+def sign_m2(cfg, job, confirm, found, by, extra):
+    """M-2 into the sign-off file for the job's fab hash, signed by `by` – the owner's word –, its note what the check
+    found; CartError when the file's fab sign-offs are bound to another run's files."""
+    from .release import gate
+    path = cfg.signoff
+    s = json.loads(path.read_text(encoding="utf-8")) if path.exists() else {"manual": [], "accept": []}
+    bound = s.get("fab_sha256")
+    if not job.get("fab_sha256"):
+        raise CartError(f"run {job['run']} has no fab hash (stage F) – M-2 is bound to the files the maker builds from")
+    if bound and bound != job["fab_sha256"]:
+        raise CartError(f"{path.name}: its sign-offs of scope 'fab' are bound to fab {bound[:12]}…, the order's run "
+                        f"{job['run']} has fab {job['fab_sha256'][:12]}… – M-2 is signed for the order's files")
+    s["fab_sha256"] = job["fab_sha256"]
+    m = next((x for x in s.setdefault("manual", []) if x.get("id") == "M-2"), None)
+    if m is None:
+        m = {"id": "M-2", "phase": "order", "scope": "fab", "text": M2_TEXT, "done_by": None, "date": None, "note": None}
+        s["manual"].append(m)
+    note = (f"M-2: OK for fab {job['fab_sha256']} (run {job['run']}, order at {job['maker']['name']}, the pages read "
+            f"{confirm.get('read')}). {found}." + (f" {extra}" if extra else ""))
+    m.update(done_by=by, date=dt.date.today().isoformat(), note=note)
+    gate.save_manifest(path, s, indent=2)
+    return m
+
+
+def confirm_check(cfg, args):
+    """The maker's confirmations after the order, as the skill cart read them: ORDER.read, ORDER.parts and
+    ORDER.confirm on confirm.json and its page text; with --sign and every check passed, M-2 into the sign-off file."""
+    board, m, out, job, _ = load_order(cfg, args, need=(), ordered=True)
+    for n in (CONFIRM, CONFIRM_PAGE):
+        if not (out / n).exists():
+            raise CartError(f"{cfg.relative(out / n)} is not there – the skill cart reads the maker's confirmation "
+                            "pages into it (its mode confirm)")
+    confirm = json.loads((out / CONFIRM).read_text(encoding="utf-8"))
+    page = (out / CONFIRM_PAGE).read_text(encoding="utf-8")
+    polar = polarised(cfg, job)
+    res = []
+    for cid, (bad, ok_text) in (("ORDER.read", b4_confirm(confirm, page)), ("ORDER.parts", b2_confirm(job, confirm)),
+                                ("ORDER.confirm", b8(job, confirm, polar))):
+        res.append((cid, "fail" if bad else "pass", "; ".join(bad) if bad else ok_text))
+    passed = all(r != "fail" for _, r, _ in res)
+    signed = sign_m2(cfg, job, confirm, res[2][2], args.sign, args.note) if passed and args.sign else None
+    head = {"time": dt.datetime.now().astimezone().isoformat(timespec="seconds"), "job_sha256": sha_of(out / JOB),
+            "confirm_sha256": sha_of(out / CONFIRM)}
+    rows = [{"id": c, "check": CHECKS[c], "result": r, "actual": a} for c, r, a in res]
+    (out / CONFIRM_CHECK).write_text(json.dumps({**head, "results": rows, "passed": passed, "polarised": polar,
+                                                 "signed": signed}, indent=1, ensure_ascii=False) + "\n",
+                                     encoding="utf-8")
+    word = {"pass": "passed", "fail": "FAILED"}
+    status = (f"M-2 signed by {signed['done_by']} ({signed['date']}) in {cfg.relative(cfg.signoff)}: {signed['note']}"
+              if signed else "M-2 open: the sign-off is the owner's word – edakit cart confirm --sign BY" if passed
+              else "The confirmation stops here: nothing signed until the checks pass; a part judged wrong is "
+                   "'Not good, modification needed' on the maker's page.")
+    L = [f"# Confirmations after the order – board {job['board']} at {job['maker']['name']}, run {job['run']}\n",
+         f"Written by edakit cart confirm at {head['time']}: what the skill cart read on the maker's confirmation pages "
+         f"({CONFIRM}, {CONFIRM_PAGE}) against the job, the polarity sheet and the page text. job.json "
+         f"`{head['job_sha256']}`, {CONFIRM} `{head['confirm_sha256']}`.\n", "| Check | Result | Actual |", "|---|---|---|",
+         *(f"| {r['id']} {r['check']} | {word[r['result']]} | {r['actual']} |" for r in rows), "", status, ""]
+    (out / CONFIRM_MD).write_text("\n".join(L), encoding="utf-8")
+    for c, r, a in res:
+        print(f"{'ok  ' if r == 'pass' else 'FAIL'} {c} {CHECKS[c]}: {a}")
+    print(status if signed is None else f"M-2 signed by {signed['done_by']} ({signed['date']}) in "
+                                        f"{cfg.relative(cfg.signoff)}")
+    print(f"result: {cfg.relative(out / CONFIRM_MD)}")
+    return 0 if passed else 2
 
 
 # --- edakit cart actual ------------------------------------------------------------------------------------------------
@@ -659,10 +832,17 @@ def page_text(path):
     return text
 
 
+def order_word(actual):
+    """'order Y8-1234567A', or 'the order' where actual.json names no number (a project that keeps order numbers out of
+    its repository)."""
+    return f"order {actual['order_number']}" if actual.get("order_number") else "the order"
+
+
 def b4_actual(actual, page):
-    """ORDER.read on the real cost: the order number, every amount and every count of actual.json in the page text."""
-    values = [actual.get("order_number"), *(amount_text(x["amount"]) for x in [*actual.get("lines", []),
-                                                                                *actual.get("order", [])]
+    """ORDER.read on the real cost: the order number, every amount and every count of actual.json in the page text – an
+    amount by its figure (a coupon's -10.00 on a page that prints -$10.00)."""
+    values = [actual.get("order_number"), *(amount_text(abs(float(x["amount"]))) for x in [*actual.get("lines", []),
+                                                                                            *actual.get("order", [])]
                                             if x.get("amount") is not None),
               *(x["count"] for x in actual.get("lines", []) if x.get("count") is not None)]
     values = [v for v in values if v not in (None, "")]
@@ -729,7 +909,7 @@ def write_fees(cfg, m, job, actual, updates, rows):
     from . import cost
     path = cost.own_fee_path(cfg, m.key)
     own = json.loads(path.read_text(encoding="utf-8")) if path.exists() else {}
-    source = f"order {actual.get('order_number')} at {m.name}, {actual.get('date')} (edakit cart actual)"
+    source = f"{order_word(actual)} at {m.name}, {actual.get('date')} (edakit cart actual)"
     date = str(actual.get("date") or dt.date.today().isoformat())
     if not m.data.get("fees"):
         own.setdefault("orders", []).append({"order_number": actual.get("order_number"), "date": date,
@@ -770,7 +950,7 @@ def write_fees(cfg, m, job, actual, updates, rows):
 def actual_cost(cfg, args):
     """The real cost after the owner ordered and paid: ORDER.read on it, actual.md – estimate, quote and actual line by line,
     per order shipping, VAT and coupon against [cost] –, the project's fee table one to one, the order record."""
-    board, m, out, job, _ = load_order(cfg, args, need=())
+    board, m, out, job, _ = load_order(cfg, args, need=(), ordered=True)
     if not (out / ACTUAL).exists():
         raise CartError(f"{cfg.relative(out / ACTUAL)} is not there – the skill cart reads the order page into it")
     actual = json.loads((out / ACTUAL).read_text(encoding="utf-8"))
@@ -791,7 +971,7 @@ def actual_cost(cfg, args):
     money = lambda v: "–" if v is None else f"{v:.2f}"  # noqa: E731
     diff = lambda a, b: "–" if a is None or b is None else f"{a - b:+.2f}"  # noqa: E731
     cur = actual.get("currency") or (quote or {}).get("currency") or e.get("currency", "")
-    L = [f"# Real cost – board {job['board']} at {m.name}, order {actual.get('order_number')} ({actual.get('date')})\n",
+    L = [f"# Real cost – board {job['board']} at {m.name}, {order_word(actual)} ({actual.get('date')})\n",
          f"Written by edakit cart actual from {ACTUAL} and {'--from ' + Path(args.source).name if args.source else ACTUAL_PAGE}"
          f" (ORDER.read: {'; '.join(bad) if bad else b4_text}). Run {job['run']}, fab {str(job['fab_sha256'])[:12]}…, "
          f"{job['quantity']} PCBs, " + (f"{job['pcba_quantity']} assembled" if job.get("bom") else "bare")
@@ -1035,6 +1215,8 @@ def main(cfg, args):
             return prepare(cfg, args)
         if args.action == "check":
             return check(cfg, args)
+        if args.action == "confirm":
+            return confirm_check(cfg, args)
         return actual_cost(cfg, args)
     except (CartError, makers.MakerError) as e:
         print(f"edakit cart: {e}", file=sys.stderr)
