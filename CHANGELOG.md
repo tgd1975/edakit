@@ -7,6 +7,10 @@ written once, by `.github/merge.py`, from the fragments in [changes/](changes/RE
 [versioning.md](docs/concepts/done/versioning.md). Update with `claude plugin marketplace update edakit && claude plugin
 update edakit@edakit`, then `/reload-plugins` or a new session; `edakit --version` names the version that runs.
 
+## 1.0.3 – 2026-11-02
+
+- `edakit cart actual`: the fee table's PCB price row of a bare order is for the Gerber outline the form names, not the estimate's size with the edge rails of its assembly class (the bell's tht: ordered bare as 85 × 56 mm, estimated Standard as 85 × 66).
+
 ## 1.0.2 – 2026-11-02
 
 - `edakit cart confirm` and the skill cart's mode `confirm`: what the maker asks to confirm after the order – the production file as released, the placement as the maker's engineer adjusted it, part by part against the polarity sheet (ORDER.confirm) – checked, and M-2 written into the sign-off file on `--sign`, the owner's word; the JLCPCB profile's `[confirm]` (the two buttons, the viewer, its marks). After the order, `confirm` and `actual` read the run the order was placed against when a newer release has no job for the board.
