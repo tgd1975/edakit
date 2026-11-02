@@ -5,7 +5,12 @@ edakit is a version of its own: the minor number goes up when a project must act
 updating:**; the patch number goes up otherwise; the major number marks a milestone of edakit itself. Each section is
 written once, by `.github/merge.py`, from the fragments in [changes/](changes/README.md) – the rule is in
 [versioning.md](docs/concepts/done/versioning.md). Update with `claude plugin marketplace update edakit && claude plugin
-update edakit@edakit`, then `/reload-plugins` or a new session; `edakit --version` names the version that runs.
+update edakit@edakit`, then `/reload-plugins` or a new session; `edakit version` names the version that runs and what an
+update brings.
+
+## 1.0.9 – 2026-11-02
+
+- `edakit version` and the skill `/edakit:version`: which edakit runs, the plugin's installation per scope with the one in effect here, the newest version on GitHub and the changelog's sections in between – their **When updating:** lines first –, and where the project pins edakit (`.claude/settings.json`, CI, scripts), with whether the pins agree; the update command for the scope in effect, run on the owner's word (handbook 2.3).
 
 ## 1.0.8 – 2026-11-02
 

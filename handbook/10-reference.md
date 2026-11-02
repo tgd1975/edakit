@@ -574,6 +574,26 @@ kicad-cli.
 - **Writes:** – (prints `edakit 0.2.0`, or `edakit 0.2.0+g1a2b3c4` from such a clone – the string a gate run writes into
   its manifest, 2.3)
 
+### edakit version
+
+<!-- edakit:generated command version -->
+`edakit version [--offline] [--json JSON]`
+
+What runs, what the plugin installed per scope, the newest version and what changed since – its When updating lines first –, where the project pins edakit.
+<!-- edakit:end -->
+
+`edakit version [--offline] [--json JSON]` – EasyEDA: no; network: the tags and the newest changelog from GitHub
+
+- **Reads:** the running edakit; Claude Code's `~/.claude/plugins/installed_plugins.json` (or under
+  `$CLAUDE_CONFIG_DIR`): edakit per scope, the one a session in this repository uses marked "in effect here"; `git
+  ls-remote --tags` of tgd1975/edakit and the newest version's CHANGELOG.md; in the repository `.claude/settings.json`
+  (the marketplace's `ref`), every `tgd1975/edakit@<ref>` in the files that start edakit – CI, hooks, shell scripts,
+  YAML, Makefile, pyproject.toml, a `$NAME` read from the same file –, and `[project] edakit` of each edakit.toml
+- **Writes:** – (prints what runs, the plugin per scope, the newest version, the changelog's sections in between with
+  their **When updating:** lines first, the pins and the update command for the scope in effect; `--json`: the same
+  as data. Exit 2 when the edakit in effect is behind the newest, the pins disagree or differ from what runs, or a
+  requirement is not met; `--offline` or no network: the newest version stays unknown, 2.3)
+
 ### edakit check
 
 <!-- edakit:generated command check -->
