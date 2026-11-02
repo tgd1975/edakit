@@ -9,8 +9,8 @@ the pages under `site/docs/` and the handbook under `site/handbook/`. The curren
 
 Make a checked circuit of your own here from this idea: "a 9 V battery, a switch, two LEDs". A circuit only – no
 board, no EasyEDA, no KiCad. Follow the documentation, and only the documentation: start at the start page and open
-what it leads you to, a page with the Read tool. The plugin's own `handbook/` is the same text as `site/handbook/`. Do
-not read edakit's code –
+what it leads you to, a page with the Read tool. The plugin's own `handbook/` is the same text as `site/handbook/`.
+Its skills (`/edakit:…`) and its commands are there to be used, as the documentation says; do not read edakit's code –
 the plugin's `edakit/` – to find out how something works: where the documentation does not say, stop there, or go on
 and name what was missing. On Linux pipe edakit's output: `edakit check 2>&1 | cat`. There is no network here:
 `edakit part search`, `edakit stock` and `edakit cost` cannot reach the shop.
