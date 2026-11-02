@@ -100,9 +100,11 @@ concept.
   come with its next gate run after the plugin update (its D-40).
 - **The bell's "What edakit found"** holds the README's old "Where it stands" numbers, labelled as at its first
   release; the current runs differ (stitching vias of D-41).
-- **pytree's page is text only**, from its README and chapter 13: the owner picks what goes out of a private
-  repository, and no picture was picked. The page says what the calendar is – it is a gift; the owner may want less
-  said before Christmas.
+- **pytree's pictures** the owner picked on 2026-11-02 (TD-82): the board and the schematic from the ordered release
+  20261101-225744, the project's render of the tree in its hill – a photo of the delivered tree replaces it – and the
+  copper review's before/after of the back. The sketch, the silkscreen art alone, the hill's drawings, the box and the
+  booklet stay in the private repository. What the page says of the calendar stands before Christmas: the public
+  repository pytree-adventskalender says the same.
 - **The examples are cards** on the gallery's index with their top-side pictures, linked to their walkthroughs.
 
 ## D.5 – the chapters
