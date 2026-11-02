@@ -623,6 +623,12 @@ these commands (chapters 6 and 7), each in less than half a minute:
 
    ![The top side of coin-cell-led from its Gerber files: the round board, label and BT1 above the holder, "+" beside pad 1, D1, R1 and SW1 below](../examples/coin-cell-led/docs/silk_main_top.png)
 
+   The board as the gate run draws it from the same Gerber files (`pictures/board_main_top.png`, 17.12) – copper,
+   the ground pour with its clearances, the tracks from BT1's "+" pad to SW1 and on to R1 and D1, mask and
+   silkscreen:
+
+   ![The routed top side of coin-cell-led: the ground pour over the round board, tracks from BT1's "+" pad to SW1, R1 and D1, the tooling holes in their keep-out squares](../examples/coin-cell-led/docs/board_main_top.png)
+
 5. The agent pcb-reviewer reviews the round, in a session of its own, on the manufacturing files of a gate run (17.12).
    Nothing blocked; it had four notes:
    - BT1's designator lay under the cell – GEO.silk did not see it then; since then BT1's entry has a `body.box`
