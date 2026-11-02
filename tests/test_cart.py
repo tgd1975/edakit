@@ -803,3 +803,20 @@ def test_an_order_without_a_number(prepared, monkeypatch):
     own = json.loads((prepared.root / "hardware" / "fees" / "jlcpcb.json").read_text())
     assert own["pcba"]["economic_setup"]["source"] == "the order at JLCPCB, 2026-11-02 (edakit cart actual)"
     assert (order_dir(prepared) / "actual.md").read_text().startswith("# Real cost – board main at JLCPCB, the order (")
+
+
+def test_a_bare_orders_pcb_price_is_for_the_gerber_size(prepared, monkeypatch, capsys):
+    """A bare board gets no edge rails: the fee table's PCB row is for the Gerber outline the form names, not the
+    estimate's size with the rails of its assembly class (the bell's tht, 2026-11-02: 85 × 56 mm, estimated 85 × 66)."""
+    write_quote(prepared)
+    d = order_dir(prepared)
+    j = json.loads((d / "job.json").read_text())
+    j["bom"] = []
+    j["estimate"]["pcb_size_mm"] = [70.0, 60.0]
+    next(f for f in j["fields"] if f.get("key") == "size_mm")["value"] = "60.00 x 50.00 mm"
+    (d / "job.json").write_text(json.dumps(j, indent=1))
+    write_actual(prepared, lambda a: a.update(lines=[{"label": "PCB", "amount": 5.2, "kind": "pcb"}]))
+    assert cart(prepared, monkeypatch, "actual") == 0
+    assert "fee table: PCB 60 × 50 mm, 5 boards: 5.20" in capsys.readouterr().out
+    own = json.loads((prepared.root / "hardware" / "fees" / "jlcpcb.json").read_text())
+    assert (own["pcb"]["prices"][0]["w_mm"], own["pcb"]["prices"][0]["h_mm"]) == (60.0, 50.0)

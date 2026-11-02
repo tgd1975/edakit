@@ -902,6 +902,18 @@ def fee_updates(job, actual, table):
     return out
 
 
+def ordered_size(job):
+    """The PCB size the maker priced, [w, h] mm: the estimate's – with the edge rails of its assembly class – for an
+    order with parts to place; for a bare board, which gets no rails, the Gerber outline of the job's form (size_mm).
+    The bell's tht (2026-11-02): estimated Standard with rails as 85 × 66 mm, ordered bare and priced as 85 × 56 mm."""
+    e = job.get("estimate") or {}
+    if job.get("bom"):
+        return e.get("pcb_size_mm")
+    f = next((x for x in job.get("fields", []) if x.get("key") == "size_mm"), None)
+    m = re.match(r"\s*([\d.]+)\s*[x×]\s*([\d.]+)", str((f or {}).get("value", "")))
+    return [float(m.group(1)), float(m.group(2))] if m else e.get("pcb_size_mm")
+
+
 def write_fees(cfg, m, job, actual, updates, rows):
     """The project's fee table (cost.own_fee_path), created by the first order: the values that map one to one, each
     with the order as its source and the order's date; the PCB price for the size, quantity and board settings as a
@@ -931,7 +943,7 @@ def write_fees(cfg, m, job, actual, updates, rows):
                 own["pcba"][name] = {**entry, "date": date, "source": source}
                 written.append(text)
         e, pcb = job.get("estimate") or {}, [x for x in actual.get("lines", []) if x.get("kind") == "pcb"]
-        size = e.get("pcb_size_mm")
+        size = ordered_size(job)
         if pcb and size and job["quantity"] == shipped["pcb"]["qty"] and not e.get("not_in_price"):
             price = round(sum(float(x["amount"]) for x in pcb), 2)
             own.setdefault("pcb", {"qty": shipped["pcb"]["qty"], "prices": []})
