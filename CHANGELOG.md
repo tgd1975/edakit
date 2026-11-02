@@ -8,6 +8,11 @@ written once, by `.github/merge.py`, from the fragments in [changes/](changes/RE
 update edakit@edakit`, then `/reload-plugins` or a new session; `edakit version` names the version that runs and what an
 update brings.
 
+## 1.0.11 – 2026-11-02
+
+- `edakit version pin [current|latest|X.Y.Z]` and `unpin`: one version in every edakit.toml (`[project] edakit = "==X"`) and in every edakit call of CI and scripts, or following the updates again (`>=X`, the calls without a ref); listed first, written with `--write`. The marketplace's `ref` in `.claude/settings.json` goes – it held the plugin for every project on the machine, not for one; handbook 2.3 no longer advises it.
+- `edakit hook install|check|run`: edakit's block in the project's pre-commit hook – written or renewed by `install`, the project's own steps kept, `core.hooksPath` set –, which finds edakit itself (a commit by hand needs no wrapper script) and runs the steps of every configuration whose files are staged. The session start says in one line when the hook is missing, has no block or an older one, or git does not run it (handbook 2.7).
+
 ## 1.0.10 – 2026-11-02
 
 - Handbook 17 and 18 show the routed board of both walkthroughs, from the Gerber files of a gate run (TD-104).
