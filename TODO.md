@@ -4,7 +4,7 @@ Open work that needs the owner's computer, a maker or the owner's word. The stat
 and plans the sections name; this list is what is left to do of them, in the order it can be done. No item is deleted.
 
 **Layout.** Every item, in every section, open or closed, is a line with a checkbox and an ID unique in this file,
-counted up and never reused – whoever adds an item takes the next free ID and counts it up here. Next free ID: TD-103.
+counted up and never reused – whoever adds an item takes the next free ID and counts it up here. Next free ID: TD-104.
 
 - Open: `- [ ] TD-<n> - **Title:** what and why.` – a step's own name after the dash (`- [ ] TD-31 - **D.4** …`).
 - Done: ticked, the commit that did it, the date at the end, moved to [Closed todos](#closed-todos), newest first –
@@ -30,12 +30,15 @@ to touch.
 ## For the owner
 
 - [ ] TD-102 - **Run the eval first-circuit in a cloud session** of Claude Code on tgd1975/edakit, as an ordinary user
-      (`useradd -m eval`, not root – evals/README.md, "Running"): `git archive HEAD | tar -x -C /tmp/edakit-eval`,
-      `cd /tmp/edakit-eval && UV_LINK_MODE=copy uv sync`, then `claude plugin eval . --scaffold --case first-circuit
-      --allow-tools Bash Edit Write --trust-plugin --ablation none --runs 1 --model claude-sonnet-5-5 --max-cost-usd 6
-      --no-publish`; the session writes score and pages opened into the status line of
-      `docs/concepts/new/documentation-newcomer.md` and closes TD-98 – the Bash sandbox cannot start on this machine
-      (Ubuntu's `kernel.apparmor_restrict_unprivileged_userns`). *(edakit-c1)*
+      (`useradd -m eval`, not root – evals/README.md, "Running"): first set `CLAUDE_CODE_OAUTH_TOKEN` (or
+      `ANTHROPIC_API_KEY`) in the cloud environment's variables – a session has neither, and its own token file may
+      not be handed to `eval` –, then in the new session `apt-get install -y socat bubblewrap ngspice`, `git archive
+      HEAD | tar -x -C /tmp/edakit-eval`, `cd /tmp/edakit-eval && UV_LINK_MODE=copy uv sync`, as `eval` with that
+      variable `claude plugin eval . --scaffold --case first-circuit --allow-tools Bash Edit Write --trust-plugin
+      --ablation none --runs 1 --model claude-sonnet-5-5 --max-cost-usd 6 --no-publish`; the session writes score and
+      pages opened into the status line of `docs/concepts/new/documentation-newcomer.md` and closes TD-98. A run as
+      root on 2026-11-02 scored 0.33 (0.90 USD, 62 turns) and does not count: Bash could not write the workspace, so
+      no `hardware/graph.json`; ngspice missing, the parts catalogue denied by the proxy. *(edakit-c1)*
 - [ ] TD-99 - **Decide on parts on hand (PartsLedger):** a decision round in Claude Code's form on
       `docs/concepts/new/parts-on-hand.md` – eight decisions, recommendations first: the maker's bin as a source of
       hand-soldered parts, only the rest ordered, the way back into the bin, PartsLedger's name; nothing is built
@@ -76,6 +79,11 @@ Built on 2026-11-01 (#174, edakit 0.4.14); what is left after the owner's review
 
 ## The documentation for a newcomer ([documentation-newcomer.md](docs/concepts/new/documentation-newcomer.md))
 
+- [ ] TD-103 - **The eval case first-circuit, three faults** seen in the root run of 2026-11-02 (TD-102): `names-pages`
+      wants `PAGES: site/…` while the prompt asks for "paths under site/" – the run wrote `README.md, docs/…` and
+      failed; `few-pages` passed with ten pages named – the judge sees the last message only and counts wrong; the run
+      read the plugin's own `handbook/`, `skills/`, `examples/` and `edakit/parts/` outside `site/`, so "the site
+      alone" is not held. Fixed through a branch before TD-102's run counts. *(edakit-c1)*
 - [ ] TD-98 - **N.5** The newcomer's test: the eval case `evals/first-circuit` (built in #222) run once – a one-line
       idea to a checked graph with the site alone –, its result and the pages it opened into the concept's status
       line; runs in a cloud session (TD-102). *(edakit-c1)*
