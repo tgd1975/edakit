@@ -4,7 +4,7 @@ Open work that needs the owner's computer, a maker or the owner's word. The stat
 and plans the sections name; this list is what is left to do of them, in the order it can be done. No item is deleted.
 
 **Layout.** Every item, in every section, open or closed, is a line with a checkbox and an ID unique in this file,
-counted up and never reused – whoever adds an item takes the next free ID and counts it up here. Next free ID: TD-96.
+counted up and never reused – whoever adds an item takes the next free ID and counts it up here. Next free ID: TD-99.
 
 - Open: `- [ ] TD-<n> - **Title:** what and why.` – a step's own name after the dash (`- [ ] TD-31 - **D.4** …`).
 - Done: ticked, the commit that did it, the date at the end, moved to [Closed todos](#closed-todos), newest first –
@@ -65,6 +65,15 @@ Built on 2026-11-01 (#174, edakit 0.4.14); what is left after the owner's review
 - [ ] TD-83 - **The findings of the chapters' reviews:** sources that cite a section for what it does not hold
       (codes.toml, docstrings, skills), statements that look stale against the code – each listed under "Findings" in
       `docs/concepts/done/documentation-review/` –, fixed through a branch each, sources on the owner's word.
+
+## The documentation for a newcomer ([documentation-newcomer.md](docs/concepts/new/documentation-newcomer.md))
+
+- [ ] TD-96 - **N.2** The steps: `docs/steps/` with its index and ten pages, the tabs "A circuit" and "A board",
+      `tests/test_steps.py`, the style guide's section and its counts – branch `newcomer-n2`. *(edakit-c1)*
+- [ ] TD-97 - **N.4** The handbook declared complete: the line on its index, "The short way" in each chapter's first
+      paragraph – with N.2's branch. *(edakit-c1)*
+- [ ] TD-98 - **N.5** The newcomer's test: the eval first-reader's second case, its numbers into the concept's status
+      line. *(edakit-c1)*
 
 ## Closed todos
 
