@@ -123,10 +123,10 @@ Material's `navigation.tabs`: the groups become tabs across the top, the sidebar
 | Handbook | its index, the chapters as the index orders them – 9 and 10 under Reference, as today |
 | Reference | Files, keys and commands (10), EasyEDA API (9), the rule catalog's index, Changelog |
 
-Eight entries in a sidebar at most, the handbook's excepted – its index says when to read which chapter. "Inside
-edakit" – concepts, skills, agents, evals, the rules of a session – leaves the navigation: one page under Develop
-links their indexes, the pages stay on the site and in the search, and every link into them lands as today
-(decision 2 of documentation.md stands). The rule catalog leaves Start; it is reference. On a phone Material folds the tabs into the
+Eight entries in a sidebar at most, the handbook's excepted – its index says when to read which chapter. "Inside edakit"
+– concepts, skills, agents, evals, the rules of a session – leaves the navigation: one page under Develop links their
+indexes, the pages stay on the site and in the search, and every link into them lands as today (decision 2 of
+documentation.md stands). The rule catalog leaves Start; it is reference. On a phone Material folds the tabs into the
 drawer as collapsed groups. `docs/pages.py`'s table and `tests/test_pages.py` follow; no file moves.
 
 ### 4. The entry, lightened
