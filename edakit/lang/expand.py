@@ -77,6 +77,7 @@ class Job:
 class Context:
     """What a usage's expansion reads of the project: its nets as declared, its ground, the designators taken."""
     nets: dict = field(default_factory=dict)       # name -> [Net statements of the project]
+    params: dict = field(default_factory=dict)     # the project's parameters: name -> Param
     ground: str = "GND"
     taken: dict = field(default_factory=dict)      # designator -> node that took it
 
@@ -149,7 +150,10 @@ def expand_use(use, defn, ctx):
             errors.append(_err(use, f"use {instance}: def {defn.name} has no parameter {a.name} – parameters: "
                                     f"{', '.join(params) or 'none'}", defn))
         else:
-            params[a.name] = (a.value, f"use {instance} ({a.name})")
+            value = a.value
+            if isinstance(value, str) and value in ctx.params:
+                value = ctx.params[value].value
+            params[a.name] = (value, f"use {instance} ({a.name})")
 
     # bindings
     port_to, net_to, part_to = {}, {}, {}
@@ -207,7 +211,10 @@ def expand_use(use, defn, ctx):
         n = next(x for x in nets if x.name == name)
         project = target[name]
         if project is not None and project in ctx.nets:
-            return _range_of(project, ctx), True
+            got = _range_of(project, ctx)
+            if isinstance(got, str) and got in ctx.params:
+                got = ctx.params[got].value
+            return got, True
         v = n.v if n.v is not None else dict(n.attrs).get("v")
         if isinstance(v, str) and v in params:
             v = params[v][0]
@@ -291,6 +298,8 @@ def project_context(statements):
     for st in statements:
         if isinstance(st, m.Net):
             ctx.nets.setdefault(st.name, []).append(st)
+        elif isinstance(st, m.Param):
+            ctx.params[st.name] = st
         elif isinstance(st, m.Ground):
             ctx.ground = st.name
         elif isinstance(st, m.Part):

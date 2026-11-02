@@ -27,3 +27,5 @@ patch
 - T.11: `use DEF INSTANCE (PARAM = VALUE) PORT = NET … PART = DES …` – a definition of the project's or of
   edakit's block library expanded into parts and nets, its derivations evaluated into the graph's records.
 - T.12: `for VAR in A..B` – parts, nets, usages, locks, cables and layout once per value, `{n}`, `{n+k}` put in.
+- T.13: `param NAME = QUANTITY`, `alias NAME = PINWORD` checked against the entry, `include PATH` – one
+  namespace over the main file and the files it includes.

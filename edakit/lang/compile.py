@@ -98,14 +98,48 @@ def _name(path, root):
 
 
 def load_sources(path, root):
-    """[Source] of a project: the main file (includes and the variant chain follow in T.13 and T.14)."""
-    path = Path(path)
-    try:
-        text = path.read_text(encoding="utf-8")
-    except FileNotFoundError:
-        raise CompileError([LangError(_name(path, root), 0, "no such file")]) from None
-    src = read(text, _name(path, root), "graph")
-    return [src]
+    """[Source] of a project: the main file and every file it includes, each read once – an Include knows its Source
+    (`.source`); a cycle, a missing file and a path outside the project are errors at the include (T.13)."""
+    root = Path(root).resolve()
+    out, errors, seen = [], [], {}
+
+    def visit(p, stack, at=None):
+        p = p.resolve()
+        if p in stack:
+            chain = " → ".join(_name(x, root) for x in [*stack, p])
+            errors.append(LangError(at.file, at.line, f"include {at.path}: a cycle – {chain}"))
+            return None
+        if p in seen:
+            return seen[p]
+        try:
+            text = p.read_text(encoding="utf-8")
+        except (FileNotFoundError, IsADirectoryError):
+            if at is None:
+                raise CompileError([LangError(_name(p, root), 0, "no such file")]) from None
+            errors.append(LangError(at.file, at.line, f"include {at.path}: no such file"))
+            return None
+        src = read(text, _name(p, root), "graph")
+        seen[p] = src
+        out.append(src)
+        if at is not None:
+            src.included = True
+            for st in src.statements[:1]:
+                if isinstance(st, (m.GraphHead, m.Variant)):
+                    errors.append(LangError(st.file, st.line, f"{'graph' if isinstance(st, m.GraphHead) else 'variant'}"
+                                                              f" in an included file – it stands in the main file"))
+        for st in src.statements:
+            if isinstance(st, m.Include):
+                target = (root / st.path).resolve()
+                if not target.is_relative_to(root):
+                    errors.append(LangError(st.file, st.line, f"include {st.path}: outside the project"))
+                    continue
+                st.source = visit(target, [*stack, p], st)
+        return src
+
+    visit(Path(path), [])
+    if errors:
+        raise CompileError([e for s in out for e in s.errors] + errors)
+    return out
 
 
 # --- namespace ------------------------------------------------------------------------------------------------------
@@ -124,8 +158,25 @@ def resolve(sources, root, parts_dirs):
             seen[(kind, name)] = node
 
     from .expand import expand_for
-    for src in sources:
-        for st in [x for s in src.statements for x in (expand_for(s) if isinstance(s, m.For) else [s])]:
+    done = set()
+
+    def flat(src):
+        """The statements of a source with every include's put in its place, a file once."""
+        if id(src) in done:
+            return []
+        done.add(id(src))
+        out = []
+        for s in src.statements:
+            if isinstance(s, m.Include):
+                out += flat(s.source) if getattr(s, "source", None) is not None else []
+            elif isinstance(s, m.For):
+                out += expand_for(s)
+            else:
+                out.append(s)
+        return out
+
+    for src in sources[:1]:
+        for st in flat(src):
             model.statements.append(st)
             if isinstance(st, m.Part):
                 declare("part", st.des, st)
@@ -279,6 +330,16 @@ class Assembler:
     def err(self, node, msg):
         self.errors.append(LangError(node.file, node.line, msg))
 
+    def param(self, node, name):
+        """The value of a project parameter where a quantity is expected; an error for a name without one."""
+        p = self.model.params.get(name)
+        if p is None or not isinstance(p.value, Quantity):
+            have = ", ".join(sorted(self.model.params)) or "none"
+            self.err(node, f"{name}: no parameter with a quantity – parameters: {have}" if not name.startswith("@")
+                     else f"{name}: a port's range, only inside a definition")
+            return None
+        return p.value
+
     def word(self, w):
         """A pin word with its part's alias replaced."""
         des, dot, rest = w.partition(".")
@@ -290,6 +351,8 @@ class Assembler:
         for st in self.model.statements:
             if isinstance(st, m.Part):
                 self.aliases[st.des] = dict(st.aliases)
+                if st.aliases:
+                    self.places.setdefault("alias", []).append(st)
         for st in self.model.statements:
             handler = getattr(self, "on_" + type(st).__name__.lower(), None)
             if handler is None:
@@ -402,7 +465,9 @@ class Assembler:
                 first = self.net_nodes[st.name]
                 self.err(st, f"net {st.name}: the range given twice – first at {first.file}:{first.line}")
             elif isinstance(st.v, str):
-                self.err(st, f"net {st.name}: {st.v} – a parameter or a port is read in T.13 and T.11")
+                q = self.param(st, st.v)
+                if q is not None:
+                    n["v"] = _range(q)
             else:
                 n["v"] = _range(st.v)
         for p in st.pins:
@@ -421,8 +486,10 @@ class Assembler:
                 first = self.net_nodes[st.name]
                 self.err(st, f"net {st.name}: {key} given twice – first at {first.file}:{first.line}")
                 continue
-            if isinstance(value, str) and key in ("v",) and not isinstance(value, Quantity):
-                self.err(st, f"net {st.name}: v {value} – a parameter or a port is read in T.13 and T.11")
+            if isinstance(value, str) and key in ("v", "pwm_hz"):
+                q = self.param(st, value)
+                if q is not None:
+                    n[key] = _value(key, q)
                 continue
             n[key] = _value(key, value)
         if st.accepts:
@@ -534,6 +601,12 @@ def check_pins(asm, design):
     for st, a, b in asm.places.get("cable", []) + asm.places.get("loop", []):
         names(st, a, one=True)
         names(st, b, one=True)
+    for st in asm.places.get("alias", []):
+        for alias, word in st.aliases:
+            if st.des in design.comps and not design.resolve(st.des, word):
+                cands = _candidates(design, st.des, {})
+                errors.append(LangError(st.file, st.line, f"alias {alias} = {word}: names no pin of {st.des} – its "
+                                                          f"pins: {', '.join(cands[:24])}"))
     return errors
 
 
