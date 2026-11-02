@@ -124,8 +124,9 @@ advice: it makes no claim to correctness, and nothing in it is legally guarantee
 What runs offline and what has run live, so that you know how close it is.
 
 - **Ordering.** edakit and the skill cart put a released board into the maker's cart and stop there. Nothing orders
-  or pays. The skill ran live at all four makers up to the cart, nothing ordered, on a copy of the 555 blinker
-  ([live runs](../tests/fixtures/makers/LIVE.md)). No order has gone through `edakit cart actual` yet.
+  or pays. The skill ran live at all four makers up to the cart on a copy of the 555 blinker
+  ([live runs](../tests/fixtures/makers/LIVE.md)). The first real order went through it: pytree's tree at JLCPCB,
+  from the cart the skill filled and checked. No order has gone through `edakit cart actual` yet.
 - **EasyEDA's ODB++ export.** It ran on a probe board.
 - **Text that ran live in EasyEDA**, in throwaway projects:
   - the positions EasyEDA's auto-layout sets, written back into the placement plan (handbook 7.4);

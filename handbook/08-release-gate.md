@@ -518,7 +518,8 @@ is as public as the repository. Without `gh` or its login one sentence says so. 
 > **State:** ordering step 0 recorded the four forms in real accounts at the makers (`recorded` in each profile), and
 > the skill cart ran live at every maker up to the cart, nothing ordered – on a copy of the example blinker-555 released
 > on the KiCad tool chain (`tests/fixtures/makers/LIVE.md`: 5.7 JLCPCB, 5.12 PCBWay, 5.8 Eurocircuits, 5.10 AISLER up to
-> its price). No order has gone through it yet: step 5 below, `edakit cart actual`, has run on recorded data only.
+> its price). The first order went through it on 2026-11-02: pytree's tree, five assembled, from the JLCPCB cart the
+> skill filled and checked. Step 5 below, `edakit cart actual`, has run on recorded data only.
 > EasyEDA's own ODB++ export went through ordering step 0b on a probe board
 > (`tests/fixtures/makers/aisler/step0b_2026-11-01.md`).
 

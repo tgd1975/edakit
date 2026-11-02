@@ -159,6 +159,7 @@ stood with its date in the chapter of the last column, which keeps the statement
 | 1 Nov | Pours: easyeda-mcp-pro 1.6.0 and EasyEDA's beta `rebuildCopperRegion`; edakit's pour follows the outline (E-13, live) | 9.4 |
 | 1 Nov | Ordering step 0 recorded the four forms in our accounts (`recorded` in each profile), and the skill cart ran live at every maker up to the cart, nothing ordered – on a copy of the example blinker-555 released on the KiCad tool chain (`tests/fixtures/makers/LIVE.md`: 5.7 JLCPCB, 5.12 PCBWay, 5.8 Eurocircuits, 5.10 AISLER up to its price) | 8.4 |
 | 1 Nov | Decided: the wishes to the makers stay future work | 8.4 |
+| 2 Nov | The first order: pytree's tree, five assembled, from the JLCPCB cart the skill cart filled and checked (the cart record of run 20261101-225744), and the bell's variants tht and esp32tht, five bare each, in the same order – the bare boards without the cart's protocol, since edakit's cart takes bare JLCPCB boards only from 0.4.17; the LCSC parts in one shipment with it. With it edakit 1.0.0 | 8.4 |
 
 ## 13.8 How the chapters' details came about
 
