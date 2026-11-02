@@ -4,8 +4,11 @@ Status 2026-11-02: concept, asked for by the owner the same day – PartsLedger 
 far from finished, but would be a fine complement to edakit: makers keep many parts at home and want to use those
 when they solder a board themselves, and order only the difference; a concept for how that goes – optionally – into
 the parts choice, what PartsLedger would have to be able to do, and whether it should get another, easier name".
-PartsLedger read at its commit a7e9363 (2026-05-14). Nothing decided, nothing built: the decisions at the end wait
-for a decision round in Claude Code's form, and every step starts on the owner's word.
+PartsLedger read at its commit a7e9363 (2026-05-14). Decided on 2026-11-02 in a decision round (TD-99, "Decisions"
+at the end): movements 1 and 2 – "edakit ist Konsument", it reads the bin and writes nothing back –, profiles
+`partsledger`, `csv` and `xlsx`; the name stays open while this is a concept. Nothing built: every step starts on the
+owner's word. Movement 3, the appendix and PartsLedger's requirements 4, 5 and 7 stay below as written, dropped by
+decision 1.
 
 ## Why
 
@@ -86,6 +89,8 @@ handbook 4.5), the row's datasheet link saving the search. One sold at LCSC gets
 only says that the drawer has it.
 
 ### 3. The way back: what was taken, what is left over
+
+Dropped by decision 1 (2026-11-02): edakit reads the bin and writes nothing for it – kept for the record.
 
 `edakit order` writes two more files beside the carts (their columns in the appendix):
 
@@ -222,17 +227,19 @@ What follows for the design: the bin is one inner shape and a profile per source
 part number, manufacturer, supplier codes, pieces, package, kind, value and rating where known, the source and its
 date. Three profiles are enough for years:
 
-1. **`partsledger`** – the markdown table, movements 1 to 3 as above.
+1. **`partsledger`** – the markdown table, movements 1 and 2 as above.
 2. **`csv`** – a file with named columns (`Part`, `Quantity`, `Manufacturer`, `LCSC`, `Package`, `Kind`, `Value`;
    `[bin] columns` maps other names), the lowest common denominator: what InvenTree, Part-DB, Binner, Bomist, PartsBox
-   and every spreadsheet export. The way back is the two files, booked by the maker in their own tool.
+   and every spreadsheet export.
+   **`xlsx`** beside it (decision 8): the same columns in the first sheet of a workbook – a spreadsheet kept as one,
+   read with the reader edakit has for EasyEDA's pick-and-place file, no new dependency.
 3. **A live API** – InvenTree's REST first when someone asks, the token from the environment as the distributors'
    keys are (4.2), stock remove and add with the order identity in the note; a proposal through the pipeline, not
    now. The KiCad HTTP library endpoint that InvenTree, Part-DB and Binner serve is one read interface for all three –
    worth a check whether it carries the quantity, before a profile of its own.
 
 `[project] bin` stays a path; the profile follows the file's extension (`.md` partsledger, `.csv` csv), and `[bin]`
-names one explicitly (`kind`) and holds the column map. The match rules and the access rules hold for every profile;
+names one explicitly (`kind`) and holds the column map; `.xlsx` is the `xlsx` profile. The match rules and the access rules hold for every profile;
 a CSV gets no lock from edakit – it is the maker's file, edakit only reads it.
 
 ## What PartsLedger must offer
@@ -319,46 +326,37 @@ name. edakit's words follow in any case: the bin, parts on hand, never stock.
 
 Each step on the owner's word; the first three in edakit, the fourth in PartsLedger, the fifth live.
 
-1. **The order** (movement 1, the match rules 1 to 4, `[project] bin`, the two files, the order record, the profiles
-   `partsledger` and `csv` – decision 8): `edakit/order.py` and a reader `edakit/bin.py`, a fixture inventory in the
-   shape of the owner's and a CSV one, tests for each
-   rule and for a missing file; handbook 8.4, 10.1 and 3.1 (`supplier`'s neighbour), the glossary ("Bin",
-   "On hand"); a fragment `patch` – no project must act.
+1. **The order** (movement 1, the match rules 1 to 4, `[project] bin`, the profiles `partsledger`, `csv` and
+   `xlsx` – decision 8): `edakit/order.py` and a reader `edakit/bin.py`, a fixture inventory in the shape of the
+   owner's, a CSV and an XLSX one, tests for each rule and for a missing file; handbook 8.4, 10.1 and 3.1
+   (`supplier`'s neighbour), the glossary ("Bin", "On hand"); a fragment `patch` – no project must act.
 2. **The choice** (movement 2): `edakit bin`, one paragraph each in part-search, part-selector and circuit-design.
 3. **Kits** (rule 5) – after PartsLedger has the table shape of requirement 3.
-4. **PartsLedger**: requirements 2 to 5 – `take` and `import` against the two files as the appendix fixes them, the
-   kit table, the LCSC token –, and the rename if decided; an idea in its task system, written by a session there.
+4. **PartsLedger**: requirements 2 and 3 – the kit table, the LCSC token; an idea in its task system, written by a
+   session there.
 5. **A live run**: the bell's `tht` variant or the next parts order (parts-order.md step 2) against the owner's bin –
-   the carts shortened, the take booked, the surplus imported; what the run finds goes into handbook 8.4.
+   the carts shortened, `hand_assembly.md` naming what to take; what the run finds goes into handbook 8.4.
 
-## Decisions to take
+## Decisions
 
-The owner's, with the recommendation first; what Claude set itself is one closing question.
+Taken by the owner on 2026-11-02 in a decision round (TD-99), the recommendation of each in the history of this file.
 
-1. **Scope.** All three movements, in the order above – recommended; or the order alone (1), the choice and the way
-   back later; or nothing of it.
-2. **Where the bin is named.** `[project] bin` with a path, relative or absolute, missing on a machine a note –
-   recommended, the project then says that its carts are short on purpose; or an environment variable alone
-   (`EDAKIT_BIN`), nothing in the repository; or both, the variable winning.
-3. **How much is taken.** Up to need plus spares – recommended, the spares are there to be used up; or the need
-   alone and the spares bought; or a reserve kept per row, a `keep` column in PartsLedger – possible later, not now.
-4. **Siblings and kits.** Siblings listed, never counted; kits counted once they are data, an estimate marked –
-   recommended; or siblings counted when the maker names them equal in the row; or kits never counted.
-5. **The way back.** `from_bin.csv` and `surplus.csv` from edakit, `take` and `import` in PartsLedger, on the maker's
-   word – recommended, no tool writes the other's files; or edakit writes the index through PartsLedger's writer (an
-   import of a package that is not published); or nothing goes back and the maker books with `/inventory-add`.
-6. **The name.** `partbin` now – recommended; or `PartsLedger` stays; or another of the table.
-7. **When the take is booked.** At the bench, when the parts leave the drawer, the refusal and the re-run as the net –
-   recommended; or at the order, with a reservation in the bin: an order identity in both tools and a release when an
-   order is dropped.
-8. **Other bins.** The `csv` profile built with step 1 – recommended: it makes the feature usable without PartsLedger
-   and costs a column map; or PartsLedger alone until someone asks. A live API only on a proposal, either way.
+1. **Scope: movements 1 and 2, "edakit ist Konsument".** The order takes from the bin, the choice looks there first;
+   edakit only reads the bin. Movement 3 – `from_bin.csv`, `surplus.csv`, PartsLedger's `take` and `import` – is
+   dropped, and with it decisions 5 (the way back) and 7 (when a take is booked). The maker books in their own tool.
+2. **`[project] bin` with a path**, relative or absolute; missing on a machine, a note and the full carts.
+3. **Up to need plus spares** come from the bin: `min(h, n)`, the rest ordered.
+4. **Siblings listed, never counted; kits counted once they are data**, an estimate marked.
+5. – (dropped by 1)
+6. **The name: open.** "not yet – wir sind noch immer im Konzept": PartsLedger keeps its name until the concept is
+   built; the table in "The name" stays as the material for then.
+7. – (dropped by 1)
+8. **Profiles `partsledger`, `csv` and `xlsx`** with step 1; a live API only on a proposal.
 
-Set by Claude, to confirm in one question: the words bin and on hand, stock left to the assembler; the key `bin` under
+Set by Claude and confirmed the same day: the words bin and on hand, stock left to the assembler; the key `bin` under
 `[project]`; `edakit bin`; the match order LCSC number, part number, siblings and hedged rows as maybe, kits as data;
-the two file names and their columns (appendix); the profile chosen by the file's extension; the full cart as the
-safe side whenever the bin cannot be read; no
-new check code; the requirements on PartsLedger carried over by a session there, not from here.
+the profile chosen by the file's extension; the full cart as the safe side whenever the bin cannot be read; no new
+check code; the requirements on PartsLedger – now 1 to 3 and 6 – carried over by a session there, not from here.
 
 ## Appendix: the two files
 
