@@ -16,6 +16,9 @@ dependencies = [
     "svgelements>=1.9.6",
 ]
 
+[project.optional-dependencies]
+lsp = ["pygls>=2.0"]       # edakit lsp: the language server of the circuit language (handbook 19)
+
 [project.scripts]
 edakit = "edakit.cli:main"
 

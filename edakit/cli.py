@@ -134,6 +134,8 @@ def build_parser():
                                                  "net, lock and accept was written")
     _common(p)
 
+    p = sub.add_parser("lsp", help="the language server of the circuit language over stdio (the extra lsp: pygls)")
+
     p = sub.add_parser("domains", help="the domains of the project: on, off, suggested; the reviewers' questions")
     p.add_argument("--review", choices=["electrical", "regulatory", "pcb"], help="the questions of the enabled domains "
                                                                                 "for this review")
@@ -401,6 +403,9 @@ def _main(argv=None):
     if args.command == "block" and args.action in ("list", "show"):
         from . import block
         return block.main(None, args)
+    if args.command == "lsp":                                               # the editor's: no project needed
+        from .lang import server
+        return server.main(args)
     if args.command == "graph" and args.action == "fmt" and args.name:     # files named: no project needed
         from .lang import cli as lang_cli
         return lang_cli.main(None, args)
