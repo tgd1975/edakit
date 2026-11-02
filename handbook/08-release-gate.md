@@ -5,6 +5,13 @@ to a hash, when a run is RELEASED, how a released run reaches the maker's cart, 
 and requirements take part. The short way: [Have it reviewed](../docs/steps/08-have-it-reviewed.md) and [Order the
 board](../docs/steps/10-order-the-board.md).
 
+**In short.** `edakit gate` runs every check on the files – P, G and E offline, with `--eda` also S, L and F – and
+writes a test protocol (the stages, 8.1). Four hashes bind the sign-offs; a change voids those of its scope (hashes and
+sign-offs, 8.2). A run is RELEASED only if no check failed, every warning is accepted, and every part and required
+manual check is signed for the current hashes; only the current release goes to the maker (the decision, 8.3). The skill
+cart fills the maker's cart; you order and pay (ordering, 8.4). A delivered board gets its acceptance test (M-4, 8.5).
+Project scripts, agents and requirements take part (8.6, 8.7).
+
 Only the gate creates the files that go to the manufacturer, and only the current release may be uploaded: the run whose
 manifest says `"released": true` – a newer released run supersedes it (one current release, 8.3). The gate runs every
 check on the files themselves and writes a test protocol.

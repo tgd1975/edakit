@@ -4,6 +4,13 @@ For you when you design a circuit or want edakit to know more. Chapters 3 to 8 c
 before – from "five LEDs, a servo, USB power" to a graph – and the knowledge the checks are made of. The short way:
 [Design the circuit](../docs/steps/04-design-the-circuit.md).
 
+**In short.** You decide; the work is split into roles, each a skill or an agent in a session of its own, and reviewers
+that change nothing (roles, 14.1). What edakit knows is data in one catalog: engines with their codes, tables, and
+domains – profiles of rules per area, suggested by the graph (the catalog, 14.2). A hint is knowledge no program can
+decide, a note that never blocks (hints, 14.3). A finding no code caught becomes a code, a fact or a domain setting on
+your word, through the skill add-rule (from a finding to a rule, 14.4). A building block is a checked piece of graph
+with ports (building blocks, 14.5).
+
 ## 14.1 Roles
 
 ![Roles and sessions: you decide; requirements, circuit designer, hand-over, PCB designer and order each in a session of its own, with their agents; the reviewers in sessions of their own, changing nothing](../docs/pictures/roles.svg)

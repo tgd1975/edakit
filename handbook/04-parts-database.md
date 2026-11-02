@@ -5,6 +5,13 @@ agent part-selector. After this chapter you can find a part, write and sign off 
 project, and enter a part nobody sells. The short way: [Settle parts and
 cost](../docs/steps/06-settle-parts-and-cost.md).
 
+**In short.** Every part has one JSON entry in `hardware/parts/`: pin types and roles, limits, parameters, SPICE models,
+leads, and who checked it against which datasheet (the fields, 4.1). The agent part-selector compares candidates at the
+project's distributors and writes the entry it recommends; the parts library has signed entries to copy (finding parts,
+4.2). An entry is signed off against its datasheet, kept with the project, and a critical part gets the second check M-1
+(signing off, 4.3; the datasheets, 4.6). A changed entry changes the circuit hash. A part nobody sells – a board of your
+own – gets an entry derived from its project (own parts, 4.5).
+
 Each part has one JSON file in `hardware/parts/`, named
 
 - by its LCSC number: `hardware/parts/C17414.json`;

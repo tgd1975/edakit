@@ -4,6 +4,13 @@ For you when you set up a board's scenarios or a part's behaviour model. `edakit
 netlist per scenario, computes the DC operating point, and checks every part against its ratings and the circuit against
 its function – in seconds, on every commit. The short way: [Design the circuit](../docs/steps/04-design-the-circuit.md).
 
+**In short.** `edakit sim` builds an ngspice netlist from the graph and the parts entries, every IC and module a
+behaviour model (the netlist, 5.1). The scenarios of `hardware/sim.json` are supplies × loads × LED corners × the
+transistors' spread, plus extra and fault scenarios, each one DC operating point (the scenarios, 5.2). Transient runs
+follow a plug, an unplug or a load step; AC runs measure a frequency response, with the domain audio or guitar. The
+checks hold every part to its derated limits and every input, LED and output to what the load expects (the checks, 5.3).
+Routed copper adds the tracks' resistance. Switching and charge cycles are not modelled.
+
 DC operating points come first because the expensive errors on a small board are static. A resistor that cooks at full
 brightness, a regulator without headroom at the low end of the USB voltage, an LED the wrong way round, a net that
 reaches a pin with more than it tolerates, a supply that cannot deliver the sum of all loads. A DC sweep over supply
