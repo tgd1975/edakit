@@ -1,7 +1,8 @@
 # 11 Working with Claude Code
 
 This chapter is for you when you work on an edakit project with Claude Code. After it you know what the plugin brings,
-how sessions share EasyEDA, and the agreements every session starts with.
+how sessions share EasyEDA, and the agreements every session starts with. The short way: [Decide on what was
+found](../docs/steps/05-decide-on-what-was-found.md).
 
 The toolkit is half code, half agreements about how Claude works, and the agreements are as important as the scripts.
 

@@ -1,7 +1,8 @@
 # 2 Setup
 
 For everyone who installs edakit. After this chapter the tool chain runs, `edakit doctor` finds it ready, and a first
-project is set up.
+project is set up. The short way: [Install the tools](../docs/steps/01-install.md) and [Start a
+project](../docs/steps/02-start-a-project.md).
 
 Tested with EasyEDA Pro 3.2.209 on Linux (Ubuntu), easyeda-mcp-pro 1.6.0, Node 24, Python 3.11–3.14, ngspice 45,
 Freerouting 2.4.1, Claude Code 2.1.3xx. Windows and macOS should work for everything except the bundled Freerouting

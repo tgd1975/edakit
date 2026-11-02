@@ -102,9 +102,8 @@ checks.
 
 ## Next
 
-- **Your own circuit.** Install the plugin in Claude Code and run `/edakit:new-project` – the
-  [start page](../README.md#install) has the three lines. Claude asks what the circuit must do and writes the graph.
-  The same checks run on it.
+- **Your own circuit.** [The steps](steps/README.md) take you from the plugin's install to a checked circuit of your
+  own, and on to an ordered board: what you do, what Claude asks, what you decide. The same checks run on it.
 - **A board from it.** The [walkthrough](../handbook/17-walkthrough.md) takes this example on to EasyEDA Pro, the
   manufacturing files and the order. On KiCad it is [walkthrough 2](../handbook/18-walkthrough-kicad.md).
 - **How it fits together.** [How it works](how-it-works.md) shows the steps, who does what and what is not done yet.

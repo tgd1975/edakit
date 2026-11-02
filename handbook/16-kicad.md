@@ -2,7 +2,8 @@
 
 For a project that draws its boards in KiCad instead of EasyEDA Pro
 ([concept](../docs/concepts/done/kicad-toolchain.md)). After it you can switch a project, set KiCad up, and know what
-each command and each gate stage does on KiCad's files.
+each command and each gate stage does on KiCad's files. The short way: [Lay out the
+board](../docs/steps/09-lay-out-the-board.md).
 
 > **State 2026-10-31:** built; tested offline against a kicad-cli the tests fake, and in CI against KiCad 10 on the
 > led-bar example (what is confirmed, 16.8). The first board released through it is the 555 blinker of chapter 18,

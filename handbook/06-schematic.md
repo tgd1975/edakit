@@ -1,7 +1,8 @@
 # 6 Schematic (stage S)
 
-For you when a board's schematic is generated, checked or laid out in EasyEDA Pro, or drawn without it. After it you
-can build and check both schematics, draw one as an SVG and quote design values in notes and documents.
+For you when a board's schematic is generated, checked or laid out in EasyEDA Pro, or drawn without it. After it you can
+build and check both schematics, draw one as an SVG and quote design values in notes and documents. The short way: [Draw
+and hand over](../docs/steps/07-draw-and-hand-over.md).
 
 Two schematics per board, both generated:
 

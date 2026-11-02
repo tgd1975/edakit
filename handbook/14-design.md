@@ -1,7 +1,8 @@
 # 14 Designing a circuit: rules, hints and building blocks
 
-For you when you design a circuit or want edakit to know more. Chapters 3 to 8 check a circuit; this one covers the
-step before – from "five LEDs, a servo, USB power" to a graph – and the knowledge the checks are made of.
+For you when you design a circuit or want edakit to know more. Chapters 3 to 8 check a circuit; this one covers the step
+before – from "five LEDs, a servo, USB power" to a graph – and the knowledge the checks are made of. The short way:
+[Design the circuit](../docs/steps/04-design-the-circuit.md).
 
 ## 14.1 Roles
 

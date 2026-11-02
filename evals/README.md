@@ -12,6 +12,7 @@ only with the largest model.
 | `add-led` | a status LED on GP8 from the block library, until check and sim are clean | the graph has it; block add, check and sim ran; the `DONE:` line |
 | `requirements-inventory` | the inventory for the requirements file of led-bar with a two-line README (#97) | the README's eight LEDs and USB port are candidates; a candidate read from the circuit says inferred; the list "already checked by edakit"; no candidate edakit derived (judge) |
 | `first-reader` | a reader new to edakit follows the start page and the quickstart to the first finding on the walkthrough's example, with only those pages | `edakit check` ran; PATH.reverse named; what it means and why it is accepted (judge) |
+| `first-circuit` | a reader new to edakit makes a checked circuit of a one-line idea – a 9 V battery, a switch, two LEDs – with the site's Markdown as the only guide, no board (documentation-newcomer.md, N.5) | `edakit check` ran; a graph with two LEDs; the pages named; the last check without an unaccepted error, at most six pages opened (judges) |
 
 Each case's `scaffold.sh` writes its project into the run's empty workspace with `tests/reference.py` (plain
 `python3`, no edakit needed for that). The graders are regex and tool_used – free – and one judge per fault case and

@@ -1,7 +1,8 @@
 # 18 Walkthrough 2: a 555 blinker on KiCad
 
 For you if you draw in KiCad, run a board from cells behind a power switch, or want to see an IC through every step.
-After it you have followed a board on KiCad from the idea to released manufacturing files.
+After it you have followed a board on KiCad from the idea to released manufacturing files. The short way: [the
+steps](../docs/steps/README.md).
 
 Switch it on and a red LED blinks about once a second, from two AAA cells; switch it off and the cells deliver
 nothing. The chapter tells only what differs from the coin cell board of chapter 17, which stays the first reading: who
