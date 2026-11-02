@@ -8,6 +8,10 @@ written once, by `.github/merge.py`, from the fragments in [changes/](changes/RE
 update edakit@edakit`, then `/reload-plugins` or a new session; `edakit version` names the version that runs and what an
 update brings.
 
+## 1.1.1 – 2026-11-02
+
+- A pin of the template on a second net while another schematic of the project is open is easyeda-mcp-pro's, not EasyEDA's: its net reading takes the net flags of every open schematic but the wires of the focused one (M-11, checked live on pytree, TD-105). SYNC.schematic's reason, the `saved` finding of `schematic check` and handbook 6.2 and 12 say so; the check still closes the other schematics first.
+
 ## 1.1.0 – 2026-11-02
 
 - **When updating:** easyeda-mcp-pro is pinned to 1.8.0 (was 1.6.0), and server and bridge extension must have the
