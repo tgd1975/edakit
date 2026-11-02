@@ -1,7 +1,8 @@
 ---
-type: llm
+type: tool_used
+tool: Read
+input_match: '^(?!.*"offset").*"file_path":\s*"[^"]*/(?:site/|handbook/|examples/)[^"]*\.md"'
+min: 0
+max: 6
 weight: 1
 ---
-
-Count the distinct documentation pages the session opened with the Read tool – files under `site/` – in the trace.
-PASS if they are at most six. FAIL if more than six. Say the number and the pages in your reason.

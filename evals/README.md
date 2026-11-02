@@ -12,7 +12,7 @@ only with the largest model.
 | `add-led` | a status LED on GP8 from the block library, until check and sim are clean | the graph has it; block add, check and sim ran; the `DONE:` line |
 | `requirements-inventory` | the inventory for the requirements file of led-bar with a two-line README (#97) | the README's eight LEDs and USB port are candidates; a candidate read from the circuit says inferred; the list "already checked by edakit"; no candidate edakit derived (judge) |
 | `first-reader` | a reader new to edakit follows the start page and the quickstart to the first finding on the walkthrough's example, with only those pages | `edakit check` ran; PATH.reverse named; what it means and why it is accepted (judge) |
-| `first-circuit` | a reader new to edakit makes a checked circuit of a one-line idea – a 9 V battery, a switch, two LEDs – with the site's Markdown as the only guide, no board (documentation-newcomer.md, N.5) | `edakit check` ran; a graph with two LEDs; the pages named; the last check without an unaccepted error, at most six pages opened (judges) |
+| `first-circuit` | a reader new to edakit makes a checked circuit of a one-line idea – a 9 V battery, a switch, two LEDs – with the site's Markdown as the only guide, no board (documentation-newcomer.md, N.5) | `edakit check` ran; a graph with two LEDs; the pages named as `site/…`; the `DONE:` line without an open error; a graph of its own with battery, switch and two LEDs, every acceptance with a reason (judge on the graph); the last check clean and the DONE line true to it (judge on the trace); at most six documentation pages opened with Read – a page read on from an offset not counted again –; no Read, Grep, Glob or Bash into edakit's code (`edakit/` of the plugin) |
 
 Each case's `scaffold.sh` writes its project into the run's empty workspace with `tests/reference.py` (plain
 `python3`, no edakit needed for that). The graders are regex and tool_used – free – and one judge per fault case and
@@ -27,10 +27,14 @@ claude plugin eval . --scaffold --allow-tools Bash Edit Write --trust-plugin --a
     --model claude-sonnet-5-5 --max-cost-usd 6 --no-publish
 ```
 
-On Linux the sandbox of Bash needs `bubblewrap` and `socat`. The plugin directory must contain no hard links – the
-harness refuses case files reachable by another name, and uv fills a `.venv` with hard links from its cache –, hence
-the copy. Run it as an ordinary user: as root the harness cannot seal the workspace, and in the runs below Bash could
-not write the workspace (the Edit tool could).
+On Linux the sandbox of Bash needs `bubblewrap` and `socat`, and `TMPDIR` set to a directory outside `/tmp`,
+`/var/tmp` and `/dev/shm` (`mkdir -p /srv/evaltmp`, owned by the user running it, `TMPDIR=/srv/evaltmp`): the harness
+puts the run's workspace under `TMPDIR` and denies Bash writes to those three directories, and the denial is mounted
+last – with the default `/tmp`, Bash cannot write the workspace (the Edit tool can), which is what the runs below and
+the first two runs of `first-circuit` (TD-102) met. The plugin directory must contain no hard links – the harness
+refuses case files reachable by another name, and uv fills a `.venv` with hard links from its cache –, hence the copy.
+Run it as an ordinary user (`useradd -m eval`), not as root. A run has no network: `edakit part search`, `edakit stock`
+and `edakit cost` cannot reach the shop, which the prompt of `first-circuit` says.
 
 ## Baseline, 2026-10-31
 
@@ -47,9 +51,9 @@ as root.
 | add-led | 0.40 | 1.00 |
 | cost | 0.55 USD | 1.48 USD |
 
-`add-led` with Sonnet: Bash could not write the workspace (root, see above); Sonnet stopped and asked how to go on,
-Opus wrote the graph with the Edit tool. One run per case is a first reading, not a rate: repeat with `--runs 3` before
-reading a difference into it.
+`add-led` with Sonnet: Bash could not write the workspace (`TMPDIR` under `/tmp`, see above); Sonnet stopped and asked
+how to go on, Opus wrote the graph with the Edit tool. One run per case is a first reading, not a rate: repeat with
+`--runs 3` before reading a difference into it.
 
 What the first runs changed in edakit: `bin/edakit` falls back to the plugin's `.venv` where uv cannot write its cache;
 `edakit sim` reports artifacts it could not write as a note after its complete results; the SessionStart hook names the
