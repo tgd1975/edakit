@@ -102,6 +102,35 @@ writes no line of `INVENTORY.md`, PartsLedger imports no code of edakit: files b
 PartsLedger set for itself with CircuitSmith kept both ways. The order record `hardware/orders/<date>-…json` (8.4)
 gets the two lists, so the project keeps what it took and what it put back even when the run folder is gone.
 
+## The interface: two files, two commands, no server
+
+What passes between the two tools, and what does not:
+
+| Direction | What | Contract |
+| --- | --- | --- |
+| PartsLedger → edakit | `INVENTORY.md` (split: every `inventory/*.md` but the master) | the table's shape – a header with `Part` and `Qty` –, parsed by edakit itself, as grep or Obsidian read it; a column it cannot find is the error |
+| edakit → PartsLedger | `from_bin.csv`, `surplus.csv` | the columns of the appendix, read by `partsledger take` and `partsledger import` |
+| the maker → both | `edakit order`, `edakit bin`; `partsledger take`, `partsledger import` | commands – every harness reaches a shell (claude-independence.md), so does a script |
+
+No import in either direction: edakit does not `import partsledger` – torch, OpenCV and a vision client are its
+dependencies, nothing to carry for a table –, PartsLedger does not import edakit. No process: nothing runs while
+nobody orders or books. PartsLedger's `PL_INVENTORY_PATH` already names the file for its own commands from any
+directory, and `[project] bin` may fall back to it (decision 2); a `partsledger` entry point installed once
+(`uv tool install` from its repository, no PyPI needed) makes the two commands callable from the project's folder.
+
+**Why no MCP server.** An MCP server gives a model tools into a running process. That is right where the thing behind
+it is a process the model cannot reach otherwise – EasyEDA Pro through its bridge, a browser –, remote, or stateful.
+The bin is none of that: a local text file, read by a command – `edakit order` is a program, it calls no MCP tool –,
+and PartsLedger's own stance is "no ORM, no API wrapper, `cat` reads it". A server would add a process to start, a
+version to pin and a tool schema to keep in step – upstream/README.md shows what the EasyEDA pin costs – and put
+nothing into the data. Skills and commands do the same: the assistant reads the file or runs `edakit bin`, the maker
+runs `partsledger take`.
+
+Where MCP would fit later: PartsLedger's camera path. A viewfinder and a loaded recognition model are a live process,
+and "capture, identify, confirm" from the assistant are tool calls into it – PartsLedger's own server, as
+easyeda-mcp-pro is EasyEDA's. edakit would not use it: it reads the rows the capture writes. The same if the bin ever
+left the machine – a makerspace's shared bin behind an HTTP server. Not the owner's case: one maker, one drawer.
+
 ## The match: which row is which part
 
 A cart line knows its parts entry: `lcsc`, `mpn`, `manufacturer`, `kind`, `package`, the values and limits. A bin row
