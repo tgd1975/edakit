@@ -5,8 +5,8 @@ codes of each stage, the parts schema, the check IDs of before with the codes th
 
 A generated section sits between `<!-- edakit:generated KIND ARGS -->` and `<!-- edakit:end -->` in a chapter of
 handbook/; KIND is table (ARGS: engine prefixes – code, title and severity, each code linked to its engine's page of
-the catalog), codes (the same with the rule and its details), kinds (the parts schema), replaced (the map of
-before) or command (ARGS: a subcommand – its synopsis and help line from the command line's own parser). Without
+the catalog), codes (the same with the rule and its details), engines (each engine's prefix and what it decides),
+kinds (the parts schema), replaced (the map of before) or command (ARGS: a subcommand – its synopsis and help line from the command line's own parser). Without
 --write the command lists the sections that differ from the catalog; tests/test_catalog.py holds the handbook to it.
 """
 
@@ -54,6 +54,14 @@ def table_section(prefixes):
             old = f"; replaces {', '.join(e['replaces'])}" if e.get("replaces") else ""
             out.append(f"| [`{name}`]({page_of(name)}#{name}) | {e['title']} | {severity(e)}{old} |")
     out += ["", "Rule, why, fix and sources of each: `edakit explain CODE`, or the code on its page of the catalog."]
+    return "\n".join(out)
+
+
+def engines_section():
+    """Each engine of the catalog: its prefix and what it decides, in the catalog's order."""
+    from . import engines
+    out = ["| Engine | Decides |", "|---|---|"]
+    out += [f"| {e['prefix']} | {e['decides']} |" for e in engines().values()]
     return "\n".join(out)
 
 
@@ -108,6 +116,8 @@ def render(kind, args):
         return table_section(args.split())
     if kind == "codes":
         return codes_section(args.split())
+    if kind == "engines":
+        return engines_section()
     if kind == "kinds":
         return kinds_section()
     if kind == "replaced":

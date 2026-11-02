@@ -614,7 +614,7 @@ def way_back(on):
 def pad_args(n, pad, ox, oy):
     """The arguments of PCB_PrimitivePad.create for a pad of the data: layer, number, x, y (mil), rotation, shape,
     net, hole, hole offset x and y, hole rotation, metallization. A slot runs along the pad's longer side (hole
-    rotation 0 along w, 90 along h – an assumption the live run of step 3.6 has to confirm)."""
+    rotation 0 along w, 90 along h – as the live run of step 3.6 showed)."""
     w, h = mil(pad["w"]), mil(pad["h"])
     shape = ["RECT", w, h, 0] if pad["shape"] == "RECT" else [pad["shape"], w, h]
     hole, turn = None, 0

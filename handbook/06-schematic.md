@@ -233,10 +233,10 @@ that the lead keeps its way out. The router never runs through a part or along i
 wire or through its ends, bends, junctions and pin tips. The ground runs along a rail below the drawing and the
 supplies along rails above when at least two pieces join there.
 
-Every net gets a colour – ground black, the supplies red and orange, the rest from ten colours, so that nets that cross
-or run side by side differ. A dot marks every junction; two wires crossing without a dot are not connected. A net the
-router cannot join, or one with a single pin on the board (it goes on elsewhere), is named at its pieces as in the
-labelled drawing.
+Every net gets a colour – ground black, the supplies red, orange, dark yellow and pink (the fourth and every further one
+pink), the rest from ten colours, so that nets that cross or run side by side differ. A dot marks every junction; two
+wires crossing without a dot are not connected. A net the router cannot join, or one with a single pin on the board (it
+goes on elsewhere), is named at its pieces as in the labelled drawing.
 
 `"mixed"` keeps the labelled stubs for the nets that are nothing but pass-throughs and buses – only modules, ICs and
 connectors on them, or six pins or more (a key matrix, a shared line) – and wires the rest. The output line counts

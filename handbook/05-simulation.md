@@ -11,8 +11,9 @@ corners × load cases × LED tolerance corners finds those – and over the tran
 on it.
 
 Where the supply itself changes – plug, unplug, a switch-over between two sources – a DC scenario sits on one side of
-the gap or the other; transient runs (5.2) follow the supply over time, and LIM.v judges them. Switching spikes and fast
-edges are measured on the delivered board (acceptance test): the behaviour models know no switching.
+the gap or the other; transient runs (5.2) follow the supply over time, judged by LIM.v on a net, LIM.i on a source and
+LIM.range for an MCU's minimum. Switching spikes and fast edges are measured on the delivered board (acceptance test):
+the behaviour models know no switching.
 
 A comparison that does not hold reads as its finding is judged, as in stages P and G: `fail` for an error, `warn` for a
 warning, `info` for a note. A new code or grade starts as a warning, which the sign-off file accepts or the gate stops
@@ -169,8 +170,8 @@ AMS1117) or `fb` (the reference from FB to ground: most bucks and boosts) – ta
 VREF × (1 + R1/R2) with `fb`, the adjust pin's current left out as the datasheets do.
 
 The check holds the divider to the output net's declared range (REQ.value/feedback, REQ.missing/feedback without one).
-With `i_load_min_a` every scenario loads the regulator at least that much (LIM.range/min_load – the AMS1117 needs 10 mA,
-which its divider can draw itself).
+With `i_load_min_a` every scenario must load the regulator at least that much (LIM.range/min_load – the AMS1117 needs
+10 mA, which its divider can draw itself).
 
 An asynchronous boost converter with an external rectifier (the MT3608) has no output pin: its output is the net behind
 the one diode on its `sw` pin, the divider's R1 runs from there. With its enable (`en`) low – at the pin's VIL and
@@ -301,7 +302,7 @@ is `typ`, and its name has no spread part. What a corner sets, per kind (`edakit
 | `npn`, `pnp` | `hfe_min`, `hfe_max`; `icbo_a` | BF = hFE of the corner; in `max` also the collector-base leakage at `ambient_c` as a current from the collector into the base |
 | `nmos`, `pmos` | `vgs_th_v` [min, typ, max] | VTO at the smaller (`min`) or larger (`max`) magnitude; KP so that RDS(on) at the lowest gate voltage of `rds_on_max_ohm` stays what the entry's model gives – the datasheet's maximum holds for every part |
 | `njfet`, `pjfet` | `idss_a`, `vgs_off_v` [min, typ, max] | VTO = −\|VGS(off)\| and BETA = IDSS / VTO² at the same end: the least IDSS with the smallest \|VGS(off)\| |
-| `ic` of behaviour `logic` | `r_out_ohm` [min, typ, max] | the output resistance at the low (`min`) or high (`max`) end: the LMC555's discharge pin, 150 Ω at 1.5 V and about 15 Ω at 5 V – one number hid the 555 blinker's current from fresh cells (handbook 18) |
+| `ic` of behaviour `logic` | `r_out_ohm` [min, typ, max] | the output resistance at the low (`min`) or high (`max`) end: the LMC555's discharge pin, 150 Ω at 1.5 V and about 15 Ω at 5 V – one number hid the 555 blinker's current from fresh cells (chapter 18) |
 
 `min` puts every parameter at the low end of its magnitude, `max` at the high end, all transistors of the board at the
 same end – as all LEDs share a corner: the parts of one batch, and the extremes of a stage whose bias moves one way with

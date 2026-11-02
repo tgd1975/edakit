@@ -1,6 +1,6 @@
 """PARTS.fact/reach (#95): every part of a board that is given away or sold states its SVHC – compliance.reach, the
 supplier's REACH statement. A gift is placing on the market too (REACH Art. 3(12)), and Art. 33(2) asks to name a
-substance of very high concern above 0.1 % to a consumer who asks. Graded by purpose (handbook 15.4): information for
+substance of very high concern above 0.1 % to a consumer who asks. Graded by purpose (handbook 15.3): information for
 a gift, a warning for a sale, nothing for a board built for oneself or without a purpose."""
 
 import pytest
