@@ -6,7 +6,7 @@ assumptions you made along the way"). This file lists every judgement call made 
 [documentation.md](documentation.md), steps D.2 to D.9, for that review. Per chapter of the handbook the review of
 step D.5 – what was cut, merged, moved or reworded, with the places in code, skills and agents that name the section –
 is in [documentation-review/](documentation-review/). The owner's review closed on 2026-11-02 with decision 7 of
-[documentation-newcomer.md](../new/documentation-newcomer.md), and this file and the folder moved here with the
+[documentation-newcomer.md](documentation-newcomer.md), and this file and the folder moved here with the
 concept.
 
 ## How it was built

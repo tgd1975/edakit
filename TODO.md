@@ -33,10 +33,6 @@ to touch.
       it replaces the render on `docs/projects/pytree.md`. *(edakit-ce)*
 - [ ] TD-110 - **OK for #265:** the parts at LCSC and the combined shipment (parts-order.md, steps 2 and 3) – merged
       with `python3 .github/merge.py 265` on your word. *(edakit-4f)*
-- [ ] TD-112 - **OK for #267:** the gaps of the newcomer's eval closed – a 9 V snap and a slide switch in the library,
-      the smallest edakit.toml, edakit off the PATH, refused writes in new-project and `hook install`, SIM.state's
-      rows; then documentation-newcomer.md moves to `done/`. Merged with `python3 .github/merge.py 267` on your word.
-      *(edakit-df)*
 
 ## The parts order ([docs/concepts/new/parts-order.md](docs/concepts/new/parts-order.md))
 
@@ -64,6 +60,8 @@ Nothing to do until there is an answer or a release; whichever session learns of
 
 ## Closed todos
 
+- [x] TD-112 - **OK for #267:** given; merged as edakit 1.1.2 (#267) – the newcomer's gaps closed;
+      documentation-newcomer.md moved to `done/`. *(edakit-df)* [2026-11-02]
 - [x] TD-105 - **E-18 (a pin on a second net while another schematic of the project is open):** checked live on
       EasyEDA Pro 3.2.209, still the newest, and against the docs – not EasyEDA's, nothing to report there: a V_LED flag
       of `layout_tree` sits on the end of the template's wire from U4.11, and easyeda-mcp-pro takes the flags of every
@@ -98,7 +96,7 @@ taken from the history of this file; an item rewritten on its way is listed once
       `edakit/`. Two runs with it, 0.875 each, in the concept's status line. *(edakit-c1)* [2026-11-02]
 - [x] TD-102 - **Run the eval first-circuit in a cloud session:** done on 2026-11-02 as the user `eval` with
       `TMPDIR=/srv/evaltmp` – 0.875, 0.88 USD, 32 turns, Bash wrote the workspace; the result in the status line of
-      `docs/concepts/new/documentation-newcomer.md`. Two runs the same day did not count (root 0.33, `eval` 0.83):
+      `docs/concepts/done/documentation-newcomer.md`. Two runs the same day did not count (root 0.33, `eval` 0.83):
       Bash read-only, the workspace under `/tmp`, which the harness denies. *(edakit-c1)* [2026-11-02]
 - [x] TD-98 - **N.5** The newcomer's test: the eval case `evals/first-circuit` run once in a cloud session (TD-102) –
       0.875, thirteen pages opened, the gaps of its `MISSING:` line – into the concept's status line. *(edakit-c1)*
