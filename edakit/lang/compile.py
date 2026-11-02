@@ -123,8 +123,9 @@ def resolve(sources, root, parts_dirs):
         else:
             seen[(kind, name)] = node
 
+    from .expand import expand_for
     for src in sources:
-        for st in src.statements:
+        for st in [x for s in src.statements for x in (expand_for(s) if isinstance(s, m.For) else [s])]:
             model.statements.append(st)
             if isinstance(st, m.Part):
                 declare("part", st.des, st)
@@ -187,7 +188,8 @@ def check_def(defn):
 
 
 def expand(model):
-    """Loops (T.12) and usages (T.11, expand.py) expanded in place."""
+    """Usages expanded in place (T.11, expand.py); the loops were expanded with the namespace, so that what they make
+    is declared as what is written."""
     from .expand import expand_uses
     statements, jobs, errors = expand_uses(model.statements, model.defs)
     if errors:

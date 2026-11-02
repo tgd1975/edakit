@@ -15,10 +15,50 @@ rules). `{as}` in a text becomes the instance's name, as `block add` writes it. 
 
 from __future__ import annotations
 
+import copy
+import dataclasses
+import re
 from dataclasses import dataclass, field
 
 from . import model as m
 from .tokens import LangError
+
+BRACE = re.compile(r"\{\s*([A-Za-z_]\w*)\s*(?:([-+*])\s*(\d+))?\s*\}")
+KEEP = ("syntax", "items")                      # what a copy of a statement shares with the statement it copies
+
+
+def substitute(node, var, value):
+    """A statement with {VAR}, {VAR+k}, {VAR-k} and {VAR*k} put in every word and string, once – a copy."""
+    def text(s):
+        def one(mm):
+            if mm.group(1) != var:
+                return mm.group(0)
+            k = int(mm.group(3)) if mm.group(3) else 0
+            return str({None: value, "+": value + k, "-": value - k, "*": value * k}[mm.group(2)])
+        return BRACE.sub(one, s)
+
+    def walk(x):
+        if isinstance(x, str):
+            return text(x)
+        if isinstance(x, list):
+            return [walk(y) for y in x]
+        if isinstance(x, tuple):
+            return tuple(walk(y) for y in x)
+        if isinstance(x, dict):
+            return {walk(k): walk(v) for k, v in x.items()}
+        if dataclasses.is_dataclass(x) and not isinstance(x, type) and not x.__dataclass_params__.frozen:
+            new = copy.copy(x)
+            for f in dataclasses.fields(x):
+                if f.name not in KEEP:
+                    setattr(new, f.name, walk(getattr(x, f.name)))
+            return new
+        return x
+    return walk(node)
+
+
+def expand_for(loop):
+    """The statements of a loop's body, once per value of its range, in order."""
+    return [substitute(st, loop.var, n) for n in range(loop.start, loop.stop + 1) for st in loop.body]
 
 
 @dataclass

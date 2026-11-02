@@ -26,3 +26,4 @@ patch
   derivations, the compiler, the hash and the commands; 3.1, 2.7 and 10 name the `.circuit` form.
 - T.11: `use DEF INSTANCE (PARAM = VALUE) PORT = NET … PART = DES …` – a definition of the project's or of
   edakit's block library expanded into parts and nets, its derivations evaluated into the graph's records.
+- T.12: `for VAR in A..B` – parts, nets, usages, locks, cables and layout once per value, `{n}`, `{n+k}` put in.
