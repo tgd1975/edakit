@@ -194,6 +194,9 @@ A maker's profile holds no defaults of the board. What it holds:
   (`compliance`, 15.5);
 - the one cart button the skill cart may press and the ones it must not touch (`cart`, `never`), its seat and
   currency, its fee table (`fees`).
+- what the maker asks to confirm after the order (`[confirm]`: its order page, the two buttons and what each opens,
+  the viewer of the placement, how it marks pin 1 and a diode's anode) – read by the skill cart's mode `confirm`,
+  checked by `edakit cart confirm` (8.4, step 5); a profile without it: the maker asks nothing after the order
 
 `recorded` is the day ordering step 0 read the form; `false` marks a profile whose words are not yet read off it, and
 FILES.order names it as information. Per field:
@@ -845,9 +848,9 @@ Assembler's BOM, one cart per other supplier, hand-assembly list for all sets.
 ### edakit cart
 
 <!-- edakit:generated command cart -->
-`edakit cart [--board BOARD] [--maker MAKER] [--cart] [--from SOURCE] {fields,prepare,check,actual,compare}`
+`edakit cart [--board BOARD] [--maker MAKER] [--cart] [--from SOURCE] [--sign BY] [--note NOTE] {fields,prepare,check,confirm,actual,compare}`
 
-The order at the maker: the form's fields, the job of the skill cart, its check, the real cost, the makers' quotes compared – up to the maker's cart, never further.
+The order at the maker: the form's fields, the job of the skill cart, its check, the maker's confirmations after the order (M-2), the real cost, the makers' quotes compared – up to the maker's cart, never further.
 <!-- edakit:end -->
 
 `edakit cart fields [--board B] [--maker M]` – EasyEDA: no
@@ -874,10 +877,19 @@ The order at the maker: the form's fields, the job of the skill cart, its check,
   of ORDER.form to ORDER.review failed, 3 ORDER.form to ORDER.finish passed and the review of the order (ORDER.review)
   is open
 
+`edakit cart confirm [--board B] [--maker M] [--sign BY] [--note TEXT]` – EasyEDA: no
+
+- **Reads:** `job.json`, `confirm.json` and `confirm_page.txt` of the order's folder (the current release's, else the
+  run the order record names), the graph and parts entries for the parts of the polarity sheet, the sign-off file
+- **Writes:** `confirm.md`, `confirm_check.json`; with `--sign` and every check passed M-2 in the sign-off file
+  (`done_by`, `date`, `note`), bound to the job's fab hash. Exit 2 when a check fails – nothing signed; 1 when the
+  sign-off file's fab sign-offs are bound to another run's files (8.4, step 5)
+
 `edakit cart actual [--board B] [--maker M] [--from FILE]` – EasyEDA: no
 
-- **Reads:** `job.json`, `quote.json`, `actual.json` and `actual_page.txt` of the order's folder – with `--from` a saved
-  order page or invoice (HTML; PDF with pdftotext) whose text edakit reads itself; `[cost]`, the fee table
+- **Reads:** `job.json`, `quote.json`, `actual.json` and `actual_page.txt` of the order's folder (the current release's,
+  else the run the order record names) – with `--from` a saved order page or invoice (HTML; PDF with pdftotext) whose
+  text edakit reads itself; `[cost]`, the fee table
 - **Writes:** `actual.md`; the project's fee table (`[cost] fees`, else `hardware/fees/<maker>.json`) with what maps one
   to one; the order number and the totals in the order record. Exit 2 when ORDER.read fails – the fee table and the
   order record stay as they are, and `actual.md` says why

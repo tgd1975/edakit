@@ -3,6 +3,7 @@ current release, `edakit cart check` holds what the skill brought back – quote
 the release and the page (ORDER.form to ORDER.review), `--cart` checks the cart line and writes the order record. On recorded data:
 the example's export of test_fab_run, released, and a quote and page text as the skill would write them."""
 
+import datetime as dt
 import json
 import shutil
 import zipfile
@@ -40,7 +41,8 @@ def released(project, fault=None, cart='[cart]\nship_to = "DE"\nshipping = { jlc
         for f in sorted((d / "gerber").iterdir()):
             z.write(f, f.name)
     head = {"time": RUN, "git_commit": "abc", "git_dirty": False, "graph_sha256": "g", "graph_version": "1.0",
-            "state_sha256": gate.state_hash(cfg), "layout_sha256": gate.layout_hash(cfg)}
+            "state_sha256": gate.state_hash(cfg), "layout_sha256": gate.layout_hash(cfg),
+            "fab_sha256": "f" * 64, "fab_method": "test", "fab_layers": {}}   # as a run with stage F: M-2 binds to it
     gate.write_manifest(cfg, out, head, "RELEASED")
     (out / gate.MAKERS).write_text(json.dumps(gate.maker_findings(cfg, rows)))
     if sign:
@@ -659,3 +661,132 @@ def test_a_field_asked_only_with_assembly():
         "maker x: fields.customs: assembly must be true or false"]
     assert makers.problems("x", {"unshown_bare": ["gerber"]}) == []
     assert makers.problems("x", {"unshown_bare": ["schematic"]})[0].startswith("maker x: unshown_bare: unknown file")
+
+
+# --- edakit cart confirm (ordering step 5) -----------------------------------------------------------------------------
+
+def confirm_of(j, change=None):
+    """confirm.json as the skill reads the maker's confirmation pages after the order – the production file as released,
+    the placement as the maker's engineer adjusted it with every part of the job's BOM, D1 (a diode: on the polarity
+    sheet) with its pin 1 and sign – and the page text it kept."""
+    parts = [{"designator": d, "part": p["part"]} for p in j["bom"] for d in p["designators"]]
+    for x in parts:
+        if x["designator"] == "D1":
+            x.update(pin1="left pad (magenta dot)", sign="+ at the right pad", ok=True)
+    c = {"maker": j["maker"]["key"], "read": "2026-11-02T08:40:00+01:00",
+         "production_file": {"asked": True, "renders": ["top", "bottom"], "as_released": True, "notes": []},
+         "placement": {"asked": True, "side": "top", "assembled": len(parts), "unassembled": 0, "parts": parts,
+                       "dfm": [], "notes": []}}
+    if change:
+        change(c)
+    pl = c["placement"]
+    page = "\n".join(["Confirm Product Detail", "Top", "Bottom", "Yes, please proceed to production",
+                      f"Assembled ({pl['assembled']})", f"Unassembled ({pl['unassembled']})",
+                      *(f"{x['designator']} {x.get('part', '')} top SMT Assembly Yes" for x in pl["parts"])])
+    return c, page
+
+
+def write_confirm(project, change=None, page_change=None):
+    c, page = confirm_of(job(project), change)
+    d = order_dir(project)
+    (d / "confirm.json").write_text(json.dumps(c, indent=1))
+    (d / "confirm_page.txt").write_text(page_change(page) if page_change else page)
+    return c
+
+
+def confirm_results(project):
+    return {r["id"]: (r["result"], r["actual"]) for r in json.loads((order_dir(project) / "confirm_check.json").read_text())[
+        "results"]}
+
+
+def m2(project):
+    s = json.loads(project.config().signoff.read_text())
+    return next(m for m in s["manual"] if m["id"] == "M-2"), s
+
+
+def test_confirm_checks_the_makers_pages_and_signs_m2_on_the_owners_word(prepared, monkeypatch, capsys):
+    """Ordering step 5: the production file as released, every part of the BOM in the maker's placement with its part
+    number, every polarised part of the polarity sheet read with pin 1 and sign and found right. The sign-off is the
+    owner's word: --sign writes M-2 for the job's fab hash, the parts in its note."""
+    write_confirm(prepared)
+    assert cart(prepared, monkeypatch, "confirm") == 0
+    got = confirm_results(prepared)
+    assert {k: v[0] for k, v in got.items()} == {"ORDER.read": "pass", "ORDER.parts": "pass", "ORDER.confirm": "pass"}
+    assert "D1" in got["ORDER.confirm"][1]
+    assert m2(prepared)[0]["done_by"] is None and "M-2 open" in capsys.readouterr().out
+    assert cart(prepared, monkeypatch, "confirm", "--sign", "the owner (skill cart)", "--note",
+                "requirements met: R-7") == 0
+    m, s = m2(prepared)
+    assert m["done_by"] == "the owner (skill cart)" and m["date"] == dt.date.today().isoformat()
+    assert m["note"].startswith(f"M-2: OK for fab {job(prepared)['fab_sha256']}") and "D1 pin 1 left pad" in m["note"]
+    assert m["note"].endswith("requirements met: R-7") and s["fab_sha256"] == job(prepared)["fab_sha256"]
+    md = (order_dir(prepared) / "confirm.md").read_text()
+    assert "| ORDER.confirm" in md and "M-2 signed" in md
+
+
+@pytest.mark.parametrize("change, page_change, expected", [
+    (lambda c: next(x for x in c["placement"]["parts"] if x["designator"] == "D1").update(
+        ok=False, note="cathode at the + pad"), None, ("ORDER.confirm", "fail", "D1: cathode at the + pad")),
+    (lambda c: c["placement"]["parts"].remove(next(x for x in c["placement"]["parts"] if x["designator"] == "D1")),
+     None, ("ORDER.parts", "fail", "C8678 D1: not in the maker's placement")),
+    (lambda c: next(x for x in c["placement"]["parts"] if x["designator"] == "D1").pop("pin1"), None,
+     ("ORDER.confirm", "fail", "D1: pin 1 not read")),
+    (lambda c: next(x for x in c["placement"]["parts"] if x["designator"] == "C2").update(part="C999"), None,
+     ("ORDER.parts", "fail", "C45783 C2: the maker's placement has C999")),
+    (lambda c: c["placement"].update(assembled=3), None, ("ORDER.confirm", "fail", "3 parts assembled, the job places 2")),
+    (lambda c: c["production_file"].update(as_released=False, notes=["the bottom render lacks the version line"]),
+     None, ("ORDER.confirm", "fail", "production file: the bottom render lacks the version line")),
+    (None, lambda page: page.replace("D1 C8678", "C8678"), ("ORDER.read", "fail", "not in confirm_page.txt: D1")),
+])
+def test_each_finding_of_the_confirmation(prepared, monkeypatch, change, page_change, expected):
+    write_confirm(prepared, change, page_change)
+    assert cart(prepared, monkeypatch, "confirm", "--sign", "the owner") == 2
+    cid, result, text = expected
+    got = confirm_results(prepared)[cid]
+    assert got[0] == result and text in got[1], got
+    assert m2(prepared)[0]["done_by"] is None            # nothing is signed on a failed check
+
+
+def test_confirm_needs_the_pages_and_the_runs_fab_hash(prepared, monkeypatch, capsys):
+    assert cart(prepared, monkeypatch, "confirm") == 1
+    assert "confirm.json is not there" in capsys.readouterr().err
+    write_confirm(prepared)
+    s = json.loads(prepared.config().signoff.read_text())
+    s["fab_sha256"] = "0" * 64                            # M-5 of the file is bound to another run's files
+    prepared.config().signoff.write_text(json.dumps(s, indent=1))
+    assert cart(prepared, monkeypatch, "confirm", "--sign", "the owner") == 1
+    assert "bound to fab 000000000000" in capsys.readouterr().err
+
+
+def test_after_a_newer_release_the_orders_run_holds_the_job(prepared, monkeypatch):
+    """The order was placed against its run: confirm and actual take that run's job – found through the order record –
+    when the current release has none."""
+    q = write_quote(prepared)
+    review(prepared)
+    d = order_dir(prepared)
+    subtotal = round(sum(p["amount"] for p in q["prices"] if p["kind"] != "shipping"), 2)
+    (d / "cart.json").write_text(json.dumps({"name": "gerber_main", "quantity": 5, "price": subtotal,
+                                             "currency": "USD"}))
+    assert cart(prepared, monkeypatch, "check", "--cart") == 0
+    cfg = prepared.config()
+    man = json.loads((cfg.reports / RUN / "fab" / "manifest.json").read_text())
+    later = cfg.reports / "20261031-120000"
+    shutil.copytree(cfg.reports / RUN / "fab" / "main", later / "fab" / "main")
+    shutil.rmtree(later / "fab" / "main" / "cart")
+    gate.write_manifest(cfg, later, {**man, "time": "20261031-120000", "git_commit": "abc", "git_dirty": False},
+                        "RELEASED")
+    assert gate.current(cfg)[0] == "20261031-120000"
+    write_confirm(prepared)
+    assert cart(prepared, monkeypatch, "confirm") == 0
+    write_actual(prepared)
+    assert cart(prepared, monkeypatch, "actual") == 0
+
+
+def test_the_profiles_confirm_table():
+    """[confirm] of a profile: what the maker asks for after the order, each entry a string; the job carries it."""
+    good = {"page": "https://x/orders", "production_file": "a dialog", "placement": "a second window",
+            "viewer": "/smt/dfm-result", "pin1": "a dot", "anode": "a +"}
+    assert makers.problems("x", {"confirm": good}) == []
+    assert makers.problems("x", {"confirm": {**good, "popup": "yes"}})[0].startswith("maker x: confirm must be a table of")
+    assert makers.problems("x", {"confirm": {"page": ""}})[0].startswith("maker x: confirm must be a table of")
+    assert makers.load("jlcpcb").data["confirm"]["placement"].startswith("Confirm Parts Placement")

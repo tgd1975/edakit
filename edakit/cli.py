@@ -21,8 +21,9 @@
     edakit stock [--refresh]         what JLCPCB says about the assembled parts, as a dated snapshot (check PARTS.stock)
     edakit cost [--json F]           the order for `quantity` boards from BOM, board and the dated fee table
     edakit order [--out DIR]         the assembler's BOM, a cart per other supplier, the hand-assembly list (PARTS.supplier)
-    edakit cart fields|prepare|check|actual   the order at the maker: its form from [order], the job of the skill
-                                     cart, ORDER.form to ORDER.review on what it brought back, the real cost (never orders, never pays)
+    edakit cart fields|prepare|check|confirm|actual   the order at the maker: its form from [order], the job of the skill
+                                     cart, ORDER.form to ORDER.review on what it brought back, the maker's confirmations
+                                     after the order (M-2 on --sign), the real cost (never orders, never pays)
     edakit cart compare              the quotes of every maker of [cart] makers side by side: price, parts, lead time, check
     edakit sim                       stage E: ngspice operating points of all scenarios (offline, seconds)
     edakit docs [--write]            values quoted in documents and schematic notes: DOCS.quote for stale ones, --write fills in
@@ -183,12 +184,15 @@ def build_parser():
     _common(p)
 
     p = sub.add_parser("cart", help="the order at the maker: the form's fields, the job of the skill cart, its check, "
-                                    "the real cost, the makers' quotes compared – up to the maker's cart, never further")
-    p.add_argument("action", choices=["fields", "prepare", "check", "actual", "compare"])
+                                    "the maker's confirmations after the order (M-2), the real cost, the makers' quotes "
+                                    "compared – up to the maker's cart, never further")
+    p.add_argument("action", choices=["fields", "prepare", "check", "confirm", "actual", "compare"])
     p.add_argument("--board", help="the board (needed with several made boards)")
     p.add_argument("--maker", help="a maker of [cart] makers (default: [cart] maker, jlcpcb without [cart])")
     p.add_argument("--cart", action="store_true", help="check: the cart line after the cart button (cart.json)")
     p.add_argument("--from", dest="source", help="actual: a saved order page or invoice instead of the order history")
+    p.add_argument("--sign", metavar="BY", help="confirm: write M-2 into the sign-off file as signed by BY – the owner's word")
+    p.add_argument("--note", help="confirm: appended to M-2's note, e.g. \"requirements met: R-31\"")
     _common(p)
 
     p = sub.add_parser("sim", help="simulation (stage E)")

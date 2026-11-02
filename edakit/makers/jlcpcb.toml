@@ -34,6 +34,15 @@ never = ["Order", "Buy", "Checkout", "Pay", "Place Order", "Submit Order", "Secu
 # "Number Only" – a serial number without a barcode – is a third choice of the dialog that edakit's keys do not name
 excludes = [{ barcode = "none", serial_number = true }]
 
+[confirm]                              # what JLCPCB asks for after the order (its order history, 2026-11-02): read by the skill
+                                       # cart's mode confirm, checked by edakit cart confirm (handbook 8.4, step 5)
+page = "https://jlcpcb.com/user-center/orders"
+production_file = "Confirm Production file – a dialog in the page, 'Confirm Product Detail': the Top and Bottom render, 'Yes, please proceed to production' or 'Not good, modification needed', Submit; the skill submits on the owner's word"
+placement = "Confirm Parts Placement – opens a second browser window (smtWeldClient) the skill cannot see or read: one click opens it on the owner's screen, the owner confirms there; the order history then shows the button no more"
+viewer = "/smt/dfm-result?uuid=<smtOrderAccessId> – the placement as JLCPCB's engineer adjusted it ('adjusted by our engineer'), with the parts table (designator, part number, side, assembled) and the DFM column; the id is in the order page's data (smtOrderAccessId of the SMT order); the page shows no confirm control"
+pin1 = "a magenta dot at pin 1 of the part as placed"
+anode = "a magenta + at the anode of a diode"
+
 [compliance]                           # what the maker itself states, read 2026-11-01 – the regulatory review at the order
                                        # cites it from the job (handbook 15.5)
 rohs = "PCB: lead-free HASL, ENIG and OSP are RoHS compliant, HASL(with lead) is not – it 'does not comply with RoHS environmental requirements'; a RoHS certificate of conformity to download (Soar Testing, one sample each – lead-free HASL and ENIG 2025-12-01, OSP 2026-07-23 –, Directive 2011/65/EU with (EU) 2015/863: 'based on a single evaluation of one sample … does not imply an assessment of the whole production'), none per order. PCBA: the assembly terms (5.4) solder with lead on a leaded finish and, on a lead-free board, 'follow up the compoments properties to determine whether to choose leaded or lead-free' – lead-free solder is not promised"

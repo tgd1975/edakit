@@ -1329,6 +1329,17 @@ sources = [
   "Ordering at the manufacturer (docs/concepts/done/ordering.md, decided 2026-10-30): edakit prepares the order, Claude fills the maker's form in the owner's browser (skill cart), edakit checks what it brings back; up to the maker's cart button, never further",
 ]
 
+[codes."ORDER.confirm"]
+title = "the maker's confirmations as released and as the sheet"
+rule = "edakit cart confirm: what the maker asks to confirm after the order, as the skill cart read it into confirm.json – the production file, where the maker asked for it: both renders seen and as released; the placement as the maker's engineer adjusted it: as many parts assembled as the job places, none unassembled, every polarised part of the polarity sheet (FILES.sheet) read with its pin 1 and judged right, no part judged wrong, no DFM finding. ORDER.read and ORDER.parts run on the same files: every value in the page text, every part of the job's BOM in the placement with the job's part number. With --sign BY and every check passed, M-2 is written into the sign-off file for the job's fab hash – the owner's word, never on its own."
+why = "M-2 is the one manual check that happens on the maker's pages after the order: the placement the maker builds from is the one its engineer adjusted, not the preview of the quote, and the production file is the maker's rendering of the files. The first order (2026-11-02) read both by hand – the viewer's address from the page's data, the pin-1 dot and the anode + part by part against the sheet – and wrote M-2 by hand; a part judged wrong and still confirmed goes into production turned round."
+fix = "A part found wrong: 'Not good, modification needed' on the maker's page, and the layout again (the CPL's rotation, SYNC.cpl); a part not read: open the viewer again and read it; counts that differ: the maker's BOM matching against the job (ORDER.parts). Nothing signed until the check passes."
+severity = "error"
+sources = [
+  "The first order at JLCPCB (pytree, 2026-11-02): 'Confirm Production file' a dialog in the order history, 'Confirm Parts Placement' a second browser window; the placement viewer /smt/dfm-result read in the skill's own tab; M-2 written into signoff.json by hand",
+  "Ordering at the manufacturer (docs/concepts/done/ordering.md, decided 2026-10-30): edakit prepares the order, Claude fills the maker's form in the owner's browser (skill cart), edakit checks what it brings back; up to the maker's cart button, never further",
+]
+
 [codes."DOCS.quote"]
 title = "documents quote the design data"
 rule = "Every value block in a Markdown file of [docs] files equals its source – a graph value, a parts entry field, the simulation result or the text of a need or requirement of [project] requirements (req:) – and every source quoted in a block or in a placeholder of the schematic notes exists; a need or requirement quoted is not dropped."

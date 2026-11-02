@@ -643,7 +643,10 @@ this has no `[cart]`: its maker is JLCPCB, its checks run as today, and `edakit 
   by it, only completed for what the order adds.
 - **Ordering and paying are the owner's, and so is M-2.** The skill ends with the maker's cart button; no command,
   skill or API path places or pays an order – `pcb/create` is never called –, and the browser it works in pays
-  nothing with one click (5.).
+  nothing with one click (5.). Added on the owner's word of 2026-11-02, after the first order: what the maker asks
+  to confirm after the order – JLCPCB's production file and the placement its engineer adjusted, which is where M-2
+  happens – the skill reads into `confirm.json`, `edakit cart confirm` checks it (ORDER.confirm), and M-2 goes into
+  the sign-off file on `--sign`, the owner's word; the confirming clicks stay the owner's (handbook 8.4, step 5).
 - **No key, no change.** Without `[cart]` the maker is JLCPCB and the makers are `["jlcpcb"]`: the gate writes no new
   file, runs no new check, and its result, the hashes and the sign-offs stay as they are; `edakit cart` works with
   these defaults. A board that sets none of the new keys of 2. keeps its `order.json` and its fab hash. Everything

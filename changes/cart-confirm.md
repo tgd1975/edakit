@@ -1,0 +1,2 @@
+patch
+- `edakit cart confirm` and the skill cart's mode `confirm`: what the maker asks to confirm after the order – the production file as released, the placement as the maker's engineer adjusted it, part by part against the polarity sheet (ORDER.confirm) – checked, and M-2 written into the sign-off file on `--sign`, the owner's word; the JLCPCB profile's `[confirm]` (the two buttons, the viewer, its marks). After the order, `confirm` and `actual` read the run the order was placed against when a newer release has no job for the board.
