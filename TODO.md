@@ -4,7 +4,7 @@ Open work that needs the owner's computer, a maker or the owner's word. The stat
 and plans the sections name; this list is what is left to do of them, in the order it can be done. No item is deleted.
 
 **Layout.** Every item, in every section, open or closed, is a line with a checkbox and an ID unique in this file,
-counted up and never reused – whoever adds an item takes the next free ID and counts it up here. Next free ID: TD-108.
+counted up and never reused – whoever adds an item takes the next free ID and counts it up here. Next free ID: TD-109.
 
 - Open: `- [ ] TD-<n> - **Title:** what and why.` – a step's own name after the dash (`- [ ] TD-31 - **D.4** …`).
 - Done: ticked, the commit that did it, the date at the end, moved to [Closed todos](#closed-todos), newest first –
@@ -33,9 +33,11 @@ to touch.
       easyeda-mcp-pro servers of the sessions; then in EasyEDA uninstall the old extension, import
       `~/.easyeda-mcp-pro/ext-1.8.0/easyeda-bridge-extension.eext`, allow "External Interactions", quit and restart
       EasyEDA – for the live checks of #250 (TD-26, TD-84). *(edakit-80)*
-- [ ] TD-82 - **pytree's pictures:** pick what of the private repository may go onto `docs/projects/pytree.md` – the
-      page is text only, from its README and chapter 13; say too whether that much about the gift may stand before
-      Christmas. *(edakit, documentation session)*
+- [ ] TD-82 - **pytree's pictures:** merge #257 – the pictures picked on 2026-11-02 (the board from the ordered release
+      20261101-225744, the tree in its hill, the copper review's before/after); the gift's words stand before Christmas.
+      *(edakit-ce)*
+- [ ] TD-108 - **A photo of the delivered tree:** one picture of the lit tree in its hill into pytree's `docs/img/` –
+      it replaces the render on `docs/projects/pytree.md`. *(edakit-ce)*
 
 ## What edakit needs from EasyEDA Pro and easyeda-mcp-pro ([upstream/README.md](upstream/README.md))
 
