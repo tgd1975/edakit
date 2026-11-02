@@ -3,3 +3,4 @@ patch
   (`edakit/lang/units.py`) and the E-series E6 to E96 of IEC 60063 as a catalog table (`tables/series.toml`).
 - T.2: the reader of the circuit language – `edakit/lang/tokens.py`, `model.py`, `reader.py` and the attribute
   table `schema.py`: every statement of language 5 with its file and line, every error at once.
+- T.3: the attribute table held to handbook 3.1 by a test; an unknown key names the nearest known one.
