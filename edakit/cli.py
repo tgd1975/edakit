@@ -116,7 +116,7 @@ def build_parser():
 
     p = sub.add_parser("graph", help="what the graph says about one part or net; the resolved graph as JSON; a JSON "
                                      "graph moved to TOML")
-    p.add_argument("action", choices=["show", "json", "convert", "fmt", "derive"])
+    p.add_argument("action", choices=["show", "json", "convert", "fmt", "derive", "sysml", "kerml"])
     p.add_argument("name", nargs="?", help="show: a designator (U1) or a net name (LED_CLK); fmt: a .circuit file")
     p.add_argument("files", nargs="*", help="fmt: further .circuit files (default: the project's source)")
     p.add_argument("--json", help="show: write the view and its findings as JSON")
@@ -128,6 +128,8 @@ def build_parser():
     p.add_argument("--dry-run", action="store_true", help="convert: print what would change, write nothing")
     p.add_argument("--to", choices=["toml", "circuit"], default="toml", help="convert: the form to move the graph to "
                                                                              "(default toml)")
+    p.add_argument("--out", metavar="DIR", help="sysml, kerml: the folder of the export (default <artifacts>/sysml, "
+                                                "<artifacts>/kerml)")
     p.add_argument("--map", metavar="FILE", help="json: write the source map of a .circuit graph – where each part, "
                                                  "net, lock and accept was written")
     _common(p)
@@ -434,7 +436,7 @@ def _main(argv=None):
     if args.command == "graph" and args.action == "show":
         from . import graph_show
         return graph_show.main(cfg, args)
-    if args.command == "graph" and args.action in ("fmt", "derive"):
+    if args.command == "graph" and args.action in ("fmt", "derive", "sysml", "kerml"):
         from .lang import cli as lang_cli
         return lang_cli.main(cfg, args)
     if args.command == "graph":

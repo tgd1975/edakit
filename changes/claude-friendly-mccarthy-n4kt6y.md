@@ -38,3 +38,6 @@ patch
 - T.17: the test project led-bar-circuit – led-bar in the circuit language – for the tests and the evals.
 - T.18: the skills circuit-design, hardware-change and new-project and the agent project-surveyor know the
   circuit language; handbook 19 describes usages, loops, parameters, variants and requirements in the notation.
+- T.20–T.23: `edakit graph sysml` and `edakit graph kerml` export a project as SysML v2 and KerML, textual and
+  as JSON, with the electrical library `edakit/lang/library/Electrical.sysml`; the requirements with it. The
+  optional dependency group `sysml` (systree) and the CI job sysml read them with a standard reader.

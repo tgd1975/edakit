@@ -683,7 +683,7 @@ Rule, why, fix and sources of a code.
 ### edakit graph
 
 <!-- edakit:generated command graph -->
-`edakit graph [--json JSON] [--write] [--check] [--dry-run] [--to {toml,circuit}] [--map FILE] {show,json,convert,fmt,derive} [name] [files ...]`
+`edakit graph [--json JSON] [--write] [--check] [--dry-run] [--to {toml,circuit}] [--out DIR] [--map FILE] {show,json,convert,fmt,derive,sysml,kerml} [name] [files ...]`
 
 What the graph says about one part or net; the resolved graph as JSON; a JSON graph moved to TOML.
 <!-- edakit:end -->

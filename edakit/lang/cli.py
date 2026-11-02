@@ -100,5 +100,32 @@ def main_derive(cfg, args):
     return 0
 
 
+def main_export(cfg, args):
+    """edakit graph sysml|kerml [--out DIR]: the project as SysML v2 or KerML, textual and as JSON, with the library."""
+    from .export import json as as_json
+    from .export import kerml, sysml
+    from .export.model import build
+    from .reader import CompileError
+    try:
+        export = build(cfg)
+    except CompileError as e:
+        print(f"edakit graph {args.action}: {e}", file=sys.stderr)
+        return 1
+    out = Path(args.out) if getattr(args, "out", None) else Path(cfg.artifacts) / args.action
+    out.mkdir(parents=True, exist_ok=True)
+    stem = export.project
+    if args.action == "sysml":
+        files = {f"{stem}.sysml": sysml.text(export), f"{stem}.json": as_json.text(export, "sysml"),
+                 "Electrical.sysml": export.library}
+    else:
+        files = {f"{stem}.kerml": kerml.text(export), f"{stem}.kerml.json": as_json.text(export, "kerml"),
+                 "Electrical.kerml": kerml.library(export.library)}
+    for name_, text in files.items():
+        (out / name_).write_text(text, encoding="utf-8")
+    rel = cfg.relative(out) if out.is_absolute() else out.as_posix()
+    print(f"{rel}: {', '.join(files)} – {args.action == 'sysml' and 'SysML v2' or 'KerML'} of {cfg.relative(cfg.graph)}")
+    return 0
+
+
 def main(cfg, args):
-    return {"fmt": main_fmt, "derive": main_derive}[args.action](cfg, args)
+    return {"fmt": main_fmt, "derive": main_derive, "sysml": main_export, "kerml": main_export}[args.action](cfg, args)
