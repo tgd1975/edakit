@@ -18,9 +18,9 @@ come first.
 | 5 | [Simulation](05-simulation.md) | you set up scenarios or a behaviour model |
 | 15 | [Regulatory review](15-regulatory.md) | a board is sold or given away, or it transmits – support, not legal advice |
 
-The station ends with the drawn schematic – [6.5, without EasyEDA or KiCad](06-schematic.md#65-drawn-without-easyeda)
-– and the hand-over to the layout (`edakit handover`, [14.1](14-design.md#141-roles)): enough for a hand-wired build,
-a perfboard or a document, or the input of the board.
+The station ends with the drawn schematic – [6.5, without an EDA
+program](06-schematic.md#65-drawn-without-an-eda-program) – and the hand-over to the layout (`edakit handover`,
+[14.1](14-design.md#141-roles)): enough for a hand-wired build, a perfboard or a document, or the input of the board.
 
 ## The board
 
@@ -29,9 +29,9 @@ a perfboard or a document, or the input of the board.
 | 6 | [Schematic](06-schematic.md) | you generate or arrange schematics |
 | 7 | [PCB](07-pcb.md) | you place, route, pour, print |
 | 8 | [Release gate](08-release-gate.md) | you prepare an order |
-| 16 | [KiCad as the tool chain](16-kicad.md) | a project draws its boards in KiCad instead of EasyEDA (`toolchain = "kicad"`) |
+| 16 | [KiCad as the tool chain](16-kicad.md) | you weigh KiCad against EasyEDA Pro, the default, or draw in KiCad (`toolchain = "kicad"`) |
 | 17 | [Walkthrough: a coin cell, a button, an LED](17-walkthrough.md) | you want to see every step once, on the smallest board |
-| 18 | [Walkthrough 2: a 555 blinker on KiCad](18-walkthrough-kicad.md) | you draw in KiCad, run a board from cells behind a power switch, or want an IC through every step |
+| 18 | [Walkthrough on KiCad: a 555 blinker](18-walkthrough-kicad.md) | you draw in KiCad, run a board from cells behind a power switch, or want an IC through every step |
 | 12 | [Troubleshooting](12-troubleshooting.md) | something fails |
 | 13 | [Lessons learned](13-lessons-learned.md) | you want the history of edakit and what it learned |
 
@@ -48,5 +48,5 @@ a perfboard or a document, or the input of the board.
 - *New circuit:* 14 → 3 → 4 → 5.
 - *Something broke:* 12 → 9.
 - *Adapting to your board:* 10 → 3 → 7.
-- *KiCad instead of EasyEDA:* 1 → 2 → 16 → 18 – table 16.4 says what each command does there, chapter 18 shows a
+- *On KiCad:* 1 → 2 → 16 → 18 – 16.1 says when to take it, table 16.4 what each command does there, chapter 18 shows a
   board through it.

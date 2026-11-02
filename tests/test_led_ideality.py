@@ -1,4 +1,4 @@
-"""An LED's ideality from the datasheet's IV curve (the 555 blinker, walkthrough 2, M-1): the model's N was fixed at 2,
+"""An LED's ideality from the datasheet's IV curve (the 555 blinker, the KiCad walkthrough, M-1): the model's N was fixed at 2,
 and D1's curve (Kingbright DSAO7910, p. 3) gave 20–25 mV more at 0.5 mA than the model. values.vf_vs_if [[A, V], …]
 – points read off that curve – sets N; vf at vf_at_a of the corner keeps setting IS. Without it N stays 2."""
 

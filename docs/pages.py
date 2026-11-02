@@ -1,9 +1,10 @@
 """edakit's documentation as one site for GitHub Pages, assembled into build/pages and built by MkDocs. The navigation
 is data – NAV, a table of tab, file and short title, by reader (docs/concepts/new/documentation-newcomer.md, steps N.1
-and N.2): Start, A circuit, A board, Extend, Develop, Handbook and Reference as tabs across the top, the sidebar showing
-the current tab alone, at most eight entries but for the handbook. The sources – the concepts, skills, agents, evals
-and the rules of a session – are on the site behind "Inside edakit" under Develop and an index each, not in the
-navigation, every page of them marked as a source.
+and N.2): Start, A circuit, A board, Extend, Develop, Handbook, Reference and Inside edakit as tabs across the top, the
+sidebar showing the current tab alone, at most eight entries but for the handbook. The sources – the concepts, skills,
+agents, evals and the rules of a session – are on the site behind the tab "Inside edakit": its sidebar holds an
+overview and the index of each kind, the pages themselves are not in the navigation, every page of them marked as a
+source.
 
     python3 docs/pages.py                       assembles build/pages (the Markdown, the catalog, mkdocs.yml)
     uvx --with mkdocs-material==9.6.23 --from mkdocs==1.6.1 mkdocs build --strict -f build/pages/mkdocs.yml
@@ -83,7 +84,6 @@ NAV = [
         ("docs/organisation.md", "Organisation"),
         ("docs/style.md", "Style guide"),
         ("docs/brand/README.md", "Brand"),
-        ("docs/inside-edakit.md", "Inside edakit"),
     ]),
     ("Handbook", [
         ("handbook/README.md", "The handbook"),
@@ -110,6 +110,14 @@ NAV = [
         ("docs/catalog/index.html", "Rule catalog"),
         ("CHANGELOG.md", "Changelog"),
     ]),
+    ("Inside edakit", [          # the sources: an overview, then the index of each kind
+        ("docs/inside-edakit.md", "Overview"),
+        ("docs/concepts/README.md", "Concepts"),
+        ("skills/README.md", "Skills"),
+        ("agents/README.md", "Agents"),
+        ("evals/README.md", "Evals"),
+        ("CLAUDE.md", "Rules of a session"),
+    ]),
 ]
 SIDEBAR = 8                      # entries a tab shows at most, the handbook's excepted
 GENERATED = {"docs/concepts/README.md", "skills/README.md", "agents/README.md"}   # indexes written by this script
@@ -117,12 +125,15 @@ INSIDE = ("docs/concepts/README.md", "skills/README.md", "agents/README.md", "ev
 SOURCE = ('!!! note "A source"\n    This page is a source of edakit – a concept, a prompt or the rules of a session –, '
           'shown as it is in the repository. Read it as such; the guides say what edakit does.\n')
 ISSUES = f"{REPO}/issues/new/choose"
+# The old address of a page that moved on the site: a page there that sends the reader on, so a link from outside holds.
+REDIRECTS = {"inside-edakit/index.html": "../inside/"}
 
 
 def site_path(src):
     """Where a repository file lands on the site."""
     special = {"README.md": "index.md", "handbook/README.md": "handbook/index.md", "evals/README.md": "evals.md",
                "CHANGELOG.md": "changelog.md", "CLAUDE.md": "inside/claude.md",
+               "docs/inside-edakit.md": "inside/index.md",   # the tab's index: Material shows its other entries
                "docs/brand/README.md": "brand/index.md", "docs/concepts/README.md": "concepts/index.md",
                "docs/projects/README.md": "projects/index.md", "docs/steps/README.md": "steps/index.md",
                "skills/README.md": "skills/index.md", "agents/README.md": "agents/index.md"}
@@ -350,6 +361,11 @@ def assemble(out=ROOT / "build" / "pages"):
                             for src, title in entries]})
     shutil.copytree(ROOT / "docs" / "catalog", docs / "catalog", ignore=shutil.ignore_patterns("*.py", "__pycache__"))
     shutil.copytree(ROOT / "docs" / "brand", docs / "brand", ignore=shutil.ignore_patterns("README.md"), dirs_exist_ok=True)
+    for old, new in REDIRECTS.items():
+        (docs / old).parent.mkdir(parents=True, exist_ok=True)
+        (docs / old).write_text(f'<!doctype html><meta charset="utf-8"><title>Moved</title><link rel="canonical" '
+                                f'href="{new}"><meta http-equiv="refresh" content="0; url={new}">'
+                                f'<a href="{new}">This page moved.</a>\n', encoding="utf-8")
     for rel in sorted(media):
         (docs / "files" / rel).parent.mkdir(parents=True, exist_ok=True)
         shutil.copy2(ROOT / rel, docs / "files" / rel)

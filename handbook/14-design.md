@@ -157,6 +157,11 @@ structure, artifacts, limits and levels of the basic kinds, parts, files, docume
 | `cables` | the lines on a lead | a cable |
 | `mains` | no check – spacing and isolation stay unchecked (rules-at-scale.md, decision 7) | a net above the ES1 limits, which LIM.hazardous recognises |
 
+![The reference circuit of the domain power: the led-bar with a battery block, BT20 and D20 onto +5V – the holder suggests the domain](../docs/catalog/circuits/power.svg)
+
+Each domain has such a reference circuit with the faults it must catch, drawn on its page of the
+[catalog](../docs/catalog/index.html).
+
 The interview of a new project asks for no domain: there is no graph yet, and the graph decides (skill new-project). A
 domain file sets severities (also per purpose: `[severity.sale]`), switches codes or topics on, and names the facts a
 kind must give (a missing one is `PARTS.fact`), the hints that apply and the questions the reviewers ask. A project
@@ -469,10 +474,10 @@ the review are still the project's. A project's own blocks are JSON files of the
 
 ## 14.6 Where the ideas came from
 
-CircuitSmith, a sibling project that draws schematics from declarative YAML and checks them against an ERC rule
-catalog, brought in: the catalog with reason and source for every rule; the designer as an "electronics engineer" bound
-to the parts library and to rules instead of memory, asking open questions in one batch; sub-blocks with ports; and the
-checks for I2C pull-ups, strapping pins, input-only pins and the MCU's current budget. CircuitSmith's other goal, a
-schematic without an EDA tool, edakit reached with what it had: the layout it computes for EasyEDA, drawn with symbols
-from the parts database (drawn without EasyEDA, 6.5). Not taken: CircuitSmith's renderer and layout engine, and the
-KiCad netlist.
+CircuitSmith, a sibling project that draws schematics from declarative YAML and checks them against an ERC rule catalog,
+brought in: the catalog with reason and source for every rule; the designer as an "electronics engineer" bound to the
+parts library and to rules instead of memory, asking open questions in one batch; sub-blocks with ports; and the checks
+for I2C pull-ups, strapping pins, input-only pins and the MCU's current budget. CircuitSmith's other goal, a schematic
+without an EDA tool, edakit reached with what it had: the layout it computes for EasyEDA, drawn with symbols from the
+parts database (drawn without an EDA program, 6.5). Not taken: CircuitSmith's renderer and layout engine, and the KiCad
+netlist.

@@ -43,4 +43,4 @@ Next: [Have it reviewed](08-have-it-reviewed.md).
 ## Read on
 
 - The walkthrough: [Drawing and hand-over](../../handbook/17-walkthrough.md#178-drawing-and-hand-over)
-- The handbook: [Drawn without EasyEDA](../../handbook/06-schematic.md#65-drawn-without-easyeda)
+- The handbook: [Drawn without an EDA program](../../handbook/06-schematic.md#65-drawn-without-an-eda-program)

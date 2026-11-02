@@ -1,4 +1,4 @@
-"""The example of walkthrough 2 (handbook 18, examples/blinker-555): what the chapter quotes still holds."""
+"""The example of the KiCad walkthrough (handbook 18, examples/blinker-555): what the chapter quotes still holds."""
 
 import argparse
 import shutil

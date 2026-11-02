@@ -1,12 +1,12 @@
-# 18 Walkthrough 2: a 555 blinker on KiCad
+# 18 Walkthrough on KiCad: a 555 blinker
 
 For you if you draw in KiCad, run a board from cells behind a power switch, or want to see an IC through every step.
 After it you have followed a board on KiCad from the idea to released manufacturing files. The short way: [the
 steps](../docs/steps/README.md).
 
 Switch it on and a red LED blinks about once a second, from two AAA cells; switch it off and the cells deliver
-nothing. The chapter tells only what differs from the coin cell board of chapter 17, which stays the first reading: who
-does what, why each step comes where it does. The project is [examples/blinker-555](../examples/blinker-555/).
+nothing. The chapter tells what this board adds to the coin cell board of chapter 17; who does what and why each step
+comes where it does stands there, for both tool chains. The project is [examples/blinker-555](../examples/blinker-555/).
 
 What it shows that chapter 17 does not:
 
@@ -53,7 +53,7 @@ D-1:
 ```toml
 [project]
 name = "blinker-555"             # the KiCad project in build/edakit/kicad/main/ – edakit writes it, nothing by hand
-toolchain = "kicad"              # KiCad 10 instead of EasyEDA Pro (handbook 16): no EasyEDA documents to name
+toolchain = "kicad"              # KiCad 10 as the tool chain (handbook 16): no EasyEDA documents to name
 quantity = 5
 graph = "hardware/graph.toml"    # the graph as TOML; edakit graph json --write keeps hardware/graph.json beside it
 requirements = "hardware/requirements.toml"
@@ -417,7 +417,7 @@ remark = "2 tooling holes added by customer."
 
 ## 18.12 Release
 
-`edakit gate --eda` – `--easyeda` is the same flag – runs S, L and F on the KiCad files: SYNC.schematic on kicad-cli's
+`edakit gate --eda` runs S, L and F on the KiCad files: SYNC.schematic on kicad-cli's
 netlist and ERC, stage L on `pcb.json` read from the file and KiCad's DRC, stage F on kicad-cli's Gerber, drill and
 position files (the gate on KiCad, 16.6).
 

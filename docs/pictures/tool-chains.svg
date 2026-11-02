@@ -1,0 +1,84 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 366" width="760" height="366" font-family="IBM Plex Sans, Helvetica, Arial, sans-serif" role="img" aria-labelledby="t d">
+  <title id="t">What talks to what, on both tool chains</title>
+  <desc id="d">Claude Code runs edakit. On EasyEDA Pro, the default, Claude Code and edakit each talk to their own easyeda-mcp-pro over stdio; the MCP server reaches the bridge extension inside EasyEDA Pro over a local WebSocket, and the bridge calls the editor's API. One session drives EasyEDA at a time, and you create the project once. On KiCad 10, edakit writes the KiCad files and calls kicad-cli, which reads them: no server, no bridge, no claim, no click. Graph, parts, checks, simulation, board file, Freerouting and the gate are shared by both.</desc>
+  <style>
+    .bg { fill: #f4f6f6; } .station { fill: #ffffff; stroke: #d5dcdc; }
+    .box { fill: #ffffff; stroke: #0e6c6a; stroke-width: 1.6; } .you { fill: #fbeee2; stroke: #b8691f; stroke-width: 1.4; }
+    .ink { fill: #1d2626; } .muted { fill: #5d6b6b; } .accent { fill: #0e6c6a; } .copper { fill: #b8691f; }
+    .arrow { stroke: #0e6c6a; stroke-width: 1.6; fill: none; }
+    @media (prefers-color-scheme: dark) {
+      .bg { fill: #111717; } .station { fill: #182020; stroke: #2c3838; }
+      .box { fill: #182020; stroke: #5cc4c0; } .you { fill: #2a2118; stroke: #e0954f; }
+      .ink { fill: #e3eaea; } .muted { fill: #97a6a6; } .accent { fill: #5cc4c0; } .copper { fill: #e0954f; }
+      .arrow { stroke: #5cc4c0; }
+    }
+  </style>
+  <defs>
+    <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="accent"/></marker>
+  </defs>
+  <rect class="bg" x="0" y="0" width="760" height="366" rx="10"/>
+
+  <!-- who drives -->
+  <g text-anchor="middle">
+    <rect class="box" x="20" y="66" width="176" height="52" rx="6"/>
+    <text class="ink" x="108" y="88" font-size="13" font-weight="600">Claude Code</text>
+    <text class="muted" x="108" y="106" font-size="11">skills, agents, hooks</text>
+    <rect class="box" x="20" y="202" width="176" height="52" rx="6"/>
+    <text class="ink" x="108" y="224" font-size="13" font-weight="600">edakit</text>
+    <text class="muted" x="108" y="242" font-size="11">the command line</text>
+  </g>
+  <line class="arrow" x1="108" y1="118" x2="108" y2="200" marker-end="url(#a)"/>
+  <text class="muted" x="116" y="164" font-size="11">runs</text>
+
+  <!-- EasyEDA Pro -->
+  <rect class="station" x="230" y="30" width="510" height="120" rx="10"/>
+  <text class="accent" x="246" y="52" font-size="14" font-weight="600">EasyEDA Pro – the default</text>
+  <g text-anchor="middle">
+    <rect class="box" x="246" y="66" width="130" height="52" rx="6"/>
+    <text class="ink" x="311" y="88" font-size="12.5">easyeda-mcp-pro</text>
+    <text class="muted" x="311" y="106" font-size="11">MCP server, 1.6.0</text>
+    <rect class="box" x="446" y="66" width="120" height="52" rx="6"/>
+    <text class="ink" x="506" y="88" font-size="12.5">bridge extension</text>
+    <text class="muted" x="506" y="106" font-size="11">menu "MCP Bridge"</text>
+    <rect class="box" x="616" y="66" width="108" height="52" rx="6"/>
+    <text class="ink" x="670" y="88" font-size="12.5">EasyEDA Pro</text>
+    <text class="muted" x="670" y="106" font-size="11">editor, project</text>
+    <text class="muted" x="411" y="86" font-size="11">WebSocket</text>
+    <text class="muted" x="411" y="110" font-size="10.5">port 49620</text>
+    <text class="muted" x="591" y="86" font-size="11">API</text>
+  </g>
+  <line class="arrow" x1="378" y1="92" x2="444" y2="92" marker-start="url(#a)" marker-end="url(#a)"/>
+  <line class="arrow" x1="566" y1="92" x2="614" y2="92" marker-end="url(#a)"/>
+  <text class="muted" x="246" y="140" font-size="11">one session drives it at a time: the claim</text>
+  <text class="copper" x="724" y="140" font-size="11" text-anchor="end">you: create the project once</text>
+
+  <!-- Claude Code and edakit into the MCP server -->
+  <line class="arrow" x1="196" y1="92" x2="244" y2="92" marker-end="url(#a)"/>
+  <text class="muted" x="220" y="86" font-size="11" text-anchor="middle">stdio</text>
+  <path class="arrow" d="M176,202 L176,158 L290,158 L290,120" marker-end="url(#a)"/>
+  <text class="muted" x="298" y="162" font-size="11">stdio, its own instance</text>
+
+  <!-- KiCad 10 -->
+  <rect class="station" x="230" y="172" width="510" height="114" rx="10"/>
+  <text class="accent" x="246" y="194" font-size="14" font-weight="600">KiCad 10</text>
+  <g text-anchor="middle">
+    <rect class="box" x="246" y="202" width="130" height="52" rx="6"/>
+    <text class="ink" x="311" y="224" font-size="12.5">kicad-cli</text>
+    <text class="muted" x="311" y="242" font-size="11">DRC, ERC, Gerber</text>
+    <rect class="box" x="446" y="202" width="150" height="52" rx="6"/>
+    <text class="ink" x="521" y="224" font-size="12.5">KiCad files</text>
+    <text class="muted" x="521" y="242" font-size="11">schematic, PCB, rules</text>
+    <text class="muted" x="411" y="222" font-size="11">reads</text>
+  </g>
+  <line class="arrow" x1="196" y1="228" x2="244" y2="228" marker-end="url(#a)"/>
+  <text class="muted" x="220" y="222" font-size="11" text-anchor="middle">calls</text>
+  <line class="arrow" x1="376" y1="228" x2="444" y2="228" marker-end="url(#a)"/>
+  <path class="arrow" d="M108,254 L108,300 L521,300 L521,256" marker-end="url(#a)"/>
+  <text class="muted" x="300" y="296" font-size="11">writes</text>
+  <text class="muted" x="616" y="222" font-size="11">no server, no bridge,</text>
+  <text class="muted" x="616" y="238" font-size="11">no claim, no click</text>
+
+  <!-- shared -->
+  <rect class="station" x="20" y="316" width="720" height="36" rx="8"/>
+  <text x="36" y="339" font-size="12.5"><tspan class="accent" font-weight="600">Shared by both: </tspan><tspan class="ink">the graph, the parts, the checks, the simulation, the board file and plan, Freerouting, the gate</tspan></text>
+</svg>

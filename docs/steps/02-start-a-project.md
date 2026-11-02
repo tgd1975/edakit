@@ -28,9 +28,9 @@ A question you cannot answer yet keeps its default. Claude names it in its repor
 
 ## What you decide
 
-Every answer is yours. The purpose matters most: it sets how deep the legal review of a later step goes. That review
-is support, not legal advice. Nothing in it is legally guaranteed, and it
-makes no promise to be correct.
+Every answer is yours. EasyEDA Pro is the default program for the board, and KiCad is the other choice. Claude says
+what each means for your project. The purpose matters most: it sets how deep the legal review of a later step goes.
+That review is support, not legal advice. Nothing in it is legally guaranteed, and it makes no promise to be correct.
 
 Then Claude shows every file and every setting with the answer behind it. Nothing is written before your OK.
 

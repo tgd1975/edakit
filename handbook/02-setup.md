@@ -4,41 +4,43 @@ For everyone who installs edakit. After this chapter the tool chain runs, `edaki
 project is set up. The short way: [Install the tools](../docs/steps/01-install.md) and [Start a
 project](../docs/steps/02-start-a-project.md).
 
-Tested with EasyEDA Pro 3.2.209 on Linux (Ubuntu), easyeda-mcp-pro 1.6.0, Node 24, Python 3.11–3.14, ngspice 45,
-Freerouting 2.4.1, Claude Code 2.1.3xx. Windows and macOS should work for everything except the bundled Freerouting
-download (set `FREEROUTING_JAR`) – untested.
+Tested on Linux (Ubuntu) with Python 3.11–3.14, ngspice 45, Freerouting 2.4.1 and Claude Code 2.1.3xx; on EasyEDA with
+EasyEDA Pro 3.2.209, easyeda-mcp-pro 1.6.0 and Node 24, on KiCad with KiCad 10.0.6. Windows and macOS should work for
+everything except the bundled Freerouting download (set `FREEROUTING_JAR`) – untested.
 
 ## 2.1 What talks to what
 
-```text
-Claude Code ──stdio──► easyeda-mcp-pro ◄──WebSocket 127.0.0.1:49620──► bridge extension in EasyEDA Pro
- (plugin manifest)     (edakit/easyeda/mcp-server.sh)                    (menu "MCP Bridge")
-edakit ──────stdio──► easyeda-mcp-pro (its own instance, the same bridge connection)
-```
+![What talks to what: Claude Code runs edakit; on EasyEDA Pro both reach the editor through easyeda-mcp-pro and the bridge extension, on KiCad edakit writes the files and calls kicad-cli; graph, checks, simulation, Freerouting and gate are shared](../docs/pictures/tool-chains.svg)
+
+Claude Code starts easyeda-mcp-pro from the plugin manifest (`edakit/easyeda/mcp-server.sh`), edakit starts its own
+instance on the same bridge connection, and the bridge listens on 127.0.0.1:49620.
 
 EasyEDA Pro has no command line and no HTTP API; only its **extension API**, inside the running editor, automates
 it. [easyeda-mcp-pro](https://github.com/oaslananka/easyeda-mcp-pro) brings an extension that connects to a local MCP
 server with 115 tools plus a controlled generic call into the extension API. edakit uses the same server.
 
+**On KiCad:** edakit writes KiCad's files and calls kicad-cli in the session – no server and no bridge in between
+(kicad-cli, 16.5).
+
 ## 2.2 Install
 
-1. **EasyEDA Pro** (desktop, not the web version): from easyeda.com. Create or open your project once.
-2. **Node 24** (easyeda-mcp-pro 1.6.0 requires it): `nvm install 24`. Started from a desktop client without nvm in
-   PATH, the launcher sources nvm itself.
-3. **uv** (runs edakit with its dependencies): <https://docs.astral.sh/uv/>.
-4. **ngspice** (stage E): `sudo apt install ngspice` (or your package manager).
+1. **The EDA program**, for a board – one of the two; when to take which is in 16.1:
+   - **EasyEDA Pro**, the default (desktop, not the web version): from easyeda.com. Create or open your project once.
+     With it **Node 24** (easyeda-mcp-pro 1.6.0 requires it): `nvm install 24`. Started from a desktop client without
+     nvm in PATH, the launcher sources nvm itself. Then the MCP server, the bridge and the window, sections 2.4 to 2.6.
+   - **KiCad 10**, the other choice, from KiCad's PPA – Ubuntu's own packages are older:
+     `sudo add-apt-repository ppa:kicad/kicad-10.0-releases && sudo apt install kicad`. No Node, no server, no bridge:
+     `edakit doctor` asks kicad-cli for its version (the KiCad setup, 16.2).
+2. **uv** (runs edakit with its dependencies): <https://docs.astral.sh/uv/>.
+3. **ngspice** (stage E): `sudo apt install ngspice` (or your package manager).
    **pdftotext** (optional, poppler-utils): with it `edakit part fetch` (datasheets, 4.6) checks whether a datasheet
    has a text layer and names its part number.
-5. **Freerouting**: nothing to do on Linux x64 – `edakit route` downloads the pinned release (with its own Java)
+4. **Freerouting**: nothing to do on Linux x64 – `edakit route` downloads the pinned release (with its own Java)
    to `~/.local/share/freerouting/` and checks its SHA-256. Elsewhere: download `freerouting-2.4.1.jar`, install
    Java 21+ (Java 17 is too old for Freerouting 2.x), set `FREEROUTING_JAR`.
-6. **For ordering** (the skill cart, 8.4): Chrome with Claude in Chrome, signed in at the makers and allowed on their
+5. **For ordering** (the skill cart, 8.4): Chrome with Claude in Chrome, signed in at the makers and allowed on their
    domains only – best a Chrome profile of its own, without a saved card –, on the computer that holds the release's
    files. `edakit cart actual --from` a PDF invoice needs pdftotext.
-
-With `toolchain = "kicad"` (chapter 16) steps 1 and 2 and sections 2.4 to 2.6 are not needed; instead **KiCad 10**
-from KiCad's PPA: `sudo add-apt-repository ppa:kicad/kicad-10.0-releases && sudo apt install kicad`. `edakit doctor`
-asks kicad-cli for its version (the KiCad setup, 16.2).
 
 ## 2.3 Claude Code: the plugin
 
@@ -104,6 +106,8 @@ running edakit does not meet it, `edakit check` notes STRUCT.edakit, and the ses
 session. The first line of the working agreements names the edakit that runs.
 
 ## 2.4 The MCP server
+
+Sections 2.4 to 2.6 set up EasyEDA Pro; on KiCad they have nothing to do.
 
 `edakit/easyeda/mcp-server.sh` installs easyeda-mcp-pro **pinned** to 1.6.0 into
 `~/.easyeda-mcp-pro/runtime/1.6.0` (once) and starts `node` directly, with safe defaults:
@@ -225,6 +229,9 @@ deleting each is your decision, the setup deletes none.
 After the skill, create the EasyEDA project by hand (File → New → Project, named as `[project] name`); edakit finds
 it in EasyEDA's project folder, remembers its UUID and reopens it after an EasyEDA restart (editor state, 9.2). Then
 follow chapters 6–8. Daily: start EasyEDA → open the project → work.
+
+**On KiCad:** there is nothing to create. edakit writes the KiCad project of each board into
+`<artifacts>/kicad/<board>/` at the first `schematic create` or `pcb apply` – the KiCad project (16.3).
 
 ## 2.8 Licences of the parts you combine
 

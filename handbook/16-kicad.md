@@ -1,9 +1,9 @@
 # 16 KiCad as the tool chain
 
-For a project that draws its boards in KiCad instead of EasyEDA Pro
-([concept](../docs/concepts/done/kicad-toolchain.md)). After it you can switch a project, set KiCad up, and know what
-each command and each gate stage does on KiCad's files. The short way: [Lay out the
-board](../docs/steps/09-lay-out-the-board.md).
+For a project that draws its boards in KiCad ([concept](../docs/concepts/done/kicad-toolchain.md)). EasyEDA Pro is
+the default – edakit was built around it and JLCPCB –, and KiCad is the other choice; 16.1 says when to take which.
+After this chapter you can choose, set KiCad up, switch a project and know what each command and each gate stage does
+on KiCad's files. The short way: [Lay out the board](../docs/steps/09-lay-out-the-board.md).
 
 > **State 2026-10-31:** built; tested offline against a kicad-cli the tests fake, and in CI against KiCad 10 on the
 > led-bar example (what is confirmed, 16.8). The first board released through it is the 555 blinker of chapter 18,
@@ -13,15 +13,30 @@ The graph, the parts database, the simulation, the board file with its plan, the
 check of the gate are the same for both tool chains. Only the EDA project is the tool chain's: an EasyEDA project
 driven through the bridge, or KiCad files that edakit writes and kicad-cli reads.
 
-## 16.1 Choosing it
+## 16.1 EasyEDA Pro or KiCad
+
+Both give the same checks, the same gate and the same manufacturing files. They differ in how edakit reaches the EDA
+project:
+
+| | EasyEDA Pro, the default | KiCad 10 |
+| --- | --- | --- |
+| Take it when | you work in EasyEDA already, or want the tool chain edakit's projects were built on | you want open files, no bridge and no click, or a chain without a noncommercial licence |
+| The EDA project | you create it once; edakit drives it through the bridge | edakit writes it; kicad-cli reads it |
+| By hand | create the project, one *Import Changes* ([upstream](../upstream/README.md) lists each click) | nothing |
+| Parallel sessions | one at a time per machine: the claim (11.2) | no limit: each board has its own files |
+| Footprints | EasyEDA's library, which JLCPCB's assembly works from | the same LCSC data, cached by edakit (16.3) |
+| Licence | EasyEDA Pro proprietary, easyeda-mcp-pro PolyForm Noncommercial | KiCad GPL-3.0 |
+| Released on it | pytree, the Christmas bell, the coin cell of [walkthrough 17](17-walkthrough.md) | the 555 blinker of [walkthrough 18](18-walkthrough-kicad.md); CI against KiCad 10 (16.8) |
+
+`/edakit:new-project` asks for it once; a project switches later as 16.7 says.
 
 ```toml
 # edakit.toml
 [project]
-toolchain = "kicad"          # "easyeda" (default) or "kicad"
+toolchain = "kicad"          # "easyeda" (the default) or "kicad"
 ```
 
-Without the key a project is an EasyEDA project, as before. One tool chain serves every board of a project. With
+Without the key a project draws in EasyEDA Pro, the default. One tool chain serves every board of a project. With
 `"kicad"` every board is the KiCad project `<artifacts>/kicad/<board>/`, and the names of EasyEDA documents in
 `[boards.<name>]` (`template`, `schematic`, `pcb`) are refused – there is nothing to name.
 
@@ -77,9 +92,9 @@ or oval drills along the pad's long side; a hole not plated → `np_thru_hole`.
 
 ### Symbols
 
-Symbols are those `schematic draw` draws (drawn without EasyEDA, 6.5), one per part, turned as the sheet turns it.
-Their pins are the drawing's pin tips, of length 0 and passive – edakit's checks of stage G reason about drivers, not
-KiCad's ERC. Labels name the nets where the drawing writes a net name or a flag.
+Symbols are those `schematic draw` draws (drawn without an EDA program, 6.5), one per part, turned as the sheet turns
+it. Their pins are the drawing's pin tips, of length 0 and passive – edakit's checks of stage G reason about drivers,
+not KiCad's ERC. Labels name the nets where the drawing writes a net name or a flag.
 
 A pin in `nc` that the drawing shows gets KiCad's no-connect flag, and KiCad nets it on its own,
 "unconnected-(SW1-Pad3)". `pcb apply` gives its pad that net, taken from kicad-cli's netlist export, so that the
@@ -112,7 +127,7 @@ The commands are the same; what they do on KiCad:
 | `route drc` | KiCad's DRC with schematic parity |
 | `silk apply` / `check` | the same placement (silkscreen, 7.7), written into the file; Gerber from kicad-cli |
 | `export` | PDFs, netlist, BOM, Gerber ZIP, CPL, `kicad_<board>.zip` |
-| `gate --eda` | stages S, L, F on KiCad (`--easyeda` is the same flag) |
+| `gate --eda` | stages S, L, F on KiCad's files |
 | `part build --write` | the board's library and the part's footprints in the PCB from `footprint_data` |
 
 ## 16.5 kicad-cli

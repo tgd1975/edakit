@@ -1,7 +1,7 @@
 """Release gate: runs every stage and writes a test protocol. Only a run that says RELEASED may go to the manufacturer.
 
     edakit gate             P (parts), G (graph), E (simulation) and the project's checks before S; offline, seconds
-    edakit gate --easyeda   plus S (schematic), L (board), F (manufacturing files) and the project's checks after F;
+    edakit gate --eda       plus S (schematic), L (board), F (manufacturing files) and the project's checks after F;
                             EasyEDA with the bridge, minutes
 
 The project's checks ([[release.stages]] and [scripts.<name>] of kind check, scripts.gate_checks): phase export is a
@@ -1124,7 +1124,7 @@ def main(cfg, args):
     stages = stages_of(cfg)
     stages = stages[:3] + [(c.id, c.title, c.about) for c in before] + stages[3:] + [
         (c.id, c.title, c.about) for c in after]
-    step = eda.Steps(2 + len(before) + (1 + len(cfg.made()) + len(after) if args.easyeda else 0))
+    step = eda.Steps(2 + len(before) + (1 + len(cfg.made()) + len(after) if args.eda else 0))
     step("P/G parts and graph")
     rows, g_json = stage_graph(cfg, design)
     (outdir / "graph_checks.json").write_text(json.dumps(g_json, indent=1, ensure_ascii=False) + "\n", encoding="utf-8")
@@ -1147,7 +1147,7 @@ def main(cfg, args):
         rows += more
         stages_run |= ran
     files = {}
-    if args.easyeda:
+    if args.eda:
         step("S schematic against the graph")
         rows += stage_schematic(cfg, outdir)
         rows += stage_fab(cfg, outdir, step)
@@ -1163,7 +1163,7 @@ def main(cfg, args):
     reqs = requirements.evaluate(entries, [*sim["checks"], *rows], signoff, stages_run,
                                  project_checks)   # [] without the key; script: the checks of this run
     decision, reasons = decide(rows, sim["checks"], signoff, stages_run, stages, reqs)
-    if args.easyeda:
+    if args.eda:
         files = write_manifest(cfg, outdir, head, decision)
         (outdir / MAKERS).write_text(json.dumps(maker_findings(cfg, rows), indent=1, ensure_ascii=False) + "\n",
                                      encoding="utf-8")

@@ -3,6 +3,8 @@
 For you if you want to make a circuit or a board with Claude. Ten steps lead from the idea to the boards in your
 hand. Each page says what you do, what you are asked, what you decide and what you have at the end.
 
+![The steps of edakit, the loops back and where you decide](../pictures/pipeline.svg)
+
 | | Step | Who acts |
 | --- | --- | --- |
 | 1 | [Install the tools](01-install.md) | you |

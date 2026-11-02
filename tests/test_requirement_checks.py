@@ -464,7 +464,7 @@ def test_a_check_that_did_not_run_is_no_passing_evidence(tmp_path):
     text = requirement("must", ("script", "gerber"), rid="R-1") + requirement("must", ("script", "pins"), rid="R-2")
     results, _ = evaluate(tmp_path, text, stages_run="PGE", checks=[gerber])
     assert [r.items[0][2:] for r in results] == [
-        ("fail", "check X did not run – it runs after stage F, in edakit gate --easyeda"),
+        ("fail", "check X did not run – it runs after stage F, in edakit gate --eda"),
         ("fail", "no check pins in this run – stage G says why (scripts, DOCS.ref)")]
 
 

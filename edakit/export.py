@@ -14,7 +14,7 @@ Per board (board schematic and PCB):
                             patched server and bridge (easyeda_export_odb, handbook 2.5); on KiCad kicad-cli's
 plus <project>.eprj2: a consistent copy of the project file (SQLite backup, state of the last save).
 
-Orders are NOT placed with these files but with the checked ones of the release gate (`edakit gate --easyeda`).
+Orders are NOT placed with these files but with the checked ones of the release gate (`edakit gate --eda`).
 What the bridge cannot do is replaced here: its PDF export always takes the PCB path (the first available function
 is called, PCB_ManufactureData.getPdfFile), easyeda_bom_export writes no file and mixes all schematics of the
 project, and the netlist export returns nothing.
