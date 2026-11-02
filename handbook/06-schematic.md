@@ -73,10 +73,11 @@ duplicate, LCSC), nets (every graph pin on its net, no foreign pins, no unknown 
 no-connect markers.
 
 It reads the schematic **as saved, with no other schematic open**: every saved schematic tab is closed first – the
-PCB's stay –, then every page of this one opened again. While another schematic of the project is open, EasyEDA can
-list a pin on a second net with no wire, net label or flag there: pytree's template showed U4.11 on V_LED whenever the
-board's schematic `layout_tree` was open – stage F focuses it last – and matched with that tab closed (E-18 in
-`upstream/README.md`, #117). So the same template passed or failed depending on what ran before in the session.
+PCB's stay –, then every page of this one opened again. While another schematic of the project is open, the bridge
+can list a pin on a second net: pytree's template showed U4.11 on V_LED whenever the board's schematic `layout_tree`
+was open – stage F focuses it last –, because a V_LED flag of `layout_tree` sits on the end of the template's wire
+from U4.11 and the bridge takes the flags of every open schematic but the wires of one (M-11 in `upstream/README.md`,
+#117). So the same template passed or failed by what ran before.
 
 A tab with unsaved changes stays open – closing it would throw them away –; the check reads this schematic's as drawn,
 and names either in a finding of its own (`saved`): save it, or close its tab without saving.
