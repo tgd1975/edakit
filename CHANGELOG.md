@@ -8,6 +8,10 @@ written once, by `.github/merge.py`, from the fragments in [changes/](changes/RE
 update edakit@edakit`, then `/reload-plugins` or a new session; `edakit version` names the version that runs and what an
 update brings.
 
+## 1.0.14 – 2026-11-02
+
+- `schematic check` and stage S close every saved schematic tab before they read, not only their own: EasyEDA lists a pin of the template on a second net while the board's schematic is open (E-18, #117 – live on pytree). Another schematic with unsaved changes stays open and is named in the finding `saved`.
+
 ## 1.0.13 – 2026-11-02
 
 - The pre-commit hook's edakit block holds under the project's `set -euo pipefail`: without edakit on the PATH it still reaches the plugin, and a failing step still blocks with its exit code. A block of 1.0.11 counts as older; the session start names it, `edakit hook install` renews it.

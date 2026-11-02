@@ -423,36 +423,38 @@ def check_pins(mcp, graph_comps, sch, graph_nets, rep):
 
 
 def close_schematic_tabs(mcp, sch_uuid):
-    """Close the tabs of one schematic; returns the titles of those left open because they hold unsaved changes."""
+    """Close every saved schematic tab – this schematic's and every other one's; the PCB's stay. Returns the titles left
+    open because they hold unsaved changes: (this schematic's, other schematics')."""
     try:
         tree = api(mcp, "DMT_EditorControl.getSplitScreenTree")
     except MCPError as e:
         print(f"  ? tabs not readable ({e}) – the schematic is read as it is open")
-        return []
-    unsaved = []
+        return [], []
+    own, others = [], []
     for tab in list(iter_tabs(tree)):
         data = tab.get("data") or {}
-        if not data.get("sch") or data.get("data-schematic-uuid") != sch_uuid:
+        if not data.get("sch"):
             continue
         if tab.get("isUnSaved"):
-            unsaved.append(tab["title"])
+            (own if data.get("data-schematic-uuid") == sch_uuid else others).append(tab["title"])
             continue
         try:
             api(mcp, "DMT_EditorControl.closeDocument", tab["tabId"])
         except MCPError as e:
             print(f"  ? tab {tab['title']} not closed ({e}) – read as it is open")
-    return unsaved
+    return own, others
 
 
 def read_saved(mcp, name):
-    """The schematic `name` as saved: its tab closed first (a saved one only), every page opened again and read –
-    (parts, nets, titles of tabs with unsaved changes). EasyEDA can put a pin of a saved schematic on a second net once
-    it is opened again, with no primitive there (E-18, #117): a tab left open by `schematic create`, an earlier stage S
-    or anything else would make the result depend on what ran before in the session, while a restart, `schematic
-    copy` and every later session read the save. A tab with unsaved changes stays open – closing it would throw them
-    away – and is read as drawn."""
+    """The schematic `name` as saved, with no other schematic open: every saved schematic tab closed first, every page
+    of this one opened again and read – (parts, nets, titles of its tabs with unsaved changes, of other schematics'
+    left open). While another schematic of the project is open – the board's schematic, a copy of the template, which
+    stage F focuses last –, EasyEDA lists a pin on a second net with no primitive there (E-18, #117: pytree's U4.11 on
+    V_LED with layout_tree open, matching with it closed); a tab left open would make the result depend on what ran
+    before in the session. A tab with unsaved changes stays open – closing it would throw them away –; this
+    schematic's is read as drawn."""
     sch_uuid, pages = eda.find_pages(mcp, name)
-    unsaved = close_schematic_tabs(mcp, sch_uuid)
+    unsaved, others = close_schematic_tabs(mcp, sch_uuid)
     sch_comps, sch_nets = [], {}
     for page in pages:    # both tools answer for the focused page: counted only while it stayed active
         parts, nets = eda.read_on_page(mcp, sch_uuid, page, lambda: (
@@ -465,15 +467,16 @@ def read_saved(mcp, name):
             sch_nets[net["net_name"]]["nodes"] += net.get("nodes", [])
     sch_comps = [c for c in sch_comps if c.get("component_kind", "part") == "part" and c.get("reference")]
     print(f"schematic '{name}': {len(pages)} page(s), {len(sch_comps)} parts, {len(sch_nets)} nets"
-          + (" – as drawn, unsaved changes" if unsaved else ", as saved"))
-    return sch_comps, list(sch_nets.values()), unsaved
+          + (" – as drawn, unsaved changes" if unsaved else ", as saved")
+          + (f" – open beside it, unsaved: {', '.join(others)}" if others else ""))
+    return sch_comps, list(sch_nets.values()), unsaved, others
 
 
 def check_reopened(mcp, name, comps, nets):
     """After `create --save`: the saved schematic opened again against the graph – the drift of E-18 shows where it
     starts. Returns the number of differences."""
     rep = Findings()
-    sch_comps, sch_nets, _ = read_saved(mcp, name)
+    sch_comps, sch_nets, _, _ = read_saved(mcp, name)
     compare(comps, nets, sch_comps, sch_nets, rep)
     if rep.count():
         print(f"  ! '{name}' saved, but opened again from the save it differs from the graph ({rep.count()}) – "
@@ -485,7 +488,8 @@ def check_reopened(mcp, name, comps, nets):
 
 
 def check(cfg, args):
-    """Read only (it closes the schematic's tab and activates its pages, though): the schematic as saved (read_saved).
+    """Read only (it closes the saved schematic tabs and activates its pages, though): the schematic as saved, with
+    no other schematic open (read_saved).
     Exit 0 = same as the graph, 2 = differences, 1 = error."""
     if is_kicad(cfg):                 # the gate's stage S calls this directly: KiCad's netlist and ERC (handbook 16)
         from .toolchain.kicad import schematic as kicad_schematic
@@ -501,10 +505,13 @@ def check(cfg, args):
             return 1
         eda.open_project(mcp, cfg)
         rep = Findings()
-        sch_comps, sch_nets, unsaved = read_saved(mcp, name)
+        sch_comps, sch_nets, unsaved, others = read_saved(mcp, name)
         if unsaved:
             rep.add("saved", f"{name}: unsaved changes in EasyEDA – read as drawn in this session, not as saved; save "
                     "it (`schematic create --save`) or close its tab without saving, and check again")
+        for title in others:
+            rep.add("saved", f"{title}: another schematic with unsaved changes stays open – EasyEDA can list its nets in "
+                    f"{name}'s (E-18); save it or close its tab without saving, and check again")
         sch = compare(graph_comps, graph_nets, sch_comps, sch_nets, rep)
         if not args.no_pins:
             check_pins(mcp, graph_comps, sch, graph_nets, rep)

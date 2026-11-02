@@ -540,19 +540,25 @@ def test_the_drc_reloads_the_pcb_only_on_connection_errors(monkeypatch, first, r
     assert len(done) == reloads and found == ([] if reloads else first)
 
 
-# --- stage S reads the saved schematic (#117) ------------------------------------------------------------------------
+# --- stage S reads the schematic with no other schematic open (#117, E-18) ---------------------------------------------
 
 class FakeSaved:
-    """One schematic, the template, with one page in a tab: the tab answers with the netlist as drawn in this session;
-    once the tab is closed, the page opened again answers with the saved state – where EasyEDA has put one pin on a
-    second net with no primitive there (E-18, pytree's U4.11 on V_LED). Records the calls in order."""
+    """Two schematics of one project, both open in tabs: the template and the board's schematic, its copy. While the
+    board's schematic is open, EasyEDA lists one pin of the template on a second net with no primitive there (E-18,
+    pytree's U4.11 on V_LED with layout_tree open); with that tab closed, the template answers as drawn. Records the
+    calls in order."""
 
-    def __init__(self, comps, nets, extra, unsaved=False):
-        self.comps, self.drawn = comps, nets
-        self.saved = {n: list(p) + ([extra[1]] if n == extra[0] else []) for n, p in nets.items()}
+    def __init__(self, comps, nets, extra, unsaved=False, other_unsaved=False):
+        self.comps, self.drawn, self.extra = comps, nets, extra
         self.tabs = [{"tabId": "t-tpl1", "title": "generated_main", "isUnSaved": unsaved,
-                      "data": {"sch": True, "data-schematic-uuid": "s-template"}}]
-        self.open, self.from_save, self.calls = True, False, []
+                      "data": {"sch": True, "data-schematic-uuid": "s-template"}},
+                     {"tabId": "t-lay1", "title": "layout_main", "isUnSaved": other_unsaved,
+                      "data": {"sch": True, "data-schematic-uuid": "s-layout"}},
+                     {"tabId": "t-pcb", "title": "main", "data": {}}]
+        self.calls = []
+
+    def leaking(self):
+        return any(tab["tabId"] == "t-lay1" for tab in self.tabs)
 
     def call(self, tool, timeout=130, **args):
         if tool == "easyeda_schematic_sheet_info":
@@ -562,7 +568,8 @@ class FakeSaved:
             return {"components": self.comps, "total": len(self.comps)}
         if tool == "easyeda_schematic_nets":
             self.calls.append(tool)
-            nets = self.saved if self.from_save else self.drawn
+            nets = {n: list(p) + ([self.extra[1]] if n == self.extra[0] and self.leaking() else [])
+                    for n, p in self.drawn.items()}
             return {"nets": [{"net_name": n, "nodes": [{"component_ref": p.split(".")[0], "pin": p.split(".")[1]}
                                                        for p in pins]} for n, pins in nets.items()]}
         path = args["path"]
@@ -572,18 +579,19 @@ class FakeSaved:
         if path == "DMT_Schematic.getSchematicInfo":
             return {"ok": True, "result": {"name": "generated_main"}}
         if path == "DMT_EditorControl.getSplitScreenTree":
-            return {"ok": True, "result": [{"tabs": self.tabs if self.open else []}]}
+            return {"ok": True, "result": [{"tabs": list(self.tabs)}]}
         if path == "DMT_EditorControl.closeDocument":
-            self.open = False
+            self.tabs = [tab for tab in self.tabs if tab["tabId"] != args["args"][0]]
             return {"ok": True, "result": True}
         if path == "DMT_EditorControl.openDocument":
-            self.from_save |= not self.open
-            self.open = True
+            if not any(tab["tabId"] == "t-tpl1" for tab in self.tabs):
+                self.tabs.insert(0, {"tabId": "t-tpl1", "title": "generated_main", "isUnSaved": False,
+                                     "data": {"sch": True, "data-schematic-uuid": "s-template"}})
             return {"ok": True, "result": True}
         raise AssertionError(path)
 
 
-def saved_template(cfg, unsaved=False):
+def saved_template(cfg, unsaved=False, other_unsaved=False):
     from edakit.design import Design
     design = Design.from_config(cfg)
     board = cfg.board(None)
@@ -591,7 +599,8 @@ def saved_template(cfg, unsaved=False):
     first, second = sorted(nets)[:2]
     pin = nets[first][0]
     sch = [{"reference": d, "lcsc": c.get("lcsc"), "primitiveId": f"p-{d}"} for d, c in comps.items()]
-    return FakeSaved(sch, nets, (second, pin), unsaved), f"{first}: {pin} is on {sorted([first, second])}"
+    return (FakeSaved(sch, nets, (second, pin), unsaved, other_unsaved),
+            f"{first}: {pin} is on {sorted([first, second])}")
 
 
 def run_check(cfg, monkeypatch, mcp, tmp_path):
@@ -607,15 +616,24 @@ def run_check(cfg, monkeypatch, mcp, tmp_path):
     return schematic.check(cfg, args), json.loads(out.read_text())
 
 
-def test_stage_s_judges_the_template_as_saved_not_as_its_open_tab(cfg, monkeypatch, tmp_path):
-    """#117: the template's tab, open from `schematic create` or an earlier stage S, answers as drawn; the saved
-    template, opened again – after stage F closed its tab, after a restart – puts a pin on a second net. The check
-    closes the tab first and reads the page opened again, so every run judges the same state: the saved one."""
-    mcp, finding = saved_template(cfg)
+def test_stage_s_reads_the_template_with_no_other_schematic_open(cfg, monkeypatch, tmp_path):
+    """#117, E-18: with the board's schematic open – stage F focuses it last – EasyEDA lists a pin of the template on a
+    second net; with it closed the template matches. The check closes every other saved schematic tab before it reads,
+    so the result does not depend on what ran before in the session. The PCB's tab stays."""
+    mcp, _ = saved_template(cfg)
     code, found = run_check(cfg, monkeypatch, mcp, tmp_path)
-    assert code == 2 and found == {"nets": [finding]}
-    close = mcp.calls.index("DMT_EditorControl.closeDocument")
-    assert close < mcp.calls.index("DMT_EditorControl.openDocument") < mcp.calls.index("easyeda_schematic_nets")
+    assert code == 0 and found == {}
+    assert [tab["tabId"] for tab in mcp.tabs] == ["t-tpl1", "t-pcb"]
+    assert mcp.calls.index("DMT_EditorControl.closeDocument") < mcp.calls.index("easyeda_schematic_nets")
+
+
+def test_another_schematic_with_unsaved_changes_stays_open_and_is_named(cfg, monkeypatch, tmp_path):
+    """Another schematic with unsaved changes cannot be closed without losing them: it stays open, and the check names
+    that its nets can show in this one's."""
+    mcp, finding = saved_template(cfg, other_unsaved=True)
+    code, found = run_check(cfg, monkeypatch, mcp, tmp_path)
+    assert code == 2 and found["nets"] == [finding]
+    assert found["saved"][0].startswith("layout_main: another schematic with unsaved changes stays open")
 
 
 def test_a_template_with_unsaved_changes_is_not_closed_and_named(cfg, monkeypatch, tmp_path):
@@ -623,19 +641,19 @@ def test_a_template_with_unsaved_changes_is_not_closed_and_named(cfg, monkeypatc
     names that it did not read the saved state."""
     mcp, _ = saved_template(cfg, unsaved=True)
     code, found = run_check(cfg, monkeypatch, mcp, tmp_path)
-    assert "DMT_EditorControl.closeDocument" not in mcp.calls
+    assert [tab["tabId"] for tab in mcp.tabs] == ["t-tpl1", "t-pcb"]
     assert code == 2 and list(found) == ["saved"]
     assert found["saved"][0].startswith("generated_main: unsaved changes in EasyEDA – read as drawn in this session")
 
 
 def test_create_save_reads_the_template_again_from_its_save(cfg, capsys):
-    """`schematic create --save` checks the saved template opened again, so the drift shows where it starts."""
+    """`schematic create --save` reads the saved template again, with no other schematic open, against the graph."""
     from edakit import schematic
     from edakit.design import Design
-    mcp, finding = saved_template(cfg)
+    mcp, _ = saved_template(cfg)
     design = Design.from_config(cfg)
     board = cfg.board(None)
     comps, nets = design.board_comps(board.name), design.board_nets(board.name)
-    assert schematic.check_reopened(mcp, "generated_main", comps, nets) == 1
-    out = capsys.readouterr().out
-    assert "saved, but opened again from the save it differs from the graph" in out and finding in out
+    assert schematic.check_reopened(mcp, "generated_main", comps, nets) == 0
+    assert "opened again from the save: matches the graph" in capsys.readouterr().out
+    assert "t-lay1" not in [tab["tabId"] for tab in mcp.tabs]

@@ -68,18 +68,18 @@ edakit schematic check                                  # the template
 edakit schematic check --schematic layout_main --no-pins
 ```
 
-Read only (it closes the schematic's tab and activates its pages, though), about 10 s. It checks parts (missing, extra,
+Read only (it closes the saved schematic tabs and activates its pages, though), about 10 s. It checks parts (missing, extra,
 duplicate, LCSC), nets (every graph pin on its net, no foreign pins, no unknown nets), pin numbers **and names** and
 no-connect markers.
 
-It reads the schematic **as saved**: its tab is closed first and every page opened again. A saved schematic, opened
-again, can list a pin on a second net with no wire, net label or flag there – pytree's U4.11 on V_LED after stage F
-had closed the template's tab (E-18 in `upstream/README.md`, #117). A tab left open from `schematic create` or an
-earlier gate showed the drawing instead, so the same template passed or failed depending on what ran before in the
-session. The save is what a restart of EasyEDA, `schematic copy` and every later session read.
+It reads the schematic **as saved, with no other schematic open**: every saved schematic tab is closed first – the
+PCB's stay –, then every page of this one opened again. While another schematic of the project is open, EasyEDA can
+list a pin on a second net with no wire, net label or flag there: pytree's template showed U4.11 on V_LED whenever the
+board's schematic `layout_tree` was open – stage F focuses it last – and matched with that tab closed (E-18 in
+`upstream/README.md`, #117). So the same template passed or failed depending on what ran before in the session.
 
-A tab with unsaved changes stays open – closing it would throw them away –; the check reads it as drawn and names that in a finding
-of its own (`saved`): save the template, or close its tab without saving.
+A tab with unsaved changes stays open – closing it would throw them away –; the check reads this schematic's as drawn,
+and names either in a finding of its own (`saved`): save it, or close its tab without saving.
 
 A name that differs from the symbol (`D11/MOSI` in the graph, `D11` in the symbol) fails. Either the graph assumed
 another pinout – the error to catch here – or the library part disagrees with itself: an LED symbol names pin 1 `K`
