@@ -4,7 +4,7 @@ Open work that needs the owner's computer, a maker or the owner's word. The stat
 and plans the sections name; this list is what is left to do of them, in the order it can be done. No item is deleted.
 
 **Layout.** Every item, in every section, open or closed, is a line with a checkbox and an ID unique in this file,
-counted up and never reused – whoever adds an item takes the next free ID and counts it up here. Next free ID: TD-108.
+counted up and never reused – whoever adds an item takes the next free ID and counts it up here. Next free ID: TD-109.
 
 - Open: `- [ ] TD-<n> - **Title:** what and why.` – a step's own name after the dash (`- [ ] TD-31 - **D.4** …`).
 - Done: ticked, the commit that did it, the date at the end, moved to [Closed todos](#closed-todos), newest first –
@@ -33,9 +33,11 @@ to touch.
       easyeda-mcp-pro servers of the sessions; then in EasyEDA uninstall the old extension, import
       `~/.easyeda-mcp-pro/ext-1.8.0/easyeda-bridge-extension.eext`, allow "External Interactions", quit and restart
       EasyEDA – for the live checks of #250 (TD-26, TD-84). *(edakit-80)*
-- [ ] TD-82 - **pytree's pictures:** pick what of the private repository may go onto `docs/projects/pytree.md` – the
-      page is text only, from its README and chapter 13; say too whether that much about the gift may stand before
-      Christmas. *(edakit, documentation session)*
+- [ ] TD-82 - **pytree's pictures:** merge #257 – the pictures picked on 2026-11-02 (the board from the ordered release
+      20261101-225744, the tree in its hill, the copper review's before/after); the gift's words stand before Christmas.
+      *(edakit-ce)*
+- [ ] TD-108 - **A photo of the delivered tree:** one picture of the lit tree in its hill into pytree's `docs/img/` –
+      it replaces the render on `docs/projects/pytree.md`. *(edakit-ce)*
 
 ## What edakit needs from EasyEDA Pro and easyeda-mcp-pro ([upstream/README.md](upstream/README.md))
 
@@ -44,12 +46,8 @@ E-1 to E-17 on EasyEDA Pro and M-1 to M-10 on easyeda-mcp-pro, checked live on E
 
 - [ ] TD-105 - **E-18 (a saved schematic, opened again, puts a pin on a second net):** check it live on the newest
       EasyEDA Pro and against the API docs, then report it upstream on the owner's "posten?" – entered unreported with
-      #117 (edakit 1.0.6); upstream/README.md follows. Not reproduced on `examples/coin-cell-led` (2026-11-02: saved,
-      opened again, matches) – it needs `tree`, so after TD-106. *(edakit-80)*
-- [ ] TD-106 - **#117 on `tree` (pytree):** once `schematic create --save` passes place-D2 again (it times out at
-      `schematic.placeComponent`, C2895477), run it with edakit 1.0.6 and `schematic check --schematic generated_tree`
-      before and after `gate --easyeda` – both the same shows the gap closed; a drifted save gives E-18 its live case.
-      *(edakit-80)*
+      #117 (edakit 1.0.6); the cause found live on `tree` and E-18 rewritten with #256 (edakit 1.0.14): another
+      schematic of the project open. *(edakit-80)*
 
 ### Waiting for upstream
 
@@ -74,6 +72,9 @@ Nothing to do until there is an answer or a release; whichever session learns of
 Done or dropped, newest first, each with its date and the commit that closed it. What closed before 2026-11-01 is
 taken from the history of this file; an item rewritten on its way is listed once, in its last form.
 
+- [x] TD-106 - **#117 on `tree` (pytree):** run by pytree-29 – with #232 the check differed before and after the
+      gate; the cause was the board's schematic `layout_tree` left open, not the save. Fixed in #256 (edakit 1.0.14),
+      live on `tree`: with `layout_tree` open the check matches. [2026-11-02]
 - [x] TD-104 - **A picture of the routed board for the walkthroughs:** `board_main_top.png` of a gate run in both
       examples' `docs/` – coin-cell-led from the EasyEDA run 20261101-200611, blinker-555 from `gate --eda` with KiCad
       10 –, shown in handbook 17.11 and 18 after the silkscreen (#246, edakit 1.0.10). [2026-11-02]
