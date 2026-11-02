@@ -16,11 +16,28 @@ source and `--check` finds its drift, `edakit graph convert` moves a project, `b
 line editor, the hook line and the handbook are there; the language builds on these, and every step names what
 it reuses. Sizes as in the plans: S a day, M a few days, L a week or more, in a human's measure.
 
+Checked on 2026-11-02 against main at `63dac84` (edakit 1.1.0), on the owner's go the same day to build all four
+stages on one branch: the code the plan reuses is where it names it – `edakit/circuit.py`, `edakit/block.py`,
+`edakit/design.py` and `edakit/graph_form.py` unchanged since `2f4628a` –, and five things moved since and are
+followed here: the handbook's chapter 18 is the KiCad walkthrough, so the language's chapter is 19; the hook line
+of the TOML form is now `edakit hook` (`edakit/hook.py`, handbook 2.7), whose block runs `graph json --check` for a
+configuration with a generated graph and already runs every variant when the main project's `hardware/` is staged;
+a merge is a version (`docs/concepts/done/versioning.md`) – the branch carries `changes/<branch>.md` and goes onto
+main through `python3 .github/merge.py`; `[project] edakit` names the edakit a project needs (STRUCT.edakit, read
+at the session start by `edakit/agreements.py`); and `docs/steps/` tells a newcomer the way through, its step 4
+naming the graph.
+
 ## The session's protocol
 
 - **One branch, one commit per step.** Everything on the branch the session is given; a commit per step, named
-  `T.n: …` with what it adds; main is the owner's, merged on the owner's word after the closing report. The branch is
-  listed in the report as the one unmerged branch, as CLAUDE.md asks.
+  `T.n: …` with what it adds; main is the owner's, merged on the owner's word after the closing report – then as a
+  pull request through `python3 .github/merge.py <n>`, never by a local merge. The branch is listed in the report as
+  the one unmerged branch, as CLAUDE.md asks.
+- **One fragment.** The first step writes `changes/<branch>.md` (`changes/README.md`), first line `patch` – new
+  commands, keys, a code and a file form; no project has to act, no hash of a project without the language changes
+  –, and every step that adds something a project reads adds its line. Were a step to change a hash or the meaning
+  of a key for a project that does not use the language, the fragment becomes `minor` with a line beginning
+  **When updating:**, and the report names it – the plan foresees none.
 - **Each step in add-feature's order** (`.claude/skills/add-feature/SKILL.md`): the failing test first, then the
   interface – a key in `edakit/config.py` with a default that changes nothing, a command in `edakit/cli.py` –, the
   code, the test green with its counterpart, the projects at hand unchanged, the handbook, and `uv run --group dev
@@ -42,9 +59,9 @@ it reuses. Sizes as in the plans: S a day, M a few days, L a week or more, in a 
 - **Evals** are written as cases; they run with `claude plugin eval` only where the harness is at hand and the
   owner's budget allows (`evals/README.md`); otherwise the report says "written, not run".
 -  **The closing report:** one line per step – commit, tests added, what changed in led-bar's report (nothing,
-  or what) –, the decisions of the session, what the owner has to do (merge, run the evals, the bell's
-  conversion in its repository), and the closing question of the decision-round skill for what the session
-  decided itself.
+  or what) –, the fragment as it stands, the decisions of the session, what the owner has to do (merge, run the
+  evals, the bell's conversion in its repository), and the closing question of the decision-round skill for what
+  the session decided itself.
 
 ## What is built
 
@@ -55,7 +72,8 @@ a stale resolved graph; the block library as definitions with the generated JSON
 --set` and `--part`; `block add` writing a usage on a language source; `edakit req` reading `.circuit` requirements
 files; the fixture `tests/fixtures/led-bar-circuit`; three evals; the handbook chapter 18 with the generated tables
 of rules and DEF codes; `edakit/lang/library/Electrical.sysml` and the exports with their conformance test; `edakit
-lsp` on pygls and `editors/vscode/`.
+lsp` on pygls and `editors/vscode/`; `edakit hook` checking the generated graph of a `.circuit` source as of a TOML
+one; `edakit graph convert --to circuit` setting `[project] edakit`.
 
 ## Overview
 
@@ -64,13 +82,13 @@ lsp` on pygls and `editors/vscode/`.
 | T.1 | Quantities, units, the E-series table | S | – | 1 |
 | T.2 | Tokens, statements, the model, the reader | M | T.1 | 1 |
 | T.3 | The attribute table; pin words through the Design | S | T.2 | 1 |
-| T.4 | The compiler for flat statements; `load_graph` and `edakit graph json` on a `.circuit` source; the hash; SYNC.graph | M | T.3 | 1 |
+| T.4 | The compiler for flat statements; `load_graph` and `edakit graph json` on a `.circuit` source; the hash; SYNC.graph; `edakit hook` | M | T.3 | 1 |
 | T.5 | `edakit graph fmt` | S–M | T.4 | 1 |
 | T.6 | `edakit graph convert --to circuit`, the sign-offs carried over | S | T.4 | 1 |
 | T.7 | Definitions; the block library as `.circuit` with the generated JSON | M | T.4 | 1 |
 | T.8 | Derivation rules and records; `block add --set` and `--part`; `edakit graph derive`; the engine DEF | M | T.7 | 1 |
 | T.9 | The TextMate grammar | S | T.2 | 1 |
-| T.10 | Handbook chapter 18, reference, README – stage 1 | M | T.5–T.9 | 1 |
+| T.10 | Handbook chapter 19, reference, README – stage 1 | M | T.5–T.9 | 1 |
 | T.11 | Usages | M | T.8 | 2 |
 | T.12 | Repetition | S | T.11 | 2 |
 | T.13 | `param`, `alias`, `include` | S–M | T.11 | 2 |
@@ -78,7 +96,7 @@ lsp` on pygls and `editors/vscode/`.
 | T.15 | Requirements in the notation; `edakit req` on `.circuit`; DOCS.ref on `subject`, `satisfies`, `decision` | M | T.14 | 2 |
 | T.16 | `block add` on a language source writes a usage | M | T.11 | 2 |
 | T.17 | The fixture led-bar-circuit; golden, determinism and round-trip tests; the bell's sources, optional | M | T.14, T.16 | 2 |
-| T.18 | Skills, the hook line, handbook of stage 2 | S–M | T.17 | 2 |
+| T.18 | Skills, the steps, handbook of stage 2 | S–M | T.17 | 2 |
 | T.19 | Evals: add-led in the language, a repetition task, a variant task | S | T.17 | 2 |
 | T.20 | `Electrical.sysml` and the conformance test with a standard reader | M | T.7 | 3 |
 | T.21 | `edakit graph sysml` | M | T.15, T.20 | 3 |
@@ -104,7 +122,7 @@ graph LR
   t14 --> t17["T.17 fixtures, golden"]
   t16 --> t17
   t15 --> t17
-  t17 --> t18["T.18 skills, hook"]
+  t17 --> t18["T.18 skills, steps"]
   t17 --> t19["T.19 evals"]
   t7 --> t20["T.20 Electrical.sysml"] --> t21["T.21 graph sysml"] --> t22["T.22 graph kerml, JSON"]
   t22 --> t23["T.23 requirements export, CI"]
@@ -175,49 +193,51 @@ tables, as `test_catalog.py` holds generated sections), `nearest("labl") == "lab
 by `tests/test_pin_words.py`. Done when: the test passes.
 
 **T.4 The compiler for flat statements; `load_graph` and `edakit graph json` on a `.circuit` source; the hash;
-SYNC.graph.** Files: `edakit/lang/compile.py`, `edakit/lang/cli.py`, `edakit/design.py`, `edakit/graph_form.py`,
-`edakit/release/gate.py`, `edakit/cli.py`, `edakit/config.py`, `edakit/engines/project.py`,
-`edakit/catalog/codes.toml`. `compile.py`: `project_of(path) -> (root, parts_dirs)` – edakit.toml found upward
-from the file, as `config.load` searches from the working directory, its `[project] parts` read; no Config is
-built, `load_graph` has only the path –; `load_sources(path, root) -> [Source]` (the main file; includes and the
-variant chain come in T.13 and T.14, this is the one function that grows); `resolve(sources) -> Model` (the
-namespace of language 6, phase 2, with the duplicate checks); `expand(model) -> Model` (identity until T.11 and
-T.12); `assemble(model, root, parts_dirs) -> (graph: dict, map: SourceMap)` (phases 7 and 9: the graph dict as
-`graph_of_toml` gives a TOML graph's – components, nets and cables as lists in today's key order, pin words as
-written with a part's aliases replaced, every `set` key where it was put, `derivations` from T.8 on –; the
-Design built on it with `graph_form.design_of`, and every entry of `Design.unresolved` turned into a `LangError`
-at its statement with the entry's names and roles and the aliases as candidates); `compile_path(path) -> dict`
-for `load_graph`; `compile(cfg) -> (graph, map)`; `CompileError` with the list of `LangError`s, raised from
-`load_graph` as `ConfigError` with every `PATH:LINE: TEXT`, as a broken TOML graph is; the `SourceMap` of
-language 6, phase 10, filled from the start. `design.py`: `load_graph` reads a `.circuit` path through
-`lang.compile.compile_path`. `graph_form.py`: `generated_path` gives the `.json` beside a `.circuit` source as
-beside a `.toml`; `main_json` then prints, writes and checks a language project as it does a TOML one – the
-resolved graph through `resolved`, drift through `firmware.differences` –, nothing else changes. `gate.py`:
-`content(path, ignore, graph=True)` takes a `.circuit` graph as its compiled data, arranged, as it takes a TOML
-graph (the scripts' data name `graph` goes through `file_hash(graph=…)` already). `config.py`: `[project] graph`
-accepts the `.circuit` suffix where it validates the path; no new key. `cli.py`: `graph json` gains
-`--map FILE`; `json` and `convert` stay with `graph_form`, the language's own actions – `fmt`, `derive`,
-`sysml`, `kerml` – go to `lang.cli.main`. `engines/project.py`: `SYNC.graph` – for a TOML or a `.circuit` graph
-with a generated file beside it, the generated file against `graph_form.resolved`, canonically; a difference is
-an error of stage G (`f.stage = "G"` next to `SYNC.scripts`), a missing generated file too; a JSON project
-nothing (language 12, item 16); `codes.toml` gets `[codes."SYNC.graph"]` with title, rule, why, fix
-(`edakit graph json --write`), severity error, sources; the handbook's generated SYNC section follows
-(`python -m edakit.catalog.handbook --write`). Tests: `tests/test_lang_compile.py` – the flat form of language
-11's led-bar (the `for` written out, in a test string) compiles canonically equal to
-`tests/fixtures/led-bar/hardware/graph.json` with the parts of the fixture (`graph_form.canonical`); the errors
-with file and line: an unknown designator in a net, a pin word naming no pin (the candidates in the text), the
-same pin in two nets or in a net and `nc` (both places), a range in the wrong unit, a missing entry naming
-`edakit part add`, a duplicate designator and a duplicate net; `tests/test_lang_cli.py` – on a project whose
-`[project] graph` is a `.circuit` file: `graph json` prints, `--write` writes beside the source and a second
-`--write` changes no bytes, `--check` exits 2 with the differing designator named after a source edit and 0
-after `--write` (the pattern of `tests/test_graph_form.py`), `--check` on led-bar exits 0 with its message;
-`edakit check` on the same project reports what led-bar reports; the hash tests of `tests/test_graph_toml.py`
-mirrored for the language – the hash takes the compiled data, a comment and a reordered statement change
-nothing, a changed pin does, `graph_sha256` names the source's bytes, led-bar's `state_hash` unchanged;
-`tests/test_sync_graph.py` – a TOML project and a language project with a stale generated file report SYNC.graph
-as an error in `edakit check`, a current one nothing, led-bar nothing. Done when: the tests pass; led-bar's
-`edakit check`, `sim` and `gate` report as before, and so does the TOML led-bar of `tests/test_graph_toml.py`
-with its generated file current.
+SYNC.graph; `edakit hook`.** Files: `edakit/lang/compile.py`, `edakit/lang/cli.py`, `edakit/design.py`,
+`edakit/graph_form.py`, `edakit/release/gate.py`, `edakit/cli.py`, `edakit/config.py`, `edakit/engines/project.py`,
+`edakit/catalog/codes.toml`, `edakit/hook.py`. `hook.py`: `configs` marks a configuration whose `[project] graph` is a
+`.toml` or a `.circuit` file (the key `toml_graph` renamed `generated_graph`, its one reader `plan`), so that `plan`
+adds `graph json --check` for both; the block's text and `FORMAT` unchanged – a project's installed hook needs no
+`edakit hook install` again. `compile.py`: `project_of(path) -> (root, parts_dirs)` – edakit.toml found upward from
+the file, as `config.load` searches from the working directory, its `[project] parts` read; no Config is built,
+`load_graph` has only the path –; `load_sources(path, root) -> [Source]` (the main file; includes and the variant
+chain come in T.13 and T.14, this is the one function that grows); `resolve(sources) -> Model` (the namespace of
+language 6, phase 2, with the duplicate checks); `expand(model) -> Model` (identity until T.11 and T.12);
+`assemble(model, root, parts_dirs) -> (graph: dict, map: SourceMap)` (phases 7 and 9: the graph dict as
+`graph_of_toml` gives a TOML graph's – components, nets and cables as lists in today's key order, pin words as written
+with a part's aliases replaced, every `set` key where it was put, `derivations` from T.8 on –; the Design built on it
+with `graph_form.design_of`, and every entry of `Design.unresolved` turned into a `LangError` at its statement with
+the entry's names and roles and the aliases as candidates); `compile_path(path) -> dict` for `load_graph`;
+`compile(cfg) -> (graph, map)`; `CompileError` with the list of `LangError`s, raised from `load_graph` as
+`ConfigError` with every `PATH:LINE: TEXT`, as a broken TOML graph is; the `SourceMap` of language 6, phase 10, filled
+from the start. `design.py`: `load_graph` reads a `.circuit` path through `lang.compile.compile_path`.
+`graph_form.py`: `generated_path` gives the `.json` beside a `.circuit` source as beside a `.toml`; `main_json` then
+prints, writes and checks a language project as it does a TOML one – the resolved graph through `resolved`, drift
+through `firmware.differences` –, nothing else changes. `gate.py`: `content(path, ignore, graph=True)` takes a
+`.circuit` graph as its compiled data, arranged, as it takes a TOML graph (the scripts' data name `graph` goes through
+`file_hash(graph=…)` already). `config.py`: `[project] graph` accepts the `.circuit` suffix where it validates the
+path; no new key. `cli.py`: `graph json` gains `--map FILE`; `json` and `convert` stay with `graph_form`, the
+language's own actions – `fmt`, `derive`, `sysml`, `kerml` – go to `lang.cli.main`. `engines/project.py`: `SYNC.graph`
+– for a TOML or a `.circuit` graph with a generated file beside it, the generated file against `graph_form.resolved`,
+canonically; a difference is an error of stage G (`f.stage = "G"` next to `SYNC.scripts`), a missing generated file
+too; a JSON project nothing (language 12, item 16); `codes.toml` gets `[codes."SYNC.graph"]` with title, rule, why,
+fix (`edakit graph json --write`), severity error, sources; the handbook's generated SYNC section follows (`python -m
+edakit.catalog.handbook --write`). Tests: `tests/test_lang_compile.py` – the flat form of language 11's led-bar (the
+`for` written out, in a test string) compiles canonically equal to `tests/fixtures/led-bar/hardware/graph.json` with
+the parts of the fixture (`graph_form.canonical`); the errors with file and line: an unknown designator in a net, a
+pin word naming no pin (the candidates in the text), the same pin in two nets or in a net and `nc` (both places), a
+range in the wrong unit, a missing entry naming `edakit part add`, a duplicate designator and a duplicate net;
+`tests/test_lang_cli.py` – on a project whose `[project] graph` is a `.circuit` file: `graph json` prints, `--write`
+writes beside the source and a second `--write` changes no bytes, `--check` exits 2 with the differing designator
+named after a source edit and 0 after `--write` (the pattern of `tests/test_graph_form.py`), `--check` on led-bar
+exits 0 with its message; `edakit check` on the same project reports what led-bar reports; the hash tests of
+`tests/test_graph_toml.py` mirrored for the language – the hash takes the compiled data, a comment and a reordered
+statement change nothing, a changed pin does, `graph_sha256` names the source's bytes, led-bar's `state_hash`
+unchanged; `tests/test_sync_graph.py` – a TOML project and a language project with a stale generated file report
+SYNC.graph as an error in `edakit check`, a current one nothing, led-bar nothing; `tests/test_hook.py` – a staged
+`.circuit` source gives the steps `check`, `sim` and `graph json --check`, a TOML project as before, a JSON project
+without the step. Done when: the tests pass; led-bar's `edakit check`, `sim` and `gate` report as before, and so does
+the TOML led-bar of `tests/test_graph_toml.py` with its generated file current.
 
 **T.5 `edakit graph fmt`.** Files: `edakit/lang/fmt.py`, `edakit/lang/cli.py`. `fmt.py`: `format(text) -> str`
 from the tokens of T.2 with the comment tokens: statements in the source's order, never reordered; the head line of
@@ -243,10 +263,13 @@ today's behaviour byte for byte): with `circuit`, from a JSON or a TOML source, 
 `hardware/graph.circuit`, sets `[project] graph` (`set_graph`), writes the resolved `hardware/graph.json`, reads
 its own text back through `load_graph` before writing anything (the TOML writer's own check), carries the
 sign-offs of scope circuit over with `convert.carry_signoffs` – the hash changes once, from the JSON's bytes or
-the TOML's data to the compiled data –, refuses an existing target; `--dry-run` as today. Tests:
+the TOML's data to the compiled data –, sets `[project] edakit` to `>=` the running version (`edakit.__version__`)
+where the key is absent or names a lower one – an older plugin then says so at the session start (STRUCT.edakit,
+`agreements.py`) instead of failing on the suffix –, refuses an existing target; `--dry-run` as today. Tests:
 `tests/test_lang_convert.py` – led-bar converted in a scratch copy: `edakit graph json` equals the original
 canonically, `edakit check` reports the same findings, the sign-off file carries its circuit sign-offs
-(`rehashed`, as `test_convert_carries_the_circuit_sign_offs_of_the_signed_files` tests it for TOML); the TOML
+(`rehashed`, as `test_convert_carries_the_circuit_sign_offs_of_the_signed_files` tests it for TOML), and
+`[project] edakit` set, a higher one kept; the TOML
 led-bar converted the same way; the round trip compile → convert → compile on the examples of language 11 is
 canonically equal; the converted text of led-bar equals language 11's text up to the loop (a test with the loop
 written out). Done when: the tests pass and `edakit graph convert` without `--to` behaves as before, test for
@@ -321,7 +344,7 @@ silences it; `tests/test_block.py` – `block add led --as STATUS --connect in=S
 `edakit/parts/` from its datasheet, with `edakit part import` and the entry's sources as the library asks
 (handbook 4.1), or uses an existing entry whose value fits another `i` – writes the part and the record;
 `edakit graph derive` reports a changed entry and `--write` rewrites; `tests/test_graph_show.py` – the record
-shown. Handbook: 14.5 for `--set` and `--part`; chapter 18 (T.10) for the rules and DEF. Done when: all tests
+shown. Handbook: 14.5 for `--set` and `--part`; chapter 19 (T.10) for the rules and DEF. Done when: all tests
 pass, led-bar's report is unchanged, and `edakit rules` lists DEF.
 
 **T.9 The TextMate grammar.** Files: `editors/vscode/syntaxes/circuit.tmLanguage.json`,
@@ -334,13 +357,15 @@ the site's build does not have); no `.gitattributes` in edakit (the handbook nam
 for projects). Tests: `tests/test_lang_grammar.py` – the grammar is valid JSON, every keyword of `reader.KEYWORDS`
 is matched by a pattern of it, the language configuration names `#`. Done when: the test passes.
 
-**T.10 Handbook chapter 18, reference, README – stage 1.** Files: `handbook/18-circuit-language.md` (new
+**T.10 Handbook chapter 19, reference, README – stage 1.** Files: `handbook/19-circuit-language.md` (new
 chapter; `docs/pages.py` picks chapters up by its glob), `handbook/03-hardware-graph.md` (3.1: the language as
-the third form of the graph, one paragraph after the TOML form, link to 18; 3.4: the hook line of the TOML form
-holds for a `.circuit` graph too), `handbook/10-reference.md` (10.1: `[project] graph` may name a `.circuit`;
-10.5: `edakit graph json|fmt|convert|derive`, `block add --set --part`; 10.6: the files),
-`handbook/14-design.md` (14.5), `README.md` ("What is in here", "Status and limits"), `handbook/README.md` (the
-chapter list). Chapter 18: the frame and the files (language 1 and 2), the lexical form and quantities (3 and
+the third form of the graph, one paragraph after the TOML form, link to 19; "The JSON generated beside a TOML
+graph": the same for a `.circuit` graph, SYNC.graph beside the hook), `handbook/02-setup.md` (2.7: `edakit hook`
+checks the generated graph of a TOML and a `.circuit` source), `handbook/10-reference.md` (10.1: `[project] graph`
+may name a `.circuit`, `[project] edakit` set by the converter; 10.5: `edakit graph json|fmt|convert|derive`,
+`block add --set --part`, `edakit hook`'s steps; 10.6: the files), `handbook/14-design.md` (14.5), `README.md`
+("What is in here", "Status and limits"), `handbook/README.md` (the chapter list). Chapter 19: the frame and the
+files (language 1 and 2), the lexical form and quantities (3 and
 4), the statements of stage 1 – the graph, parts, nets, cables, layout, definitions, derivations – each with a
 short example, the compiler's phases and errors (6), the rules with the generated table
 `<!-- edakit:generated rules -->` and the DEF codes `<!-- edakit:generated codes DEF -->` (7), the resolved
@@ -448,17 +473,20 @@ graphs converted the same way – skipped without `BELL_ROOT`, run by the sessio
 read-only, reported either way. Done when: the golden tests pass; the bell test passes or is reported skipped with
 the reason.
 
-**T.18 Skills, the hook line, handbook of stage 2.** Files: `skills/circuit-design/SKILL.md` (§5: the language
-as a source form, a usage and a loop as examples, link to 18), `skills/hardware-change/SKILL.md` (§1: edit the
-source, `graph json --write`, the diff of the resolved graph), `skills/new-project/SKILL.md` (§4: the hook line
-of the TOML form, `edakit graph json --check`, when `[project] graph` names a `.toml` or a `.circuit`; how a
-project starts in the language: `edakit graph convert --to circuit`), `agents/project-surveyor.md` (the resolved
-graph as a guard rail), `handbook/18-circuit-language.md` (the statements of stage 2: usages, repetition,
-parameters, aliases, includes, variants, requirements; the bell's model as the worked example; `block add` on
-the language), `handbook/03-hardware-graph.md` (3.4), `handbook/08-release-gate.md` (8.2),
-`handbook/10-reference.md`, `handbook/17-walkthrough.md` (one sentence: the walkthrough stays JSON). Tests:
-`tests/test_agents.py` and `tests/test_plugin.py` as they hold the skills' references today. Done when: every
-command and key of stage 2 is in the reference and the skills name the language where they name the graph.
+**T.18 Skills, the steps, handbook of stage 2.** Files: `skills/circuit-design/SKILL.md` (§5: the language
+as a source form, a usage and a loop as examples, link to 19), `skills/hardware-change/SKILL.md` (§1: edit the
+source, `graph json --write`, the diff of the resolved graph), `skills/new-project/SKILL.md` (the graph's form in
+the interview: JSON, TOML or the language, and how a project starts in the language: `edakit graph convert --to
+circuit`; the hook stays `edakit hook install`, which checks either source since T.4), `agents/project-surveyor.md`
+(the resolved graph as a guard rail), `docs/steps/04-design-the-circuit.md` (one sentence and a link to 19: the
+graph may be written in the language, the resolved `graph.json` beside it is what the step shows),
+`handbook/19-circuit-language.md` (the statements of stage 2: usages, repetition, parameters, aliases, includes,
+variants, requirements; the bell's model as the worked example, its four configurations checked by one `edakit
+hook`; `block add` on the language), `handbook/03-hardware-graph.md` (3.4), `handbook/08-release-gate.md` (8.2),
+`handbook/10-reference.md`, `handbook/17-walkthrough.md` and `handbook/18-walkthrough-kicad.md` (one sentence
+each: the walkthrough stays JSON). Tests: `tests/test_agents.py`, `tests/test_plugin.py` and the tests of
+`docs/steps/` as they hold the skills' and pages' references today. Done when: every command and key of stage 2 is
+in the reference and the skills name the language where they name the graph.
 
 **T.19 Evals.** Files: `evals/add-led-circuit/` (the scaffold `led-bar-circuit`; the task of `evals/add-led` on a
 language project: the `DONE:` line, the graders `used-the-block`, `graph-has-it` on the resolved graph, `ran-check`,
@@ -510,10 +538,12 @@ decisions. Done when: the tests pass.
 **T.23 The requirements export; the optional CI job.** Files: `edakit/lang/export/sysml.py` (requirement usages
 with `doc`, `binding`, `status`, `subject`, `require constraint` with the condition as `doc`, `verify` as
 strings, `satisfy … by …` from the graph's `satisfies`, the need-to-requirement derivation with the Requirement
-Derivation library's `#derivation` metadata), `handbook/18-circuit-language.md` (the exports: files, the mapping
+Derivation library's `#derivation` metadata), `handbook/19-circuit-language.md` (the exports: files, the mapping
 in short, the conformance test; no import procedure of a graphical tool – language 12, item 18),
 `.github/workflows/tests.yml` (a job `sysml` with `continue-on-error: true`: `pip install systree`,
-`pytest -m sysml`; Rust is on GitHub's Ubuntu runners), `README.md` (the exports in "What is in here"). Tests:
+`pytest -m sysml`; Rust is on GitHub's Ubuntu runners; not a required check – `.github/rulesets/main.json` stays
+as it is, a change of it is a pull request of its own on the owner's word), `README.md` (the exports in "What is
+in here"). Tests:
 the requirement export of language 11's requirements, structural and with the marker. Done when: the handbook
 describes the exports and the job runs on a push.
 
@@ -551,10 +581,10 @@ formatting request. Tests: `npm run compile` succeeds; a test with `@vscode/test
 compiles and, on the session's machine or in the report's instructions, activates on a `.circuit` file.
 
 **T.27 The CI job of the extension; handbook of stage 4.** Files: `.github/workflows/tests.yml` (a job `vscode`:
-`actions/setup-node` 20, `npm ci` and `npm run compile` in `editors/vscode`), `handbook/18-circuit-language.md`
-(the editor: install, the server, what each feature does, `graph show` at the cursor, the findings at their
-statements), `handbook/02-setup.md` (one line to the chapter), `README.md`. Done when: the job runs on a push and
-the handbook describes the editor.
+`actions/setup-node` 20, `npm ci` and `npm run compile` in `editors/vscode`; not a required check, as `sysml`),
+`handbook/19-circuit-language.md` (the editor: install, the server, what each feature does, `graph show` at the
+cursor, the findings at their statements), `handbook/02-setup.md` (one line to the chapter), `README.md`. Done
+when: the job runs on a push and the handbook describes the editor.
 
 ## Hashes and gate results
 
@@ -586,7 +616,7 @@ Where the code forces a choice the documents do not name, these hold; each use i
 - An error message starts with the file and line, then the statement's keyword and name, then what is wrong and the
   candidates, as edakit's findings start with the designator.
 -  What L.1 to L.8 built is reused, never repeated: `Design.resolve` and `word`, `graph_form`'s `design_of`,
-  `resolved`, `written`, `main_json` and `main_convert`, `toml_edit`, the hook line; where a function of this
+  `resolved`, `written`, `main_json` and `main_convert`, `toml_edit`, `edakit hook`'s `plan`; where a function of this
   plan would duplicate one of `edakit/block.py` or `edakit/convert.py`, call it.
 - A new key in a block JSON, a graph or edakit.toml has a default that changes nothing for a file without it.
 - A test that needs a parts entry uses the library's (`project.use_library_part`) or builds a minimal entry in the
@@ -635,6 +665,11 @@ SysML v2 in the export.
   `tests/test_catalog.py`, `evals/README.md`, `evals/add-led/`, `.github/workflows/tests.yml`, `docs/pages.py`,
   `.claude/skills/add-feature/SKILL.md`, `skills/new-project/SKILL.md` (the hook),
   `skills/decision-round/SKILL.md`, handbook 3, 8.2, 10, 11.4, 14.5.
+-  edakit at `63dac84`, for the check of 2026-11-02: `edakit/hook.py` (`configs`, `plan`, `toml_graph`),
+  `edakit/version.py` and `edakit/agreements.py` (STRUCT.edakit), `edakit/config.py` (`[project] edakit`),
+  `changes/README.md`, `.github/versions.py` (`NO_VERSION`), `.github/rulesets/main.json` (the required checks),
+  `docs/steps/04-design-the-circuit.md`, `handbook/02-setup.md` (2.7), `handbook/18-walkthrough-kicad.md`,
+  [versioning.md](../done/versioning.md).
 - Syster's `systree` on [PyPI](https://pypi.org/pypi/systree/json) (the API, the CLI installed from crates.io on
   first use); [pygls](https://pypi.org/project/pygls/) as the language-server frame, named in circuit-dsl.md; the
   release repository of SysML v2 for the installers of the pilot implementation.
