@@ -32,3 +32,5 @@ patch
 - T.14: variants – `variant NAME of PATH` with redefinitions and additions over its base, in a chain;
   `[project] parts` may be a list of folders, and the circuit hash of such a project takes the entries its graph
   uses; a project with one folder hashes as before.
+- T.15: requirements may be written in the notation (`hardware/requirements.circuit`); a requirement gains
+  `subject` and `require`, a part or net `satisfies` and `decision` – DOCS.ref resolves all four.

@@ -526,6 +526,14 @@ status = "accepted"
 | `verify` | requirement | a list of what tests it – below; `edakit req` shows it as written, the gate evaluates it (8.7) |
 | `status` | both | `draft` (written, not approved – also an entry without `status`), `accepted` (only you set it), `dropped` – below |
 | `reason` | both | why; required with `dropped` |
+| `subject` | requirement | the part, net, usage or definition it is about (`led`, `+5V`); DOCS.ref resolves it against the graph and, for a `.circuit` graph, its usages and definitions |
+| `require` | requirement | the condition as stated, kept as text and checked for its form – a quantity reference, an operator (`<`, `<=`, `>`, `>=`, `==`, `within`) and a quantity: `"D.i within 2 mA .. 15 mA"`; what checks it is what `verify` names |
+
+A part or a net of the graph names what it answers with `satisfies` (`["R-3"]`), and a decision with `decision`
+(`["D-8"]`): DOCS.ref holds `satisfies` to the requirements of the files and – with `[release] publish.decisions` – a
+`decision` to the headings `## D-…` of the decision log; `edakit req` lists a requirement's parts and nets. The same
+file may be written in the notation of the circuit language, `hardware/requirements.circuit` (chapter 19), read to
+the same entries and hashed byte for byte as well.
 
 `verify`, one kind per entry:
 
