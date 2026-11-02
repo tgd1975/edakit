@@ -4,6 +4,14 @@ For whoever lays out a board – you or the assistant. After it you can write th
 pour the copper, place the silkscreen and read what each step reports. The short way: [Lay out the
 board](../docs/steps/09-lay-out-the-board.md).
 
+**In short.** The PCB is built in layers, each repeatable and each checking itself. `edakit pcb parts` brings the parts
+and nets of the board schematic over without a dialog (parts and nets, 7.3). The placement plan in the board file fixes
+what matters, `edakit pcb plan` checks it offline – overlaps, outline, polarity, mated plugs, pad spacing –, and
+EasyEDA's auto-layout or `pcb place --rest` places the rest (the placement plan, 7.4). `edakit route all` routes with
+Freerouting, checks before it writes, pours the copper and runs the DRC (routing, 7.5; pours, 7.6). `edakit silk apply`
+places the designators and checks the silkscreen on the Gerber files (silkscreen, 7.7). On KiCad the commands are the
+same.
+
 The PCB is built in layers, each repeatable and each checking itself: parts and nets from the board schematic (without
 dialogs), a **placement plan** for what matters (in the board file `hardware/boards/<name>.toml`, 10.2), EasyEDA's
 auto-layout for the rest – its positions go into the placement plan (7.4) too –, **Freerouting** for the tracks, then

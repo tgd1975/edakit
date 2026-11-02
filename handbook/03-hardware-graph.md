@@ -4,6 +4,13 @@ For you when you write or change a project's circuit: after this chapter you can
 keep the firmware contract and the requirements file beside it. The short way: [Say what it must
 do](../docs/steps/03-say-what-it-must-do.md) and [Design the circuit](../docs/steps/04-design-the-circuit.md).
 
+**In short.** The graph, `hardware/graph.toml`, is the one place where parts, values and connections are decided:
+components, nets with their voltage ranges, cables, every pin by name or role (the format, 3.1). `edakit check` checks
+it in under a second; each finding has a code and a severity – an error is fixed, a warning accepted with its reason
+(rule checks, 3.3). A change starts in the graph, never in the schematic or the PCB (working rules, 3.4). Beside the
+graph stand what the firmware must know (the firmware contract, 3.5) and what the circuit must do, each requirement
+approved by you (requirements, 3.6).
+
 The graph is a pin-level netlist. It is the **only** place where parts, values and connections are decided. It is
 TOML, `hardware/graph.toml`, with pins by name or role and comments where a reader needs the reason. The older form,
 JSON in `hardware/graph.json`, is kept until the project converts; both read to the same graph. `[project] graph` in
