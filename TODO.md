@@ -65,13 +65,13 @@ Decided on 2026-11-02; N.1 to N.5 as the concept's table has them, each here onc
 - [ ] TD-94 - **N.1 + N.3** The tabs by reader and the lightened entry: branch `newcomer-n1-n3`, worktree
       `../edakit-newcomer`; a pull request once green, merged on the owner's OK. *(edakit-96)*
 
-## The documentation for its readers ([documentation.md](docs/concepts/new/documentation.md))
+## The documentation for its readers ([documentation.md](docs/concepts/done/documentation.md))
 
 Built on 2026-11-01 (#174, edakit 0.4.14); what is left after the owner's review (TD-81):
 
 - [ ] TD-83 - **The findings of the chapters' reviews:** sources that cite a section for what it does not hold
       (codes.toml, docstrings, skills), statements that look stale against the code – each listed under "Findings" in
-      `docs/concepts/new/documentation-review/` –, fixed through a branch each, sources on the owner's word.
+      `docs/concepts/done/documentation-review/` –, fixed through a branch each, sources on the owner's word.
 
 ## Closed todos
 

@@ -49,11 +49,11 @@ def test_the_navigation_is_by_reader_with_short_titles():
 
 def test_a_source_carries_the_source_line_and_the_concepts_an_index(tmp_path):
     docs = pages().assemble(tmp_path / "pages") / "docs"
-    assert "A source" in (docs / "concepts" / "new" / "documentation.md").read_text(encoding="utf-8")
+    assert "A source" in (docs / "concepts" / "done" / "documentation.md").read_text(encoding="utf-8")
     assert "A source" in (docs / "skills" / "cart.md").read_text(encoding="utf-8")
     assert "A source" not in (docs / "handbook" / "08-release-gate.md").read_text(encoding="utf-8")
     index = (docs / "concepts" / "index.md").read_text(encoding="utf-8")
-    assert "## Open" in index and "(new/documentation.md)" in index and "prototypes" not in index
+    assert "## Open" in index and "(new/documentation-newcomer.md)" in index and "prototypes" not in index
 
 
 def test_links_stay_on_the_site_or_go_to_github():

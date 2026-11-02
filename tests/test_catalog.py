@@ -211,7 +211,7 @@ def test_the_generator_renders_a_section_anew(tmp_path):
 
 
 def test_the_short_kind_is_a_table_that_links_the_catalog_page():
-    """Step D.4 of docs/concepts/new/documentation.md: a chapter lists its codes as code, title and severity, each code
+    """Step D.4 of docs/concepts/done/documentation.md: a chapter lists its codes as code, title and severity, each code
     linked to its engine's page of the catalog, which holds the rule, why, fix and sources."""
     from edakit.catalog import handbook
     text = handbook.render("table", "FILES ORDER")
@@ -224,7 +224,7 @@ def test_the_short_kind_is_a_table_that_links_the_catalog_page():
 
 
 def test_every_command_has_its_entry_in_the_reference():
-    """Step D.4 of docs/concepts/new/documentation.md: 10.5 is one entry per subcommand, its synopsis and help line
+    """Step D.4 of docs/concepts/done/documentation.md: 10.5 is one entry per subcommand, its synopsis and help line
     generated from the parser (held by test_the_handbook_lists_what_the_catalog_holds through stale())."""
     import re
     from edakit.catalog import handbook

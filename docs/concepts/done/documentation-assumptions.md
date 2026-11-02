@@ -5,8 +5,9 @@ stopping, commit along the way, at the end pull, merge and touch up the docs; to
 assumptions you made along the way"). This file lists every judgement call made while building
 [documentation.md](documentation.md), steps D.2 to D.9, for that review. Per chapter of the handbook the review of
 step D.5 – what was cut, merged, moved or reworded, with the places in code, skills and agents that name the section –
-is in [documentation-review/](documentation-review/). Once the owner has gone through it, this file and the folder
-move to `docs/concepts/done/` with the concept.
+is in [documentation-review/](documentation-review/). The owner's review closed on 2026-11-02 with decision 7 of
+[documentation-newcomer.md](../new/documentation-newcomer.md), and this file and the folder moved here with the
+concept.
 
 ## How it was built
 

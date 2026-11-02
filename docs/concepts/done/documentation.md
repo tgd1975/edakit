@@ -2,21 +2,23 @@
 
 Status 2026-11-01: built – D.2 to D.9 in one evening on the owner's word, one branch, the judgement calls in
 [documentation-assumptions.md](documentation-assumptions.md) and the chapters' reviews in
-[documentation-review/](documentation-review/), for the owner's review before the concept moves to `done/`; 1.0.0 was
-released on 2026-11-02 on the owner's word, at the first order (#210), the review still open (TD-81). Decided 2026-10-31 – the eight decisions and what Claude decided itself accepted by the owner the same
-day, and a ninth and a tenth added by the owner the same evening (the circuit alone as a station; condensing as a rule,
-with its measure); an eleventh to a fourteenth on 2026-11-01 – the case for edakit on the start page, confirmed by the
-owner with the vision line added, and a gallery of the projects built with edakit, a page per project with its schematic
-and board pictures, accepted with the owner's additions, future work – two items, then a third, on the owner's word –,
-and the architecture – the mechanism on the reader pages, "edakit as a meta-harness" on a page for developers, the word
-named once at the start of the README –, in a decision round in Claude Code's form (the table at the end); D.1 built the
-same evening (`docs/style.md`, `docs/glossary.md`, `tests/test_style.py`, `tests/test_references.py`); each step D.2 to
-D.7 and D.9 starts on the owner's word, one per branch, listed in `TODO.md`. Written against main at `8fba5f2`; the
-gallery checked against main at `a6ae71a` – its pictures are the release protocol's section 12 (since `741cc9a`), and
-chapter 18, the second walkthrough, joins "The board"; the whole checked again against main at `08a6951` the same day,
-after 155 commits on main in a day – versions and a changelog (versioning.md), outreach.md building on D.2, D.7 and D.9
-for its launch, the README's new sections, the four makers live –, the places below following; on the owner's word the
-same evening D.2, D.7 and D.9 come ahead of the other todos (decision 15). Asked for by the owner: the pages are
+[documentation-review/](documentation-review/), for the owner's review; 1.0.0 was released on 2026-11-02 on the owner's
+word, at the first order (#210); the review closed on 2026-11-02 with decision 7 of
+[documentation-newcomer.md](../new/documentation-newcomer.md) – rule 5 stays strict – and the concept moved to `done/`.
+Decided 2026-10-31 – the eight decisions and what Claude decided itself accepted by the owner the same day, and a ninth
+and a tenth added by the owner the same evening (the circuit alone as a station; condensing as a rule, with its
+measure); an eleventh to a fourteenth on 2026-11-01 – the case for edakit on the start page, confirmed by the owner with
+the vision line added, and a gallery of the projects built with edakit, a page per project with its schematic and board
+pictures, accepted with the owner's additions, future work – two items, then a third, on the owner's word –, and the
+architecture – the mechanism on the reader pages, "edakit as a meta-harness" on a page for developers, the word named
+once at the start of the README –, in a decision round in Claude Code's form (the table at the end); D.1 built the same
+evening (`docs/style.md`, `docs/glossary.md`, `tests/test_style.py`, `tests/test_references.py`); each step D.2 to D.7
+and D.9 starts on the owner's word, one per branch, listed in `TODO.md`. Written against main at `8fba5f2`; the gallery
+checked against main at `a6ae71a` – its pictures are the release protocol's section 12 (since `741cc9a`), and chapter
+18, the second walkthrough, joins "The board"; the whole checked again against main at `08a6951` the same day, after 155
+commits on main in a day – versions and a changelog (versioning.md), outreach.md building on D.2, D.7 and D.9 for its
+launch, the README's new sections, the four makers live –, the places below following; on the owner's word the same
+evening D.2, D.7 and D.9 come ahead of the other todos (decision 15). Asked for by the owner: the pages are
 comprehensive but confusing, so unreadable – a concept for how the documentation should look, be organised and be
 written, who its readers are, the language and its style, what is missing for it to be understood, everything needed so
 that others use edakit. With one condition the owner set while it was written: everything `docs/organisation.md` does
@@ -592,7 +594,7 @@ offline and held by a test; the first reader as an eval case; the pipeline drawi
   `README.md` and `handbook/`; the references to the handbook as `handbook N` and `handbook/NN-` over the `.py`, `.md`,
   `.toml`, `.sh` and `.json` files of `edakit/`, `skills/`, `agents/` and `.claude/`.
 - For the gallery, main at `a6ae71a`: handbook 8.3 (section 12 of the protocol, `edakit release publish`),
-  [circuit-dsl.md](circuit-dsl.md) (the bell's four configurations, its D-11 to D-15),
+  [circuit-dsl.md](../new/circuit-dsl.md) (the bell's four configurations, its D-11 to D-15),
   [docs/glossary.md](../../glossary.md) (variant, station), [docs/style.md](../../style.md) (the entry register's
   length).
 - `examples/coin-cell-led`: `edakit check` in 0.2 s, `edakit explain PATH.reverse`, on 2026-10-31.

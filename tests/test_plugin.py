@@ -44,7 +44,7 @@ def test_skills_have_name_and_description():
 
 def test_every_skill_and_agent_is_listed():
     """What the plugin brings is in the table of handbook 11.1, the page that lists it (the README, the start page of
-    docs/concepts/new/documentation.md, links there): every skill as /edakit:<name>, every agent by its name."""
+    docs/concepts/done/documentation.md, links there): every skill as /edakit:<name>, every agent by its name."""
     chapter = (ROOT / "handbook" / "11-working-with-claude.md").read_text(encoding="utf-8")
     table = chapter.split("## 11.1 ")[1].split("## 11.2 ")[0]
     for name in sorted(p.parent.name for p in (ROOT / "skills").glob("*/SKILL.md")):
