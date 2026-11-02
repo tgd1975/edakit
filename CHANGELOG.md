@@ -7,6 +7,14 @@ written once, by `.github/merge.py`, from the fragments in [changes/](changes/RE
 [versioning.md](docs/concepts/done/versioning.md). Update with `claude plugin marketplace update edakit && claude plugin
 update edakit@edakit`, then `/reload-plugins` or a new session; `edakit --version` names the version that runs.
 
+## 1.0.7 – 2026-11-02
+
+- Handbook 1: the pipeline is a Mermaid diagram, drawn on GitHub and on the site; the site's handbook sidebar lists the
+  chapters by number.
+- Chapter 17 is the "Walkthrough on EasyEDA", beside chapter 18, the "Walkthrough on KiCad".
+- Handbook 4 shows symbol pictures: the pins by role, the limits and values of four kinds, and the footprint that
+  prints "+" at the cathode with its fix in the graph (4.4).
+
 ## 1.0.6 – 2026-11-02
 
 - `schematic check` and the gate's stage S read a schematic as saved: its tab is closed and its pages opened again
