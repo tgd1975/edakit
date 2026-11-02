@@ -68,8 +68,9 @@ The skill asks before the LCSC cart whether an `[[extra]]` or bought part has a 
 
 ## What the shipping cost on 2026-11-02
 
-The first combined order – JLCPCB W2026110207503262 (the tree with assembly, two bare bell boards; 1,340 g) and LCSC
-WM2611020162 (26 lines of THT parts) – to Vienna. Prices in USD as the checkouts showed them.
+The first combined order – at JLCPCB the tree with assembly and two bare bell boards (1,340 g), at LCSC 26 lines of
+THT parts – to Austria. Prices in USD as the checkouts showed them. No order numbers, addresses or account data in
+this repository (the owner, 2026-11-02).
 
 | Route | Shipping | Lead time | Duties |
 |---|---:|---|---|
