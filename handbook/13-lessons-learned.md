@@ -58,7 +58,9 @@ dead ends against the API, and loops that never ended. Each got a rule or a tool
 5. **Regenerating a big schematic costs ~9 minutes per change** → only the board schematic is rebuilt for layout
    changes; parts sync in place.
 6. **A generated schematic drifted** (a pin on two nets) without anyone writing to it; regenerating fixed it → the
-   reference schematic is checked at the start of every EasyEDA session and before every gate run.
+   reference schematic is checked at the start of every EasyEDA session and before every gate run. The cause, found
+   on pytree (#117): EasyEDA lists a pin of the saved schematic, opened again, on a second net; a tab left open showed
+   the drawing → the check reads the saved state, always (6.2).
 7. **Checks missing in the flow** (the hardware tests did not run after a graph change; CI found it) → the pre-commit
    hook runs the fast hardware tests whenever hardware files are staged.
 8. **Small things with consequences:** API connection errors that stalled a session until someone typed "continue";

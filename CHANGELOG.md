@@ -7,6 +7,13 @@ written once, by `.github/merge.py`, from the fragments in [changes/](changes/RE
 [versioning.md](docs/concepts/done/versioning.md). Update with `claude plugin marketplace update edakit && claude plugin
 update edakit@edakit`, then `/reload-plugins` or a new session; `edakit --version` names the version that runs.
 
+## 1.0.6 – 2026-11-02
+
+- `schematic check` and the gate's stage S read a schematic as saved: its tab is closed and its pages opened again
+  first, so the result no longer depends on whether stage F of an earlier gate closed the template's tab. A tab with
+  unsaved changes stays open and is named in a finding `saved`. `schematic create --save` reads the save opened again
+  and exits 2 when it differs from the graph (E-18, #117).
+
 ## 1.0.5 – 2026-11-02
 
 - The handbook shows six more diagrams: the graph and the files around it (2.7), what `edakit sim` computes (5.2), the
