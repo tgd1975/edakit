@@ -47,7 +47,7 @@ board, the schematic or the checks (the earlier one-file form) is refused with a
 | `lock` | `auto` | EasyEDA claim between Claude sessions: `auto` (when `CLAUDE_CODE_SESSION_ID` is set) or `off` |
 | `agreements` | `true` | the working agreements (11.4), one line each, in the context of every Claude Code session in the project – below |
 | `graph` | `hardware/graph.json` | the hardware graph (3.1): a `.json` file, a `.toml` file with the same keys – below –, or a `.circuit` file of the circuit language (chapter 19) |
-| `parts` | `hardware/parts` | parts database, one JSON per part (LCSC number or manufacturer part number) |
+| `parts` | `hardware/parts` | parts database, one JSON per part (LCSC number or manufacturer part number); a list of folders for a variant of the circuit language – its own first, then its base's (`["hardware/parts", "../../hardware/parts"]`, chapter 19): an entry is taken from the first that has it, and the circuit hash takes the entries the graph uses |
 | `sim` | `hardware/sim.json` | simulation config (chapter 5) |
 | `sim_plugin` | – | optional Python file with `MODELS` and `checks` (5.1) |
 | `schematic` | `hardware/schematic.toml` | the schematic file (10.3) |

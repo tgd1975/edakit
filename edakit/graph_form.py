@@ -126,7 +126,7 @@ def drift(cfg):
     if out is None or not out.exists():
         return None
     source = load_graph(cfg.graph)
-    g = resolved(source, design_of(cfg.graph, load_parts(cfg.parts), list(cfg.boards), source))
+    g = resolved(source, design_of(cfg.graph, load_parts(cfg.parts_dirs or cfg.parts), list(cfg.boards), source))
     try:
         data = json.loads(out.read_text(encoding="utf-8"))
     except json.JSONDecodeError:
@@ -140,7 +140,7 @@ def drift(cfg):
 def main_json(cfg, args):
     from .firmware import differences
     source = load_graph(cfg.graph)
-    design = design_of(cfg.graph, load_parts(cfg.parts), list(cfg.boards), source)
+    design = design_of(cfg.graph, load_parts(cfg.parts_dirs or cfg.parts), list(cfg.boards), source)
     g = resolved(source, design)
     out = generated_path(cfg)
     words = [f"{where}: {why}" for where, _, why in design.unresolved]
@@ -411,7 +411,7 @@ def main_convert(cfg, args):
         print(f"edakit graph convert: {cfg.relative(target)} is there already – remove it, or set [project] graph to it",
               file=sys.stderr)
         return 1
-    parts, boards = load_parts(cfg.parts), list(cfg.boards)
+    parts, boards = load_parts(cfg.parts_dirs or cfg.parts), list(cfg.boards)
     source = load_graph(src_path)
     try:
         design = design_of(src_path, parts, boards, source)
@@ -487,7 +487,7 @@ def main_convert_circuit(cfg, args):
         print(f"edakit graph convert: {cfg.relative(target)} is there already – remove it, or set [project] graph to it",
               file=sys.stderr)
         return 1
-    parts, boards = load_parts(cfg.parts), list(cfg.boards)
+    parts, boards = load_parts(cfg.parts_dirs or cfg.parts), list(cfg.boards)
     source = load_graph(src_path)
     try:
         design = design_of(src_path, parts, boards, source)

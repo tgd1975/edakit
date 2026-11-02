@@ -234,6 +234,11 @@ is hashed where it lies, so nothing lapses before the move; `edakit check`, `pcb
 `layout` are signed again, nothing is rehashed. The circuit and the fab hash stay, so M-1, M-6 and M-5 with its default
 scope `fab` keep counting.
 
+A graph in the circuit language (chapter 19) counts with its compiled data, as a TOML graph with its data: a comment
+or a statement moved changes nothing. A variant whose `[project] parts` is a list of folders counts the entries its
+graph uses, each from the folder it is found in, so that a change of its base reaches its hash only where it reaches
+its circuit; a project with one folder counts every entry of it, as before.
+
 ### What the circuit hash leaves out
 
 By default the circuit hash takes the files byte by byte: a corrected note, a source added or the `verified` record a

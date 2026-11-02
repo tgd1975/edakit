@@ -207,8 +207,28 @@ def file_hash(root, files, ignore=(), documented=(), extra=(), graph=None):
     return h.hexdigest()
 
 
+def entry_files(cfg):
+    """The parts entries in the circuit hash: every entry of the folder; with [project] parts a list of folders (a
+    variant), the entries the graph uses, each from the folder it is found in first (language 8)."""
+    dirs = list(getattr(cfg, "parts_dirs", None) or [cfg.parts])
+    if len(dirs) == 1:
+        return sorted(cfg.parts.glob("*.json"))
+    from ..design import Design
+    try:
+        design = Design.from_config(cfg)
+        keys = sorted({k for des in design.comps if (k := design.entry_key(des))})
+    except Exception:                                  # a graph that does not load: every entry of every folder
+        keys = sorted({p.stem for d in dirs for p in Path(d).glob("*.json")})
+    out = []
+    for key in keys:
+        found = next((Path(d) / f"{key}.json" for d in dirs if (Path(d) / f"{key}.json").exists()), None)
+        if found is not None:
+            out.append(found)
+    return out
+
+
 def state_files(cfg):
-    files = [cfg.graph, cfg.sim_config, *sorted(cfg.parts.glob("*.json"))]
+    files = [cfg.graph, cfg.sim_config, *entry_files(cfg)]
     if cfg.sim_plugin:
         files.append(cfg.sim_plugin)
     files += [cfg.resolve(f) for f in cfg.release.get("state_files", [])]
@@ -221,7 +241,7 @@ def state_hash(cfg, ignore=None):
     bytes – the reviews read the requirements whole. A TOML graph counts with its data, a JSON graph with its bytes
     or, with hash_ignore, as canonical JSON (content)."""
     ignore = cfg.release.get("hash_ignore", []) if ignore is None else ignore
-    return file_hash(cfg.root, state_files(cfg), ignore, [cfg.graph, *cfg.parts.glob("*.json")], graph=cfg.graph)
+    return file_hash(cfg.root, state_files(cfg), ignore, [cfg.graph, *entry_files(cfg)], graph=cfg.graph)
 
 
 def electrical_hash(cfg):

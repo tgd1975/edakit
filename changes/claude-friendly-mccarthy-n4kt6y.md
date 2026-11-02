@@ -29,3 +29,6 @@ patch
 - T.12: `for VAR in A..B` – parts, nets, usages, locks, cables and layout once per value, `{n}`, `{n+k}` put in.
 - T.13: `param NAME = QUANTITY`, `alias NAME = PINWORD` checked against the entry, `include PATH` – one
   namespace over the main file and the files it includes.
+- T.14: variants – `variant NAME of PATH` with redefinitions and additions over its base, in a chain;
+  `[project] parts` may be a list of folders, and the circuit hash of such a project takes the entries its graph
+  uses; a project with one folder hashes as before.

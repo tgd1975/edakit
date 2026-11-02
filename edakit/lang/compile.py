@@ -15,6 +15,7 @@ design.py reads every word, so the compiler and the checks never disagree about 
 
 from __future__ import annotations
 
+import copy
 import re
 import sys
 import tomllib
@@ -90,11 +91,13 @@ def load_parts(dirs):
 
 
 def _name(path, root):
+    """A file as an error names it: relative to the project's root – a variant's base as ../../hardware/…"""
+    import os
     path = Path(path)
     try:
         return path.resolve().relative_to(Path(root).resolve()).as_posix()
     except ValueError:
-        return str(path)
+        return Path(os.path.relpath(path.resolve(), Path(root).resolve())).as_posix()
 
 
 def load_sources(path, root):
@@ -127,13 +130,25 @@ def load_sources(path, root):
                 if isinstance(st, (m.GraphHead, m.Variant)):
                     errors.append(LangError(st.file, st.line, f"{'graph' if isinstance(st, m.GraphHead) else 'variant'}"
                                                               f" in an included file – it stands in the main file"))
-        for st in src.statements:
+        own = project_of(p)[0].resolve()                # a path is relative to the edakit.toml of its file
+        body = src.variant.body if src.variant is not None else src.statements
+        for st in [*body, *(src.statements[1:] if src.variant is not None else [])]:
             if isinstance(st, m.Include):
-                target = (root / st.path).resolve()
-                if not target.is_relative_to(root):
+                target = (own / st.path).resolve()
+                if not target.is_relative_to(own):
                     errors.append(LangError(st.file, st.line, f"include {st.path}: outside the project"))
                     continue
                 st.source = visit(target, [*stack, p], st)
+        if src.variant is not None:
+            v = src.variant
+            base = (own / v.base).resolve()
+            if base in [x.resolve() for x in [*stack, p]]:
+                chain = " → ".join(_name(x, root) for x in [*stack, p, base])
+                errors.append(LangError(v.file, v.line, f"variant {v.name} of {v.base}: the chain loops – {chain}"))
+            elif not base.is_file():
+                errors.append(LangError(v.file, v.line, f"variant {v.name} of {v.base}: no such file"))
+            else:
+                v.base_source = visit(base, [*stack, p], None) if base not in seen else seen[base]
         return src
 
     visit(Path(path), [])
@@ -175,8 +190,21 @@ def resolve(sources, root, parts_dirs):
                 out.append(s)
         return out
 
+    def statements_of(src):
+        """A main file's statements; a variant's: its base's, with its own applied – redefinitions merged, additions
+        appended (language 5.9)."""
+        if src.variant is None:
+            return flat(src)
+        base = getattr(src.variant, "base_source", None)
+        out = statements_of(base) if base is not None else []
+        body = [*src.variant.body, *src.statements[1:]]
+        own = m.Source(src.file, statements=body)
+        done.discard(id(own))
+        errors.extend(apply_variant(out, flat(own), src.variant))
+        return out
+
     for src in sources[:1]:
-        for st in flat(src):
+        for st in statements_of(src):
             model.statements.append(st)
             if isinstance(st, m.Part):
                 declare("part", st.des, st)
@@ -201,6 +229,123 @@ def resolve(sources, root, parts_dirs):
                   file=sys.stderr)
         model.defs = {**lib, **model.defs}
     return model
+
+
+def _merge_attrs(base, new):
+    """Attributes of a redefinition over the base's: a key given replaces the base's; `bom yes` sets it back."""
+    out = list(base)
+    for k, v in new:
+        out = [(x, y) for x, y in out if x != k]
+        if not (k == "bom" and v is True):
+            out.append((k, v))
+    return out
+
+
+def _merge_accepts(base, new):
+    keep = {a.key: a for a in base}
+    for a in new:
+        if a.reason is None:
+            keep.pop(a.key, None)
+        else:
+            keep[a.key] = a
+    return list(keep.values())
+
+
+def _merge_part(base, new):
+    out = copy.copy(base)
+    out.file, out.line = new.file, new.line
+    if new.type is not None:
+        out.type = new.type
+    if new.part is not None:
+        out.part = new.part
+    if new.label is not None:
+        out.label = new.label
+    entry_changed = new.part is not None or any(k == "lcsc" for k, _ in new.attrs)
+    out.attrs = _merge_attrs(base.attrs, new.attrs)
+    out.pins = list(new.pins) if new.pins else ([] if entry_changed else list(base.pins))
+    out.nc = list(new.nc) if new.nc else list(base.nc)
+    out.aliases = list(new.aliases) if new.aliases else list(base.aliases)
+    out.accepts = _merge_accepts(base.accepts, new.accepts)
+    return out
+
+
+def _merge_use(base, new):
+    out = copy.copy(base)
+    params = {a.name: a for a in base.params}
+    for a in new.params:
+        params[a.name] = a
+    out.params = list(params.values())
+    bindings = {b.left: b for b in base.bindings}
+    for b in new.bindings:
+        old = bindings.get(b.left)
+        if old is not None and old.part is not None and b.part is not None:
+            nb = copy.copy(b)
+            nb.part = _merge_part(old.part, b.part)
+            nb.part.des = b.right
+            bindings[b.left] = nb
+        else:
+            bindings[b.left] = b
+    out.bindings = list(bindings.values())
+    out.without = list(new.without) or list(base.without)
+    out.satisfies = list(new.satisfies) or list(base.satisfies)
+    out.decision = list(new.decision) or list(base.decision)
+    return out
+
+
+def apply_variant(out, statements, variant):
+    """A variant's statements applied to its base's flat list, in place: a part, a usage or a parameter of the base
+    redefined where it stands, a net's statement appended as a redefinition, everything else appended; a usage or a
+    parameter the base does not have is an error."""
+    errors = []
+    where = {}
+    for k, st in enumerate(out):
+        if isinstance(st, m.Part):
+            where[("part", st.des)] = k
+        elif isinstance(st, m.Use):
+            where[("use", st.instance)] = k
+        elif isinstance(st, m.Param):
+            where[("param", st.name)] = k
+    bound = {}
+    for k, st in enumerate(out):
+        if isinstance(st, m.Use):
+            for b in st.bindings:
+                bound[b.right] = (k, b.left)
+    for st in statements:
+        if isinstance(st, m.Part) and ("part", st.des) in where:
+            k = where[("part", st.des)]
+            out[k] = _merge_part(out[k], st)
+        elif isinstance(st, m.Part) and st.des in bound:          # a part a usage of the base binds: its binding
+            k, left = bound[st.des]
+            nb = m.Binding(st.file, st.line, left=left, right=st.des, part=copy.copy(st))
+            nb.part.head = False
+            out[k] = _merge_use(out[k], m.Use(st.file, st.line, definition=out[k].definition,
+                                              instance=out[k].instance, bindings=[nb]))
+        elif isinstance(st, m.Use):
+            k = where.get(("use", st.instance))
+            if k is None:
+                errors.append(LangError(st.file, st.line, f"use {st.instance}: no usage {st.instance} in the base of "
+                                                          f"variant {variant.name} – a new one needs its definition and "
+                                                          "every binding"))
+                out.append(st)
+                where[("use", st.instance)] = len(out) - 1
+            elif out[k].definition != st.definition:
+                errors.append(LangError(st.file, st.line, f"use {st.instance}: the base uses def {out[k].definition}"
+                                                          f" – a variant cannot change the definition"))
+            else:
+                out[k] = _merge_use(out[k], st)
+        elif isinstance(st, m.Param):
+            k = where.get(("param", st.name))
+            if k is None:
+                errors.append(LangError(st.file, st.line, f"param {st.name}: the base has no parameter {st.name}"))
+            else:
+                out[k] = st
+        else:
+            if isinstance(st, m.Net):
+                st.redefine = True
+            out.append(st)
+            if isinstance(st, m.Part):
+                where[("part", st.des)] = len(out) - 1
+    return errors
 
 
 def check_def(defn):
@@ -460,6 +605,20 @@ class Assembler:
             n = self.nets[st.name] = {"name": st.name, "pins": []}
             self.net_nodes[st.name] = st
             self.map.put("nets", st.name, st)
+        redefine = getattr(st, "redefine", False)
+        if redefine and st.without:
+            for w in st.without:
+                word = self.word(w.word)
+                if word in n["pins"]:
+                    n["pins"].remove(word)
+                    self.places["net"] = [x for x in self.places.get("net", []) if not (x[1] == st.name
+                                                                                        and x[2] == word)]
+                else:
+                    self.err(w, f"net {st.name}: without {w.word} – not on the net (pins: {', '.join(n['pins'])})")
+        if redefine:
+            n.pop("v", None) if st.v is not None else None
+            for key, _ in st.attrs:
+                n.pop(key, None)
         if st.v is not None:
             if "v" in n:
                 first = self.net_nodes[st.name]
@@ -497,6 +656,10 @@ class Assembler:
             for a in st.accepts:
                 if a.reason is not None:
                     acc[a.key] = a.reason
+                else:
+                    acc.pop(a.key, None)
+            if not acc:
+                n.pop("accept")
 
     # cables and the layout
     def on_cable(self, st):
