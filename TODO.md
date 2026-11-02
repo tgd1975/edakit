@@ -4,7 +4,7 @@ Open work that needs the owner's computer, a maker or the owner's word. The stat
 and plans the sections name; this list is what is left to do of them, in the order it can be done. No item is deleted.
 
 **Layout.** Every item, in every section, open or closed, is a line with a checkbox and an ID unique in this file,
-counted up and never reused – whoever adds an item takes the next free ID and counts it up here. Next free ID: TD-100.
+counted up and never reused – whoever adds an item takes the next free ID and counts it up here. Next free ID: TD-102.
 
 - Open: `- [ ] TD-<n> - **Title:** what and why.` – a step's own name after the dash (`- [ ] TD-31 - **D.4** …`).
 - Done: ticked, the commit that did it, the date at the end, moved to [Closed todos](#closed-todos), newest first –
@@ -29,6 +29,10 @@ to touch.
 
 ## For the owner
 
+- [ ] TD-100 - **OK for #222:** the steps (N.2), the handbook declared complete (N.4), the eval case first-circuit
+      (N.5) – merged with `python3 .github/merge.py 222` as a patch version. *(edakit-c1)*
+- [ ] TD-101 - **`sudo apt install socat`** – the sandbox of Bash in `claude plugin eval` needs it, so that the eval
+      first-circuit (N.5) can run on this machine; a cloud run does without it. *(edakit-c1)*
 - [ ] TD-99 - **Decide on parts on hand (PartsLedger):** a decision round in Claude Code's form on
       `docs/concepts/new/parts-on-hand.md` – six decisions, recommendations first: the maker's bin as a source of
       hand-soldered parts, only the rest ordered, the way back into the bin, PartsLedger's name; nothing is built
@@ -70,11 +74,13 @@ Built on 2026-11-01 (#174, edakit 0.4.14); what is left after the owner's review
 ## The documentation for a newcomer ([documentation-newcomer.md](docs/concepts/new/documentation-newcomer.md))
 
 - [ ] TD-96 - **N.2** The steps: `docs/steps/` with its index and ten pages, the tabs "A circuit" and "A board",
-      `tests/test_steps.py`, the style guide's section and its counts – branch `newcomer-n2`. *(edakit-c1)*
+      `tests/test_steps_pages.py`, the style guide's section and its counts – built in #222, merged after TD-100.
+      *(edakit-c1)*
 - [ ] TD-97 - **N.4** The handbook declared complete: the line on its index, "The short way" in each chapter's first
-      paragraph – with N.2's branch. *(edakit-c1)*
-- [ ] TD-98 - **N.5** The newcomer's test: the eval first-reader's second case, its numbers into the concept's status
-      line. *(edakit-c1)*
+      paragraph – built in #222, merged after TD-100. *(edakit-c1)*
+- [ ] TD-98 - **N.5** The newcomer's test: the eval case `evals/first-circuit` (built in #222) run once – a one-line
+      idea to a checked graph with the site alone –, its result and the pages it opened into the concept's status
+      line; waits for TD-100 and TD-101. *(edakit-c1)*
 
 ## Closed todos
 

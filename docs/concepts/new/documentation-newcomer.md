@@ -3,13 +3,15 @@
 Status 2026-11-02: decided – the seven decisions taken by the owner the same day in a decision round in Claude Code's
 form (the table at the end): six as recommended, the newcomer's test as the eval alone, without a person; what Claude
 had set itself – the budgets, the shape of a steps page, the ten pages, the tabs, the order of the steps – confirmed.
-N.1 and N.3 built the same day on the owner's word (#215); N.2, the steps, next on the owner's word. Asked for by the owner the day
-after the documentation concept was built ("I am still not happy with the documentation; it is more compact after the
-revision, but when somebody new looks at it, they run away – think about what we could do so that it is not so
-overwhelming, and write a concept"). Written against main at `37a0745`, with [documentation.md](../done/documentation.md) as
-built (#174) and its review ([documentation-assumptions.md](../done/documentation-assumptions.md), closed with decision 7);
-checked against `530252a` (edakit 1.0.0): How it works gained a paragraph on the first order and has 1,705 words now,
-nothing else in the table below moved.
+N.1 and N.3 built the same day on the owner's word (#215); N.2, N.4 and N.5's eval case built the same day on the
+owner's word (#222), waiting for the merge; the eval's first run and its numbers are N.5's rest. Asked for by the owner
+the day after the documentation concept was built ("I am still not happy with the documentation; it is more compact
+after the revision, but when somebody new looks at it, they run away – think about what we could do so that it is not so
+overwhelming, and write a concept"). Written against main at `37a0745`, with
+[documentation.md](../done/documentation.md) as built (#174) and its review
+([documentation-assumptions.md](../done/documentation-assumptions.md), closed with decision 7); checked against
+`530252a` (edakit 1.0.0): How it works gained a paragraph on the first order and has 1,705 words now, nothing else in
+the table below moved.
 
 ## The short answer
 
@@ -191,7 +193,8 @@ The entry register of the style guide holds, with these additions, into `docs/st
 
 N.1 and N.3 are one session and change what a newcomer sees first; N.2 is the substance. About four sessions to N.5.
 Each step starts on the owner's word and comes into `TODO.md` when it does; N.1 and N.3 were built on 2026-11-02
-(#215).
+(#215), N.2, N.4 and N.5's case the same day (#222). The steps' test is `tests/test_steps_pages.py` –
+`tests/test_steps.py` holds the progress lines of the EasyEDA commands.
 
 ## Measures – done when
 
