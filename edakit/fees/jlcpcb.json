@@ -28,9 +28,9 @@
   "qty": 5,
   "layers": 2,
   "prices": [
-   {"w_mm": 110, "h_mm": 100, "value": 10.7, "date": "2026-10-24", "source": "JLCPCB cart of 2026-10-24, PCB prototype Y3-13857314A (110 × 100 mm)"},
-   {"w_mm": 100, "h_mm": 170, "value": 13.7, "date": "2026-10-25", "source": "JLCPCB cart of 2026-10-25, PCB prototype Y4-13857314A (100 × 170 mm)"},
-   {"w_mm": 110, "h_mm": 170, "value": 14.5, "date": "2026-10-24", "source": "JLCPCB cart of 2026-10-24, PCB prototype Y2-13857314A (110 × 170 mm)"}
+   {"w_mm": 110, "h_mm": 100, "value": 10.7, "date": "2026-10-24", "source": "JLCPCB cart of 2026-10-24, PCB prototype (110 × 100 mm)"},
+   {"w_mm": 100, "h_mm": 170, "value": 13.7, "date": "2026-10-25", "source": "JLCPCB cart of 2026-10-25, PCB prototype (100 × 170 mm)"},
+   {"w_mm": 110, "h_mm": 170, "value": 14.5, "date": "2026-10-24", "source": "JLCPCB cart of 2026-10-24, PCB prototype (110 × 170 mm)"}
   ]
  }
 }
