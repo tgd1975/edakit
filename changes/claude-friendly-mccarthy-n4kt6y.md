@@ -13,3 +13,6 @@ patch
 - T.6: `edakit graph convert --to circuit` moves a JSON or TOML project to `hardware/graph.circuit`: flat
   statements, read back before anything is written, `[project] graph` and `edakit` set, the resolved graph.json
   beside it, the sign-offs of scope circuit carried over.
+- T.7: the block library's source is `edakit/blocks/<name>.circuit`, definitions of the language; the JSON
+  `block add` reads is generated from it (`python -m edakit.lang.blocks --write`) and gains `params` and
+  `derivations` – led, i2c-pullups and battery-sense; `block add` reads them only with `--set` (T.8).

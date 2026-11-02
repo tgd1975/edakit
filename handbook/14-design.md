@@ -485,6 +485,15 @@ stands in the block's own `test` table:
 they are signed there (the parts library, 4.1). That makes a block a good start, not a sign-off: values, ratings and
 the review are still the project's. A project's own blocks are JSON files of the same form, added with `--file`.
 
+### The source of a block
+
+Each block is written as a definition of the circuit language, `edakit/blocks/<name>.circuit` (the notation:
+docs/concepts/new/circuit-dsl-language.md, 5.5), and its JSON is generated from it: `python -m edakit.lang.blocks` lists a JSON that differs from its source, `--write` writes it
+again, and a test holds every JSON to its source. The JSON keeps the form above and gains two keys: `params`, the
+block's parameters with their defaults (`{"i": {"default": "10 mA"}}`), and `derivations`, the rule a value is derived
+by (`led`: `R1.value` by `series_resistor(i)`; `i2c-pullups`: both resistors by `pullup`; `battery-sense`: the
+divider by `divider`). `add` reads neither yet; the derivation runs only when a parameter is set.
+
 ## 14.6 Where the ideas came from
 
 CircuitSmith, a sibling project that draws schematics from declarative YAML and checks them against an ERC rule catalog,

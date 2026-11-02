@@ -43,6 +43,7 @@ VERIFY = ("rows", "signoff", "script", "accept")
 PURPOSE = ("use", "market", "country", "notes")
 BOOLEAN = {"yes": True, "true": True, "no": False, "false": False}
 IDENT = re.compile(r"[A-Za-z_][A-Za-z0-9_]*$")
+DEF_NAME = re.compile(r"[A-Za-z_][A-Za-z0-9_-]*$")      # a definition's name: the block library's have hyphens
 BRACE = re.compile(r"\{([^{}]*)\}")
 BRACE_EXPR = re.compile(r"\s*([A-Za-z_]\w*)\s*(?:([-+*])\s*(\d+))?\s*$")
 INT = re.compile(r"-?\d+$")
@@ -712,7 +713,7 @@ class Reader:
     def st_def(self, st):
         toks = st.head.toks
         node = self.node(m.Def, st)
-        if len(toks) < 2 or not IDENT.match(toks[1].raw):
+        if len(toks) < 2 or not DEF_NAME.match(toks[1].raw):
             self.err(st.keyword, "def NAME [(PARAM = DEFAULT, …)] [ports PORT …]")
             return node
         node.name = toks[1].raw

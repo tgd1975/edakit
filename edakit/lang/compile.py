@@ -15,6 +15,8 @@ design.py reads every word, so the compiler and the checks never disagree about 
 
 from __future__ import annotations
 
+import re
+import sys
 import tomllib
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -133,9 +135,54 @@ def resolve(sources, root, parts_dirs):
                 model.params[st.name] = st
             elif isinstance(st, m.Use):
                 declare("use", st.instance, st)
+    for d in model.defs.values():
+        errors += check_def(d)
     if errors:
         raise CompileError(errors)
+    if any(isinstance(st, m.Use) for st in model.statements):
+        from .blocks import library
+        lib = library()
+        for name in sorted(set(model.defs) & set(lib)):
+            d = model.defs[name]
+            print(f"{d.file}:{d.line}: def {name}: the project's definition shadows edakit's block {name}",
+                  file=sys.stderr)
+        model.defs = {**lib, **model.defs}
     return model
+
+
+def check_def(defn):
+    """The errors of a definition by itself (language 5.5): a port that is none of its nets, a part or a net named twice,
+    a derivation whose target is no part of it, an optional part or port it does not have."""
+    errors, parts, nets = [], {}, {}
+    for st in defn.body:
+        if isinstance(st, m.Part):
+            if st.des in parts:
+                errors.append(LangError(st.file, st.line, f"def {defn.name}: part {st.des} twice – first at line "
+                                                          f"{parts[st.des].line}"))
+            parts.setdefault(st.des, st)
+        elif isinstance(st, m.Net):
+            if st.name in nets:
+                errors.append(LangError(st.file, st.line, f"def {defn.name}: net {st.name} twice – first at line "
+                                                          f"{nets[st.name].line}"))
+            nets.setdefault(st.name, st)
+    for port, _ in defn.ports:
+        if port not in nets:
+            errors.append(LangError(defn.file, defn.line, f"def {defn.name}: port {port} is none of its nets – "
+                                                          f"nets: {', '.join(nets) or 'none'}"))
+    for st in defn.body:
+        if isinstance(st, m.Derive):
+            for target in st.targets:
+                des = target.partition(".")[0]
+                if des not in parts:
+                    errors.append(LangError(st.file, st.line, f"derive {target}: {des} is no part of def {defn.name}"
+                                                              f" – parts: {', '.join(parts)}"))
+    for des in defn.optional_parts:
+        if des not in parts:
+            errors.append(LangError(defn.file, defn.line, f"def {defn.name}: optional part {des} is no part of it"))
+    for port in defn.optional_ports:
+        if port not in dict(defn.ports):
+            errors.append(LangError(defn.file, defn.line, f"def {defn.name}: optional port {port} is no port of it"))
+    return errors
 
 
 def expand(model):
@@ -384,6 +431,7 @@ def _candidates(design, des, aliases):
     pins = (design.comps.get(des) or {}).get("pins") or {}
     roles = design._roles(des)
     words = list(dict.fromkeys([*[str(v) for v in pins.values()], *[r for r in roles.values() if r]]))
+    words = [w for w in words if not re.search(r'[\s"#]', w)]           # OE#: by its role or number here
     return words + [f"{a} (alias)" for a in aliases]
 
 

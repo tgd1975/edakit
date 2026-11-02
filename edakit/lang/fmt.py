@@ -139,7 +139,9 @@ class Formatter:
         indent = level * STEP
         self.out.lead(st.head.lead, indent)
         node = self.node_of(st)
-        if node is not None and not _commented(st):
+        if st.keyword.keyword("set") and len(st.head.toks) >= 3:
+            self.set_statement(st, indent)
+        elif node is not None and not _commented(st):
             (self.part if st.keyword.raw == "part" else self.net)(node, st, indent)
         elif node is not None:
             self.by_lines(node, st, indent)
@@ -152,6 +154,24 @@ class Formatter:
                 flow(self.out, at, [[t] for t in ln.toks], comment=ln.comment, wrap=wrap)
         for b in st.body:
             self.statement(b, level + 1)
+
+    def set_statement(self, st, indent):
+        """`set KEY JSON`: the JSON written again – compact on one line where it fits, else one key or item to a line
+        below the statement."""
+        toks = st.head.toks
+        last = (st.cont[-1].toks if st.cont else toks)[-1]
+        value = json.loads(self.src.text[toks[2].start:last.end])
+        head = " " * indent + f"set {toks[1].raw} "
+        compact = json.dumps(value, ensure_ascii=False, separators=(", ", ": "))
+        comment = "  " + st.head.comment.raw if st.head.comment is not None else ""
+        if len(head) + len(compact) <= WIDTH or not isinstance(value, (dict, list)) or not value:
+            self.out.add(head + compact + comment)
+            return
+        lines = json.dumps(value, ensure_ascii=False, indent=1).splitlines()
+        lines[-1] = " " + lines[-1]                     # the closing bracket as deep as the first line below the head
+        self.out.add(head + lines[0] + comment)
+        for ln in lines[1:]:
+            self.out.add(" " * (indent + STEP) + ln)
 
     def node_of(self, st):
         if not st.keyword.keyword("part", "net"):

@@ -8,6 +8,14 @@
   "adc": "to the ADC pin: half the battery voltage while en is high, 0 V otherwise",
   "gnd": "ground"
  },
+ "params": {
+  "v_out": {
+   "default": "2.75 V"
+  },
+  "i": {
+   "default": "275 uA"
+  }
+ },
  "components": [
   {
    "designator": "Q1",
@@ -154,6 +162,20 @@
     "R4.2",
     "C1.2"
    ]
+  }
+ ],
+ "derivations": [
+  {
+   "targets": [
+    "R3.value",
+    "R4.value"
+   ],
+   "rule": "divider",
+   "args": {
+    "0": "v_out",
+    "1": "i",
+    "in": "bat"
+   }
   }
  ],
  "covers": [

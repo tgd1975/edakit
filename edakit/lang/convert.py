@@ -91,6 +91,28 @@ def attrs(obj, table, skip, where):
     return head, lines
 
 
+UNWRITABLE = re.compile(r'[\s"#]')
+
+
+def pin_words(design, refs, anywhere=True):
+    """graph_form.written for the language: a word with a blank, a quote or `#` (OE#) cannot be one here, so such a
+    pin is written by its next word that names it alone – its role –, else its number; a shared word that cannot be
+    written gives each of its pins its own."""
+    from ..graph_form import written
+    out = []
+    for w in written(design, refs, anywhere):
+        des, dot, rest = w.partition(".")
+        if not dot or not UNWRITABLE.search(rest):
+            out.append(w)
+            continue
+        hits = design.resolve(des, rest) if des in design.comps else []
+        for num in hits or [rest]:
+            word = next((x for x in design.words(des, num) if not UNWRITABLE.search(x)
+                         and design.resolve(des, x) == [num]), num)
+            out.append(f"{des}.{word}")
+    return out
+
+
 def _range(v):
     if isinstance(v, list) and len(v) == 2 and all(isinstance(x, (int, float)) and not isinstance(x, bool) for x in v):
         return quantity(Quantity(v[0], v[1], "V"))
@@ -99,7 +121,7 @@ def _range(v):
 
 def to_circuit(source, design):
     """The flat statements of a graph: `source` the inner graph as the file has it, `design` its Design."""
-    from ..graph_form import FormError, converted, entry_map, problems, resolved, written
+    from ..graph_form import FormError, converted, entry_map, problems, resolved
     if bad := problems(source, design):
         raise FormError("; ".join(bad[:12]) + (f" (and {len(bad) - 12} more)" if len(bad) > 12 else ""))
     g = converted(resolved(source, design))
@@ -146,7 +168,7 @@ def to_circuit(source, design):
             line.append(string(c["label"]))
         out.append(" ".join(line))
         if isinstance(c.get("nc"), list) and c["nc"]:
-            nc = [w.partition(".")[2] for w in written(design, [f"{des}.{p}" for p in c["nc"]], False)]
+            nc = [w.partition(".")[2] for w in pin_words(design, [f"{des}.{p}" for p in c["nc"]], False)]
             out.append("  nc " + " ".join(word(x) for x in nc))
         if "pins" in src and c.get("pins") != entry_map(design, des) and isinstance(c.get("pins"), dict):
             out.append("  pins " + " ".join(f"{k}={v}" for k, v in c["pins"].items()))
@@ -165,7 +187,7 @@ def to_circuit(source, design):
         if (r := _range(n.get("v"))) is not None:
             line.append(r)
         refs = list(n.get("pins") or [])
-        for w in written(design, refs):
+        for w in pin_words(design, refs):
             des, _, rest = w.partition(".")
             stands = [f"{des}.{h}" for h in design.resolve(des, rest)] if rest and des in design.comps else [w]
             line.append(w)

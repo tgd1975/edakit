@@ -1,0 +1,63 @@
+def usb-c-data
+  title "USB-C receptacle with USB 2.0 data, ESD protection, CC pull-downs and a polyfuse"
+  about "USB-C receptacle for a USB 2.0 device: D+ and D− of both rows joined so that the plug works either way round
+      (REQ.missing/usb_data), a USBLC6-2SC6 on D+/D− with its VBUS pin on the fused rail and 100 nF there, 5.1 kΩ on
+      CC1 and on CC2 so that a USB-C host or charger switches VBUS on (REQ.missing:cc), and a 1.5 A polyfuse in VBUS.
+      The data side of usb-c-sink."
+  port vbus "the fused 5 V rail (behind F1)"
+  port dp "USB D+ to the device (USB-UART, MCU)"
+  port dn "USB D− to the device"
+  port gnd "ground"
+  part J1 connector "TYPE-C 16PIN 2MD(073)" lcsc C2765186 "{as}: USB-C receptacle (USB 2.0)"
+    nc sbu1 sbu2
+    accept LIM.v "The drawing's 'voltage rating 5.0 V' is the USB rated voltage; USB-C vSafe5V allows 4.75–5.5 V and
+      every USB-C receptacle works there. Dielectric withstanding voltage AC 100 V for 1 minute (drawing note 4-4)."
+    notes "SBU1/SBU2 unused (USB 2.0); shell (EH) on GND."
+  part U1 ic USBLC6-2SC6 lcsc C7519 "{as}: ESD protection D+/D− and VBUS (USBLC6-2SC6)"
+    notes "Flow-through: D+ through pins 1 and 6, D− through pins 3 and 4 (datasheet figure 18); VBUS pin 5 on the
+      receptacle's VBUS with C1 – next to J1."
+  part R1 resistor 0805W8F5101T5E lcsc C27834 value 5.1k "{as}: CC1 pull-down 5.1 k"
+  part R2 resistor 0805W8F5101T5E lcsc C27834 value 5.1k "{as}: CC2 pull-down 5.1 k"
+  part F1 fuse SMD1206P150TFT lcsc C495353 value 1.5A "{as}: polyfuse 1.5 A in VBUS"
+  part C1 capacitor CC0805KRX7R9BB104 lcsc C49678 value 100nF "{as}: 100 nF at the USBLC6 VBUS pin"
+  net vbus_in 0..5.5 V J1.vbus F1.1 U1.vbus C1.1
+    accept LIM.v "The USBLC6-2's VBUS pin: VRM 5.25 V is the voltage at which ST specifies the leakage (150 nA max,
+      datasheet Rev 5, table 2); the transil from VBUS to GND breaks down at VBR ≥ 6 V (1 mA), so at USB-C's vSafe5V
+      maximum of 5.5 V it does not clamp – only its leakage is unspecified there."
+    notes "VBUS at the receptacle, in front of the fuse, with the USBLC6-2's VBUS pin and its 100 nF."
+  net vbus 0..5.5 V F1.2
+  net cc1 0..5.5 V J1.cc1 R1.1
+  net cc2 0..5.5 V J1.cc2 R2.1
+  net dp 0..3.6 V J1.dp_a J1.dp_b U1.io1
+    notes "D+ of both rows (A6, B6) joined."
+  net dn 0..3.6 V J1.dn_a J1.dn_b U1.io2
+    notes "D− of both rows (A7, B7) joined."
+  net gnd J1.gnd J1.shell U1.gnd R1.2 R2.2 C1.2
+  covers REQ.missing:usb_data REQ.missing:cc REQ.value:cc REQ.forbidden:cc
+  notes "D+ (A6, B6) and D− (A7, B7) of both rows joined: a USB-C plug fits either way round and uses one row's pair
+      (REQ.missing/usb_data)."
+  notes "CC: 5.1 kΩ from each CC pin to ground, one resistor per pin – the sink's Rd of the USB Type-C specification,
+      without which a USB-C host or charger leaves VBUS off (REQ.missing:cc, REQ.value:cc 5.1 kΩ ± 10 %,
+      REQ.forbidden:cc). Without a PD controller the source gives 5 V; the Rp it shows on CC (0.5, 1.5 or 3 A) is not
+      read (HINT.usb_budget)."
+  notes "ESD: USBLC6-2SC6 (ST, Doc ID 11265 Rev 5) – for USB 2.0 up to 480 Mbit/s, 3.5 pF max per line, IEC 61000-4-2
+      level 4. Flow-through as its figure 18: D+ through pins 1 and 6, D− through pins 3 and 4; VBUS pin 5 on the
+      receptacle's VBUS with 100 nF (CBUS, figure 18), as in its USB application figure 14 – in front of the fuse, as
+      close to the connector as the layout allows (datasheet 2.3)."
+  notes "F1: 1.5 A polyfuse (as in usb-c-sink) – holds 1.5 A at 23 °C, 1.34 A at 40 °C, trips at 3 A; the receptacle
+      is rated 3.0 A (drawing note 4-1). A USB 2.0 port gives 500 mA after configuration."
+  notes "LIM.v is accepted twice with its reason: J1's voltage rating 5.0 V and the USBLC6-2's VRM 5.25 V against
+      USB-C's 5.5 V (vSafe5V). On a USB 2.0 host (VBUS ≤ 5.25 V) neither applies."
+  notes "No series resistors on D+/D− here – they belong to the device: a CH340C wants none (block esp32-wroom-32e),
+      an RP2040 27 Ω per line (maker-coverage MCU 8). Route D+/D− as a pair (90 Ω differential)."
+  notes "Shell (EH) straight to GND; SBU1/SBU2 unused."
+  notes "sim.json: the receptacle under sources (plus \"A4B9\", minus \"A1B12\") when it powers the board; a bulk
+      capacitor behind F1 (HINT.bulk) – more than 10 µF directly on VBUS is HINT.usb_inrush."
+  set test {
+     "connect": {
+      "vbus": "+5V",
+      "dp": "SIG",
+      "dn": "SIG2"
+     },
+     "about": "SIG and SIG2 stand in for the D+/D− of a USB device (a USB-UART or an MCU), which the example lacks."
+     }
