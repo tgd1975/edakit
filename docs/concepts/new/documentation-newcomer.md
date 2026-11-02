@@ -5,7 +5,14 @@ form (the table at the end): six as recommended, the newcomer's test as the eval
 had set itself – the budgets, the shape of a steps page, the ten pages, the tabs, the order of the steps – confirmed.
 N.1 and N.3 built the same day on the owner's word (#215); N.2, N.4 and N.5's eval case built the same day on the
 owner's word (#222, edakit 1.0.1); the eval's run waits for a cloud session – on this machine the Bash sandbox cannot
-start (Ubuntu restricts user namespaces), and a first try stopped after two pages without a shell. Asked for by the
+start (Ubuntu restricts user namespaces), and a first try stopped after two pages without a shell. A cloud run as the
+user `eval` on 2026-11-02 (TD-102) scored 0.83 (Sonnet, 1.18 USD, 94 turns): `DONE: 5 components, 5 nets, 5 parts
+entries; 2 note, 5 accepted; requirements: 2 needs, 2 requirements`; checked-graph, names-pages, ran-check and two-leds
+passed, few-pages failed with eleven pages – `site/README.md`, `docs/quickstart.md`, `docs/steps/README.md`, the seven
+steps `01` to `07`, `handbook/03-hardware-graph.md`; besides them it read the plugin's `skills/`, `examples/`,
+`edakit/parts/` and `edakit/sim/netlist.py` (TD-103). It does not count yet: Bash could write neither the workspace nor
+its own temporary directory ("Read-only file system") as `eval` either, so the graph came through the Write tool and
+`edakit schematic draw` failed. Asked for by the
 owner the day after the documentation concept was built ("I am still not happy with the documentation; it is more
 compact after the revision, but when somebody new looks at it, they run away – think about what we could do so that it
 is not so overwhelming, and write a concept"). Written against main at `37a0745`, with
