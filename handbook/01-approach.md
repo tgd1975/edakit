@@ -106,5 +106,5 @@ what is checked by judgement and by whom, and an acceptance test after delivery 
 | [14 Designing a circuit](14-design.md) | designer and reviewer, the catalog – engines, codes, data, domains –, hints, building blocks, from a finding to a rule |
 | [15 Regulatory review](15-regulatory.md) | the purpose, the EU rules, the review M-6 – support, not legal advice |
 | [16 KiCad as the tool chain](16-kicad.md) | EasyEDA Pro or KiCad – when to take which, and every step on KiCad's files |
-| [17 Walkthrough](17-walkthrough.md) | a coin cell, a button and an LED in EasyEDA Pro, from the idea to the delivered boards |
+| [17 Walkthrough on EasyEDA](17-walkthrough.md) | a coin cell, a button and an LED, from the idea to the delivered boards |
 | [18 Walkthrough on KiCad](18-walkthrough-kicad.md) | a 555 blinker drawn in KiCad, from the idea to RELEASED |

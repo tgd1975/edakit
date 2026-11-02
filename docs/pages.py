@@ -102,7 +102,7 @@ NAV = [
         ("handbook/14-design.md", "14 Designing a circuit"),
         ("handbook/15-regulatory.md", "15 Regulatory review"),
         ("handbook/16-kicad.md", "16 KiCad"),
-        ("handbook/17-walkthrough.md", "17 Walkthrough"),
+        ("handbook/17-walkthrough.md", "17 Walkthrough on EasyEDA"),
         ("handbook/18-walkthrough-kicad.md", "18 Walkthrough on KiCad"),
     ]),
     ("Reference", [
