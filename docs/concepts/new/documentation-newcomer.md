@@ -4,10 +4,11 @@ Status 2026-11-02: decided – the seven decisions taken by the owner the same d
 form (the table at the end): six as recommended, the newcomer's test as the eval alone, without a person; what Claude
 had set itself – the budgets, the shape of a steps page, the ten pages, the tabs, the order of the steps – confirmed.
 N.1 and N.3 built the same day on the owner's word (#215); N.2, N.4 and N.5's eval case built the same day on the
-owner's word (#222), waiting for the merge; the eval's first run and its numbers are N.5's rest. Asked for by the owner
-the day after the documentation concept was built ("I am still not happy with the documentation; it is more compact
-after the revision, but when somebody new looks at it, they run away – think about what we could do so that it is not so
-overwhelming, and write a concept"). Written against main at `37a0745`, with
+owner's word (#222, edakit 1.0.1); the eval's run waits for a cloud session – on this machine the Bash sandbox cannot
+start (Ubuntu restricts user namespaces), and a first try stopped after two pages without a shell. Asked for by the
+owner the day after the documentation concept was built ("I am still not happy with the documentation; it is more
+compact after the revision, but when somebody new looks at it, they run away – think about what we could do so that it
+is not so overwhelming, and write a concept"). Written against main at `37a0745`, with
 [documentation.md](../done/documentation.md) as built (#174) and its review
 ([documentation-assumptions.md](../done/documentation-assumptions.md), closed with decision 7); checked against
 `530252a` (edakit 1.0.0): How it works gained a paragraph on the first order and has 1,705 words now, nothing else in

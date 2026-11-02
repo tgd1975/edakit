@@ -4,7 +4,7 @@ Open work that needs the owner's computer, a maker or the owner's word. The stat
 and plans the sections name; this list is what is left to do of them, in the order it can be done. No item is deleted.
 
 **Layout.** Every item, in every section, open or closed, is a line with a checkbox and an ID unique in this file,
-counted up and never reused – whoever adds an item takes the next free ID and counts it up here. Next free ID: TD-102.
+counted up and never reused – whoever adds an item takes the next free ID and counts it up here. Next free ID: TD-103.
 
 - Open: `- [ ] TD-<n> - **Title:** what and why.` – a step's own name after the dash (`- [ ] TD-31 - **D.4** …`).
 - Done: ticked, the commit that did it, the date at the end, moved to [Closed todos](#closed-todos), newest first –
@@ -29,6 +29,13 @@ to touch.
 
 ## For the owner
 
+- [ ] TD-102 - **Run the eval first-circuit in a cloud session** of Claude Code on tgd1975/edakit, as an ordinary user
+      (`useradd -m eval`, not root – evals/README.md, "Running"): `git archive HEAD | tar -x -C /tmp/edakit-eval`,
+      `cd /tmp/edakit-eval && UV_LINK_MODE=copy uv sync`, then `claude plugin eval . --scaffold --case first-circuit
+      --allow-tools Bash Edit Write --trust-plugin --ablation none --runs 1 --model claude-sonnet-5-5 --max-cost-usd 6
+      --no-publish`; the session writes score and pages opened into the status line of
+      `docs/concepts/new/documentation-newcomer.md` and closes TD-98 – the Bash sandbox cannot start on this machine
+      (Ubuntu's `kernel.apparmor_restrict_unprivileged_userns`). *(edakit-c1)*
 - [ ] TD-99 - **Decide on parts on hand (PartsLedger):** a decision round in Claude Code's form on
       `docs/concepts/new/parts-on-hand.md` – six decisions, recommendations first: the maker's bin as a source of
       hand-soldered parts, only the rest ordered, the way back into the bin, PartsLedger's name; nothing is built
@@ -71,7 +78,7 @@ Built on 2026-11-01 (#174, edakit 0.4.14); what is left after the owner's review
 
 - [ ] TD-98 - **N.5** The newcomer's test: the eval case `evals/first-circuit` (built in #222) run once – a one-line
       idea to a checked graph with the site alone –, its result and the pages it opened into the concept's status
-      line; the first run is under way. *(edakit-c1)*
+      line; runs in a cloud session (TD-102). *(edakit-c1)*
 
 ## Closed todos
 
