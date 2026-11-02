@@ -29,15 +29,6 @@ to touch.
 
 ## For the owner
 
-- [ ] TD-104 - **A picture of the routed board for the walkthroughs:** `edakit gate` on `examples/coin-cell-led`
-      with EasyEDA (and on `examples/blinker-555` with KiCad 10 and Freerouting), `pictures/board_main_top.png` of the
-      run into the example's `docs/` – handbook 17 and 18 show the placement plan and the silkscreen, but no copper.
-      Neither example keeps the Gerber files of a routed run, and a cloud session can route neither. The session that
-      gets the files puts the picture after `route all` in both chapters. *(amazing-newton)*
-- [ ] TD-99 - **Decide on parts on hand (PartsLedger):** a decision round in Claude Code's form on
-      `docs/concepts/new/parts-on-hand.md` – eight decisions, recommendations first: the maker's bin as a source of
-      hand-soldered parts, only the rest ordered, the way back into the bin, PartsLedger's name; nothing is built
-      before. *(edakit-96)*
 - [ ] TD-82 - **pytree's pictures:** pick what of the private repository may go onto `docs/projects/pytree.md` – the
       page is text only, from its README and chapter 13; say too whether that much about the gift may stand before
       Christmas. *(edakit, documentation session)*
@@ -49,7 +40,8 @@ E-1 to E-17 on EasyEDA Pro and M-1 to M-10 on easyeda-mcp-pro, checked live on E
 
 - [ ] TD-105 - **E-18 (a saved schematic, opened again, puts a pin on a second net):** check it live on the newest
       EasyEDA Pro and against the API docs, then report it upstream on the owner's "posten?" – entered unreported with
-      #117 (edakit 1.0.6); upstream/README.md follows. *(edakit-80)*
+      #117 (edakit 1.0.6); upstream/README.md follows. Not reproduced on `examples/coin-cell-led` (2026-11-02: saved,
+      opened again, matches) – it needs `tree`, so after TD-106. *(edakit-80)*
 - [ ] TD-106 - **#117 on `tree` (pytree):** once `schematic create --save` passes place-D2 again (it times out at
       `schematic.placeComponent`, C2895477), run it with edakit 1.0.6 and `schematic check --schematic generated_tree`
       before and after `gate --easyeda` – both the same shows the gap closed; a drifted save gives E-18 its live case.
@@ -77,6 +69,12 @@ Nothing to do until there is an answer or a release; whichever session learns of
 Done or dropped, newest first, each with its date and the commit that closed it. What closed before 2026-11-01 is
 taken from the history of this file; an item rewritten on its way is listed once, in its last form.
 
+- [x] TD-104 - **A picture of the routed board for the walkthroughs:** `board_main_top.png` of a gate run in both
+      examples' `docs/` – coin-cell-led from the EasyEDA run 20261101-200611, blinker-555 from `gate --eda` with KiCad
+      10 –, shown in handbook 17.11 and 18 after the silkscreen (#246, edakit 1.0.10). [2026-11-02]
+- [x] TD-99 - **Decide on parts on hand (PartsLedger):** decided in a decision round – movements 1 and 2, edakit only
+      reads the bin; `[project] bin`; need plus spares; siblings shown, kits as data; profiles partsledger, csv, xlsx;
+      the name open while it is a concept (`docs/concepts/new/parts-on-hand.md`, "Decisions"). [2026-11-02]
 - [x] TD-83 - **The findings of the chapters' reviews:** fixed or decided (#248, edakit 1.0.8) – the handbook follows
       the code, the sources name the sections they cite, the catalog names pytree and the bell, 14.2's engines table
       generated, 8.4 "you order and pay"; what the reviews left stays left. *(edakit-b7)* [2026-11-02]
