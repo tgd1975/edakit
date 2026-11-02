@@ -12,14 +12,15 @@ operating case, the schematic in EasyEDA Pro, the PCB's parts and nets, the BOM 
 wire by hand. A change starts in the graph and runs through the pipeline again. A **release gate** runs every check on
 the files to be uploaded and writes a test protocol; only a RELEASED run goes to the maker.
 
-A project without a PCB needs no EasyEDA: checks, simulation and a drawn schematic (6.5) work from the graph alone. A
-project that draws its boards in KiCad 10 keeps the rest the same (KiCad as the tool chain, chapter 16).
+A project without a PCB needs no EDA program: checks, simulation and a drawn schematic (6.5) work from the graph
+alone. For a board, EasyEDA Pro is the default and KiCad 10 the other choice, with the rest the same – when to take
+which, 16.1.
 
 ```text
  parts database ──► hardware graph ──► schematic ──► PCB ──► manufacturing files ──► JLCPCB ──► acceptance
    (P)              (G, E)             (S)          (L)      (F)                     (M-2)       (M-4)
      │                 │                  │            │          │
-     │ edakit check    │ edakit sim       │ schematic  │ pcb, route, silk               edakit gate --easyeda
+     │ edakit check    │ edakit sim       │ schematic  │ pcb, route, silk               edakit gate --eda    
      └─────────────────┴──────────────────┴────────────┴──────────┴──► protocol.md + manifest.json "released": true
 ```
 
@@ -85,11 +86,11 @@ what is checked by judgement and by whom, and an acceptance test after delivery 
 
 | Chapter | |
 |---|---|
-| [2 Setup](02-setup.md) | EasyEDA Pro, Node, the MCP server, the bridge patch, Claude Code plugin, a project |
+| [2 Setup](02-setup.md) | EasyEDA Pro with Node, the MCP server and the bridge patch, or KiCad 10; Claude Code plugin, a project |
 | [3 Hardware graph](03-hardware-graph.md) | format, conventions, the rule checks, the firmware contract, requirements |
 | [4 Parts database](04-parts-database.md) | one file per part, sourcing, sign-off, own parts, datasheets |
 | [5 Simulation](05-simulation.md) | ngspice from the graph, behaviour models, scenarios |
-| [6 Schematic](06-schematic.md) | generate, check, copy, lay out – or draw it without EasyEDA |
+| [6 Schematic](06-schematic.md) | generate, check, copy, lay out – or draw it without an EDA program |
 | [7 PCB](07-pcb.md) | placement plan, parts without dialogs, Freerouting, pours, silkscreen |
 | [8 Release gate](08-release-gate.md) | stages, sign-offs, manifest, ordering at the manufacturer, acceptance, project scripts and agents, requirements |
 | [9 EasyEDA API](09-easyeda-api.md) | how the API and the MCP server really behave |
@@ -99,6 +100,6 @@ what is checked by judgement and by whom, and an acceptance test after delivery 
 | [13 Lessons learned](13-lessons-learned.md) | what cost time, what we would do again |
 | [14 Designing a circuit](14-design.md) | designer and reviewer, the catalog – engines, codes, data, domains –, hints, building blocks, from a finding to a rule |
 | [15 Regulatory review](15-regulatory.md) | the purpose, the EU rules, the review M-6 – support, not legal advice |
-| [16 KiCad as the tool chain](16-kicad.md) | a project that draws its boards in KiCad instead of EasyEDA |
-| [17 Walkthrough](17-walkthrough.md) | a coin cell, a button and an LED, from the idea to the delivered boards |
-| [18 Walkthrough 2: a 555 blinker on KiCad](18-walkthrough-kicad.md) | a 555 blinker drawn in KiCad, from the idea to RELEASED |
+| [16 KiCad as the tool chain](16-kicad.md) | EasyEDA Pro or KiCad – when to take which, and every step on KiCad's files |
+| [17 Walkthrough](17-walkthrough.md) | a coin cell, a button and an LED in EasyEDA Pro, from the idea to the delivered boards |
+| [18 Walkthrough on KiCad](18-walkthrough-kicad.md) | a 555 blinker drawn in KiCad, from the idea to RELEASED |

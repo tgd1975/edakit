@@ -13,8 +13,9 @@ A bought board on a cable (`bought = true`) or a hand-wired one (`wired = true`,
 `silk`, `fab` and `export` refuse it with one line when `--board` names it, and without `--board` take the one made
 board; `handover` and `export` over all boards leave it out.
 
-On a KiCad project (`[project] toolchain = "kicad"`, chapter 16) the commands are the same and work on KiCad's files;
-`pcb autolayout` is refused there, and `pcb place --rest` places the parts without a row (the KiCad flow, 16.4).
+**On KiCad:** the commands are the same and work on KiCad's files. `pcb parts` writes into the file without a dialog,
+`pcb place --rest` places the parts without a row where EasyEDA's auto-layout does, and `route apply` writes the tracks
+into the file – the KiCad flow (16.4).
 
 ```bash
 edakit handover              # what the circuit hands over: state, sign-offs, what the plan must keep (14.1)
@@ -23,8 +24,9 @@ edakit pcb dump              # footprint geometry -> hardware/boards/<board>.geo
 edakit pcb plan              # offline: check the plan, preview PNG, net classes, mechanical model
 edakit pcb place --write     # offline: decoupling capacitors, pull and series resistors next to their host
 edakit pcb apply             # outline, holes, tooling holes, fixed parts locked; pads verified
-edakit pcb autolayout        # the parts without a row; once they stand still, their rows into [place]
-edakit route all             # Freerouting -> EasyEDA, pours, DRC (exit 0 = DRC 0)
+edakit pcb autolayout        # EasyEDA: the parts without a row; once they stand still, their rows into [place]
+edakit pcb place --rest      # KiCad: edakit places the parts without a row (autolayout is EasyEDA's)
+edakit route all             # Freerouting -> the PCB, pours, DRC (exit 0 = DRC 0)
 edakit silk apply            # designators where there is room, silkscreen check on the Gerber, DRC
 ```
 
@@ -90,7 +92,7 @@ Import Changes in 7.5).
 ### Swapping a part
 
 Before a swap – another part for the same place, because the old one is out of stock or not in JLCPCB's library –
-`edakit part diff OLD NEW` (LCSC numbers or parts-entry keys) compares the footprints without EasyEDA. The geometry is
+`edakit part diff OLD NEW` (LCSC numbers or parts-entry keys) compares the footprints offline. The geometry is
 the dump of a placed part, else the footprint data of the parts entry (4.5), else the library footprint of
 `edakit part import`.
 
@@ -394,7 +396,7 @@ geometry as `pcb plan` does (footprint geometry, above).
 > has placed a real board that routed and passed the gate.
 
 `edakit pcb place --rest` places every part of the board that has no row in `[place]`, or a row with `auto = true` –
-not only the parts with a host. It works offline, from the board file, the geometry and the graph, without EasyEDA.
+not only the parts with a host. It works offline, from the board file, the geometry and the graph.
 
 - **Order.** The parts with a host come first, as above. Then the part with the most pins on nets of placed parts goes
   next, ground left out; a tie goes by designator. A part that names a placed part as its host follows that part at
@@ -958,7 +960,7 @@ on a pad (top) – 0.42 mm² of its box within 0.15 mm of a solder-mask opening`
 all the same. A row for a designator the board does not have is a finding too.
 
 `edakit silk preview` draws the fixed designators as blue boxes onto the last Gerber export and reports the same
-findings offline (exit 2), so a spot can be tuned without EasyEDA.
+findings offline (exit 2), so a spot can be tuned without the EDA program.
 
 In the gate a fixed designator is edakit's print like any other (GEO.silk). A part of the `designators` side whose name
 goes to the other side has none on its own side: GEO.silk warns unless `unlabelled` gives the reason. With `[looks]`,
@@ -1007,9 +1009,10 @@ does not print it) and mirrors graphics on the bottom side (EasyEDA does that on
 label keep clear of artwork and texts.
 
 `edakit silk preview` draws them onto the last Gerber export offline (`<artifacts>/silk_preview_<board>_<side>.png`), so
-a design can be tuned without EasyEDA. Draw motifs in mm with lines of 0.2 mm or more; script text works as outlines
-(embolden it a little). The SVGs are in the layout hash like the board file: a changed motif voids the sign-offs with
-scope `layout`, and M-5 with scope `fab` lapses with the silkscreen of the next gate run (sign-offs, 8.2).
+a design can be tuned without the EDA program. Draw motifs in mm with lines of 0.2 mm or more; script text works as
+outlines (embolden it a little). The SVGs are in the layout hash like the board file: a changed motif voids the
+sign-offs with scope `layout`, and M-5 with scope `fab` lapses with the silkscreen of the next gate run
+(sign-offs, 8.2).
 
 ### Good to know
 

@@ -25,23 +25,23 @@ its sources. The release's manual checks keep their numbers, M-1 to M-6 (8.2).
 | 6 | Stock and cost | Claude | `edakit stock`, `cost`, `order` | `hardware/stock.json` | PARTS.stock |
 | 7 | Drawing and hand-over | Claude | `edakit schematic draw`, `edakit handover` | `hardware/schematic.toml`, the graph's `layout` | SYNC.plan, later |
 | 8 | Reviews | the agents electrical-reviewer and regulatory-reviewer, each in a session of its own | – | `hardware/signoff.json`: M-1, M-6 | – |
-| 9 | The gate without EasyEDA | Claude | `edakit gate` | `build/release/<run>/` | P, G, E |
-| 10 | EasyEDA project | you, once (none with KiCad, chapter 16) | *File → New → Project* | – | – |
+| 9 | The gate offline | Claude | `edakit gate` | `build/release/<run>/` | P, G, E |
+| 10 | EasyEDA project | you, once; on KiCad edakit writes it (chapter 16) | *File → New → Project* | – | – |
 | 11 | Layout | Claude as the PCB designer, in a session of its own | `/edakit:pcb-round` | `hardware/boards/main.toml` | `pcb plan`, `route check`, round reviews |
-| 12 | Release | Claude | `edakit gate --easyeda` | the manufacturing files | P to F, M-5 |
+| 12 | Release | Claude | `edakit gate --eda` | the manufacturing files | P to F, M-5 |
 | 13 | Order | Claude up to the maker's cart, you order and pay | `edakit cart`, `/edakit:cart` | the order record `hardware/orders/` | ORDER.form to ORDER.review, M-2 |
 | 14 | Acceptance | you | the boards in your hand | – | M-4 |
 
-Steps 1 to 9 work from the files alone – checks, simulation, drawing –, without EasyEDA; a board on a breadboard would
-end there.
+Steps 1 to 9 work from the files alone – checks, simulation, drawing –, without an EDA program; a board on a breadboard
+would end there.
 
 ## 17.2 Set up
 
 `/edakit:new-project coin-cell-led main` asks its questions in one round, a form with options in Claude Code. The
-answers here: a PCB, one board `main`, drawn in EasyEDA Pro (not KiCad, chapter 16), made by JLCPCB with one side
-assembled, SMD parts only (Economic), 5 sets, no budget, built for oneself in the EU, the requirements now, no firmware,
-no documents that quote values, no project scripts or agents. The skill proposes every file and key with the answer
-behind it and writes after your OK:
+answers here: a PCB, one board `main`, drawn in EasyEDA Pro, the default (KiCad, the other choice, in chapter 18), made
+by JLCPCB with one side assembled, SMD parts only (Economic), 5 sets, no budget, built for oneself in the EU, the
+requirements now, no firmware, no documents that quote values, no project scripts or agents. The skill proposes every
+file and key with the answer behind it and writes after your OK:
 
 ```toml
 [project]
@@ -411,9 +411,9 @@ PCBA
 
 ## 17.8 Drawing and hand-over
 
-`edakit schematic draw` draws the schematic from graph and parts alone, without EasyEDA. The note in the block quotes
-the simulation – `{sim:min SIM.state used/* D1 LED on}` in `hardware/schematic.toml` – and changes when R1 or D1 change
-(DOCS.quote, 6.6):
+`edakit schematic draw` draws the schematic from graph and parts alone, without an EDA program. The note in the block
+quotes the simulation – `{sim:min SIM.state used/* D1 LED on}` in `hardware/schematic.toml` – and changes when R1 or D1
+change (DOCS.quote, 6.6):
 
 ![The schematic of coin-cell-led, drawn by edakit schematic draw](../examples/coin-cell-led/docs/schematic.svg)
 
@@ -476,7 +476,7 @@ outline of holder and cell from its drawing (`body.box`, for the silkscreen chec
 looked again and signed for the new hash. M-1 checked the new accept's reason against the cell's data sheet, and one of
 its looks found a hint that repeated what PATH.reverse had already checked (gaps closed, 13.9).
 
-## 17.10 The gate without EasyEDA
+## 17.10 The gate offline
 
 `edakit gate` runs stages P, G and E and writes the test protocol (chapter 8):
 
@@ -507,8 +507,8 @@ Section 6 of the protocol already holds the lists for later: what M-2 looks at b
 ## 17.11 EasyEDA and the layout
 
 EasyEDA cannot create a project through its API: you create `coin-cell-led` once by hand (*File → New → Project*) and
-leave it open (the template, 6.1). A project with `toolchain = "kicad"` skips that: edakit writes the KiCad
-project itself, and the same steps run on KiCad's files (chapter 16). Then the PCB designer takes the layout in a
+leave it open (the template, 6.1). On KiCad there is nothing to create: edakit writes the KiCad project itself, and
+the same steps run on KiCad's files (chapter 18 shows them). Then the PCB designer takes the layout in a
 session of its own (`/edakit:pcb-round`), starting from `edakit handover`.
 
 ### The board file
@@ -641,7 +641,7 @@ these commands (chapters 6 and 7), each in less than half a minute:
 
 ## 17.12 Release, order, acceptance
 
-`edakit gate --easyeda` runs every stage, the last ones on the files that go to JLCPCB: the schematic equals the graph
+`edakit gate --eda` runs every stage, the last ones on the files that go to JLCPCB: the schematic equals the graph
 (SYNC.schematic), the copper of the Gerber files connects what the graph connects (GEO.copper), the "+" lies next to
 BT1's plus pad (GEO.mark), the BOM leaves BT1 out (SYNC.bom), the pick-and-place file has every assembled part once
 (SYNC.cpl), the order settings fit JLCPCB's form (FILES.order).
@@ -651,7 +651,7 @@ the same files counts it. Only a run whose protocol says **RELEASED** may be upl
 three runs: the first passed every stage with M-5 open, the second followed the review's notes, the third counted M-5:
 
 ```text
-$ edakit gate --easyeda
+$ edakit gate --eda
 [ 0.0 min] step 1/4: P/G parts and graph
 [ 0.0 min] step 2/4: E simulation
 [ 0.0 min] step 3/4: S schematic against the graph

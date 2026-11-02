@@ -128,7 +128,7 @@ its `verify` belongs to the requirements file.
 edakit check 2>&1 | cat     # 0 errors: fix the cause; accept only with a reason that holds
 edakit domains 2>&1 | cat   # the domains on and suggested; a new part may need one more
 edakit sim 2>&1 | cat       # every scenario passes
-edakit schematic draw 2>&1 | cat   # the circuit as a drawing (SVG) for the user to look at – no EasyEDA needed
+edakit schematic draw 2>&1 | cat   # the circuit as a drawing (SVG) for the user to look at – no EDA program needed
 ```
 
 A hint that is taken care of gets a line in the graph's `[accept]`: `"HINT.bulk" = "C1 1000 µF next to J1"`. The pins
@@ -172,7 +172,7 @@ shows under "Who reviews where" who reviews at the circuit review – a project 
 replaces (`replaces`), and the project's agents with a sign-off of scope `circuit` beside them, each after the ones its
 `after` names. Their findings go into one decision round. Then the PCB designer takes over in a session of its own:
 skill pcb-round, starting with `edakit handover`. Without a PCB (a development board and hand wiring) the drawing is the
-schematic, and the project is done without EasyEDA.
+schematic, and the project is done without an EDA program.
 
 ## Report
 

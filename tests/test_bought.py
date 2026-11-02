@@ -124,7 +124,7 @@ def test_the_gate_makes_only_the_made_boards(project, monkeypatch):
     monkeypatch.setattr(schematic, "check", schematic_check)
     monkeypatch.setattr(fab, "run", fab_run)
     monkeypatch.setattr(fab, "fab_layers", fab_layers)
-    assert cli_run(project, monkeypatch, "gate", "--easyeda") == 2            # M-1, M-5, M-6 open, as in the example
+    assert cli_run(project, monkeypatch, "gate", "--easyeda") == 2            # the old name of --eda; M-1, M-5, M-6 open
     assert called == {"schematic": ["main"], "fab": ["main"], "layers": ["main"]}
     runs = sorted((project.root / "build" / "release").iterdir())
     manifest = json.loads((runs[-1] / "fab" / "manifest.json").read_text())

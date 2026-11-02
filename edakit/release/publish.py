@@ -166,7 +166,7 @@ def no_release(pcfg):
     """Why a project has no current release, as `release current` says it."""
     last = next((f"{run} {gate.status(d)}" for run, _, d in reversed(gate.runs(pcfg)) if d.get("decision") == "RELEASED"),
                 None)
-    return "no current release" + (f" (newest released run: {last})" if last else " – edakit gate --easyeda releases one")
+    return "no current release" + (f" (newest released run: {last})" if last else " – edakit gate --eda releases one")
 
 
 def collect(projs):

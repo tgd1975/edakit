@@ -4,9 +4,9 @@ After this step your board is placed, routed and checked, in EasyEDA Pro or in K
 
 ## What you do
 
-Install the program once: EasyEDA Pro desktop with Node 24, or KiCad 10. For EasyEDA you create the project by hand,
-*File → New → Project*, with your project's name. Its interface cannot do that. With KiCad there is nothing to create:
-Claude writes the project.
+Install the program you chose once: EasyEDA Pro desktop with Node 24, or KiCad 10. For EasyEDA you create the
+project by hand, *File → New → Project*, with your project's name. Its interface cannot do that. With KiCad there is
+nothing to create: Claude writes the project.
 
 Then start a new session and type `/edakit:pcb-round`. Claude works from what the last steps handed over. It plans the
 places and checks the plan offline:

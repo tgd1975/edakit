@@ -469,10 +469,10 @@ the review are still the project's. A project's own blocks are JSON files of the
 
 ## 14.6 Where the ideas came from
 
-CircuitSmith, a sibling project that draws schematics from declarative YAML and checks them against an ERC rule
-catalog, brought in: the catalog with reason and source for every rule; the designer as an "electronics engineer" bound
-to the parts library and to rules instead of memory, asking open questions in one batch; sub-blocks with ports; and the
-checks for I2C pull-ups, strapping pins, input-only pins and the MCU's current budget. CircuitSmith's other goal, a
-schematic without an EDA tool, edakit reached with what it had: the layout it computes for EasyEDA, drawn with symbols
-from the parts database (drawn without EasyEDA, 6.5). Not taken: CircuitSmith's renderer and layout engine, and the
-KiCad netlist.
+CircuitSmith, a sibling project that draws schematics from declarative YAML and checks them against an ERC rule catalog,
+brought in: the catalog with reason and source for every rule; the designer as an "electronics engineer" bound to the
+parts library and to rules instead of memory, asking open questions in one batch; sub-blocks with ports; and the checks
+for I2C pull-ups, strapping pins, input-only pins and the MCU's current budget. CircuitSmith's other goal, a schematic
+without an EDA tool, edakit reached with what it had: the layout it computes for EasyEDA, drawn with symbols from the
+parts database (drawn without an EDA program, 6.5). Not taken: CircuitSmith's renderer and layout engine, and the KiCad
+netlist.

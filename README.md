@@ -16,12 +16,14 @@ agent [harness](https://tgd1975.github.io/edakit/architecture/) for circuit desi
 | --- | --- |
 | ![The walkthrough's schematic: a CR2032, a push button, a red LED and its resistor](examples/coin-cell-led/docs/schematic.svg) | ![The walkthrough's round board, top side](examples/coin-cell-led/docs/silk_main_top.png) |
 
-The walkthrough's example: a coin cell, a button and a red LED – every file of it is text in
-[examples/coin-cell-led](examples/coin-cell-led/).
+The walkthrough's example: a coin cell, a button and a red LED, drawn in EasyEDA Pro – every file of it is text in
+[examples/coin-cell-led](examples/coin-cell-led/). The same on KiCad: a 555 blinker in
+[examples/blinker-555](examples/blinker-555/), with
+[its walkthrough](https://tgd1975.github.io/edakit/handbook/18-walkthrough-kicad/).
 
 ## Try it in two minutes
 
-In a clone of this repository, without the plugin and without EasyEDA:
+In a clone of this repository, without the plugin and without an EDA program:
 
 ```bash
 cd examples/coin-cell-led
@@ -53,8 +55,9 @@ but that is no guarantee. The regulatory review is support, not legal advice.
 At least that is the vision, and we are close. [How it works](https://tgd1975.github.io/edakit/how-it-works/#state) says
 what has run live, what has not, and where it goes next.
 
-**What it needs.** Claude Code; uv and ngspice; for a board EasyEDA Pro desktop with Node 24, or KiCad 10. Tested on
-Linux; Windows and macOS are untested. An account at the maker you order from.
+**What it needs.** Claude Code; uv and ngspice; for a board EasyEDA Pro desktop with Node 24, the default, or KiCad 10
+([which one](https://tgd1975.github.io/edakit/handbook/16-kicad/#161-easyeda-pro-or-kicad)). Tested on Linux; Windows
+and macOS are untested. An account at the maker you order from.
 
 **What it costs.** The checks, the simulation and the drawings run offline. Claude's part is paid in tokens: six
 typical tasks of the evals cost 0.55 USD together with Sonnet 5.5 and 1.48 USD with Opus 5.5

@@ -79,7 +79,7 @@ PreToolUse hook on git commands.
 
 - Say up front how long a run takes and which step is the longest, and show progress (step n/m, minutes). edakit's
   long commands print a line before each step, flushed at once – `[ 3.2 min] step 4/8: pours`: `route all`, `gate`
-  (each stage and project check, with `--easyeda` each board), `pcb apply`, `silk apply`, `export` (two steps per
+  (each stage and project check, with `--eda` each board), `pcb apply`, `silk apply`, `export` (two steps per
   board), `schematic create`/`layout` (each phase, followed by its duration and EasyEDA's memory). A Monitor on
   `step ` lines shows where a run is and since when; a stalled run stalls in the step it last named.
 - Start long runs in the background, and wait for the notification or watch the log. **Never wait with `pgrep -f`** on

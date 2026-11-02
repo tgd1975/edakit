@@ -601,7 +601,7 @@ def _script(name, checks, protocol_rows, stages_run, signoff):
         return "later", f"{dict(PHASES)[check.phase]}: {sid} {why} – check {check.id} is a line of its list (section 6)"
     if check.id not in stages_run:
         return "fail", f"check {check.id} did not run" + (
-            " – it runs after stage F, in edakit gate --easyeda" if check.at == "after F" else "")
+            " – it runs after stage F, in edakit gate --eda" if check.at == "after F" else "")
     hits = Counter(r["result"] for r in protocol_rows if r.get("stage") == check.id)
     n = sum(hits.values())
     if not n:

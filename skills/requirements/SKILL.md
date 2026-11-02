@@ -129,7 +129,7 @@ pointer is missing; sim.json, the parts' limits and the protocol's rows are wher
 
 A rows pattern names the rows that test the sentence – the scenario and the part it is about; `LIM.i *` matches every
 row of the code and says nothing about the sentence. Rows of the stages S, L and F come only with
-`edakit gate --easyeda`. Evidence that does not exist yet is proposed in the round and made by its owner: a scenario
+`edakit gate --eda`. Evidence that does not exist yet is proposed in the round and made by its owner: a scenario
 in sim.json by the circuit designer (sim.json is theirs), a project script by the project. Until then the requirement
 has no passing evidence, and a `must` holds up the release.
 
@@ -138,7 +138,7 @@ has no passing evidence, and a `must` holds up the release.
 ```bash
 edakit req 2>&1 | cat     # the file as edakit reads it – a key it does not know or a missing field stops it
 edakit check 2>&1 | cat   # DOCS.ref references resolve, DOCS.need accepted needs have a requirement, DOCS.evidence evidence, DOCS.draft drafts
-edakit gate 2>&1 | cat    # offline, no EasyEDA: section 11 of its protocol – what each requirement's evidence found
+edakit gate 2>&1 | cat    # offline, no EDA program: section 11 of its protocol – what each requirement's evidence found
 ```
 
 Fix what DOCS.ref, DOCS.need and DOCS.evidence report before the round; DOCS.draft names the drafts the round is for. In section 11 of the
