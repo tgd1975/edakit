@@ -119,11 +119,13 @@ def build_parser():
     p.add_argument("action", choices=["show", "json", "convert"])
     p.add_argument("name", nargs="?", help="show: a designator (U1) or a net name (LED_CLK)")
     p.add_argument("--json", help="show: write the view and its findings as JSON")
-    p.add_argument("--write", action="store_true", help="json: write the resolved graph beside a TOML graph "
-                                                        "(hardware/graph.json)")
+    p.add_argument("--write", action="store_true", help="json: write the resolved graph beside a TOML or a .circuit "
+                                                        "graph (hardware/graph.json)")
     p.add_argument("--check", action="store_true", help="json: compare the generated file with the graph, write "
                                                         "nothing; exit 2 on drift")
     p.add_argument("--dry-run", action="store_true", help="convert: print what would change, write nothing")
+    p.add_argument("--map", metavar="FILE", help="json: write the source map of a .circuit graph – where each part, "
+                                                 "net, lock and accept was written")
     _common(p)
 
     p = sub.add_parser("domains", help="the domains of the project: on, off, suggested; the reviewers' questions")

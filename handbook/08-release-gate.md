@@ -79,6 +79,7 @@ and `SYNC.agents` in G; the rest in L. Their codes, generated from the catalog:
 | [`SYNC.odb`](../docs/catalog/sync.html#SYNC.odb) | ODB++ = the released files | error, other_maker: warning, unlisted: note; replaces F-7 |
 | [`SYNC.source`](../docs/catalog/sync.html#SYNC.source) | own part = its source | error, margin: warning, stale: pending, unchecked: note; replaces P-3 |
 | [`SYNC.scripts`](../docs/catalog/sync.html#SYNC.scripts) | project scripts current | error, margin: warning, unchecked: note |
+| [`SYNC.graph`](../docs/catalog/sync.html#SYNC.graph) | the resolved graph current | error |
 | [`SYNC.agents`](../docs/catalog/sync.html#SYNC.agents) | project agents complete | error |
 | [`GEO.copper`](../docs/catalog/geo.html#GEO.copper) | copper from the Gerber files | error, margin: warning; replaces L-2 |
 | [`GEO.drc`](../docs/catalog/geo.html#GEO.drc) | DRC | error, margin: warning; replaces L-3 |

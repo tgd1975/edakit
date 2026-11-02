@@ -675,7 +675,7 @@ Rule, why, fix and sources of a code.
 ### edakit graph
 
 <!-- edakit:generated command graph -->
-`edakit graph [--json JSON] [--write] [--check] [--dry-run] {show,json,convert} [name]`
+`edakit graph [--json JSON] [--write] [--check] [--dry-run] [--map FILE] {show,json,convert} [name]`
 
 What the graph says about one part or net; the resolved graph as JSON; a JSON graph moved to TOML.
 <!-- edakit:end -->

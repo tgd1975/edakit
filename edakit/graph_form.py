@@ -50,6 +50,9 @@ HEADER = ["# The hardware graph (handbook 3.1): components, nets and cables keye
           "# or role through the parts entries. edakit graph json writes the resolved graph beside it (graph.json)."]
 
 
+GENERATED = (".toml", ".circuit")       # sources the resolved graph.json is generated from
+
+
 class FormError(ValueError):
     pass
 
@@ -95,9 +98,10 @@ def indent_of(path):
 
 
 def generated_path(cfg):
-    """Where the resolved graph of a TOML graph goes: beside it, as .json; None for a JSON graph, the source itself."""
+    """Where the resolved graph of a TOML or a .circuit graph goes: beside it, as .json; None for a JSON graph, the
+    source itself."""
     graph = Path(cfg.graph)
-    return graph.with_suffix(".json") if graph.suffix == ".toml" else None
+    return graph.with_suffix(".json") if graph.suffix in GENERATED else None
 
 
 def keyed(graph):
@@ -113,6 +117,26 @@ def keyed(graph):
     return out
 
 
+def drift(cfg):
+    """What differs between the generated graph.json and what the source resolves to now, compared canonically – None
+    when it is current, not written (the hook's --check says so; language 12, item 16) or the graph is JSON, the source
+    itself; SYNC.graph."""
+    from .firmware import differences
+    out = generated_path(cfg)
+    if out is None or not out.exists():
+        return None
+    source = load_graph(cfg.graph)
+    g = resolved(source, design_of(cfg.graph, load_parts(cfg.parts), list(cfg.boards), source))
+    try:
+        data = json.loads(out.read_text(encoding="utf-8"))
+    except json.JSONDecodeError:
+        return ["not valid JSON"]
+    old = data.get("graph", data) if isinstance(data, dict) else data
+    if isinstance(old, dict) and canonical(old) == canonical(g):
+        return None
+    return differences(keyed(old), keyed(g)) or ["the order of lists only"]
+
+
 def main_json(cfg, args):
     from .firmware import differences
     source = load_graph(cfg.graph)
@@ -124,7 +148,7 @@ def main_json(cfg, args):
     if args.check:
         if out is None:
             print(f"{cfg.relative(cfg.graph)} is the graph – nothing is generated from a JSON graph (edakit graph json "
-                  "--check checks the file beside a TOML graph)")
+                  "--check checks the file beside a TOML or a .circuit graph)")
             return 0
         rel = cfg.relative(out)
         if not out.exists():
@@ -144,10 +168,17 @@ def main_json(cfg, args):
         for line in lines or ["formatting only"]:
             print(f"  {line}")
         return 2
+    if getattr(args, "map", None):
+        if Path(cfg.graph).suffix != ".circuit":
+            print("edakit graph json: --map is the source map of a .circuit graph", file=sys.stderr)
+            return 1
+        from .lang.compile import compile as compile_circuit
+        Path(args.map).write_text(json.dumps(compile_circuit(cfg)[1].as_dict(), indent=1, ensure_ascii=False) + "\n",
+                                  encoding="utf-8")
     if args.write:
         if out is None:
             print(f"edakit graph json: {cfg.relative(cfg.graph)} is the graph itself – --write writes the file beside "
-                  "a TOML graph, never over a JSON one", file=sys.stderr)
+                  "a TOML or a .circuit graph, never over a JSON one", file=sys.stderr)
             return 1
         text = render(g, indent_of(out))
         same = out.exists() and out.read_text(encoding="utf-8") == text
@@ -350,6 +381,9 @@ def main_convert(cfg, args):
     rel = cfg.relative(src_path)
     if src_path.suffix == ".toml":
         print(f"{rel} is TOML already – nothing to convert")
+        return 0
+    if src_path.suffix == ".circuit":
+        print(f"{rel} is the circuit language already – nothing to convert")
         return 0
     target = src_path.with_suffix(".toml")
     if target.exists():

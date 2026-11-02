@@ -165,8 +165,8 @@ def content(path, ignore=(), graph=False):
     """What the hash takes of a file: its bytes; with ignore, a JSON file as canonical JSON (sorted keys, no
     whitespace) without those keys. A file that is no valid JSON stays bytes. graph: the file is the project's graph –
     a TOML graph is read as data in any case and taken as canonical JSON, arranged, without the keys of ignore, so that
-    a comment, a blank line and a table or pin moved count for nothing; one that does not load stays bytes. A JSON
-    graph as any JSON file."""
+    a comment, a blank line and a table or pin moved count for nothing; one that does not load stays bytes. A .circuit
+    graph the same way, its compiled data (lang/compile.py). A JSON graph as any JSON file."""
     path = Path(path)
     if not path.exists():
         return b"<missing>"
@@ -175,6 +175,13 @@ def content(path, ignore=(), graph=False):
         try:
             data = arranged(graph_of_toml(raw.decode("utf-8"), path))
         except (ConfigError, UnicodeDecodeError):
+            return raw
+    elif graph and path.suffix == ".circuit":          # the circuit language: its compiled data, as a TOML graph's
+        from ..lang.compile import compile_path
+        from ..lang.reader import CompileError
+        try:
+            data = arranged(compile_path(path))
+        except (CompileError, ConfigError):
             return raw
     elif not ignore:
         return raw

@@ -813,6 +813,18 @@ sources = [
   "edakit handbook 8.6",
 ]
 
+[codes."SYNC.graph"]
+title = "the resolved graph current"
+rule = "Beside a TOML or a .circuit graph the generated graph.json is what the source resolves to now, with the parts entries as they are."
+why = "Scripts, the firmware and a reviewer's diff read the generated file; one written before a change describes the old circuit, and the pre-commit hook is not the only way a file reaches a commit."
+fix = "edakit graph json --write writes it again; commit it with the source (handbook 3.1)."
+severity = "error"
+replaces = []
+sources = [
+  "edakit handbook 3.1, The JSON generated beside a TOML graph",
+  "docs/concepts/new/circuit-dsl-language.md, section 8 and item 16",
+]
+
 [codes."SYNC.agents"]
 title = "project agents complete"
 rule = "Every project agent ([agents.*]) has its agent file, signs only what is its to sign, and names in after only agents that exist."
