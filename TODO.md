@@ -4,7 +4,7 @@ Open work that needs the owner's computer, a maker or the owner's word. The stat
 and plans the sections name; this list is what is left to do of them, in the order it can be done. No item is deleted.
 
 **Layout.** Every item, in every section, open or closed, is a line with a checkbox and an ID unique in this file,
-counted up and never reused – whoever adds an item takes the next free ID and counts it up here. Next free ID: TD-109.
+counted up and never reused – whoever adds an item takes the next free ID and counts it up here. Next free ID: TD-113.
 
 - Open: `- [ ] TD-<n> - **Title:** what and why.` – a step's own name after the dash (`- [ ] TD-31 - **D.4** …`).
 - Done: ticked, the commit that did it, the date at the end, moved to [Closed todos](#closed-todos), newest first –
@@ -31,16 +31,28 @@ to touch.
 
 - [ ] TD-108 - **A photo of the delivered tree:** one picture of the lit tree in its hill into pytree's `docs/img/` –
       it replaces the render on `docs/projects/pytree.md`. *(edakit-ce)*
+- [ ] TD-110 - **OK for #265:** the parts at LCSC and the combined shipment (parts-order.md, steps 2 and 3) – merged
+      with `python3 .github/merge.py 265` on your word. *(edakit-4f)*
+- [ ] TD-112 - **OK for #267:** the gaps of the newcomer's eval closed – a 9 V snap and a slide switch in the library,
+      the smallest edakit.toml, edakit off the PATH, refused writes in new-project and `hook install`, SIM.state's
+      rows; then documentation-newcomer.md moves to `done/`. Merged with `python3 .github/merge.py 267` on your word.
+      *(edakit-df)*
+
+## The parts order ([docs/concepts/new/parts-order.md](docs/concepts/new/parts-order.md))
+
+- [ ] TD-111 - **Live run at the next parts order:** the skill cart's modes `parts` and `combine` at LCSC and JLCPCB,
+      nothing ordered or paid by the skill – it records the BOM tool's labels into `edakit/suppliers/lcsc.toml`, sets
+      `recorded`, and what it finds goes into handbook 8.4; after #265. *(edakit-4f)*
 
 ## What edakit needs from EasyEDA Pro and easyeda-mcp-pro ([upstream/README.md](upstream/README.md))
 
 E-1 to E-17 on EasyEDA Pro and M-1 to M-10 on easyeda-mcp-pro, checked live on EasyEDA Pro 3.2.209 and posted on
 2026-11-01; what each asks and where it stands is in upstream/README.md – the items here say only what is left to do.
 
-- [ ] TD-105 - **E-18 (a pin on a second net while another schematic of the project is open):** check it live on the newest
-      EasyEDA Pro and against the API docs, then report it upstream on the owner's "posten?" – entered unreported with
-      #117 (edakit 1.0.6); the cause found live on `tree` and E-18 rewritten with #256 (edakit 1.0.14): another
-      schematic of the project open. *(edakit-80)*
+- [ ] TD-109 - **M-11 (easyeda-mcp-pro's net reading takes a net flag of another open schematic):** post the issue
+      and the pull request from the fork's `fix/net-read-one-page` (`149dbe3`, local) on the owner's "posten?" – drafts in
+      `upstream/issue-10-net-read-one-page.md` and `pr-10-…`; until a release takes it, `schematic check` keeps closing
+      the other schematics. *(edakit-7b)*
 
 ### Waiting for upstream
 
@@ -52,6 +64,10 @@ Nothing to do until there is an answer or a release; whichever session learns of
 
 ## Closed todos
 
+- [x] TD-105 - **E-18 (a pin on a second net while another schematic of the project is open):** checked live on
+      EasyEDA Pro 3.2.209, still the newest, and against the docs – not EasyEDA's, nothing to report there: a V_LED flag
+      of `layout_tree` sits on the end of the template's wire from U4.11, and easyeda-mcp-pro takes the flags of every
+      open schematic but the wires of one; it goes upstream as M-11 (TD-109, branch `td105-m11`). [2026-11-02]
 - [x] TD-82 - **pytree's pictures:** picked by the owner on 2026-11-02 – the board from the ordered release
       20261101-225744, the tree in its hill (a photo replaces it, TD-108), the copper review's before/after; the gift's
       words stand before Christmas (#257). [2026-11-02]
