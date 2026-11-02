@@ -16,3 +16,8 @@ patch
 - T.7: the block library's source is `edakit/blocks/<name>.circuit`, definitions of the language; the JSON
   `block add` reads is generated from it (`python -m edakit.lang.blocks --write`) and gains `params` and
   `derivations` – led, i2c-pullups and battery-sense; `block add` reads them only with `--set` (T.8).
+- T.8: derivation rules (`series_resistor`, `divider`, `pullup`, `rc`); `edakit block add --set PARAM=VALUE`
+  derives a block's values and writes the record into the graph's `derivations`, `--part DES=KEY` takes an
+  entry inside the window; `edakit graph derive [--write]`; `edakit graph show` lists a part's records. New
+  engine DEF: DEF.derive, a warning when a part's value lies outside its record's window or the record's inputs
+  changed since (grade inputs). Handbook chapter 19 begins.

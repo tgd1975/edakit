@@ -675,7 +675,7 @@ Rule, why, fix and sources of a code.
 ### edakit graph
 
 <!-- edakit:generated command graph -->
-`edakit graph [--json JSON] [--write] [--check] [--dry-run] [--to {toml,circuit}] [--map FILE] {show,json,convert,fmt} [name] [files ...]`
+`edakit graph [--json JSON] [--write] [--check] [--dry-run] [--to {toml,circuit}] [--map FILE] {show,json,convert,fmt,derive} [name] [files ...]`
 
 What the graph says about one part or net; the resolved graph as JSON; a JSON graph moved to TOML.
 <!-- edakit:end -->
@@ -758,7 +758,7 @@ Mistakes built into a copy of the design one at a time: what no code catches.
 ### edakit block
 
 <!-- edakit:generated command block -->
-`edakit block [--as INSTANCE] [--connect PORT=NET [PORT=NET ...]] [--without DES [DES ...]] [--board BOARD] [--file FILE] [--dry-run] {list,show,add} [name]`
+`edakit block [--as INSTANCE] [--connect PORT=NET [PORT=NET ...]] [--without DES [DES ...]] [--board BOARD] [--set PARAM=VALUE [PARAM=VALUE ...]] [--part DES=KEY [DES=KEY ...]] [--file FILE] [--dry-run] {list,show,add} [name]`
 
 Building blocks: list, show, or add one to the graph.
 <!-- edakit:end -->

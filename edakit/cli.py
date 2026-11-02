@@ -116,12 +116,12 @@ def build_parser():
 
     p = sub.add_parser("graph", help="what the graph says about one part or net; the resolved graph as JSON; a JSON "
                                      "graph moved to TOML")
-    p.add_argument("action", choices=["show", "json", "convert", "fmt"])
+    p.add_argument("action", choices=["show", "json", "convert", "fmt", "derive"])
     p.add_argument("name", nargs="?", help="show: a designator (U1) or a net name (LED_CLK); fmt: a .circuit file")
     p.add_argument("files", nargs="*", help="fmt: further .circuit files (default: the project's source)")
     p.add_argument("--json", help="show: write the view and its findings as JSON")
     p.add_argument("--write", action="store_true", help="json: write the resolved graph beside a TOML or a .circuit "
-                                                        "graph (hardware/graph.json)")
+                                                        "graph (hardware/graph.json); derive: the records again")
     p.add_argument("--check", action="store_true", help="json: compare the generated file with the graph, write "
                                                         "nothing; exit 2 on drift; fmt: exit 2 where the layout "
                                                         "would change")
@@ -154,6 +154,10 @@ def build_parser():
     p.add_argument("--without", action="extend", nargs="+", metavar="DES", help="add: leave out these optional parts "
                                                                                 "of the block")
     p.add_argument("--board", help="add: board of the new parts (needed with several boards)")
+    p.add_argument("--set", action="extend", nargs="+", metavar="PARAM=VALUE", help="add: a parameter of the block "
+                                                                                    "(i=10mA): its derivations run")
+    p.add_argument("--part", action="extend", nargs="+", metavar="DES=KEY", help="add: the parts entry a part of "
+                                                                                 "the block takes where --set asks")
     p.add_argument("--file", help="a block from this JSON file instead of the library")
     p.add_argument("--dry-run", action="store_true", help="add: show what would change, write nothing")
     _common(p)
@@ -430,7 +434,7 @@ def _main(argv=None):
     if args.command == "graph" and args.action == "show":
         from . import graph_show
         return graph_show.main(cfg, args)
-    if args.command == "graph" and args.action == "fmt":
+    if args.command == "graph" and args.action in ("fmt", "derive"):
         from .lang import cli as lang_cli
         return lang_cli.main(cfg, args)
     if args.command == "graph":

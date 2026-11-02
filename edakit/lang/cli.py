@@ -1,8 +1,10 @@
-"""The language's own actions of `edakit graph`: fmt (T.5), and with the later steps derive, sysml, kerml.
+"""The language's own actions of `edakit graph`: fmt (T.5), derive (T.8), and with the later steps sysml, kerml.
 
     edakit graph fmt [--check] [FILE …]   the canonical layout of the project's source files, or of the files named;
                                           --check writes nothing and exits 2 naming the first file and line that
                                           would change
+    edakit graph derive [--write]         every derivation record evaluated again with the entries and nets as they
+                                          are now; --write rewrites the records of a JSON graph
 """
 
 from __future__ import annotations
@@ -50,5 +52,53 @@ def main_fmt(cfg, args):
     return code
 
 
+def main_derive(cfg, args):
+    """edakit graph derive [--write]: every derivation record of the graph evaluated again with the entries and nets
+    as they are now; --write rewrites the records of a JSON graph."""
+    import json
+
+    from ..block import write_json
+    from ..design import Design
+    from .rules import RuleError, refresh
+    suffix = Path(cfg.graph).suffix
+    design = Design.from_config(cfg)
+    records = [r for r in design.graph.get("derivations") or [] if isinstance(r, dict)]
+    if not records:
+        print("no derivation records in the graph")
+        return 0
+    new, stale = [], 0
+    for rec in records:
+        try:
+            fresh, changes = refresh(rec, design, records)
+        except RuleError as e:
+            print(f"{rec.get('part')}: {e}", file=sys.stderr)
+            return 1
+        new.append(fresh)
+        if changes:
+            stale += 1
+            print(f"{rec.get('part')}: {rec.get('rule')} ({rec.get('from')}) – {', '.join(changes)}: derived "
+                  f"{(rec.get('derived') or {}).get('value')} → {fresh['derived']['value']} "
+                  f"{fresh['derived']['unit']}, window {fresh['series']['window']}")
+    if not stale:
+        print(f"{len(records)} record{'s' if len(records) != 1 else ''} current")
+        return 0
+    if not args.write:
+        return 0
+    if suffix == ".circuit":
+        print("edakit graph derive: a .circuit source derives its records when it compiles – edakit graph json --write",
+              file=sys.stderr)
+        return 1
+    if suffix == ".toml":
+        print("edakit graph derive: the records of a TOML graph are its [[derivations]] tables – edit them there, or "
+              "write the block again (edakit block add --set)", file=sys.stderr)
+        return 1
+    data = json.loads(Path(cfg.graph).read_text(encoding="utf-8"))
+    g = data.get("graph", data)
+    g["derivations"] = new
+    write_json(cfg.graph, data)
+    print(f"{cfg.relative(cfg.graph)}: {stale} record{'s' if stale != 1 else ''} written again")
+    return 0
+
+
 def main(cfg, args):
-    return {"fmt": main_fmt}[args.action](cfg, args)
+    return {"fmt": main_fmt, "derive": main_derive}[args.action](cfg, args)

@@ -110,6 +110,7 @@ Each engine decides one kind of relation – on the graph, the parts, the simula
 | PARTS | parts entries complete, well-formed, verified, orderable |
 | ORDER | the order at the maker is the release: form, parts, quote, read, files, finish, review, confirm |
 | DOCS | documents and requirements quote the design |
+| DEF | every derived value is the value its record derives |
 | HINT | patterns that need judgement, as notes |
 <!-- edakit:end -->
 
@@ -487,12 +488,12 @@ the review are still the project's. A project's own blocks are JSON files of the
 
 ### The source of a block
 
-Each block is written as a definition of the circuit language, `edakit/blocks/<name>.circuit` (the notation:
-docs/concepts/new/circuit-dsl-language.md, 5.5), and its JSON is generated from it: `python -m edakit.lang.blocks` lists a JSON that differs from its source, `--write` writes it
+Each block is written as a definition of the circuit language, `edakit/blocks/<name>.circuit`, and its JSON is
+generated from it: `python -m edakit.lang.blocks` lists a JSON that differs from its source, `--write` writes it
 again, and a test holds every JSON to its source. The JSON keeps the form above and gains two keys: `params`, the
-block's parameters with their defaults (`{"i": {"default": "10 mA"}}`), and `derivations`, the rule a value is derived
-by (`led`: `R1.value` by `series_resistor(i)`; `i2c-pullups`: both resistors by `pullup`; `battery-sense`: the
-divider by `divider`). `add` reads neither yet; the derivation runs only when a parameter is set.
+block's parameters with their defaults (`{"i": {"default": "10 mA"}}`), and `derivations`, the rules its values are
+derived by – `led`, `i2c-pullups` and `battery-sense` have them. `add --set i=4mA` runs them, `--part R1=KEY` takes
+another entry where the block's value lies outside what the rule derives (19.1).
 
 ## 14.6 Where the ideas came from
 

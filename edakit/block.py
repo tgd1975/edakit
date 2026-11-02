@@ -3,7 +3,7 @@
     edakit block list
     edakit block show NAME
     edakit block add NAME --as INSTANCE [--connect PORT=NET ...] [--without DES ...] [--board B] [--file BLOCK.json]
-                     [--dry-run]
+                     [--set PARAM=VALUE ...] [--part DES=KEY ...] [--dry-run]
 
 A block (edakit/blocks/<name>.json, or any file given with --file) is a piece of graph: components with LCSC numbers,
 nets, and ports – the nets that connect to the rest of the circuit. `add` copies it into the project's graph:
@@ -20,6 +20,11 @@ nets, and ports – the nets that connect to the rest of the circuit. `add` copi
   - "optional": {"parts": [designator, …], "ports": [port, …]} – parts --without may leave out, and ports that may stay
     unconnected: a pin left alone on its net goes into its component's nc instead of a net of one pin
   - an accept keyed by "code place" names the block's designators; they are renamed with the parts
+  - --set PARAM=VALUE (a block's "params"): every derivation of the block that reads the parameter runs with the
+    block's own entries and the ranges of the nets its ports join – the derived value, the series' nearest value and
+    the window are printed; a part of the block whose value fits stays, else --part DES=KEY names the entry to take
+    (the library's or the project's, inside the window), and without it nothing is written and the entries in the
+    window are named. The record goes into the graph's "derivations" (DEF.derive reads it); without --set no rule runs
   - the graph file keeps its formatting (indent, UTF-8); nothing is written with --dry-run
   - a TOML graph is written with a line editor (toml_edit) that keeps its comments and arrangement: a new
     [components.<des>] table after the last component table, a new [nets.<name>] after the last net table, a pin on an
@@ -108,9 +113,11 @@ def rename_accept(acc, rename):
     return out
 
 
-def plan(block, graph, instance, connect, ground, board=None, without=()):
+def plan(block, graph, instance, connect, ground, board=None, without=(), names=None):
     """What `add` would do: (components, new nets, extended nets {name: [pins]}, attributes for existing nets
-    {name: {key: value}} such as "bus": "i2c", LCSC numbers used, grounds the block brings)."""
+    {name: {key: value}} such as "bus": "i2c", LCSC numbers used, grounds the block brings). `names`, a dict, gets
+    rename {block designator: new}, target {block net: project net} and ranges {block net: [lo, hi]} – what a
+    derivation of the block (--set) reads."""
     if not re.fullmatch(r"[A-Za-z][A-Za-z0-9_]*", instance or ""):
         raise BlockError("--as needs a name for this instance: letters, digits, underscore (e.g. STATUS, BUZ)")
     block = without_parts(block, without)
@@ -194,6 +201,14 @@ def plan(block, graph, instance, connect, ground, board=None, without=()):
             new_nets[name] = {"name": name, "pins": pins, "v": v_of(net["name"]), **extra}
             if net.get("notes"):
                 new_nets[name]["notes"] = net["notes"].replace("{as}", instance)
+    if names is not None:
+        ranges = {}
+        for net in block["nets"]:
+            try:
+                ranges[net["name"]] = v_of(net["name"])
+            except BlockError:
+                ranges[net["name"]] = None
+        names.update(rename=rename, target=target, ranges=ranges)
     lcsc = sorted({c["lcsc"] for c in comps if c.get("lcsc")}, key=natural_key)
     grounds = []
     for name in (block.get("graph") or {}).get("grounds", []):
@@ -264,9 +279,10 @@ def toml_form(comps):
     return [{k: v for k, v in c.items() if not (k == "pins" and c.get("lcsc"))} for c in comps]
 
 
-def write_toml(cfg, graph, comps, new_nets, extended, attrs, grounds):
+def write_toml(cfg, graph, comps, new_nets, extended, attrs, grounds, records=()):
     """The block into a TOML graph with the line editor: comments and arrangement stay. Written only when the text
-    reads back as the graph with the block in it (apply) – else BlockError, and the file stays as it was."""
+    reads back as the graph with the block in it (apply) – else BlockError, and the file stays as it was. Derivation
+    records (--set) go at the end, as [[derivations]] tables."""
     from .config import ConfigError
     path, where = Path(cfg.graph), cfg.relative(cfg.graph)
     nets = {n["name"]: n for n in graph["nets"]}
@@ -290,20 +306,176 @@ def write_toml(cfg, graph, comps, new_nets, extended, attrs, grounds):
             doc.add_table(("nets", n["name"]), toml_lines(n, ("name",)), after="nets", before="cables")
     except toml_edit.TomlEditError as e:
         raise BlockError(f"{where}: {e}") from None
+    text = doc.text
+    try:
+        for rec in records:
+            text = text.rstrip("\n") + "\n\n[[derivations]]\n" + "\n".join(toml_edit.line(k, v) for k, v in rec.items())
+            text += "\n"
+    except toml_edit.TomlEditError as e:
+        raise BlockError(f"{where}: {e}") from None
     expected = copy.deepcopy(graph)
     apply(expected, copy.deepcopy(comps), copy.deepcopy(new_nets), extended, attrs, grounds)
+    if records:
+        expected["derivations"] = [*(expected.get("derivations") or []), *copy.deepcopy(list(records))]
     try:
-        got = graph_of_toml(doc.text, where)
+        got = graph_of_toml(text, where)
     except ConfigError as e:
         got = {"error": str(e)}
     if got != expected:
         off = sorted(k for k in set(got) | set(expected) if got.get(k) != expected.get(k))
         raise BlockError(f"{where}: the block would not read back as written ({', '.join(off)} differ) – the file is "
                          "left as it was; write the block by hand (--dry-run shows it)")
-    path.write_text(doc.text, encoding="utf-8")
+    path.write_text(text, encoding="utf-8")
 
 
-def add(cfg, name, instance, connect, board=None, file=None, dry_run=False, without=()):
+def entry_of(cfg, key):
+    """A parts entry: the project's, else the library's; None for neither."""
+    mine = Path(cfg.parts) / f"{key}.json"
+    return json.loads(mine.read_text(encoding="utf-8")) if mine.exists() else library_part(key)
+
+
+def package_of(entry):
+    return (entry or {}).get("package") or ((entry or {}).get("footprint") or {}).get("package")
+
+
+def value_text(x, unit):
+    """A value as a block writes it: 330, 4.7k, 100k for a resistor; 100nF for a capacitor."""
+    if unit == "Ω":
+        for f, p in ((1e6, "M"), (1e3, "k")):
+            if x >= f:
+                return f"{x / f:g}{p}"
+        return f"{x:g}"
+    from .circuit import si
+    return si(x, unit).replace(" ", "")
+
+
+def candidates(cfg, kind, package, unit, window):
+    """[(key, value)] of the library's and the project's entries of a kind and package whose value lies in a window."""
+    from . import library as parts_library
+    from .circuit import VALUE_PARAMS
+    field = next((k for k, (u, _) in VALUE_PARAMS.items() if u == unit), None)
+    seen, out = set(), []
+    dirs = [Path(cfg.parts), Path(parts_library.__file__).with_name("parts")]
+    lo, hi = window
+    for d in dirs:
+        for p in sorted(Path(d).glob("*.json")):
+            if p.stem in seen or p.name == "README.json":
+                continue
+            seen.add(p.stem)
+            try:
+                e = json.loads(p.read_text(encoding="utf-8"))
+            except ValueError:
+                continue
+            v = (e.get("values") or {}).get(field)
+            if e.get("kind") == kind and package_of(e) == package and isinstance(v, (int, float)) \
+                    and lo * (1 - 1e-9) <= v <= hi * (1 + 1e-9):
+                out.append((p.stem, float(v)))
+    return sorted(out, key=lambda x: x[1])
+
+
+def derive_set(cfg, block, instance, sets, choices, comps, names):
+    """The records of every derivation of the block whose arguments name a parameter --set sets: the rule evaluated
+    with the block's own entries and the ranges of the nets its ports are on; a part outside its window takes the
+    entry --part names, else BlockError with the window and the entries in it. -> (records, lines to print)."""
+    from .lang.rules import RuleError, Scope, derive, in_window
+    from .lang.units import UnitError, parse
+    params = block.get("params") or {}
+    unknown = sorted(set(sets) - set(params))
+    if unknown:
+        raise BlockError(f"block {block['name']} has no parameter {', '.join(unknown)} (parameters: "
+                         f"{', '.join(params) or 'none'})")
+    origin = f"block {block['name']}, {instance}"
+    values = {}
+    for p, spec in params.items():
+        default = parse(spec.get("default"))
+        if p in sets:
+            try:
+                q = parse(sets[p], default.unit if default else None)
+            except UnitError as e:
+                raise BlockError(f"--set {p}={sets[p]}: {e}") from None
+            if q is None:
+                raise BlockError(f"--set {p}={sets[p]}: a quantity – 10mA, 3.3V")
+            values[p] = (q, f"{origin} (--set {p})")
+        elif default is not None:
+            values[p] = (default, f"block {block['name']} ({p} default)")
+    by_des = {c_new["designator"]: c_new for c_new in comps}
+    rename = names["rename"]
+    ports = {}
+    for port in block.get("ports") or {}:
+        net = names["target"].get(port)
+        rng = names["ranges"].get(port)
+        ports[port] = (net, rng if isinstance(rng, list) else None)
+    parts = {}
+    for c in block["components"]:
+        key = c.get("lcsc")
+        entry = entry_of(cfg, key) if key else None
+        parts[c["designator"]] = (key, entry, (entry or {}).get("kind") or c.get("type"))
+    unknown = sorted(set(choices) - set(parts))
+    if unknown:
+        raise BlockError(f"--part {', '.join(unknown)}: no part of block {block['name']} ({', '.join(parts)})")
+    records, lines = [], []
+    for d in block.get("derivations") or []:
+        args = [{"name": None if k.isdigit() else k, "text": v} for k, v in d["args"].items()]
+        if not any(a["text"] in sets for a in args):
+            continue
+        targets = [t.partition(".")[0] for t in d["targets"]]
+
+        def scope():
+            chosen = {}
+            for t in targets:
+                key, entry, _ = parts[t]
+                v = ((entry or {}).get("values") or {}).get("value_ohm")
+                chosen[t] = (v, "Ω", f"{key} values.value_ohm") if v is not None else (None, None, None)
+            return Scope(params=values, ports=ports, parts=parts, targets=targets, names=rename, origin=origin,
+                         chosen=chosen)
+        try:
+            recs = derive(d["rule"], args, scope())
+        except RuleError as e:
+            raise BlockError(str(e)) from None
+        again = False
+        for rec, t in zip(recs, targets):
+            new_des = rename[t]
+            lo, hi = rec["series"]["window"]
+            unit = rec["derived"]["unit"]
+            chosen = (rec.get("chosen") or {}).get("value")
+            head = (f"{new_des}: {d['rule']} derives {value_text(rec['derived']['value'], unit)}{unit} – "
+                    f"{rec['series']['name']} {value_text(rec['series']['nearest'], unit)}{unit}, window "
+                    f"{value_text(lo, unit)}…{value_text(hi, unit)}{unit}")
+            key, entry, kind = parts[t]
+            if chosen is not None and in_window(rec, chosen) and t not in choices:
+                lines.append(f"{head}; the block's {value_text(chosen, unit)}{unit} ({key}) fits – kept")
+                continue
+            cands = candidates(cfg, kind, package_of(entry), unit, (lo, hi))
+            if t not in choices:
+                where = (", ".join(f"{k} {value_text(v, unit)}{unit}" for k, v in cands) + f" – --part {t}=KEY"
+                         if cands else f"no entry of the library in the window – part-search skill, then --part {t}=KEY")
+                raise BlockError(f"{head}; the block's {value_text(chosen, unit) if chosen else '?'}{unit} lies outside. "
+                                 f"Entries in the window: {where}")
+            pick = choices[t]
+            e = entry_of(cfg, pick)
+            v = ((e or {}).get("values") or {}).get("value_ohm")
+            if e is None or e.get("kind") != kind or v is None:
+                raise BlockError(f"--part {t}={pick}: no {kind} entry with a value – in the project's parts or the "
+                                 "library")
+            if not in_window(rec, v):
+                raise BlockError(f"--part {t}={pick}: {value_text(v, unit)}{unit} lies outside the window "
+                                 f"{value_text(lo, unit)}…{value_text(hi, unit)}{unit}")
+            c = by_des[new_des]
+            c["lcsc"], c["value"] = pick, value_text(v, unit)
+            if e.get("mpn"):
+                c["part"] = e["mpn"]
+            c["pins"] = {n: (x or {}).get("name", n) for n, x in (e.get("pins") or {}).items()}
+            parts[t] = (pick, e, kind)
+            lines.append(f"{head}; --part {t}={pick}: {value_text(v, unit)}{unit}")
+            again = True
+        if again:
+            recs = derive(d["rule"], args, scope())
+        records += recs
+    return records, lines
+
+
+def add(cfg, name, instance, connect, board=None, file=None, dry_run=False, without=(), sets=None, choices=None,
+        lines=None):
     block = load(name, file)
     toml = Path(cfg.graph).suffix == ".toml"
     if toml:                                      # read as every reader does, written with the line editor
@@ -316,14 +488,26 @@ def add(cfg, name, instance, connect, board=None, file=None, dry_run=False, with
     if board is not None and board not in cfg.boards:
         raise BlockError(f"no board '{board}' in edakit.toml (boards: {', '.join(cfg.boards)})")
     missing = sorted(t for t in connect.values() if t not in {n["name"] for n in graph["nets"]})
+    names = {}
     comps, new_nets, extended, attrs, lcsc, grounds = plan(block, graph, instance, connect, graph.get("ground", "GND"),
-                                                           board if len(cfg.boards) > 1 else None, without)
+                                                           board if len(cfg.boards) > 1 else None, without, names)
+    records = []
+    if sets or choices:
+        if not sets:
+            raise BlockError("--part goes with --set: it names the entry for a value a derivation asks for")
+        records, said = derive_set(cfg, block, instance, sets, choices or {}, comps, names)
+        if lines is not None:
+            lines += said
+        lcsc = sorted({c["lcsc"] for c in comps if c.get("lcsc")}, key=natural_key)
     copy = parts_to_copy(lcsc, cfg.parts, comps)
     if not dry_run:
         if toml:
-            write_toml(cfg, graph, toml_form(comps), new_nets, extended, attrs, grounds)
+            write_toml(cfg, graph, toml_form(comps), new_nets, extended, attrs, grounds, records)
         else:
             apply(graph, comps, new_nets, extended, attrs, grounds)
+            if records:
+                graph["derivations"] = sorted([*(graph.get("derivations") or []), *records],
+                                              key=lambda r: (r["part"], r["key"], r["rule"]))
             write_json(cfg.graph, data)
         from . import library as parts_library
         for n in copy:
@@ -363,12 +547,25 @@ def main(cfg, args):
             if not sep or not net:
                 raise BlockError(f"--connect {item}: expected PORT=NET")
             connect[port] = net
+        sets, choices = {}, {}
+        for flag, items, into in (("--set", getattr(args, "set", None), sets),
+                                  ("--part", getattr(args, "part", None), choices)):
+            for item in items or []:
+                k, sep, v = item.partition("=")
+                if not sep or not k or not v:
+                    raise BlockError(f"{flag} {item}: expected NAME=VALUE" if flag == "--set" else
+                                     f"{flag} {item}: expected DES=KEY")
+                into[k] = v
+        said = []
         block, comps, new_nets, extended, attrs, copy, missing = add(cfg, args.name, args.instance, connect,
                                                                      args.board, args.file, args.dry_run,
-                                                                     getattr(args, "without", None) or ())
+                                                                     getattr(args, "without", None) or (),
+                                                                     sets, choices, said)
     except (BlockError, KeyError, ValueError) as e:
         print(f"edakit block: {e}")
         return 1
+    for line in said:
+        print(line)
     head = "would add" if args.dry_run else "added"
     print(f"{head} block {block['name']} as {args.instance}:")
     for c in comps:
