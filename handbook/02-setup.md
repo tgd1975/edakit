@@ -42,6 +42,9 @@ server with 115 tools plus a controlled generic call into the extension API. eda
    domains only – best a Chrome profile of its own, without a saved card –, on the computer that holds the release's
    files. `edakit cart actual --from` a PDF invoice needs pdftotext.
 
+For a graph written in the circuit language, an editor can show its errors and findings as they are typed: the
+language server `edakit lsp` and the VS Code extension of `editors/vscode/` (chapter 19).
+
 ## 2.3 Claude Code: the plugin
 
 ```text

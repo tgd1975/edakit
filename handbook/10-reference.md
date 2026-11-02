@@ -718,6 +718,20 @@ What the graph says about one part or net; the resolved graph as JSON; a JSON gr
   – convert says so), and the project scripts that read `graph` show as outdated once – `edakit run` or
   `edakit scripts stamp` (8.6)
 
+### edakit lsp
+
+<!-- edakit:generated command lsp -->
+`edakit lsp`
+
+The language server of the circuit language over stdio (the extra lsp: pygls).
+<!-- edakit:end -->
+
+`edakit lsp` – EasyEDA: no
+
+- The language server of the circuit language over stdio, for an editor (chapter 19). **Reads:** the editor's text,
+  the project's edakit.toml and parts entries. **Writes:** – . Needs the extra `lsp` (pygls); without it exit 1 and
+  what to install.
+
 ### edakit domains
 
 <!-- edakit:generated command domains -->

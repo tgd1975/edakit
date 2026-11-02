@@ -97,3 +97,19 @@ jobs:
       - uses: astral-sh/setup-uv@07a047e608db84b3d8c06cd9a7c7dcc9c355c18e # v10.3.2
       - name: Conformance with a standard reader
         run: uv run --group dev --group sysml pytest -q -rs -m sysml tests/test_lang_export.py
+
+  vscode:
+    # The VS Code extension of the circuit language compiles (editors/vscode, handbook 19.11) – Node from the runner's
+    # image; optional, no required check of the rulesets.
+    needs: lane
+    if: ${{ !cancelled() && needs.lane.outputs.only != 'true' }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: The extension compiles
+        working-directory: editors/vscode
+        run: npm ci --no-audit --no-fund && npm run compile

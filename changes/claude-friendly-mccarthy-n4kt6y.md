@@ -41,3 +41,6 @@ patch
 - T.20–T.23: `edakit graph sysml` and `edakit graph kerml` export a project as SysML v2 and KerML, textual and
   as JSON, with the electrical library `edakit/lang/library/Electrical.sysml`; the requirements with it. The
   optional dependency group `sysml` (systree) and the CI job sysml read them with a standard reader.
+- T.24–T.27: the source map places a finding at its statement; `edakit lsp`, the language server (the extra
+  `lsp`, pygls): errors and findings as they are typed, go to definition, hover, completion, formatting; the VS
+  Code extension in `editors/vscode/`; the CI job vscode compiles it.

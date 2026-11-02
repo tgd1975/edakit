@@ -273,7 +273,7 @@ The JSON beside each is an array of elements with a stable `@id` (UUID 5 of the 
 (`pytest -m sysml`, the optional dependency group `sysml` with Syster's `systree`), an optional job of the CI; a
 graphical tool's import is no test of edakit's.
 
-## 19.11 Commands and the editor
+## 19.11 Commands
 
 | Command | What it does |
 | --- | --- |
@@ -285,5 +285,22 @@ graphical tool's import is no test of edakit's.
 | `edakit graph sysml\|kerml [--out DIR]` | the project as SysML v2 or KerML (19.10) |
 
 A converted project needs the edakit that reads the language: `[project] edakit` names it, and an older plugin says
-so at the session start (STRUCT.edakit). For VS Code, `editors/vscode/` holds a TextMate grammar and the language
-configuration, generated from the reader's keywords (`python -m edakit.lang.grammar --write`).
+so at the session start (STRUCT.edakit).
+
+## 19.12 The editor
+
+`edakit lsp` is the language server, over stdio, for a person in an editor – a model edits through the command line
+and `graph show` and needs none of it. It answers the reader's and the compiler's errors as they are typed, the
+findings of the graph engines at the statements they come from (through the compiler's source map, `--map`), go to
+definition – a pin word to its parts entry, a usage to its definition, a net to its first statement, an include to
+its file –, hover with a part's entry, a pin's number and role and a net's range, completion of pin words after
+`DES.`, of codes after `accept` and of definitions after `use`, and formatting.
+
+It needs edakit's extra `lsp` (`pygls`); without it the command says so.
+
+`editors/vscode/` is the extension for VS Code: the TextMate grammar and the language configuration – generated
+from the reader's keywords, `python -m edakit.lang.grammar --write` –, the server's client, format on save through the
+server, and the commands `graph json --write`, `graph json --check`, `graph show` for the word under the cursor and
+`graph fmt`, the two graph commands also as tasks. The setting `edakit.command` names the executable. It is not
+published; `npm ci && npm run compile && npx @vscode/vsce package` builds it, `code --install-extension` installs it,
+and an optional job of the CI compiles it.
