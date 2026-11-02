@@ -9,6 +9,7 @@ with X-ray at JLCPCB – and out of stock on the day of the recording.
 import datetime as dt
 import json
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 
@@ -20,6 +21,19 @@ from edakit.design import Design
 REC = Path(__file__).resolve().parent / "fixtures" / "jlcpcb"
 ASSEMBLED = ["C17414", "C17604", "C2297", "C318884", "C41407547", "C45783", "C49678", "C8678", "C90107"]
 TODAY = dt.date.today().isoformat()
+
+
+class _Today(dt.date):
+    @classmethod
+    def today(cls):
+        return dt.date.fromisoformat(TODAY)
+
+
+@pytest.fixture(autouse=True)
+def one_day(monkeypatch):
+    """A run across midnight: edakit stock's today stays the day TODAY was read, as in the expected texts."""
+    from edakit import stock
+    monkeypatch.setattr(stock, "dt", SimpleNamespace(date=_Today, timedelta=dt.timedelta))
 
 
 def p4(rep):
@@ -118,7 +132,7 @@ def test_edakit_stock_writes_the_snapshot_of_the_assembled_parts(project, jlcpcb
 
 def test_edakit_stock_asks_only_what_is_missing_or_old(project, jlcpcb, monkeypatch):
     stock_cli(project, monkeypatch)
-    old = (dt.date.today() - dt.timedelta(days=20)).isoformat()
+    old = (_Today.today() - dt.timedelta(days=20)).isoformat()
     edit_snapshot(project, lambda s: (s["parts"].pop("C8678"), s["parts"]["C2297"].update(date=old),
                                       s["parts"]["C90107"].update(error="catalogue: timed out")))
     jlcpcb.clear()
@@ -173,7 +187,7 @@ def test_the_example_with_its_snapshot_fails_u1(project, jlcpcb, monkeypatch, ca
      ("warning", "D2–D9 C2297 KT-0805G: MSL 5 at JLCPCB – baked before assembly (fee and 2 days more)")),
     ("class", lambda s: s["parts"]["C8678"].update({"class": "Extended Part"}),
      ("warning", "D1 C8678: JLCPCB lists it as Extended Part, the parts entry as Basic Part")),
-    ("old", lambda s: s["parts"]["C2297"].update(date=(dt.date.today() - dt.timedelta(days=20)).isoformat()),
+    ("old", lambda s: s["parts"]["C2297"].update(date=(_Today.today() - dt.timedelta(days=20)).isoformat()),
      ("pending", "hardware/stock.json: 1 of 8 parts read 20 days ago (stock_max_age_days 14) – edakit stock")),
     ("not asked", lambda s: s["parts"].pop("C2297"),
      ("pending", "D2–D9 C2297: not in the stock snapshot – edakit stock")),
