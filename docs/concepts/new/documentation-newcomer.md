@@ -148,8 +148,8 @@ Material's `navigation.tabs`: the groups become tabs across the top, the sidebar
 | A board | steps 8 to 10 |
 | Extend | Adding a rule, Propose a rule, Propose a feature |
 | Develop | Working on edakit, edakit as a meta-harness, Organisation, Style guide, Brand |
-| Handbook | its index, the chapters as the index orders them – 9 and 10 under Reference, as today |
-| Reference | Files, keys and commands (10), EasyEDA API (9), the rule catalog's index, Changelog |
+| Handbook | its index, the chapters 1 to 18 by their numbers – the index says which to read when (decision 3, changed) |
+| Reference | an overview pointing to 10, 9, the catalog and the glossary; the rule catalog's index, Changelog (decision 3, changed) |
 | Inside edakit | its overview, the indexes of concepts, skills, agents and evals, the rules of a session (decision 3, changed) |
 
 Eight entries in a sidebar at most, the handbook's excepted – its index says when to read which chapter. The sources –
@@ -271,7 +271,7 @@ recommended.
 | --- | --- | --- | --- | --- |
 | 1 | Two manuals | the handbook declared the complete one and kept as it is; the steps as the person's manual, ten pages under 400 words | trim the handbook further (TD-81, rule 5 loosened); both | 2026-11-02: as recommended |
 | 2 | The steps' shape | ten pages and an index in two groups, A circuit and A board, each page one step of 17.1 | one page with ten sections; the walkthrough split into pages | 2026-11-02: as recommended |
-| 3 | The navigation | tabs by reader, eight entries a sidebar, the handbook its own tab, Inside edakit behind one page under Develop, the catalog out of Start | collapsible groups as today with the steps added; the handbook off the navigation, search only | 2026-11-02: as recommended; changed by the owner the same day – Inside edakit a tab of its own, its indexes in the sidebar: behind one page under Develop the skills were two clicks away (#239) |
+| 3 | The navigation | tabs by reader, eight entries a sidebar, the handbook its own tab, Inside edakit behind one page under Develop, the catalog out of Start | collapsible groups as today with the steps added; the handbook off the navigation, search only | 2026-11-02: as recommended; changed by the owner the same day – Inside edakit a tab of its own, its indexes in the sidebar: behind one page under Develop the skills were two clicks away (#239); then, on the owner's word: the handbook tab by number, 1 to 18 – in reading order the numbers looked jumbled (#242, #244) –, and every page's address under its tab, the files left where they are, each old address sending the reader on (#244) |
 | 4 | The entry | the first screen with the pictures and the two-minute command, at most 120 words before the first picture; "The words" to the glossary's head; a term budget of three per steps page | the pages as decided in documentation.md, the steps added only | 2026-11-02: as recommended |
 | 5 | The newcomer's test | the eval's second case and one person picked by the owner, the result in the status line | the eval alone; no test, the owner's own look | 2026-11-02: the eval alone – no person's try, the owner's own look stands in for it |
 | 6 | Folding the reference blocks of 4, 7 and 8 | later, only if the newcomer's test still stops in a chapter | with N.2; never | 2026-11-02: as recommended – later, on the owner's word, if the eval's second case still fails or needs a chapter; the same day, after the runs: never – the owner does not want folding |
