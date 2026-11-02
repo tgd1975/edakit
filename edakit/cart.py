@@ -832,6 +832,12 @@ def page_text(path):
     return text
 
 
+def order_word(actual):
+    """'order Y8-1234567A', or 'the order' where actual.json names no number (a project that keeps order numbers out of
+    its repository)."""
+    return f"order {actual['order_number']}" if actual.get("order_number") else "the order"
+
+
 def b4_actual(actual, page):
     """ORDER.read on the real cost: the order number, every amount and every count of actual.json in the page text – an
     amount by its figure (a coupon's -10.00 on a page that prints -$10.00)."""
@@ -903,7 +909,7 @@ def write_fees(cfg, m, job, actual, updates, rows):
     from . import cost
     path = cost.own_fee_path(cfg, m.key)
     own = json.loads(path.read_text(encoding="utf-8")) if path.exists() else {}
-    source = f"order {actual.get('order_number')} at {m.name}, {actual.get('date')} (edakit cart actual)"
+    source = f"{order_word(actual)} at {m.name}, {actual.get('date')} (edakit cart actual)"
     date = str(actual.get("date") or dt.date.today().isoformat())
     if not m.data.get("fees"):
         own.setdefault("orders", []).append({"order_number": actual.get("order_number"), "date": date,
@@ -965,7 +971,7 @@ def actual_cost(cfg, args):
     money = lambda v: "–" if v is None else f"{v:.2f}"  # noqa: E731
     diff = lambda a, b: "–" if a is None or b is None else f"{a - b:+.2f}"  # noqa: E731
     cur = actual.get("currency") or (quote or {}).get("currency") or e.get("currency", "")
-    L = [f"# Real cost – board {job['board']} at {m.name}, order {actual.get('order_number')} ({actual.get('date')})\n",
+    L = [f"# Real cost – board {job['board']} at {m.name}, {order_word(actual)} ({actual.get('date')})\n",
          f"Written by edakit cart actual from {ACTUAL} and {'--from ' + Path(args.source).name if args.source else ACTUAL_PAGE}"
          f" (ORDER.read: {'; '.join(bad) if bad else b4_text}). Run {job['run']}, fab {str(job['fab_sha256'])[:12]}…, "
          f"{job['quantity']} PCBs, " + (f"{job['pcba_quantity']} assembled" if job.get("bom") else "bare")
