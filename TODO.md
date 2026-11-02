@@ -4,7 +4,7 @@ Open work that needs the owner's computer, a maker or the owner's word. The stat
 and plans the sections name; this list is what is left to do of them, in the order it can be done. No item is deleted.
 
 **Layout.** Every item, in every section, open or closed, is a line with a checkbox and an ID unique in this file,
-counted up and never reused – whoever adds an item takes the next free ID and counts it up here. Next free ID: TD-107.
+counted up and never reused – whoever adds an item takes the next free ID and counts it up here. Next free ID: TD-108.
 
 - Open: `- [ ] TD-<n> - **Title:** what and why.` – a step's own name after the dash (`- [ ] TD-31 - **D.4** …`).
 - Done: ticked, the commit that did it, the date at the end, moved to [Closed todos](#closed-todos), newest first –
@@ -29,6 +29,10 @@ to touch.
 
 ## For the owner
 
+- [ ] TD-107 - **The bridge extension 1.8.0, when no session needs EasyEDA:** say "jetzt" to edakit-80 – it ends the
+      easyeda-mcp-pro servers of the sessions; then in EasyEDA uninstall the old extension, import
+      `~/.easyeda-mcp-pro/ext-1.8.0/easyeda-bridge-extension.eext`, allow "External Interactions", quit and restart
+      EasyEDA – for the live checks of #250 (TD-26, TD-84). *(edakit-80)*
 - [ ] TD-82 - **pytree's pictures:** pick what of the private repository may go onto `docs/projects/pytree.md` – the
       page is text only, from its README and chapter 13; say too whether that much about the gift may stand before
       Christmas. *(edakit, documentation session)*
@@ -51,7 +55,8 @@ E-1 to E-17 on EasyEDA Pro and M-1 to M-10 on easyeda-mcp-pro, checked live on E
 
 Nothing to do until there is an answer or a release; whichever session learns of one takes it.
 
-- [ ] TD-26 - **easyeda-mcp-pro, #792 to #805** (M-1 to M-5, M-7, M-9): fixed on upstream's main by the maintainer
+- [ ] TD-26 - **easyeda-mcp-pro, #792 to #805** (M-1 to M-5, M-7, M-9): released in 1.7.0 (2026-11-02); built in
+      #250 (pin 1.8.0, both patches gone), its live checks wait for TD-107. Before: fixed on upstream's main by the maintainer
       (#809, #810, #812, #814, #815 – 2026-11-01), our pull requests closed, nothing to answer; not in 1.6.0. When a
       release brings them: the pin raised, the original extension, `bridge-extension-patch.sh` and `odb-tool-patch.mjs`
       removed, handbook 2.4, 2.5 and 9.1 follow; with M-9 `place` in `edakit/schematic.py` passes `addIntoBom` on
