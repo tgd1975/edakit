@@ -8,7 +8,9 @@ Little: Claude designs. It reads what you said in the last step, picks the parts
 it with `/edakit:circuit-design`, or with a sentence such as "add a buzzer".
 
 Where one fits, Claude takes a [building block](../glossary.md#building-block), such as an LED with its resistor.
-Every part gets a [parts entry](../glossary.md#parts-entry) with the limits from its datasheet.
+Every part gets a [parts entry](../glossary.md#parts-entry) with the limits from its datasheet. Common parts come
+from edakit's parts library: `edakit part add` lists it, one line per part with its kind. Claude looks up a part the
+library lacks at the shop and writes its entry from the datasheet.
 
 ## What you are asked
 

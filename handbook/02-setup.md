@@ -72,6 +72,10 @@ The plugin brings the skills (`/edakit:start`, `/edakit:hardware-change`, …), 
 hook brings the working agreements (11.4) and the project's own scripts and agents (8.6) into every session of an
 edakit project. Confirm the MCP server when Claude Code asks (or `/mcp` → easyeda).
 
+Where a session does not find `edakit` – a sandbox, an eval, a Claude Code that leaves the plugin's `bin/` off the
+PATH –, the command is the plugin's `bin/edakit`: in a project with an edakit.toml the session start names its path
+(11.4), before that every skill that runs `edakit` names it.
+
 For the plugin in every session of a project, put this into the project's `.claude/settings.json`:
 
 ```json
@@ -223,6 +227,30 @@ The block finds edakit itself – `$EDAKIT`, the PATH inside Claude
 Code, else the plugin in effect for the repository – so a commit by hand needs no script of the project's own. Where
 the hook is missing, has no block or an older one, or git does not run it, the session start says so in one line
 (`edakit hook check`); `edakit hook install` again renews it.
+
+Where the session may not write `.claude/settings.json` or set `core.hooksPath` – Claude Code guards both, a sandbox
+may refuse them –, nothing else depends on them: the skill writes the other files and names the two steps in its
+report for you, the settings as the block above and `edakit hook install` in a terminal of your own. `edakit hook
+install` says which step failed and exits 1.
+
+**By hand, without the skill.** A circuit without a board of its own – hand-wired, or the board not decided yet –
+starts from three files: this edakit.toml, a graph with its name and purpose (3.1) and the requirements file (3.6):
+
+```toml
+[project]
+name = "battery-leds"                         # the project
+graph = "hardware/graph.toml"                 # the circuit as text (3.1)
+requirements = "hardware/requirements.toml"   # what it must do (3.6)
+
+[boards.main]
+wired = true                                  # hand-wired: no PCB, no EasyEDA (4.5)
+```
+
+On a hand-wired board every part has `bom = false` (STRUCT.board), and every net its voltage range `v` (STRUCT.net).
+`[boards.main]` without `wired` is a board to be laid out later: the checks and the simulation are the same, its board
+file comes with the PCB designer (10.2). A part's entry comes from the parts library (`edakit part add`, 4.1), from
+the shop (`edakit part import` and its datasheet, the skill part-search, 4.2) or, for a part nobody sells, from your
+notes (4.5); the simulation's supplies and switch positions from `hardware/sim.json` (5.2). Every key: 10.1.
 
 The purpose – private, a gift or for sale – decides how deep the regulatory review M-6 goes (chapter 15); the review is
 support, not legal advice: nothing in it is legally guaranteed, and it claims no correctness.

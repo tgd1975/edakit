@@ -1,0 +1,84 @@
+{
+ "lcsc": "C22355741",
+ "mpn": "SS-12D00-G3",
+ "manufacturer": "SOFNG(硕方)",
+ "kind": "switch",
+ "package": "slide switch SPDT, through hole, 3 pins at 2.5 mm, body 8.8 × 3.9 mm, actuator 3.0 mm (G3)",
+ "footprint": "SW-TH_3P-L8.8-W3.9-P2.50_SS12D00G3",
+ "jlc_class": "Extended Part",
+ "datasheet": {
+  "url": "https://datasheet.lcsc.com/datasheet/pdf/7357551f1ab94cd5763cc9d7033faef8.pdf?productCode=C22355741",
+  "pinout_page": 1
+ },
+ "pins": {
+  "1": {
+   "name": "1",
+   "type": "passive",
+   "role": "throw_a"
+  },
+  "2": {
+   "name": "2",
+   "type": "passive",
+   "role": "common"
+  },
+  "3": {
+   "name": "3",
+   "type": "passive",
+   "role": "throw_b"
+  }
+ },
+ "values": {
+  "r_on_ohm": 0.05,
+  "force_n": 3.5
+ },
+ "limits": {
+  "v_max_v": 24,
+  "i_max_a": 0.5
+ },
+ "lead": {
+  "*": {
+   "shape": "rect",
+   "a_mm": 0.5,
+   "b_mm": 0.3,
+   "tol_mm": null,
+   "source": "SOFNG SS-12D00 drawing: terminal 0.5 mm wide, 0.3 mm thick (0.3 THK), 3.0 mm below the base; no hole recommendation, the P.C.B layout gives only the pitch"
+  }
+ },
+ "body": {
+  "box": [
+   -4.4,
+   -1.95,
+   4.4,
+   1.95
+  ]
+ },
+ "spice": {},
+ "compliance": {
+  "rohs": true,
+  "source": "SOFNG SS-12D00 drawing: RoHS compliant, lead free, halogen free marks"
+ },
+ "sources": [
+  "mpn, manufacturer, footprint, jlc_class, pin numbers and names: EasyEDA library data of C22355741, https://easyeda.com/api/products/C22355741/components?version=6.4.19.5, read 2026-11-02 (edakit part import)",
+  "SOFNG SS-12D00 series drawing, 1 page, undated – LCSC product data of C22355741, read 2026-11-02 (edakit part fetch); it names the series SS-12D00 G□ with G3 = actuator 3.0 mm, not SS-12D00-G3 itself",
+  "v_max_v 24, i_max_a 0.5: contact rating 0.5 A, 24 V DC",
+  "r_on_ohm 0.05: initial contact resistance 50 mΩ max.",
+  "force_n 3.5: operating force 3.5 N; life 12 000 cycles at rated load (grade A), 8 500 (grade B); storage −35 … +75 °C, the operating range left blank",
+  "pins: the circuit diagram – the middle terminal (filled) is the common, the two outer ones the throws; P.C.B layout 3 holes at 2.5 mm, 5 mm across",
+  "body.box: housing 8.8 × 3.9 mm (L8.8 × W3.9 × H7.2 in the title), symmetric about the middle pin – the library footprint's pad 2 at its origin, pads 1 and 3 at ±2.5 mm"
+ ],
+ "notes": "A slide switch SPDT for a panel or a perfboard: the middle pin to the load, one throw to the supply – the other throw left open makes it an on/off switch. Library draft.",
+ "verified": {
+  "by": "Claude (datasheet check, library draft)",
+  "date": "2026-11-02",
+  "datasheet": "SOFNG SS-12D00 series drawing (undated)",
+  "datasheet_sha256": "c7b840388e60f1b7d9eb08eb9896e40034acf26685ef8eb5490cb0f53b718fd2",
+  "checked": [
+   "circuit diagram: pin 2 common, pins 1 and 3 the throws; the library footprint's pads 1–3 at 2.5 mm in the same order",
+   "0.5 A / 24 V DC, 50 mΩ, 3.5 N; terminal 0.5 × 0.3 mm"
+  ],
+  "open": [
+   "which throw closes in which actuator position: the drawing does not say – the graph needs it only where it matters, the simulation names the throw (5.1)",
+   "through hole: soldered by hand on an SMD-only assembly"
+  ]
+ }
+}

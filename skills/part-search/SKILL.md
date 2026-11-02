@@ -7,6 +7,7 @@ argument-hint: "<part, requirement or LCSC number>"
 # Find a part and enter it
 
 Wanted: $ARGUMENTS. Fields of an entry: `${CLAUDE_PLUGIN_ROOT}/handbook/04-parts-database.md`.
+Where the session does not find `edakit` on the PATH, it is `${CLAUDE_PLUGIN_ROOT}/bin/edakit`.
 
 ## Frame
 

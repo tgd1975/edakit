@@ -8,6 +8,7 @@ argument-hint: "<the part: what it is and where it comes from>"
 
 Wanted: $ARGUMENTS. Fields of an entry: `${CLAUDE_PLUGIN_ROOT}/handbook/04-parts-database.md` (4.1, 4.5; the
 footprint as data: 4.5, "Own footprints as data").
+Where the session does not find `edakit` on the PATH, it is `${CLAUDE_PLUGIN_ROOT}/bin/edakit`.
 
 ## 0. Which way
 

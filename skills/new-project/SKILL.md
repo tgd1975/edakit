@@ -10,6 +10,7 @@ Project: $ARGUMENTS. The approach and why: `${CLAUDE_PLUGIN_ROOT}/handbook/01-ap
 `10-reference.md` (10.1). A complete small example to copy from: `${CLAUDE_PLUGIN_ROOT}/tests/fixtures/led-bar/`
 (shipped with the plugin); a real one, taken through EasyEDA to the gate, with variants:
 https://github.com/tgd1975/automatic_christmas_bell.
+Where the session does not find `edakit` on the PATH, it is `${CLAUDE_PLUGIN_ROOT}/bin/edakit`.
 
 You set the project up the way this project needs it: every file and key from an answer, none left at the example's
 value unasked. You propose each with its reason and write only after the user's OK – no silent change. You delete
@@ -141,6 +142,11 @@ report names them.
   Moving: an EasyEDA MCP server of the project's own (`.mcp.json`) goes – the plugin brings the pinned one, and two
   would run with every tool twice; agents and hooks that name its tools (`mcp__easyeda__…`) get the plugin's names
   (`mcp__plugin_edakit_easyeda__…`).
+- **A write refused.** Claude Code guards `.claude/settings.json` and git's configuration, and a sandbox may refuse
+  them: `edakit hook install` then names the step that failed and exits 1. Nothing else waits for either – write the
+  other files, go on with section 5, and put each refused step under **Open** in the report as the user's to do: the
+  settings block above for `.claude/settings.json`, `edakit hook install` (or the `git config core.hooksPath …` it
+  names) in a terminal of their own. Do not retry it another way.
 
 ## 5. First run and hand-over
 

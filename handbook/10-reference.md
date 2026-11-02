@@ -32,7 +32,9 @@ are. What one role decides lives in a file of its own, with one owner and one ha
   after an `easyeda` script ran through `edakit run`, what it changed and what is from before it (8.6). `pcb dump` and
   `route all` take off what they made again; `route all` and `route pours` mark a change of `pcb:<b>` gone.
 
-Complete example: [tests/fixtures/led-bar](../tests/fixtures/led-bar/). A key edakit does not know is an error with
+Complete example: [tests/fixtures/led-bar](../tests/fixtures/led-bar/). The smallest project – a circuit without a
+board of its own, written by hand – is in 2.7: `[project]` with `name`, `graph` and `requirements`, and
+`[boards.main]` with `wired = true`. A key edakit does not know is an error with
 the list of the known ones – a typo does not fall back to a default unnoticed. An edakit.toml that still holds the
 board, the schematic or the checks (the earlier one-file form) is refused with a list of what goes where.
 
@@ -530,6 +532,11 @@ status = "accepted"
 `verify`, one kind per entry:
 
 - `{ rows = "…" }` – rows of the gate protocol, a pattern over "ID scenario item check" as `accept` match them (8.2);
+  the rows of the simulation are those of `edakit sim --json <file>` (its `checks`: `id`, `scenario`, `item`,
+  `check`), e.g. `SIM.state fresh/on/vf-min D1 LED on`. SIM.state's items are designators and nets – an LED's
+  checks `LED on`, `LED dark`, `LED current (…)`, a regulator's `output voltage (…)`, a blocking diode's `diode
+  blocks` –, so `SIM.state * D1 LED on` is D1 lit in every scenario that turns it on, `SIM.state used/* D? LED on`
+  every LED at the end voltage;
 - `{ signoff = "M-1" }` – a manual check, which counts when its `note` names the requirement's ID after
   "requirements met:";
 - `{ script = "…" }` – a project script of kind `check` or the id of a `[[release.stages]]`: it passes when the check
@@ -617,7 +624,9 @@ The project's pre-commit hook: edakit's block written or renewed (install), what
   session start prints, 2.7)
 - **install** – **Reads:** the same. **Writes:** edakit's block into the hook – a new hook, after the header of one the
   project has, or the older block renewed –, the hook made executable, `git config core.hooksPath` when unset; names
-  every line outside the block that runs edakit itself, for the project to take out
+  every line outside the block that runs edakit itself, for the project to take out. A step the session may not do –
+  Claude Code guards git's configuration, a sandbox refuses a write – is a line `failed: …` with the command to run in
+  a terminal of your own, and exit 1
 - **run** – what the block calls. **Reads:** the staged paths, every edakit.toml of the repository and the files each
   names. **Writes:** what its steps write. A configuration runs when its edakit.toml, its `hardware/`, the main
   project's `hardware/` or a file it names is staged: `edakit check`, `edakit sim`, with a TOML graph `edakit graph

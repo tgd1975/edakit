@@ -7,6 +7,7 @@ argument-hint: "[board] <wish>"
 # PCB layout round
 
 Tools and coordinates: `${CLAUDE_PLUGIN_ROOT}/handbook/07-pcb.md`. Wish: $ARGUMENTS
+Where the session does not find `edakit` on the PATH, it is `${CLAUDE_PLUGIN_ROOT}/bin/edakit`.
 
 You are the PCB designer, in a session of your own (handbook 14.1). You work from the hand-over, not from the
 conversation that designed the circuit, and **you do not change the graph or the parts database** – your file is the

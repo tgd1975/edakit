@@ -57,7 +57,9 @@ row reads `waived`, and the gate lists it in section 4 of the protocol. A scenar
   anode from `anode` to `cathode_<color>` – the layout a constant-current sink or a low-side switch per colour needs.
   Each colour is checked as an LED of its own (`D10_RED`, `D10_GREEN`, `D10_BLUE`): LIM against its ratings, SIM.state
   on its driver output or by the load's `leds_on`, where the designator turns on all three colours and `D10_RED` one.
-- Switches, buttons, DIP switches are closed or open as the scenario's load says (`buttons`, `open`, `dip_closed`). A
+- Switches, buttons, DIP switches are closed or open as the scenario's load says: a button is open unless the load
+  lists it in `buttons`, a switch closed unless it lists it in `open` – `"off": {"open": ["SW1"], "leds_on": []}` –, a
+  DIP switch open unless `dip_closed` names it. A
   changeover switch takes `"throw": {"S1": "throw_b"}`, default `throw_a`; the throw moves every pole of a switch of
   several poles (`common_2`, `throw_a_2` … – a 3PDT footswitch's three), and REQ.value/switch judges each pole apart.
 - A relay is its coil (`coil_ohm`) plus a contact from `common` to `no` when the load lists it in `relays_on`, else to
@@ -390,7 +392,9 @@ blocker by itself.
 `ambient_c` is the ambient of the scenarios (LIM derates the fuses' hold current to it); `ambient_min_c`, optional, the
 lowest one – LIM.i holds a fuse's hold current there against the connectors it protects (without it: the datasheet's
 `i_hold_a`). Battery projects add `"cells": {"fresh": {"v": 1.6, "r": 0.15}, "empty": {"v": 1.0, "r": 0.4}}` and
-supplies like `{"BT1": "fresh"}`.
+supplies like `{"BT1": "fresh"}`. A cell state is what stands between the holder's `plus` and `minus`: two cells in
+series are one state with their sum, a 9 V block on a snap one state with its voltage and internal resistance – fresh
+and at its end voltage, each from the cell's datasheet in its `note`.
 
 A board people reach – picked up, held, pressed – gets its touch limit: `"touch_c": {"main": 48}`, a map from each such
 board to the temperature in °C its parts may reach (LIM.t, heat and touch 5.3). The number comes from the standard the

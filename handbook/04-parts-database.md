@@ -355,13 +355,17 @@ entry's, the entry's before the default of the pin type. The sections below give
 ### The parts library
 
 The parts library (`edakit/parts/`) holds entries of popular parts and of the parts the building blocks use –
-resistors, LEDs, the SS14/SS34 diodes, S8050, AO3401A, a USB-C receptacle, a polyfuse, buttons, a JST connector. Each
+resistors, LEDs, the SS14/SS34 diodes, S8050, AO3401A, a USB-C receptacle, a polyfuse, buttons, a slide switch
+(C22355741), a CR2032 holder and a 9 V battery snap (C70374), JST connectors. Each
 is written from its datasheet (the source with its revision) and counts once it is signed in edakit: `edakit part
 sign <key> --by NAME` writes the signature with the entry's SHA-256 into `edakit/parts/signed.toml`, and an entry
 changed after its signature is a draft again (rules-at-scale.md, decision 8).
 
-`edakit part add` lists the entries, signed or draft; `edakit part add <key>` copies one into the project's parts
-folder – `edakit block add` does the same for a block's parts. The copy names its library version in `library`
+`edakit part add` lists the entries, one line each – key, kind, part number, signed or draft –, so `edakit part add
+2>&1 | grep switch` shows the switches; `edakit part add <key>` copies one into the project's parts folder – `edakit
+block add` does the same for a block's parts. A part the library lacks gets its entry written: `edakit part import
+<LCSC>` reads its pins and footprint, the datasheet the rest – kind, roles, limits, values, sources –, by the skill
+part-search or by hand (4.2, 4.3); a part nobody sells, from your notes (4.5). The copy names its library version in `library`
 (`key`, `sha256` of the entry, `signed`, `date`) and belongs to the project from then on: checked like every entry,
 signed in the project like every entry. PARTS.library notes a copy whose library entry has changed since (grade
 `newer`) – `edakit part add <key> --update` takes the new version over the copy on purpose and names what changed –

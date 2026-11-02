@@ -7,6 +7,7 @@ description: Get EasyEDA Pro and the MCP bridge ready, watch long EasyEDA runs a
 
 Background and every API quirk: `${CLAUDE_PLUGIN_ROOT}/handbook/02-setup.md`, `09-easyeda-api.md`,
 `12-troubleshooting.md`. Here only the procedure.
+Where the session does not find `edakit` on the PATH, it is `${CLAUDE_PLUGIN_ROOT}/bin/edakit`.
 
 A project with `toolchain = "kicad"` in `[project]` of edakit.toml (handbook 16) needs none of this: no EasyEDA, no
 bridge, no claim. `edakit doctor 2>&1 | cat` shows the line for kicad-cli (KiCad 10); the commands run in the session.
