@@ -18,6 +18,7 @@ where they are; a link to a file the site does not carry goes to the file on Git
 from __future__ import annotations
 
 import json
+import posixpath
 import re
 import shutil
 import sys
@@ -49,8 +50,8 @@ def title_of(text, fallback):
 
 # The navigation: (tab, [(repo path, title of at most five words)]); a tab's first page is its index page where it is
 # one (README.md, handbook/README.md). "A circuit" and "A board" are the steps, the person's manual, in the order of the
-# walkthrough. The handbook's chapters stand by their numbers – its index says which to read when –, 9 and 10 under
-# Reference.
+# walkthrough. The handbook's chapters stand by their numbers, 1 to 18 – its index says which to read when; Reference
+# points to 9 and 10 from its overview.
 NAV = [
     ("Start", [
         ("README.md", "Start"),
@@ -96,6 +97,8 @@ NAV = [
         ("handbook/06-schematic.md", "6 Schematic"),
         ("handbook/07-pcb.md", "7 PCB"),
         ("handbook/08-release-gate.md", "8 Release gate"),
+        ("handbook/09-easyeda-api.md", "9 EasyEDA API"),
+        ("handbook/10-reference.md", "10 Files, keys, commands"),
         ("handbook/11-working-with-claude.md", "11 Working with Claude"),
         ("handbook/12-troubleshooting.md", "12 Troubleshooting"),
         ("handbook/13-lessons-learned.md", "13 Lessons learned"),
@@ -105,9 +108,8 @@ NAV = [
         ("handbook/17-walkthrough.md", "17 Walkthrough on EasyEDA"),
         ("handbook/18-walkthrough-kicad.md", "18 Walkthrough on KiCad"),
     ]),
-    ("Reference", [
-        ("handbook/10-reference.md", "Files, keys and commands"),
-        ("handbook/09-easyeda-api.md", "EasyEDA API"),
+    ("Reference", [              # what is looked up: an overview pointing into the handbook, the catalog, the changelog
+        ("docs/reference/README.md", "Overview"),
         ("docs/catalog/index.html", "Rule catalog"),
         ("CHANGELOG.md", "Changelog"),
     ]),
@@ -121,7 +123,8 @@ NAV = [
     ]),
 ]
 SIDEBAR = 8                      # entries a tab shows at most, the handbook's excepted
-GENERATED = {"docs/concepts/README.md", "skills/README.md", "agents/README.md"}   # indexes written by this script
+GENERATED = {"docs/concepts/README.md", "skills/README.md", "agents/README.md",   # indexes written by this script
+             "docs/reference/README.md"}
 INSIDE = ("docs/concepts/README.md", "skills/README.md", "agents/README.md", "evals/README.md", "CLAUDE.md")
 SOURCE = ('!!! note "A source"\n    This page is a source of edakit – a concept, a prompt or the rules of a session –, '
           'shown as it is in the repository. Read it as such; the guides say what edakit does.\n')
@@ -133,11 +136,47 @@ FENCE_FORMAT = "!!python/name:pymdownx.superfences.fence_code_format"
 REDIRECTS = {"inside-edakit/index.html": "../inside/"}
 
 
+# Where a page lands on the site follows its tab (the owner's decision of 2026-11-02): /start/…, /circuit/…, /board/…,
+# /extend/…, /develop/…, /handbook/…, /reference/…, /inside/…; the files in the repository stay where the code, the
+# skills and the projects name them. The catalog's own pages stay at /catalog/: generated HTML whose relative links
+# (../brand/…) are those of docs/catalog/ in the repository.
+TAB_DIR = {"Start": "start", "A circuit": "circuit", "A board": "board", "Extend": "extend", "Develop": "develop",
+           "Handbook": "handbook", "Reference": "reference", "Inside edakit": "inside"}
+INDEXES = {"README.md": "index.md", "handbook/README.md": "handbook/index.md", "docs/steps/README.md": "circuit/index.md",
+           "docs/projects/README.md": "start/projects/index.md", "docs/reference/README.md": "reference/index.md",
+           "docs/inside-edakit.md": "inside/index.md",   # a tab's index: Material shows the tab's other entries
+           "docs/concepts/README.md": "inside/concepts/index.md", "skills/README.md": "inside/skills/index.md",
+           "agents/README.md": "inside/agents/index.md", "evals/README.md": "inside/evals.md",
+           "CLAUDE.md": "inside/claude.md", "docs/brand/README.md": "develop/brand.md", "CHANGELOG.md": "reference/changelog.md"}
+
+
+def page_name(src):
+    """A page's last path part on the site: a skill by its folder, every other file by its own name."""
+    p = Path(src)
+    return f"{p.parent.name}.md" if p.name == "SKILL.md" else p.name
+
+
 def site_path(src):
-    """Where a repository file lands on the site."""
+    """Where a repository file lands on the site: under its tab, or – a source the navigation does not list – under
+    Inside edakit, a project page under Start."""
+    if src in INDEXES:
+        return INDEXES[src]
+    tab = next((tab for tab, entries in NAV for s, _ in entries if s == src), None)
+    if tab:
+        return f"{TAB_DIR[tab]}/{page_name(src)}"
+    if src.startswith("docs/concepts/"):
+        return "inside/" + src[len("docs/"):]
+    if src.startswith(("skills/", "agents/")):
+        return f"inside/{src.split('/')[0]}/{page_name(src)}"
+    if src.startswith("docs/projects/"):
+        return "start/projects/" + page_name(src)
+    return src[len("docs/"):] if src.startswith("docs/") else src
+
+
+def old_site_path(src):
+    """Where a page stood on the site until the addresses followed the tabs (edakit 1.0.7) – for the redirects."""
     special = {"README.md": "index.md", "handbook/README.md": "handbook/index.md", "evals/README.md": "evals.md",
-               "CHANGELOG.md": "changelog.md", "CLAUDE.md": "inside/claude.md",
-               "docs/inside-edakit.md": "inside/index.md",   # the tab's index: Material shows its other entries
+               "CHANGELOG.md": "changelog.md", "CLAUDE.md": "inside/claude.md", "docs/inside-edakit.md": "inside/index.md",
                "docs/brand/README.md": "brand/index.md", "docs/concepts/README.md": "concepts/index.md",
                "docs/projects/README.md": "projects/index.md", "docs/steps/README.md": "steps/index.md",
                "skills/README.md": "skills/index.md", "agents/README.md": "agents/index.md"}
@@ -145,9 +184,27 @@ def site_path(src):
         return special[src]
     if src.startswith("skills/") and src.endswith("/SKILL.md"):
         return f"skills/{src.split('/')[1]}.md"
-    if src.startswith("docs/"):
-        return src[len("docs/"):]
-    return src
+    return src[len("docs/"):] if src.startswith("docs/") else src
+
+
+def url_of(md):
+    """The directory URL of a page's site path: "start/quickstart.md" → "start/quickstart/", "index.md" → ""."""
+    stem = md[:-len(".md")]
+    return "" if stem == "index" else (stem[:-len("index")] if stem.endswith("/index") else stem + "/")
+
+
+def redirects(pages):
+    """{file of the old address: relative URL of the page now} – for every page whose address changed, and the older
+    ones of REDIRECTS."""
+    out = dict(REDIRECTS)
+    now = {site for _, site, _ in pages}
+    for src, site, _ in pages:
+        old = old_site_path(src)
+        if old != site and old not in now:
+            old_url, new_url = url_of(old), url_of(site)
+            rel = posixpath.relpath(new_url or ".", old_url.rstrip("/") or ".")
+            out[old_url + "index.html"] = (rel.rstrip("/") + "/") if rel != "." else "./"
+    return out
 
 
 def is_source(src):
@@ -241,8 +298,18 @@ def index_pages():
     agents += table("", [f"| [`{p.stem}`]({p.name}) | "
                          f"{first_sentence(front_matter(p.read_text(encoding='utf-8'))[0].get('description', ''))} |"
                          for p in sorted((ROOT / "agents").glob("*.md")) if p.name != "README.md"])[1:]
+    reference = ["# Reference", "", "What you look up rather than read through.", "",
+                 "- [Files, keys and commands](../../handbook/10-reference.md) – handbook 10: every key of edakit.toml, "
+                 "of a board file and of the schematic file, and every command.",
+                 "- [EasyEDA API](../../handbook/09-easyeda-api.md) – handbook 9: how the EasyEDA Pro API and its MCP "
+                 "server really behave.",
+                 "- [Rule catalog](../catalog/index.html) – every check edakit runs: its rule, why it exists, what to "
+                 "do and its sources.",
+                 "- [Changelog](../../CHANGELOG.md) – what each version changed, and what a project does when it "
+                 "updates.",
+                 "- [Glossary](../glossary.md) – the words edakit uses.", ""]
     return {"docs/concepts/README.md": "\n".join(lines) + "\n", "skills/README.md": "\n".join(skills) + "\n",
-            "agents/README.md": "\n".join(agents) + "\n"}
+            "agents/README.md": "\n".join(agents) + "\n", "docs/reference/README.md": "\n".join(reference)}
 
 
 def version():
@@ -367,10 +434,11 @@ def assemble(out=ROOT / "build" / "pages"):
                             for src, title in entries]})
     shutil.copytree(ROOT / "docs" / "catalog", docs / "catalog", ignore=shutil.ignore_patterns("*.py", "__pycache__"))
     shutil.copytree(ROOT / "docs" / "brand", docs / "brand", ignore=shutil.ignore_patterns("README.md"), dirs_exist_ok=True)
-    for old, new in REDIRECTS.items():
+    for old, new in redirects(pages).items():
         (docs / old).parent.mkdir(parents=True, exist_ok=True)
         (docs / old).write_text(f'<!doctype html><meta charset="utf-8"><title>Moved</title><link rel="canonical" '
                                 f'href="{new}"><meta http-equiv="refresh" content="0; url={new}">'
+                                f'<script>location.replace("{new}" + location.hash)</script>'
                                 f'<a href="{new}">This page moved.</a>\n', encoding="utf-8")
     for rel in sorted(media):
         (docs / "files" / rel).parent.mkdir(parents=True, exist_ok=True)

@@ -3,7 +3,7 @@
 
 [table]
 about = "margins of the limits on declared ranges (G) and simulated values (E)"
-source = "edakit handbook 3.3 and 5.3 (the margins of the reference project)"
+source = "edakit handbook 5.3 (derating.p of sim.json, the margins pytree kept)"
 tag = "r"
 
 [G.factor]          # value × factor ≤ limit

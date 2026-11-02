@@ -518,7 +518,7 @@ nothing. Exit 0, 2 (verify refused a file, a project has no current release), 1 
 the GitHub CLI `gh`, logged in (`gh auth login`); the repository is the one `gh` sees from the project, and the release
 is as public as the repository. Without `gh` or its login one sentence says so. Firmware is not published.
 
-## 8.4 Ordering at the manufacturer (up to the cart; the owner orders and pays)
+## 8.4 Ordering at the manufacturer (up to the cart; you order and pay)
 
 > **State:** ordering step 0 recorded the four forms in real accounts at the makers (`recorded` in each profile), and
 > the skill cart ran live at every maker up to the cart, nothing ordered – on a copy of the example blinker-555 released

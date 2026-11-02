@@ -127,7 +127,7 @@ Handbook: [14.2 The catalog: engines, codes, data and domains](../handbook/14-de
 
 What `edakit cost` prices an assembly order with: JLCPCB's fees and PCB prices, each with its date and source. A
 project's own orders lay their values over it in `hardware/fees/<maker>.json`.
-Handbook: [8.4 Ordering at the manufacturer (up to the cart; the owner orders and pays)](../handbook/08-release-gate.md#84-ordering-at-the-manufacturer-up-to-the-cart-the-owner-orders-and-pays).
+Handbook: [8.4 Ordering at the manufacturer (up to the cart; you order and pay)](../handbook/08-release-gate.md#84-ordering-at-the-manufacturer-up-to-the-cart-you-order-and-pay).
 
 ### Finding
 
@@ -187,13 +187,13 @@ Handbook: [14.3 Hints](../handbook/14-design.md#143-hints).
 
 What `edakit cart prepare` writes for one order: the release's upload files with their SHA-256, every field of the
 maker's form and the expected parts. The skill cart fills the form from it. `edakit cart check` holds the page to it.
-Handbook: [8.4 Ordering at the manufacturer (up to the cart; the owner orders and pays)](../handbook/08-release-gate.md#84-ordering-at-the-manufacturer-up-to-the-cart-the-owner-orders-and-pays).
+Handbook: [8.4 Ordering at the manufacturer (up to the cart; you order and pay)](../handbook/08-release-gate.md#84-ordering-at-the-manufacturer-up-to-the-cart-you-order-and-pay).
 
 ### Maker
 
 The manufacturer that builds the board: JLCPCB, PCBWay, Eurocircuits or AISLER. Its profile in `edakit/makers/`
 translates the order settings into the words of its form.
-Handbook: [8.4 Ordering at the manufacturer (up to the cart; the owner orders and pays)](../handbook/08-release-gate.md#84-ordering-at-the-manufacturer-up-to-the-cart-the-owner-orders-and-pays).
+Handbook: [8.4 Ordering at the manufacturer (up to the cart; you order and pay)](../handbook/08-release-gate.md#84-ordering-at-the-manufacturer-up-to-the-cart-you-order-and-pay).
 
 ### Manual check
 
@@ -216,7 +216,7 @@ Handbook: [3.6 Requirements](../handbook/03-hardware-graph.md#36-requirements).
 
 What stays of an order in the repository: `hardware/orders/<date>-<board>-<maker>.json`, written once the board is in
 the maker's cart. It names the run, its hashes and the regulatory verdict, later the order number and the real cost.
-Handbook: [8.4 Ordering at the manufacturer (up to the cart; the owner orders and pays)](../handbook/08-release-gate.md#84-ordering-at-the-manufacturer-up-to-the-cart-the-owner-orders-and-pays).
+Handbook: [8.4 Ordering at the manufacturer (up to the cart; you order and pay)](../handbook/08-release-gate.md#84-ordering-at-the-manufacturer-up-to-the-cart-you-order-and-pay).
 
 ### Own part
 
@@ -246,7 +246,7 @@ Handbook: [7.4 The placement plan](../handbook/07-pcb.md#74-the-placement-plan).
 
 The maker a board is planned for: `[cart] maker`, JLCPCB without it. Its checks fail. Those of the other makers of
 `[cart] makers` warn.
-Handbook: [8.4 Ordering at the manufacturer (up to the cart; the owner orders and pays)](../handbook/08-release-gate.md#84-ordering-at-the-manufacturer-up-to-the-cart-the-owner-orders-and-pays).
+Handbook: [8.4 Ordering at the manufacturer (up to the cart; you order and pay)](../handbook/08-release-gate.md#84-ordering-at-the-manufacturer-up-to-the-cart-you-order-and-pay).
 
 ### Project scripts and agents
 

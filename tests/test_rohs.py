@@ -1,6 +1,6 @@
 """PARTS.fact/rohs: every part the BOM lists states its RoHS status (compliance.rohs, handbook 4.1 and 15.3) – a check
 candidate of the review at the order (implementation plan 5.5), built on the owner's word of 2026-11-01. Graded by
-purpose.use as the radio statement (handbook 15.4): a warning for a board that is sold, information otherwise. The
+purpose.use as the radio statement (handbook 15.3): a warning for a board that is sold, information otherwise. The
 example's parts state it (LCSC's product data); the tests take it out again. J1 is soldered by hand (bom: false) and is
 the regulatory review's alone."""
 

@@ -44,7 +44,7 @@ Examples: [the Christmas bell's parts](https://github.com/tgd1975/automatic_chri
 | `mate` | optional, for a connector: its mated plug with the strain relief, `{"box": [x0, y0, x1, y1], "h_mm": 6.5, "exit": "+y"}` – `box` in footprint mm (relative to the part's origin at 0° on TOP, as `pcb dump` measures it), `h_mm` its height above the board, `exit` the direction the cable leaves the box: `+x`, `-x`, `+y`, `-y`, or `+z` (away from the board). `pcb plan` checks it (7.4) |
 | `pad_map` | only when pad numbers are deliberately swapped on the placed part: `{PCB pad: library pad}` – check SYNC.footprint |
 | `sources` | where every value comes from; "assumption …" marks what must be checked with extra care – also a value taken from a sibling part or the series. The gate protocol lists every source with the word "assumption" (8.2) |
-| `compliance` | for the regulatory review (M-6, chapter 15): `rohs` (true, false or the exemption), `reach` (the supplier's SVHC statement, or `"none above 0.1 %"` with its source: a board given away or sold names it for every part, else PARTS.fact/reach – information for a gift, a warning for a sale), `radio` for a part that transmits – `bands_mhz` (`[[from, to], …]` in MHz: the bands it can transmit in, as datasheet or certificate state them), `max_dbm` (the conducted power at the RF port, as datasheets state it – not the radiated power), `antenna_dbi` (the gain of the antenna it transmits through in the product, from the module's datasheet or certificate), `eirp_dbm` (optional: the e.i.r.p. where a certificate states it), `doc` (URL of the EU declaration of conformity); its e.i.r.p. is `eirp_dbm`, else `max_dbm` + `antenna_dbi`, and LIM.eirp holds it to the limit of the band (3.3) –, or `"none"` for a part that does not transmit: a part of graph type `module` or `microcontroller` states one of the two, else PARTS.fact reports it (information, for a board that is sold a warning), and every part the BOM lists (`bom` not false) states `rohs`, else PARTS.fact/rohs, graded the same; `source` (page and date) |
+| `compliance` | for the regulatory review (M-6, chapter 15): `rohs` (true, false or the exemption), `reach` (the supplier's SVHC statement, or `"none above 0.1 %"` with its source: a board given away or sold names it for every part, else PARTS.fact/reach – information for a gift, a warning for a sale), `radio` for a part that transmits – `bands_mhz` (`[[from, to], …]` in MHz: the bands it can transmit in, as datasheet or certificate state them), `max_dbm` (the conducted power at the RF port, as datasheets state it – not the radiated power), `antenna_dbi` (the gain of the antenna it transmits through in the product, from the module's datasheet or certificate), `eirp_dbm` (optional: the e.i.r.p. where a certificate states it), `doc` (URL of the EU declaration of conformity); its e.i.r.p. is `eirp_dbm`, else `max_dbm` + `antenna_dbi`, and LIM.eirp holds it to the limit of the band (3.3) –, or `"none"` for a part that does not transmit: a part of graph type `module` or `microcontroller` states one of the two, else PARTS.fact reports it (information, for a board that is sold a warning), and every part the BOM lists (`bom` not false) states `rohs`, else PARTS.fact/rohs, graded the same; `source` (page and date). This is support for the review, not legal advice: nothing in it is legally guaranteed, and it makes no claim to be correct (chapter 15) |
 | `verified` | `null` or the sign-off: `by`, `date`, `datasheet` (revision), `checked` (list), `open` (list: a text, or `{"text": "…", "when": "order"}` – `when` names the phase whose manual check answers it: `order` the assembly preview M-2, `acceptance` the delivered board M-4), optional `datasheet_sha256` (the file signed against, as `edakit part fetch` recorded it), optional `second_check` (the independent M-1 review). The gate protocol lists the open points (8.2) |
 | `own` | a part nobody sells (4.5): `what` – `pcb` (a board of an edakit project), `bin` (from your stock, no longer to be had), `handmade`; for `pcb` its source: `project`, `connectors`, `graph_version`, `state_sha256` (the board's circuit hash), and in the copy `path`, `commit`, `repo`, `released` – SYNC.source compares them |
 
@@ -616,8 +616,9 @@ against those notes. The checks treat it like the copy of an edakit board; SYNC.
 
 ### Own footprints as data
 
-> **State:** `edakit part build` runs the EasyEDA calls the bell's and a real project's scripts use, but in this form
-> it has not run against EasyEDA yet (implementation plan, live run of 3.6).
+> **State:** `edakit part build` runs the EasyEDA calls the bell's and a real project's scripts use. It ran against
+> EasyEDA once, on the bell's T-Display in a throwaway project: the build, the copy in the PCB, a pad changed as a
+> line of text and the reopened project held (implementation plan, live run of 3.6).
 
 A footprint that exists only in EasyEDA – drawn in its editor, or rebuilt there by a script of the project – is not
 text: the repository knows its name, `pcb dump` measures what was put there, and nobody can review or diff it. The
@@ -739,8 +740,8 @@ Until the dump has the part, `pcb plan`, `pcb place`, GEO.hole and `part diff` t
 ("footprint data", before the library footprint), so holes and leads are checked on the text already.
 
 Not covered yet: pad shapes NGON and POLYGON (written as RECT, ELLIPSE or OVAL), arcs and circles in the print
-(written as points), the direction of a slot (built along the pad's longer side – the live run of step 3.6 has to show
-it), and the print in SYNC.footprint.
+(written as points), and the print in SYNC.footprint. A slot is built along the pad's longer side, as the live run of
+step 3.6 showed.
 
 ## 4.6 Datasheets kept with the project
 
