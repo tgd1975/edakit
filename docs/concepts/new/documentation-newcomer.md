@@ -1,7 +1,8 @@
 # The documentation for a newcomer: two manuals, ten steps, a navigation that shows them
 
 Status 2026-11-02: decided – the seven decisions taken by the owner the same day in a decision round in Claude Code's
-form (the table at the end): six as recommended, the newcomer's test as the eval alone, without a person; what Claude
+form (the table at the end): six as recommended, the newcomer's test as the eval alone, without a person – and
+decision 6 taken again the same day after the eval's runs: no folding, ever; what Claude
 had set itself – the budgets, the shape of a steps page, the ten pages, the tabs, the order of the steps – confirmed.
 N.1 and N.3 built the same day on the owner's word (#215); N.2, N.4 and N.5's eval case built the same day on the
 owner's word (#222, edakit 1.0.1); the eval's run waits for a cloud session – on this machine the Bash sandbox cannot
@@ -186,7 +187,8 @@ placement plan's keys (7.4, 360 lines), a project's scripts and agents (8.6, 375
 (`???`, enabled in `docs/pages.py` already) would fold them under their heading. The text stays in the file, in its
 section, with its anchors – the assistant reads the same Markdown –, and the rendered page shows the chapter's way
 first. A presentation change, not a trim; one chapter per branch, the review as for D.5. Not now: the steps are tried
-first, and this comes only if the eval's second case still fails or needs a chapter to pass (decision 6).
+first, and this comes only if the eval's second case still fails or needs a chapter to pass (decision 6). Decided
+against on 2026-11-02, after the runs: the owner does not want folding – the reference blocks stay as they are.
 
 ## How a steps page is written
 
@@ -209,7 +211,7 @@ The entry register of the style guide holds, with these additions, into `docs/st
 | N.3 | The entry lightened: the start page's first screen, How it works without "The words", the glossary's "ten words first", the term budget counted | S | the decisions |
 | N.4 | The handbook declared complete: the line on its index, "The short way" in each chapter's first paragraph | S | N.2 |
 | N.5 | The newcomer's test: the second eval case, its numbers into the status line | S | N.2 |
-| N.6 | Folded reference blocks in 4, 7 and 8, if N.5 still fails or needs a chapter | M | N.5, the owner's word |
+| N.6 | Folded reference blocks in 4, 7 and 8, if N.5 still fails or needs a chapter – dropped, decision 6 of 2026-11-02: no folding | – | – |
 
 N.1 and N.3 are one session and change what a newcomer sees first; N.2 is the substance. About four sessions to N.5.
 Each step starts on the owner's word and comes into `TODO.md` when it does; N.1 and N.3 were built on 2026-11-02
@@ -270,7 +272,7 @@ recommended.
 | 3 | The navigation | tabs by reader, eight entries a sidebar, the handbook its own tab, Inside edakit behind one page under Develop, the catalog out of Start | collapsible groups as today with the steps added; the handbook off the navigation, search only | 2026-11-02: as recommended |
 | 4 | The entry | the first screen with the pictures and the two-minute command, at most 120 words before the first picture; "The words" to the glossary's head; a term budget of three per steps page | the pages as decided in documentation.md, the steps added only | 2026-11-02: as recommended |
 | 5 | The newcomer's test | the eval's second case and one person picked by the owner, the result in the status line | the eval alone; no test, the owner's own look | 2026-11-02: the eval alone – no person's try, the owner's own look stands in for it |
-| 6 | Folding the reference blocks of 4, 7 and 8 | later, only if the newcomer's test still stops in a chapter | with N.2; never | 2026-11-02: as recommended – later, on the owner's word, if the eval's second case still fails or needs a chapter |
+| 6 | Folding the reference blocks of 4, 7 and 8 | later, only if the newcomer's test still stops in a chapter | with N.2; never | 2026-11-02: as recommended – later, on the owner's word, if the eval's second case still fails or needs a chapter; the same day, after the runs: never – the owner does not want folding |
 | 7 | TD-81's rule 5 | kept strict: the handbook is the assistant's and the look-up reader's and no longer has to shrink | loosened per chapter for 10 to 15 % | 2026-11-02: as recommended – kept strict, TD-81 closed with it |
 
 What Claude had set itself was confirmed the same day: the budgets – a steps page of at most 400 words, the index
