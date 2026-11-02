@@ -29,8 +29,6 @@ to touch.
 
 ## For the owner
 
-- [ ] TD-95 - **OK for #215:** `python3 .github/merge.py 215` – N.1 + N.3 of documentation-newcomer.md (tabs by reader,
-      the entry lightened, the budgets) and the documentation concept to `done/`; no version. *(edakit-96)*
 - [ ] TD-82 - **pytree's pictures:** pick what of the private repository may go onto `docs/projects/pytree.md` – the
       page is text only, from its README and chapter 13; say too whether that much about the gift may stand before
       Christmas. *(edakit, documentation session)*
@@ -60,13 +58,6 @@ Nothing to do until there is an answer or a release; whichever session learns of
       check it live, take it up and say so in upstream/README.md. EasyEDA's first answer is often "update to the latest
       version".
 
-## The documentation for a newcomer ([documentation-newcomer.md](docs/concepts/new/documentation-newcomer.md))
-
-Decided on 2026-11-02; N.1 to N.5 as the concept's table has them, each here once it starts:
-
-- [ ] TD-94 - **N.1 + N.3** The tabs by reader and the lightened entry: built on branch `newcomer-n1-n3`, pull request
-      #215, merged on the owner's OK (TD-95). *(edakit-96)*
-
 ## The documentation for its readers ([documentation.md](docs/concepts/done/documentation.md))
 
 Built on 2026-11-01 (#174, edakit 0.4.14); what is left after the owner's review (TD-81):
@@ -80,6 +71,10 @@ Built on 2026-11-01 (#174, edakit 0.4.14); what is left after the owner's review
 Done or dropped, newest first, each with its date and the commit that closed it. What closed before 2026-11-01 is
 taken from the history of this file; an item rewritten on its way is listed once, in its last form.
 
+- [x] TD-95 - **OK for #215:** given; merged without a version (#215, 1d177e1). *(edakit-96)* [2026-11-02]
+- [x] TD-94 - **N.1 + N.3** The site's navigation as tabs by reader with "Inside edakit", the start page's first screen,
+      How it works without "The words", the glossary's ten words first, the budgets in style.md and test_style.py; the
+      documentation concept moved to `done/` (#215, 1d177e1). *(edakit-96)* [2026-11-02]
 - [x] TD-93 - **Decide on the documentation for a newcomer:** decided in a decision round – six of seven as
       recommended, the newcomer's test the eval alone; N.1 and N.3 started the same day (TD-94). *(edakit-96)*
       [2026-11-02]
