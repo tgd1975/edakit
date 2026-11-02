@@ -1,0 +1,64 @@
+{
+ "lcsc": "C70374",
+ "mpn": "9V电池铜线扣 铜100mm",
+ "manufacturer": "QIJEY",
+ "kind": "battery_holder",
+ "package": "snap for one 9 V block (6LR61, PP3), red and black leads 1007 AWG 26, 100 mm",
+ "footprint": "BAT-TH_2P-9VBATTERY",
+ "jlc_class": "Extended Part",
+ "datasheet": {
+  "url": "https://datasheet.lcsc.com/datasheet/pdf/2a7b23bc868e36d6dcdc068afa9a2519.pdf?productCode=C70374",
+  "pinout_page": 1
+ },
+ "pins": {
+  "1": {
+   "name": "+",
+   "type": "passive",
+   "role": "plus",
+   "hint": "red lead"
+  },
+  "2": {
+   "name": "-",
+   "type": "passive",
+   "role": "minus",
+   "hint": "black lead"
+  }
+ },
+ "values": {},
+ "limits": {},
+ "spice": {},
+ "lead": {
+  "*": {
+   "shape": "round",
+   "a_mm": 0.48,
+   "b_mm": null,
+   "tol_mm": null,
+   "source": "the specification's electronic wire 1007 AWG 26; stranded 7 × 0.16 mm (7/34, the common stranding of AWG 26, not printed) is 0.48 mm across the strands, tinned"
+  }
+ },
+ "compliance": {
+  "rohs": true,
+  "source": "Qijie product specification 20080808-D: every material ROHS – contacts, rivet, insulating disc, plating, solder, PVC jacket"
+ },
+ "sources": [
+  "mpn, manufacturer, footprint, jlc_class, pin numbers and names: EasyEDA library data of C70374, https://easyeda.com/api/products/C70374/components?version=6.4.19.5, read 2026-11-02 (edakit part import)",
+  "Qijie (QIJEY) product specification, I-type 9 V battery snap, file 20080808-D, 1 page, scanned – JLCPCB catalogue of C70374, read 2026-11-02 (edakit part fetch)",
+  "pins: red lead positive (红线正极), black lead negative (黑线负极); the library footprint prints '+' beside pad 1 and '−' beside pad 2 – pad 1 is plus, as the symbol's pin names say",
+  "leads: electronic wire 1007 AWG 26, PVC jacket 0.25 mm; snap 14.7 × 29.2 mm, contacts 12.7 mm apart",
+  "no rating: the specification gives no current or voltage – the cell's voltage and internal resistance are sim.json's cells (5.2)"
+ ],
+ "notes": "A snap with leads for a 9 V block, for a hand-wired circuit or soldered into two holes. Library draft.",
+ "verified": {
+  "by": "Claude (datasheet check, library draft)",
+  "date": "2026-11-02",
+  "datasheet": "Qijie I-type 9 V battery snap specification 20080808-D",
+  "datasheet_sha256": "d7f9a329edf0a2bcf1bca96bd000267f94fb3a8704241e8a2f55f0466a067d6f",
+  "checked": [
+   "red lead plus, black lead minus; pad 1 '+' and pad 2 '−' on the library footprint",
+   "1007 AWG 26 leads, 100 mm"
+  ],
+  "open": [
+   "no current rating in the specification: LIM.i has no limit of the snap to hold the current to"
+  ]
+ }
+}

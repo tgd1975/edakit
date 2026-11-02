@@ -10,7 +10,8 @@ Open Claude Code in the repository of your project. An empty one is fine. Then t
 /edakit:new-project my-board main
 ```
 
-The first word names the project, the second its board.
+The first word names the project, the second its board. To write the files by hand instead, the handbook's page
+below shows the smallest project.
 
 ## What you are asked
 
@@ -40,7 +41,8 @@ Then Claude shows every file and every setting with the answer behind it. Nothin
 - `hardware/graph.toml`, the [hardware graph](../glossary.md#hardware-graph): the circuit as text, empty but for
   its purpose;
 - `docs/decisions.md`, your answers as the first decision, D-1;
-- a git hook that runs the checks on every commit, and the settings that load the plugin in every session.
+- a git hook that runs the checks on every commit, and the settings that load the plugin in every session. Where
+  Claude may not write these two, its report names them for you to do in a terminal.
 
 Next: [Say what it must do](03-say-what-it-must-do.md).
 

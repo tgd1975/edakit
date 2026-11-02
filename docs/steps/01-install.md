@@ -35,8 +35,8 @@ when you come to [Lay out the board](09-lay-out-the-board.md).
 
 ## What you have
 
-Claude Code with the plugin, and the command `edakit` in every session. Next: [Start a
-project](02-start-a-project.md).
+Claude Code with the plugin, and the command `edakit` in every session. Where a session does not find it, the
+plugin names its path to Claude. Next: [Start a project](02-start-a-project.md).
 
 ## Read on
 

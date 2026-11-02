@@ -454,7 +454,7 @@ hears, each marked inferred until you say yes.
 
 `source` says where an entry was found – a document, a decision. `from` says where a requirement comes from: a need, a
 decision (D-8), a standard (USB 2.0: 500 mA), a sign-off (M-6). `verify` says what tests it: rows of the gate
-protocol, a manual check, a project script, a step of the acceptance test. The file covers the circuit only – what the
+protocol (their form and the simulation's: 10.4), a manual check, a project script, a step of the acceptance test. The file covers the circuit only – what the
 boards must do and withstand; what firmware and mechanics must do stays in the project's own documents.
 
 IDs are stable, as in the rule catalog: a requirement that no longer holds stays in the file with its `reason` and
