@@ -125,7 +125,8 @@ shorter wording never trades a meaning: in a section the automation names, the w
 A page of the gallery (`docs/projects/`) is written in the entry register, its length set by its pictures. It explains
 the project to a reader who has never seen it: what it is, the circuit with its drawn schematic and its blocks, the
 board as made, what edakit found, its variants, what it changed in edakit. The pictures are the release's, copied with
-its tag, never drawn by hand; the numbers name their release. The gallery shows what is built, nothing planned.
+its tag, never drawn by hand; the numbers name their release. A render or a photo of the whole object may stand first,
+named as the project's own. The gallery shows what is built, nothing planned.
 
 ## A steps page
 
