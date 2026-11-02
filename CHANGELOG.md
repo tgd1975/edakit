@@ -8,6 +8,29 @@ written once, by `.github/merge.py`, from the fragments in [changes/](changes/RE
 update edakit@edakit`, then `/reload-plugins` or a new session; `edakit version` names the version that runs and what an
 update brings.
 
+## 1.0.14 – 2026-11-02
+
+- `schematic check` and stage S close every saved schematic tab before they read, not only their own: EasyEDA lists a pin of the template on a second net while the board's schematic is open (E-18, #117 – live on pytree). Another schematic with unsaved changes stays open and is named in the finding `saved`.
+
+## 1.0.13 – 2026-11-02
+
+- The pre-commit hook's edakit block holds under the project's `set -euo pipefail`: without edakit on the PATH it still reaches the plugin, and a failing step still blocks with its exit code. A block of 1.0.11 counts as older; the session start names it, `edakit hook install` renews it.
+- `edakit hook run` takes the file of `doc_pin_table` as one of the configuration's inputs – under `locks` or `checks`, also in a JSON graph wrapped in `graph` – so a change to the documented pin table runs `edakit check` (pytree's `docs/hardware.md`).
+
+## 1.0.12 – 2026-11-02
+
+- The handbook's long guide chapters – 3, 4, 5, 7, 8 and 14 – open with a summary, **In short.**, of their core
+  statements, each with the section that owns it; `tests/test_style.py` holds it for every guide chapter over 450 lines.
+
+## 1.0.11 – 2026-11-02
+
+- `edakit version pin [current|latest|X.Y.Z]` and `unpin`: one version in every edakit.toml (`[project] edakit = "==X"`) and in every edakit call of CI and scripts, or following the updates again (`>=X`, the calls without a ref); listed first, written with `--write`. The marketplace's `ref` in `.claude/settings.json` goes – it held the plugin for every project on the machine, not for one; handbook 2.3 no longer advises it.
+- `edakit hook install|check|run`: edakit's block in the project's pre-commit hook – written or renewed by `install`, the project's own steps kept, `core.hooksPath` set –, which finds edakit itself (a commit by hand needs no wrapper script) and runs the steps of every configuration whose files are staged. The session start says in one line when the hook is missing, has no block or an older one, or git does not run it (handbook 2.7).
+
+## 1.0.10 – 2026-11-02
+
+- Handbook 17 and 18 show the routed board of both walkthroughs, from the Gerber files of a gate run (TD-104).
+
 ## 1.0.9 – 2026-11-02
 
 - `edakit version` and the skill `/edakit:version`: which edakit runs, the plugin's installation per scope with the one in effect here, the newest version on GitHub and the changelog's sections in between – their **When updating:** lines first –, and where the project pins edakit (`.claude/settings.json`, CI, scripts), with whether the pins agree; the update command for the scope in effect, run on the owner's word (handbook 2.3).

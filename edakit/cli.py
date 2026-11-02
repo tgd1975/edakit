@@ -89,8 +89,17 @@ def build_parser():
 
     p = sub.add_parser("version", help="what runs, what the plugin installed per scope, the newest version and what "
                                        "changed since – its When updating lines first –, where the project pins edakit")
+    p.add_argument("action", nargs="?", choices=["pin", "unpin"], help="pin: one version in every edakit.toml "
+                                                                     "([project] edakit = \"==x\") and every call in CI "
+                                                                     "and scripts; unpin: follow the updates again")
+    p.add_argument("target", nargs="?", help="pin: current (the edakit in effect here, default), latest or a number")
+    p.add_argument("--write", action="store_true", help="pin, unpin: write the changes (default: list them)")
     p.add_argument("--offline", action="store_true", help="read no tags and no changelog from GitHub")
     p.add_argument("--json", help="write the state and the findings as JSON")
+
+    p = sub.add_parser("hook", help="the project's pre-commit hook: edakit's block written or renewed (install), what "
+                                    "is missing (check), the steps of the staged configurations (run – the block calls it)")
+    p.add_argument("action", nargs="?", default="check", choices=["check", "install", "run"])
 
     p = sub.add_parser("check", help="rule checks on the graph (stages P, G)")
     p.add_argument("--release", action="store_true", help="also fail on open sign-offs")
@@ -362,6 +371,9 @@ def _main(argv=None):
     if args.command == "version":
         from . import update
         return update.main(args)
+    if args.command == "hook":
+        from . import hook
+        return hook.main(args)
     if args.command == "rules":
         from . import catalog
         return catalog.main_rules(args)

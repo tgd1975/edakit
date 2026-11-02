@@ -391,6 +391,11 @@ beside it and got a fixed spot below the LED (`[silk] place`):
 
 ![The bottom side: the holder's outline and its poles](../examples/blinker-555/docs/silk_main_bottom.png)
 
+The board as `edakit gate --eda` draws it from kicad-cli's Gerber files (`pictures/board_main_top.png`) – the tracks
+around U1, the ground pour, mask and silkscreen:
+
+![The routed top side of blinker-555: the ground pour over the whole board, U1 with C1 to C4 and R1, Q1 and SW1 at the right end, the tracks between them](../examples/blinker-555/docs/board_main_top.png)
+
 The bottom carries the holder's outline with "+" and "−" from its library footprint. SW1's knob is drawn by its
 footprint beyond the body and so beyond the outline; GEO.silk's warning on it is accepted in the sign-off file with D-8
 – the maker prints nothing there.

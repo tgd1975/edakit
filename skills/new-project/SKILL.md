@@ -124,12 +124,14 @@ report names them.
 
 ## 4. Guard rails
 
-- Pre-commit hook (`.githooks/pre-commit`, `git config core.hooksPath .githooks`): when `hardware/` changed, run
-  `edakit check`, `edakit sim` and, with a TOML graph, `edakit graph json --check` – the generated `graph.json` still
-  the resolved TOML (handbook 3.1) –, with `[firmware]` also `edakit firmware --check` (handbook 3.5), with `[docs]`
-  `edakit docs` (handbook 6.6); a failing check blocks the commit. Never bypass it with `--no-verify`. Moving: the
-  project's hook keeps its other steps; its own graph check and simulation become edakit's, and a hint in it to
-  bypass a failing check goes.
+- Pre-commit hook: `edakit hook install 2>&1 | cat` writes edakit's block into `.githooks/pre-commit` and sets
+  `git config core.hooksPath` – on a commit that touches a configuration's files `edakit check`, `edakit sim` and,
+  with a TOML graph, `edakit graph json --check` – the generated `graph.json` still the resolved TOML (handbook 3.1)
+  –, with `[firmware]` also `edakit firmware --check` (handbook 3.5), with `[docs]` `edakit docs` (handbook 6.6); a
+  failing check blocks the commit. Never bypass it with `--no-verify`. No wrapper script of the project's own: the
+  block finds edakit itself. Moving: the project's hook keeps its other steps, the block goes after its header; the
+  lines `install` names as running edakit themselves – its own graph check and simulation, a wrapper's calls – go,
+  and so does a hint in it to bypass a failing check.
 - CI: the same commands plus the project's tests on every pull request (`uvx --from git+<edakit repo> edakit …`).
 - `.claude/settings.json` of the project, so every session in this repo has the plugin:
   ```json

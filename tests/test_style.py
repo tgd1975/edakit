@@ -3,7 +3,8 @@ docs/organisation.md lists it: the entry pages' sentences, sections without a su
 paragraphs over 120 words, bare cross-references, "the user" and "the reference project" in a page's own sentences,
 dates outside the history, bold terms the glossary does not have, buzzwords outside docs/architecture.md and the
 README's one "harness", the budgets of the lightest pages (docs/concepts/new/documentation-newcomer.md, decision 4),
-and the steps' own rules: sentences of at most 30 words, no aside. It reads documentation only.
+the steps' own rules: sentences of at most 30 words, no aside, and the summary a long guide chapter opens with. It
+reads documentation only.
 
 A page that does not meet a rule today stands in RED: its test is expected to fail and fails once the page meets the
 rule, so that the page leaves RED (steps D.2 and D.5 of docs/concepts/done/documentation.md). A new page meets every
@@ -25,7 +26,10 @@ DATED = ("handbook/15-regulatory.md",               # the state of the law the r
          "examples/blinker-555/docs/decisions.md") + PROJECTS   # a project page names its release with its date
 QUOTED = ("11.4",)                                  # the working agreements: the hook reads them, their words stay
 SECTION_LINES = 80
-CHAPTER_LINES = 500                        # a chapter of the handbook
+CHAPTER_LINES = 500                        # a chapter of the handbook, its summary not counted
+SUMMARY = "**In short.** "                 # the summary: the chapter's second paragraph
+SUMMARY_FROM = 450                         # a guide chapter of more lines opens with one
+NOT_GUIDES = ("handbook/10-reference.md", "handbook/17-walkthrough.md", "handbook/18-walkthrough-kicad.md")
 PARAGRAPH_WORDS = 120
 ENTRY_MEAN, ENTRY_MAX = 20, 35
 STEPS_MAX = 30                             # the longest sentence of a steps page
@@ -131,8 +135,26 @@ def long_sections(page, text):
             for a, b in zip(starts, starts[1:]) if b - a > SECTION_LINES and not lines[a].startswith(quoted)]
 
 
+def summary(text):
+    """The lines of the chapter's summary, (first, end), or None: the paragraph that starts with SUMMARY."""
+    lines = text.splitlines()
+    first = next((i for i, ln in enumerate(lines) if ln.startswith(SUMMARY)), None)
+    if first is None:
+        return None
+    end = first
+    while end < len(lines) and lines[end].strip():
+        end += 1
+    return first, end
+
+
+def chapter_lines(text):
+    """The lines of a chapter without its summary and the blank line before it."""
+    s = summary(text)
+    return len(text.splitlines()) - (s[1] - s[0] + 1 if s else 0)
+
+
 def long_chapter(page, text):
-    n = len(text.splitlines())
+    n = chapter_lines(text)
     return [f"{n} lines (at most {CHAPTER_LINES})"] if n > CHAPTER_LINES else []
 
 
@@ -243,6 +265,24 @@ def asides(page, text):
     return [f"line {t.count(chr(10), 0, m.start()) + 1}: an aside" for m in re.finditer(r"\w \u2013 ", t)]
 
 
+def summaries(page, text):
+    """A guide chapter of more than SUMMARY_FROM lines opens with its summary: the second paragraph, after the one that
+    says for whom the chapter is, and every section of the chapter it names is one of its own."""
+    s = summary(text)
+    if s is None:
+        n = chapter_lines(text)
+        return [f"{n} lines and no summary (one from {SUMMARY_FROM + 1} lines)"] if n > SUMMARY_FROM else []
+    lines = text.splitlines()
+    out = []
+    if len([p for p in re.split(r"\n\s*\n", "\n".join(lines[:s[0]])) if p.strip()]) != 2:
+        out.append(f"line {s[0] + 1}: the summary is not the second paragraph")
+    chapter = re.match(r"handbook/0?(\d+)-", page).group(1)
+    sections = set(re.findall(r"^## (\d+\.\d+) ", text, re.M))
+    body = own(" ".join(lines[s[0]:s[1]]))
+    return out + [f"the summary names {n}, which the chapter does not have"
+                  for n in re.findall(rf"(?<![\d.]){chapter}\.\d+(?![\d.])", body) if n not in sections]
+
+
 RULES = {                                            # rule: (check, the pages it holds)
     "sentences": (long_sentences, lambda pages: [p for p in pages if p in ENTRY]),
     "sections": (long_sections, lambda pages: pages),
@@ -255,6 +295,7 @@ RULES = {                                            # rule: (check, the pages i
     "buzzwords": (buzzwords, lambda pages: pages),
     "budgets": (budgets, lambda pages: [p for p in pages if p in ENTRY or p.startswith("docs/steps/")]),
     "asides": (asides, lambda pages: [p for p in pages if p.startswith("docs/steps/")]),
+    "summaries": (summaries, lambda pages: [p for p in pages if re.match(r"handbook/\d\d-", p) and p not in NOT_GUIDES]),
 }
 
 # Today's pages that do not meet a rule yet – measured on main when D.1 was built. D.2 rewrites the README, D.5 the
@@ -273,6 +314,7 @@ RED = {
     "buzzwords": set(),
     "budgets": set(),
     "asides": set(),
+    "summaries": set(),
 }
 
 
@@ -301,6 +343,15 @@ def test_the_rules_find_what_they_count():
     assert long_sections("x", "# A\n" + "text\n" * 90) != [] and long_sections("x", "# A\n" + "x\n" * 10) == []
     assert long_sections("x", "## 11.4 The agreements\n" + "text\n" * 90) == []      # QUOTED keeps its form
     assert long_chapter("x", "x\n" * 501) != [] and long_chapter("x", "x\n" * 500) == []
+    shortened = "# 3 X\n\nFor you.\n\n**In short.** The graph (the format, 3.1).\nMore.\n\n## 3.1 Format\n"
+    assert long_chapter("x", shortened + "x\n" * 495) == [] and long_chapter("x", shortened + "x\n" * 496) != []
+    assert summaries("handbook/03-x.md", shortened) == []
+    assert summaries("handbook/03-x.md", shortened.replace("3.1).", "3.9).")) == [
+        "the summary names 3.9, which the chapter does not have"]
+    assert summaries("handbook/03-x.md", shortened.replace("For you.\n", "For you.\n\nMore.\n")) == [
+        "line 7: the summary is not the second paragraph"]
+    assert summaries("handbook/03-x.md", "# 3 X\n" + "x\n" * 449) == [] and summaries(
+        "handbook/03-x.md", "# 3 X\n" + "x\n" * 450) == ["451 lines and no summary (one from 451 lines)"]
     assert long_paragraphs("x", " ".join(["word"] * 121)) != []
     assert long_paragraphs("x", "- " + " ".join(["word"] * 100) + "\n- " + " ".join(["word"] * 100)) == []
     assert long_sections("x", "# A\n```\n" + "# not a heading\n" * 90 + "```\n") != []

@@ -128,7 +128,7 @@ The checks, the simulation, the drawings, the routing and the gate run offline.
 **Your project's files.** `/edakit:new-project` writes, after your OK, besides edakit.toml and `hardware/`:
 
 - `.claude/settings.json`, which enables the edakit marketplace and plugin for every session in the repository;
-- a pre-commit hook in `.githooks/`, with `git config core.hooksPath .githooks`;
+- a pre-commit hook in `.githooks/` from `edakit hook install`, which also sets `git config core.hooksPath .githooks`;
 - a CI workflow that runs the same checks on every pull request.
 
 ## Questions and bugs

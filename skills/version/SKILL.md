@@ -1,6 +1,6 @@
 ---
 name: version
-description: Show which edakit runs and which the plugin installed per scope (user, each project), the newest version on GitHub, what the changelog says in between – its "When updating:" lines first, what a project must do –, and where the project pins edakit (settings.json, CI, scripts), from `edakit version`; then update the plugin on the owner's word. Use for "which edakit do I have", "is edakit up to date", "what is new in edakit", "update edakit", "/edakit:version".
+description: Show which edakit runs and which the plugin installed per scope (user, each project), the newest version on GitHub, what the changelog says in between – its "When updating:" lines first, what a project must do –, and where the project pins edakit (settings.json, CI, scripts), from `edakit version`; then update the plugin, pin the project at one version or let it follow the updates (`edakit version pin|unpin`), and write or renew the pre-commit hook (`edakit hook install`) – each on the owner's word. Use for "pin edakit", "unpin", "the hook is missing", "which edakit do I have", "is edakit up to date", "what is new in edakit", "update edakit", "/edakit:version".
 ---
 
 # Which edakit, and what an update brings
@@ -41,3 +41,22 @@ scope.
 
 A project that pins edakit moves its pins itself: the tag in `.claude/settings.json` and in CI together, then the gate
 and a commit (handbook 2.3) – on the owner's word, never as a side effect of the plugin update.
+
+## 4. Pin or follow – on the owner's word
+
+`edakit version pin [current|latest|X.Y.Z] 2>&1 | cat` lists what it would change: `[project] edakit = "==X"` in every
+edakit.toml, every edakit call in CI and scripts at `@vX`, the marketplace's `ref` out of `.claude/settings.json`.
+`edakit version unpin 2>&1 | cat` lists the way back: `>=X`, the calls without a ref. Show the list; on the owner's
+word run it again with `--write`, then `edakit check 2>&1 | cat` and commit.
+
+Say once what a pin holds and what it does not: the command line in CI and scripts runs exactly X; the plugin – skills,
+agents, `edakit` in the session – cannot be held per project and keeps following its updates. Where it no longer meets
+`==X`, the session start and `edakit check` say so (STRUCT.edakit); then either `pin latest` after reading the
+changelog, or `unpin`.
+
+## 5. The pre-commit hook
+
+When the session start names the hook – missing, no edakit block, an older one, not run by git –, `edakit hook check
+2>&1 | cat` shows what, and `edakit hook install 2>&1 | cat` on the owner's word writes or renews edakit's block and
+activates it. Lines it names as running edakit outside the block are the project's to take out – a wrapper script of
+its own among them; show them, change them on the owner's word, and commit the hook.

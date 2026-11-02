@@ -101,10 +101,17 @@ project – with the one in effect here, the newest version on GitHub, the chang
 **When updating:** lines first, and the pins below with whether they agree. It prints the update command for the scope
 in effect and exits 2 when there is something to act on; it changes nothing.
 
-A project that stays on one version names its tag in two places: in `.claude/settings.json` beside the repository,
-`"source": { "source": "github", "repo": "tgd1975/edakit", "ref": "v0.2.0" }`, and in CI as
-`uvx --from git+https://github.com/tgd1975/edakit@v0.2.0 edakit <command>`. Skills, agents and the command line are
-then of the same version. To move up, read the changelog, change both tags, run the gate and commit.
+A project that stays on one version says so with `edakit version pin` (the skill `/edakit:version`):
+`edakit = "==1.0.9"` under `[project]` in every edakit.toml, and the same tag in every call in CI and scripts,
+`uvx --from git+https://github.com/tgd1975/edakit@v1.0.9 edakit <command>`. Without `--write` it lists what it would
+change. `current` takes the edakit in effect here, `latest` the newest version, or name one. `edakit version unpin`
+turns `==` into `>=` and takes the tags out of the calls, so the project follows the updates again.
+
+The plugin itself cannot be held per project: Claude Code keeps one marketplace "edakit" per user, and a `ref` in a
+project's `.claude/settings.json` replaces it for every project of that user. `pin` and `unpin` take such a `ref` out.
+The plugin keeps following its updates; where it no longer meets the pin, the session start and `edakit check` say so
+(STRUCT.edakit), and `edakit version` names the mismatch. To move up: read the changelog, `edakit version pin latest
+--write`, run the gate and commit.
 
 A project can also say which edakit it needs: `edakit = ">=0.4"` under `[project]` in edakit.toml (10.1). When the
 running edakit does not meet it, `edakit check` notes STRUCT.edakit, and the session hook says so at the start of a
@@ -204,10 +211,18 @@ elsewhere one decision round in text.
 ![The hardware graph and the files around it: the parts database by LCSC number, the board file by designator, the requirements checked against it, the simulation config reading it, and what is generated from it](../docs/pictures/project-files.svg)
 
 The graph it writes is `hardware/graph.toml`, with the resolved `hardware/graph.json` generated beside it (the graph's
-format, 3.1). The pre-commit hook it writes runs on every commit that touches `hardware/`: `edakit check`,
-`edakit sim` and `edakit graph json --check` – which fails when the generated file no longer matches the TOML
+format, 3.1). The pre-commit hook comes from `edakit hook install`: it writes edakit's block into `.githooks/pre-commit` – or
+into the hook the repository has, after its header, the project's own steps kept – and sets `git config
+core.hooksPath`, which every clone needs once. On every commit that touches a configuration's files – its edakit.toml,
+its `hardware/`, the main project's `hardware/`, a file it names – the block runs `edakit check`, `edakit sim` and,
+with a TOML graph, `edakit graph json --check` – which fails when the generated file no longer matches the TOML
 (`edakit graph json --write` brings it along) –, with `[firmware]` also `edakit firmware --check`, with `[docs]`
-`edakit docs`.
+`edakit docs`. A failing step blocks the commit.
+
+The block finds edakit itself – `$EDAKIT`, the PATH inside Claude
+Code, else the plugin in effect for the repository – so a commit by hand needs no script of the project's own. Where
+the hook is missing, has no block or an older one, or git does not run it, the session start says so in one line
+(`edakit hook check`); `edakit hook install` again renews it.
 
 The purpose – private, a gift or for sale – decides how deep the regulatory review M-6 goes (chapter 15); the review is
 support, not legal advice: nothing in it is legally guaranteed, and it claims no correctness.
