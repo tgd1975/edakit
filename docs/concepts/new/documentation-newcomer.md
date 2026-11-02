@@ -1,11 +1,15 @@
 # The documentation for a newcomer: two manuals, ten steps, a navigation that shows them
 
-Status 2026-11-02: proposed – asked for by the owner the day after the documentation concept was built ("I am still
-not happy with the documentation; it is more compact after the revision, but when somebody new looks at it, they run
-away – think about what we could do so that it is not so overwhelming, and write a concept"). Written against main at
-`37a0745`, with [documentation.md](documentation.md) as built (#174) and its open review
-([documentation-assumptions.md](documentation-assumptions.md), TD-81). Nothing built; the decisions at the end are
-open, for a decision round in Claude Code's form.
+Status 2026-11-02: decided – the seven decisions taken by the owner the same day in a decision round in Claude Code's
+form (the table at the end): six as recommended, the newcomer's test as the eval alone, without a person; what Claude
+had set itself – the budgets, the shape of a steps page, the ten pages, the tabs, the order of the steps – confirmed.
+N.1 and N.3 started the same day on the owner's word (branch `newcomer-n1-n3`, TD-94). Asked for by the owner the day
+after the documentation concept was built ("I am still not happy with the documentation; it is more compact after the
+revision, but when somebody new looks at it, they run away – think about what we could do so that it is not so
+overwhelming, and write a concept"). Written against main at `37a0745`, with [documentation.md](documentation.md) as
+built (#174) and its review ([documentation-assumptions.md](documentation-assumptions.md), closed with decision 7);
+checked against `530252a` (edakit 1.0.0): How it works gained a paragraph on the first order and has 1,705 words now,
+nothing else in the table below moved.
 
 ## The short answer
 
@@ -22,8 +26,8 @@ complete, is the assistant's and the look-up reader's, kept exactly as it is. **
 new: ten pages of at most 400 words, one per thing you do or decide on the way from an idea to an ordered board, each
 ending with the walkthrough's step and the chapter that has everything. A navigation in tabs by reader, so that a page
 shows eight entries, not 39. The entry pages lightened: fewer words before the first picture, fewer terms before the
-first command. And a measure that is the owner's sentence: a newcomer – a fresh session, and one person – reaches a
-checked circuit of their own with the site alone, or says where they stopped.
+first command. And a measure that is the owner's sentence: a newcomer – a fresh session, the site its only input –
+reaches a checked circuit of their own, or the eval says where it stopped.
 
 What this moves into text that is in someone's head today: that the handbook is the assistant's manual, that the
 person's manual is a different and short one, and the budgets that keep it short.
@@ -81,7 +85,8 @@ behind the entry, and the navigation puts it in view from the first page.
 The handbook is declared what it is. Its index says so in its first line – the complete handbook: what edakit does,
 every case and every key; what the assistant reads in a session; the short way is the steps – and every chapter's
 first paragraph gets one sentence, "The short way: <the step>". Nothing else in a chapter changes for this concept.
-TD-81's question whether to loosen rule 5 loses its urgency: the handbook no longer has to shrink for anybody.
+TD-81's question whether to loosen rule 5 is answered by decision 7: it stays strict, the handbook no longer has to
+shrink for anybody, and TD-81 is closed.
 
 ### 2. The steps – the person's manual
 
@@ -148,10 +153,9 @@ drawer as collapsed groups. `docs/pages.py`'s table and `tests/test_pages.py` fo
 The eval `first-reader` runs a fresh session with the start page, the entry pages and the example as its only input
 and asks for the example's first finding. A second case takes the whole site as built and a one-line idea – "a 9 V
 battery, a switch, two LEDs" – and asks for a checked graph of its own, without EasyEDA. It passes when the graph
-checks clean or every finding is accepted with a reason, and it records the pages opened. And one person, picked by
-the owner, who has not seen edakit: the start page, then whatever they click, up to a checked circuit of their own or
-to the point where they stop – the pages they opened, the time, and the sentence where they stopped, written into this
-concept's status line. The owner's sentence – "they run away" – becomes a number: where, after how many words.
+checks clean or every finding is accepted with a reason, and it records the pages opened; the result goes into this
+concept's status line. The owner's sentence – "they run away" – becomes a number: whether the session got there, and
+through how many pages. A person's try is not part of it (decision 5): the owner's own look stands in for it.
 
 ### 6. Later, if the chapters still deter: fold what is looked up
 
@@ -160,7 +164,7 @@ placement plan's keys (7.4, 360 lines), a project's scripts and agents (8.6, 375
 (`???`, enabled in `docs/pages.py` already) would fold them under their heading. The text stays in the file, in its
 section, with its anchors – the assistant reads the same Markdown –, and the rendered page shows the chapter's way
 first. A presentation change, not a trim; one chapter per branch, the review as for D.5. Not now: the steps are tried
-first, and this comes only if the newcomer's test still stops in a chapter.
+first, and this comes only if the eval's second case still fails or needs a chapter to pass (decision 6).
 
 ## How a steps page is written
 
@@ -182,11 +186,12 @@ The entry register of the style guide holds, with these additions, into `docs/st
 | N.2 | The steps: `docs/steps/` with its index and ten pages, `tests/test_steps.py`, the test that nothing in `edakit/`, `skills/`, `agents/` and `.claude/` names them; the style guide's section and the counts in `test_style.py` | M–L, two sessions | N.1 |
 | N.3 | The entry lightened: the start page's first screen, How it works without "The words", the glossary's "ten words first", the term budget counted | S | the decisions |
 | N.4 | The handbook declared complete: the line on its index, "The short way" in each chapter's first paragraph | S | N.2 |
-| N.5 | The newcomer's test: the second eval case, one person's try, the numbers into the status line | S, and the person's hour | N.2 |
-| N.6 | Folded reference blocks in 4, 7 and 8, if N.5 still stops in a chapter | M | N.5, the owner's word |
+| N.5 | The newcomer's test: the second eval case, its numbers into the status line | S | N.2 |
+| N.6 | Folded reference blocks in 4, 7 and 8, if N.5 still fails or needs a chapter | M | N.5, the owner's word |
 
 N.1 and N.3 are one session and change what a newcomer sees first; N.2 is the substance. About four sessions to N.5.
-Each step starts on the owner's word and comes into `TODO.md` when it does.
+Each step starts on the owner's word and comes into `TODO.md` when it does; N.1 and N.3 started on 2026-11-02 (TD-94,
+branch `newcomer-n1-n3`).
 
 ## Measures – done when
 
@@ -199,8 +204,8 @@ Each step starts on the owner's word and comes into `TODO.md` when it does.
 - The start page: at most 120 words before the first picture, the two-minute command on the first screen. How it
   works: at most 1,100 words and 15 glossary terms.
 - No path under `docs/steps/` is named in `edakit/`, `skills/`, `agents/` or `.claude/`.
-- The eval's second case reaches a checked graph of its own with the site alone and opens at most six pages; one
-  person reaches a checked circuit, or the status line says where they stopped.
+- The eval's second case reaches a checked graph of its own with the site alone and opens at most six pages; its
+  result stands in the status line.
 - The handbook: unchanged in meaning, the tests of documentation.md green. Its size is no measure any more.
 
 ## Alternatives
@@ -220,7 +225,7 @@ Each step starts on the owner's word and comes into `TODO.md` when it does.
 
 ## Costs and risks
 
-- **Work.** About four sessions, the owner's tokens; one hour of a person's time.
+- **Work.** About four sessions, the owner's tokens.
 - **Drift between the steps and the handbook.** A steps page could say what a chapter no longer does. Held by: no
   number or rule of its own on a steps page, every quoted output under a test, the review reading each page against
   its skill. Likely once a year, then ten minutes.
@@ -230,19 +235,26 @@ Each step starts on the owner's word and comes into `TODO.md` when it does.
   pages stay. A complaint once, then a link added.
 - **Tabs on a phone.** Material folds them into the drawer. Checked in N.1 at 390 px, light and dark.
 
-## Decisions – open
+## Decisions
 
-For a decision round in Claude Code's form; the recommendation first.
+Taken by the owner on 2026-11-02 in a decision round in Claude Code's form, the recommendation first; six of seven as
+recommended.
 
 | # | Question | Recommendation | Alternatives | Decision |
 | --- | --- | --- | --- | --- |
-| 1 | Two manuals | the handbook declared the complete one and kept as it is; the steps as the person's manual, ten pages under 400 words | trim the handbook further (TD-81, rule 5 loosened); both | open |
-| 2 | The steps' shape | ten pages and an index in two groups, A circuit and A board, each page one step of 17.1 | one page with ten sections; the walkthrough split into pages | open |
-| 3 | The navigation | tabs by reader, eight entries a sidebar, the handbook its own tab, Inside edakit behind one page under Develop, the catalog out of Start | collapsible groups as today with the steps added; the handbook off the navigation, search only | open |
-| 4 | The entry | the first screen with the pictures and the two-minute command, at most 120 words before the first picture; "The words" to the glossary's head; a term budget of three per steps page | the pages as decided in documentation.md, the steps added only | open |
-| 5 | The newcomer's test | the eval's second case and one person picked by the owner, the result in the status line | the eval alone; no test, the owner's own look | open |
-| 6 | Folding the reference blocks of 4, 7 and 8 | later, only if the newcomer's test still stops in a chapter | with N.2; never | open |
-| 7 | TD-81's rule 5 | kept strict: the handbook is the assistant's and the look-up reader's and no longer has to shrink | loosened per chapter for 10 to 15 % | open |
+| 1 | Two manuals | the handbook declared the complete one and kept as it is; the steps as the person's manual, ten pages under 400 words | trim the handbook further (TD-81, rule 5 loosened); both | 2026-11-02: as recommended |
+| 2 | The steps' shape | ten pages and an index in two groups, A circuit and A board, each page one step of 17.1 | one page with ten sections; the walkthrough split into pages | 2026-11-02: as recommended |
+| 3 | The navigation | tabs by reader, eight entries a sidebar, the handbook its own tab, Inside edakit behind one page under Develop, the catalog out of Start | collapsible groups as today with the steps added; the handbook off the navigation, search only | 2026-11-02: as recommended |
+| 4 | The entry | the first screen with the pictures and the two-minute command, at most 120 words before the first picture; "The words" to the glossary's head; a term budget of three per steps page | the pages as decided in documentation.md, the steps added only | 2026-11-02: as recommended |
+| 5 | The newcomer's test | the eval's second case and one person picked by the owner, the result in the status line | the eval alone; no test, the owner's own look | 2026-11-02: the eval alone – no person's try, the owner's own look stands in for it |
+| 6 | Folding the reference blocks of 4, 7 and 8 | later, only if the newcomer's test still stops in a chapter | with N.2; never | 2026-11-02: as recommended – later, on the owner's word, if the eval's second case still fails or needs a chapter |
+| 7 | TD-81's rule 5 | kept strict: the handbook is the assistant's and the look-up reader's and no longer has to shrink | loosened per chapter for 10 to 15 % | 2026-11-02: as recommended – kept strict, TD-81 closed with it |
+
+What Claude had set itself was confirmed the same day: the budgets – a steps page of at most 400 words, the index
+300, 4,000 in all, three glossary terms a page, sentences of 20 words on average and none over 30; How it works 1,100
+words; the start page 120 words before the first picture –, the shape of a steps page, the ten pages in the order of
+17.1 and the tabs' names, the test that nothing in `edakit/`, `skills/`, `agents/` and `.claude/` names a steps page,
+and the order N.1 and N.3, then N.2, N.4, N.5 – with N.1 and N.3 started at once.
 
 ## Sources
 

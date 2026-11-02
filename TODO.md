@@ -4,7 +4,7 @@ Open work that needs the owner's computer, a maker or the owner's word. The stat
 and plans the sections name; this list is what is left to do of them, in the order it can be done. No item is deleted.
 
 **Layout.** Every item, in every section, open or closed, is a line with a checkbox and an ID unique in this file,
-counted up and never reused – whoever adds an item takes the next free ID and counts it up here. Next free ID: TD-94.
+counted up and never reused – whoever adds an item takes the next free ID and counts it up here. Next free ID: TD-95.
 
 - Open: `- [ ] TD-<n> - **Title:** what and why.` – a step's own name after the dash (`- [ ] TD-31 - **D.4** …`).
 - Done: ticked, the commit that did it, the date at the end, moved to [Closed todos](#closed-todos), newest first –
@@ -29,14 +29,6 @@ to touch.
 
 ## For the owner
 
-- [ ] TD-81 - **Review the documentation as built:** `docs/concepts/new/documentation-assumptions.md` and the chapters'
-      reviews in `docs/concepts/new/documentation-review/` (#174) – every judgement call of that evening, among them
-      the strict rule that kept the chapters from a third fewer words; then the concept moves to `done/`, and 1.0.0
-      (TD-49) is the owner's word. *(edakit, documentation session)*
-- [ ] TD-93 - **Decide on the documentation for a newcomer:** read
-      `docs/concepts/new/documentation-newcomer.md` – two manuals (the handbook the assistant's, the steps the
-      person's), ten short pages, tabs by reader – and take its seven decisions in a decision round; nothing is
-      built until then. *(edakit-96)*
 - [ ] TD-82 - **pytree's pictures:** pick what of the private repository may go onto `docs/projects/pytree.md` – the
       page is text only, from its README and chapter 13; say too whether that much about the gift may stand before
       Christmas. *(edakit, documentation session)*
@@ -66,6 +58,13 @@ Nothing to do until there is an answer or a release; whichever session learns of
       check it live, take it up and say so in upstream/README.md. EasyEDA's first answer is often "update to the latest
       version".
 
+## The documentation for a newcomer ([documentation-newcomer.md](docs/concepts/new/documentation-newcomer.md))
+
+Decided on 2026-11-02; N.1 to N.5 as the concept's table has them, each here once it starts:
+
+- [ ] TD-94 - **N.1 + N.3** The tabs by reader and the lightened entry: branch `newcomer-n1-n3`, worktree
+      `../edakit-newcomer`; a pull request once green, merged on the owner's OK. *(edakit-96)*
+
 ## The documentation for its readers ([documentation.md](docs/concepts/new/documentation.md))
 
 Built on 2026-11-01 (#174, edakit 0.4.14); what is left after the owner's review (TD-81):
@@ -79,6 +78,13 @@ Built on 2026-11-01 (#174, edakit 0.4.14); what is left after the owner's review
 Done or dropped, newest first, each with its date and the commit that closed it. What closed before 2026-11-01 is
 taken from the history of this file; an item rewritten on its way is listed once, in its last form.
 
+- [x] TD-93 - **Decide on the documentation for a newcomer:** decided in a decision round – six of seven as
+      recommended, the newcomer's test the eval alone; N.1 and N.3 started the same day (TD-94). *(edakit-96)*
+      [2026-11-02]
+- [x] TD-81 - **Review the documentation as built:** the judgement call that mattered – rule 5, every statement stays –
+      decided with documentation-newcomer.md's decision 7: kept strict, the handbook is the assistant's and the look-up
+      reader's; 1.0.0 was the owner's word at the first order (TD-49); documentation.md moves to `done/` with TD-94's
+      branch. *(edakit-96)* [2026-11-02]
 - [x] TD-49 - **V.6** 1.0.0 released on the owner's word at the first order – pytree's tree and the bell's tht and
   esp32tht at JLCPCB, the milestone in handbook 13.7 (#210, 72bf30b). *(edakit-4b)* [2026-11-02]
 - [x] TD-92 - **OK for #194:** given; merged as edakit 0.6.0 (#194, 78ae7d7). *(edakit-6a)* [2026-11-02]
