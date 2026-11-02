@@ -629,7 +629,91 @@ Where the code forces a choice the documents do not name, these hold; each use i
 
 ## Decisions of the session
 
-Written by the session that builds the plan: number, date, decision, reason. Empty until then.
+Written by the session that builds the plan: number, date, decision, reason. Stage 1 built on the branch
+`claude/friendly-mccarthy-n4kt6y` (T.1 to T.10); the closing question goes to the owner with the closing report.
+
+1. 2026-11-02, T.1: a plain number where a unit is expected takes that unit (`v 0..5.5` reads as volts), and a lone
+   `m` after a number is the metre – `mA`, `mm`, `ms` stay milli. A bare number at one end of a range takes the other
+   end's unit but not its multiplier, so `2..15 mA` is refused as a lower end above the upper. Reason: language 4
+   leaves both open; the refusal catches the one reading that would silently be wrong.
+2. 2026-11-02, T.1: the E-series values are read from the package eseries 1.2.1 (Sixty North, MIT), which tabulates
+   IEC 60063:2015; the standard's own pages could not be fetched from the session (no network to it). Reason: the
+   plan asks for a named published source; the values are the standard's.
+3. 2026-11-02, T.2: the attribute table (`edakit/lang/schema.py`) is written with the reader, since the reader reads
+   `KEY VALUE` pairs by it; T.3 adds the test against handbook 3.1. Reason: the plan's order T.2 → T.3 would
+   otherwise need a second reader of attributes.
+4. 2026-11-02, T.2: braces outside a `for` are text (language 3), not the lexical error language 6 phase 1 names –
+   the block library's `{as}` must pass through. Reason: language 3 is the specific rule.
+5. 2026-11-02, T.2: in a variant file the statements after `variant NAME of PATH` belong to the variant, indented as
+   its body or at the top level. Reason: language 5.9 shows the body indented and says nothing of the top level; both
+   read the same.
+6. 2026-11-02, T.2: in a part binding of a usage the word right after the designator is the part number (`R = R4 "330
+   Ω 0805" …`), as PARTNO after TYPE in a `part` statement; a label alone is written `label "…"`. TYPE may be left
+   out in a variant's redefinition, PARTNO everywhere. Reason: the example of language 11 writes it so; the
+   positional rule is the `part` statement's.
+7. 2026-11-02, T.2: a boolean attribute alone means yes (`off_board`), `KEY yes|no` sets it either way; `no-bom`
+   stays the word for `bom: false`. Reason: language 5.2 lists `off_board` as an attribute without a value.
+8. 2026-11-02, T.4: SYNC.graph reports a generated graph.json that differs from its source; one not written is not
+   reported – item 16 of language 12, confirmed by the owner, says "a project without a generated file is not
+   touched", where step T.4 of this plan said "a missing generated file too". The hook's `graph json --check` still
+   exits 2 on a file not written. Reason: the owner's confirmed text wins over the plan's; the existing tests of TOML
+   projects without the file keep their meaning.
+9. 2026-11-02, T.4: a part without a parts entry and without a `pins` line takes pin numbers only – digits; any other
+   word is a compile error that names `edakit part add KEY`, the pin's number or a `pins` map. A part without an
+   entry whose words are numbers compiles, and STRUCT.entry reports the missing entry. Reason: language 6 ("a missing
+   entry is an error that names edakit part add") and 5.2 ("STRUCT.entry reports the missing entry as today") both
+   hold this way; without the rule the Design would read every word of such a part as a number of its own.
+10. 2026-11-02, T.5: a part or a net with a comment inside it keeps the lines its author wrote it on – the formatter
+   only normalises the spaces, the indent and the width there; one without is laid out canonically. Reason: "comments
+   kept in place" needs a place the comment belongs to; a rearranged statement has none.
+11. 2026-11-02, T.5: the canonical layout of a part is language 11's: the head `part DES TYPE PARTNO` with the word
+   attributes in the attribute table's order and the label, then nc, pins, alias, the text attributes (function,
+   verify), the lists, `set`, every accept and the notes – where step T.5 said the attributes go on continuation
+   lines and nc after them. Reason: led-bar's text of language 11 is the fixture the converter is held to (T.6); it
+   is canonical as written.
+12. 2026-11-02, T.6: the converter writes pins by the word rule of the TOML form – a name several pins share for all
+   of them where all stand in the net (`U1.GND`) –, where language 11's text lists the Pico's ground pins by number;
+   both compile to the same pins, and the test holds that line by its pins. Reason: the word rule is decided and
+   confirmed (circuit-language decision 2); one rule for both forms.
+13. 2026-11-02, T.6: converting a TOML graph leaves the TOML file where it is and says it is no longer read; the JSON
+   source of a JSON project becomes the resolved graph, as the TOML conversion does. Reason: a session removes no
+   file of the user's it did not write.
+14. 2026-11-02, T.6: `[project] edakit` is set to `>=` the running version without its git suffix where the key names
+   a lower bound or none; one that names more is kept, an upper bound it had is dropped with it. Reason: the step
+   asks for the key; a project that needs the language needs the version that reads it.
+15. 2026-11-02, T.7: a definition's name may hold hyphens (`[A-Za-z_][A-Za-z0-9_-]*`), where language 3 asks for an
+   identifier; parameters stay identifiers. Reason: the block library's names have them (`i2c-pullups`), and `block
+   add NAME` must keep finding its blocks.
+16. 2026-11-02, T.7: `set KEY JSON` is written again by the formatter from its value – compact on one line where it
+   fits, else one key or item to a line below the statement, the closing bracket as deep as the first line below it –
+   never token by token, which would change the escapes of a JSON string. Reason: JSON is no language text; its
+   strings' escapes are JSON's.
+17. 2026-11-02, T.7: a pin whose name holds `#`, a quote or a blank (`OE#`, `RE#`) is written by its role, else its
+   number – by the converter and the block tool alike –, and the candidates of a compile error name only words the
+   language can read. Reason: language 3 keeps `#` for comments; three blocks of the library have such names.
+18. 2026-11-02, T.8: a record's `args` are the derivation's arguments as written (`{"i": "i"}`); the numbers they
+   stand for, with their sources, are in `inputs`, where language 7's example writes the bound values into `args`.
+   Reason: the inputs carry the numbers already; args then say what the statement wrote.
+19. 2026-11-02, T.8: the defaults of the new parameters come from data: i2c-pullups `t_rise = 1 us, c_bus = 400 pF`,
+   Standard mode's limits of catalog/tables/i2c.toml; battery-sense `v_out = 2.75 V, i = 275 uA`, the 10 kΩ + 10 kΩ
+   at 5.5 V its notes state. led `i = 10 mA` is the plan's. Reason: a default is a number the block already states,
+   not one invented.
+20. 2026-11-02, T.8: the test of `--part` takes an entry the library has (C17630, 330 Ω, at `i = 2mA`: window 270…330
+   Ω) instead of adding a 51 Ω or 56 Ω entry from a datasheet – the plan allows either; the session could not read a
+   datasheet from its network. Reason: no entry is added without its datasheet read.
+21. 2026-11-02, T.8: `edakit graph derive --write` rewrites the records of a JSON graph; for a TOML graph it says the
+   `[[derivations]]` tables are edited there, for a .circuit source `edakit graph json --write`. Reason: the plan
+   names the JSON graph and the language; a line editor for arrays of tables is more than the step needs.
+22. 2026-11-02, T.8: the handbook's chapter 19 begins with T.8 – its 19.1 on derivations with the generated tables of
+   DEF and of the rules –, since chapter 14 would pass the style guide's 500 lines; 14.5 keeps a paragraph on the
+   block sources. T.10 writes the rest of the chapter.
+23. 2026-11-02, T.9: the grammar and the language configuration are generated (`python -m edakit.lang.grammar
+   --write`) from the reader's keywords and the attribute table, and the test holds the files to the generator.
+   Reason: a keyword added to the reader then cannot be missing from the colours.
+24. 2026-11-02, T.10: the README has no sections "What is in here" and "Status and limits" any more – it is an entry
+   page with the style guide's sentence budget –, so stage 1 adds nothing to it; the language gets its line there
+   with stage 2, when a project can use it beyond flat statements (T.18). Reason: the plan named sections of an older
+   README.
 
 ## Not in this plan
 
