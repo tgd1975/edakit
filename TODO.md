@@ -4,7 +4,7 @@ Open work that needs the owner's computer, a maker or the owner's word. The stat
 and plans the sections name; this list is what is left to do of them, in the order it can be done. No item is deleted.
 
 **Layout.** Every item, in every section, open or closed, is a line with a checkbox and an ID unique in this file,
-counted up and never reused – whoever adds an item takes the next free ID and counts it up here. Next free ID: TD-95.
+counted up and never reused – whoever adds an item takes the next free ID and counts it up here. Next free ID: TD-96.
 
 - Open: `- [ ] TD-<n> - **Title:** what and why.` – a step's own name after the dash (`- [ ] TD-31 - **D.4** …`).
 - Done: ticked, the commit that did it, the date at the end, moved to [Closed todos](#closed-todos), newest first –
@@ -29,6 +29,8 @@ to touch.
 
 ## For the owner
 
+- [ ] TD-95 - **OK for #215:** `python3 .github/merge.py 215` – N.1 + N.3 of documentation-newcomer.md (tabs by reader,
+      the entry lightened, the budgets) and the documentation concept to `done/`; no version. *(edakit-96)*
 - [ ] TD-82 - **pytree's pictures:** pick what of the private repository may go onto `docs/projects/pytree.md` – the
       page is text only, from its README and chapter 13; say too whether that much about the gift may stand before
       Christmas. *(edakit, documentation session)*
@@ -62,8 +64,8 @@ Nothing to do until there is an answer or a release; whichever session learns of
 
 Decided on 2026-11-02; N.1 to N.5 as the concept's table has them, each here once it starts:
 
-- [ ] TD-94 - **N.1 + N.3** The tabs by reader and the lightened entry: branch `newcomer-n1-n3`, worktree
-      `../edakit-newcomer`; a pull request once green, merged on the owner's OK. *(edakit-96)*
+- [ ] TD-94 - **N.1 + N.3** The tabs by reader and the lightened entry: built on branch `newcomer-n1-n3`, pull request
+      #215, merged on the owner's OK (TD-95). *(edakit-96)*
 
 ## The documentation for its readers ([documentation.md](docs/concepts/new/documentation.md))
 
