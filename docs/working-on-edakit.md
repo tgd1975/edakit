@@ -69,7 +69,8 @@ the code is right; the tests do that. The baseline and how to run them: [evals](
 
 `docs/pages.py` assembles the site into `build/pages`, MkDocs Material builds it, and the workflow `pages.yml`
 publishes it from main. The navigation is data: the table `NAV` in `docs/pages.py`, a group per reader. The sources –
-concepts, skills, agents, evals, CLAUDE.md – are shown at the end as "Inside edakit", each marked as a source.
+concepts, skills, agents, evals, CLAUDE.md – have the last tab, "Inside edakit", with the index of each in its
+sidebar; every page of them is marked as a source.
 
 ```bash
 python3 docs/pages.py
