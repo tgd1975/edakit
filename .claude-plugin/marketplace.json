@@ -10,7 +10,7 @@
       "source": {
         "source": "github",
         "repo": "tgd1975/edakit",
-        "ref": "v1.0.3"
+        "ref": "v1.0.5"
       },
       "description": "Skills, agents, the EasyEDA MCP server and the edakit command line – EasyEDA Pro or KiCad.",
       "category": "hardware",
@@ -19,7 +19,7 @@
         "pcb",
         "jlcpcb"
       ],
-      "version": "1.0.3"
+      "version": "1.0.5"
     }
   ]
 }

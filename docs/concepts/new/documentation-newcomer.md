@@ -1,11 +1,31 @@
 # The documentation for a newcomer: two manuals, ten steps, a navigation that shows them
 
 Status 2026-11-02: decided – the seven decisions taken by the owner the same day in a decision round in Claude Code's
-form (the table at the end): six as recommended, the newcomer's test as the eval alone, without a person; what Claude
+form (the table at the end): six as recommended, the newcomer's test as the eval alone, without a person – and
+decision 6 taken again the same day after the eval's runs: no folding, ever; what Claude
 had set itself – the budgets, the shape of a steps page, the ten pages, the tabs, the order of the steps – confirmed.
 N.1 and N.3 built the same day on the owner's word (#215); N.2, N.4 and N.5's eval case built the same day on the
 owner's word (#222, edakit 1.0.1); the eval's run waits for a cloud session – on this machine the Bash sandbox cannot
-start (Ubuntu restricts user namespaces), and a first try stopped after two pages without a shell. Asked for by the
+start (Ubuntu restricts user namespaces), and a first try stopped after two pages without a shell. Two cloud runs on
+2026-11-02 did not count (TD-102): as root 0.33, as the user `eval` 0.83 – in both Bash could not write the workspace,
+which the harness keeps under `TMPDIR` while denying writes to `/tmp`. The run that counts, the same day with
+`TMPDIR=/srv/evaltmp` and the case as fixed for TD-103 (`d3485c3`): 0.875 (Sonnet, 0.88 USD, 32 turns) – `DONE: 6
+components, 5 nets, 5 parts entries; 3 note, 6 accepted; requirements: 1 need, 1 requirement`; a graph of its own, the
+clean check, the DONE line, `edakit check` run, two LEDs and no read of edakit's code passed; `few-pages` failed:
+thirteen pages opened (twelve counted; `handbook/02-setup.md` read from an offset after a Grep) – `site/README.md`,
+`docs/quickstart.md`, `docs/steps/README.md`, the steps `01` to `04`, and the handbook's chapters 14, 3, 2, 4, 10 and
+5. Its `MISSING:` line: no page shows a minimal `edakit.toml` for a hand-wired circuit; the parts library has no 9 V
+battery and no switch, and no page says to write the entries by hand; how a switch opens in `sim.json` and how to
+model a 9 V cell are only implied; how to accept PATH.reverse for a keyed connector is not described; where `edakit`
+lives when the plugin is not active is not said. It wrote every file by hand from the handbook and ran no skill,
+taking the prompt's bar on edakit's code for one on the skills too; a second run with that bar lifted from the skills
+(`382fc62`, #236): 0.875 (0.76 USD, 40 turns), the skills new-project, requirements and circuit-design run, `DONE: 7
+components, 6 nets, 6 parts entries; 10 note; requirements: 1 need, 1 requirement`, fourteen pages – the start page,
+the quickstart, the steps index and the steps `01` to `07`, the handbook's chapters 2, 3, 4 and 10 (eleven counted: 4
+and 10 read through grep) –, and as missing: `edakit` not on PATH though the docs say the plugin puts it there; no way
+shown to list the parts library by kind; no toggle or slide switch and no 9 V connector in it; whether `[boards.main]`
+with a title alone is enough without a board; the writes of `.claude/settings.json` and the git hook path failed
+without a fallback; which `rows` patterns `SIM.state` evidence takes. Asked for by the
 owner the day after the documentation concept was built ("I am still not happy with the documentation; it is more
 compact after the revision, but when somebody new looks at it, they run away – think about what we could do so that it
 is not so overwhelming, and write a concept"). Written against main at `37a0745`, with
@@ -127,15 +147,17 @@ Material's `navigation.tabs`: the groups become tabs across the top, the sidebar
 | A circuit | the steps' index, steps 1 to 7 |
 | A board | steps 8 to 10 |
 | Extend | Adding a rule, Propose a rule, Propose a feature |
-| Develop | Working on edakit, edakit as a meta-harness, Organisation, Style guide, Brand, Inside edakit |
+| Develop | Working on edakit, edakit as a meta-harness, Organisation, Style guide, Brand |
 | Handbook | its index, the chapters as the index orders them – 9 and 10 under Reference, as today |
 | Reference | Files, keys and commands (10), EasyEDA API (9), the rule catalog's index, Changelog |
+| Inside edakit | its overview, the indexes of concepts, skills, agents and evals, the rules of a session (decision 3, changed) |
 
-Eight entries in a sidebar at most, the handbook's excepted – its index says when to read which chapter. "Inside edakit"
-– concepts, skills, agents, evals, the rules of a session – leaves the navigation: one page under Develop links their
-indexes, the pages stay on the site and in the search, and every link into them lands as today (decision 2 of
-documentation.md stands). The rule catalog leaves Start; it is reference. On a phone Material folds the tabs into the
-drawer as collapsed groups. `docs/pages.py`'s table and `tests/test_pages.py` follow; no file moves.
+Eight entries in a sidebar at most, the handbook's excepted – its index says when to read which chapter. The sources –
+concepts, skills, agents, evals, the rules of a session – have the last tab, "Inside edakit": its overview and their
+indexes in the sidebar, the pages themselves out of the navigation but on the site and in the search, and every link
+into them lands as today; the overview's old address sends the reader on (decision 2 of documentation.md stands). The
+rule catalog leaves Start; it is reference. On a phone Material folds the tabs into the drawer as collapsed groups.
+`docs/pages.py`'s table and `tests/test_pages.py` follow; no file moves.
 
 ### 4. The entry, lightened
 
@@ -167,7 +189,8 @@ placement plan's keys (7.4, 360 lines), a project's scripts and agents (8.6, 375
 (`???`, enabled in `docs/pages.py` already) would fold them under their heading. The text stays in the file, in its
 section, with its anchors – the assistant reads the same Markdown –, and the rendered page shows the chapter's way
 first. A presentation change, not a trim; one chapter per branch, the review as for D.5. Not now: the steps are tried
-first, and this comes only if the eval's second case still fails or needs a chapter to pass (decision 6).
+first, and this comes only if the eval's second case still fails or needs a chapter to pass (decision 6). Decided
+against on 2026-11-02, after the runs: the owner does not want folding – the reference blocks stay as they are.
 
 ## How a steps page is written
 
@@ -190,7 +213,7 @@ The entry register of the style guide holds, with these additions, into `docs/st
 | N.3 | The entry lightened: the start page's first screen, How it works without "The words", the glossary's "ten words first", the term budget counted | S | the decisions |
 | N.4 | The handbook declared complete: the line on its index, "The short way" in each chapter's first paragraph | S | N.2 |
 | N.5 | The newcomer's test: the second eval case, its numbers into the status line | S | N.2 |
-| N.6 | Folded reference blocks in 4, 7 and 8, if N.5 still fails or needs a chapter | M | N.5, the owner's word |
+| N.6 | Folded reference blocks in 4, 7 and 8, if N.5 still fails or needs a chapter – dropped, decision 6 of 2026-11-02: no folding | – | – |
 
 N.1 and N.3 are one session and change what a newcomer sees first; N.2 is the substance. About four sessions to N.5.
 Each step starts on the owner's word and comes into `TODO.md` when it does; N.1 and N.3 were built on 2026-11-02
@@ -248,10 +271,10 @@ recommended.
 | --- | --- | --- | --- | --- |
 | 1 | Two manuals | the handbook declared the complete one and kept as it is; the steps as the person's manual, ten pages under 400 words | trim the handbook further (TD-81, rule 5 loosened); both | 2026-11-02: as recommended |
 | 2 | The steps' shape | ten pages and an index in two groups, A circuit and A board, each page one step of 17.1 | one page with ten sections; the walkthrough split into pages | 2026-11-02: as recommended |
-| 3 | The navigation | tabs by reader, eight entries a sidebar, the handbook its own tab, Inside edakit behind one page under Develop, the catalog out of Start | collapsible groups as today with the steps added; the handbook off the navigation, search only | 2026-11-02: as recommended |
+| 3 | The navigation | tabs by reader, eight entries a sidebar, the handbook its own tab, Inside edakit behind one page under Develop, the catalog out of Start | collapsible groups as today with the steps added; the handbook off the navigation, search only | 2026-11-02: as recommended; changed by the owner the same day – Inside edakit a tab of its own, its indexes in the sidebar: behind one page under Develop the skills were two clicks away (#239) |
 | 4 | The entry | the first screen with the pictures and the two-minute command, at most 120 words before the first picture; "The words" to the glossary's head; a term budget of three per steps page | the pages as decided in documentation.md, the steps added only | 2026-11-02: as recommended |
 | 5 | The newcomer's test | the eval's second case and one person picked by the owner, the result in the status line | the eval alone; no test, the owner's own look | 2026-11-02: the eval alone – no person's try, the owner's own look stands in for it |
-| 6 | Folding the reference blocks of 4, 7 and 8 | later, only if the newcomer's test still stops in a chapter | with N.2; never | 2026-11-02: as recommended – later, on the owner's word, if the eval's second case still fails or needs a chapter |
+| 6 | Folding the reference blocks of 4, 7 and 8 | later, only if the newcomer's test still stops in a chapter | with N.2; never | 2026-11-02: as recommended – later, on the owner's word, if the eval's second case still fails or needs a chapter; the same day, after the runs: never – the owner does not want folding |
 | 7 | TD-81's rule 5 | kept strict: the handbook is the assistant's and the look-up reader's and no longer has to shrink | loosened per chapter for 10 to 15 % | 2026-11-02: as recommended – kept strict, TD-81 closed with it |
 
 What Claude had set itself was confirmed the same day: the budgets – a steps page of at most 400 words, the index

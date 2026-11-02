@@ -1,10 +1,10 @@
 # Example: blinker-555
 
-Switch it on and a red LED blinks about once a second, from two AAA cells; switch it off and the cells deliver
-nothing – the project of walkthrough 2 in [handbook chapter 18](../../handbook/18-walkthrough-kicad.md), drawn in
-KiCad (`toolchain = "kicad"`). One board, 60 × 28 mm: the 2×AAA holder on the bottom and the slide switch at the edge
-are soldered by hand, JLCPCB assembles the CMOS 555, the reverse-polarity MOSFET, the LED and the passives on the top
-side (Economic).
+Switch it on and a red LED blinks about once a second, from two AAA cells; switch it off and the cells deliver nothing –
+the project of the KiCad walkthrough in [handbook chapter 18](../../handbook/18-walkthrough-kicad.md), drawn in KiCad
+(`toolchain = "kicad"`). One board, 60 × 28 mm: the 2×AAA holder on the bottom and the slide switch at the edge are
+soldered by hand, JLCPCB assembles the CMOS 555, the reverse-polarity MOSFET, the LED and the passives on the top side
+(Economic).
 
 ![The top side of the board from its Gerber files](docs/silk_main_top.png)
 

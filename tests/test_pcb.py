@@ -520,7 +520,7 @@ def test_place_keeps_the_paste_gap_next_to_a_host_and_by_airline_length(project,
 
 
 def test_plan_names_a_pad_within_the_keep_of_a_hand_soldered_joint(project):
-    """hand_solder_keep_mm in the plan, as `route check` holds it (the 555 blinker, walkthrough 2): J1 (bom = false)
+    """hand_solder_keep_mm in the plan, as `route check` holds it (the 555 blinker, the KiCad walkthrough): J1 (bom = false)
     is soldered by hand from the bottom, and R2 on the bottom beside its pin 1 keeps the clearance but not the 1 mm."""
     assert project.comp(project.graph(), "J1")["bom"] is False
     f = place_project(project, drop=("R2",), add='R2 = { x = 84.4, y = 13.0, rot = 0, side = "bottom" }\n')

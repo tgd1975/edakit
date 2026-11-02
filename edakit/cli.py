@@ -44,7 +44,7 @@
     edakit route diagnose [--net N]  why each open connection is open: walled in, blocked, or a free way (offline)
     edakit silk apply|check|preview
     edakit export                    PDFs, Gerber, BOM, CPL, netlist and a project copy to <artifacts>/export
-    edakit gate [--easyeda]          release gate with test protocol and manufacturing files
+    edakit gate [--eda]              release gate with test protocol and manufacturing files
     edakit release current|withdraw RUN --reason T|verify FILE…   the one current release, the files to upload
     edakit release publish [--draft] [--dry-run] [--tag T] | --built T   the order files of every board's current
                                      release as a GitHub release (gh); --built: a board of it works
@@ -289,8 +289,9 @@ def build_parser():
     _common(p)
 
     p = sub.add_parser("gate", help="release gate: all stages, test protocol, manufacturing files")
-    p.add_argument("--easyeda", "--eda", dest="easyeda", action="store_true",
-                   help="also run S, L and F (EasyEDA with the bridge, or KiCad with kicad-cli: [project] toolchain)")
+    p.add_argument("--eda", "--easyeda", dest="eda", action="store_true",
+                   help="also run S, L and F in the EDA program: EasyEDA with the bridge, or KiCad with kicad-cli "
+                        "([project] toolchain); --easyeda is the old name")
     _no_scripts(p)
     _common(p)
 

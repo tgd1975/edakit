@@ -6,6 +6,8 @@ before – from "five LEDs, a servo, USB power" to a graph – and the knowledge
 
 ## 14.1 Roles
 
+![Roles and sessions: you decide; requirements, circuit designer, hand-over, PCB designer and order each in a session of its own, with their agents; the reviewers in sessions of their own, changing nothing](../docs/pictures/roles.svg)
+
 - **Project surveyor** – the agent `project-surveyor` in its own context, for the skill `new-project`. For a project
   that moves to edakit it reads the repository – hardware data, scripts, agents, skills, documents, decisions, hooks –
   and returns per place candidates with where it found them, a proposal and its reason. It changes nothing; the skill
@@ -156,6 +158,11 @@ structure, artifacts, limits and levels of the basic kinds, parts, files, docume
 | `power` | the hints of cells, converters and polarity | a battery holder |
 | `cables` | the lines on a lead | a cable |
 | `mains` | no check – spacing and isolation stay unchecked (rules-at-scale.md, decision 7) | a net above the ES1 limits, which LIM.hazardous recognises |
+
+![The reference circuit of the domain power: the led-bar with a battery block, BT20 and D20 onto +5V – the holder suggests the domain](../docs/catalog/circuits/power.svg)
+
+Each domain has such a reference circuit with the faults it must catch, drawn on its page of the
+[catalog](../docs/catalog/index.html).
 
 The interview of a new project asks for no domain: there is no graph yet, and the graph decides (skill new-project). A
 domain file sets severities (also per purpose: `[severity.sale]`), switches codes or topics on, and names the facts a
@@ -309,6 +316,8 @@ is a candidate. The reference circuits per domain (`tests/reference.py`) carry t
 with exactly its codes.
 
 ### The proposals Action
+
+![How a proposal becomes a change: your sealed issue starts the Action proposals; an issue by someone else is wrapped and waits for your command; Claude triages read-only, a fixed job checks the commit, you merge the pull request](../docs/pictures/proposals.svg)
 
 Claude only reads. The triage runs with a token that cannot write and follows main's copies of the skills rather than
 the branch's. It gets the proposal's text, the repository owner's comments and the triage's earlier results – of what
@@ -469,10 +478,10 @@ the review are still the project's. A project's own blocks are JSON files of the
 
 ## 14.6 Where the ideas came from
 
-CircuitSmith, a sibling project that draws schematics from declarative YAML and checks them against an ERC rule
-catalog, brought in: the catalog with reason and source for every rule; the designer as an "electronics engineer" bound
-to the parts library and to rules instead of memory, asking open questions in one batch; sub-blocks with ports; and the
-checks for I2C pull-ups, strapping pins, input-only pins and the MCU's current budget. CircuitSmith's other goal, a
-schematic without an EDA tool, edakit reached with what it had: the layout it computes for EasyEDA, drawn with symbols
-from the parts database (drawn without EasyEDA, 6.5). Not taken: CircuitSmith's renderer and layout engine, and the
-KiCad netlist.
+CircuitSmith, a sibling project that draws schematics from declarative YAML and checks them against an ERC rule catalog,
+brought in: the catalog with reason and source for every rule; the designer as an "electronics engineer" bound to the
+parts library and to rules instead of memory, asking open questions in one batch; sub-blocks with ports; and the checks
+for I2C pull-ups, strapping pins, input-only pins and the MCU's current budget. CircuitSmith's other goal, a schematic
+without an EDA tool, edakit reached with what it had: the layout it computes for EasyEDA, drawn with symbols from the
+parts database (drawn without an EDA program, 6.5). Not taken: CircuitSmith's renderer and layout engine, and the KiCad
+netlist.

@@ -808,7 +808,7 @@ def _place(e):
         return "the simulation plugin, it runs inside edakit sim"
     if e.phase == "export":
         return f"a check, phase export {e.at or 'before S'}: the gate runs it" + (
-            " with --easyeda, on the run's manufacturing files" if e.at == "after F" else "")
+            " with --eda, on the run's manufacturing files" if e.at == "after F" else "")
     if e.phase in WORKS_THROUGH:
         where = "the acceptance list after delivery" if e.phase == "acceptance" else \
             "the list after uploading, before paying"
@@ -949,7 +949,7 @@ def gate_checks(cfg):
     them otherwise, and stage G says why. A [[release.stages]] without an id is a finding of stage G, no check.
 
       phase export, before S   a stage of the gate between E and S, where [[release.stages]] always ran
-      phase export, after F    a stage after stage F, with --easyeda: it reads the run's manufacturing files
+      phase export, after F    a stage after stage F, with --eda: it reads the run's manufacturing files
       order, acceptance        no stage: a line of the protocol's list of its phase (section 6), which the manual
                                check of the phase works through – M-2 at the manufacturer, M-4 after delivery"""
     res, entries, _ = _resolve(cfg)

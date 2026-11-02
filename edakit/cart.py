@@ -190,7 +190,7 @@ def prepare(cfg, args):
     m = maker_of(cfg, args.maker)
     cur = gate.current(cfg)
     if cur is None:
-        raise CartError("no current release – edakit gate --easyeda releases a run (edakit release current)")
+        raise CartError("no current release – edakit gate --eda releases a run (edakit release current)")
     run, man = cur
     d = cfg.reports / run / "fab" / board.name
     if not d.is_dir():
@@ -199,7 +199,7 @@ def prepare(cfg, args):
     lost = [n for n in names if not (d / n).exists()]
     if lost:
         raise CartError(f"run {run} has no {', '.join(lost)} – {m.name} takes them; the gate writes the files of every "
-                        "maker of [cart] makers (edakit gate --easyeda)")
+                        "maker of [cart] makers (edakit gate --eda)")
     _, found = gate.verify(cfg, [d / n for n in names])                      # 2. release verify, the same function
     if bad := [f"{f.name}: {what}" for f, ok, what in found if not ok]:
         raise CartError("the files are not the current release's – " + "; ".join(bad))

@@ -8,7 +8,7 @@
 [project]
 name = "blinker-555"             # the KiCad project in build/edakit/kicad/main/ – edakit writes it, nothing by hand
 company = "edakit example"       # schematic title block
-toolchain = "kicad"              # KiCad 10 instead of EasyEDA Pro (handbook 16): no EasyEDA documents to name
+toolchain = "kicad"              # KiCad 10 as the tool chain (handbook 16): no EasyEDA documents to name
 quantity = 5                     # boards per order: the stock check (PARTS.stock) needs this many sets
 graph = "hardware/graph.toml"    # the graph as TOML; edakit graph json --write keeps hardware/graph.json beside it
 requirements = "hardware/requirements.toml"   # what the circuit must do (handbook 3.6)

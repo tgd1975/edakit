@@ -268,7 +268,7 @@ the checks (8.1).
   after uploading, before paying, which M-2 works through; `acceptance`: a line of the acceptance list after delivery,
   which M-4 works through. Neither of the last two runs in the gate (8.1, 8.5).
 - `at` – `"before S"`: between E and S, where `[[release.stages]]` run; `"after F"`: after stage F, only in
-  `edakit gate --easyeda`, to read the run's manufacturing files (`gerber:<b>`, in `fab/<b>/` of `$EDAKIT_RUN`).
+  `edakit gate --eda`, to read the run's manufacturing files (`gerber:<b>`, in `fab/<b>/` of `$EDAKIT_RUN`).
 
 A field of another kind is a finding of `edakit check`, a key no kind has an error of edakit.toml.
 
@@ -561,6 +561,10 @@ Every command that reads a project: `--config`, `-v` (MCP traffic).
 
 Each command below: its synopsis and help line, generated from the command line itself, then per action what it
 reads and writes and whether it needs EasyEDA (✓ yes, – no). `edakit COMMAND -h` prints the same synopsis.
+
+**On KiCad:** the commands marked ✓ run on the board's KiCad project and kicad-cli, without bridge and claim – what
+each does there is in the KiCad flow (16.4). `pcb autolayout` and `lock` have no KiCad side; `KICAD_CLI` names another
+kicad-cli.
 
 ### edakit --version
 
@@ -1167,12 +1171,12 @@ Documentation and manufacturing files from EasyEDA.
 ### edakit gate
 
 <!-- edakit:generated command gate -->
-`edakit gate [--easyeda] [--no-scripts]`
+`edakit gate [--eda] [--no-scripts]`
 
 Release gate: all stages, test protocol, manufacturing files.
 <!-- edakit:end -->
 
-`edakit gate [--easyeda | --eda]` – EasyEDA: – / ✓
+`edakit gate [--eda]` – EasyEDA: – / ✓ (`--easyeda`, the old name, still works)
 
 - **Reads:** everything; with `[project] requirements` the requirements files (8.7 – a file missing or not valid: exit 1
   before a run)
@@ -1285,10 +1289,6 @@ Check the tool chain.
   (connected, extension against server version, registry) and, while the claim is free or yours,
   `DMT_Project.getCurrentProjectInfo` (`[MaxDepth]` = the original extension) – 2.5, 12
 - **Writes:** –
-
-With `toolchain = "kicad"` the commands marked ✓ run on the board's KiCad project and kicad-cli instead of EasyEDA –
-what each does there is in the KiCad chapter (16.4); `pcb autolayout` and `lock` have no KiCad side, `KICAD_CLI`
-names another kicad-cli.
 
 ## 10.6 Files in a project
 

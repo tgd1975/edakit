@@ -11,13 +11,13 @@ check on the files themselves and writes a test protocol.
 
 ```bash
 edakit gate              # P, G, E and the project's checks before S – offline, seconds
-edakit gate --easyeda    # plus S, L, F and the project's checks after F – EasyEDA with the bridge, minutes
+edakit gate --eda        # plus S, L, F and the project's checks after F – in the EDA program, minutes
 ```
 
-On a KiCad project (`[project] toolchain = "kicad"`) `--easyeda` – or `--eda`, the same flag – runs S, L and F on the
-KiCad files with kicad-cli (16.6).
+**On KiCad:** `--eda` runs S, L and F on the KiCad files with kicad-cli, without bridge and claim – the gate on KiCad
+(16.6). On EasyEDA it drives the editor through the bridge. `--easyeda`, the flag's old name, still works.
 
-Before each stage – each project check, and with `--easyeda` each board of stages L/F – the gate prints
+Before each stage – each project check, and with `--eda` each board of stages L/F – the gate prints
 `[x.x min] step n/m: <stage>` (the progress line, 11.3).
 
 "Guaranteed correct" is not reachable with any tool chain. Reachable is:
@@ -27,6 +27,8 @@ Before each stage – each project check, and with `--easyeda` each board of sta
 3. After delivery an acceptance test of every board checks the assumptions by measurement.
 
 ## 8.1 Stages
+
+![The stages of the release gate: P, G, E and the project's checks offline; with --eda S, L, F and the checks after F per board; the decision RELEASED or NOT RELEASED; the run folder with protocol and files](../docs/pictures/gate.svg)
 
 | Stage | What | Checks |
 |---|---|---|
@@ -101,12 +103,12 @@ numbers, pin roles and nets, bottom parts mirrored as seen from below. A tile sh
 GEO.mark pairs with the part, 3 mm around, also a "+" beyond the footprint. The second check compares it with the
 datasheet drawings, and you compare it with the maker's assembly preview.
 
-### Seen red without EasyEDA
+### Seen red without an EDA program
 
-No EasyEDA run is needed to test stages L and F. `tests/test_fab_run.py` cuts the example down to its input stage (J1,
-D1, C2 on a 30 × 20 mm board) and writes the export for it: the files `edakit fab` collects, the footprint geometry, the
-net currents and the board as `route read` saw it (pads with their shapes, for GEO.spacing). `edakit fab --offline` on
-that export passes every row.
+No run in the EDA program is needed to test stages L and F. `tests/test_fab_run.py` cuts the example down to its input
+stage (J1, D1, C2 on a 30 × 20 mm board) and writes the export for it: the files `edakit fab` collects, the footprint
+geometry, the net currents and the board as `route read` saw it (pads with their shapes, for GEO.spacing).
+`edakit fab --offline` on that export passes every row.
 
 Then each entry of `FAULTS` builds one fault into a copy: a pad net, a part moved or turned, a short or an open net in
 the Gerber copper, a hole too small in the drill file, a changed LCSC number, a part missing from the pick-and-place
@@ -138,7 +140,7 @@ advisory = true             # the stand is adapted after delivery anyway (D-37)
 
 - **Where it runs:** `at = "before S"`, the default, runs it between E and S, where `[[release.stages]]` always ran, in
   the order `edakit scripts` shows; `after` orders checks among each other. `at = "after F"` runs it after stage F, to
-  read this run's manufacturing files – only in `edakit gate --easyeda`: the offline gate lists it as a stage not run,
+  read this run's manufacturing files – only in `edakit gate --eda`: the offline gate lists it as a stage not run,
   as S, L and F.
 - **What it gets:** its `cmd` runs in the project folder, with the gate's environment and `EDAKIT_RUN`, the absolute
   path of this run's folder `<reports>/<run>/`: its `sim.json` and `graph_checks.json`, after F also `fab/<board>/` with
@@ -167,6 +169,8 @@ needs the file current runs `edakit pcb plan` first.
 ## 8.2 Hashes and sign-offs
 
 ### The four hashes
+
+![The four hashes: what goes into each, and the sign-offs bound to it – M-1 to the circuit, M-6 to the electrical, the sign-offs of scope layout to the layout, M-5 to the fab hash](../docs/pictures/hashes.svg)
 
 Every run records three hashes in the protocol header, and a run with stage F a fourth:
 
@@ -375,7 +379,7 @@ A run is RELEASED only if
   `should` without it is accepted like a warning (8.7); a draft binds nothing yet.
 
 Otherwise it is NOT RELEASED, with the reasons. Exit 0 / 2. Every project check of phase `export` is a stage (8.1): it
-has to run – one after F runs only with `--easyeda` – and pass, unless it is advisory. A check of phase `order` or
+has to run – one after F runs only with `--eda` – and pass, unless it is advisory. A check of phase `order` or
 `acceptance` does not hold up the release; it is a line of section 6.
 
 A finding is judged by its severity in every stage alike, the simulation's comparisons too: an error fails, a warning
@@ -634,6 +638,8 @@ maker's pages in your browser (Claude in Chrome), puts the board into the cart w
 there. Nothing orders or pays – no command, skill or API path does: the order, the payment and M-2 at the maker are
 yours – M-2 on the reading of step 5, signed on your word.
 
+![From the current release to the boards: edakit prepares and checks, Claude fills the maker's form in your browser and stops at the cart, you order and pay; then confirm, invoice and the acceptance test](../docs/pictures/order.svg)
+
 1. `edakit cart prepare [--board B] [--maker M]` takes the current release and stops unless the maker's upload files are
    the release's (`release verify`, the same function), the circuit and layout hash are the run's, the order settings
    are the run's `order.json`, M-6 is signed for the run's electrical hash, the run checked the maker (its
@@ -749,10 +755,11 @@ shows, checked by ORDER.parts.
 
 With `[release] maker_files = "all"` (the default) every board with an assembly side gets `odb_<board>.zip` and
 `bom_<board>_mpn.csv`, whatever `[cart] makers` says: a board released for JLCPCB can be quoted at AISLER, Eurocircuits
-or PCBWay from the release, without EasyEDA and a new gate run. While no maker of `[cart] makers` takes ODB++, SYNC.odb
-reads it as AISLER's profile does and reports a fault as a note – a failed export blocks no release. Neither file is in
-the fab hash: a sign-off with scope `fab` stays valid. `cart prepare` still asks for the maker in `[cart] makers` and a
-new gate run, since its checks run only for those. `"cart"` writes both files only for such a maker.
+or PCBWay from the release, without the EDA program and a new gate run. While no maker of `[cart] makers` takes ODB++,
+SYNC.odb reads it as AISLER's profile does and reports a fault as a note – a failed export blocks no release. Neither
+file is in the fab hash: a sign-off with scope `fab` stays valid. `cart prepare` still asks for the maker in
+`[cart] makers` and a new gate run, since its checks run only for those. `"cart"` writes both files only for such a
+maker.
 
 Each profile also holds what the maker itself states about RoHS and REACH (`[compliance]`, read 2026-11-01, with the
 pages): JLCPCB's and PCBWay's boards are RoHS compliant only with a lead-free finish, JLCPCB's assembly terms do not
@@ -1012,7 +1019,7 @@ that writes what the step reads, and the inputs before it – those it reads fro
 |---|---|
 | `pcb place`, `pcb parts`, `pcb plan`, `pcb apply`, `route all` | the board file of its board |
 | `silk apply`, `silk preview` | the board file and the SVGs of `[[silk.art]]` of its board – preview shows what apply places |
-| `gate` (with and without `--easyeda`) | every made board's board file and artwork, and the simulation plugin |
+| `gate` (with and without `--eda`) | every made board's board file and artwork, and the simulation plugin |
 
 The other actions – `pcb dump`, `nets`, `tooling`, `pour`, `autolayout`, the single actions of `route`, `silk check` –
 run none, and neither do `edakit sim` and `edakit firmware`, which read the simulation plugin: they run in the

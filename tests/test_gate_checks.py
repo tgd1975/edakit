@@ -194,7 +194,7 @@ def test_a_check_after_f_reads_the_runs_manufacturing_files(project, monkeypatch
     easyeda_offline(monkeypatch)
     monkeypatch.chdir(project.root)
     monkeypatch.delenv("EDAKIT_CONFIG", raising=False)
-    assert cli.main(["gate", "--easyeda"]) == 2                    # M-1, M-5, M-6 open, as in the example
+    assert cli.main(["gate", "--eda"]) == 2                    # M-1, M-5, M-6 open, as in the example
     text = (run_folder(project) / "protocol.md").read_text()
     assert stage(text, "X").endswith("| 1 | 0 | 0 | 0 | 0 | passed |")
     assert "| X | X-1 | gerber | Gerber ZIP of this run | main | main | passed |" in section(text, 8)
@@ -231,7 +231,7 @@ def test_edakit_scripts_says_where_a_check_runs(project, monkeypatch, capsys):
     cli.main(["scripts"])
     lines = capsys.readouterr().out.splitlines()
     assert "mechanik  check    no stamp – a check, phase export before S: the gate runs it" in lines
-    assert ("gerber    check    no stamp – a check, phase export after F: the gate runs it with --easyeda, on the "
+    assert ("gerber    check    no stamp – a check, phase export after F: the gate runs it with --eda, on the "
             "run's manufacturing files") in lines
     assert ("abnahme   check    no stamp – a check, phase acceptance: a line of the acceptance list after delivery "
             "(protocol section 6), M-4 works through it") in lines

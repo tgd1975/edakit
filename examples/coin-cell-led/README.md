@@ -30,5 +30,5 @@ edakit sim        # 9 scenarios, 112 comparisons: the cell's current with SW1 he
 edakit gate       # P, G, E pass; NOT RELEASED offline: stages S, L, F need EasyEDA, M-5 is signed for fab dbbe8aa2baf1… – checked by stage F
 ```
 
-With the EasyEDA project `coin-cell-led` open, `edakit gate --easyeda` exports the manufacturing files and says
+With the EasyEDA project `coin-cell-led` open, `edakit gate --eda` exports the manufacturing files and says
 RELEASED (handbook 17.11, 17.12). Not done: the order and the delivered boards (M-2, M-4).

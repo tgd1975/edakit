@@ -7,6 +7,22 @@ written once, by `.github/merge.py`, from the fragments in [changes/](changes/RE
 [versioning.md](docs/concepts/done/versioning.md). Update with `claude plugin marketplace update edakit && claude plugin
 update edakit@edakit`, then `/reload-plugins` or a new session; `edakit --version` names the version that runs.
 
+## 1.0.5 – 2026-11-02
+
+- The handbook shows six more diagrams: the graph and the files around it (2.7), what `edakit sim` computes (5.2), the
+  way from the current release to the boards (8.4), roles and sessions (14.1) and how a proposal becomes a change
+  (14.4); the architecture page shows edakit's three layers.
+
+## 1.0.4 – 2026-11-02
+
+- KiCad is described as the other choice beside EasyEDA Pro, the default: handbook 16.1 "EasyEDA Pro or KiCad" says
+  when to take which, setup 2.2 lists both side by side, chapters 2, 6, 7, 8 and 10 carry one line "On KiCad", and
+  chapter 18 is the "Walkthrough on KiCad". `/edakit:new-project` gives each tool chain its reason.
+- `edakit gate --eda` is the flag's name for both tool chains; `--easyeda`, the old name, still works.
+- The handbook shows pictures: diagrams of what talks to what on both tool chains (2.1), the gate's stages (8.1) and
+  the four hashes with their sign-offs (8.2); the drawn schematic in both styles (6.5), the placement plan, the
+  routing and the silkscreen of a real board (7.4, 7.5, 7.7), a domain's reference circuit (14.2).
+
 ## 1.0.3 – 2026-11-02
 
 - `edakit cart actual`: the fee table's PCB price row of a bare order is for the Gerber outline the form names, not the estimate's size with the edge rails of its assembly class (the bell's tht: ordered bare as 85 × 56 mm, estimated Standard as 85 × 66).

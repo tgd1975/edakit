@@ -1,0 +1,90 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 376" width="760" height="376" font-family="IBM Plex Sans, Helvetica, Arial, sans-serif" role="img" aria-labelledby="t d">
+  <title id="t">The stages of the release gate</title>
+  <desc id="d">edakit gate runs stages P parts, G graph, E simulation and the project's checks before S, offline in seconds; it cannot release. With --eda it adds, per board in the EDA program, S schematic, L board, F manufacturing files and the project's checks after F. The decision: RELEASED when every stage ran, no check failed, every warning is accepted, every part signed and M-1, M-5 and M-6 are signed for the current hashes; otherwise NOT RELEASED with the reasons. The run folder holds protocol.md, manifest.json and the files to upload. M-2 at the order and M-4 at acceptance are lines of section 6 and hold nothing up.</desc>
+  <style>
+    .bg { fill: #f4f6f6; } .station { fill: #ffffff; stroke: #d5dcdc; }
+    .box { fill: #ffffff; stroke: #0e6c6a; stroke-width: 1.6; } .you { fill: #fbeee2; stroke: #b8691f; stroke-width: 1.4; }
+    .proj { fill: #ffffff; stroke: #0e6c6a; stroke-width: 1.4; stroke-dasharray: 5 3; }
+    .ink { fill: #1d2626; } .muted { fill: #5d6b6b; } .accent { fill: #0e6c6a; } .copper { fill: #b8691f; }
+    .arrow { stroke: #0e6c6a; stroke-width: 1.6; fill: none; }
+    @media (prefers-color-scheme: dark) {
+      .bg { fill: #111717; } .station { fill: #182020; stroke: #2c3838; }
+      .box { fill: #182020; stroke: #5cc4c0; } .you { fill: #2a2118; stroke: #e0954f; }
+      .proj { fill: #182020; stroke: #5cc4c0; }
+      .ink { fill: #e3eaea; } .muted { fill: #97a6a6; } .accent { fill: #5cc4c0; } .copper { fill: #e0954f; }
+      .arrow { stroke: #5cc4c0; }
+    }
+  </style>
+  <defs>
+    <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="accent"/></marker>
+  </defs>
+  <rect class="bg" x="0" y="0" width="760" height="376" rx="10"/>
+
+  <!-- labels -->
+  <text class="accent" x="20" y="60" font-size="13" font-weight="600">edakit gate</text>
+  <text class="muted" x="20" y="77" font-size="11">offline, seconds;</text>
+  <text class="muted" x="20" y="91" font-size="11">it cannot release</text>
+  <text class="accent" x="20" y="150" font-size="13" font-weight="600">with --eda</text>
+  <text class="muted" x="20" y="167" font-size="11">in the EDA program,</text>
+  <text class="muted" x="20" y="181" font-size="11">per board, minutes</text>
+  <text class="accent" x="20" y="240" font-size="13" font-weight="600">the decision</text>
+  <text class="muted" x="20" y="257" font-size="11">exit 0 or 2</text>
+  <text class="accent" x="20" y="330" font-size="13" font-weight="600">the run folder</text>
+  <text class="muted" x="20" y="347" font-size="11">&lt;reports&gt;/&lt;run&gt;/</text>
+
+  <!-- stages -->
+  <g text-anchor="middle">
+    <rect class="box" x="170" y="40" width="128" height="52" rx="6"/>
+    <text class="ink" x="234" y="62" font-size="12.5" font-weight="600">P – Parts</text>
+    <text class="muted" x="234" y="80" font-size="11">entries, stock, holes</text>
+    <rect class="box" x="318" y="40" width="128" height="52" rx="6"/>
+    <text class="ink" x="382" y="62" font-size="12.5" font-weight="600">G – Graph</text>
+    <text class="muted" x="382" y="80" font-size="11">rules, requirements</text>
+    <rect class="box" x="466" y="40" width="128" height="52" rx="6"/>
+    <text class="ink" x="530" y="62" font-size="12.5" font-weight="600">E – Simulation</text>
+    <text class="muted" x="530" y="80" font-size="11">ngspice, every case</text>
+    <rect class="proj" x="614" y="40" width="128" height="52" rx="6"/>
+    <text class="ink" x="678" y="62" font-size="12.5">project checks</text>
+    <text class="muted" x="678" y="80" font-size="11">before S</text>
+
+    <rect class="box" x="170" y="130" width="128" height="52" rx="6"/>
+    <text class="ink" x="234" y="152" font-size="12.5" font-weight="600">S – Schematic</text>
+    <text class="muted" x="234" y="170" font-size="11">schematic = graph</text>
+    <rect class="box" x="318" y="130" width="128" height="52" rx="6"/>
+    <text class="ink" x="382" y="152" font-size="12.5" font-weight="600">L – Board</text>
+    <text class="muted" x="382" y="170" font-size="11">PCB = graph and plan</text>
+    <rect class="box" x="466" y="130" width="128" height="52" rx="6"/>
+    <text class="ink" x="530" y="152" font-size="12.5" font-weight="600">F – Manufacturing</text>
+    <text class="muted" x="530" y="170" font-size="11">Gerber, BOM, CPL</text>
+    <rect class="proj" x="614" y="130" width="128" height="52" rx="6"/>
+    <text class="ink" x="678" y="152" font-size="12.5">project checks</text>
+    <text class="muted" x="678" y="170" font-size="11">after F</text>
+  </g>
+  <g>
+    <line class="arrow" x1="298" y1="66" x2="316" y2="66" marker-end="url(#a)"/>
+    <line class="arrow" x1="446" y1="66" x2="464" y2="66" marker-end="url(#a)"/>
+    <line class="arrow" x1="594" y1="66" x2="612" y2="66" marker-end="url(#a)"/>
+    <path class="arrow" d="M678,92 L678,111 L234,111 L234,128" marker-end="url(#a)"/>
+    <line class="arrow" x1="298" y1="156" x2="316" y2="156" marker-end="url(#a)"/>
+    <line class="arrow" x1="446" y1="156" x2="464" y2="156" marker-end="url(#a)"/>
+    <line class="arrow" x1="594" y1="156" x2="612" y2="156" marker-end="url(#a)"/>
+    <line class="arrow" x1="678" y1="182" x2="678" y2="212" marker-end="url(#a)"/>
+  </g>
+
+  <!-- decision -->
+  <rect class="box" x="170" y="214" width="572" height="74" rx="6"/>
+  <text class="accent" x="186" y="236" font-size="13" font-weight="600">RELEASED</text>
+  <text class="ink" x="186" y="255" font-size="12">every stage ran, no check failed, every warning accepted, every part signed,</text>
+  <text class="ink" x="186" y="273" font-size="12">M-1, M-5 and M-6 signed for the current hashes – otherwise NOT RELEASED, with the reasons</text>
+  <line class="arrow" x1="306" y1="288" x2="306" y2="310" marker-end="url(#a)"/>
+
+  <!-- results -->
+  <g text-anchor="middle">
+    <rect class="box" x="170" y="312" width="272" height="48" rx="6"/>
+    <text class="ink" x="306" y="332" font-size="12.5">protocol.md · manifest.json</text>
+    <text class="muted" x="306" y="349" font-size="11">and the files to upload</text>
+    <rect class="you" x="462" y="312" width="280" height="48" rx="6"/>
+    <text class="ink" x="602" y="332" font-size="12.5">M-2 at the order · M-4 at acceptance</text>
+    <text class="muted" x="602" y="349" font-size="11">lines of section 6 – they hold nothing up</text>
+  </g>
+</svg>

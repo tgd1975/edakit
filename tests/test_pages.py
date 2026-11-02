@@ -20,7 +20,7 @@ def pages():
 def test_every_description_is_a_page_of_the_site(tmp_path):
     out = pages().assemble(tmp_path / "pages")
     docs = out / "docs"
-    want = (["index.md", "handbook/index.md", "evals.md", "catalog/index.html", "inside-edakit.md", "inside/claude.md",
+    want = (["index.md", "handbook/index.md", "evals.md", "catalog/index.html", "inside/index.md", "inside/claude.md",
              "concepts/index.md", "skills/index.md", "agents/index.md"]
             + [f"handbook/{p.name}" for p in (ROOT / "handbook").glob("[0-9]*.md")]
             + [f"skills/{p.parent.name}.md" for p in (ROOT / "skills").glob("*/SKILL.md")]
@@ -41,10 +41,11 @@ def test_every_description_is_a_page_of_the_site(tmp_path):
 def test_the_navigation_is_tabs_by_reader_with_short_titles():
     """Steps N.1 and N.2 of docs/concepts/new/documentation-newcomer.md: tabs by reader, at most eight entries a tab
     but for the handbook, titles of at most five words; every page of kind documentation in a tab, the steps among
-    them, the sources in none – they stand behind "Inside edakit" and stay on the site."""
+    them; the sources only in the tab "Inside edakit", its overview and the index of each kind – the pages stay on the
+    site, out of the navigation."""
     mod = pages()
     tabs = [g for g, _ in mod.NAV]
-    assert tabs == ["Start", "A circuit", "A board", "Extend", "Develop", "Handbook", "Reference"]
+    assert tabs == ["Start", "A circuit", "A board", "Extend", "Develop", "Handbook", "Reference", "Inside edakit"]
     assert all(len(entries) <= mod.SIDEBAR for tab, entries in mod.NAV if tab != "Handbook")
     assert all(len(title.split()) <= 5 for _, entries in mod.NAV for _, title in entries)
     listed = {src for _, entries in mod.NAV for src, _ in entries}
@@ -53,8 +54,11 @@ def test_the_navigation_is_tabs_by_reader_with_short_titles():
             *(p.relative_to(ROOT).as_posix() for p in (ROOT / "docs" / "steps").glob("*.md")),
             "docs/projects/README.md"}
     assert sorted(docs - listed) == []
-    assert all((ROOT / src).is_file() for src in listed)
-    assert not any(mod.is_source(src) for src in listed if not src.startswith("skills/propose-"))
+    assert all((ROOT / src).is_file() for src in listed - mod.GENERATED)
+    inside = dict(mod.NAV)["Inside edakit"]
+    assert [src for src, _ in inside] == ["docs/inside-edakit.md", *mod.INSIDE]
+    assert not any(mod.is_source(src) for tab, entries in mod.NAV if tab != "Inside edakit" for src, _ in entries
+                   if not src.startswith("skills/propose-"))
     on_site = {src for src, _, _ in mod.sources()}
     assert set(mod.INSIDE) <= on_site and "docs/inside-edakit.md" in on_site
 
@@ -67,8 +71,9 @@ def test_a_source_carries_the_source_line_and_the_concepts_an_index(tmp_path):
     index = (docs / "concepts" / "index.md").read_text(encoding="utf-8")
     assert "## Open" in index and "(new/documentation-newcomer.md)" in index and "prototypes" not in index
     assert "## Decided and built" in index and "(done/documentation.md)" in index
-    inside = (docs / "inside-edakit.md").read_text(encoding="utf-8")
-    assert "(concepts/index.md)" in inside and "(skills/index.md)" in inside and "(inside/claude.md)" in inside
+    inside = (docs / "inside" / "index.md").read_text(encoding="utf-8")
+    assert "(../concepts/index.md)" in inside and "(../skills/index.md)" in inside and "(claude.md)" in inside
+    assert 'url=../inside/"' in (docs / "inside-edakit" / "index.html").read_text(encoding="utf-8")   # the old address
 
 
 def test_links_stay_on_the_site_or_go_to_github():

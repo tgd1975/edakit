@@ -30,8 +30,8 @@ in six:
 | 6 | Stock and cost | Claude |
 | 7 | Drawing and hand-over | Claude |
 | 8 | Reviews | the reviewers, in sessions of their own |
-| 9 | The gate without EasyEDA | Claude |
-| 10 | EasyEDA project | you, once (none on KiCad) |
+| 9 | The gate offline | Claude |
+| 10 | EDA project | EasyEDA: you, once; KiCad: edakit |
 | 11 | Layout | Claude as the PCB designer, in its own session |
 | 12 | Release | Claude |
 | 13 | Order | Claude up to the cart, you order and pay |
@@ -85,8 +85,8 @@ What runs offline and what has run live, so that you know how close it is.
   click by hand ([upstream](../upstream/README.md) lists each click).
 - **The circuit as TOML.** Built and tested on the examples and the reference circuits. The Christmas bell's five
   boards were released on it. A JSON graph keeps working.
-- **KiCad.** Tested in CI against KiCad 10. The 555 blinker of [walkthrough 2](../handbook/18-walkthrough-kicad.md)
-  went through it to a release.
+- **KiCad.** Tested in CI against KiCad 10. The 555 blinker of the [KiCad
+  walkthrough](../handbook/18-walkthrough-kicad.md) went through it to a release.
 - **Limits.** Two copper layers. The simulation runs DC operating points, the transient scenarios of plug, unplug and
   switch-over, and small-signal AC for audio and guitar circuits where an expectation is named. Spikes and fast edges
   are left to the acceptance test.

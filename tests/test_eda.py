@@ -157,7 +157,7 @@ def test_progress_with_a_total_numbers_its_phases(capsys, monkeypatch):
     assert "  (place: " in out                                    # the duration of each phase stays
 
 
-# --- reads of the focused page: the BOM of gate --easyeda (walkthrough-gaps B7) ---------------------------------------
+# --- reads of the focused page: the BOM of gate --eda (walkthrough-gaps B7) ---------------------------------------
 
 class FakeTabs:
     """Two schematics with their pages in tabs, one active: easyeda_bom_generate answers for the ACTIVE page, as the

@@ -287,8 +287,8 @@ one was closed in edakit:
 
 ## 13.10 What the 555 blinker changed in edakit
 
-The 555 blinker of walkthrough 2 (chapter 18) – the first real board through the KiCad tool chain, and the first on
-cells behind a power switch – found these gaps; each was closed in edakit with its test:
+The 555 blinker of the KiCad walkthrough (chapter 18) – the first real board through the KiCad tool chain, and the first
+on cells behind a power switch – found these gaps; each was closed in edakit with its test:
 
 - **A load's budget on a battery holder.** `expect` in a load named sources and nets only; `{"BT1": {"i_max_a": …}}`
   was SIM.config. It holds the current from the holder's cells now (LIM.i) – R-3's 1 µA and R-4's budget.

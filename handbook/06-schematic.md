@@ -1,10 +1,10 @@
 # 6 Schematic (stage S)
 
-For you when a board's schematic is generated, checked or laid out in EasyEDA Pro, or drawn without it. After it you can
-build and check both schematics, draw one as an SVG and quote design values in notes and documents. The short way: [Draw
-and hand over](../docs/steps/07-draw-and-hand-over.md).
+For you when a board's schematic is generated, checked or laid out in the EDA program, or drawn without one. After it
+you can build and check both schematics, draw one as an SVG and quote design values in notes and documents. The short
+way: [Draw and hand over](../docs/steps/07-draw-and-hand-over.md).
 
-Two schematics per board, both generated:
+In EasyEDA, two schematics per board, both generated:
 
 | | name (default) | made by | content | edited by hand |
 |---|---|---|---|---|
@@ -14,8 +14,12 @@ Two schematics per board, both generated:
 The PCB hangs on the board schematic. Once it does, the board schematic cannot be replaced – the PCB would lose its
 schematic –, and `layout` syncs the parts in place instead of copying.
 
-Without EasyEDA, `edakit schematic draw` draws the schematic as an SVG (the drawing, 6.5): for a project without a
-PCB, for the documentation, for a look at a design before EasyEDA is involved.
+**On KiCad:** one schematic per board, `<board>.kicad_sch`. `schematic create` and `layout` write it and check it at
+once, `copy` has nothing to do, and `schematic check` holds kicad-cli's netlist and KiCad's ERC to the graph – the
+KiCad flow (16.4).
+
+Without an EDA program, `edakit schematic draw` draws the schematic as an SVG (the drawing, 6.5): for a project
+without a PCB, for the documentation, for a look at a design before the EDA program is involved.
 
 A bought board on a cable (`bought = true`) or a hand-wired one (`wired = true`, 4.5) has no schematic in EasyEDA:
 `--board` of such a board is refused with one line, and without `--board` the one made board is taken. `schematic
@@ -141,12 +145,12 @@ footprint. New parts reach the PCB with `edakit pcb parts --write` (chapter 7).
 
 The API calls behind each: [9.3 Schematic](09-easyeda-api.md#93-schematic).
 
-## 6.5 Drawn without EasyEDA
+## 6.5 Drawn without an EDA program
 
 The drawing is a result on its own, without EasyEDA or KiCad: the graph and the parts database are enough – no
-bridge, about a second. A project without a PCB – a development board and hand wiring – never needs EasyEDA: checks,
-simulation and this drawing work from the graph alone. For a PCB, EasyEDA's board schematic stays the one that counts;
-the PCB hangs on it.
+bridge, about a second. A project without a PCB – a development board and hand wiring – never needs an EDA program:
+checks, simulation and this drawing work from the graph alone. For a PCB, the EDA program's schematic stays the one
+that counts – EasyEDA's board schematic, KiCad's `<board>.kicad_sch` –; the PCB hangs on it.
 
 ```bash
 edakit schematic draw                          # <artifacts>/schematic_<board>.svg
@@ -156,6 +160,8 @@ edakit schematic draw --out docs/schematic.svg
 Every gate run draws it too, as SVG and PNG beside its protocol (the gate protocol's section 12, 8.3). The arrangement
 is the one of `layout` (copy and lay out, 6.3): blocks with titles and notes, placement by topology, real wires,
 flags, GPIO table. Only the symbols come from the parts database instead of EasyEDA's library:
+
+![The led-bar of the tests, drawn with labels: the blocks Power Input, MCU, LED Driver and Other with their notes, nets joined by name](../docs/catalog/circuits/led-bar.svg)
 
 | kind | symbol |
 |---|---|
@@ -198,6 +204,8 @@ border and the title block for a drawing embedded in a document; the page is the
 - `"labels"`: the drawing above, and the default;
 - `"wires"`: every connection a wire from pin to pin, as the maker scene draws it (Fritzing's schematic view);
 - `"mixed"`: wires, with labels for the buses.
+
+![The Christmas bell's main board drawn with wires through: every connection a wire from pin to pin, the nets in colours](../docs/projects/christmas-bell/schematic_main.svg)
 
 A board takes the style its project interview chose: labels for a board of any size, wires through for a maker-size
 circuit or a hand-wired board, mixed for a module with headers.

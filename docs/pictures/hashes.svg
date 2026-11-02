@@ -1,0 +1,90 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 404" width="760" height="404" font-family="IBM Plex Sans, Helvetica, Arial, sans-serif" role="img" aria-labelledby="t d">
+  <title id="t">The four hashes and what is signed for them</title>
+  <desc id="d">Circuit hash: graph, parts database, simulation config, requirements files and footprint data; M-1, the second datasheet check by the agent electrical-reviewer, is signed for it. Electrical hash: the same without the footprint data; M-6, the regulatory review by the agent regulatory-reviewer, support and not legal advice. Layout hash: the board files with their artwork, the footprint geometry and footprint data; sign-offs of scope layout. Fab hash: the Gerber layers rasterised, the drill hits, BOM, CPL and the order settings, known after stage F; M-5, the layout review by the agent pcb-reviewer. edakit.toml, the schematic file and the documents of [docs] files are in no hash. A change voids every sign-off bound to its hash: a changed pad changes the circuit and the layout hash, so M-1 and the layout sign-offs lapse and M-6 stays.</desc>
+  <style>
+    .bg { fill: #f4f6f6; } .station { fill: #ffffff; stroke: #d5dcdc; }
+    .box { fill: #ffffff; stroke: #0e6c6a; stroke-width: 1.6; } .you { fill: #fbeee2; stroke: #b8691f; stroke-width: 1.4; }
+    .none { fill: none; stroke: #9aa8a8; stroke-width: 1.2; stroke-dasharray: 5 3; }
+    .ink { fill: #1d2626; } .muted { fill: #5d6b6b; } .accent { fill: #0e6c6a; } .copper { fill: #b8691f; }
+    .arrow { stroke: #0e6c6a; stroke-width: 1.6; fill: none; }
+    @media (prefers-color-scheme: dark) {
+      .bg { fill: #111717; } .station { fill: #182020; stroke: #2c3838; }
+      .box { fill: #182020; stroke: #5cc4c0; } .you { fill: #2a2118; stroke: #e0954f; }
+      .none { stroke: #5d6b6b; }
+      .ink { fill: #e3eaea; } .muted { fill: #97a6a6; } .accent { fill: #5cc4c0; } .copper { fill: #e0954f; }
+      .arrow { stroke: #5cc4c0; }
+    }
+  </style>
+  <defs>
+    <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="accent"/></marker>
+  </defs>
+  <rect class="bg" x="0" y="0" width="760" height="404" rx="10"/>
+
+  <g font-size="12" font-weight="600" class="muted">
+    <text x="20" y="34">What goes in</text>
+    <text x="350" y="34">Hash</text>
+    <text x="540" y="34">Signed for it</text>
+  </g>
+
+  <!-- rows: y 46, 108, 170, 232 -->
+  <g font-size="11.5">
+    <rect class="station" x="20" y="46" width="290" height="50" rx="6"/>
+    <text class="ink" x="34" y="67">graph · parts database · simulation config</text>
+    <text class="ink" x="34" y="85">requirements files · footprint data</text>
+    <rect class="station" x="20" y="108" width="290" height="50" rx="6"/>
+    <text class="ink" x="34" y="129">the same without the footprint data</text>
+    <text class="muted" x="34" y="147">a pad has no regulatory content</text>
+    <rect class="station" x="20" y="170" width="290" height="50" rx="6"/>
+    <text class="ink" x="34" y="191">board files with their artwork</text>
+    <text class="ink" x="34" y="209">footprint geometry · footprint data</text>
+    <rect class="station" x="20" y="232" width="290" height="50" rx="6"/>
+    <text class="ink" x="34" y="253">Gerber layers rasterised · drill hits</text>
+    <text class="ink" x="34" y="271">BOM · CPL · order settings – after stage F</text>
+  </g>
+  <g text-anchor="middle">
+    <rect class="box" x="350" y="46" width="150" height="50" rx="6"/>
+    <text class="accent" x="425" y="67" font-size="13" font-weight="600">circuit</text>
+    <text class="muted" x="425" y="85" font-size="11">state_sha256</text>
+    <rect class="box" x="350" y="108" width="150" height="50" rx="6"/>
+    <text class="accent" x="425" y="129" font-size="13" font-weight="600">electrical</text>
+    <text class="muted" x="425" y="147" font-size="11">electrical_sha256</text>
+    <rect class="box" x="350" y="170" width="150" height="50" rx="6"/>
+    <text class="accent" x="425" y="191" font-size="13" font-weight="600">layout</text>
+    <text class="muted" x="425" y="209" font-size="11">layout_sha256</text>
+    <rect class="box" x="350" y="232" width="150" height="50" rx="6"/>
+    <text class="accent" x="425" y="253" font-size="13" font-weight="600">fab</text>
+    <text class="muted" x="425" y="271" font-size="11">fab_sha256</text>
+  </g>
+  <g>
+    <rect class="box" x="540" y="46" width="200" height="50" rx="6"/>
+    <text class="ink" x="554" y="67" font-size="12.5">M-1 datasheets again</text>
+    <text class="muted" x="554" y="85" font-size="11">agent electrical-reviewer</text>
+    <rect class="box" x="540" y="108" width="200" height="50" rx="6"/>
+    <text class="ink" x="554" y="129" font-size="12.5">M-6 regulatory review</text>
+    <text class="muted" x="554" y="147" font-size="11">support, not legal advice</text>
+    <rect class="box" x="540" y="170" width="200" height="50" rx="6"/>
+    <text class="ink" x="554" y="191" font-size="12.5">sign-offs of scope layout</text>
+    <text class="muted" x="554" y="209" font-size="11">a project's own, an older M-5</text>
+    <rect class="box" x="540" y="232" width="200" height="50" rx="6"/>
+    <text class="ink" x="554" y="253" font-size="12.5">M-5 layout review</text>
+    <text class="muted" x="554" y="271" font-size="11">agent pcb-reviewer, on the files</text>
+  </g>
+  <g>
+    <line class="arrow" x1="310" y1="71" x2="348" y2="71" marker-end="url(#a)"/>
+    <line class="arrow" x1="500" y1="71" x2="538" y2="71" marker-end="url(#a)"/>
+    <line class="arrow" x1="310" y1="133" x2="348" y2="133" marker-end="url(#a)"/>
+    <line class="arrow" x1="500" y1="133" x2="538" y2="133" marker-end="url(#a)"/>
+    <line class="arrow" x1="310" y1="195" x2="348" y2="195" marker-end="url(#a)"/>
+    <line class="arrow" x1="500" y1="195" x2="538" y2="195" marker-end="url(#a)"/>
+    <line class="arrow" x1="310" y1="257" x2="348" y2="257" marker-end="url(#a)"/>
+    <line class="arrow" x1="500" y1="257" x2="538" y2="257" marker-end="url(#a)"/>
+  </g>
+
+  <!-- in no hash -->
+  <rect class="none" x="20" y="294" width="720" height="40" rx="6"/>
+  <text x="34" y="319" font-size="11.5"><tspan class="muted" font-weight="600">In no hash: </tspan><tspan class="ink">edakit.toml · the schematic file · the documents of [docs] files – a change there voids no review</tspan></text>
+
+  <!-- the rule -->
+  <text class="copper" x="20" y="364" font-size="12">A change voids every sign-off bound to its hash. A changed pad changes the circuit and the layout hash:</text>
+  <text class="copper" x="20" y="382" font-size="12">M-1 and the layout sign-offs lapse, M-6 stays. The fab hash is known only after stage F.</text>
+</svg>

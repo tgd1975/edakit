@@ -67,7 +67,7 @@ Handbook: [8.1 Stages](../handbook/08-release-gate.md#81-stages).
 
 ### Bridge
 
-The extension inside EasyEDA Pro, menu "MCP Bridge". The MCP server drives EasyEDA through it.
+The extension inside EasyEDA Pro, menu "MCP Bridge". The MCP server drives EasyEDA through it. EasyEDA Pro only.
 Handbook: [2.1 What talks to what](../handbook/02-setup.md#21-what-talks-to-what),
 [2.5 The bridge extension, patched](../handbook/02-setup.md#25-the-bridge-extension-patched).
 
@@ -86,7 +86,7 @@ Handbook: [14.2 The catalog: engines, codes, data and domains](../handbook/14-de
 ### Claim
 
 A session holds EasyEDA while it works in it, so that two sessions do not pull its tab from each other. The first
-access claims it. The claim expires after 15 minutes without access.
+access claims it. The claim expires after 15 minutes without access. EasyEDA Pro only.
 Handbook: [11.2 Parallel sessions share one EasyEDA](../handbook/11-working-with-claude.md#112-parallel-sessions-share-one-easyeda).
 
 ### Code
@@ -203,7 +203,7 @@ Handbook: [8.2 Hashes and sign-offs](../handbook/08-release-gate.md#82-hashes-an
 
 ### MCP server
 
-easyeda-mcp-pro, the program between Claude Code or edakit and the bridge in EasyEDA.
+easyeda-mcp-pro, the program between Claude Code or edakit and the bridge in EasyEDA. EasyEDA Pro only.
 Handbook: [2.1 What talks to what](../handbook/02-setup.md#21-what-talks-to-what),
 [2.4 The MCP server](../handbook/02-setup.md#24-the-mcp-server).
 
@@ -329,7 +329,7 @@ Handbook: [8.1 Stages](../handbook/08-release-gate.md#81-stages).
 One of the two results edakit leads to. The circuit is the graph, its checks, the simulation, the drawn schematic
 and the hand-over. The board is the schematic in the EDA program, the PCB, the manufacturing files and the order. The
 circuit is a result on its own, for a hand-wired build or a drawing in a document.
-Handbook: [6.5 Drawn without EasyEDA](../handbook/06-schematic.md#65-drawn-without-easyeda),
+Handbook: [6.5 Drawn without an EDA program](../handbook/06-schematic.md#65-drawn-without-an-eda-program),
 [14.1 Roles](../handbook/14-design.md#141-roles).
 
 ### Stock snapshot
@@ -340,9 +340,10 @@ Handbook: [4.2 Finding parts](../handbook/04-parts-database.md#42-finding-parts)
 
 ### Tool chain
 
-The EDA program the boards are drawn in: EasyEDA Pro or KiCad. The key `toolchain` in edakit.toml chooses it.
-Everything else is the same for both.
-Handbook: [16 KiCad as the tool chain](../handbook/16-kicad.md).
+The EDA program the boards are drawn in: EasyEDA Pro, the default, or KiCad, the other choice. The key `toolchain` in
+edakit.toml chooses it. Everything else is the same for both.
+Handbook: [16.1 EasyEDA Pro or KiCad](../handbook/16-kicad.md#161-easyeda-pro-or-kicad),
+[2.2 Install](../handbook/02-setup.md#22-install).
 
 ### Topic
 
