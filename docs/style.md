@@ -79,6 +79,11 @@ the commands of the reference (10.5) and `edakit --help` are one list in one pla
 - No restatement of a code block or a table in prose.
 - No history in a guide.
 
+One summary is the exception: a guide chapter of more than 450 lines opens with **In short.** – its second
+paragraph, after the one that says for whom the chapter is. It repeats the chapter's core statements in at most 120
+words, each with the section that owns it ("the scenarios, 5.2"). A statement changes in its section first, then in
+the summary. The reference (10) and the walkthroughs (17, 18) have none; their tables lead the way.
+
 Short sentences and dense text are not opposites. The words that go are the asides, the repetitions and the
 enumerations, not the statements. A qualification – a number, a condition, an exception – is a statement and stays. A
 shorter wording never trades a meaning: in a section the automation names, the wording gets shorter and nothing leaves.
@@ -104,7 +109,8 @@ shorter wording never trades a meaning: in a section the automation names, the w
 
 ## A page
 
-- The first paragraph says for whom the page is and what they can do after it.
+- The first paragraph says for whom the page is and what they can do after it; a long guide chapter's second paragraph
+  is its summary (Dense, above).
 - The shortest path comes first, the details after it, the reasons at the end.
 - A status admonition at the top where something is built offline only or planned – one line, not the state woven into
   the prose.
@@ -158,7 +164,9 @@ code, block quotes, phrases in quotation marks and section 11.4. In them it coun
 
 - on the entry pages, the average and the longest sentence;
 - a section over 80 lines without a subheading;
-- a chapter of the handbook over 500 lines, and a paragraph over 120 words;
+- a chapter of the handbook over 500 lines, its summary not counted, and a paragraph over 120 words;
+- a guide chapter over 450 lines without its summary, a summary that is not the second paragraph, and a section it names
+  that the chapter does not have;
 - a bare cross-reference: a parenthesis of section numbers only at the start of a paragraph or after a punctuation
   mark, or "see 8.2" – whether the word before "(8.2)" is its subject is the review's to judge;
 - "the reference project" and "the user";

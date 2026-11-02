@@ -8,6 +8,11 @@ written once, by `.github/merge.py`, from the fragments in [changes/](changes/RE
 update edakit@edakit`, then `/reload-plugins` or a new session; `edakit version` names the version that runs and what an
 update brings.
 
+## 1.0.12 – 2026-11-02
+
+- The handbook's long guide chapters – 3, 4, 5, 7, 8 and 14 – open with a summary, **In short.**, of their core
+  statements, each with the section that owns it; `tests/test_style.py` holds it for every guide chapter over 450 lines.
+
 ## 1.0.11 – 2026-11-02
 
 - `edakit version pin [current|latest|X.Y.Z]` and `unpin`: one version in every edakit.toml (`[project] edakit = "==X"`) and in every edakit call of CI and scripts, or following the updates again (`>=X`, the calls without a ref); listed first, written with `--write`. The marketplace's `ref` in `.claude/settings.json` goes – it held the plugin for every project on the machine, not for one; handbook 2.3 no longer advises it.
