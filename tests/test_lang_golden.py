@@ -75,3 +75,17 @@ def test_the_bell_s_sources_compile_to_its_graphs(tmp_path):
         (copy / where / "graph.circuit").write_text((BELL / f"{name}.circuit").read_text())
         got = compile_path(copy / where / "graph.circuit")
         assert {c["designator"] for c in got["components"]} == {c["designator"] for c in want["components"]}, name
+
+
+@pytest.mark.parametrize("case", ["add-led-circuit", "repeat-leds", "variant-smd"])
+def test_the_evals_of_the_language_scaffold_their_project(case, tmp_path):
+    """T.19: each case writes led-bar-circuit into its workspace; its graders read files of it or of the agent."""
+    import subprocess
+    root = Path(__file__).resolve().parents[1]
+    subprocess.run(["bash", str(root / "evals" / case / "scaffold.sh")], cwd=tmp_path, check=True)
+    assert (tmp_path / "hardware" / "graph.circuit").read_text() == (reference.CIRCUIT / "hardware" /
+                                                                       "graph.circuit").read_text()
+    for grader in (root / "evals" / case / "graders").glob("*.md"):
+        text = grader.read_text()
+        assert text.startswith("---\ntype: ") and "weight: 1" in text
+    assert f"`{case}`" in (root / "evals" / "README.md").read_text()
