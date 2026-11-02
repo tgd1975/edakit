@@ -118,7 +118,7 @@ Sections 2.4 to 2.6 set up EasyEDA Pro; on KiCad they have nothing to do.
 | `JLCPCB_MODE`, `JLCPCB_ENABLE_ORDERING` | `disabled`, `false` | nothing can be ordered from Claude – orders are placed by a human |
 | `BRIDGE_RAW_EXEC_ENABLED` | `false` | no arbitrary JavaScript in the editor |
 | `ARTIFACT_DIR` | `$PWD/build/easyeda-mcp` | exports land in the project, not in the home directory |
-| `BRIDGE_TIMEOUT_MS` | `120000` | DRC and pour fills of a large board take longer than the default 15 s |
+| `BRIDGE_TIMEOUT_MS` | `120000` | DRC and pour fills of a large board take longer than the default 15 s. The same value in every server: the one that holds the bridge port drops pending requests after its own timeout, also those another server passes through; `edakit doctor` warns when they differ |
 
 After the install `mcp-server.sh` adds the tool `easyeda_export_odb` to the installed server, once
 (`odb-tool-patch.mjs`, idempotent): the ODB++ export for a maker that assembles from it (AISLER; ordering, 8.4;
@@ -150,7 +150,7 @@ If the extension changed upstream, it stops instead of patching blindly. `edakit
 SYNC.odb ("Bridge did not return an ODB++ archive").
 
 Import in EasyEDA: *Settings → Extensions → Extension Manager → Import*; it asks for the permission "External
-Interactions" itself. Then the menu **MCP Bridge** appears; choose **Enable Auto-Connect**.
+Interaction" itself. Then the menu **MCP Bridge** appears; choose **Enable Auto-Connect**.
 
 Re-importing (update, other depth): EasyEDA does not take an import over an installed copy with the same UUID and
 version. **Uninstall the old one, import, restart EasyEDA**; until the restart the old copy keeps running. After that

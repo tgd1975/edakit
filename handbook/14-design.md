@@ -88,6 +88,7 @@ What edakit knows about circuits is data in one catalog, which the code reads. F
 
 Each engine decides one kind of relation – on the graph, the parts, the simulation, the plan or the files:
 
+<!-- edakit:generated engines -->
 | Engine | Decides |
 |---|---|
 | STRUCT | the graph is well-formed and names what exists |
@@ -100,9 +101,10 @@ Each engine decides one kind of relation – on the graph, the parts, the simula
 | GEO | copper, holes, print, widths and distances on plan and Gerber files |
 | FILES | manufacturing files and sheets complete and consistent |
 | PARTS | parts entries complete, well-formed, verified, orderable |
-| ORDER | the order at the maker is the release: form, parts, quote, read, files, finish, review (8.4) |
+| ORDER | the order at the maker is the release: form, parts, quote, read, files, finish, review, confirm |
 | DOCS | documents and requirements quote the design |
 | HINT | patterns that need judgement, as notes |
+<!-- edakit:end -->
 
 LIM computes nothing itself. Producers give it quantities – the declared ranges of the graph times a derating factor
 in stage G, the simulated values in stage E –, and it compares each with the limit of that name in the parts entry

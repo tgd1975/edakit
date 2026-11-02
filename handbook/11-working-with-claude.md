@@ -68,7 +68,8 @@ So EasyEDA is **claimed per session** (`edakit lock`), independent of anything g
   gap.
 - **Waiting for your click holds nothing:** release EasyEDA while waiting.
 
-The state is machine-wide, as EasyEDA is: `~/.local/state/edakit/easyeda-lock.json`.
+The state is machine-wide, as EasyEDA is: `$XDG_STATE_HOME/edakit/easyeda-lock.json`, by default
+`~/.local/state/edakit/easyeda-lock.json`; `EDAKIT_LOCK_FILE` names another file.
 
 Git needs the same thinking when several sessions share one working tree: one branch switch moves everyone, and a
 `git add -A` takes other sessions' files. edakit has no tool for it, as it is not EDA-specific. If you run parallel
@@ -205,10 +206,10 @@ registered so that every session knows it – a project that keeps working agree
 ## 11.5 Memory and project knowledge
 
 The working agreements (11.4) reach every session through the plugin, so a new project starts with them. Claude Code's
-memory (per project) and the project's CLAUDE.md hold one project's preferences that are not in the code. Facts that
-are in the repository – decisions, checks, API behaviour – belong in the repository: the decision log, the handbook,
-comments next to the code they explain. Each EasyEDA quirk (chapter 9) is also a comment where edakit works around it,
-so the next person does not "simplify" the workaround away.
+memory (per project) and the project's CLAUDE.md hold one project's preferences that are not in the code. Facts about
+the project – decisions, checks, API behaviour – belong in the repository: the decision log, the handbook, comments next
+to the code they explain. Each EasyEDA quirk (chapter 9) is also a comment where edakit works around it, so the next
+person does not "simplify" the workaround away.
 
 ## 11.6 When edakit falls short: feature proposals
 
