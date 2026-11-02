@@ -1,0 +1,56 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 300" width="760" height="300" font-family="IBM Plex Sans, Helvetica, Arial, sans-serif" role="img" aria-labelledby="t d">
+  <title id="t">A library footprint that prints + at the cathode</title>
+  <desc id="d">Left, the library's footprint of a 5 mm LED: the silkscreen prints + next to pad 1, while the symbol and the datasheet call pad 1 the cathode. Right, the fix in the graph: the parts entry gives pin 1 the role anode and the net of the anode goes to pad 1 with the + print, pin 2 is the cathode; every check, the simulation and the firmware's pin tables follow. GEO.mark of the gate reads the + in the silk Gerber and fails when the nearest pad with a polarity role is a cathode.</desc>
+  <style>
+    .bg { fill: #f4f6f6; } .station { fill: #ffffff; stroke: #d5dcdc; }
+    .silk { stroke: #1d2626; stroke-width: 2; fill: none; } .pad { fill: #b8691f; } .hole { fill: #ffffff; }
+    .bad { stroke: #b3261e; stroke-width: 2; fill: none; } .good { stroke: #0e6c6a; stroke-width: 2; fill: none; }
+    .ink { fill: #1d2626; } .muted { fill: #5d6b6b; } .accent { fill: #0e6c6a; } .copper { fill: #b8691f; } .red { fill: #b3261e; }
+    @media (prefers-color-scheme: dark) {
+      .bg { fill: #111717; } .station { fill: #182020; stroke: #2c3838; }
+      .silk { stroke: #e3eaea; } .pad { fill: #e0954f; } .hole { fill: #182020; }
+      .bad { stroke: #ef6f66; } .good { stroke: #5cc4c0; }
+      .ink { fill: #e3eaea; } .muted { fill: #97a6a6; } .accent { fill: #5cc4c0; } .copper { fill: #e0954f; } .red { fill: #ef6f66; }
+    }
+  </style>
+  <rect class="bg" x="0" y="0" width="760" height="300" rx="10"/>
+  <rect class="station" x="20" y="20" width="350" height="226" rx="10"/>
+  <rect class="station" x="390" y="20" width="350" height="226" rx="10"/>
+  <text class="ink" x="36" y="44" font-size="13.5" font-weight="600">The library's footprint</text>
+  <text class="ink" x="406" y="44" font-size="13.5" font-weight="600">The fix, in the graph</text>
+
+  <!-- left footprint, centre (130, 140) -->
+  <circle class="silk" cx="130" cy="140" r="46"/>
+  <rect class="pad" x="98" y="128" width="24" height="24" rx="2"/><circle class="hole" cx="110" cy="140" r="5"/>
+  <circle class="pad" cx="150" cy="140" r="12"/><circle class="hole" cx="150" cy="140" r="5"/>
+  <path class="silk" d="M62,140 H74 M68,134 V146"/>
+  <text class="muted" x="110" y="172" font-size="11" text-anchor="middle">1</text>
+  <text class="muted" x="150" y="172" font-size="11" text-anchor="middle">2</text>
+  <circle class="bad" cx="68" cy="140" r="10"/>
+  <g font-size="11.5">
+    <text class="ink" x="200" y="104">print: "+" at pad 1</text>
+    <text class="ink" x="200" y="124">symbol, datasheet:</text>
+    <text class="ink" x="200" y="140">pad 1 is the cathode</text>
+    <text class="red" x="200" y="164" font-weight="600">they disagree</text>
+  </g>
+  <text class="muted" x="36" y="226" font-size="11">editing the footprint through the API went nowhere</text>
+
+  <!-- right footprint, centre (500, 140) -->
+  <circle class="silk" cx="500" cy="140" r="46"/>
+  <rect class="pad" x="468" y="128" width="24" height="24" rx="2"/><circle class="hole" cx="480" cy="140" r="5"/>
+  <circle class="pad" cx="520" cy="140" r="12"/><circle class="hole" cx="520" cy="140" r="5"/>
+  <path class="silk" d="M432,140 H444 M438,134 V146"/>
+  <text class="muted" x="480" y="172" font-size="11" text-anchor="middle">1</text>
+  <text class="muted" x="520" y="172" font-size="11" text-anchor="middle">2</text>
+  <circle class="good" cx="438" cy="140" r="10"/>
+  <g font-size="11.5">
+    <text class="ink" x="570" y="104">pin 1: role <tspan class="accent">anode</tspan></text>
+    <text class="ink" x="570" y="120">the anode's net on it</text>
+    <text class="ink" x="570" y="144">pin 2: role <tspan class="accent">cathode</tspan></text>
+    <text class="accent" x="570" y="168" font-weight="600">print and roles agree</text>
+  </g>
+  <text class="muted" x="406" y="226" font-size="11">checks, simulation and pin tables follow the roles</text>
+
+  <text class="muted" x="20" y="272" font-size="12">GEO.mark of the gate reads the "+" in the silk Gerber and fails when the nearest pad with a polarity role is a</text>
+  <text class="muted" x="20" y="289" font-size="12">cathode; the gate's polarity sheet shows each polarised part with copper, print, pad numbers, roles and nets.</text>
+</svg>

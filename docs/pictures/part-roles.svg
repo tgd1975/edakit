@@ -1,0 +1,144 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 392" width="760" height="392" font-family="IBM Plex Sans, Helvetica, Arial, sans-serif" role="img" aria-labelledby="t d">
+  <title id="t">Pins by role</title>
+  <desc id="d">Eight kinds of part with the roles of their pins: a diode or LED has anode and cathode; an npn or pnp transistor collector, base and emitter; an nmos or pmos drain, gate and source; a polarized capacitor plus and minus; a switch common, throw_a and throw_b; a potentiometer end_a, wiper and end_b; a battery holder plus and minus; a button a and b. The checks, the simulation and the firmware's pin tables read the role, not the pin's number or name.</desc>
+  <style>
+    .bg { fill: #f4f6f6; } .station { fill: #ffffff; stroke: #d5dcdc; }
+    .sym { stroke: #1d2626; stroke-width: 1.6; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+    .dot { fill: #1d2626; }
+    .ink { fill: #1d2626; } .muted { fill: #5d6b6b; } .accent { fill: #0e6c6a; } .copper { fill: #b8691f; }
+    @media (prefers-color-scheme: dark) {
+      .bg { fill: #111717; } .station { fill: #182020; stroke: #2c3838; }
+      .sym { stroke: #e3eaea; } .dot { fill: #e3eaea; }
+      .ink { fill: #e3eaea; } .muted { fill: #97a6a6; } .accent { fill: #5cc4c0; } .copper { fill: #e0954f; }
+    }
+  </style>
+  <rect class="bg" x="0" y="0" width="760" height="392" rx="10"/>
+  <text class="ink" x="20" y="28" font-size="13.5" font-weight="600">Pins by role <tspan class="muted" font-weight="400">– the checks, the simulation and the firmware read the role, not the name</tspan></text>
+
+  <!-- cells: x 20, 205, 390, 575 (w 165); y 44, 216 (h 160) -->
+  <g>
+    <rect class="station" x="20" y="44" width="165" height="160" rx="8"/>
+    <rect class="station" x="205" y="44" width="165" height="160" rx="8"/>
+    <rect class="station" x="390" y="44" width="165" height="160" rx="8"/>
+    <rect class="station" x="575" y="44" width="165" height="160" rx="8"/>
+    <rect class="station" x="20" y="216" width="165" height="160" rx="8"/>
+    <rect class="station" x="205" y="216" width="165" height="160" rx="8"/>
+    <rect class="station" x="390" y="216" width="165" height="160" rx="8"/>
+    <rect class="station" x="575" y="216" width="165" height="160" rx="8"/>
+  </g>
+  <g class="ink" font-size="12.5" font-weight="600" text-anchor="middle">
+    <text x="102" y="192">diode, led</text>
+    <text x="287" y="192">npn, pnp</text>
+    <text x="472" y="192">nmos, pmos</text>
+    <text x="657" y="192">capacitor, polarized</text>
+    <text x="102" y="364">switch</text>
+    <text x="287" y="364">potentiometer</text>
+    <text x="472" y="364">battery_holder</text>
+    <text x="657" y="364">button</text>
+  </g>
+
+  <!-- LED, centre (102, 114) -->
+  <g class="sym">
+    <path d="M47,114 H90 M114,114 H157"/>
+    <path d="M90,102 L90,126 L112,114 Z"/>
+    <path d="M114,102 V126"/>
+    <path d="M100,98 L108,88 M104,88 L108,88 L108,92"/>
+    <path d="M108,102 L116,92 M112,92 L116,92 L116,96"/>
+  </g>
+  <g class="accent" font-size="11">
+    <text x="47" y="136">anode</text>
+    <text x="157" y="136" text-anchor="end">cathode</text>
+  </g>
+
+  <!-- NPN, centre (287, 114) -->
+  <g class="sym">
+    <path d="M232,114 H277"/>
+    <path d="M277,96 V132"/>
+    <path d="M277,106 L299,92 V66"/>
+    <path d="M277,122 L299,136 V162"/>
+    <path d="M292,128 L299,136 L289,137"/>
+  </g>
+  <g class="accent" font-size="11">
+    <text x="306" y="76">collector</text>
+    <text x="232" y="106">base</text>
+    <text x="306" y="158">emitter</text>
+  </g>
+
+  <!-- NMOS, centre (472, 114) -->
+  <g class="sym">
+    <path d="M417,124 H458 M458,98 V124"/>
+    <path d="M465,96 V106 M465,109 V119 M465,122 V132"/>
+    <path d="M465,100 H486 V66"/>
+    <path d="M465,128 H486 V162"/>
+    <path d="M465,114 H486 V128"/>
+    <path d="M472,110 L466,114 L472,118"/>
+  </g>
+  <g class="accent" font-size="11">
+    <text x="493" y="76">drain</text>
+    <text x="417" y="117">gate</text>
+    <text x="493" y="158">source</text>
+  </g>
+
+  <!-- polarized capacitor, centre (657, 114) -->
+  <g class="sym">
+    <path d="M602,114 H651 M665,114 H712"/>
+    <path d="M651,98 V130"/>
+    <path d="M669,98 Q661,114 669,130"/>
+    <path d="M637,96 H645 M641,92 V100"/>
+  </g>
+  <g class="accent" font-size="11">
+    <text x="602" y="136">plus</text>
+    <text x="712" y="136" text-anchor="end">minus</text>
+  </g>
+
+  <!-- switch SPDT, centre (102, 286) -->
+  <g class="sym">
+    <path d="M47,286 H78"/>
+    <circle cx="81" cy="286" r="3"/>
+    <path d="M84,285 L118,270"/>
+    <circle cx="123" cy="268" r="3"/>
+    <circle cx="123" cy="304" r="3"/>
+    <path d="M126,268 H157 M126,304 H157"/>
+  </g>
+  <g class="accent" font-size="11">
+    <text x="47" y="306">common</text>
+    <text x="157" y="260" text-anchor="end">throw_a</text>
+    <text x="157" y="324" text-anchor="end">throw_b</text>
+  </g>
+
+  <!-- potentiometer, centre (287, 296) -->
+  <g class="sym">
+    <path d="M232,296 H260 M314,296 H342"/>
+    <rect x="260" y="288" width="54" height="16"/>
+    <path d="M287,252 V284 M282,277 L287,285 L292,277"/>
+  </g>
+  <g class="accent" font-size="11">
+    <text x="232" y="318">end_a</text>
+    <text x="294" y="262">wiper</text>
+    <text x="342" y="318" text-anchor="end">end_b</text>
+  </g>
+
+  <!-- battery holder, centre (472, 286) -->
+  <g class="sym">
+    <path d="M417,286 H464 M480,286 H527"/>
+    <path d="M464,266 V306"/>
+    <path d="M480,276 V296" stroke-width="4"/>
+    <path d="M450,268 H458 M454,264 V272"/>
+  </g>
+  <g class="accent" font-size="11">
+    <text x="417" y="308">plus</text>
+    <text x="527" y="308" text-anchor="end">minus</text>
+  </g>
+
+  <!-- button, centre (657, 290) -->
+  <g class="sym">
+    <path d="M602,296 H636 M678,296 H712"/>
+    <circle cx="639" cy="296" r="3"/>
+    <circle cx="675" cy="296" r="3"/>
+    <path d="M633,284 H681 M657,284 V270 M649,270 H665"/>
+  </g>
+  <g class="accent" font-size="11">
+    <text x="602" y="318">a</text>
+    <text x="712" y="318" text-anchor="end">b</text>
+  </g>
+</svg>
