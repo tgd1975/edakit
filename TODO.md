@@ -46,12 +46,8 @@ E-1 to E-17 on EasyEDA Pro and M-1 to M-10 on easyeda-mcp-pro, checked live on E
 
 - [ ] TD-105 - **E-18 (a saved schematic, opened again, puts a pin on a second net):** check it live on the newest
       EasyEDA Pro and against the API docs, then report it upstream on the owner's "posten?" – entered unreported with
-      #117 (edakit 1.0.6); upstream/README.md follows. Not reproduced on `examples/coin-cell-led` (2026-11-02: saved,
-      opened again, matches) – it needs `tree`, so after TD-106. *(edakit-80)*
-- [ ] TD-106 - **#117 on `tree` (pytree):** once `schematic create --save` passes place-D2 again (it times out at
-      `schematic.placeComponent`, C2895477), run it with edakit 1.0.6 and `schematic check --schematic generated_tree`
-      before and after `gate --easyeda` – both the same shows the gap closed; a drifted save gives E-18 its live case.
-      *(edakit-80)*
+      #117 (edakit 1.0.6); the cause found live on `tree` and E-18 rewritten with #256 (edakit 1.0.14): another
+      schematic of the project open. *(edakit-80)*
 
 ### Waiting for upstream
 
@@ -76,6 +72,9 @@ Nothing to do until there is an answer or a release; whichever session learns of
 Done or dropped, newest first, each with its date and the commit that closed it. What closed before 2026-11-01 is
 taken from the history of this file; an item rewritten on its way is listed once, in its last form.
 
+- [x] TD-106 - **#117 on `tree` (pytree):** run by pytree-29 – with #232 the check differed before and after the
+      gate; the cause was the board's schematic `layout_tree` left open, not the save. Fixed in #256 (edakit 1.0.14),
+      live on `tree`: with `layout_tree` open the check matches. [2026-11-02]
 - [x] TD-104 - **A picture of the routed board for the walkthroughs:** `board_main_top.png` of a gate run in both
       examples' `docs/` – coin-cell-led from the EasyEDA run 20261101-200611, blinker-555 from `gate --eda` with KiCad
       10 –, shown in handbook 17.11 and 18 after the silkscreen (#246, edakit 1.0.10). [2026-11-02]
