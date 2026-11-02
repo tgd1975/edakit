@@ -2,7 +2,7 @@
 
 For you when you set up a board's scenarios or a part's behaviour model. `edakit sim` turns the graph into an ngspice
 netlist per scenario, computes the DC operating point, and checks every part against its ratings and the circuit against
-its function – in seconds, on every commit.
+its function – in seconds, on every commit. The short way: [Design the circuit](../docs/steps/04-design-the-circuit.md).
 
 DC operating points come first because the expensive errors on a small board are static. A resistor that cooks at full
 brightness, a regulator without headroom at the low end of the USB voltage, an LED the wrong way round, a net that

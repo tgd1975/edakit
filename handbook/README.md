@@ -1,7 +1,9 @@
 # Handbook: from a circuit to a manufactured board with EasyEDA Pro or KiCad and Claude Code
 
-The guides, by station. The circuit is a result on its own; the board starts from its hand-over. New here: the
-[quickstart](../docs/quickstart.md) and [how it works](../docs/how-it-works.md) come first.
+The complete handbook: what edakit does, every case and every key, and what the assistant reads in a session. The short
+way is [the steps](../docs/steps/README.md). The guides, by station. The circuit is a result on its own; the board
+starts from its hand-over. New here: the [quickstart](../docs/quickstart.md) and [how it works](../docs/how-it-works.md)
+come first.
 
 ## The circuit
 

@@ -2,7 +2,8 @@
 
 For you when a board goes to the manufacturer. After this chapter you know what the gate checks, how a sign-off is bound
 to a hash, when a run is RELEASED, how a released run reaches the maker's cart, and how a project's own scripts, agents
-and requirements take part.
+and requirements take part. The short way: [Have it reviewed](../docs/steps/08-have-it-reviewed.md) and [Order the
+board](../docs/steps/10-order-the-board.md).
 
 Only the gate creates the files that go to the manufacturer, and only the current release may be uploaded: the run whose
 manifest says `"released": true` – a newer released run supersedes it (one current release, 8.3). The gate runs every

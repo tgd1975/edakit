@@ -2,8 +2,8 @@
 docs/organisation.md lists it: the entry pages' sentences, sections without a subheading, chapters over 500 lines and
 paragraphs over 120 words, bare cross-references, "the user" and "the reference project" in a page's own sentences,
 dates outside the history, bold terms the glossary does not have, buzzwords outside docs/architecture.md and the
-README's one "harness", and the budgets of the lightest pages (docs/concepts/new/documentation-newcomer.md, decision
-4). It reads documentation only.
+README's one "harness", the budgets of the lightest pages (docs/concepts/new/documentation-newcomer.md, decision 4),
+and the steps' own rules: sentences of at most 30 words, no aside. It reads documentation only.
 
 A page that does not meet a rule today stands in RED: its test is expected to fail and fails once the page meets the
 rule, so that the page leaves RED (steps D.2 and D.5 of docs/concepts/done/documentation.md). A new page meets every
@@ -17,7 +17,8 @@ import pytest
 ROOT = Path(__file__).resolve().parents[1]
 GLOSSARY = ROOT / "docs" / "glossary.md"
 PROJECTS = tuple(p.relative_to(ROOT).as_posix() for p in sorted((ROOT / "docs" / "projects").glob("*.md")))
-ENTRY = ("README.md", "docs/glossary.md", "docs/quickstart.md", "docs/how-it-works.md") + PROJECTS   # the entry layer
+STEPS = tuple(p.relative_to(ROOT).as_posix() for p in sorted((ROOT / "docs" / "steps").glob("*.md")))
+ENTRY = ("README.md", "docs/glossary.md", "docs/quickstart.md", "docs/how-it-works.md") + PROJECTS + STEPS   # entry
 HISTORY = ("handbook/13-lessons-learned.md",)       # the history of edakit: its dates are its content
 DATED = ("handbook/15-regulatory.md",               # the state of the law the regulatory review relies on
          "examples/coin-cell-led/docs/decisions.md",  # a decision log: each decision with its day
@@ -27,6 +28,7 @@ SECTION_LINES = 80
 CHAPTER_LINES = 500                        # a chapter of the handbook
 PARAGRAPH_WORDS = 120
 ENTRY_MEAN, ENTRY_MAX = 20, 35
+STEPS_MAX = 30                             # the longest sentence of a steps page
 MONTHS = "January|February|March|April|May|June|July|August|September|October|November|December"
 DATE = re.compile(rf"\b20\d\d-\d\d-\d\d\b|\b(?:\d{{1,2}}(?:–\d{{1,2}})? )?(?:{MONTHS}) 20\d\d\b")
 BUZZ = re.compile(r"\b(?:[Hh]arness(?:es)?|[Aa]gentic|AI-powered|copilots?)\b")   # "GitHub Copilot" is a name
@@ -109,7 +111,8 @@ def sentences(text):
 
 def long_sentences(page, text):
     words = [len(re.findall(r"[\w'’-]+", s)) for s in sentences(own(text))]
-    out = [f"a sentence of {n} words (at most {ENTRY_MAX})" for n in words if n > ENTRY_MAX]
+    most = STEPS_MAX if page.startswith("docs/steps/") else ENTRY_MAX
+    out = [f"a sentence of {n} words (at most {most})" for n in words if n > most]
     mean = sum(words) / len(words) if words else 0
     return out + ([f"{mean:.1f} words per sentence on average (at most {ENTRY_MEAN})"] if mean > ENTRY_MEAN else [])
 
@@ -180,15 +183,22 @@ def bold_terms(page, text):
 
 
 def glossary_terms_used(text):
-    """The glossary's terms a page uses, as whole words, a plural allowed; "Claude Code" is a name, not the term."""
-    t = own(text).replace("Claude Code", "Claude").lower()
+    """The glossary's terms a page uses, as whole words, a plural allowed; "Claude Code" and "VS Code" are names, not
+    the term, and code or a quoted phrase uses none."""
+    t = re.sub(r"\b(?:CODE|QUOTE)\b", "", own(text))                       # own()'s placeholders for code and quotes
+    t = t.replace("Claude Code", "Claude").replace("VS Code", "VS").lower()   # names
     heads = re.findall(r"^### (.+)$", GLOSSARY.read_text(encoding="utf-8"), re.M)
     return sorted(h for h in heads if re.search(rf"(?<![\w-]){re.escape(h.strip().lower())}(?:e?s)?(?![\w-])", t))
 
 
+def anchor(term):
+    """The glossary's anchor of a term: lower case, words joined by "-", no dots."""
+    return re.sub(r"[^\w-]", "", term.strip().lower().replace(" ", "-"))
+
+
 def budgets(page, text):
     """The budgets of the lightest pages (docs/style.md, "Budgets"): words and glossary terms of How it works, glossary
-    links of the quickstart and of a steps page, the start page's first screen."""
+    links of the quickstart and of a steps page, a steps page's terms all linked, the start page's first screen."""
     out = []
     if page in BUDGET_WORDS and len(text.split()) > BUDGET_WORDS[page]:
         out.append(f"{len(text.split())} words (at most {BUDGET_WORDS[page]})")
@@ -197,6 +207,11 @@ def budgets(page, text):
     limit = BUDGET_LINKS.get(page, STEPS_LINKS if page.startswith("docs/steps/") else None)
     if limit is not None and len(links := set(re.findall(r"glossary\.md#([\w-]+)", text))) > limit:
         out.append(f"{len(links)} glossary links (at most {limit})")
+    if page.startswith("docs/steps/"):
+        linked = set(re.findall(r"glossary\.md#([\w-]+)", text))
+        unlinked = [t for t in glossary_terms_used(text) if anchor(t) not in linked]
+        if unlinked:
+            out.append(f"glossary terms used without a link: {', '.join(unlinked)}")
     if page == "README.md":
         pictures = [m for m in re.finditer(r"!\[[^\]]*\]\(([^)\s]+)\)", text)
                     if not re.search(r"badge|shields\.io|docs/brand/", m.group(1))]
@@ -221,6 +236,12 @@ def buzzwords(page, text):
     return found
 
 
+def asides(page, text):
+    """An aside on a steps page: an en dash between words in its own sentences – a second sentence instead."""
+    t = own(text)
+    return [f"line {t.count(chr(10), 0, m.start()) + 1}: an aside" for m in re.finditer(r"\w \u2013 ", t)]
+
+
 RULES = {                                            # rule: (check, the pages it holds)
     "sentences": (long_sentences, lambda pages: [p for p in pages if p in ENTRY]),
     "sections": (long_sections, lambda pages: pages),
@@ -232,6 +253,7 @@ RULES = {                                            # rule: (check, the pages i
     "bold": (bold_terms, lambda pages: [p for p in pages if p in ENTRY]),
     "buzzwords": (buzzwords, lambda pages: pages),
     "budgets": (budgets, lambda pages: [p for p in pages if p in ENTRY or p.startswith("docs/steps/")]),
+    "asides": (asides, lambda pages: [p for p in pages if p.startswith("docs/steps/")]),
 }
 
 # Today's pages that do not meet a rule yet – measured on main when D.1 was built. D.2 rewrites the README, D.5 the
@@ -249,6 +271,7 @@ RED = {
     "bold": set(),
     "buzzwords": set(),
     "budgets": set(),
+    "asides": set(),
 }
 
 
@@ -293,6 +316,11 @@ def test_the_rules_find_what_they_count():
     assert budgets("docs/quickstart.md", " ".join(f"[t](glossary.md#t{i})" for i in range(7))) == [
         "7 glossary links (at most 6)"]
     assert budgets("docs/steps/1-install.md", "[a](glossary.md#a) [b](glossary.md#b) [a](glossary.md#a)") == []
+    assert budgets("docs/steps/1-install.md", "A [finding](glossary.md#finding) and a skill.") == [
+        "glossary terms used without a link: Skill"]
+    assert anchor("edakit.toml") == "edakittoml" and anchor("Sign-off file") == "sign-off-file"
+    assert long_sentences("docs/steps/x.md", " ".join(["word"] * 31) + ".") != []
+    assert asides("x", "A cell – upside down. A range 2–3 V and `a – b`.") == ["line 1: an aside"]
     short = "# x\n\nOne line.\n\n```bash\nedakit check\n```\n\n![p](examples/x.png)\n"
     assert budgets("README.md", short) == []
     assert budgets("README.md", " ".join(["word"] * 121) + "\n\n![p](examples/x.png)\n") == [

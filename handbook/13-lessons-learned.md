@@ -1,8 +1,8 @@
 # 13 Lessons learned
 
-For anyone who wants to know where edakit comes from and why its rules are as they are. You find the two projects it
-was built on, day by day, where the time went, what we would do again and differently, and how the details of the
-other chapters came about.
+For anyone who wants to know where edakit comes from and why its rules are as they are. You find the two projects it was
+built on, day by day, where the time went, what we would do again and differently, and how the details of the other
+chapters came about. The short way: [the steps](../docs/steps/README.md).
 
 edakit was grown on [pytree](../docs/projects/pytree.md), a programming advent calendar with a tree of circuit boards:
 a project of about 120 parts built in October 2026. Its board has two layers and 98 nets – an MCU module, three LED
