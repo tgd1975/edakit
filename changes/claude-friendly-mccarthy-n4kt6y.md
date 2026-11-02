@@ -9,3 +9,4 @@ patch
   resolved graph.json beside it; `--map FILE` writes where each part and net was written. New: SYNC.graph, an
   error of stage G when the generated graph.json beside a TOML or a .circuit graph no longer is what its source
   resolves to; `edakit hook` runs `graph json --check` for a .circuit graph as for a TOML one.
+- T.5: `edakit graph fmt [--check] [FILE …]` lays a `.circuit` source out canonically, comments kept.

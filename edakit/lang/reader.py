@@ -423,6 +423,7 @@ class Reader:
         lines = st.lines()
         toks = lines[0].toks
         node = self.node(m.Part, st)
+        node.syntax = st
         if len(toks) < 2:
             self.err(st.keyword, "part DES TYPE PARTNO [attributes…] [\"label\"]")
             return node
@@ -435,7 +436,7 @@ class Reader:
                 and t.raw not in ("set", "no-bom") and t.raw not in OLD
 
         if i < len(toks) and toks[i].kind == "word" and bare(toks[i]):
-            node.type = toks[i].raw
+            node.type = None if toks[i].keyword("-") else toks[i].raw
             i += 1
             if i < len(toks) and bare(toks[i]):
                 node.part = None if toks[i].keyword("-") else toks[i].value
@@ -443,22 +444,26 @@ class Reader:
                 i += 1
         elif not self.in_variant:
             self.err(st.keyword, f"part {node.des}: TYPE after the designator – part DES TYPE PARTNO …")
+        node.items.append(("head", toks[:i]))
         self.part_attrs(node, lines, 0, i)
         return node
 
     def part_attrs(self, node, lines, li, i):
         """The attributes of a part from token i of lines[li] on: KEY VALUE pairs, the label, and the line keywords
-        nc, pins, alias, accept."""
+        nc, pins, alias, accept – each recorded in node.items with its tokens, for the formatter."""
         while li < len(lines):
             toks = lines[li].toks
             while i < len(toks):
-                t = toks[i]
+                t, start = toks[i], i
+                kind = "attr"
                 if t.keyword("nc"):
+                    kind = "nc"
                     for p in toks[i + 1:]:
                         self.braces(p)
                         node.nc.append(m.PinWord(self.path, p.line, word=p.value))
                     i = len(toks)
                 elif t.keyword("pins"):
+                    kind = "pins"
                     for p in toks[i + 1:]:
                         k, eq, v = p.raw.partition("=")
                         if not eq or not k:
@@ -467,6 +472,7 @@ class Reader:
                             node.pins.append((k, v))
                     i = len(toks)
                 elif t.keyword("alias"):
+                    kind = "alias"
                     j = i + 1
                     while j < len(toks):
                         if j + 2 < len(toks) and toks[j + 1].keyword("="):
@@ -481,31 +487,52 @@ class Reader:
                             j += 1
                     i = len(toks)
                 elif t.keyword("accept"):
+                    kind = "accept"
                     acc, i = self.accept(toks, i, t.line)
                     node.accepts.append(acc)
                 elif t.kind == "string":
+                    kind = "label"
                     if node.label is not None:
                         self.err(t, f"part {node.des}: a second label – a key before the text? (notes \"…\")")
                     self.braces(t)
                     node.label = t.value
                     i += 1
                 elif t.keyword("label"):
+                    kind = "label"
                     if node.label is not None:
                         self.err(t, f"part {node.des}: a second label")
                     node.label = self.value(toks, i + 1, "label")
                     i += 2
                 else:
                     i, li2 = self.attr(schema.COMPONENT, toks, i, node.attrs, lines, li)
+                    kind = "set" if t.keyword("set") else self.attr_kind(schema.COMPONENT, t.raw)
                     if li2 is not None and li2 != li:
+                        node.items.append((kind, toks[start:]))
                         li, i = li2, len(lines[li2].toks)
                         toks = lines[li].toks
+                        continue
+                node.items.append((kind, toks[start:max(i, start + 1)]))
             li, i = li + 1, 0
+
+    @staticmethod
+    def attr_kind(table, key):
+        """The formatter's class of an attribute: string attributes and lists go on lines of their own, the others
+        on the head."""
+        kind = table.get(key)
+        if key == "notes":
+            return "notes"
+        if kind == "string":
+            return "string"
+        if kind == "list":
+            return "list"
+        return "attr"
 
     # --- nets --------------------------------------------------------------------------------------------------------
     def st_net(self, st):
         lines = st.lines()
         toks = lines[0].toks
         node = self.node(m.Net, st)
+        node.syntax = st
         if len(toks) < 2:
             self.err(st.keyword, "net NAME [RANGE] PINWORD …")
             return node
@@ -525,6 +552,7 @@ class Reader:
                     node.v, i = q, j
                 elif j != i:
                     i = j
+        node.items.append(("head", toks[:i]))
         self.net_tokens(node, lines, 0, i)
         return node
 
@@ -533,22 +561,25 @@ class Reader:
         while li < len(lines):
             toks = lines[li].toks
             while i < len(toks):
-                t = toks[i]
+                t, start, kind = toks[i], i, "attr"
                 if is_pin(t):
+                    kind = "pin"
                     self.braces(t)
                     last_pin = m.PinWord(self.path, t.line, word=t.raw)
                     node.pins.append(last_pin)
                     i += 1
-                elif t.kind == "group" and t.raw == "(locked)":
-                    if last_pin is None or i == 0 or not is_pin(toks[i - 1]):
-                        self.err(t, "(locked) after the pin word it marks")
-                    else:
+                    if i < len(toks) and toks[i].kind == "group" and toks[i].raw == "(locked)":
                         last_pin.locked = True
+                        i += 1
+                elif t.kind == "group" and t.raw == "(locked)":
+                    self.err(t, "(locked) after the pin word it marks")
                     i += 1
                 elif t.keyword("accept"):
+                    kind = "accept"
                     acc, i = self.accept(toks, i, t.line)
                     node.accepts.append(acc)
                 elif t.keyword("without"):
+                    kind = "without"
                     if not self.in_variant:
                         self.err(t, f"net {node.name}: without – takes pins off a net of the base, only in a variant")
                     for p in toks[i + 1:]:
@@ -561,12 +592,16 @@ class Reader:
                     i += 1
                 elif t.kind == "word":
                     i, li2 = self.attr(schema.NET, toks, i, node.attrs, lines, li)
+                    kind = "set" if t.keyword("set") else self.attr_kind(schema.NET, t.raw)
                     if li2 is not None and li2 != li:
+                        node.items.append((kind, toks[start:]))
                         li, i = li2, len(lines[li2].toks)
                         toks = lines[li].toks
+                        continue
                 else:
                     self.err(t, f"net {node.name}: {t.raw} – a pin word, (locked) or an attribute")
                     i += 1
+                node.items.append((kind, toks[start:max(i, start + 1)]))
             li, i = li + 1, 0
 
     # --- cables and the layout ---------------------------------------------------------------------------------------

@@ -16,6 +16,7 @@ from .units import Quantity
 class Node:
     file: str
     line: int
+    syntax = None                                     # the tokens.Statement a part or a net was read from
 
 
 @dataclass(eq=False)
@@ -99,6 +100,7 @@ class Part(Node):
     aliases: list = field(default_factory=list)       # [(name, word)]
     accepts: list = field(default_factory=list)       # [Accept]
     head: bool = True                                 # False: a binding's part in a usage (no TYPE, no PARTNO given)
+    items: list = field(default_factory=list)         # [(kind, tokens)] as written – the formatter lays them out
 
     def attr(self, key, default=None):
         return next((v for k, v in reversed(self.attrs) if k == key), default)
@@ -112,6 +114,7 @@ class Net(Node):
     attrs: list = field(default_factory=list)         # [(key, value)]
     accepts: list = field(default_factory=list)
     without: list = field(default_factory=list)       # [PinWord] – only in a variant
+    items: list = field(default_factory=list)         # [(kind, tokens)] as written – the formatter lays them out
 
 
 @dataclass(eq=False)

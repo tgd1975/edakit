@@ -116,13 +116,15 @@ def build_parser():
 
     p = sub.add_parser("graph", help="what the graph says about one part or net; the resolved graph as JSON; a JSON "
                                      "graph moved to TOML")
-    p.add_argument("action", choices=["show", "json", "convert"])
-    p.add_argument("name", nargs="?", help="show: a designator (U1) or a net name (LED_CLK)")
+    p.add_argument("action", choices=["show", "json", "convert", "fmt"])
+    p.add_argument("name", nargs="?", help="show: a designator (U1) or a net name (LED_CLK); fmt: a .circuit file")
+    p.add_argument("files", nargs="*", help="fmt: further .circuit files (default: the project's source)")
     p.add_argument("--json", help="show: write the view and its findings as JSON")
     p.add_argument("--write", action="store_true", help="json: write the resolved graph beside a TOML or a .circuit "
                                                         "graph (hardware/graph.json)")
     p.add_argument("--check", action="store_true", help="json: compare the generated file with the graph, write "
-                                                        "nothing; exit 2 on drift")
+                                                        "nothing; exit 2 on drift; fmt: exit 2 where the layout "
+                                                        "would change")
     p.add_argument("--dry-run", action="store_true", help="convert: print what would change, write nothing")
     p.add_argument("--map", metavar="FILE", help="json: write the source map of a .circuit graph – where each part, "
                                                  "net, lock and accept was written")
@@ -391,6 +393,9 @@ def _main(argv=None):
     if args.command == "block" and args.action in ("list", "show"):
         from . import block
         return block.main(None, args)
+    if args.command == "graph" and args.action == "fmt" and args.name:     # files named: no project needed
+        from .lang import cli as lang_cli
+        return lang_cli.main(None, args)
     from . import config
     try:
         cfg = config.load(args.config)
@@ -423,6 +428,9 @@ def _main(argv=None):
     if args.command == "graph" and args.action == "show":
         from . import graph_show
         return graph_show.main(cfg, args)
+    if args.command == "graph" and args.action == "fmt":
+        from .lang import cli as lang_cli
+        return lang_cli.main(cfg, args)
     if args.command == "graph":
         from . import graph_form
         return graph_form.main(cfg, args)
