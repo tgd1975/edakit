@@ -543,11 +543,11 @@ def test_the_drc_reloads_the_pcb_only_on_connection_errors(monkeypatch, first, r
     assert len(done) == reloads and found == ([] if reloads else first)
 
 
-# --- stage S reads the schematic with no other schematic open (#117, E-18) ---------------------------------------------
+# --- stage S reads the schematic with no other schematic open (#117, M-11) ---------------------------------------------
 
 class FakeSaved:
     """Two schematics of one project, both open in tabs: the template and the board's schematic, its copy. While the
-    board's schematic is open, EasyEDA lists one pin of the template on a second net with no primitive there (E-18,
+    board's schematic is open, the bridge lists one pin of the template on a second net with no primitive there (M-11,
     pytree's U4.11 on V_LED with layout_tree open); with that tab closed, the template answers as drawn. Records the
     calls in order."""
 
@@ -620,7 +620,7 @@ def run_check(cfg, monkeypatch, mcp, tmp_path):
 
 
 def test_stage_s_reads_the_template_with_no_other_schematic_open(cfg, monkeypatch, tmp_path):
-    """#117, E-18: with the board's schematic open – stage F focuses it last – EasyEDA lists a pin of the template on a
+    """#117, M-11: with the board's schematic open – stage F focuses it last – the bridge lists a pin of the template on a
     second net; with it closed the template matches. The check closes every other saved schematic tab before it reads,
     so the result does not depend on what ran before in the session. The PCB's tab stays."""
     mcp, _ = saved_template(cfg)
