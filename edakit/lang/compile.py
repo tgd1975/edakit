@@ -569,8 +569,10 @@ class Assembler:
     # parts
     def on_part(self, st):
         if getattr(st, "expanded", None) is not None:
-            use, _ = st.expanded
+            use, defpart = st.expanded
             self.map.put("usages", use.instance, use)
+            self.map.put("components", st.des, st, use=f"{use.file}:{use.line}",
+                         definition=f"{defpart.file}:{defpart.line}")
         c = {"designator": st.des}
         if st.type is not None:
             c["type"] = st.type
