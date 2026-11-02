@@ -5,10 +5,11 @@ switch of a Christmas tree made of circuit boards. With each code the tree wakes
 of December, the whole tree with its golden star and a melody from the buzzer on the 24th. Its repository is private;
 this page is the one description of it in edakit.
 
-**State 2026-11-02:** the tree board released in gate run 20261031-110510; edakit's gate makes the same
-manufacturing files from the same board (run 20261101-003052). Five boards are ordered at JLCPCB, assembled on the
-back, from the cart the skill cart filled and checked (the record of run 20261101-225744); the parts from LCSC ship
-with them.
+**State 2026-11-02:** the tree board released in gate run 20261101-225744 and ordered at JLCPCB on 2026-11-02.
+Five boards, assembled on the back, from the cart the skill cart filled and checked; the parts from LCSC ship with
+them.
+
+![pytree: the lit tree in its printed snow hill – the project's render of its 3D model](pytree/tree_in_hill.png)
 
 ## What it is
 
@@ -19,8 +20,9 @@ with them.
   print and a copper area. Routed by Freerouting, DRC 0.
 - **The assembly.** JLCPCB makes the board and assembles the back side; the through-hole parts are soldered by hand.
 
-The pictures are edakit's: the board drawn from the Gerber files of release 20261031-110510, the schematic drawn by
-`edakit schematic draw` from the graph at pytree's commit 8852d23.
+The board and schematic pictures are edakit's, drawn by the gate into the protocol of release 20261101-225744 – the
+board from its Gerber files, the schematic from its graph. The render of the tree in its hill is the project's own,
+from the 3D model of the printed hill; a photo of the delivered tree will replace it.
 
 ## The board
 
@@ -54,3 +56,10 @@ Its blocks, as the drawing names them:
 edakit was grown on this project: the first released manufacturing files came five days after the first graph. The
 simulation ran 41 scenarios with about 11 000 single checks in about 3 seconds. What went wrong on the way, and what
 edakit learned from it, is in [lessons learned](../../handbook/13-lessons-learned.md).
+
+One of those lessons in a picture. The back of the earlier release 20261031-110510, left, had copper islands without a
+pad, which EasyEDA drops when it fills the pours. Gate, DRC and the layout review all passed it. The copper review of
+2026-11-01 found them; on the right the back after the review, where seams of the LED supply close the channels.
+GEO.pour measures the bare area since.
+
+![pytree's back before and after the copper review](pytree/copper_back_before_after.png)
