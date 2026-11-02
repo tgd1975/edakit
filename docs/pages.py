@@ -49,7 +49,8 @@ def title_of(text, fallback):
 
 # The navigation: (tab, [(repo path, title of at most five words)]); a tab's first page is its index page where it is
 # one (README.md, handbook/README.md). "A circuit" and "A board" are the steps, the person's manual, in the order of the
-# walkthrough. The handbook's chapters stand as its index orders them, 9 and 10 under Reference.
+# walkthrough. The handbook's chapters stand by their numbers – its index says which to read when –, 9 and 10 under
+# Reference.
 NAV = [
     ("Start", [
         ("README.md", "Start"),
@@ -89,20 +90,20 @@ NAV = [
         ("handbook/README.md", "The handbook"),
         ("handbook/01-approach.md", "1 The approach"),
         ("handbook/02-setup.md", "2 Setup"),
-        ("handbook/11-working-with-claude.md", "11 Working with Claude"),
-        ("handbook/14-design.md", "14 Designing a circuit"),
         ("handbook/03-hardware-graph.md", "3 Hardware graph"),
         ("handbook/04-parts-database.md", "4 Parts"),
         ("handbook/05-simulation.md", "5 Simulation"),
-        ("handbook/15-regulatory.md", "15 Regulatory review"),
         ("handbook/06-schematic.md", "6 Schematic"),
         ("handbook/07-pcb.md", "7 PCB"),
         ("handbook/08-release-gate.md", "8 Release gate"),
-        ("handbook/16-kicad.md", "16 KiCad"),
-        ("handbook/17-walkthrough.md", "17 Walkthrough"),
-        ("handbook/18-walkthrough-kicad.md", "18 Walkthrough on KiCad"),
+        ("handbook/11-working-with-claude.md", "11 Working with Claude"),
         ("handbook/12-troubleshooting.md", "12 Troubleshooting"),
         ("handbook/13-lessons-learned.md", "13 Lessons learned"),
+        ("handbook/14-design.md", "14 Designing a circuit"),
+        ("handbook/15-regulatory.md", "15 Regulatory review"),
+        ("handbook/16-kicad.md", "16 KiCad"),
+        ("handbook/17-walkthrough.md", "17 Walkthrough on EasyEDA"),
+        ("handbook/18-walkthrough-kicad.md", "18 Walkthrough on KiCad"),
     ]),
     ("Reference", [
         ("handbook/10-reference.md", "Files, keys and commands"),
@@ -125,6 +126,9 @@ INSIDE = ("docs/concepts/README.md", "skills/README.md", "agents/README.md", "ev
 SOURCE = ('!!! note "A source"\n    This page is a source of edakit – a concept, a prompt or the rules of a session –, '
           'shown as it is in the repository. Read it as such; the guides say what edakit does.\n')
 ISSUES = f"{REPO}/issues/new/choose"
+# A ```mermaid block is drawn by Material, as GitHub draws it: a custom fence whose format is a Python function – a YAML
+# tag, which mkdocs.yml carries unquoted (assemble).
+FENCE_FORMAT = "!!python/name:pymdownx.superfences.fence_code_format"
 # The old address of a page that moved on the site: a page there that sends the reader on, so a link from outside holds.
 REDIRECTS = {"inside-edakit/index.html": "../inside/"}
 
@@ -320,7 +324,9 @@ def config(nav):
         },
         "extra_css": ["brand/edakit.css"],
         "markdown_extensions": ["tables", "admonition", "attr_list", "md_in_html", "def_list",
-                                {"toc": {"permalink": True}}, "pymdownx.superfences",
+                                {"toc": {"permalink": True}},
+                                {"pymdownx.superfences": {"custom_fences": [
+                                    {"name": "mermaid", "class": "mermaid", "format": FENCE_FORMAT}]}},   # format last
                                 {"pymdownx.highlight": {"anchor_linenums": False}}, "pymdownx.inlinehilite",
                                 "pymdownx.details"],
         "validation": {"nav": {"omitted_files": "info", "not_found": "warn"},
@@ -369,8 +375,9 @@ def assemble(out=ROOT / "build" / "pages"):
     for rel in sorted(media):
         (docs / "files" / rel).parent.mkdir(parents=True, exist_ok=True)
         shutil.copy2(ROOT / rel, docs / "files" / rel)
-    # JSON is YAML: MkDocs reads it without PyYAML here
-    (out / "mkdocs.yml").write_text(json.dumps(config(nav), indent=1, ensure_ascii=False), encoding="utf-8")
+    # JSON is YAML: MkDocs reads it without PyYAML here – the fence's format unquoted, a tag, not a string
+    text = json.dumps(config(nav), indent=1, ensure_ascii=False).replace(json.dumps(FENCE_FORMAT), FENCE_FORMAT)
+    (out / "mkdocs.yml").write_text(text, encoding="utf-8")
     return out
 
 

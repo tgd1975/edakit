@@ -104,6 +104,8 @@ in `sources` – any RP2350 module takes the same list per GPIO. On the RP2040 a
 
 Pin roles (`role`) tell the code what a pin does, independent of its name:
 
+![Pins by role: anode and cathode of a diode or LED, collector, base and emitter of a bipolar transistor, drain, gate and source of a MOSFET, plus and minus of a polarized capacitor and a battery holder, common and throws of a switch, the ends and wiper of a potentiometer, a and b of a button](../docs/pictures/part-roles.svg)
+
 | kind | roles |
 |---|---|
 | capacitor | the pin numbers `1`, `2`; a polarized one `plus`, `minus` |
@@ -129,6 +131,8 @@ Pin roles (`role`) tell the code what a pin does, independent of its name:
 | ic, module | as the behaviour model needs them: `vin`, `vout`, `gnd`, `vsys`, `3v3`, `gpio`, `rext`, `out`, `oe_n`, `vdd`; `sda`, `scl` for I2C pins (REQ.missing); on shift registers and LED drivers `sdi`, `sdo` (serial data in and out) and the outputs numbered `out0` … `outN` where their order matters – the simulation reads them as `out`, the firmware contract numbers its channels by them (3.5) |
 
 ### Limits and values
+
+![Limits and values of a resistor, an LED, an nmos and a capacitor, each beside its symbol with what it is held to – the voltage, current and power at the part](../docs/pictures/part-limits.svg)
 
 What `edakit part lint` holds an entry to and the engines read, per kind – generated from `edakit/catalog/kinds.toml`
 (`python -m edakit.catalog.handbook --write`):
@@ -469,6 +473,8 @@ A real project had a 5 mm LED whose EasyEDA footprint printed "+" next to pad 1,
 pad 1 the cathode. Editing the project's footprint through the API went nowhere (chapter 9.4). The fix is in the
 graph: the net of the anode goes to the pad with the "+" print, and the parts entry gives pin 1 the role `anode` – so
 every check, the simulation and the firmware pin tables follow.
+
+![A library footprint that prints + at pad 1 while the datasheet calls pad 1 the cathode, and the fix in the graph: pin 1 gets the role anode and the anode's net, so print and roles agree](../docs/pictures/footprint-polarity.svg)
 
 The gate's polarity sheet – one tile per polarised part with copper, silkscreen, pad numbers, roles and nets – makes
 this visible at a glance. GEO.mark of the gate finds it on its own: it reads the "+" the footprint draws in the silk
