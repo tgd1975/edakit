@@ -21,3 +21,4 @@ patch
   entry inside the window; `edakit graph derive [--write]`; `edakit graph show` lists a part's records. New
   engine DEF: DEF.derive, a warning when a part's value lies outside its record's window or the record's inputs
   changed since (grade inputs). Handbook chapter 19 begins.
+- T.9: a TextMate grammar for `.circuit` files and VS Code's language configuration (`editors/vscode/`).
