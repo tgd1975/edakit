@@ -88,7 +88,7 @@ Three numbers, major.minor.patch, starting at 0.2.0:
 
 | Number | Set by | When | Examples |
 | --- | --- | --- | --- |
-| **Major** | the owner | when the owner releases one; Claude may propose it, never set it | 1.0.0 once step D.2 of [documentation.md](../new/documentation.md), the entry layer (start page, quickstart, how it works), is built |
+| **Major** | the owner | when the owner releases one; Claude may propose it, never set it | 1.0.0 once step D.2 of [documentation.md](documentation.md), the entry layer (start page, quickstart, how it works), is built |
 | **Minor** | Claude | a project must change one of its files or sign again when it updates | a key, file format, command or exit code removed or changed in meaning; a hash computed differently (sign-offs void); a retired code that waivers name; a new seal format |
 | **Patch** | Claude | everything else | a new rule (check, hint, block, parts fact), a severity raised; a new command, key, maker or skill; a fix; the handbook; a prompt's wording |
 | – | the paths | a merge that changes nothing a project reads, the notes lane among them: no version, no fragment | `tests/`, `.github/`, `evals/`, `docs/`, `examples/`, `upstream/`, `.claude/`, `TODO.md`, `CLAUDE.md`, `README.md` |

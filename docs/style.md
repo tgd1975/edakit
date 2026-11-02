@@ -51,12 +51,23 @@ catalog pages.
 | Length | a page of at most two screens; the quickstart longer | a chapter of at most 500 lines; the same statements in a third fewer words than before its trim | as long as the things it lists |
 | Asides | none – a second sentence instead | one per sentence, with the en dash | – |
 | Cross-references | to the glossary and to one guide page, by name | the subject and the number: "the board file (10.2)" | by number and name |
-| Terms | one new term per sentence, linked to the glossary at first use | as the glossary has them | as the glossary has them |
+| Terms | one new term per sentence, linked to the glossary at first use; the budgets below | as the glossary has them | as the glossary has them |
 | History | none | none – it belongs in chapter 13 | none |
 | State | a status admonition, one line | the same | the same |
 
 A cross-reference names its subject. "The sign-off file (8.2)" tells a reader who does not know the numbering what is
 there; "(8.2)" alone does not.
+
+## Budgets
+
+The lightest pages have a count, so that a newcomer meets the words one at a time
+([documentation-newcomer](concepts/new/documentation-newcomer.md), decision 4):
+
+- The start page: at most 120 words before the first picture, the two-minute command within its first 40 lines.
+- How it works: at most 1,100 words and 15 glossary terms – a term counts when the page uses it, linked or not. The
+  ten words the site rests on are the glossary's first section, and How it works links it.
+- The quickstart: at most six glossary links. A steps page (`docs/steps/`): at most three, and no term it does not
+  link.
 
 ## Dense
 
@@ -131,8 +142,10 @@ code, block quotes, phrases in quotation marks and section 11.4. In them it coun
 - "the reference project" and "the user";
 - a date outside chapter 13, chapter 15 (the state of the law), a decision log and the status lines;
 - on the entry pages, a term in bold that the glossary does not have – a bold title of a paragraph or an item is no
-  term.
-- a buzzword outside [architecture](architecture.md) and the README's one "harness".
+  term;
+- a buzzword outside [architecture](architecture.md) and the README's one "harness";
+- the budgets: the start page's words before the first picture and the line of its two-minute command, the words and
+  the glossary terms of How it works, the glossary links of the quickstart and of a steps page.
 
 A page that does not meet a rule today is listed in the test as expected to fail, and the test fails once the page
 meets it, so that the entry leaves the list. A new page meets every rule from the start. The rest – meaning, order, the

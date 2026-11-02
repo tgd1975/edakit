@@ -1,4 +1,4 @@
-"""The addresses the automation reads in the handbook (docs/concepts/new/documentation.md, "What the automation reads"):
+"""The addresses the automation reads in the handbook (docs/concepts/done/documentation.md, "What the automation reads"):
 every "handbook N" and "handbook N.N" named in the code, the skills, the agents and this repository's skills is a
 chapter or a section of the handbook, every chapter file they name exists, and every path a skill or an agent opens
 under ${CLAUDE_PLUGIN_ROOT} exists. Red before a section disappears, not after a session finds the gap."""
