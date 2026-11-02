@@ -66,15 +66,6 @@ Nothing to do until there is an answer or a release; whichever session learns of
       check it live, take it up and say so in upstream/README.md. EasyEDA's first answer is often "update to the latest
       version".
 
-## Versions and branch protection ([versioning.md](docs/concepts/done/versioning.md))
-
-Decided on 2026-11-01: 0.2.0 first; the major number the owner's to release, minor and patch by one question (minor
-when a project must act); every merge that changes edakit a version of its own, numbered by `.github/merge.py`; the
-notes lane for concepts and TODO.md; the rulesets on main as text; the projects on the newest version, unpinned. Each
-step starts on the owner's word.
-
-- [ ] TD-49 - **V.6** 1.0.0 on the owner's word once D.2 is built (`merge.py <n> --major`).
-
 ## The documentation for its readers ([documentation.md](docs/concepts/new/documentation.md))
 
 Built on 2026-11-01 (#174, edakit 0.4.14); what is left after the owner's review (TD-81):
@@ -88,6 +79,8 @@ Built on 2026-11-01 (#174, edakit 0.4.14); what is left after the owner's review
 Done or dropped, newest first, each with its date and the commit that closed it. What closed before 2026-11-01 is
 taken from the history of this file; an item rewritten on its way is listed once, in its last form.
 
+- [x] TD-49 - **V.6** 1.0.0 released on the owner's word at the first order – pytree's tree and the bell's tht and
+  esp32tht at JLCPCB, the milestone in handbook 13.7 (#210, 72bf30b). *(edakit-4b)* [2026-11-02]
 - [x] TD-92 - **OK for #194:** given; merged as edakit 0.6.0 (#194, 78ae7d7). *(edakit-6a)* [2026-11-02]
 - [x] TD-89 - **The LED model's ideality:** `values.vf_vs_if`, points of the datasheet's IV curve, sets it; 2 without,
   `edakit part lint` holds the points to their form (#194, 78ae7d7). [2026-11-02]
