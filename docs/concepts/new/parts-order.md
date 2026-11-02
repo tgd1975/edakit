@@ -66,6 +66,44 @@ before "Submit order".
 The skill asks before the LCSC cart whether an `[[extra]]` or bought part has a better variant the owner named before
 (a project key `[order] prefer` with the reason) – or this stays a chat matter. Open, see decision 4.
 
+## What the shipping cost on 2026-11-02
+
+The first combined order – JLCPCB W2026110207503262 (the tree with assembly, two bare bell boards; 1,340 g) and LCSC
+WM2611020162 (26 lines of THT parts) – to Vienna. Prices in USD as the checkouts showed them.
+
+| Route | Shipping | Lead time | Duties |
+|---|---:|---|---|
+| JLCPCB direct, DHL Express (cart estimate) | 30.57 | 2–4 working days | VAT and DHL's fee at delivery |
+| JLCPCB → LCSC Hong Kong, S.F Express (paid) | 6.54 | 2–5 working days | – |
+| LCSC alone, Global Direct Standard Line | 18.37 | 7–15 working days | "Tariff" 27.85 prepaid |
+| LCSC alone, 4PX / Singapore Post | 20.70 / 29.95 | not read | not read |
+| LCSC alone, FedEx IE / UPS / DHL | 40.83 / 41.97 / 52.19 | 2–5 working days | not read |
+| **Combined (LCSC 1,500 g + JLCPCB 1,340 g), cheapest express** | 56.94 | 2–5 working days | no "Tariff" line |
+| **Combined, DHL Express (paid)** | 68.40 | 2–5 working days | no "Tariff" line |
+
+What follows from it:
+
+1. **Combining is not cheap by itself.** Together the parcel weighed about 2.8 kg; LCSC then offered only UPS, FedEx and
+   DHL ("the original shipping method failed to apply … exceeding the weight limit"). Paid: 6.54 + 68.40 = 74.94 for
+   shipping, against 48.94 for the two cheapest separate routes – which would have brought the parts 7–15 working
+   days later. Combining buys speed and one parcel, not a lower price.
+2. **The decision falls before the prices are known.** JLCPCB's address cannot be changed after its checkout; LCSC
+   shows the combined prices only after JLCPCB is paid ("Combine Orders" appeared about 20 minutes after the payment).
+   So the comparison has to be estimated from the weights before JLCPCB's checkout: JLCPCB's cart shows its weight,
+   LCSC's cart its own; above about 2 kg together, expect express only.
+3. **LCSC's weight estimate is high.** 1,500 g for 26 lines of LEDs, resistors and headers – most of the combined
+   weight, and what pushed the parcel off the cheap lines. Worth asking LCSC or reading the order's real weight
+   afterwards.
+4. **Duties move with the route.** LCSC's Global Direct line prepaid a "Tariff" (27.85); the express routes did not –
+   import VAT and the carrier's handling fee come at delivery. Compare totals with that in mind (an assessment, not
+   legal advice).
+5. **Pick the method before paying.** After combining, LCSC asked to choose the method again, and DHL Express
+   (68.40) was paid instead of the cheapest express (56.94).
+
+For proposal 4 this means: `edakit cart prepare` prints the weights of both carts and the routes to compare – JLCPCB
+direct, LCSC alone, combined – before the JLCPCB checkout, and the skill reads LCSC's recalculated methods after
+combining and names the cheapest one that meets a date the project gives.
+
 ## Decisions (the owner, 2026-11-02)
 
 1. **Basket across projects:** built as `edakit order --with` (proposal 1). As recommended.
