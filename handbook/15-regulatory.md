@@ -97,8 +97,9 @@ service and used falls under FuAG § 7 with § 4(1) no. 2.
   certificate states –, and the EU declaration of conformity. A part that does not transmit says `"none"`. What nobody
   states is open, not fine.
 - **Checked per part** – PARTS.fact asks every module and microcontroller for `radio` or `"none"`. It asks every part of
-  a board that is given away or sold for its REACH statement (PARTS.fact/reach, graded as 15.4 says). It asks every part
-  the BOM lists for its RoHS status (PARTS.fact/rohs: information, for a board that is sold a warning).
+  a board that is given away or sold for its REACH statement (PARTS.fact/reach: information for a gift, a warning for a
+  board that is sold). It asks every part the BOM lists for its RoHS status (PARTS.fact/rohs: information, for a board
+  that is sold a warning).
 - **Per own board** (4.5) – its `compliance` collects what its parts entries state, with the parts that state nothing.
   An own board is no module with certificates of its own but part of the product: whoever gives the product away or
   sells it is the manufacturer of the board in it too.

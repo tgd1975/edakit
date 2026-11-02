@@ -5,6 +5,7 @@ GitHub."""
 
 import importlib.util
 import json
+import posixpath
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -20,22 +21,34 @@ def pages():
 def test_every_description_is_a_page_of_the_site(tmp_path):
     out = pages().assemble(tmp_path / "pages")
     docs = out / "docs"
-    want = (["index.md", "handbook/index.md", "evals.md", "catalog/index.html", "inside/index.md", "inside/claude.md",
-             "concepts/index.md", "skills/index.md", "agents/index.md"]
+    want = (["index.md", "handbook/index.md", "inside/evals.md", "catalog/index.html", "inside/index.md",
+             "inside/claude.md", "inside/concepts/index.md", "inside/skills/index.md", "inside/agents/index.md",
+             "reference/index.md", "reference/changelog.md"]
             + [f"handbook/{p.name}" for p in (ROOT / "handbook").glob("[0-9]*.md")]
-            + [f"skills/{p.parent.name}.md" for p in (ROOT / "skills").glob("*/SKILL.md")]
-            + [f"agents/{p.name}" for p in (ROOT / "agents").glob("*.md")]
+            + [f"{'extend' if p.parent.name.startswith('propose-') else 'inside/skills'}/{p.parent.name}.md"
+               for p in (ROOT / "skills").glob("*/SKILL.md")]
+            + [f"inside/agents/{p.name}" for p in (ROOT / "agents").glob("*.md") if p.name != "README.md"]
             + [f"catalog/circuits/{p.name}" for p in (ROOT / "docs" / "catalog" / "circuits").glob("*.svg")])
     assert [w for w in want if not (docs / w).is_file()] == []
-    cfg = json.loads((out / "mkdocs.yml").read_text(encoding="utf-8"))
+    mod = pages()
+    text = (out / "mkdocs.yml").read_text(encoding="utf-8")
+    assert f'"format": {mod.FENCE_FORMAT}\n' in text            # a YAML tag, unquoted, nothing after it
+    cfg = json.loads(text.replace(mod.FENCE_FORMAT, json.dumps(mod.FENCE_FORMAT)))
+    fences = next(e["pymdownx.superfences"] for e in cfg["markdown_extensions"] if "pymdownx.superfences" in e)
+    assert fences["custom_fences"][0]["name"] == "mermaid"
     reference = next(g["Reference"] for g in cfg["nav"] if "Reference" in g)
     assert cfg["docs_dir"] == "docs" and {"Rule catalog": "catalog/index.html"} in reference
     assert "edakit" in cfg["copyright"] and "issues/new/choose" in cfg["copyright"]   # the version, the feedback line
     features = cfg["theme"]["features"]
     assert "navigation.tabs" in features and "navigation.indexes" in features
-    assert cfg["nav"][0] == {"Start": [{"Start": "index.md"}, {"Quickstart": "quickstart.md"},
-                                       {"How it works": "how-it-works.md"}, {"Projects": "projects/index.md"},
-                                       {"Glossary": "glossary.md"}]}
+    assert cfg["nav"][0] == {"Start": [{"Start": "index.md"}, {"Quickstart": "start/quickstart.md"},
+                                       {"How it works": "start/how-it-works.md"},
+                                       {"Projects": "start/projects/index.md"}, {"Glossary": "start/glossary.md"}]}
+    # every page under its tab: the address's first part is the tab's
+    for group in cfg["nav"][1:]:
+        (tab, entries), = group.items()
+        assert all(path.startswith(mod.TAB_DIR[tab] + "/") or path == "catalog/index.html"
+                   for entry in entries for path in entry.values()), tab
 
 
 def test_the_navigation_is_tabs_by_reader_with_short_titles():
@@ -46,6 +59,8 @@ def test_the_navigation_is_tabs_by_reader_with_short_titles():
     mod = pages()
     tabs = [g for g, _ in mod.NAV]
     assert tabs == ["Start", "A circuit", "A board", "Extend", "Develop", "Handbook", "Reference", "Inside edakit"]
+    chapters = [int(Path(src).name[:2]) for src, _ in dict(mod.NAV)["Handbook"] if Path(src).name[:2].isdigit()]
+    assert chapters == sorted(chapters)                          # by number; the index says which to read when
     assert all(len(entries) <= mod.SIDEBAR for tab, entries in mod.NAV if tab != "Handbook")
     assert all(len(title.split()) <= 5 for _, entries in mod.NAV for _, title in entries)
     listed = {src for _, entries in mod.NAV for src, _ in entries}
@@ -65,14 +80,14 @@ def test_the_navigation_is_tabs_by_reader_with_short_titles():
 
 def test_a_source_carries_the_source_line_and_the_concepts_an_index(tmp_path):
     docs = pages().assemble(tmp_path / "pages") / "docs"
-    assert "A source" in (docs / "concepts" / "done" / "documentation.md").read_text(encoding="utf-8")
-    assert "A source" in (docs / "skills" / "cart.md").read_text(encoding="utf-8")
+    assert "A source" in (docs / "inside" / "concepts" / "done" / "documentation.md").read_text(encoding="utf-8")
+    assert "A source" in (docs / "inside" / "skills" / "cart.md").read_text(encoding="utf-8")
     assert "A source" not in (docs / "handbook" / "08-release-gate.md").read_text(encoding="utf-8")
-    index = (docs / "concepts" / "index.md").read_text(encoding="utf-8")
+    index = (docs / "inside" / "concepts" / "index.md").read_text(encoding="utf-8")
     assert "## Open" in index and "(new/documentation-newcomer.md)" in index and "prototypes" not in index
     assert "## Decided and built" in index and "(done/documentation.md)" in index
     inside = (docs / "inside" / "index.md").read_text(encoding="utf-8")
-    assert "(../concepts/index.md)" in inside and "(../skills/index.md)" in inside and "(claude.md)" in inside
+    assert "(concepts/index.md)" in inside and "(skills/index.md)" in inside and "(claude.md)" in inside
     assert 'url=../inside/"' in (docs / "inside-edakit" / "index.html").read_text(encoding="utf-8")   # the old address
 
 
@@ -118,3 +133,20 @@ def test_the_start_pages_links_to_the_site_land_on_its_pages():
     assert len(links) > 10
     missing = [u for u in links if u and not ({u.rstrip("/") + ".md", u + "index.md", u + "index.html"} & have)]
     assert missing == []
+
+
+def test_an_old_address_sends_the_reader_on(tmp_path):
+    """Since the addresses follow the tabs, every page that moved keeps its old address as a page that sends the reader
+    on, the anchor kept – links from outside (posts, issues, other projects) hold."""
+    import re
+    mod = pages()
+    docs = pages().assemble(tmp_path / "pages") / "docs"
+    moved = mod.redirects(mod.sources())
+    assert {"quickstart/index.html", "steps/index.html", "skills/cart/index.html",
+            "concepts/done/documentation/index.html", "changelog/index.html"} <= set(moved)
+    for old, new in moved.items():
+        text = (docs / old).read_text(encoding="utf-8")
+        assert f'url={new}"' in text and "location.hash" in text
+        target = posixpath.normpath(posixpath.join(posixpath.dirname(old), new))
+        assert (docs / target / "index.md").is_file() or (docs / (target + ".md")).is_file(), (old, new)
+    assert not re.search(r"handbook/\d\d-", " ".join(moved))       # the handbook kept its addresses

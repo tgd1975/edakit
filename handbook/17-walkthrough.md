@@ -1,4 +1,4 @@
-# 17 Walkthrough: a coin cell, a button, an LED
+# 17 Walkthrough on EasyEDA: a coin cell, a button, an LED
 
 If you want to see one whole project before you start your own, this chapter takes a board of four parts – press a
 button and a red LED lights, from a CR2032 coin cell – from the idea to the delivered boards, in the order things

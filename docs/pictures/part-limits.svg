@@ -1,0 +1,82 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 330" width="760" height="330" font-family="IBM Plex Sans, Helvetica, Arial, sans-serif" role="img" aria-labelledby="t d">
+  <title id="t">Limits and values of four kinds</title>
+  <desc id="d">A resistor: limits p_max_w and v_max_v, values value_ohm and tolerance. An LED: limits if_max_a and vr_max_v, values vf_typ_v at vf_at_a and color. An nmos: limits vds_max_v, vgs_max_v and id_max_a, values vgs_th_v and rds_on_max_ohm. A capacitor: limits v_max_v, values value_f and dielectric. A limit named quantity_max_unit is held to that quantity at the part by LIM.v, LIM.i, LIM.p and LIM.t; every kind has p_max_w, tj_max_c, t_max_c and t_min_c.</desc>
+  <style>
+    .bg { fill: #f4f6f6; } .station { fill: #ffffff; stroke: #d5dcdc; }
+    .sym { stroke: #1d2626; stroke-width: 1.6; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+    .meas { stroke: #b8691f; stroke-width: 1.2; fill: none; stroke-dasharray: 3 2; }
+    .ink { fill: #1d2626; } .muted { fill: #5d6b6b; } .accent { fill: #0e6c6a; } .copper { fill: #b8691f; }
+    @media (prefers-color-scheme: dark) {
+      .bg { fill: #111717; } .station { fill: #182020; stroke: #2c3838; }
+      .sym { stroke: #e3eaea; } .meas { stroke: #e0954f; }
+      .ink { fill: #e3eaea; } .muted { fill: #97a6a6; } .accent { fill: #5cc4c0; } .copper { fill: #e0954f; }
+    }
+  </style>
+  <rect class="bg" x="0" y="0" width="760" height="330" rx="10"/>
+  <g>
+    <rect class="station" x="20" y="20" width="165" height="250" rx="8"/>
+    <rect class="station" x="205" y="20" width="165" height="250" rx="8"/>
+    <rect class="station" x="390" y="20" width="165" height="250" rx="8"/>
+    <rect class="station" x="575" y="20" width="165" height="250" rx="8"/>
+  </g>
+  <g class="ink" font-size="13" font-weight="600">
+    <text x="36" y="44">resistor</text><text x="221" y="44">led</text><text x="406" y="44">nmos</text><text x="591" y="44">capacitor</text>
+  </g>
+
+  <!-- resistor, centre (102, 100) -->
+  <g class="sym"><path d="M44,100 H76 M128,100 H160"/><rect x="76" y="92" width="52" height="16"/></g>
+  <path class="meas" d="M76,124 H128 M76,120 V128 M128,120 V128"/>
+  <text class="copper" x="102" y="141" font-size="11" text-anchor="middle">V, P across it</text>
+
+  <!-- LED, centre (287, 100) -->
+  <g class="sym">
+    <path d="M229,100 H275 M299,100 H345"/>
+    <path d="M275,88 L275,112 L297,100 Z"/><path d="M299,88 V112"/>
+    <path d="M285,84 L293,74 M289,74 L293,74 L293,78"/><path d="M293,88 L301,78 M297,78 L301,78 L301,82"/>
+  </g>
+  <path class="meas" d="M236,116 H262 M258,112 L262,116 L258,120"/>
+  <text class="copper" x="236" y="133" font-size="11">I</text>
+  <path class="meas" d="M275,124 H299 M275,120 V128 M299,120 V128"/>
+  <text class="copper" x="287" y="141" font-size="11" text-anchor="middle">Vf</text>
+
+  <!-- NMOS, centre (472, 100) -->
+  <g class="sym">
+    <path d="M420,112 H458 M458,86 V112"/>
+    <path d="M465,84 V94 M465,97 V107 M465,110 V120"/>
+    <path d="M465,88 H486 V60"/><path d="M465,116 H486 V140"/><path d="M465,102 H486 V116"/>
+    <path d="M472,98 L466,102 L472,106"/>
+  </g>
+  <path class="meas" d="M500,64 V136 M496,64 H504 M496,136 H504"/>
+  <text class="copper" x="508" y="104" font-size="11">VDS, ID</text>
+  <text class="copper" x="420" y="130" font-size="11">VGS</text>
+
+  <!-- capacitor, centre (657, 100) -->
+  <g class="sym"><path d="M600,100 H651 M663,100 H714"/><path d="M651,84 V116 M663,84 V116"/></g>
+  <path class="meas" d="M651,124 H663 M651,120 V128 M663,120 V128"/>
+  <text class="copper" x="657" y="141" font-size="11" text-anchor="middle">V</text>
+
+  <!-- keys -->
+  <g font-size="11">
+    <text class="muted" x="36" y="172" font-weight="600">limits</text>
+    <text class="accent" x="36" y="189">p_max_w</text><text class="accent" x="36" y="204">v_max_v</text>
+    <text class="muted" x="36" y="228" font-weight="600">values</text>
+    <text class="ink" x="36" y="245">value_ohm, tolerance</text>
+
+    <text class="muted" x="221" y="172" font-weight="600">limits</text>
+    <text class="accent" x="221" y="189">if_max_a</text><text class="accent" x="221" y="204">vr_max_v</text>
+    <text class="muted" x="221" y="228" font-weight="600">values</text>
+    <text class="ink" x="221" y="245">vf_typ_v at vf_at_a</text><text class="ink" x="221" y="260">color</text>
+
+    <text class="muted" x="406" y="172" font-weight="600">limits</text>
+    <text class="accent" x="406" y="189">vds_max_v, vgs_max_v</text><text class="accent" x="406" y="204">id_max_a</text>
+    <text class="muted" x="406" y="228" font-weight="600">values</text>
+    <text class="ink" x="406" y="245">vgs_th_v</text><text class="ink" x="406" y="260">rds_on_max_ohm</text>
+
+    <text class="muted" x="591" y="172" font-weight="600">limits</text>
+    <text class="accent" x="591" y="189">v_max_v</text>
+    <text class="muted" x="591" y="228" font-weight="600">values</text>
+    <text class="ink" x="591" y="245">value_f, dielectric</text>
+  </g>
+  <text class="muted" x="20" y="296" font-size="12">A limit <tspan class="accent">&lt;quantity&gt;_max_&lt;unit&gt;</tspan> is held to that quantity at the part: LIM.v, LIM.i, LIM.p, LIM.t.</text>
+  <text class="muted" x="20" y="314" font-size="12">Every kind also has <tspan class="accent">p_max_w</tspan>, <tspan class="accent">tj_max_c</tspan>, <tspan class="accent">t_max_c</tspan>, <tspan class="accent">t_min_c</tspan> – the table below lists every kind.</text>
+</svg>

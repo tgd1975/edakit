@@ -39,4 +39,4 @@ cost beside the estimate.
 ## Read on
 
 - The walkthrough: [Release, order, acceptance](../../handbook/17-walkthrough.md#1712-release-order-acceptance)
-- The handbook: [Ordering](../../handbook/08-release-gate.md#84-ordering-at-the-manufacturer-up-to-the-cart-the-owner-orders-and-pays)
+- The handbook: [Ordering](../../handbook/08-release-gate.md#84-ordering-at-the-manufacturer-up-to-the-cart-you-order-and-pay)

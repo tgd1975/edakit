@@ -4,7 +4,7 @@ Open work that needs the owner's computer, a maker or the owner's word. The stat
 and plans the sections name; this list is what is left to do of them, in the order it can be done. No item is deleted.
 
 **Layout.** Every item, in every section, open or closed, is a line with a checkbox and an ID unique in this file,
-counted up and never reused – whoever adds an item takes the next free ID and counts it up here. Next free ID: TD-105.
+counted up and never reused – whoever adds an item takes the next free ID and counts it up here. Next free ID: TD-107.
 
 - Open: `- [ ] TD-<n> - **Title:** what and why.` – a step's own name after the dash (`- [ ] TD-31 - **D.4** …`).
 - Done: ticked, the commit that did it, the date at the end, moved to [Closed todos](#closed-todos), newest first –
@@ -47,6 +47,14 @@ to touch.
 E-1 to E-17 on EasyEDA Pro and M-1 to M-10 on easyeda-mcp-pro, checked live on EasyEDA Pro 3.2.209 and posted on
 2026-11-01; what each asks and where it stands is in upstream/README.md – the items here say only what is left to do.
 
+- [ ] TD-105 - **E-18 (a saved schematic, opened again, puts a pin on a second net):** check it live on the newest
+      EasyEDA Pro and against the API docs, then report it upstream on the owner's "posten?" – entered unreported with
+      #117 (edakit 1.0.6); upstream/README.md follows. *(edakit-80)*
+- [ ] TD-106 - **#117 on `tree` (pytree):** once `schematic create --save` passes place-D2 again (it times out at
+      `schematic.placeComponent`, C2895477), run it with edakit 1.0.6 and `schematic check --schematic generated_tree`
+      before and after `gate --easyeda` – both the same shows the gap closed; a drifted save gives E-18 its live case.
+      *(edakit-80)*
+
 ### Waiting for upstream
 
 Nothing to do until there is an answer or a release; whichever session learns of one takes it.
@@ -64,19 +72,14 @@ Nothing to do until there is an answer or a release; whichever session learns of
       check it live, take it up and say so in upstream/README.md. EasyEDA's first answer is often "update to the latest
       version".
 
-## The documentation for its readers ([documentation.md](docs/concepts/done/documentation.md))
-
-Built on 2026-11-01 (#174, edakit 0.4.14); what is left after the owner's review (TD-81):
-
-- [ ] TD-83 - **The findings of the chapters' reviews:** sources that cite a section for what it does not hold
-      (codes.toml, docstrings, skills), statements that look stale against the code – each listed under "Findings" in
-      `docs/concepts/done/documentation-review/` –, fixed through a branch each, sources on the owner's word.
-
 ## Closed todos
 
 Done or dropped, newest first, each with its date and the commit that closed it. What closed before 2026-11-01 is
 taken from the history of this file; an item rewritten on its way is listed once, in its last form.
 
+- [x] TD-83 - **The findings of the chapters' reviews:** fixed or decided (#248, edakit 1.0.8) – the handbook follows
+      the code, the sources name the sections they cite, the catalog names pytree and the bell, 14.2's engines table
+      generated, 8.4 "you order and pay"; what the reviews left stays left. *(edakit-b7)* [2026-11-02]
 - [x] TD-103 - **The eval case first-circuit, three faults** fixed (#236): the prompt names `site/…`, the plugin's
       handbook as a twin, edakit's code off limits, the skills to be used, no network; `few-pages` counts Read calls
       from the trace; judges on the graph file and the trace, a regex on the DONE line; four graders catch reads of

@@ -87,7 +87,7 @@ the import acknowledgement" (exit 3) request that click as the start skill descr
      `edakit part diff OLD NEW` says how the new footprint lies over the old one (turn, shift, pad map). A footprint
      whose holes the project moves for leads formed by hand: `edakit pcb dump`, then `edakit check` – GEO.formed fails when
      a turn lays the formed holes onto themselves with a pin in another net's hole, and notes the counter-bend that
-     fits turned – answered by the assembly instruction's reference lead (handbook 3.3, 7.3).
+     fits turned – answered by the assembly instruction's reference lead (handbook 7.3).
    - `edakit pcb apply` (outline, holes, tooling holes, fixed parts locked; pad positions verified against the plan)
    - `edakit pcb autolayout` (the parts without a row, TOP only; once they stand still it writes their rows into
      `[place]` with `auto = true` – commit them with the board file, `pcb plan` checks them like any row). Or

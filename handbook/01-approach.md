@@ -16,12 +16,17 @@ A project without a PCB needs no EDA program: checks, simulation and a drawn sch
 alone. For a board, EasyEDA Pro is the default and KiCad 10 the other choice, with the rest the same – when to take
 which, 16.1.
 
-```text
- parts database ──► hardware graph ──► schematic ──► PCB ──► manufacturing files ──► JLCPCB ──► acceptance
-   (P)              (G, E)             (S)          (L)      (F)                     (M-2)       (M-4)
-     │                 │                  │            │          │
-     │ edakit check    │ edakit sim       │ schematic  │ pcb, route, silk               edakit gate --eda    
-     └─────────────────┴──────────────────┴────────────┴──────────┴──► protocol.md + manifest.json "released": true
+```mermaid
+flowchart TB
+  subgraph stages ["generated, each checked"]
+    direction LR
+    P["parts database<br/>P · edakit check"] --> G["hardware graph<br/>G, E · check, sim"] --> S["schematic<br/>S · edakit schematic"] --> L["PCB<br/>L · pcb, route, silk"] --> F["manufacturing files<br/>F"]
+  end
+  subgraph after ["released, ordered, tested"]
+    direction LR
+    R["edakit gate --eda<br/>protocol.md, manifest.json"] -- "released: true" --> M["maker<br/>M-2"] --> A["acceptance<br/>M-4"]
+  end
+  stages --> after
 ```
 
 ## Why not just draw it in EasyEDA?
@@ -101,5 +106,5 @@ what is checked by judgement and by whom, and an acceptance test after delivery 
 | [14 Designing a circuit](14-design.md) | designer and reviewer, the catalog – engines, codes, data, domains –, hints, building blocks, from a finding to a rule |
 | [15 Regulatory review](15-regulatory.md) | the purpose, the EU rules, the review M-6 – support, not legal advice |
 | [16 KiCad as the tool chain](16-kicad.md) | EasyEDA Pro or KiCad – when to take which, and every step on KiCad's files |
-| [17 Walkthrough](17-walkthrough.md) | a coin cell, a button and an LED in EasyEDA Pro, from the idea to the delivered boards |
+| [17 Walkthrough on EasyEDA](17-walkthrough.md) | a coin cell, a button and an LED, from the idea to the delivered boards |
 | [18 Walkthrough on KiCad](18-walkthrough-kicad.md) | a 555 blinker drawn in KiCad, from the idea to RELEASED |

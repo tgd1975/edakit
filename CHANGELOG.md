@@ -8,6 +8,36 @@ written once, by `.github/merge.py`, from the fragments in [changes/](changes/RE
 update edakit@edakit`, then `/reload-plugins` or a new session; `edakit version` names the version that runs and what an
 update brings.
 
+## 1.0.8 – 2026-11-02
+
+- The handbook follows the code where the chapters' reviews found it did not (TD-83): a regulator's `i_load_min_a` is
+  checked, not added as a load (5.1); transient runs are judged by LIM.v, LIM.i and LIM.range (5); the drawing's four
+  supply colours (6.5); DOCS.derived in the requirement checks (10.1, 10.4, 10.5); the lock file's
+  `$XDG_STATE_HOME` and `EDAKIT_LOCK_FILE` (11.2); KiCad's coordinates converted from mil (16.3); the REACH fact's
+  grade in 15.3; footprint data's live run and the slot direction (4.5); every server's `BRIDGE_TIMEOUT_MS` the same
+  (2.4); the permission "External Interaction" (2.5); "your numbers" for what the requirements skill asks back
+  (3.6, 11.1, 14.1). The `compliance` field says it is support, not legal advice.
+  Section 8.4 is "you order and pay". The engines table of 14.2 is generated from the catalog, and ORDER's `decides`
+  names `read` and `confirm`.
+- Sources name the section that holds what they cite: LIM.v and the derating table 5.3, PARTS.fact's lead 4.1, the
+  rule files KiCad gets 7.5 and 16.5, SYNC.odb's fix 16.6, the RoHS and REACH grades 15.3; the catalog names pytree
+  and the bell where it said "the reference project".
+
+## 1.0.7 – 2026-11-02
+
+- Handbook 1: the pipeline is a Mermaid diagram, drawn on GitHub and on the site; the site's handbook sidebar lists the
+  chapters by number.
+- Chapter 17 is the "Walkthrough on EasyEDA", beside chapter 18, the "Walkthrough on KiCad".
+- Handbook 4 shows symbol pictures: the pins by role, the limits and values of four kinds, and the footprint that
+  prints "+" at the cathode with its fix in the graph (4.4).
+
+## 1.0.6 – 2026-11-02
+
+- `schematic check` and the gate's stage S read a schematic as saved: its tab is closed and its pages opened again
+  first, so the result no longer depends on whether stage F of an earlier gate closed the template's tab. A tab with
+  unsaved changes stays open and is named in a finding `saved`. `schematic create --save` reads the save opened again
+  and exits 2 when it differs from the graph (E-18, #117).
+
 ## 1.0.5 – 2026-11-02
 
 - The handbook shows six more diagrams: the graph and the files around it (2.7), what `edakit sim` computes (5.2), the

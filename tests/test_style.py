@@ -126,8 +126,9 @@ def long_sections(page, text):
         elif not in_code and re.match(r"#{1,6} ", ln):
             starts.append(i)
     starts.append(len(lines))
+    quoted = tuple(f"## {n} " for n in QUOTED)    # the working agreements keep their form, as they keep their words
     return [f"line {a + 1}: {b - a} lines without a subheading (at most {SECTION_LINES})"
-            for a, b in zip(starts, starts[1:]) if b - a > SECTION_LINES]
+            for a, b in zip(starts, starts[1:]) if b - a > SECTION_LINES and not lines[a].startswith(quoted)]
 
 
 def long_chapter(page, text):
@@ -260,7 +261,7 @@ RULES = {                                            # rule: (check, the pages i
 # chapters; a page that meets its rule fails here until it leaves the list.
 RED = {
     "sentences": set(),
-    "sections": {f"handbook/{c}.md" for c in ("10-reference", "11-working-with-claude")},   # 10.7 generated, 11.4 quoted
+    "sections": {f"handbook/{c}.md" for c in ("10-reference",)},   # 10.7 generated
     "chapters": {f"handbook/{c}.md" for c in ("04-parts-database", "05-simulation", "07-pcb",
                                               "08-release-gate", "10-reference", "17-walkthrough")},
     "paragraphs": {"examples/coin-cell-led/docs/decisions.md", "examples/blinker-555/docs/decisions.md"},
@@ -298,6 +299,7 @@ def test_the_rules_find_what_they_count():
     assert long_sentences("x", " ".join(["word"] * 40) + ".") != []
     assert long_sentences("x", "A short one. Another short one.") == []
     assert long_sections("x", "# A\n" + "text\n" * 90) != [] and long_sections("x", "# A\n" + "x\n" * 10) == []
+    assert long_sections("x", "## 11.4 The agreements\n" + "text\n" * 90) == []      # QUOTED keeps its form
     assert long_chapter("x", "x\n" * 501) != [] and long_chapter("x", "x\n" * 500) == []
     assert long_paragraphs("x", " ".join(["word"] * 121)) != []
     assert long_paragraphs("x", "- " + " ".join(["word"] * 100) + "\n- " + " ".join(["word"] * 100)) == []

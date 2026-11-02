@@ -46,6 +46,8 @@ The steps, each with its duration and EasyEDA's memory:
 7. Set designators and compare the symbol pins with the graph.
 8. Connect the nets as stubs (longer stubs on collisions), then the leftover pins one by one; mark no-connects.
 9. Compare the netlist with the graph, run ERC, save.
+10. With `--save`: close the template's tab, open it again from the save and compare once more (6.2) – the drift
+    shows where it starts, and the run exits 2.
 
 The template's name is read again after its page got its title and once more before the end, and put back if it
 changed. A panel of the template's name is named in the output, not touched.
@@ -66,15 +68,26 @@ edakit schematic check                                  # the template
 edakit schematic check --schematic layout_main --no-pins
 ```
 
-Read only (it activates the pages, though), about 10 s. It checks parts (missing, extra, duplicate, LCSC), nets (every
-graph pin on its net, no foreign pins, no unknown nets), pin numbers **and names** and no-connect markers.
+Read only (it closes the schematic's tab and activates its pages, though), about 10 s. It checks parts (missing, extra,
+duplicate, LCSC), nets (every graph pin on its net, no foreign pins, no unknown nets), pin numbers **and names** and
+no-connect markers.
+
+It reads the schematic **as saved**: its tab is closed first and every page opened again. A saved schematic, opened
+again, can list a pin on a second net with no wire, net label or flag there – pytree's U4.11 on V_LED after stage F
+had closed the template's tab (E-18 in `upstream/README.md`, #117). A tab left open from `schematic create` or an
+earlier gate showed the drawing instead, so the same template passed or failed depending on what ran before in the
+session. The save is what a restart of EasyEDA, `schematic copy` and every later session read.
+
+A tab with unsaved changes stays open – closing it would throw them away –; the check reads it as drawn and names that in a finding
+of its own (`saved`): save the template, or close its tab without saving.
 
 A name that differs from the symbol (`D11/MOSI` in the graph, `D11` in the symbol) fails. Either the graph assumed
 another pinout – the error to catch here – or the library part disagrees with itself: an LED symbol names pin 1 `K`
 while its footprint prints `+` at pad 1. Names follow the symbol; the meaning sits in the roles.
 
 The gate runs the check for every board (SYNC.schematic). Run it also at the start of every EasyEDA session and before
-every gate run: a template can get a pin on two nets without anyone writing to it, and generating it again fixes that.
+every gate run: a saved template can get a pin on two nets once it is opened again, and generating it again
+(`schematic create --save`) fixed it so far – the run then says whether the save, opened again, still matches.
 
 ## 6.3 Copy and lay out
 
@@ -220,10 +233,10 @@ that the lead keeps its way out. The router never runs through a part or along i
 wire or through its ends, bends, junctions and pin tips. The ground runs along a rail below the drawing and the
 supplies along rails above when at least two pieces join there.
 
-Every net gets a colour – ground black, the supplies red and orange, the rest from ten colours, so that nets that cross
-or run side by side differ. A dot marks every junction; two wires crossing without a dot are not connected. A net the
-router cannot join, or one with a single pin on the board (it goes on elsewhere), is named at its pieces as in the
-labelled drawing.
+Every net gets a colour – ground black, the supplies red, orange, dark yellow and pink (the fourth and every further one
+pink), the rest from ten colours, so that nets that cross or run side by side differ. A dot marks every junction; two
+wires crossing without a dot are not connected. A net the router cannot join, or one with a single pin on the board (it
+goes on elsewhere), is named at its pieces as in the labelled drawing.
 
 `"mixed"` keeps the labelled stubs for the nets that are nothing but pass-throughs and buses – only modules, ICs and
 connectors on them, or six pins or more (a key matrix, a shared line) – and wires the rest. The output line counts
