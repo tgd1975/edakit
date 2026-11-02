@@ -199,6 +199,42 @@ owner asked. With the key and no such file on this machine (another computer, CI
 and says so in a note, as SYNC.source does for a board whose project is not there. A split inventory (PartsLedger's
 stage 3, one file per section) is read as PartsLedger plans it: every `inventory/*.md` but the master.
 
+## Other bins: one shape, a profile per tool
+
+edakit is public; PartsLedger is the owner's. Most makers keep their parts elsewhere – in a spreadsheet, or in one of
+the inventory tools below, read on 2026-11-02 from their documentation and repositories (versions and plans not
+checked on the sites themselves):
+
+| Tool | What it is | Read | Write | Standing |
+| --- | --- | --- | --- | --- |
+| a spreadsheet, a CSV | the most common bin of all | a file, columns by name | – | – |
+| InvenTree | self-hosted, Python; REST API with a token – stock add, remove, count and transfer as endpoints, every movement tracked –, a Python client on PyPI, a KiCad HTTP library plugin | API or CSV export | API | active, the most named |
+| Part-DB | self-hosted, PHP, AGPL; REST API (beta) with a per-user token and an OpenAPI schema; a KiCad HTTP library of its own; an MCP server for agents | API or export | API | active, PartKeepr's successor |
+| Binner | self-hosted, .NET, free; distributor lookups; CSV and Excel export; a KiCad HTTP library | export | – | active |
+| Bomist | desktop; CSV and JSON export; a local REST API on a paid tier | export | – | commercial |
+| PartsBox | cloud; an API on every plan, one key on the free one; stock computed from its history; not yet stable | API | API | commercial |
+| PartKeepr | inactive for years | – | – | – |
+
+Not bins: Octopart/Nexar, Mouser, DigiKey, LCSC are catalogues, and edakit has them as distributor profiles.
+
+What follows for the design: the bin is one inner shape and a profile per source – as the distributors have one
+(`skills/part-search/distributors/<name>.md`) and the makers (`edakit/makers/<maker>.toml`). The shape is a row:
+part number, manufacturer, supplier codes, pieces, package, kind, value and rating where known, the source and its
+date. Three profiles are enough for years:
+
+1. **`partsledger`** – the markdown table, movements 1 to 3 as above.
+2. **`csv`** – a file with named columns (`Part`, `Quantity`, `Manufacturer`, `LCSC`, `Package`, `Kind`, `Value`;
+   `[bin] columns` maps other names), the lowest common denominator: what InvenTree, Part-DB, Binner, Bomist, PartsBox
+   and every spreadsheet export. The way back is the two files, booked by the maker in their own tool.
+3. **A live API** – InvenTree's REST first when someone asks, the token from the environment as the distributors'
+   keys are (4.2), stock remove and add with the order identity in the note; a proposal through the pipeline, not
+   now. The KiCad HTTP library endpoint that InvenTree, Part-DB and Binner serve is one read interface for all three –
+   worth a check whether it carries the quantity, before a profile of its own.
+
+`[project] bin` stays a path; the profile follows the file's extension (`.md` partsledger, `.csv` csv), and `[bin]`
+names one explicitly (`kind`) and holds the column map. The match rules and the access rules hold for every profile;
+a CSV gets no lock from edakit – it is the maker's file, edakit only reads it.
+
 ## What PartsLedger must offer
 
 What edakit reads and writes, as requirements on PartsLedger – they go into its repository on the owner's word, as an
@@ -283,8 +319,9 @@ name. edakit's words follow in any case: the bin, parts on hand, never stock.
 
 Each step on the owner's word; the first three in edakit, the fourth in PartsLedger, the fifth live.
 
-1. **The order** (movement 1, the match rules 1 to 4, `[project] bin`, the two files, the order record):
-   `edakit/order.py` and a reader `edakit/bin.py`, a fixture inventory in the shape of the owner's, tests for each
+1. **The order** (movement 1, the match rules 1 to 4, `[project] bin`, the two files, the order record, the profiles
+   `partsledger` and `csv` – decision 8): `edakit/order.py` and a reader `edakit/bin.py`, a fixture inventory in the
+   shape of the owner's and a CSV one, tests for each
    rule and for a missing file; handbook 8.4, 10.1 and 3.1 (`supplier`'s neighbour), the glossary ("Bin",
    "On hand"); a fragment `patch` – no project must act.
 2. **The choice** (movement 2): `edakit bin`, one paragraph each in part-search, part-selector and circuit-design.
@@ -314,10 +351,13 @@ The owner's, with the recommendation first; what Claude set itself is one closin
 7. **When the take is booked.** At the bench, when the parts leave the drawer, the refusal and the re-run as the net –
    recommended; or at the order, with a reservation in the bin: an order identity in both tools and a release when an
    order is dropped.
+8. **Other bins.** The `csv` profile built with step 1 – recommended: it makes the feature usable without PartsLedger
+   and costs a column map; or PartsLedger alone until someone asks. A live API only on a proposal, either way.
 
 Set by Claude, to confirm in one question: the words bin and on hand, stock left to the assembler; the key `bin` under
 `[project]`; `edakit bin`; the match order LCSC number, part number, siblings and hedged rows as maybe, kits as data;
-the two file names and their columns (appendix); the full cart as the safe side whenever the bin cannot be read; no
+the two file names and their columns (appendix); the profile chosen by the file's extension; the full cart as the
+safe side whenever the bin cannot be read; no
 new check code; the requirements on PartsLedger carried over by a session there, not from here.
 
 ## Appendix: the two files
