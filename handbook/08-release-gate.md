@@ -28,6 +28,8 @@ Before each stage – each project check, and with `--eda` each board of stages 
 
 ## 8.1 Stages
 
+![The stages of the release gate: P, G, E and the project's checks offline; with --eda S, L, F and the checks after F per board; the decision RELEASED or NOT RELEASED; the run folder with protocol and files](../docs/pictures/gate.svg)
+
 | Stage | What | Checks |
 |---|---|---|
 | P – Parts | parts database complete and signed, every part named by its entry, through-hole leads fitting their holes and, formed for the board, fitting only one way round, own parts equal to their source, parts orderable, a supplier per part, the radio of every module and microcontroller stated | STRUCT.entry, STRUCT.identity, PARTS, SYNC.source, GEO.hole, GEO.formed (chapter 3, 4) |
@@ -167,6 +169,8 @@ needs the file current runs `edakit pcb plan` first.
 ## 8.2 Hashes and sign-offs
 
 ### The four hashes
+
+![The four hashes: what goes into each, and the sign-offs bound to it – M-1 to the circuit, M-6 to the electrical, the sign-offs of scope layout to the layout, M-5 to the fab hash](../docs/pictures/hashes.svg)
 
 Every run records three hashes in the protocol header, and a run with stage F a fourth:
 

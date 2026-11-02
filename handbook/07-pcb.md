@@ -144,6 +144,8 @@ auto-layout places only unlocked parts, only on TOP, and knows nothing about bel
 capacitor 24 mm from its IC. So `near` holds only between fixed parts: an entry for a part the auto-layout places is a
 finding – `edakit pcb place` (below) gives such a part a spot next to its host.
 
+![The plan of the Christmas bell's main board from edakit pcb plan: both sides, the module U1, the LEDs with their resistors in a row, the mounting and tooling holes, no finding](../docs/projects/christmas-bell/placement_plan.png)
+
 ### Footprint geometry
 
 The plan works with footprint boxes and pads relative to the part origin: from `edakit pcb dump` once the parts are in
@@ -500,6 +502,8 @@ headless, reads the SES, and creates every track and via through the API.
 
 `edakit route all`, steps: read → dsn → route → check (up to `attempts` times with a reshuffled DSN) → apply → pours →
 (reload, only with `[routing] drc_rules = "write"`) → drc. About 3–7 minutes for 120 parts.
+
+![The Christmas bell's main board after route all: the tracks on top, one track on the bottom, both sides poured with GND, kept clear of the mounting holes](../docs/projects/christmas-bell/routing.png)
 
 ### Rules in the board file
 
@@ -897,6 +901,8 @@ the same layer, `route check` says so. The gate's GEO.copper (connectivity) and 
 the Gerber copper have the last word either way.
 
 ## 7.7 Silkscreen
+
+![The Christmas bell's top side from its released Gerber files: designators beside their parts, the polarity marks of the LEDs and of C1, the pin names of J1, artwork and the board label](../docs/projects/christmas-bell/silkscreen_top.png)
 
 `edakit silk apply`:
 

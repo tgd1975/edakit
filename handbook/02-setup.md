@@ -10,11 +10,10 @@ everything except the bundled Freerouting download (set `FREEROUTING_JAR`) – u
 
 ## 2.1 What talks to what
 
-```text
-Claude Code ──stdio──► easyeda-mcp-pro ◄──WebSocket 127.0.0.1:49620──► bridge extension in EasyEDA Pro
- (plugin manifest)     (edakit/easyeda/mcp-server.sh)                    (menu "MCP Bridge")
-edakit ──────stdio──► easyeda-mcp-pro (its own instance, the same bridge connection)
-```
+![What talks to what: Claude Code runs edakit; on EasyEDA Pro both reach the editor through easyeda-mcp-pro and the bridge extension, on KiCad edakit writes the files and calls kicad-cli; graph, checks, simulation, Freerouting and gate are shared](../docs/pictures/tool-chains.svg)
+
+Claude Code starts easyeda-mcp-pro from the plugin manifest (`edakit/easyeda/mcp-server.sh`), edakit starts its own
+instance on the same bridge connection, and the bridge listens on 127.0.0.1:49620.
 
 EasyEDA Pro has no command line and no HTTP API; only its **extension API**, inside the running editor, automates
 it. [easyeda-mcp-pro](https://github.com/oaslananka/easyeda-mcp-pro) brings an extension that connects to a local MCP

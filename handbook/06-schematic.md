@@ -148,6 +148,8 @@ Every gate run draws it too, as SVG and PNG beside its protocol (the gate protoc
 is the one of `layout` (copy and lay out, 6.3): blocks with titles and notes, placement by topology, real wires,
 flags, GPIO table. Only the symbols come from the parts database instead of EasyEDA's library:
 
+![The led-bar of the tests, drawn with labels: the blocks Power Input, MCU, LED Driver and Other with their notes, nets joined by name](../docs/catalog/circuits/led-bar.svg)
+
 | kind | symbol |
 |---|---|
 | resistor, capacitor, inductor, fuse, diode, LED, buzzer, battery holder, button | two terminals; anode, plus or pin 1 on the left; `+` at a polarised capacitor |
@@ -189,6 +191,8 @@ border and the title block for a drawing embedded in a document; the page is the
 - `"labels"`: the drawing above, and the default;
 - `"wires"`: every connection a wire from pin to pin, as the maker scene draws it (Fritzing's schematic view);
 - `"mixed"`: wires, with labels for the buses.
+
+![The Christmas bell's main board drawn with wires through: every connection a wire from pin to pin, the nets in colours](../docs/projects/christmas-bell/schematic_main.svg)
 
 A board takes the style its project interview chose: labels for a board of any size, wires through for a maker-size
 circuit or a hand-wired board, mixed for a module with headers.

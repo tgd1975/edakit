@@ -157,6 +157,11 @@ structure, artifacts, limits and levels of the basic kinds, parts, files, docume
 | `cables` | the lines on a lead | a cable |
 | `mains` | no check – spacing and isolation stay unchecked (rules-at-scale.md, decision 7) | a net above the ES1 limits, which LIM.hazardous recognises |
 
+![The reference circuit of the domain power: the led-bar with a battery block, BT20 and D20 onto +5V – the holder suggests the domain](../docs/catalog/circuits/power.svg)
+
+Each domain has such a reference circuit with the faults it must catch, drawn on its page of the
+[catalog](../docs/catalog/index.html).
+
 The interview of a new project asks for no domain: there is no graph yet, and the graph decides (skill new-project). A
 domain file sets severities (also per purpose: `[severity.sale]`), switches codes or topics on, and names the facts a
 kind must give (a missing one is `PARTS.fact`), the hints that apply and the questions the reviewers ask. A project
