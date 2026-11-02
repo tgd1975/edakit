@@ -96,6 +96,11 @@ a new rule, a new command, a fix. The major number marks a milestone of edakit i
 `edakit --version` prints the version that runs; from a git clone away from the version's tag it adds the commit, as
 in `0.2.0+g1a2b3c4`. Every gate run writes the same string into its manifest, under `tools.edakit`.
 
+`edakit version` (the skill `/edakit:version`) shows more: the plugin's installation per scope – user and each
+project – with the one in effect here, the newest version on GitHub, the changelog's sections in between with their
+**When updating:** lines first, and the pins below with whether they agree. It prints the update command for the scope
+in effect and exits 2 when there is something to act on; it changes nothing.
+
 A project that stays on one version names its tag in two places: in `.claude/settings.json` beside the repository,
 `"source": { "source": "github", "repo": "tgd1975/edakit", "ref": "v0.2.0" }`, and in CI as
 `uvx --from git+https://github.com/tgd1975/edakit@v0.2.0 edakit <command>`. Skills, agents and the command line are

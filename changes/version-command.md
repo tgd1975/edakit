@@ -1,0 +1,2 @@
+patch
+- `edakit version` and the skill `/edakit:version`: which edakit runs, the plugin's installation per scope with the one in effect here, the newest version on GitHub and the changelog's sections in between – their **When updating:** lines first –, and where the project pins edakit (`.claude/settings.json`, CI, scripts), with whether the pins agree; the update command for the scope in effect, run on the owner's word (handbook 2.3).

@@ -118,6 +118,7 @@ edakit runs on your machine and collects no usage data. Your design leaves it on
 | `edakit part import` | easyeda.com: EasyEDA's public component data | the LCSC number |
 | `edakit part fetch` | LCSC and the datasheet's own site | the LCSC number, the URL |
 | `edakit part search`, `edakit stock` | jlcpcb.com: the public assembly catalogue and part pages | the search words, the LCSC numbers |
+| `edakit version`, `/edakit:version` | github.com: the version tags and the newest CHANGELOG.md | nothing |
 | `edakit release publish` | GitHub through `gh` | the release files – into your own repository |
 | `/edakit:propose-rule`, `/edakit:propose-feature` | GitHub through `gh` | an issue in tgd1975/edakit with the text you approved |
 | `/edakit:cart` | the maker's website, in your Chrome through Claude in Chrome | the order files and form fields; it stops at the cart and never orders or pays |
