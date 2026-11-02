@@ -1,7 +1,7 @@
 # Versions and branch protection: what a version of edakit is, how main is protected, how a concept still gets there
 
 Status 2026-11-01: decided and built; moved to `docs/concepts/done/` the same day – what is left is in `TODO.md`: TD-48
-(branches left lying around), TD-49 (1.0.0 after D.2), TD-50 (the key `edakit` in `edakit.toml`, later) and TD-79
+(branches left lying around), TD-49 (1.0.0 – released on 2026-11-02 at the first order, #210), TD-50 (the key `edakit` in `edakit.toml`, later) and TD-79
 (`merge.py` and generated files). Decided. The owner took the four decisions the same day in a decision round in Claude
 Code's form (the table at the end): 0.2.0 first, with 1.0 once the documentation's entry layer is built; the notes lane;
 every merge a version of its own; the projects on the newest version, unpinned. The owner then added three points: a
@@ -342,7 +342,7 @@ cache become text:
 | V.3 | The notes lane: `.github/notes.py`, `paths` for `notes/*` | `.github/` | M | V.2 |
 | V.4 | The rules as text, applied with `gh api` on the owner's word once V.2 and V.3 are on main (the required checks must exist), with the working rules that go with them: CLAUDE.md (the notes lane, the protection), `docs/organisation.md` (`changes/`, `CHANGELOG.md`, `.github/rulesets/`), the triage, add-rule and add-feature skills (a fragment per change) | `.github/rulesets/`, CLAUDE.md, `docs/organisation.md`, `.claude/skills/` | M | V.3 |
 | V.5 | Branches left lying around: 9 `claude/*` and 2 `ccr-*` on origin, the local ones and worktrees – listed, then merged or deleted on the owner's word; other sessions' branches named with their session | – | S | – |
-| V.6 | 1.0.0: on the owner's word, once D.2 of documentation.md is built (`merge.py --major`) | – | S | D.2 |
+| V.6 | 1.0.0: on the owner's word, once D.2 of documentation.md is built (`merge.py --major`) – released on 2026-11-02 at the first order, #210 | – | S | D.2 |
 | V.7 | Later: `edakit = ">=0.4"` under `[project]` in `edakit.toml`. `edakit check` notes when the running edakit does not meet it, and the SessionStart hook says which edakit runs, so a project that needs a newer edakit says so | `edakit/config.py`, `edakit/agreements.py`, handbook 10 | M | V.2, the owner's word |
 
 ## Not proposed
