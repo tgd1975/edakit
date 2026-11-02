@@ -160,7 +160,73 @@ The rules, generated from their table (`edakit/lang/rules.py`), each choosing fr
 | `rc` | `f_c` (the corner frequency), `c` (optional), `r` (optional) | value: R = 1 / (2π f_c C), C = 1 / (2π f_c R) | E24 for a resistor, E6 for a capacitor; one step |
 <!-- edakit:end -->
 
-## 19.6 What the compiler does
+## 19.6 Usages, loops and parameters
+
+A usage puts a definition – the project's own, or a block of edakit's library by its name – into the graph:
+
+```text
+param vlogic = 0..5.5 V
+use led step1 (color = green) in = LED_G1 gnd = GND anode = LED_G1_A
+  R = R4 "330 Ω 0805" lcsc C17630 value 330Ω "Series resistor LED5"
+  D = LED5 XL-504UGD lcsc C2895549 no-bom "5 mm LED, green, countdown step 1"
+net LED_G1 vlogic U1.led1 (locked)
+```
+
+`PORT = NET` puts a port on a net of the project – a new one gets the range the definition gives the port, `@in`
+resolved –, `gnd` without a binding joins the ground, `NET = NAME` names an internal net that would otherwise be
+`STEP1_ANODE`, `PART = DES …` binds a part of the definition to the project's designator with its part number,
+attributes and label over the definition's, and `without D1` leaves an optional part out. Every part must be bound:
+the compiler renumbers nothing. `{as}` in a text becomes the instance's name.
+
+A derivation of the project's own
+definition runs at every usage; one of a library block where the usage sets a parameter it reads, as `block add`
+runs it only with `--set`. `edakit block add` on a `.circuit` graph writes the usage – after the last part or usage,
+before the first net – and the resolved graph beside it.
+
+`for n in 0..7` repeats its body – parts, nets, usages, locks, cables, layout – once per value, with `{n}`, `{n+2}`,
+`{n-1}` and `{n*10}` put in every word and string; one level deep. `param NAME = QUANTITY` stands wherever a quantity
+is expected: a net's range, a usage's parameter. `alias led1 = PD6` gives a module's pins the project's names.
+`include hardware/defs.circuit` reads another file into the same namespace, in its place and once; a designator,
+net, parameter, definition or instance declared twice names both places.
+
+## 19.7 Variants and requirements
+
+A variant is a project of its own whose source names its base, the main file or another variant:
+
+```text
+variant smd of ../../hardware/graph.circuit
+  part C1 capacitor "RVT1C102M1010 1000uF 16V SMD" lcsc C3359 bom yes
+  use led step1 D = LED5 KT-0805G lcsc C2297 bom yes "0805 LED, green, countdown step 1"
+  for n in 1..5
+    part R{n} resistor "330 Ω 1/4 W metal film, THT" lcsc C58608 no-bom
+  net LED_G2 without U1.led2
+  accept HINT.bulk -
+```
+
+A statement that names a part, a usage, a net or a parameter of the base redefines it: what is given replaces the
+base's, the rest is inherited; a part a base usage binds is redefined by its designator; `bom yes` sets the default
+back; `without` takes pins off a net; `accept KEY -` removes an accept. Everything else is added. A variant never
+removes a part.
+Its `[project] parts` is a list, its own folder first: `["hardware/parts", "../../hardware/parts"]`.
+Its resolved graph is complete, and its circuit hash takes the entries it uses, so a change of the base reaches it
+only where it reaches its circuit. `edakit hook` runs every variant whose files or the main project's `hardware/` a
+commit touches.
+
+Requirements may be written in the notation, in a file of `[project] requirements` – never in the graph's source:
+
+```text
+need N-1 "The countdown is visible across the room." who owner status accepted
+requirement R-3 from N-1 must "Every countdown LED carries 2 to 15 mA while its step is on."
+  subject led
+  require D.i within 2 mA .. 15 mA
+  verify rows "LIM.i *"  verify rows "SIM.state *"
+```
+
+`subject` names the part, net, usage or definition it is about; `require` states the condition, checked for its form
+and kept as text – `verify` names what tests it. A part or net answers with `satisfies R-3` and cites a decision with
+`decision D-8`; DOCS.ref resolves all of them (10.4).
+
+## 19.8 What the compiler does
 
 `edakit graph json` reads the source and writes the resolved graph; every phase collects all its errors before it
 stops, each as `PATH:LINE: TEXT`. The phases: read the statements; check the names across the project – a
@@ -172,7 +238,7 @@ a broken TOML graph does, with file and line.
 The compiler reads no simulation config, no board file and no sign-off; it writes no parts entry – a part without
 one whose pins are named by word is an error that names `edakit part add KEY` – and allocates no designator.
 
-## 19.7 The resolved graph and the hash
+## 19.9 The resolved graph and the hash
 
 The resolved graph is the JSON graph of 3.1 in every key, plus `derivations` where the source has derivations. The
 circuit hash takes the compiled data as the TOML form takes a TOML graph's – arranged, `[release] hash_ignore`
@@ -183,7 +249,7 @@ does. `graph_sha256` names the source's bytes. The generated `graph.json` is in 
 to; `edakit hook` runs it before each commit (2.7). `edakit check` reports the same as SYNC.graph, an error of stage
 G, for a TOML graph as for a language one; a generated file not written yet is the hook's to report.
 
-## 19.8 Commands and the editor
+## 19.10 Commands and the editor
 
 | Command | What it does |
 | --- | --- |
