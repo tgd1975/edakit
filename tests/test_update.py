@@ -3,8 +3,9 @@ its "When updating:" lines, and where the project pins edakit (edakit/update.py,
 
 import json
 
-from edakit import __version__, cli
+from edakit import cli
 from edakit import update as u
+from edakit.version import version
 
 PLUGINS = {"version": 2, "plugins": {"edakit@edakit": [
     {"scope": "user", "version": "1.0.3", "installPath": "/c/edakit/1.0.3"},
@@ -134,7 +135,7 @@ def test_edakit_version_offline_outside_a_project(tmp_path, monkeypatch, capsys)
     monkeypatch.setenv("CLAUDE_CONFIG_DIR", str(tmp_path / "claude"))
     assert cli.main(["version", "--offline"]) == 0
     out = capsys.readouterr().out
-    assert f"edakit {__version__} runs" in out and "newest: unknown (--offline)" in out
+    assert f"edakit {version()} runs" in out and "newest: unknown (--offline)" in out
 
 
 def test_the_requirements_of_the_projects_edakit_toml_files(tmp_path):
