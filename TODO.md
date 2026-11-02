@@ -72,19 +72,14 @@ Nothing to do until there is an answer or a release; whichever session learns of
       check it live, take it up and say so in upstream/README.md. EasyEDA's first answer is often "update to the latest
       version".
 
-## The documentation for its readers ([documentation.md](docs/concepts/done/documentation.md))
-
-Built on 2026-11-01 (#174, edakit 0.4.14); what is left after the owner's review (TD-81):
-
-- [ ] TD-83 - **The findings of the chapters' reviews:** sources that cite a section for what it does not hold
-      (codes.toml, docstrings, skills), statements that look stale against the code – each listed under "Findings" in
-      `docs/concepts/done/documentation-review/` –, fixed through a branch each, sources on the owner's word.
-
 ## Closed todos
 
 Done or dropped, newest first, each with its date and the commit that closed it. What closed before 2026-11-01 is
 taken from the history of this file; an item rewritten on its way is listed once, in its last form.
 
+- [x] TD-83 - **The findings of the chapters' reviews:** fixed or decided (#248, edakit 1.0.8) – the handbook follows
+      the code, the sources name the sections they cite, the catalog names pytree and the bell, 14.2's engines table
+      generated, 8.4 "you order and pay"; what the reviews left stays left. *(edakit-b7)* [2026-11-02]
 - [x] TD-103 - **The eval case first-circuit, three faults** fixed (#236): the prompt names `site/…`, the plugin's
       handbook as a twin, edakit's code off limits, the skills to be used, no network; `few-pages` counts Read calls
       from the trace; judges on the graph file and the trace, a regex on the DONE line; four graders catch reads of
