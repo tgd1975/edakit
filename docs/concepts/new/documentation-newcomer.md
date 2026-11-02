@@ -17,7 +17,14 @@ thirteen pages opened (twelve counted; `handbook/02-setup.md` read from an offse
 battery and no switch, and no page says to write the entries by hand; how a switch opens in `sim.json` and how to
 model a 9 V cell are only implied; how to accept PATH.reverse for a keyed connector is not described; where `edakit`
 lives when the plugin is not active is not said. It wrote every file by hand from the handbook and ran no skill,
-taking the prompt's bar on edakit's code for one on the skills too. Asked for by the
+taking the prompt's bar on edakit's code for one on the skills too; a second run with that bar lifted from the skills
+(`382fc62`, #236): 0.875 (0.76 USD, 40 turns), the skills new-project, requirements and circuit-design run, `DONE: 7
+components, 6 nets, 6 parts entries; 10 note; requirements: 1 need, 1 requirement`, fourteen pages – the start page,
+the quickstart, the steps index and the steps `01` to `07`, the handbook's chapters 2, 3, 4 and 10 (eleven counted: 4
+and 10 read through grep) –, and as missing: `edakit` not on PATH though the docs say the plugin puts it there; no way
+shown to list the parts library by kind; no toggle or slide switch and no 9 V connector in it; whether `[boards.main]`
+with a title alone is enough without a board; the writes of `.claude/settings.json` and the git hook path failed
+without a fallback; which `rows` patterns `SIM.state` evidence takes. Asked for by the
 owner the day after the documentation concept was built ("I am still not happy with the documentation; it is more
 compact after the revision, but when somebody new looks at it, they run away – think about what we could do so that it
 is not so overwhelming, and write a concept"). Written against main at `37a0745`, with
