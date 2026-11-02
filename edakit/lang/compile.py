@@ -58,6 +58,7 @@ class Model:
     statements: list = field(default_factory=list)
     defs: dict = field(default_factory=dict)
     params: dict = field(default_factory=dict)
+    jobs: list = field(default_factory=list)          # the derivations of the usages, evaluated at assembly
 
 
 # --- the project ----------------------------------------------------------------------------------------------------
@@ -186,8 +187,49 @@ def check_def(defn):
 
 
 def expand(model):
-    """Loops and usages expanded in place (T.11, T.12); a flat model is its own expansion."""
+    """Loops (T.12) and usages (T.11, expand.py) expanded in place."""
+    from .expand import expand_uses
+    statements, jobs, errors = expand_uses(model.statements, model.defs)
+    if errors:
+        raise CompileError(errors)
+    model.statements, model.jobs = statements, jobs
     return model
+
+
+def evaluate(jobs, design, smap):
+    """The derivation records of the usages: each rule evaluated with the usage's values, the bound nets' ranges and
+    the bound parts' entries (language 7); a rule that cannot evaluate is an error at the derivation and the usage."""
+    from ..engines.derive import part_value
+    from .rules import RuleError, Scope, derive
+    nets = {n["name"]: n for n in design.graph.get("nets") or []}
+    records, errors = [], []
+    for job in jobs:
+        d = job.derive
+        parts = {}
+        for local, proj in job.names.items():
+            key = design.entry_key(proj)
+            entry = design.parts.get(key) if key else None
+            parts[local] = (key, entry, (entry or {}).get("kind") or design.comps[proj].get("type"))
+        ports = {p: (net, (nets.get(net) or {}).get("v")) for p, net in job.ports.items() if net}
+        targets = [t.partition(".")[0] for t in d.targets]
+        chosen = {}
+        for t in targets:
+            proj = job.names.get(t)
+            v = part_value(design, proj, "Ω") if proj in design.comps else None
+            key = design.entry_key(proj) if proj in design.comps else None
+            chosen[t] = (v, "Ω", f"{key} values.value_ohm" if key else f"{proj} value")
+        scope = Scope(params=job.params, ports=ports, parts=parts, targets=targets, names=job.names,
+                      origin=job.origin, chosen=chosen)
+        try:
+            recs = derive(d.rule, [{"name": a.name, "text": a.text} for a in d.args], scope)
+        except RuleError as e:
+            errors.append(LangError(job.use.file, job.use.line, f"use {job.use.instance}: {e} – derive at "
+                                                                f"{d.file}:{d.line}"))
+            continue
+        for r in recs:
+            smap.put("derivations", f"{r['part']}.{r['key']}", job.use, derive=f"{d.file}:{d.line}")
+        records += recs
+    return sorted(records, key=lambda r: (r["part"], r["key"], r["rule"])), errors
 
 
 # --- assembly -------------------------------------------------------------------------------------------------------
@@ -316,6 +358,9 @@ class Assembler:
 
     # parts
     def on_part(self, st):
+        if getattr(st, "expanded", None) is not None:
+            use, _ = st.expanded
+            self.map.put("usages", use.instance, use)
         c = {"designator": st.des}
         if st.type is not None:
             c["type"] = st.type
@@ -502,6 +547,13 @@ def assemble(model, parts=None):
     errors = check_pins(asm, design)
     if errors:
         raise CompileError(errors)
+    if model.jobs:
+        records, errors = evaluate(model.jobs, design, asm.map)
+        if errors:
+            raise CompileError(errors)
+        if records:
+            graph["derivations"] = records
+            design.graph["derivations"] = records
     return graph, asm.map, design
 
 

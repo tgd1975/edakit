@@ -24,3 +24,5 @@ patch
 - T.9: a TextMate grammar for `.circuit` files and VS Code's language configuration (`editors/vscode/`).
 - T.10: handbook chapter 19, the circuit language: its forms, words and quantities, statements, definitions,
   derivations, the compiler, the hash and the commands; 3.1, 2.7 and 10 name the `.circuit` form.
+- T.11: `use DEF INSTANCE (PARAM = VALUE) PORT = NET … PART = DES …` – a definition of the project's or of
+  edakit's block library expanded into parts and nets, its derivations evaluated into the graph's records.
