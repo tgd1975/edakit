@@ -130,3 +130,36 @@ def test_the_hook_finds_edakit_without_the_path(tmp_path):
                        capture_output=True, text=True)
     assert r.returncode == 1 and "edakit not found" in r.stdout + r.stderr
     assert os.environ.get("EDAKIT") is None
+
+
+def test_the_block_holds_under_set_e_and_pipefail(tmp_path):
+    """A project's hook with `set -euo pipefail` before the block: no edakit on the PATH still reaches the plugin, and
+    a failing step still blocks with its exit code."""
+    root = _repo(tmp_path)
+    (root / ".githooks").mkdir()
+    (root / ".githooks" / "pre-commit").write_text("#!/usr/bin/env bash\nset -euo pipefail\n" + h.BLOCK)
+    plugin = tmp_path / "plugin"
+    (plugin / "bin").mkdir(parents=True)
+    (plugin / "bin" / "edakit").write_text("#!/bin/sh\necho \"ran $*\"\nexit ${RC:-0}\n")
+    (plugin / "bin" / "edakit").chmod(0o755)
+    (tmp_path / "claude" / "plugins").mkdir(parents=True)
+    (tmp_path / "claude" / "plugins" / "installed_plugins.json").write_text(
+        '{"plugins": {"edakit@edakit": [{"scope": "user", "installPath": "%s"}]}}' % plugin)
+    env = {"PATH": "/usr/bin:/bin", "HOME": str(tmp_path), "CLAUDE_CONFIG_DIR": str(tmp_path / "claude")}
+    hook = ["bash", str(root / ".githooks" / "pre-commit")]
+    r = subprocess.run(hook, cwd=root, env=env, capture_output=True, text=True)
+    assert r.returncode == 0 and "ran hook run" in r.stdout, r.stdout + r.stderr
+    r = subprocess.run(hook, cwd=root, env={**env, "RC": "2"}, capture_output=True, text=True)
+    assert r.returncode == 2 and "ran hook run" in r.stdout
+
+
+def test_a_doc_pin_table_the_graph_names_triggers_its_configuration(tmp_path):
+    root = _repo(tmp_path)
+    (root / "hardware").mkdir()
+    (root / "edakit.toml").write_text('[project]\nname = "a"\ngraph = "hardware/graph.json"\n\n'
+                                      '[boards.main]\nfile = "hardware/main.toml"\n')
+    (root / "hardware" / "main.toml").write_text("")
+    table = '"doc_pin_table": {"component": "U1", "file": "docs/hw.md"}'
+    for form in ('{"checks": {%s}}', '{"locks": {%s}}', '{"version": "4", "graph": {"locks": {%s}}}'):  # pytree's
+        (root / "hardware" / "graph.json").write_text(form % table)
+        assert "docs/hw.md" in h.configs(root)[0]["inputs"], form
