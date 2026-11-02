@@ -16,12 +16,17 @@ A project without a PCB needs no EDA program: checks, simulation and a drawn sch
 alone. For a board, EasyEDA Pro is the default and KiCad 10 the other choice, with the rest the same – when to take
 which, 16.1.
 
-```text
- parts database ──► hardware graph ──► schematic ──► PCB ──► manufacturing files ──► JLCPCB ──► acceptance
-   (P)              (G, E)             (S)          (L)      (F)                     (M-2)       (M-4)
-     │                 │                  │            │          │
-     │ edakit check    │ edakit sim       │ schematic  │ pcb, route, silk               edakit gate --eda    
-     └─────────────────┴──────────────────┴────────────┴──────────┴──► protocol.md + manifest.json "released": true
+```mermaid
+flowchart TB
+  subgraph stages ["generated, each checked"]
+    direction LR
+    P["parts database<br/>P · edakit check"] --> G["hardware graph<br/>G, E · check, sim"] --> S["schematic<br/>S · edakit schematic"] --> L["PCB<br/>L · pcb, route, silk"] --> F["manufacturing files<br/>F"]
+  end
+  subgraph after ["released, ordered, tested"]
+    direction LR
+    R["edakit gate --eda<br/>protocol.md, manifest.json"] -- "released: true" --> M["maker<br/>M-2"] --> A["acceptance<br/>M-4"]
+  end
+  stages --> after
 ```
 
 ## Why not just draw it in EasyEDA?

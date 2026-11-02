@@ -27,7 +27,12 @@ def test_every_description_is_a_page_of_the_site(tmp_path):
             + [f"agents/{p.name}" for p in (ROOT / "agents").glob("*.md")]
             + [f"catalog/circuits/{p.name}" for p in (ROOT / "docs" / "catalog" / "circuits").glob("*.svg")])
     assert [w for w in want if not (docs / w).is_file()] == []
-    cfg = json.loads((out / "mkdocs.yml").read_text(encoding="utf-8"))
+    mod = pages()
+    text = (out / "mkdocs.yml").read_text(encoding="utf-8")
+    assert f'"format": {mod.FENCE_FORMAT}\n' in text            # a YAML tag, unquoted, nothing after it
+    cfg = json.loads(text.replace(mod.FENCE_FORMAT, json.dumps(mod.FENCE_FORMAT)))
+    fences = next(e["pymdownx.superfences"] for e in cfg["markdown_extensions"] if "pymdownx.superfences" in e)
+    assert fences["custom_fences"][0]["name"] == "mermaid"
     reference = next(g["Reference"] for g in cfg["nav"] if "Reference" in g)
     assert cfg["docs_dir"] == "docs" and {"Rule catalog": "catalog/index.html"} in reference
     assert "edakit" in cfg["copyright"] and "issues/new/choose" in cfg["copyright"]   # the version, the feedback line
@@ -46,6 +51,8 @@ def test_the_navigation_is_tabs_by_reader_with_short_titles():
     mod = pages()
     tabs = [g for g, _ in mod.NAV]
     assert tabs == ["Start", "A circuit", "A board", "Extend", "Develop", "Handbook", "Reference", "Inside edakit"]
+    chapters = [int(Path(src).name[:2]) for src, _ in dict(mod.NAV)["Handbook"] if Path(src).name[:2].isdigit()]
+    assert chapters == sorted(chapters)                          # by number; the index says which to read when
     assert all(len(entries) <= mod.SIDEBAR for tab, entries in mod.NAV if tab != "Handbook")
     assert all(len(title.split()) <= 5 for _, entries in mod.NAV for _, title in entries)
     listed = {src for _, entries in mod.NAV for src, _ in entries}
