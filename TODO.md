@@ -46,8 +46,12 @@ to touch.
       no `hardware/graph.json`; ngspice missing, the parts catalogue denied by the proxy. A run as `eval` the same day
       (with ngspice, the CA bundle under `/usr/local/share/ccr/`, the token as `CLAUDE_CODE_OAUTH_TOKEN`) scored 0.83
       (1.18 USD, 94 turns) and does not count either: Bash was read-only in the workspace and in its own `$TMPDIR`
-      again, while bubblewrap as `eval` binds writably on its own – root was not the cause; why the sandbox of `claude
-      plugin eval` is read-only is open. *(edakit-c1)*
+      again, while bubblewrap as `eval` binds writably on its own – root was not the cause. Found the same day with a
+      probe case and a logged bwrap call: the harness puts its working directory under `os.tmpdir()`, on Linux `/tmp`,
+      and lists `/tmp`, `/var/tmp`, `/dev/shm` in `denyWrite`; bwrap mounts in order, and the deny's `--ro-bind` of
+      the allowed paths comes last. The way out: `mkdir -p /srv/evaltmp && chown eval:eval /srv/evaltmp`, and
+      `TMPDIR=/srv/evaltmp` in the eval's environment – the probe then wrote its workspace and `$TMPDIR` as `eval`;
+      the next run of first-circuit goes that way. *(edakit-c1)*
 - [ ] TD-99 - **Decide on parts on hand (PartsLedger):** a decision round in Claude Code's form on
       `docs/concepts/new/parts-on-hand.md` – eight decisions, recommendations first: the maker's bin as a source of
       hand-soldered parts, only the rest ordered, the way back into the bin, PartsLedger's name; nothing is built
