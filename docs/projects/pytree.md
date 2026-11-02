@@ -5,8 +5,10 @@ switch of a Christmas tree made of circuit boards. With each code the tree wakes
 of December, the whole tree with its golden star and a melody from the buzzer on the 24th. Its repository is private;
 this page is the one description of it in edakit.
 
-**State 2026-11-01:** the tree board released in gate run 20261031-110510; edakit's gate makes the same
-manufacturing files from the same board (run 20261101-003052). Not ordered yet; a small batch of five is planned.
+**State 2026-11-02:** the tree board released in gate run 20261031-110510; edakit's gate makes the same
+manufacturing files from the same board (run 20261101-003052). Five boards are ordered at JLCPCB, assembled on the
+back, from the cart the skill cart filled and checked (the record of run 20261101-225744); the parts from LCSC ship
+with them.
 
 ## What it is
 

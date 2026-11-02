@@ -7,6 +7,12 @@ written once, by `.github/merge.py`, from the fragments in [changes/](changes/RE
 [versioning.md](docs/concepts/done/versioning.md). Update with `claude plugin marketplace update edakit && claude plugin
 update edakit@edakit`, then `/reload-plugins` or a new session; `edakit --version` names the version that runs.
 
+## 1.0.0 – 2026-11-02
+
+- **1.0.0.** The first boards are ordered: pytree's tree, assembled, from the JLCPCB cart the skill cart filled and
+  checked, and the Christmas bell's two through-hole variants, bare, in the same order with the parts from LCSC. The
+  documentation's entry layer – start page, quickstart, how it works – is built. Nothing a project has to do.
+
 ## 0.6.2 – 2026-11-02
 
 - The JLCPCB fee table names its sources without the order and customer numbers of the reference carts.

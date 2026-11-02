@@ -14,9 +14,10 @@ five 5 mm LEDs and two buttons, on 85 × 56 mm with four M3 holes. JLCPCB assemb
 Nano's sockets, the LEDs, the capacitor and the servo header are soldered by hand. Four variants share the outline:
 one for assembly, one with through-hole parts only, two with an ESP32 module instead of the Nano.
 
-**State 2026-11-01:** all five boards released; main, smd and esp32 in gate runs 20261101-142527, -142626 and
--142730, tht and esp32tht in -005606 and -005734. Not ordered yet. The pictures on this page come from the main
-board's release 20261101-142527 and the repository at commit 49f3373.
+**State 2026-11-02:** all five boards released; main, smd and esp32 in gate runs 20261101-142527, -142626 and
+-142730, tht and esp32tht in -005606 and -005734. The through-hole variants tht and esp32tht are ordered bare at
+JLCPCB, five each, in one order with pytree's tree; main, smd and esp32 are not ordered. The pictures on this page
+come from the main board's release 20261101-142527 and the repository at commit 49f3373.
 
 ## The circuit
 
