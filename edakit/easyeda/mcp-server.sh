@@ -8,7 +8,7 @@
 # IMPORTANT: in server mode stdout speaks the MCP protocol. Never print anything to stdout.
 set -euo pipefail
 
-EASYEDA_MCP_VERSION="${EASYEDA_MCP_VERSION:-1.6.0}"
+EASYEDA_MCP_VERSION="${EASYEDA_MCP_VERSION:-1.8.0}"
 RUNTIME_DIR="${EASYEDA_MCP_RUNTIME_DIR:-$HOME/.easyeda-mcp-pro/runtime/$EASYEDA_MCP_VERSION}"
 ENTRY="$RUNTIME_DIR/node_modules/easyeda-mcp-pro/dist/index.js"
 
@@ -31,13 +31,8 @@ if [ ! -f "$ENTRY" ]; then
   npm install --prefix "$RUNTIME_DIR" --no-save --no-audit --no-fund "easyeda-mcp-pro@$EASYEDA_MCP_VERSION" >&2
 fi
 
-# ODB++ for a maker that assembles from it (edakit handbook 8.4, SYNC.odb): the tool easyeda_export_odb, patched into the
-# installed server – once; a patched server is left as it is. Its messages go to stderr.
-HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-node "$HERE/odb-tool-patch.mjs" "$RUNTIME_DIR/node_modules/easyeda-mcp-pro/dist/tools/L1_export.js" >&2 ||
-  echo "easyeda_export_odb not patched in – the server runs without the ODB++ export" >&2
-
 # Profile "full": schematic/PCB write tools plus the controlled easyeda_api_call (writes need confirmWrite=true).
+# edakit's own servers run "experimental" (eda.start): the ODB++ export easyeda_export_odb is registered only there.
 export TOOL_PROFILE="${TOOL_PROFILE:-full}"
 # Ordering hard off – orders are placed by a human in the browser.
 export JLCPCB_MODE="${JLCPCB_MODE:-disabled}"
@@ -47,9 +42,8 @@ export BRIDGE_RAW_EXEC_ENABLED=false
 # Exports (Gerber, BOM, PDF, ...) go to the project instead of ~/.easyeda-mcp-pro. edakit sets its own per run.
 export ARTIFACT_DIR="${ARTIFACT_DIR:-$PWD/build/easyeda-mcp}"
 export LOG_LEVEL="${LOG_LEVEL:-warn}"
-# Bridge calls may take 120 s instead of 15 s: DRC and copper pours of a large board need longer. The server that holds
-# the bridge port drops pending requests after ITS timeout ("stale sweep") – also requests another server (e.g. a
-# script's) passes through with a longer timeout. So every server needs the same value (checked with 1.4.0, code unchanged on 1.6.0).
+# Bridge calls may take 120 s instead of 15 s: DRC and copper pours of a large board need longer. Since 1.7.0 the server
+# that holds the bridge port keeps each request's own timeout (M-1), so a server only cuts its own calls short.
 export BRIDGE_TIMEOUT_MS="${BRIDGE_TIMEOUT_MS:-120000}"
 
 exec node "$ENTRY" "$@"

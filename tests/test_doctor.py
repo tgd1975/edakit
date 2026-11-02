@@ -37,7 +37,7 @@ def test_health_check_classifier():
 
 def test_depth_classifier():
     lv, text, hint = doctor.depth_line(CUT)
-    assert lv == "WARN" and "original extension" in text and "bridge-extension-patch.sh" in hint
+    assert lv == "WARN" and "ignores maxDepth" in text and "extension --copy" in hint
     assert doctor.depth_line(PAGES)[0] == "OK"
     assert doctor.depth_line(None)[0] == "INFO"                            # start page: no project open
     assert doctor.depth_line({"uuid": "p1", "data": []})[0] == "INFO"      # too shallow to tell
@@ -122,7 +122,7 @@ def test_bridge_part_reports_and_claims_nothing(project, monkeypatch, capsys):
     fake = FakeMCP(CUT)
     code, out, started = run_doctor(monkeypatch, capsys, ["doctor"], fake=fake)
     assert started == ["off"] and fake.closed
-    assert "OK    bridge connected" in out and "original extension" in out
+    assert "OK    bridge connected" in out and "ignores maxDepth" in out
     assert ("easyeda_api_call", "DMT_Project.getCurrentProjectInfo") in fake.calls
     with lock.state() as s:
         assert s["claim"] is None                                           # doctor takes no claim
@@ -147,12 +147,12 @@ def test_depth_probed_under_own_claim(project, monkeypatch, capsys):
     with lock.state() as s:
         lock.claim(s, "me", "pcb round")
     code, out, _ = run_doctor(monkeypatch, capsys, ["doctor"], fake=FakeMCP())
-    assert "OK    patched extension" in out
+    assert "OK    return depth" in out
 
 
 def test_the_odb_tool_of_the_server(project, tmp_path):
-    """Ordering step 10: edakit doctor names whether easyeda_export_odb is patched into the server – a warning only with
-    a maker that takes ODB++."""
+    """Ordering step 10: edakit doctor names whether easyeda_export_odb is in the server (1.7.0 and later) – a warning
+    only with a maker that takes ODB++."""
     from edakit import doctor
     tools = tmp_path / "node_modules" / "easyeda-mcp-pro" / "dist" / "tools"
     tools.mkdir(parents=True)
@@ -162,30 +162,6 @@ def test_the_odb_tool_of_the_server(project, tmp_path):
     f = project.root / "edakit.toml"
     f.write_text(f.read_text() + '\n[cart]\nmaker = "aisler"\n')
     level, text, hint = doctor.odb_line(project.config(), tmp_path, True)
-    assert level == "WARN" and "a maker of [cart] makers takes ODB++" in text and "odb-tool-patch.mjs" in hint
+    assert level == "WARN" and "a maker of [cart] makers takes ODB++" in text and "runtime folder" in hint
     (tools / "L1_export.js").write_text("    registry.register({\n        name: 'easyeda_export_odb',")
     assert doctor.odb_line(project.config(), tmp_path, True)[0] == "OK"
-
-
-def test_the_odb_patch_of_the_server(tmp_path):
-    """odb-tool-patch.mjs adds the tool once before easyeda_export_pdf and leaves a patched file as it is; a server it
-    does not know is refused."""
-    import shutil
-    import subprocess
-    from pathlib import Path
-    node = shutil.which("node")
-    if not node:
-        pytest.skip("no node")
-    script = Path(__file__).resolve().parents[1] / "edakit" / "easyeda" / "odb-tool-patch.mjs"
-    f = tmp_path / "L1_export.js"
-    f.write_text("function writeExportPayload(ctx, data) {}\nfunction registerExportTools(registry) {\n"
-                 "    registry.register({\n        name: 'easyeda_export_pdf',\n    });\n}\n")
-    assert subprocess.run([node, str(script), str(f)], capture_output=True).returncode == 0
-    once = f.read_text()
-    assert once.count("name: 'easyeda_export_odb'") == 1 and once.index("easyeda_export_odb") < once.index(
-        "easyeda_export_pdf") and "format: 'odb'" in once
-    assert subprocess.run([node, str(script), str(f)], capture_output=True).returncode == 0 and f.read_text() == once
-    assert subprocess.run([node, "--check", str(f)], capture_output=True).returncode == 0
-    f.write_text("nothing of the server here\n")
-    res = subprocess.run([node, str(script), str(f)], capture_output=True, text=True)
-    assert res.returncode == 1 and "the server has changed" in res.stderr

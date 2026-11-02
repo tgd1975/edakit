@@ -22,7 +22,7 @@ What the board file asks (route.Rules reads the same keys for the DSN; mil there
     classes     [routing.classes]: EasyEDA's net classes, each with its nets that are in the PCB
 
 EasyEDA's side, as getCurrentRuleConfiguration, getNetRules and getAllNetClasses answer (EasyEDA Pro 3.2.206 with the
-bridge's return depth 12; tests/fixtures/easyeda/drc_rules_3.2.206.json):
+return depth 12, eda.API_DEPTH; tests/fixtures/easyeda/drc_rules_3.2.206.json):
     configuration  {"name": "Custom Config", "config": {category: {kind: {rule name: rule}}}}, the categories
                    Spacing, Physics, Plane and Expansion. Every rule has "unit" ("mm") and "isSetDefault": the rule of
                    its kind that a net rule "default" means.
@@ -271,8 +271,8 @@ def verdict(board, path):
     if have.get("error"):
         return False, f"not read: {have['error']}", expected
     if "[MaxDepth]" in json.dumps(have):
-        return False, ("cut off at [MaxDepth] – the rule set needs the bridge's return depth 12 "
-                       "(edakit/easyeda/bridge-extension-patch.sh)"), expected
+        return False, ("cut off at [MaxDepth] – the rule set needs the return depth 12: the bridge extension of "
+                       "the pinned easyeda-mcp-pro (handbook 2.5)"), expected
     diff = differences(want, have)
     return not diff, f"rule set '{name_of(have)}': " + ("; ".join(diff) if diff else "the board file's"), expected
 

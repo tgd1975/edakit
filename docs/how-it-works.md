@@ -93,8 +93,8 @@ What runs offline and what has run live, so that you know how close it is.
 - **Versions.** Every change comes as a version with its own number, 1.0.0 at the first order. The
   [changelog](../CHANGELOG.md) says what each changed and what a project has to do when the middle number goes up.
   `edakit --version` names the one that runs.
-- **Licences.** [easyeda-mcp-pro](https://github.com/oaslananka/easyeda-mcp-pro) 1.6.0, as pinned, is PolyForm
-  Noncommercial – check before commercial use. EasyEDA Pro is proprietary, Freerouting GPL-3.0, ngspice BSD. None of
+- **Licences.** [easyeda-mcp-pro](https://github.com/oaslananka/easyeda-mcp-pro) 1.8.0, as pinned, is MIT (since
+  1.7.0; 1.1.0 to 1.6.0 were PolyForm Noncommercial). EasyEDA Pro is proprietary, Freerouting GPL-3.0, ngspice BSD. None of
   them is bundled.
 
 ## Future work

@@ -311,7 +311,7 @@ COIN_CELL = fab.Path(__file__).parents[1] / "examples" / "coin-cell-led"
 
 def test_f7_on_easyeda_s_own_export(tmp_path):
     """Ordering step 0b (2026-11-01): EasyEDA's own ODB++ of a probe board – coin-cell-led with D1 turned by 90°, R1 on
-    the bottom turned by 90° and AISLER in [cart] (overlay/) –, exported with the patched easyeda_export_odb, against the
+    the bottom turned by 90° and AISLER in [cart] (overlay/) –, exported with easyeda_export_odb, against the
     Gerber, drill, BOM and CPL files of the same run (run/). Every layer, hole, part and net equal; EasyEDA turns
     clockwise in its ODB++ (D1 and R1 at 270°, the CPL 90°) and keeps BT1 (bom: false) in it without a mark – the job
     lists it not to place (dnp)."""

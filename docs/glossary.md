@@ -69,7 +69,7 @@ Handbook: [8.1 Stages](../handbook/08-release-gate.md#81-stages).
 
 The extension inside EasyEDA Pro, menu "MCP Bridge". The MCP server drives EasyEDA through it. EasyEDA Pro only.
 Handbook: [2.1 What talks to what](../handbook/02-setup.md#21-what-talks-to-what),
-[2.5 The bridge extension, patched](../handbook/02-setup.md#25-the-bridge-extension-patched).
+[2.5 The bridge extension](../handbook/02-setup.md#25-the-bridge-extension).
 
 ### Building block
 

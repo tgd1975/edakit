@@ -18,7 +18,7 @@ Result in DIR/<board>/:
     cpl_<board>_<maker>.csv          with a maker of [cart] makers whose zero orientation is not the footprint's
                                      (Eurocircuits): the same rows, each part turned by [cpl.turns] of its profile
     jlc_parts.json                   JLCPCB assembly catalogue entry per LCSC number of the BOM (PARTS.stock)
-    pcb.json, drc.json, bom_easyeda.json, cpl_easyeda.xlsx   raw data from EasyEDA (for --offline)
+    pcb.json, drc.json, bom_easyeda.json, cpl_easyeda.csv    raw data from EasyEDA (for --offline; .xlsx before 1.7.0)
     order.md                         with [order] (board file or edakit.toml) or [cart]: the order form of this
                                      board at the planned maker, every field with where it comes from (order_sheet.py)
     order.json                       with [order]: the order settings that change the board as made (fab hash)
@@ -89,7 +89,7 @@ assembly preview at JLCPCB.
   FILES.set  Gerber set complete; outline and holes = plan (± 0.2 mm); tooling holes in the NPTH file, mask open, no copper
   SYNC.odb  with a maker of [cart] makers that takes ODB++ (AISLER; fails for the planned maker, warns for another one),
        and with [release] maker_files = "all" on every board with an assembly side (information, as AISLER reads it):
-       odb_<board>.zip, exported through the patched easyeda_export_odb, against this run's files – every layer
+       odb_<board>.zip, exported through easyeda_export_odb, against this run's files – every layer
        (copper, mask, paste, silkscreen) rasterised as GEO.copper and XOR'd with its Gerber layer, no spot above
        SPOT_MM2 beyond an edge one raster point off (ODB_EDGE_STEPS: the ODB++'s coarser coordinates) and no layer
        in one only; the drill hits = the drill files (1 µm, diameter, plated or not); the profile
@@ -189,6 +189,37 @@ def take_export(src, dest):
         src.unlink()
 
 
+CPL_FILES = ("cpl_easyeda.csv", "cpl_easyeda.xlsx")
+
+
+def take_cpl(src, d):
+    """EasyEDA's pick and place as cpl_easyeda.csv – or .xlsx, as a bridge extension older than 1.7.0 delivers it
+    whatever was asked (M-7) –, the other one of an earlier run gone."""
+    for name in CPL_FILES:
+        (Path(d) / name).unlink(missing_ok=True)
+    with open(src, "rb") as f:
+        xlsx = f.read(2) == b"PK"
+    take_export(src, Path(d) / CPL_FILES[xlsx])
+
+
+def read_easyeda_cpl(d):
+    """The rows of cpl_easyeda.csv (or .xlsx) as {column: value}: Designator, Mid X, Mid Y, Layer (T/B), Rotation,
+    SMD. The csv in UTF-8 or UTF-16 (a BOM says which), comma, semicolon or tab separated."""
+    path = Path(d) / CPL_FILES[0]
+    if not path.exists():
+        import openpyxl
+        ws = openpyxl.load_workbook(Path(d) / CPL_FILES[1], read_only=True).worksheets[0]
+        rx = list(ws.iter_rows(values_only=True))
+        return [dict(zip(rx[0], r)) for r in rx[1:] if r and r[0]]
+    raw = path.read_bytes()
+    text = raw.decode("utf-16") if raw[:2] in (b"\xff\xfe", b"\xfe\xff") else raw.decode("utf-8-sig")
+    lines = text.splitlines()
+    dialect = csv.Sniffer().sniff(lines[0], delimiters=",;\t") if lines else csv.excel
+    rows = list(csv.reader(lines, dialect))
+    head = [h.strip() for h in rows[0]] if rows else []
+    return [dict(zip(head, (v.strip() for v in r))) for r in rows[1:] if r and r[0].strip()]
+
+
 def collect(cfg, board, d, verbose=False):
     from .. import eda, pcb
     (d / "netlist_diff.json").unlink(missing_ok=True)
@@ -231,7 +262,7 @@ def collect(cfg, board, d, verbose=False):
         res = mcp.call("easyeda_export_pick_place", projectId="current", format="csv", timeout=120)
         if not res.get("exported"):
             raise SystemExit(f"pick-and-place export failed: {res}")
-        take_export(res["file_path"], d / "cpl_easyeda.xlsx")  # EasyEDA delivers xlsx even when csv is asked for
+        take_cpl(res["file_path"], d)
         (d / "bom_easyeda.json").write_text(json.dumps(board_bom(mcp, board), indent=1, ensure_ascii=False))
         if pcb.import_items(found):   # last: the comparison focuses the schematic pages
             try:
@@ -276,7 +307,7 @@ def takers(cfg, design, board, kind):
 
 
 def export_odb(cfg, mcp, board, d):
-    """odb_<b>.zip through the patched MCP tool easyeda_export_odb (handbook 2.5) – for a maker that takes ODB++, with
+    """odb_<b>.zip through easyeda-mcp-pro's tool easyeda_export_odb (handbook 2.4) – for a maker that takes ODB++, with
     [release] maker_files = "all" for every board with an assembly side (takers); a .tgz from EasyEDA is packed into a
     zip with the same files. A failed export leaves odb_error.txt for SYNC.odb."""
     from .. import eda
@@ -288,12 +319,12 @@ def export_odb(cfg, mcp, board, d):
     try:
         res = mcp.call("easyeda_export_odb", projectId="current", timeout=300)   # inch whatever unit says (E-16)
     except eda.MCPError as e:
-        (d / ODB_ERROR).write_text(f"easyeda_export_odb: {e} – the patched MCP server and bridge (handbook 2.5)")
+        (d / ODB_ERROR).write_text(f"easyeda_export_odb: {e} – the MCP server and bridge extension of the pinned version (handbook 2.4)")
         return
     if not res.get("exported"):
         (d / ODB_ERROR).write_text(f"easyeda_export_odb: {res.get('error') or res}")
         return
-    path = res.get("file_path") or res.get("artifact_path")   # easyeda-mcp-pro's own tool (#799) / the patched one
+    path = res.get("file_path") or res.get("artifact_path")   # easyeda-mcp-pro's tool / edakit's patch before 1.7.0
     if not path:
         (d / ODB_ERROR).write_text(f"easyeda_export_odb: no file in its answer ({res})")
         return
@@ -1712,10 +1743,7 @@ def check_cpl(cfg, board, design, d, ours, rows):
         from ..toolchain.kicad import fab as kicad_fab
         cpl = kicad_fab.read_cpl(d / "cpl_kicad.csv")
     else:
-        import openpyxl
-        ws = openpyxl.load_workbook(d / "cpl_easyeda.xlsx", read_only=True).worksheets[0]
-        rx = list(ws.iter_rows(values_only=True))
-        cpl = [dict(zip(rx[0], r)) for r in rx[1:] if r and r[0]]
+        cpl = read_easyeda_cpl(d)
     count = Counter(r["Designator"] for r in cpl)
     data = {c["designator"]: c for c in json.loads((d / "pcb.json").read_text())["components"] if c.get("designator")}
     probs = [f"{r}: {count[r]}x" for r in sorted(ours, key=natural_key) if count[r] != 1]

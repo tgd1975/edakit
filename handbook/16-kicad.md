@@ -25,7 +25,7 @@ project:
 | By hand | create the project, one *Import Changes* ([upstream](../upstream/README.md) lists each click) | nothing |
 | Parallel sessions | one at a time per machine: the claim (11.2) | no limit: each board has its own files |
 | Footprints | EasyEDA's library, which JLCPCB's assembly works from | the same LCSC data, cached by edakit (16.3) |
-| Licence | EasyEDA Pro proprietary, easyeda-mcp-pro PolyForm Noncommercial | KiCad GPL-3.0 |
+| Licence | EasyEDA Pro proprietary, easyeda-mcp-pro MIT (since 1.7.0) | KiCad GPL-3.0 |
 | Released on it | pytree, the Christmas bell, the coin cell of [walkthrough 17](17-walkthrough.md) | the 555 blinker of [walkthrough 18](18-walkthrough-kicad.md); CI against KiCad 10 (16.8) |
 
 `/edakit:new-project` asks for it once; a project switches later as 16.7 says.
@@ -41,7 +41,7 @@ Without the key a project draws in EasyEDA Pro, the default. One tool chain serv
 `[boards.<name>]` (`template`, `schematic`, `pcb`) are refused – there is nothing to name.
 
 The KiCad side does without the bridge, the MCP server, Node, the EasyEDA claim (`edakit lock`), the agent
-`easyeda-operator`, *Import Changes*, the reload before the DRC and the patched bridge for the schematic PDF. The
+`easyeda-operator`, *Import Changes*, the reload before the DRC and the bridge's schematic PDF. The
 commands run kicad-cli in the session and take seconds.
 
 ## 16.2 Setup

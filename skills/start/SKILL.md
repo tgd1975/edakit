@@ -24,7 +24,7 @@ bridge, no claim. `edakit doctor 2>&1 | cat` shows the line for kicad-cli (KiCad
    behave like Node. Restarting EasyEDA yourself is fine; save first.
 3. **Bridge:** `easyeda_bridge_status` must say `connected: true`. The first call starts the server, Auto-Connect then
    connects within seconds, also after an EasyEDA crash. Only if that fails, ask the user once to click
-   *MCP Bridge → Connect* (the patched bridge sometimes shows no menu; then restart EasyEDA – Auto-Connect stays on).
+   *MCP Bridge → Connect* (after a re-import the menu is sometimes missing; then restart EasyEDA – Auto-Connect stays on).
 4. **MCP tools missing in this session:** orphaned servers? `pgrep -af easyeda-mcp-pro`, `ss -ltnp | grep 4962`. End
    stale ones (tell other sessions first). The user reconnects with `/mcp` → easyeda; Claude cannot do that itself.
 5. **Project open:** `easyeda_api_call` `DMT_Project.getCurrentProjectInfo` (`confirmWrite: true`, also for reads).

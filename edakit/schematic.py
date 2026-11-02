@@ -150,19 +150,16 @@ def place(mcp, comps, devices, positions):
             print(f"  ! {d}: skipped (no device for {key})")
             continue
         x, y = positions[d]
-        # the bridge drops addIntoBom on create (upstream M-9) – create normally, then modify
-        ops.append({"operationId": f"place-{d}", "action": "create", "primitiveKind": "component",
-                    "deviceItem": devices[key], "x": x, "y": y})
+        op = {"operationId": f"place-{d}", "action": "create", "primitiveKind": "component",
+              "deviceItem": devices[key], "x": x, "y": y}
+        if comps[d].get("bom") is False:    # hand-soldered parts: on the PCB, not in the BOM (set on create, M-9)
+            op["addIntoBom"] = False
+        ops.append(op)
         todo.append(d)
     ids = batch_write(mcp, ops)
     placed = {d: {"id": ids[f"place-{d}"], "ref": d} for d in todo if ids.get(f"place-{d}")}
     batch_write(mcp, [{"operationId": f"ref-{d}", "action": "modify", "primitiveId": p["id"],
                        "property": {"designator": d}} for d, p in placed.items()])
-    hand = [d for d in placed if comps[d].get("bom") is False]
-    for n, d in enumerate(hand):  # hand-soldered parts: on the PCB, not in the BOM
-        if n % 20 == 0:
-            ensure_focus(mcp)
-        api(mcp, "SCH_PrimitiveComponent.modify", placed[d]["id"], {"addIntoBom": False})
     ensure_focus(mcp)
     on_sheet = {c["primitiveId"]: c for c in eda.list_sheet_parts(mcp)}
     for d, p in placed.items():
@@ -174,6 +171,11 @@ def place(mcp, comps, devices, positions):
             print(f"  ? {d}: designator in EasyEDA is {c['reference']}")
     if len(on_sheet) != len(placed):
         raise MCPError(f"the page holds {len(on_sheet)} parts, {len(placed)} were placed")
+    for d in (d for d in placed if comps[d].get("bom") is False):   # the bridge sets it best-effort: read it back
+        if eda.state(api(mcp, "SCH_PrimitiveComponent.get", placed[d]["id"]) or {}).get("AddIntoBom") is not False:
+            print(f"  ? {d}: 'in BOM' not taken on create – set again")
+            ensure_focus(mcp)
+            api(mcp, "SCH_PrimitiveComponent.modify", placed[d]["id"], {"addIntoBom": False})
     print(f"  {len(placed)} parts placed")
     return placed
 

@@ -720,7 +720,7 @@ FAULTS = [
      [("GEO.drc", "fail", "drc_rules.json missing (edakit fab without --offline reads it with the DRC)")]),
     ("the DRC's rule set cut off by the bridge",
      lambda ex, p: (drc_rules_of_the_board(ex, p), ex.drc_rules.update(net_rules="[MaxDepth]")),
-     [("GEO.drc", "fail", "cut off at [MaxDepth] – the rule set needs the bridge's return depth 12")]),
+     [("GEO.drc", "fail", "cut off at [MaxDepth] – the rule set needs the return depth 12")]),
     # SYNC.footprint
     ("another footprint", lambda ex, p: ex.comp("C2").update(footprintName="C0603"),
      [("SYNC.footprint", "fail", "C2: C0603 instead of C0805")]),
@@ -1518,3 +1518,26 @@ def test_an_export_the_server_wrote_into_the_run_folder_leaves_no_copy(tmp_path)
     elsewhere.write_bytes(b"zip")
     fab.take_export(elsewhere, d / "gerber_main.zip")
     assert elsewhere.exists() and (d / "gerber_main.zip").read_bytes() == b"zip"
+
+
+def test_the_pick_and_place_is_kept_as_easyeda_delivers_it_and_read_either_way(tmp_path):
+    """M-7 (easyeda-mcp-pro 1.7.0): the bridge asks EasyEDA for csv; an extension before 1.7.0 still delivers xlsx.
+    take_cpl keeps it under the name of what it is, the other one of an earlier run gone; read_easyeda_cpl reads both,
+    the csv in UTF-8 or UTF-16 with comma, semicolon or tab."""
+    d = tmp_path / "main"
+    d.mkdir()
+    head = ["Designator", "Footprint", "Mid X", "Mid Y", "Layer", "Rotation", "SMD"]
+    wb = openpyxl.Workbook()
+    wb.active.append(head)
+    wb.active.append(["R1", "R0603", 10.5, 20, "T", 90, "Yes"])
+    wb.save(tmp_path / "current")
+    fab.take_cpl(tmp_path / "current", d)
+    assert [p.name for p in d.iterdir()] == ["cpl_easyeda.xlsx"]
+    assert fab.read_easyeda_cpl(d)[0]["Rotation"] == 90
+    for sep, enc in ((",", "utf-8-sig"), (";", "utf-8"), ("\t", "utf-16")):
+        (tmp_path / "current").write_bytes((sep.join(head) + "\n" + sep.join(
+            ["R1", "R0603", "10.5", "20", "T", "90", "Yes"]) + "\n\n").encode(enc))
+        fab.take_cpl(tmp_path / "current", d)
+        assert [p.name for p in d.iterdir()] == ["cpl_easyeda.csv"]
+        rows = fab.read_easyeda_cpl(d)
+        assert rows == [dict(zip(head, ["R1", "R0603", "10.5", "20", "T", "90", "Yes"]))], (sep, enc)

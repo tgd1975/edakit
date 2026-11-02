@@ -754,7 +754,7 @@ upload of the cart, and submitting the files is yours. Three forms ask for a con
 terms (pre-checked), PCBWay's "Agree" on export control, Eurocircuits' Terms of Sales –: the skill stops and asks. The
 placement preview opens again from the cart at JLCPCB and Eurocircuits; PCBWay shows none; AISLER has no cart (step 4).
 
-AISLER assembles from ODB++: `odb_<board>.zip` from EasyEDA through the patched MCP server and bridge (2.4, 2.5), on the
+AISLER assembles from ODB++: `odb_<board>.zip` from EasyEDA through the MCP server's `easyeda_export_odb` (2.4), on the
 KiCad tool chain from `kicad-cli pcb export odb` (16.6), held to the released files by SYNC.odb. Eurocircuits and AISLER
 sit inside the EU: there is no import, and for `sale` you stay the manufacturer of the product (15.1). PARTS.stock and
 `edakit stock` ask JLCPCB's catalogue only where JLCPCB is among the makers; another maker's stock is what its matching

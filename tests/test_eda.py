@@ -19,6 +19,7 @@ class FakeEasyEDA:
 
     def call(self, tool, timeout=130, **args):
         path, a = args["path"], args["args"]
+        assert args.get("maxDepth") == eda.API_DEPTH         # deep answers asked of the bridge (M-3)
         self.calls.append(path)
         if path == "DMT_Project.getCurrentProjectInfo":
             return {"ok": True, "result": {"friendlyName": self.open_name, "uuid": f"uuid-{self.open_name}"}}
@@ -28,7 +29,9 @@ class FakeEasyEDA:
             return {"ok": True, "result": [f"uuid-{n}" for n in self.folders.get(a[0] if a else None, [])]}
         if path == "DMT_Project.getProjectInfo":
             return {"ok": True, "result": {"friendlyName": a[0].removeprefix("uuid-"), "uuid": a[0]}}
-        if path == "DMT_Project.createProject":
+        if path == "DMT_Project.createProject":     # since 1.7.0 a create that returns null is an error (M-5)
+            if self.create_returns is None:
+                return {"ok": False, "error": 'EasyEDA returned null for "DMT_Project.createProject": nothing was created.'}
             return {"ok": True, "result": self.create_returns}
         if path == "DMT_Project.openProject":
             if self.opens:
