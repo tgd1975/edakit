@@ -45,14 +45,15 @@ BLOCK = f"""{BEGIN}
 # edakit check, sim and the other steps of each configuration whose files are staged; a failure blocks the commit.
 cd "$(git rev-parse --show-toplevel)" || exit 1
 ek=${{EDAKIT:-}}
-[ -n "$ek" ] || ek=$(command -v edakit 2>/dev/null)
-[ -n "$ek" ] || ek=$(python3 -c '{FIND}' "$PWD" 2>/dev/null)
+[ -n "$ek" ] || ek=$(command -v edakit 2>/dev/null || true)
+[ -n "$ek" ] || ek=$(python3 -c '{FIND}' "$PWD" 2>/dev/null || true)
 if [ -z "$ek" ] || [ ! -x "$ek" ]; then
   echo "pre-commit: edakit not found – set EDAKIT=/path/to/edakit, put it on the PATH or install the Claude Code plugin"
   exit 1
 fi
 # through cat: uv from snap prints nothing and exits 120 when its output goes into a file
-rcf=$(mktemp); {{ "$ek" hook run 2>&1; echo $? >"$rcf"; }} | cat; rc=$(cat "$rcf"); rm -f "$rcf"
+# – and safe under the project's set -euo pipefail
+rcf=$(mktemp); {{ "$ek" hook run 2>&1 && echo 0 >"$rcf" || echo $? >"$rcf"; }} | cat; rc=$(cat "$rcf"); rm -f "$rcf"
 [ "$rc" = 0 ] || exit "$rc"
 {END}
 """
@@ -175,13 +176,7 @@ def configs(root):
                         "firmware": False, "docs": False})
             continue
         inputs = [cfg.graph, cfg.parts, cfg.sim_config, *cfg.requirements, *cfg.docs]
-        try:
-            graph = json.loads(cfg.graph.read_text(encoding="utf-8")) if cfg.graph.suffix == ".json" else {}
-            pin_table = (graph.get("checks") or {}).get("doc_pin_table")
-            if isinstance(pin_table, str):
-                inputs.append(cfg.resolve(pin_table.split("#")[0]))
-        except (OSError, ValueError, AttributeError):
-            pass
+        inputs += [cfg.resolve(f) for f in _pin_tables(cfg.graph)]
         rel = []
         for p in inputs:
             p = cfg.resolve(p)
@@ -190,6 +185,24 @@ def configs(root):
         d = str(Path(name).parent)
         out.append({"path": name, "dir": "" if d == "." else d, "inputs": rel, "toml_graph": cfg.graph.suffix == ".toml",
                     "firmware": cfg.firmware is not None, "docs": bool(cfg.docs)})
+    return out
+
+
+def _pin_tables(graph):
+    """The files of doc_pin_table in a graph – under locks, or checks in the older form; {file: …} or a path."""
+    import tomllib
+    try:
+        text = graph.read_text(encoding="utf-8")
+        data = tomllib.loads(text) if graph.suffix == ".toml" else json.loads(text)
+    except (OSError, ValueError):
+        return []
+    data = data.get("graph", data) if isinstance(data, dict) else {}    # as design.py reads it
+    out = []
+    for where in ("locks", "checks"):
+        t = (data.get(where) or {}).get("doc_pin_table") if isinstance(data.get(where), dict) else None
+        f = t.get("file") if isinstance(t, dict) else t
+        if isinstance(f, str) and f:
+            out.append(f.split("#")[0])
     return out
 
 
