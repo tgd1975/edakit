@@ -5,6 +5,7 @@ steps kept), `check` for the session start, `run` with the steps of each configu
 import os
 import stat
 import subprocess
+from pathlib import Path
 
 from edakit import agreements
 from edakit import hook as h
@@ -74,6 +75,26 @@ def test_an_outdated_block_is_renewed_and_an_inactive_hook_named(tmp_path):
     assert h.check(root) == []
     _git(root, "config", "--unset", "core.hooksPath")
     assert {p["what"] for p in h.check(root)} == {"inactive"}
+
+
+def test_install_names_a_refused_step_and_claims_nothing_it_did_not_do(tmp_path, monkeypatch, capsys):
+    """A session that may not set git's configuration or write the hook – Claude Code's guard, a sandbox – gets the
+    step that failed and the command to run by hand, and exit 1; the newcomer's eval found the write failing silently."""
+    root = _repo(tmp_path)
+    monkeypatch.setattr(h, "_git", lambda r, *a: None if a[:1] == ("config",) and len(a) == 3 else "")
+    done = h.install(root)
+    assert done[-1] == f"{h.FAILED}git config core.hooksPath .githooks refused – run it in a terminal of your own"
+    assert not any(x.startswith("git config") for x in done)
+    monkeypatch.chdir(root)
+    monkeypatch.setattr(h, "toplevel", lambda start: root)
+    assert h.main(type("A", (), {"action": "install"})()) == 1
+    assert "refused" in capsys.readouterr().out
+    def refused(*a, **k):
+        raise PermissionError(13, "Permission denied")
+    monkeypatch.setattr(Path, "write_text", refused)
+    (root / ".githooks" / "pre-commit").unlink()
+    assert h.install(root) == [f"{h.FAILED}.githooks/pre-commit not written (Permission denied) – run `edakit hook "
+                               "install` in a terminal of your own"]
 
 
 def test_run_runs_the_steps_and_blocks_on_a_failure(tmp_path, monkeypatch, capsys):

@@ -7,6 +7,7 @@ description: Show which edakit runs and which the plugin installed per scope (us
 
 Versions and pins: `${CLAUDE_PLUGIN_ROOT}/handbook/02-setup.md` (2.3), the command `edakit version` in
 `10-reference.md`. Here only the procedure.
+Where the session does not find `edakit` on the PATH, it is `${CLAUDE_PLUGIN_ROOT}/bin/edakit`.
 
 ## 1. Read
 

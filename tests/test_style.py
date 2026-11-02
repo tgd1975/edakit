@@ -2,7 +2,7 @@
 docs/organisation.md lists it: the entry pages' sentences, sections without a subheading, chapters over 500 lines and
 paragraphs over 120 words, bare cross-references, "the user" and "the reference project" in a page's own sentences,
 dates outside the history, bold terms the glossary does not have, buzzwords outside docs/architecture.md and the
-README's one "harness", the budgets of the lightest pages (docs/concepts/new/documentation-newcomer.md, decision 4),
+README's one "harness", the budgets of the lightest pages (docs/concepts/done/documentation-newcomer.md, decision 4),
 the steps' own rules: sentences of at most 30 words, no aside, and the summary a long guide chapter opens with. It
 reads documentation only.
 

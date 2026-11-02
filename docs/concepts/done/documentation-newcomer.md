@@ -1,6 +1,6 @@
 # The documentation for a newcomer: two manuals, ten steps, a navigation that shows them
 
-Status 2026-11-02: decided – the seven decisions taken by the owner the same day in a decision round in Claude Code's
+Status 2026-11-02: built, and moved to `done/` on the owner's word – N.1 to N.5 built, N.6 dropped; the gaps of both runs' `MISSING:` lines (below) closed with #267 (edakit 1.1.2): the smallest edakit.toml by hand (handbook 2.7), a 9 V snap and a slide switch in the parts library and how to list it by kind (4.1), a switch's `open` and a 9 V block as a cell state (5.1, 5.2), `bin/edakit` named by every skill where the session lacks it on the PATH, a refused write of `.claude/settings.json` or `core.hooksPath` named for the owner instead of failing silently, the form of a row a requirement's `rows` takes (10.4). The measure of six pages was not met – thirteen and fourteen pages opened; a new run would say whether the gaps closed it. Decided before: the seven decisions taken by the owner the same day in a decision round in Claude Code's
 form (the table at the end): six as recommended, the newcomer's test as the eval alone, without a person – and
 decision 6 taken again the same day after the eval's runs: no folding, ever; what Claude
 had set itself – the budgets, the shape of a steps page, the ten pages, the tabs, the order of the steps – confirmed.
@@ -29,8 +29,8 @@ without a fallback; which `rows` patterns `SIM.state` evidence takes. Asked for 
 owner the day after the documentation concept was built ("I am still not happy with the documentation; it is more
 compact after the revision, but when somebody new looks at it, they run away – think about what we could do so that it
 is not so overwhelming, and write a concept"). Written against main at `37a0745`, with
-[documentation.md](../done/documentation.md) as built (#174) and its review
-([documentation-assumptions.md](../done/documentation-assumptions.md), closed with decision 7); checked against
+[documentation.md](documentation.md) as built (#174) and its review
+([documentation-assumptions.md](documentation-assumptions.md), closed with decision 7); checked against
 `530252a` (edakit 1.0.0): How it works gained a paragraph on the first order and has 1,705 words now, nothing else in
 the table below moved.
 
@@ -81,7 +81,7 @@ behind the entry, and the navigation puts it in view from the first page.
   and `.claude/` name a section or open a chapter file; the SessionStart hook reads 11.4; six tests hold pages to the
   code. The skills lean on it – new-project names it 25 times, pcb-round 26. The agents that condensed the chapters
   found nearly every section named and many sentences shared word for word with docstrings, the catalog or skills,
-  and the rule "a text found elsewhere stays" kept them ([documentation-assumptions.md](../done/documentation-assumptions.md),
+  and the rule "a text found elsewhere stays" kept them ([documentation-assumptions.md](documentation-assumptions.md),
   "D.5 – the chapters"). That is not the rule failing. It is the handbook doing its job for its first reader.
 - **The person's part is small, and no page says so.** Of the walkthrough's 14 steps the person acts in six: answer
   the interview, say what the board must do, decide on what the checks found, create the EasyEDA project, order and
@@ -289,8 +289,8 @@ and the order N.1 and N.3, then N.2, N.4, N.5 – with N.1 and N.3 started at on
   `docs/style.md`, `docs/organisation.md`, `docs/pages.py` (`NAV`, the theme's `features`), `handbook/README.md`,
   chapters 1 to 18, `skills/*/SKILL.md`, `evals/first-reader/`, `tests/test_quickstart.py`, `tests/test_style.py`,
   `tests/test_pages.py`.
-- [documentation.md](../done/documentation.md) as built (#174) and its decisions 2, 9, 11 and 14;
-  [documentation-assumptions.md](../done/documentation-assumptions.md), "D.5 – the chapters"; `TODO.md`, TD-81 to TD-83.
+- [documentation.md](documentation.md) as built (#174) and its decisions 2, 9, 11 and 14;
+  [documentation-assumptions.md](documentation-assumptions.md), "D.5 – the chapters"; `TODO.md`, TD-81 to TD-83.
 - The measures: words by `wc -w` per file; sentences of the prose outside tables, lists, code and headings, split at
   `.`, `!` and `?`; glossary terms as the headings of `docs/glossary.md` found in a page; the handbook's references as
   "handbook N.N" and chapter paths over `edakit/`, `skills/`, `agents/` and `.claude/`; the reading paths summed from

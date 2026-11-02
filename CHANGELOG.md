@@ -8,6 +8,24 @@ written once, by `.github/merge.py`, from the fragments in [changes/](changes/RE
 update edakit@edakit`, then `/reload-plugins` or a new session; `edakit version` names the version that runs and what an
 update brings.
 
+## 1.1.2 – 2026-11-02
+
+- The parts library has a slide switch, SS-12D00-G3 (C22355741), and a 9 V battery snap with leads (C70374), both
+  drafts from their datasheets; handbook 4.1 says how `edakit part add` lists the library by kind and how an entry the
+  library lacks is written.
+- `edakit hook install` names a step the session may not do – the hook's write, `git config core.hooksPath` – as a
+  line `failed: …` with the command to run by hand, and exits 1; before, a refused `git config` was reported as done.
+  The skill new-project goes on without them and puts them in its report.
+- Every skill that runs `edakit` names `${CLAUDE_PLUGIN_ROOT}/bin/edakit` for a session that does not find it on the
+  PATH – before the project has an edakit.toml, the session start does not.
+- The handbook: the smallest edakit.toml for a circuit without a board of its own (2.7, 10.1); a switch closed unless
+  the load lists it in `open`, a 9 V block as one cell state (5.1, 5.2); the form of the rows a requirement's `verify`
+  names, SIM.state's among them (10.4). The newcomer's eval of documentation-newcomer.md found these missing.
+
+## 1.1.1 – 2026-11-02
+
+- A pin of the template on a second net while another schematic of the project is open is easyeda-mcp-pro's, not EasyEDA's: its net reading takes the net flags of every open schematic but the wires of the focused one (M-11, checked live on pytree, TD-105). SYNC.schematic's reason, the `saved` finding of `schematic check` and handbook 6.2 and 12 say so; the check still closes the other schematics first.
+
 ## 1.1.0 – 2026-11-02
 
 - **When updating:** easyeda-mcp-pro is pinned to 1.8.0 (was 1.6.0), and server and bridge extension must have the

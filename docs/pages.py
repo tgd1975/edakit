@@ -1,5 +1,5 @@
 """edakit's documentation as one site for GitHub Pages, assembled into build/pages and built by MkDocs. The navigation
-is data – NAV, a table of tab, file and short title, by reader (docs/concepts/new/documentation-newcomer.md, steps N.1
+is data – NAV, a table of tab, file and short title, by reader (docs/concepts/done/documentation-newcomer.md, steps N.1
 and N.2): Start, A circuit, A board, Extend, Develop, Handbook, Reference and Inside edakit as tabs across the top, the
 sidebar showing the current tab alone, at most eight entries but for the handbook. The sources – the concepts, skills,
 agents, evals and the rules of a session – are on the site behind the tab "Inside edakit": its sidebar holds an

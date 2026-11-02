@@ -8,6 +8,7 @@ argument-hint: "<what the circuit must do>"
 
 Wanted: $ARGUMENTS. The graph is the only source (`${CLAUDE_PLUGIN_ROOT}/handbook/03-hardware-graph.md`); how rules,
 hints and blocks fit together: `14-design.md`.
+Where the session does not find `edakit` on the PATH, it is `${CLAUDE_PLUGIN_ROOT}/bin/edakit`.
 
 You design the circuit; you neither sign it off nor lay out the board. The second opinion is the agent
 electrical-reviewer in its own session – a design reviewed by its designer has not been reviewed. The layout is the PCB

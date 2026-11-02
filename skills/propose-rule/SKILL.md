@@ -7,6 +7,7 @@ argument-hint: "<decision, e.g. D-17 – or an issue number to follow up>"
 # Propose a rule to edakit
 
 Wanted: $ARGUMENTS. The whole loop: `${CLAUDE_PLUGIN_ROOT}/handbook/14-design.md` (14.4).
+Where the session does not find `edakit` on the PATH, it is `${CLAUDE_PLUGIN_ROOT}/bin/edakit`.
 
 A proposal is an issue in `tgd1975/edakit`. The Action proposals there triages it – accepted and built into the
 one open pull request of rule proposals, rejected with the reason, or a question back – and works only on proposals

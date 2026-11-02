@@ -451,10 +451,10 @@ def read_saved(mcp, name):
     """The schematic `name` as saved, with no other schematic open: every saved schematic tab closed first, every page
     of this one opened again and read – (parts, nets, titles of its tabs with unsaved changes, of other schematics'
     left open). While another schematic of the project is open – the board's schematic, a copy of the template, which
-    stage F focuses last –, EasyEDA lists a pin on a second net with no primitive there (E-18, #117: pytree's U4.11 on
-    V_LED with layout_tree open, matching with it closed); a tab left open would make the result depend on what ran
-    before in the session. A tab with unsaved changes stays open – closing it would throw them away –; this
-    schematic's is read as drawn."""
+    stage F focuses last –, the bridge lists a pin on a second net with no primitive there (M-11, #117: pytree's U4.11
+    on V_LED with layout_tree open, matching with it closed – a net flag of layout_tree sits on the end of its wire);
+    a tab left open would make the result depend on what ran before in the session. A tab with unsaved changes stays
+    open – closing it would throw them away –; this schematic's is read as drawn."""
     sch_uuid, pages = eda.find_pages(mcp, name)
     unsaved, others = close_schematic_tabs(mcp, sch_uuid)
     sch_comps, sch_nets = [], {}
@@ -475,14 +475,14 @@ def read_saved(mcp, name):
 
 
 def check_reopened(mcp, name, comps, nets):
-    """After `create --save`: the saved schematic opened again against the graph – the drift of E-18 shows where it
+    """After `create --save`: the saved schematic opened again against the graph – the drift of M-11 shows where it
     starts. Returns the number of differences."""
     rep = Findings()
     sch_comps, sch_nets, _, _ = read_saved(mcp, name)
     compare(comps, nets, sch_comps, sch_nets, rep)
     if rep.count():
         print(f"  ! '{name}' saved, but opened again from the save it differs from the graph ({rep.count()}) – "
-              "EasyEDA's netlist of the saved schematic (E-18, handbook 6.2):")
+              "the nets of the saved schematic (M-11, handbook 6.2):")
         rep.print()
     else:
         print(f"  '{name}' opened again from the save: matches the graph")
@@ -512,8 +512,8 @@ def check(cfg, args):
             rep.add("saved", f"{name}: unsaved changes in EasyEDA – read as drawn in this session, not as saved; save "
                     "it (`schematic create --save`) or close its tab without saving, and check again")
         for title in others:
-            rep.add("saved", f"{title}: another schematic with unsaved changes stays open – EasyEDA can list its nets in "
-                    f"{name}'s (E-18); save it or close its tab without saving, and check again")
+            rep.add("saved", f"{title}: another schematic with unsaved changes stays open – the bridge can list its "
+                    f"nets in {name}'s (M-11); save it or close its tab without saving, and check again")
         sch = compare(graph_comps, graph_nets, sch_comps, sch_nets, rep)
         if not args.no_pins:
             check_pins(mcp, graph_comps, sch, graph_nets, rep)

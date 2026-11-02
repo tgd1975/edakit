@@ -113,13 +113,18 @@ EDAKIT_CALL = re.compile(r"(?:^|[\s;&|(])(?:\S*/)?edakit(?:\.sh)?\s+(?:check|sim
 SAYS = re.compile(r"^\s*(?:echo|printf)\b")
 
 
+FAILED = "failed: "        # the start of a line of install() for a step that could not be done
+
+
 def install(root):
-    """Write or renew edakit's block, make the hook executable and set core.hooksPath -> [what was done]."""
+    """Write or renew edakit's block, make the hook executable and set core.hooksPath -> [what was done]. A step the
+    session may not do – Claude Code guards git's configuration, a sandbox refuses a write – is a line that starts with
+    FAILED and names the command to run by hand; the steps after it are not tried."""
     root = Path(root)
     folder, active = hooks_dir(root)
     f = folder / "pre-commit"
     rel = os.path.relpath(f, root)
-    done = []
+    done, outside = [], []
     if f.is_file():
         text = f.read_text(encoding="utf-8")
         m = _block(text)
@@ -139,21 +144,28 @@ def install(root):
         rest = new.replace(BLOCK, "")
         for i, line in enumerate(rest.splitlines(), 1):
             if not line.lstrip().startswith("#") and not SAYS.match(line) and EDAKIT_CALL.search(line):
-                done.append(f"{rel} line {i} outside the block runs edakit itself – `{line.strip()[:70]}`: the "
-                            "block does that now, take the line out")
+                outside.append(f"{rel} line {i} outside the block runs edakit itself – `{line.strip()[:70]}`: the "
+                               "block does that now, take the line out")
     else:
-        folder.mkdir(parents=True, exist_ok=True)
         new = f"{SHEBANG}\n# Pre-commit hook (edakit handbook 2.7). Never bypass it with --no-verify.\n{BLOCK}"
         done.append(f"{rel} written")
-    if not f.is_file() or new != f.read_text(encoding="utf-8"):
-        f.write_text(new, encoding="utf-8")
-    mode = f.stat().st_mode
-    if not mode & stat.S_IXUSR:
-        f.chmod(mode | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH)
-        done.append(f"{rel} made executable")
+    try:
+        folder.mkdir(parents=True, exist_ok=True)
+        if not f.is_file() or new != f.read_text(encoding="utf-8"):
+            f.write_text(new, encoding="utf-8")
+        mode = f.stat().st_mode
+        if not mode & stat.S_IXUSR:
+            f.chmod(mode | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH)
+            done.append(f"{rel} made executable")
+    except OSError as e:
+        return [f"{FAILED}{rel} not written ({e.strerror or e}) – run `edakit hook install` in a terminal of your own"]
+    done += outside
     if not active:
-        _git(root, "config", "core.hooksPath", os.path.relpath(folder, root))
-        done.append(f"git config core.hooksPath {os.path.relpath(folder, root)}")
+        hooks = os.path.relpath(folder, root)
+        if _git(root, "config", "core.hooksPath", hooks) is None:
+            done.append(f"{FAILED}git config core.hooksPath {hooks} refused – run it in a terminal of your own")
+        else:
+            done.append(f"git config core.hooksPath {hooks}")
     return done
 
 
@@ -274,9 +286,10 @@ def main(args):
     if args.action == "run":
         return run(root)
     if args.action == "install":
-        for line in install(root):
+        lines = install(root)
+        for line in lines:
             print(line)
-        return 0
+        return 1 if any(line.startswith(FAILED) for line in lines) else 0
     problems = check(root)
     for p in problems:
         print(f"{p['what']}: {p['text']}")

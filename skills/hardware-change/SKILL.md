@@ -9,6 +9,7 @@ argument-hint: "<what changes>"
 The only source is the hardware graph (`[project] graph` in edakit.toml). **Never change the schematic or the PCB
 directly** – EasyEDA content is generated and gets regenerated. Why: `${CLAUDE_PLUGIN_ROOT}/handbook/01-approach.md`,
 format: `03-hardware-graph.md`. Change: $ARGUMENTS
+Where the session does not find `edakit` on the PATH, it is `${CLAUDE_PLUGIN_ROOT}/bin/edakit`.
 
 This is the circuit designer's side. EasyEDA – schematic and PCB – is the PCB designer's, in a session of its own
 (skill pcb-round, handbook 14.1); this skill ends with the hand-over.
