@@ -10,3 +10,6 @@ patch
   error of stage G when the generated graph.json beside a TOML or a .circuit graph no longer is what its source
   resolves to; `edakit hook` runs `graph json --check` for a .circuit graph as for a TOML one.
 - T.5: `edakit graph fmt [--check] [FILE …]` lays a `.circuit` source out canonically, comments kept.
+- T.6: `edakit graph convert --to circuit` moves a JSON or TOML project to `hardware/graph.circuit`: flat
+  statements, read back before anything is written, `[project] graph` and `edakit` set, the resolved graph.json
+  beside it, the sign-offs of scope circuit carried over.

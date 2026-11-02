@@ -126,6 +126,8 @@ def build_parser():
                                                         "nothing; exit 2 on drift; fmt: exit 2 where the layout "
                                                         "would change")
     p.add_argument("--dry-run", action="store_true", help="convert: print what would change, write nothing")
+    p.add_argument("--to", choices=["toml", "circuit"], default="toml", help="convert: the form to move the graph to "
+                                                                             "(default toml)")
     p.add_argument("--map", metavar="FILE", help="json: write the source map of a .circuit graph – where each part, "
                                                  "net, lock and accept was written")
     _common(p)

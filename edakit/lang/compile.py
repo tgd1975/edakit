@@ -158,7 +158,7 @@ def _value(key, v):
         if key == "pwm_hz" and v.point:
             return _num(v.lo)
         return _range(v)
-    return _num(v) if isinstance(v, float) else v
+    return v
 
 
 def _set(target, key, value):
@@ -461,6 +461,13 @@ def build(path, parts=None):
     """(graph, SourceMap, Design) of a `.circuit` file."""
     root, dirs = project_of(path)
     model = expand(resolve(load_sources(path, root), root, dirs))
+    return assemble(model, parts)
+
+
+def build_text(text, path, root, parts):
+    """(graph, SourceMap, Design) of a source not written yet – the converter reads its own text back with it."""
+    src = read(text, _name(path, root), "graph")
+    model = expand(resolve([src], root, []))
     return assemble(model, parts)
 
 
