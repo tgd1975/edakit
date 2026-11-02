@@ -1,0 +1,60 @@
+graph christmas-bell version 0.3 date 2026-10-25
+description "Automatic Christmas bell: an Arduino Nano counts down on five LEDs, then a servo swings a real bell."
+purpose private market EU
+  notes "Built and used by the owner – not sold or given away (D-16)."
+param vlogic = 0..5.5 V
+
+part U1 module "Arduino Nano V3" lcsc C9900187880 no-bom "Arduino Nano 3 (plugged in)"
+  nc TXD RXD RESET PD7 PB1 PB2 PB5 3V3 AREF PC0 PC1 PC2 PC3 PC4 PC5 ADC6 ADC7 PC6 VIN
+  alias led1 = PD6 led2 = PD5 led3 = PD2 led4 = PD3 led5 = PD4
+  alias servo = PB0 btn_start = PB4 btn_reset = PB3
+  accept STRUCT.entry "VIN stays free: the Nano runs from its USB socket"
+  notes "Plugs into two 1x15 female headers, pitch 2.54 mm; its labels of pins 14/15 are swapped."
+part J1 connector PZ254V-11-03P lcsc C2937625 no-bom "Servo (GND, +5 V, signal)"
+part C1 capacitor "1000uF 16V" lcsc C439782 no-bom "Buffer capacitor for the servo"
+part S1 button K2-1102SP-C4SC-04 lcsc C127509 "Start button"
+part S2 button K2-1102SP-C4SC-04 lcsc C127509 "Reset button"
+part R7 resistor "4.7 kΩ 0805" lcsc C17673 value 4.7kΩ "Pull-down, start button"
+part R6 resistor "4.7 kΩ 0805" lcsc C17673 value 4.7kΩ "Pull-down, reset button"
+for n in 8..9
+  part R{n} resistor "100 Ω 2512 1 W" lcsc C35218 value 100Ω "Base load for USB power banks (R8 ∥ R9 = 50 Ω)"
+    notes "Keeps a power bank from switching off: the circuit alone draws 35–75 mA (D-8)."
+
+def led (color = green, i = 10 mA) ports in gnd
+  title "LED with series resistor, driven by a signal"
+  part R resistor
+  part D led value color
+  net in R.1
+  net anode R.2 D.anode v @in
+  net gnd D.cathode
+  derive R.value series_resistor(i)
+
+use led step1 (color = green) in = LED_G1 gnd = GND anode = LED_G1_A
+  R = R4 "330 Ω 0805" lcsc C17630 value 330Ω "Series resistor LED5"
+  D = LED5 XL-504UGD lcsc C2895549 no-bom "5 mm LED, green, countdown step 1"
+use led step2 (color = green) in = LED_G2 gnd = GND anode = LED_G2_A
+  R = R3 "330 Ω 0805" lcsc C17630 value 330Ω "Series resistor LED4"
+  D = LED4 XL-504UGD lcsc C2895549 no-bom "5 mm LED, green, countdown step 2"
+use led step3 (color = yellow) in = LED_Y1 gnd = GND anode = LED_Y1_A
+  R = R2 "330 Ω 0805" lcsc C17630 value 330Ω "Series resistor LED3"
+  D = LED3 XL-504UYD lcsc C2895495 no-bom "5 mm LED, yellow, countdown step 3"
+use led step4 (color = yellow) in = LED_Y2 gnd = GND anode = LED_Y2_A
+  R = R1 "330 Ω 0805" lcsc C17630 value 330Ω "Series resistor LED2"
+  D = LED2 XL-504UYD lcsc C2895495 no-bom "5 mm LED, yellow, countdown step 4"
+use led step5 (color = red) in = LED_R gnd = GND anode = LED_R_A
+  R = R5 "330 Ω 0805" lcsc C17630 value 330Ω "Series resistor LED1"
+  D = LED1 XL-504SURD lcsc C2895493 no-bom "5 mm LED, red, countdown step 5"
+
+net +5V 0..5.5 V U1.5V C1.plus J1.2 S1.a S2.a R8.1 R9.1
+  notes "5V pin of the Nano: USB minus its Schottky diode; supplies the servo and the buttons."
+net GND 0 V U1.GND C1.minus J1.1 R6.2 R7.2 R8.2 R9.2
+net SERVO vlogic U1.servo (locked) J1.3
+net BTN_START vlogic U1.btn_start (locked) S1.b R7.1
+  notes "Pressed = 5 V at D11, else R7 pulls to GND (D-4)."
+net BTN_RESET vlogic U1.btn_reset (locked) S2.b R6.1
+  notes "Pressed = 5 V at D12, else R6 pulls to GND (D-4)."
+net LED_G1 vlogic U1.led1 (locked)
+net LED_G2 vlogic U1.led2 (locked)
+net LED_Y1 vlogic U1.led3 (locked)
+net LED_Y2 vlogic U1.led4 (locked)
+net LED_R vlogic U1.led5 (locked)

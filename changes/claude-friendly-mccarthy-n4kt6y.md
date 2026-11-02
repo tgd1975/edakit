@@ -35,3 +35,4 @@ patch
 - T.15: requirements may be written in the notation (`hardware/requirements.circuit`); a requirement gains
   `subject` and `require`, a part or net `satisfies` and `decision` – DOCS.ref resolves all four.
 - T.16: `edakit block add` on a `.circuit` graph writes a `use` statement after the parts and the resolved graph.json.
+- T.17: the test project led-bar-circuit – led-bar in the circuit language – for the tests and the evals.

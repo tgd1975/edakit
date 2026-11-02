@@ -1,0 +1,12 @@
+variant smd of ../../hardware/graph.circuit
+  description "Automatic Christmas bell, the SMD configuration"
+  part J1 connector "HX PZ2.54-1x3P TP-YQ" lcsc C41417360 bom yes
+  part C1 capacitor "RVT1C102M1010 1000uF 16V SMD" lcsc C3359 bom yes
+  use led step1 D = LED5 KT-0805G lcsc C2297 bom yes "0805 LED, green, countdown step 1"
+  use led step2 D = LED4 KT-0805G lcsc C2297 bom yes "0805 LED, green, countdown step 2"
+  use led step3 D = LED3 KT-0805Y lcsc C2296 bom yes "0805 LED, yellow, countdown step 3"
+  use led step4 D = LED2 KT-0805Y lcsc C2296 bom yes "0805 LED, yellow, countdown step 4"
+  use led step5 D = LED1 KT-0805R lcsc C2295 bom yes "0805 LED, red, countdown step 5"
+  accept HINT.bulk "C1 1000 µF / 16 V electrolytic on +5V, next to J1 (it buffers the Nano's 5V pin)"
+  accept HINT.debounce "debounced in firmware: src/firmware/buttons.ino, 50 ms (DEBOUNCE_DELAY)"
+  accept HINT.esd "J1 is the servo's own cable inside the bell's frame, plugged once; no TVS – like the main board"
