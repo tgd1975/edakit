@@ -1024,11 +1024,12 @@ Generate, check, copy or lay out a schematic in EasyEDA – or draw it without.
 
 - **Reads:** graph
 - **Writes:** template, `device_cache.json`, `schematic_map_<name>.json`; `--save` only when the netlist equals the
-  graph (6.1)
+  graph, then reads the save opened again and exits 2 when it differs (6.1)
 
 `edakit schematic check [--schematic] [--no-pins] [--json F]` – EasyEDA: ✓ read
 
-- **Reads:** graph, schematic
+- **Reads:** graph, schematic as saved – its tab closed and opened again, one with unsaved changes read as drawn
+  and named (6.2)
 - **Writes:** –
 
 `edakit schematic copy [--source] [--target] [--save]` – EasyEDA: ✓

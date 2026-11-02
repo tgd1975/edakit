@@ -102,8 +102,10 @@ def test_schematic_create(project, monkeypatch, capsys, save):
     monkeypatch.delenv("EDAKIT_CONFIG", raising=False)
     monkeypatch.setattr(schematic.eda, "start", lambda cfg, verbose=False: FakeMCP())
     monkeypatch.setattr(schematic.eda, "easyeda_memory", lambda: "EasyEDA ?")
-    for name in ("wait_for_bridge", "open_project", "label_sheet", "save_if_matching"):
+    for name in ("wait_for_bridge", "open_project", "label_sheet"):
         monkeypatch.setattr(schematic.eda, name, lambda *a, **k: True)
+    monkeypatch.setattr(schematic.eda, "save_if_matching", lambda *a, **k: 0)
+    monkeypatch.setattr(schematic, "check_reopened", lambda mcp, name, comps, nets: 0)   # the save opened again (#117)
     monkeypatch.setattr(schematic.eda, "verify_nets", lambda mcp, nets, placed: 0)
     for name in ("prepare_schematic", "close_other_schematic_tabs", "mark_nc"):
         monkeypatch.setattr(schematic, name, lambda *a, **k: None)
@@ -119,8 +121,8 @@ def test_schematic_create(project, monkeypatch, capsys, save):
     monkeypatch.setitem(schematic.FOCUS, "schematic", "sch")
     assert cli.main(["schematic", "create", *(["--save"] if save else [])]) == 0
     found = steps(capsys.readouterr().out)
-    assert numbered(found) and len(found) == 10 + save and found[0][2] == "bridge"
-    assert found[-1][2] == ("save" if save else "ERC")
+    assert numbered(found) and len(found) == 10 + 2 * save and found[0][2] == "bridge"
+    assert found[-1][2] == ("opened again from the save" if save else "ERC")
     assert names == [("sch", "generated_main", True), ("sch", "generated_main", False)]
 
 

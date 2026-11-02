@@ -674,8 +674,8 @@ sources = [
 [codes."SYNC.schematic"]
 title = "schematic = graph"
 rule = "Every schematic in EasyEDA has exactly the graph's parts (LCSC number, designator) and nets (pins, no-connects)."
-why = "The schematic is generated, but EasyEDA can lose or move things: a generated schematic once drifted (a pin on two nets) without anyone writing to it."
-fix = "Generate it again (edakit schematic create, layout); never edit a schematic by hand."
+why = "The schematic is generated, but EasyEDA can lose or move things: a saved schematic, opened again, can list a pin on a second net with no wire, label or flag there (E-18). The check closes the schematic's tab and reads it as saved – the state a restart, a copy and every later session see –, so the result does not depend on what ran before in the session."
+fix = "Generate it again (edakit schematic create --save, layout --save) and check again; never edit a schematic by hand. A template with unsaved changes: save it or close its tab without saving."
 severity = "error"
 replaces = ["S-2"]
 sources = [
