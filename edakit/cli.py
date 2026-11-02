@@ -87,6 +87,11 @@ def build_parser():
                     help="the version – from a git checkout away from its tag with the commit")
     sub = ap.add_subparsers(dest="command", required=True)
 
+    p = sub.add_parser("version", help="what runs, what the plugin installed per scope, the newest version and what "
+                                       "changed since – its When updating lines first –, where the project pins edakit")
+    p.add_argument("--offline", action="store_true", help="read no tags and no changelog from GitHub")
+    p.add_argument("--json", help="write the state and the findings as JSON")
+
     p = sub.add_parser("check", help="rule checks on the graph (stages P, G)")
     p.add_argument("--release", action="store_true", help="also fail on open sign-offs")
     p.add_argument("--json", help="write the findings as JSON")
@@ -354,6 +359,9 @@ def _main(argv=None):
     if args.command == "lock":
         from . import lock
         return lock.main(args)
+    if args.command == "version":
+        from . import update
+        return update.main(args)
     if args.command == "rules":
         from . import catalog
         return catalog.main_rules(args)

@@ -180,6 +180,15 @@ def test_format_groups_by_code():
     assert "  … 2 more (--json)" in lines and any(x.startswith("  LIM.v: A part with a higher") for x in lines)
 
 
+def test_the_handbook_lists_every_engine():
+    """14.2's table of the engines is generated from codes.toml (python -m edakit.catalog.handbook --write), so a new
+    engine and a changed `decides` show there."""
+    from edakit.catalog import handbook
+    text = (handbook.ROOT / "14-design.md").read_text(encoding="utf-8")
+    assert "<!-- edakit:generated engines -->" in text
+    assert all(f"| {e['prefix']} | {e['decides']} |" in text for e in catalog.engines().values())
+
+
 def test_the_handbook_lists_what_the_catalog_holds():
     """The handbook's lists of codes, the parts schema and the map of before are generated from the catalog: a change
     to codes.toml or kinds.toml without python -m edakit.catalog.handbook --write fails here."""

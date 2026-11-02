@@ -43,7 +43,7 @@ board, the schematic or the checks (the earlier one-file form) is refused with a
 | `name` | – (required) | EasyEDA project (friendly name) |
 | `company` | `""` | title block of the schematics |
 | `quantity` | `5` | boards per order (stock checks PARTS.stock) |
-| `distributors` | `["lcsc"]` | where the agent part-selector searches, in this order: `lcsc`, `rs`, `farnell`, `mouser`, `digikey`, `reichelt` (chapter 4.2) |
+| `distributors` | `["lcsc"]` | where the agent part-selector searches, in this order: `lcsc`, `rs`, `farnell`, `mouser`, `digikey`, `reichelt` (4.2) |
 | `lock` | `auto` | EasyEDA claim between Claude sessions: `auto` (when `CLAUDE_CODE_SESSION_ID` is set) or `off` |
 | `agreements` | `true` | the working agreements (11.4), one line each, in the context of every Claude Code session in the project – below |
 | `graph` | `hardware/graph.json` | the hardware graph (3.1): a `.json` file, or a `.toml` file with the same keys – below |
@@ -73,7 +73,7 @@ board, the schematic or the checks (the earlier one-file form) is refused with a
   (`edakit graph json --check`). A TOML graph counts in the circuit hash with its data (8.2); `edakit convert` has
   nothing to do on it, `edakit block add` writes into it with its comments kept (14.5).
 - `requirements` – a variant names the main project's file and its own, as the requirements file shows (10.4). With
-  the key, `edakit req` lists the file, `edakit check` checks it (DOCS.ref to DOCS.draft), the gate evaluates every
+  the key, `edakit req` lists the file, `edakit check` checks it (DOCS.ref to DOCS.derived), the gate evaluates every
   requirement (8.7) and the circuit hash covers it. A file named here must exist and be valid, else `edakit req`,
   `edakit check` and the gate stop. Without the key DOCS.file is open: `edakit check` passes, `--release` and the gate
   do not release (8.7).
@@ -536,7 +536,7 @@ status = "accepted"
   passed in the gate's run, one of phase `order` or `acceptance` once M-2 or M-4 is signed;
 - `{ accept = "…" }` – a step of the acceptance test, on the list of protocol section 6.
 
-`status`: a value that is written must be one of the three. A draft binds nothing yet: DOCS.ref to DOCS.draft only
+`status`: a value that is written must be one of the three. A draft binds nothing yet: DOCS.ref to DOCS.derived only
 warn about it, the gate lists it and neither blocks nor asks for an acceptance (8.7). From `accepted` on, the findings
 are errors and the binding counts.
 
@@ -560,7 +560,7 @@ Every command that reads a project: `--config`, `-v` (MCP traffic).
   fails; `--no-scripts` runs none (8.6).
 
 Each command below: its synopsis and help line, generated from the command line itself, then per action what it
-reads and writes and whether it needs EasyEDA (✓ yes, – no). `edakit COMMAND -h` prints the same synopsis.
+reads and writes and whether it needs EasyEDA (✓ or no). `edakit COMMAND -h` prints the same synopsis.
 
 **On KiCad:** the commands marked ✓ run on the board's KiCad project and kicad-cli, without bridge and claim – what
 each does there is in the KiCad flow (16.4). `pcb autolayout` and `lock` have no KiCad side; `KICAD_CLI` names another
@@ -573,6 +573,26 @@ kicad-cli.
 - **Reads:** `edakit/__init__.py`; from a git clone away from the version's tag its commit
 - **Writes:** – (prints `edakit 0.2.0`, or `edakit 0.2.0+g1a2b3c4` from such a clone – the string a gate run writes into
   its manifest, 2.3)
+
+### edakit version
+
+<!-- edakit:generated command version -->
+`edakit version [--offline] [--json JSON]`
+
+What runs, what the plugin installed per scope, the newest version and what changed since – its When updating lines first –, where the project pins edakit.
+<!-- edakit:end -->
+
+`edakit version [--offline] [--json JSON]` – EasyEDA: no; network: the tags and the newest changelog from GitHub
+
+- **Reads:** the running edakit; Claude Code's `~/.claude/plugins/installed_plugins.json` (or under
+  `$CLAUDE_CONFIG_DIR`): edakit per scope, the one a session in this repository uses marked "in effect here"; `git
+  ls-remote --tags` of tgd1975/edakit and the newest version's CHANGELOG.md; in the repository `.claude/settings.json`
+  (the marketplace's `ref`), every `tgd1975/edakit@<ref>` in the files that start edakit – CI, hooks, shell scripts,
+  YAML, Makefile, pyproject.toml, a `$NAME` read from the same file –, and `[project] edakit` of each edakit.toml
+- **Writes:** – (prints what runs, the plugin per scope, the newest version, the changelog's sections in between with
+  their **When updating:** lines first, the pins and the update command for the scope in effect; `--json`: the same
+  as data. Exit 2 when the edakit in effect is behind the newest, the pins disagree or differ from what runs, or a
+  requirement is not met; `--offline` or no network: the newest version stays unknown, 2.3)
 
 ### edakit check
 
@@ -589,8 +609,9 @@ Rule checks on the graph (stages P, G).
   footprint geometry (PARTS.footprint, SYNC.footprint); `[scripts]`, `[[release.stages]]` and `sim_plugin` with the
   board files' `[[silk.art]]`, `hardware/scripts.lock` and what the scripts read (8.6); `[agents]` and the agent files
   (8.6); with `[project] requirements` the requirements files and the sign-off file's manual checks (DOCS.ref,
-  DOCS.need, DOCS.evidence, DOCS.draft; a file missing or not valid: exit 1); `<artifacts>/sim/result.json` while its
-  inputs are unchanged – the cables' currents of the coverage report (3.3), no simulation of its own
+  DOCS.need, DOCS.evidence, DOCS.draft, DOCS.derived; a file missing or not valid: exit 1);
+  `<artifacts>/sim/result.json` while its inputs are unchanged – the cables' currents of the coverage report (3.3), no
+  simulation of its own
 - **Writes:** – (`--json`: the findings); exit 1 on errors, with `--release` also on pending findings (3.3)
 
 ### edakit rules

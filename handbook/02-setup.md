@@ -96,6 +96,11 @@ a new rule, a new command, a fix. The major number marks a milestone of edakit i
 `edakit --version` prints the version that runs; from a git clone away from the version's tag it adds the commit, as
 in `0.2.0+g1a2b3c4`. Every gate run writes the same string into its manifest, under `tools.edakit`.
 
+`edakit version` (the skill `/edakit:version`) shows more: the plugin's installation per scope – user and each
+project – with the one in effect here, the newest version on GitHub, the changelog's sections in between with their
+**When updating:** lines first, and the pins below with whether they agree. It prints the update command for the scope
+in effect and exits 2 when there is something to act on; it changes nothing.
+
 A project that stays on one version names its tag in two places: in `.claude/settings.json` beside the repository,
 `"source": { "source": "github", "repo": "tgd1975/edakit", "ref": "v0.2.0" }`, and in CI as
 `uvx --from git+https://github.com/tgd1975/edakit@v0.2.0 edakit <command>`. Skills, agents and the command line are
@@ -118,7 +123,7 @@ Sections 2.4 to 2.6 set up EasyEDA Pro; on KiCad they have nothing to do.
 | `JLCPCB_MODE`, `JLCPCB_ENABLE_ORDERING` | `disabled`, `false` | nothing can be ordered from Claude – orders are placed by a human |
 | `BRIDGE_RAW_EXEC_ENABLED` | `false` | no arbitrary JavaScript in the editor |
 | `ARTIFACT_DIR` | `$PWD/build/easyeda-mcp` | exports land in the project, not in the home directory |
-| `BRIDGE_TIMEOUT_MS` | `120000` | DRC and pour fills of a large board take longer than the default 15 s |
+| `BRIDGE_TIMEOUT_MS` | `120000` | DRC and pour fills of a large board take longer than the default 15 s. The same value in every server: the one that holds the bridge port drops pending requests after its own timeout, also those another server passes through; `edakit doctor` warns when they differ |
 
 After the install `mcp-server.sh` adds the tool `easyeda_export_odb` to the installed server, once
 (`odb-tool-patch.mjs`, idempotent): the ODB++ export for a maker that assembles from it (AISLER; ordering, 8.4;
@@ -150,7 +155,7 @@ If the extension changed upstream, it stops instead of patching blindly. `edakit
 SYNC.odb ("Bridge did not return an ODB++ archive").
 
 Import in EasyEDA: *Settings → Extensions → Extension Manager → Import*; it asks for the permission "External
-Interactions" itself. Then the menu **MCP Bridge** appears; choose **Enable Auto-Connect**.
+Interaction" itself. Then the menu **MCP Bridge** appears; choose **Enable Auto-Connect**.
 
 Re-importing (update, other depth): EasyEDA does not take an import over an installed copy with the same UUID and
 version. **Uninstall the old one, import, restart EasyEDA**; until the restart the old copy keeps running. After that

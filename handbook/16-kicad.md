@@ -102,9 +102,10 @@ schematic parity of the DRC finds it; read back, it is no net, as the graph has 
 
 ### Frames
 
-Inside, edakit computes in EasyEDA's frame, mil and y up (the coordinates, 7.1); a point (x, y) lies at (x mm, −y mm)
-in the KiCad files. A bottom-side part is mirrored in local y and turned as EasyEDA does it (`Board.transform`). So
-every pad lies on the same spot in both tool chains, and the Gerber files of both share their coordinates.
+Inside, edakit computes in EasyEDA's frame, mil and y up (the coordinates, 7.1); a point (x, y) lies at (x/39.37 mm,
+−y/39.37 mm) in the KiCad files – mil to mm, y turned down. A bottom-side part is mirrored in local y and turned as
+EasyEDA does it (`Board.transform`). So every pad lies on the same spot in both tool chains, and the Gerber files of
+both share their coordinates.
 
 ## 16.4 The flow
 
