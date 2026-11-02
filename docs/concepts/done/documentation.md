@@ -4,7 +4,7 @@ Status 2026-11-01: built – D.2 to D.9 in one evening on the owner's word, one 
 [documentation-assumptions.md](documentation-assumptions.md) and the chapters' reviews in
 [documentation-review/](documentation-review/), for the owner's review; 1.0.0 was released on 2026-11-02 on the owner's
 word, at the first order (#210); the review closed on 2026-11-02 with decision 7 of
-[documentation-newcomer.md](../new/documentation-newcomer.md) – rule 5 stays strict – and the concept moved to `done/`.
+[documentation-newcomer.md](documentation-newcomer.md) – rule 5 stays strict – and the concept moved to `done/`.
 Decided 2026-10-31 – the eight decisions and what Claude decided itself accepted by the owner the same day, and a ninth
 and a tenth added by the owner the same evening (the circuit alone as a station; condensing as a rule, with its
 measure); an eleventh to a fourteenth on 2026-11-01 – the case for edakit on the start page, confirmed by the owner with

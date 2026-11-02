@@ -1,4 +1,4 @@
-"""The steps (docs/steps/), the person's manual of docs/concepts/new/documentation-newcomer.md, step N.2: ten pages and
+"""The steps (docs/steps/), the person's manual of docs/concepts/done/documentation-newcomer.md, step N.2: ten pages and
 an index in the order of the walkthrough, each within its budget and in its shape, every command a page quotes printing the
 lines it quotes on a fresh copy of the example, every question it quotes standing in a skill, and nothing the
 automation reads naming a steps page – the steps change freely, the handbook is what a session reads. Glossary links

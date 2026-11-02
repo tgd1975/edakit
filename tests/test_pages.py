@@ -52,7 +52,7 @@ def test_every_description_is_a_page_of_the_site(tmp_path):
 
 
 def test_the_navigation_is_tabs_by_reader_with_short_titles():
-    """Steps N.1 and N.2 of docs/concepts/new/documentation-newcomer.md: tabs by reader, at most eight entries a tab
+    """Steps N.1 and N.2 of docs/concepts/done/documentation-newcomer.md: tabs by reader, at most eight entries a tab
     but for the handbook, titles of at most five words; every page of kind documentation in a tab, the steps among
     them; the sources only in the tab "Inside edakit", its overview and the index of each kind – the pages stay on the
     site, out of the navigation."""
@@ -84,7 +84,7 @@ def test_a_source_carries_the_source_line_and_the_concepts_an_index(tmp_path):
     assert "A source" in (docs / "inside" / "skills" / "cart.md").read_text(encoding="utf-8")
     assert "A source" not in (docs / "handbook" / "08-release-gate.md").read_text(encoding="utf-8")
     index = (docs / "inside" / "concepts" / "index.md").read_text(encoding="utf-8")
-    assert "## Open" in index and "(new/documentation-newcomer.md)" in index and "prototypes" not in index
+    assert "## Open" in index and "(new/parts-on-hand.md)" in index and "prototypes" not in index
     assert "## Decided and built" in index and "(done/documentation.md)" in index
     inside = (docs / "inside" / "index.md").read_text(encoding="utf-8")
     assert "(concepts/index.md)" in inside and "(skills/index.md)" in inside and "(claude.md)" in inside
