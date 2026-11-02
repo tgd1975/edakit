@@ -792,3 +792,14 @@ def test_the_profiles_confirm_table():
     assert makers.problems("x", {"confirm": {**good, "popup": "yes"}})[0].startswith("maker x: confirm must be a table of")
     assert makers.problems("x", {"confirm": {"page": ""}})[0].startswith("maker x: confirm must be a table of")
     assert makers.load("jlcpcb").data["confirm"]["placement"].startswith("Confirm Parts Placement")
+
+
+def test_an_order_without_a_number(prepared, monkeypatch):
+    """A project that keeps order numbers out of its repository: actual.json without one – ORDER.read has one value
+    less, the fee table's source and actual.md say 'the order'."""
+    write_quote(prepared)
+    write_actual(prepared, lambda a: a.update(order_number=None))
+    assert cart(prepared, monkeypatch, "actual") == 0
+    own = json.loads((prepared.root / "hardware" / "fees" / "jlcpcb.json").read_text())
+    assert own["pcba"]["economic_setup"]["source"] == "the order at JLCPCB, 2026-11-02 (edakit cart actual)"
+    assert (order_dir(prepared) / "actual.md").read_text().startswith("# Real cost – board main at JLCPCB, the order (")
