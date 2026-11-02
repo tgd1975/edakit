@@ -7,6 +7,10 @@ written once, by `.github/merge.py`, from the fragments in [changes/](changes/RE
 [versioning.md](docs/concepts/done/versioning.md). Update with `claude plugin marketplace update edakit && claude plugin
 update edakit@edakit`, then `/reload-plugins` or a new session; `edakit --version` names the version that runs.
 
+## 0.6.2 – 2026-11-02
+
+- The JLCPCB fee table names its sources without the order and customer numbers of the reference carts.
+
 ## 0.6.1 – 2026-11-02
 
 - `edakit order --with CONFIG` puts the carts of several projects into one set of files – one line per supplier and code, the pieces summed, the comment naming each project – for one parts order for several boards (docs/concepts/new/parts-order.md, decision 1).
