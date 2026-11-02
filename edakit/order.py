@@ -72,6 +72,7 @@ SUPPLIERS = Path(__file__).with_name("suppliers")
 SUPPLIER_KEYS = ("name", "recorded", "start", "currency", "formats", "max_lines", "columns", "upload", "cart", "never",
                  "rounds", "combine")
 COMBINE_TEXT = ("maker", "page", "read")      # [combine]: besides these, conditions, express_above_g and the address
+CODE, TITLE = "ORDER.basket", "the supplier's cart = the basket"
 BASKET, CART_JSON, CART_PAGE, SHIPPING, SHIPPING_PAGE, CHECK = (
     "basket.json", "cart.json", "cart_page.txt", "shipping.json", "shipping_page.txt", "check.md")
 
@@ -456,7 +457,7 @@ def check_main(cfg, args):
     cart = json.loads((d / CART_JSON).read_text(encoding="utf-8"))
     page = (d / CART_PAGE).read_text(encoding="utf-8")
     bad, notes = basket_check(lines, cart, page)
-    report = [f"# ORDER.basket – {prof['name']}'s cart against the basket\n",
+    report = [f"# {CODE} – {prof['name']}'s cart against the basket\n",
               f"Basket {cfg.relative(out / BASKET)} ({', '.join(p['label'] for p in basket['projects'])}), "
               f"{len(lines)} lines; cart read {cart.get('read', '–')}.\n"]
     report += ["## Findings\n", *(f"- {x}" for x in bad or ["none"]), "", "## Notes\n", *(f"- {x}" for x in notes or ["none"]), ""]
@@ -472,7 +473,7 @@ def check_main(cfg, args):
     if say:
         report += ["## Shipment\n", *say, ""]
     (d / CHECK).write_text("\n".join(report), encoding="utf-8")
-    print(f"{'FAIL' if bad else 'PASS':<7} ORDER.basket {prof['name']}'s cart = basket: "
+    print(f"{'FAIL' if bad else 'PASS':<7} {CODE} {prof['name']}'s cart = basket: "
           + (f"{len(bad)} finding{'s' if len(bad) != 1 else ''}" if bad else f"{len(lines)} lines"))
     for x in bad:
         print(f"  {x}")

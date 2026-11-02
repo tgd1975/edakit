@@ -597,7 +597,9 @@ where the cost estimate should know them.
 **The LCSC cart.** The skill cart fills it too (`/edakit:cart parts`), from `cart_lcsc.csv` and the supplier's profile
 `edakit/suppliers/lcsc.toml` – the BOM tool `https://www.lcsc.com/bom`, its upload, its cart button, the buttons never
 to touch. It reads the cart first and keeps the lines already there apart (`before`): they are yours, never changed or
-deleted. It uploads the basket, reads every line back – code, quantity after LCSC's rounding, stock, price, mark – and
+deleted.
+
+It uploads the basket, reads every line back – code, quantity after LCSC's rounding, stock, price, mark – and
 the parcel's weight into `<out>/lcsc/cart.json`, the page text into `cart_page.txt`, puts the lines into the cart and
 stops before the checkout. `edakit order check` holds that to `basket.json` (ORDER.basket): every line there, as many
 pieces or more – more is LCSC's rounding, named –, none short of stock or marked, no line that is neither the basket's
@@ -608,11 +610,15 @@ file missing. The profile is provisional until a parts order records its labels.
 Hong Kong – an address entered at JLCPCB's checkout and unchangeable afterwards – and the LCSC checkout ticks it to
 combine (`[combine]` of the profile: the address and the conditions as LCSC's help page gives them, with the date it
 was read). When the job is for JLCPCB and the basket has LCSC lines, `edakit cart prepare` puts the step into the job:
-the address, the conditions, the weight above which only express is left. Whether to combine is yours, before
+the address, the conditions, the weight above which only express is left.
+
+Whether to combine is yours, before
 JLCPCB's checkout and before LCSC shows the combined prices: `edakit order check` adds the weights the skill read –
 JLCPCB's on Quote & Order (`weight_g` in `quote.json`), LCSC's cart – and the routes to compare. The first combined
 order (2026-11-02) cost 74.94 USD for shipping against 48.94 for the two cheapest separate routes: it buys speed and
-one parcel, not a lower price; at 2.8 kg LCSC offered express only. On your choice the skill enters the warehouse's
+one parcel, not a lower price; at 2.8 kg LCSC offered express only.
+
+On your choice the skill enters the warehouse's
 address at JLCPCB's checkout and reads it back – the one field of a checkout it sets: no payment method, no coupon, no
 button that orders or pays. After you paid, it checks that the order page shows the warehouse, ticks the JLCPCB order
 at LCSC's checkout and reads LCSC's recalculated methods into `shipping.json`; `edakit order check` lists them by price
