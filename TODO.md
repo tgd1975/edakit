@@ -72,22 +72,15 @@ Built on 2026-11-01 (#174, edakit 0.4.14); what is left after the owner's review
       (codes.toml, docstrings, skills), statements that look stale against the code – each listed under "Findings" in
       `docs/concepts/done/documentation-review/` –, fixed through a branch each, sources on the owner's word.
 
-## The documentation for a newcomer ([documentation-newcomer.md](docs/concepts/new/documentation-newcomer.md))
-
-- [ ] TD-103 - **The eval case first-circuit, three faults** seen in the root run of 2026-11-02 (TD-102): `names-pages`
-      wants `PAGES: site/…` while the prompt asks for "paths under site/" – the run wrote `README.md, docs/…` and
-      failed; `few-pages` passed with ten pages named – the judge sees the last message only and counts wrong; the run
-      read the plugin's own `handbook/`, `skills/`, `examples/` and `edakit/parts/` outside `site/`, so "the site
-      alone" is not held. Fixed through a branch before TD-102's run counts – `claude/exciting-einstein-l7ito9`
-      (`d3485c3`): the prompt names `site/…`, the plugin's handbook as a twin, edakit's code off limits and no network;
-      `few-pages` counts Read calls from the trace; two judges on the graph file and the trace; four graders catch
-      reads of `edakit/`. The run of TD-102 used it; the merge waits for the owner's OK. *(edakit-c1)*
-
 ## Closed todos
 
 Done or dropped, newest first, each with its date and the commit that closed it. What closed before 2026-11-01 is
 taken from the history of this file; an item rewritten on its way is listed once, in its last form.
 
+- [x] TD-103 - **The eval case first-circuit, three faults** fixed (#236): the prompt names `site/…`, the plugin's
+      handbook as a twin, edakit's code off limits, the skills to be used, no network; `few-pages` counts Read calls
+      from the trace; judges on the graph file and the trace, a regex on the DONE line; four graders catch reads of
+      `edakit/`. Two runs with it, 0.875 each, in the concept's status line. *(edakit-c1)* [2026-11-02]
 - [x] TD-102 - **Run the eval first-circuit in a cloud session:** done on 2026-11-02 as the user `eval` with
       `TMPDIR=/srv/evaltmp` – 0.875, 0.88 USD, 32 turns, Bash wrote the workspace; the result in the status line of
       `docs/concepts/new/documentation-newcomer.md`. Two runs the same day did not count (root 0.33, `eval` 0.83):
