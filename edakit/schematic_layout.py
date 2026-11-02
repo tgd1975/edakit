@@ -589,8 +589,9 @@ def sync_parts(cfg, mcp, graph_comps):
             if key not in devices:
                 raise MCPError(f"{d}: no device found for {key}")
             ops.append({"operationId": f"place-{d}", "action": "create", "primitiveKind": "component",
-                        "deviceItem": devices[key], "x": 100 + 60 * (i % 10), "y": 100 + 60 * (i // 10)})
-            # the bridge drops addIntoBom on create (upstream M-9) – sync_bom below sets it
+                        "deviceItem": devices[key], "x": 100 + 60 * (i % 10), "y": 100 + 60 * (i // 10)}
+                       | ({"addIntoBom": False} if new[d].get("bom") is False else {}))
+            # set on create (M-9) – sync_bom below checks every part against the graph
         ids = batch_write(mcp, ops)
         batch_write(mcp, [{"operationId": f"ref-{d}", "action": "modify", "primitiveId": ids[f"place-{d}"],
                            "property": {"designator": d}} for d in new if ids.get(f"place-{d}")])

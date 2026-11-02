@@ -49,7 +49,7 @@ def collect(cfg, board, d, verbose=False):
     p = kb.paths(cfg, board)
     if not p["pcb"].exists():
         raise SystemExit(f"no KiCad PCB of board {board.name} ({cfg.relative(p['pcb'])}) – edakit pcb apply first")
-    for stale in ("netlist_diff.json", "drc_rules.json", "bom_easyeda.json", "cpl_easyeda.xlsx"):
+    for stale in ("netlist_diff.json", "drc_rules.json", "bom_easyeda.json", "cpl_easyeda.csv", "cpl_easyeda.xlsx"):
         (d / stale).unlink(missing_ok=True)
     data = kb.pcb_json(cfg, board)
     (d / "pcb.json").write_text(json.dumps(data, indent=1))

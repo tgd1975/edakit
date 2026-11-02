@@ -5,7 +5,7 @@ project is set up. The short way: [Install the tools](../docs/steps/01-install.m
 project](../docs/steps/02-start-a-project.md).
 
 Tested on Linux (Ubuntu) with Python 3.11–3.14, ngspice 45, Freerouting 2.4.1 and Claude Code 2.1.3xx; on EasyEDA with
-EasyEDA Pro 3.2.209, easyeda-mcp-pro 1.6.0 and Node 24, on KiCad with KiCad 10.0.6. Windows and macOS should work for
+EasyEDA Pro 3.2.209, easyeda-mcp-pro 1.8.0 and Node 24, on KiCad with KiCad 10.0.6. Windows and macOS should work for
 everything except the bundled Freerouting download (set `FREEROUTING_JAR`) – untested.
 
 ## 2.1 What talks to what
@@ -26,7 +26,7 @@ server with 115 tools plus a controlled generic call into the extension API. eda
 
 1. **The EDA program**, for a board – one of the two; when to take which is in 16.1:
    - **EasyEDA Pro**, the default (desktop, not the web version): from easyeda.com. Create or open your project once.
-     With it **Node 24** (easyeda-mcp-pro 1.6.0 requires it): `nvm install 24`. Started from a desktop client without
+     With it **Node 24** (easyeda-mcp-pro 1.8.0 requires it): `nvm install 24`. Started from a desktop client without
      nvm in PATH, the launcher sources nvm itself. Then the MCP server, the bridge and the window, sections 2.4 to 2.6.
    - **KiCad 10**, the other choice, from KiCad's PPA – Ubuntu's own packages are older:
      `sudo add-apt-repository ppa:kicad/kicad-10.0-releases && sudo apt install kicad`. No Node, no server, no bridge:
@@ -109,8 +109,8 @@ session. The first line of the working agreements names the edakit that runs.
 
 Sections 2.4 to 2.6 set up EasyEDA Pro; on KiCad they have nothing to do.
 
-`edakit/easyeda/mcp-server.sh` installs easyeda-mcp-pro **pinned** to 1.6.0 into
-`~/.easyeda-mcp-pro/runtime/1.6.0` (once) and starts `node` directly, with safe defaults:
+`edakit/easyeda/mcp-server.sh` installs easyeda-mcp-pro **pinned** to 1.8.0 into
+`~/.easyeda-mcp-pro/runtime/1.8.0` (once) and starts `node` directly, with safe defaults:
 
 | Setting | Value | Why |
 |---|---|---|
@@ -120,47 +120,41 @@ Sections 2.4 to 2.6 set up EasyEDA Pro; on KiCad they have nothing to do.
 | `ARTIFACT_DIR` | `$PWD/build/easyeda-mcp` | exports land in the project, not in the home directory |
 | `BRIDGE_TIMEOUT_MS` | `120000` | DRC and pour fills of a large board take longer than the default 15 s |
 
-After the install `mcp-server.sh` adds the tool `easyeda_export_odb` to the installed server, once
-(`odb-tool-patch.mjs`, idempotent): the ODB++ export for a maker that assembles from it (AISLER; ordering, 8.4;
-SYNC.odb). It calls the bridge method `board.exportGerbers` with `format: "odb"`, so the server's method registry stays
-as it is; the patched extension (2.5) answers it. Upstream: M-4 in [upstream/README.md](../upstream/README.md).
+edakit's own servers – those its commands start – run the profile `experimental` instead of `full`: only there does
+the server register `easyeda_export_odb`, the ODB++ export for a maker that assembles from it (AISLER; ordering, 8.4;
+SYNC.odb), which easyeda-mcp-pro marks experimental (EasyEDA's API for it is a beta). Raw JavaScript stays off in both.
+edakit reads every `easyeda_api_call` answer 12 levels deep (`maxDepth`, 9.1): DRC details and the rule set lie that
+deep.
 
 **Pinned, not npx:** the tool set and the extension must match, and npx does not pass SIGTERM on – an orphaned server
-then blocks the bridge port. Update deliberately: raise `EASYEDA_MCP_VERSION`, rebuild the patched extension (2.5),
-re-import it, restart EasyEDA, restart every server. Since 1.5.1 a server whose extension has another version refuses
+then blocks the bridge port. Update deliberately: raise `EASYEDA_MCP_VERSION`, import the extension of the same
+version (2.5), restart EasyEDA, restart every server. Since 1.5.1 a server whose extension has another version refuses
 every write, export and `easyeda_api_call` and answers only reads – server and extension change together.
 
 The bridge listens on 127.0.0.1 only. The only online calls are read-only part lookups (LCSC product data, JLCPCB's
 public assembly catalogue): only part numbers leave the machine.
 
-## 2.5 The bridge extension, patched
+## 2.5 The bridge extension
 
-The original extension cuts every API answer after 5 levels – DRC details are then unreadable – and cannot export a
-schematic as PDF. Build the patched one:
+The server brings its EasyEDA extension, the bridge; copy it out of the pinned server:
 
 ```bash
-bash <plugin or clone>/edakit/easyeda/bridge-extension-patch.sh      # -> ./easyeda-bridge-extension.eext
+bash <plugin or clone>/edakit/easyeda/mcp-server.sh extension --copy .      # -> ./easyeda-bridge-extension*.eext
 ```
-
-The script takes the extension from the pinned server and raises the depth to 12. It adds the schematic PDF path and
-the ODB++ export (`PCB_ManufactureData.getOpenDatabaseDoublePlusFile`, marked so that `easyeda_export_odb` tells it
-from a Gerber ZIP), checks the bundle still parses, and renames it "MCP Pro Bridge (depth 12, schematic PDF, ODB++)".
-If the extension changed upstream, it stops instead of patching blindly. `edakit doctor` names whether the server has
-`easyeda_export_odb` – a warning only with a maker that takes ODB++; an extension without the handler shows in
-SYNC.odb ("Bridge did not return an ODB++ archive").
 
 Import in EasyEDA: *Settings → Extensions → Extension Manager → Import*; it asks for the permission "External
 Interactions" itself. Then the menu **MCP Bridge** appears; choose **Enable Auto-Connect**.
 
-Re-importing (update, other depth): EasyEDA does not take an import over an installed copy with the same UUID and
-version. **Uninstall the old one, import, restart EasyEDA**; until the restart the old copy keeps running. After that
-restart the menu is sometimes missing, but Auto-Connect stays on and connects.
+Re-importing (update): EasyEDA does not take an import over an installed copy with the same UUID. **Uninstall the old
+one, import, restart EasyEDA**; until the restart the old copy keeps running. After that restart the menu is sometimes
+missing, but Auto-Connect stays on and connects. Until edakit 1.0.6 edakit built a patched extension of 1.6.0, named
+"MCP Pro Bridge (depth 12, schematic PDF, ODB++)" in the extension manager; since 1.7.0 the original does all three
+(upstream M-2 to M-4) – uninstall the patched one the same way.
 
-Check with `edakit doctor`: "patched extension" – it asks `DMT_Project.getCurrentProjectInfo`, whose answer shows the
-pages written out instead of `[MaxDepth]` –, and "bridge extension 1.6.0 = server 1.6.0". It probes the depth only
-while EasyEDA is free or claimed by you; the version and registry lines come from `easyeda_health_check`, which needs
-no claim. The patched build keeps the UUID and version of the original, so neither EasyEDA's extension manager nor the
-version tells the two apart – the depth does.
+Check with `edakit doctor`: "bridge extension 1.8.0 = server 1.8.0", and "return depth" – it asks
+`DMT_Project.getCurrentProjectInfo` 12 levels deep, whose answer then shows the pages written out instead of
+`[MaxDepth]`; an extension older than 1.7.0 ignores the depth asked. It probes the depth only while EasyEDA is free or
+claimed by you; the version and registry lines come from `easyeda_health_check`, which needs no claim.
 
 ## 2.6 EasyEDA without background throttling
 
@@ -238,5 +232,5 @@ follow chapters 6–8. Daily: start EasyEDA → open the project → work.
 ## 2.8 Licences of the parts you combine
 
 edakit itself is MIT licensed ([LICENSE](../LICENSE)). It uses, without bundling them: **easyeda-mcp-pro**
-(PolyForm Noncommercial 1.0.0 – fine for private projects; check its licence before commercial use), **EasyEDA Pro**
+(MIT since 1.7.0; 1.1.0 to 1.6.0 were PolyForm Noncommercial 1.0.0), **EasyEDA Pro**
 (proprietary, free), **Freerouting** (GPL-3.0, downloaded at first use), **ngspice** (BSD).

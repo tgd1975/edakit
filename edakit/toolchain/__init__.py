@@ -1,6 +1,6 @@
 """The EDA tool the boards of a project are drawn in: [project] toolchain of edakit.toml (handbook 16).
 
-    easyeda   EasyEDA Pro through the patched bridge and easyeda-mcp-pro (edakit/eda.py) – the default
+    easyeda   EasyEDA Pro through easyeda-mcp-pro and its bridge extension (edakit/eda.py) – the default
     kicad     KiCad 10: edakit writes one KiCad project per board into <artifacts>/kicad/<board>/ and calls kicad-cli
               for what files cannot do – ERC, DRC with the zone fill, the exports (edakit/toolchain/kicad/)
 

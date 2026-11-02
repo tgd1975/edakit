@@ -39,7 +39,7 @@ FREE = ("bridge_status", "health_check", "get_capabilities", "get_feature_flags"
         "get_tool_profiles", "api_inventory", "catalog_list", "observability_report")
 # Library lookups that leave the active document and tab as they are – allowed without a claim and without renewing
 # one. An entry joins only with its evidence; here the source of easyeda-mcp-pro 1.6.0 (the version mcp-server.sh
-# pins): the call goes request -> dispatcher -> the one API function, with nothing that opens, focuses or saves a
+# pinned then): the call goes request -> dispatcher -> the one API function, with nothing that opens, focuses or saves a
 # document on the way (bridge index.ts:976-984, dispatcher-domain-router.ts:266-271, system-api-operations.ts:224-229,
 # api-runtime.ts:199-223). A live check is `DMT_SelectControl.getCurrentDocumentInfo` before and after the call.
 READ_ONLY_TOOLS = (

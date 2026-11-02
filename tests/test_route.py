@@ -1249,16 +1249,17 @@ def test_dsn_keeps_vias_away_from_hand_soldered_joints(project, tmp_path):
     assert found == [("J0_BOTTOM", "BOTTOM"), ("J1_BOTTOM", "BOTTOM"), ("J2_TOP", "TOP"), ("J3_TOP", "TOP")]
 
 
-def test_the_pours_are_filled_one_by_one_and_a_refused_fill_stops(monkeypatch):
-    """M-10: one fresh pour per rebuild call; when the bridge refuses (an earlier rebuild unverified), route stops
-    instead of going on with empty pours."""
+def test_a_nets_pours_are_filled_in_one_call_and_a_refused_fill_stops(monkeypatch):
+    """M-10 (easyeda-mcp-pro 1.7.0): a net's fresh pours in one rebuild call, net by net; when the bridge refuses (an
+    earlier rebuild unverified), route stops instead of going on with empty pours."""
     from edakit import pcb
     calls = []
     monkeypatch.setattr(pcb, "pour", lambda *a, **k: None)
     monkeypatch.setattr(route, "ensure_pcb_focus", lambda mcp: None)
     monkeypatch.setattr(route, "api", lambda mcp, path, *a: [{"state": {"PrimitiveId": "p1", "Net": "GND"}},
                                                              {"state": {"PrimitiveId": "p2", "Net": "GND"}},
-                                                             {"state": {"PrimitiveId": "p3", "Net": "VCC"}}])
+                                                             {"state": {"PrimitiveId": "p3", "Net": "VCC"}},
+                                                             {"state": {"PrimitiveId": "p4", "Net": "+5V"}}])
 
     class Mcp:
         def __init__(self, answers):
@@ -1268,9 +1269,9 @@ def test_the_pours_are_filled_one_by_one_and_a_refused_fill_stops(monkeypatch):
             calls.append(kw["pourIds"])
             return next(self.answers)
     ok = {"success": True, "results": [{"pourId": "p", "status": "rebuilt", "verified": True}]}
-    route.fill(None, None, Mcp([ok, ok]), ["GND"])
-    assert calls == [["p1"], ["p2"]]
+    route.fill(None, None, Mcp([ok, ok]), ["GND", "+5V"])
+    assert calls == [["p4"], ["p1", "p2"]]
     refused = {"success": False, "results": [], "error": "A previous native PCB copper rebuild ended without complete "
                                                          "verification."}
     with pytest.raises(SystemExit, match="restart EasyEDA"):
-        route.fill(None, None, Mcp([ok, refused]), ["GND"])
+        route.fill(None, None, Mcp([ok, refused]), ["GND", "+5V"])

@@ -57,7 +57,7 @@ jobs:
           uv run --project ../../.. edakit sim
           uv run --project ../../.. edakit gate || test $? -eq 2   # NOT RELEASED is expected without EasyEDA
       - name: Shell scripts parse
-        run: bash -n edakit/easyeda/mcp-server.sh && bash -n edakit/easyeda/bridge-extension-patch.sh && bash -n bin/edakit
+        run: bash -n edakit/easyeda/mcp-server.sh && bash -n bin/edakit
 
   kicad:
     # The KiCad tool chain against a real kicad-cli (handbook 16.8): KiCad reads the files edakit writes, and its

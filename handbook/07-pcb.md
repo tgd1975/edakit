@@ -802,8 +802,8 @@ The gate writes nothing: its GEO.drc fails then, and `edakit route drc` before i
 ## 7.6 Pours
 
 `[[pours]]` of the board file: net, layers, `plane` (with `fanout`, 7.5), `stitch`, `pour_only`. Filled with
-`easyeda_pcb_rebuild_copper`, one fresh pour per call – after an unverified rebuild (`readback-mismatch`) the bridge of
-easyeda-mcp-pro 1.6.0 refuses every further one until EasyEDA restarts, and `route` stops with that (M-10). With
+`easyeda_pcb_rebuild_copper`, a net's fresh pours in one call (easyeda-mcp-pro 1.7.0, M-10) – after an unverified
+rebuild (`readback-mismatch`) the bridge refuses every further one until EasyEDA restarts, and `route` stops with that. With
 `stitch = "BOTTOM"` edakit fills once keeping islands, puts a via into every loose island on that side where it
 overlaps the pour of the other side (with clearance), then fills again without islands.
 
@@ -1063,6 +1063,6 @@ is accepted on the part.
 
 ## 7.8 Export for documentation
 
-`edakit export` writes per board the schematic as vector PDF (patched bridge; otherwise stitched canvas tiles), the PCB
+`edakit export` writes per board the schematic as vector PDF (bridge extension 1.7.0 or later; otherwise stitched canvas tiles), the PCB
 PDF, Gerber, BOM, pick and place, netlist, plus a consistent copy of the project file (SQLite backup). Orders are made
 from the gate's files, not from these.

@@ -130,7 +130,8 @@ def start(cfg, verbose=False, artifact_dir=None, lock_mode=None):
     mode = lock_mode or cfg.lock
     lock.claim_for_script(mode=mode)
     env = {"ARTIFACT_DIR": str(artifact_dir or cfg.artifact("mcp", ".keep").parent),
-           "BRIDGE_TIMEOUT_MS": os.environ.get("BRIDGE_TIMEOUT_MS", "120000")}
+           "BRIDGE_TIMEOUT_MS": os.environ.get("BRIDGE_TIMEOUT_MS", "120000"),
+           "TOOL_PROFILE": "experimental"}   # easyeda_export_odb is registered only there; raw JavaScript stays off
     return MCPClient(["bash", str(MCP_SERVER)], verbose=verbose, env=env, cwd=cfg.root if cfg else None, lock_mode=mode)
 
 
@@ -150,9 +151,13 @@ def wait_for_bridge(mcp, seconds=90):
         time.sleep(2)
 
 
+API_DEPTH = 12   # levels of an easyeda_api_call answer (maxDepth, M-3); DRC details and the rule set lie up to 9 deep
+
+
 def api(mcp, path, *args, timeout=130):
     """Documented EasyEDA API through easyeda_api_call. Read calls need confirmWrite as well."""
-    res = mcp.call("easyeda_api_call", path=path, args=list(args), confirmWrite=True, timeout=timeout)
+    res = mcp.call("easyeda_api_call", path=path, args=list(args), confirmWrite=True, maxDepth=API_DEPTH,
+                   timeout=timeout)
     if not res.get("ok"):
         raise MCPError(f"{path}: {res.get('error')}")
     return res.get("result")
@@ -229,8 +234,12 @@ def open_project(mcp, cfg, create=False):
     if not uuid:
         uuid = local_project_uuid(mcp, cfg.project)
     if not uuid and create:
-        # The desktop client in local mode refuses it ("请求参数path错误", the path parameter) and returns null.
-        uuid = api(mcp, "DMT_Project.createProject", cfg.project)
+        # The desktop client in local mode refuses it ("请求参数path错误", the path parameter) and returns null – since
+        # 1.7.0 easyeda_api_call reports that as an error (upstream M-5).
+        try:
+            uuid = api(mcp, "DMT_Project.createProject", cfg.project)
+        except MCPError:
+            uuid = None
         if not uuid:
             raise MCPError(f"EasyEDA did not create the project '{cfg.project}' (the local desktop client refuses "
                            "createProject) – create it by hand: File → New → Project, named exactly like [project] "
@@ -672,12 +681,13 @@ def list_pcb_components(mcp):
 
 
 def drc(mcp, out=None):
-    """EasyEDA DRC with details (PCB_Drc.check(true, false, true)). Needs the bridge with return depth 12, otherwise
-    only [MaxDepth] comes back. With details it always returns a list ([] = no findings); null = it did not run
+    """EasyEDA DRC with details (PCB_Drc.check(true, false, true)), read API_DEPTH levels deep – a bridge extension
+    older than 1.7.0 ignores maxDepth and answers [MaxDepth]. With details it always returns a list ([] = no findings); null = it did not run
     (tab inactive, internal timeout)."""
     ensure_pcb_focus(mcp)
     activate_pcb(mcp)
-    res = mcp.call("easyeda_api_call", path="PCB_Drc.check", args=[True, False, True], confirmWrite=True, timeout=150)
+    res = mcp.call("easyeda_api_call", path="PCB_Drc.check", args=[True, False, True], confirmWrite=True,
+                   maxDepth=API_DEPTH, timeout=150)
     if not res.get("ok"):
         raise MCPError(f"DRC failed: {res.get('error')} – is EasyEDA throttled? (handbook/12-troubleshooting.md)")
     res = res.get("result")
@@ -697,8 +707,8 @@ def drc(mcp, out=None):
                 walk(x)
     walk(res)
     if res and not found and "[MaxDepth]" in json.dumps(res):
-        raise MCPError("DRC details cut off ([MaxDepth]) – import the patched bridge (edakit/easyeda/"
-                       "bridge-extension-patch.sh)")
+        raise MCPError("DRC details cut off ([MaxDepth]) – the bridge extension is older than the server: import "
+                       "the one of the pinned easyeda-mcp-pro (handbook 2.5)")
     if out:
         Path(out).write_text(json.dumps(res, indent=1))
     return found
@@ -722,13 +732,13 @@ def read_drc_rules(mcp):
     """The rule set of the DRC of the active PCB, as EasyEDA answers (drc_rules.py): {"configuration": {"name",
     "config"}, "net_rules": [...], "net_classes": [...]} from PCB_Drc.getCurrentRuleConfiguration, getNetRules and
     getAllNetClasses. The PCB tab must count as active (activate_pcb – drc() does it). The configuration lies up to 9
-    levels deep: with the original bridge (depth 5) it is cut off, and that raises."""
+    levels deep: read API_DEPTH deep (api); an extension that ignores maxDepth cuts it off at 5, and that raises."""
     out = {"configuration": api(mcp, "PCB_Drc.getCurrentRuleConfiguration"),
            "net_rules": api(mcp, "PCB_Drc.getNetRules"),
            "net_classes": api(mcp, "PCB_Drc.getAllNetClasses")}
     if "[MaxDepth]" in json.dumps(out):
-        raise MCPError("DRC rule set cut off ([MaxDepth]) – import the patched bridge (edakit/easyeda/"
-                       "bridge-extension-patch.sh)")
+        raise MCPError("DRC rule set cut off ([MaxDepth]) – the bridge extension is older than the server: import "
+                       "the one of the pinned easyeda-mcp-pro (handbook 2.5)")
     if not (out["configuration"] or {}).get("config"):
         raise MCPError(f"no DRC rule configuration ({out['configuration']!r}) – PCB tab inactive?")
     return out

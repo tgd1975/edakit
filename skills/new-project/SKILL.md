@@ -92,7 +92,7 @@ no budget".
 Eurocircuits) makes `mpn` and `manufacturer` required in every BOM part's entry – PARTS.fact/mpn from the first part on, and the
 agent part-selector and the skill part-search fill them; parts are still chosen by LCSC number. With JLCPCB among the
 makers its classes (Basic, Extended) and `edakit stock` stay as they are; without it no stock snapshot is needed. A
-maker that takes ODB++ (AISLER) needs the patched MCP server and bridge – `edakit doctor` checks both; on the KiCad
+maker that takes ODB++ (AISLER) needs easyeda-mcp-pro's `easyeda_export_odb` – `edakit doctor` checks it; on the KiCad
 tool chain kicad-cli exports it. A project moving
 to edakit takes the maker from the inventory (past orders, an order sheet), to confirm.
 

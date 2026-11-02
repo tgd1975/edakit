@@ -320,11 +320,12 @@ def test_reading_takes_the_three_answers():
     assert fake.calls == ["getCurrentRuleConfiguration", "getNetRules", "getAllNetClasses"]
 
 
-def test_reading_through_the_original_bridge_is_cut_off():
-    """With depth 5 the spacing table comes back as "[MaxDepth]" (seen on 2026-10-21 in the reference project)."""
+def test_reading_through_an_extension_that_ignores_max_depth_is_cut_off():
+    """With depth 5 – a bridge extension older than 1.7.0 ignores maxDepth – the spacing table comes back as
+    "[MaxDepth]" (seen on 2026-10-21 in the reference project)."""
     have = recorded()
     have["configuration"]["config"]["Spacing"]["Safe Spacing"]["copperThickness1oz"]["tables"] = "[MaxDepth]"
-    with pytest.raises(eda.MCPError, match=r"cut off \(\[MaxDepth\]\) – import the patched bridge"):
+    with pytest.raises(eda.MCPError, match=r"cut off \(\[MaxDepth\]\) – the bridge extension is older than the server"):
         eda.read_drc_rules(FakeDrc(have))
     have["configuration"] = None                       # no configuration in the answer
     with pytest.raises(eda.MCPError, match="no DRC rule configuration"):

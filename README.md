@@ -99,7 +99,7 @@ edakit runs on your machine and collects no usage data. Your design leaves it on
 **Programs.** The plugin starts these:
 
 - the `edakit` command line, in a Python environment that uv builds from the plugin's `uv.lock` (packages from PyPI);
-- easyeda-mcp-pro 1.6.0, the MCP server for EasyEDA Pro, installed once with npm into `~/.easyeda-mcp-pro/runtime/`;
+- easyeda-mcp-pro 1.8.0, the MCP server for EasyEDA Pro, installed once with npm into `~/.easyeda-mcp-pro/runtime/`;
   it talks to EasyEDA Pro on your machine through the bridge extension you import in the setup;
 - ngspice, Freerouting (Java), kicad-cli, git and the GitHub CLI `gh`, where a command needs them.
 

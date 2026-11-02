@@ -6,9 +6,10 @@ start page with no project open. See handbook/12-troubleshooting.md.
 
 With EasyEDA running (and without --offline) doctor also asks the bridge what it is, through an own server started
 without a claim: connected, extension version against the server's, the method registry (easyeda_bridge_status,
-easyeda_health_check – both free in the claim), and the return depth (DMT_Project.getCurrentProjectInfo: [MaxDepth]
-means the original extension; probed only while the claim is free or the caller's). The servers' BRIDGE_TIMEOUT_MS
-come from /proc/<pid>/environ – the server holding the bridge port drops requests after its own timeout.
+easyeda_health_check – both free in the claim), and the return depth (DMT_Project.getCurrentProjectInfo with
+maxDepth: [MaxDepth] means an extension older than 1.7.0, which ignores it; probed only while the claim is free or the
+caller's). The servers' BRIDGE_TIMEOUT_MS come from /proc/<pid>/environ – a server with the default 15 s cuts its own
+DRC and pour fills short.
 """
 
 from __future__ import annotations
@@ -28,10 +29,10 @@ from .eda import MCP_SERVER
 from .toolchain import is_kicad
 
 PROC = Path("/proc")
-DEFAULT_TIMEOUT_MS = 15000  # easyeda-mcp-pro 1.6.0 without BRIDGE_TIMEOUT_MS (src/config/env.ts:69)
-ORIGINAL_DEPTH = 5          # levels the original bridge extension returns (normalizeValue(result, 5))
-PATCH_HINT = ("build the patched extension of the pinned server (bash edakit/easyeda/bridge-extension-patch.sh), "
-              "uninstall the old one in EasyEDA, import, restart EasyEDA (handbook 2.5)")
+DEFAULT_TIMEOUT_MS = 15000  # easyeda-mcp-pro 1.8.0 without BRIDGE_TIMEOUT_MS (src/config/env.ts:69)
+ORIGINAL_DEPTH = 5          # levels an extension returns without maxDepth – or one older than 1.7.0 whatever is asked
+EXTENSION_HINT = ("copy the extension of the pinned server (bash edakit/easyeda/mcp-server.sh extension --copy .), "
+                  "uninstall the old one in EasyEDA, import, restart EasyEDA (handbook 2.5)")
 
 
 def run(*cmd):
@@ -62,9 +63,9 @@ def timeout_line(envs):
         listing = ", ".join(f"pid {pid} {ms}" + ("" if envs[pid].get("BRIDGE_TIMEOUT_MS") else " (default)")
                             for pid, ms in sorted(values.items()))
         return ("WARN", f"BRIDGE_TIMEOUT_MS differs between the easyeda-mcp-pro servers: {listing}{tail}",
-                "the server holding the bridge port drops pending requests after ITS timeout (stale sweep): end the "
-                "ones with the other value (pgrep -af easyeda-mcp-pro – tell the other sessions first); they restart "
-                "through mcp-server.sh with 120000 (handbook 12)")
+                "a server with 15000 (the default) cuts its own DRC and pour fills short: end it (pgrep -af "
+                "easyeda-mcp-pro – tell the other sessions first); it restarts through mcp-server.sh with 120000 "
+                "(handbook 12)")
     if values:
         return "OK", f"BRIDGE_TIMEOUT_MS {next(iter(values.values()))} ms in all {len(values)} server(s){tail}", ""
     return "INFO", f"BRIDGE_TIMEOUT_MS not compared{tail}", ""
@@ -83,13 +84,13 @@ def bridge_lines(status, health):
               "")]
     server, ext = health.get("version") or "?", health.get("extension_version")
     if health.get("extension_version_mismatch"):
-        lines.append(("WARN", f"bridge extension {ext} against server {server}", PATCH_HINT))
+        lines.append(("WARN", f"bridge extension {ext} against server {server}", EXTENSION_HINT))
     elif ext:
         lines.append(("OK", f"bridge extension {ext} = server {server}", ""))
     else:
         lines.append(("INFO", f"bridge extension version unknown (server {server})", ""))
     if health.get("registry_mismatch"):
-        lines.append(("WARN", "method registry of the bridge extension differs from the server's", PATCH_HINT))
+        lines.append(("WARN", "method registry of the bridge extension differs from the server's", EXTENSION_HINT))
     else:
         lines.append(("OK", "method registry of extension and server match", ""))
     return lines
@@ -104,12 +105,13 @@ def nesting(o):
 
 
 def depth_line(answer):
-    """(level, text, hint) for the answer of DMT_Project.getCurrentProjectInfo: [MaxDepth] = the original extension."""
+    """(level, text, hint) for the answer of DMT_Project.getCurrentProjectInfo, asked eda.API_DEPTH deep: [MaxDepth] = an
+    extension older than 1.7.0, which ignores maxDepth."""
     if "[MaxDepth]" in json.dumps(answer, ensure_ascii=False):
-        return ("WARN", f"original extension: answers cut after {ORIGINAL_DEPTH} levels ([MaxDepth]), DRC details "
-                "unreadable", PATCH_HINT)
+        return ("WARN", f"extension ignores maxDepth: answers cut after {ORIGINAL_DEPTH} levels ([MaxDepth]), DRC "
+                "details unreadable", EXTENSION_HINT)
     if nesting(answer) > ORIGINAL_DEPTH:
-        return "OK", f"patched extension: answers deeper than {ORIGINAL_DEPTH} levels (DRC details readable)", ""
+        return "OK", f"return depth: answers deeper than {ORIGINAL_DEPTH} levels (DRC details readable)", ""
     if not answer:
         return "INFO", "return depth not shown: no project open (EasyEDA on its start page)", "open the project, run again"
     return "INFO", "return depth not shown: the project's answer is too shallow to tell", ""
@@ -168,24 +170,23 @@ def kicad_line(line):
          f"ppa:kicad/kicad-{cli.MAJOR}.0-releases && sudo apt install kicad (handbook 2)")
 
 
-ODB_TOOL = "name: 'easyeda_export_odb'"     # the tool odb-tool-patch.mjs adds to the server (handbook 2.5)
+ODB_TOOL = "name: 'easyeda_export_odb'"     # easyeda-mcp-pro's ODB++ export since 1.7.0, profile experimental (2.4)
 
 
 def odb_line(cfg, runtime, installed):
     """(level, text, hint) for the ODB++ export: the tool in the installed server – needed only with a maker of
-    [cart] makers that takes ODB++ (AISLER, SYNC.odb); the bridge's handler is in the extension bridge-extension-patch.sh
-    builds, and SYNC.odb names an extension without it."""
+    [cart] makers that takes ODB++ (AISLER, SYNC.odb); edakit's own servers run the profile that registers it, and
+    SYNC.odb names an extension without the bridge's handler."""
     from .release import fab
     need = cfg is not None and bool(fab.odb_takers(cfg))
     tools = Path(runtime) / "node_modules/easyeda-mcp-pro/dist/tools/L1_export.js"
     has = installed and tools.exists() and ODB_TOOL in tools.read_text(encoding="utf-8", errors="replace")
     if has:
-        return "OK", "ODB++ export: easyeda_export_odb in the server; the bridge needs the extension with ODB++ " \
-                     "(bridge-extension-patch.sh)", ""
+        return "OK", "ODB++ export: easyeda_export_odb in the server (edakit's own servers, profile experimental)", ""
     return ("WARN" if need else "INFO", "ODB++ export: easyeda_export_odb not in the server"
             + (" – a maker of [cart] makers takes ODB++ (SYNC.odb)" if need else ""),
-            "mcp-server.sh patches it in on its next start (odb-tool-patch.mjs); then build and import the bridge "
-            "extension with ODB++ (bash edakit/easyeda/bridge-extension-patch.sh, handbook 2.5)" if need else "")
+            "the server is older than the pin: delete its runtime folder, mcp-server.sh installs the pinned one on its "
+            "next start (handbook 2.4)" if need else "")
 
 
 def main(cfg, args):
@@ -205,11 +206,11 @@ def main(cfg, args):
         easyeda = []
         kicad_line(line)
     else:
+        version = re.search(r'EASYEDA_MCP_VERSION:-([\d.]+)', MCP_SERVER.read_text()).group(1)
         code, out = run("node", "-v")
         major = re.match(r"v(\d+)", out or "")
         line("OK" if major and major.group(1) == "24" else "FAIL", f"Node {out or 'missing'}",
-             "" if major and major.group(1) == "24" else "easyeda-mcp-pro 1.6.0 needs Node 24.x (nvm install 24)")
-        version = re.search(r'EASYEDA_MCP_VERSION:-([\d.]+)', MCP_SERVER.read_text()).group(1)
+             "" if major and major.group(1) == "24" else f"easyeda-mcp-pro {version} needs Node 24.x (nvm install 24)")
         runtime = os.environ.get("EASYEDA_MCP_RUNTIME_DIR") or os.path.expanduser(f"~/.easyeda-mcp-pro/runtime/{version}")
         installed = os.path.exists(os.path.join(runtime, "node_modules/easyeda-mcp-pro/dist/index.js"))
         line("OK" if installed else "WARN", f"easyeda-mcp-pro {version} in {runtime}",
