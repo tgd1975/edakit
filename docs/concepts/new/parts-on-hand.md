@@ -131,6 +131,36 @@ and "capture, identify, confirm" from the assistant are tool calls into it – P
 easyeda-mcp-pro is EasyEDA's. edakit would not use it: it reads the rows the capture writes. The same if the bin ever
 left the machine – a makerspace's shared bin behind an HTTP server. Not the owner's case: one maker, one drawer.
 
+## Access: one writer per file, whole files only
+
+Every file of the interface has exactly one writer, and every write is a whole file:
+
+| File | Writer | Readers | How a write lands |
+| --- | --- | --- | --- |
+| `INVENTORY.md` | PartsLedger's `upsert_row` – the skills, `take`, `import` and the camera all through it (requirement 7) | edakit, the maker, the skills | read-modify-write under a lock, flushed by atomic rename: a reader sees the old or the new file, never a torn one; a second writer waits for the lock or stops after a timeout – no lost update |
+| `from_bin.csv`, `surplus.csv` | `edakit order` | `partsledger take`, `partsledger import` | written whole per run into `<artifacts>/order/`; consumed, never edited |
+| the order record | edakit, at the cart (8.4) | – | as today |
+
+What a lock cannot catch is time: `edakit order` reads the bin on one day, the take is booked on another, and between
+the two the bin may have moved – another project's take, a camera session, a hand edit. Three rules hold it:
+
+1. **The take checks again.** `partsledger take` compares every line with the row as it stands now and refuses the
+   whole file when one would go below zero – nothing half booked; the maker runs `edakit order` again, which
+   recomputes from the bin as it is, and orders the rest.
+2. **A take and an import happen once.** Both files carry an identity – `Project` and `Order`, the appendix –, and
+   PartsLedger records every booked movement in a journal (its planned undo journal is that one) and refuses the same
+   identity twice. The same command run twice books nothing twice.
+3. **No reservation.** `edakit order` promises nothing in the bin: two projects ordered days apart may count the same
+   five pieces, and the second take is refused by rule 1 – rare with one maker and one drawer, then one small order
+   more. A reservation in the bin – "promised to <project>" – would need an order identity in both tools and a release
+   when an order is dropped: the alternative of decision 7, not recommended now.
+
+Two machines – the owner builds on Windows 11 and Ubuntu, PartsLedger runs on both –: the bin's repository is the
+sync, as PartsLedger has it, every movement a commit; a row changed on both sides is git's conflict on one text line,
+resolved by the maker. edakit never commits there. `edakit order` and `edakit bin` say when the bin's repository has
+uncommitted changes or is behind its remote – a note, as SYNC.source gives for an own board's project –, so that no
+order is computed on a stale copy.
+
 ## The match: which row is which part
 
 A cart line knows its parts entry: `lcsc`, `mpn`, `manufacturer`, `kind`, `package`, the values and limits. A bin row
@@ -191,6 +221,10 @@ idea in its own task system, from a session there; none is built from here.
    index's.
 6. **Nothing to install for edakit.** edakit reads a file; the maker runs PartsLedger's commands in its checkout
    (`uv run partsledger …`). No package on PyPI needed, no import in either direction.
+7. **One writer, under a lock.** Every mutation of the index goes through `upsert_row` – the skills included, which
+   edit the file by prompt today – and the writer holds a lock from the read to the rename: a lock file beside the
+   index, created exclusively, portable to Windows 11 and Ubuntu, stale after a timeout. A journal of booked
+   movements keyed by `Project` and `Order`, so that `take` and `import` refuse a repeat.
 
 Not needed by edakit: the camera path, Nexar enrichment, the prose pages. The index alone carries the concept.
 
@@ -225,6 +259,8 @@ saying so to PartsLedger with its two commands.
   names what to take, so the gap shows at the drawer, not at the bench.
 - **A sibling taken for the part** – excluded by rule 3: siblings are never counted.
 - **A kit's package or rating wrong** – excluded by rule 5: a kit without the data is not counted at all.
+- **Two writers on the index, a take booked twice** – excluded by requirement 7: one writer under a lock, a journal
+  with the order identity; a stale bin is caught by the take's own check (access, rule 1).
 
 ## The name
 
@@ -275,6 +311,9 @@ The owner's, with the recommendation first; what Claude set itself is one closin
    word – recommended, no tool writes the other's files; or edakit writes the index through PartsLedger's writer (an
    import of a package that is not published); or nothing goes back and the maker books with `/inventory-add`.
 6. **The name.** `partbin` now – recommended; or `PartsLedger` stays; or another of the table.
+7. **When the take is booked.** At the bench, when the parts leave the drawer, the refusal and the re-run as the net –
+   recommended; or at the order, with a reservation in the bin: an order identity in both tools and a release when an
+   order is dropped.
 
 Set by Claude, to confirm in one question: the words bin and on hand, stock left to the assembler; the key `bin` under
 `[project]`; `edakit bin`; the match order LCSC number, part number, siblings and hedged rows as maybe, kits as data;
@@ -290,6 +329,7 @@ new check code; the requirements on PartsLedger carried over by a session there,
 | `Part` | the row's `Part` text as the bin spells it – PartsLedger finds its row by it |
 | `Quantity` | pieces taken, a whole number |
 | `Project` | the project's name, in a basket each project its own line |
+| `Order` | the order's date – with `Project` the identity of the take, which PartsLedger books once |
 | `Designators` | the components served, blank for an `[[extra]]` item |
 
 `surplus.csv` – one line per cart line whose pieces exceed the need:
@@ -304,4 +344,4 @@ new check code; the requirements on PartsLedger carried over by a session there,
 | `Package` | the entry's `package` |
 | `Kind` | the entry's `kind` – PartsLedger's map to its section |
 | `Datasheet` | the entry's `datasheet.url`, else the address `edakit part fetch` recorded |
-| `Project`, `Order` | the project and the order's date, for the row's `Notes` |
+| `Project`, `Order` | the project and the order's date – the identity of the import, booked once, and the row's `Notes` |
