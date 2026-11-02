@@ -33,9 +33,6 @@ to touch.
       easyeda-mcp-pro servers of the sessions; then in EasyEDA uninstall the old extension, import
       `~/.easyeda-mcp-pro/ext-1.8.0/easyeda-bridge-extension.eext`, allow "External Interactions", quit and restart
       EasyEDA – for the live checks of #250 (TD-26, TD-84). *(edakit-80)*
-- [ ] TD-82 - **pytree's pictures:** merge #257 – the pictures picked on 2026-11-02 (the board from the ordered release
-      20261101-225744, the tree in its hill, the copper review's before/after); the gift's words stand before Christmas.
-      *(edakit-ce)*
 - [ ] TD-108 - **A photo of the delivered tree:** one picture of the lit tree in its hill into pytree's `docs/img/` –
       it replaces the render on `docs/projects/pytree.md`. *(edakit-ce)*
 
@@ -69,6 +66,9 @@ Nothing to do until there is an answer or a release; whichever session learns of
 
 ## Closed todos
 
+- [x] TD-82 - **pytree's pictures:** picked by the owner on 2026-11-02 – the board from the ordered release
+      20261101-225744, the tree in its hill (a photo replaces it, TD-108), the copper review's before/after; the gift's
+      words stand before Christmas (#257). [2026-11-02]
 Done or dropped, newest first, each with its date and the commit that closed it. What closed before 2026-11-01 is
 taken from the history of this file; an item rewritten on its way is listed once, in its last form.
 
