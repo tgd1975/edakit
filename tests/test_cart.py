@@ -306,11 +306,12 @@ def actual_of(j, change=None):
                     "count": fees["smt joints"]["count"]},
                    {"label": "Components", "amount": round(e["parts_total"], 2), "kind": "parts"}],
          "order": [{"label": "Shipping", "amount": 20.48, "kind": "shipping"},
+                   {"label": "Discount", "amount": -9.0, "kind": "coupon"},      # the page prints -$9.00
                    {"label": "Total", "amount": 40.0, "kind": "total"}]}
     if change:
         change(a)
-    page = "\n".join([a["order_number"], *(f"{x['label']} ${x['amount']:.2f}" + (f" ({x['count']} joints)"
-                                                                                 if x.get("count") else "")
+    page = "\n".join([a["order_number"], *(f"{x['label']} {'-' if x['amount'] < 0 else ''}${abs(x['amount']):.2f}"
+                                           + (f" ({x['count']} joints)" if x.get("count") else "")
                                            for x in a["lines"] + a["order"])])
     return a, page
 
@@ -345,6 +346,7 @@ def test_real_cost_into_the_projects_fee_table(prepared, monkeypatch, capsys):
     assert cost.load_fee_table(cfg)["pcba"]["bake"]["value"] == 7.94                 # not on the order: as it was
     md = (order_dir(prepared) / "actual.md").read_text()
     assert "| Line | Estimate | Quote | Actual | Actual − estimate |" in md and "| shipping |" in md
+    assert "| coupon | – | 9.00 |" in md                                       # read from -$9.00 on the page
     assert cli.main(["release", "current", "--config", str(cfg.root / "edakit.toml")]) == 0
     assert "  order Y8-1234567A at jlcpcb, board main: estimate " in capsys.readouterr().out
 

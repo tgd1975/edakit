@@ -833,9 +833,10 @@ def page_text(path):
 
 
 def b4_actual(actual, page):
-    """ORDER.read on the real cost: the order number, every amount and every count of actual.json in the page text."""
-    values = [actual.get("order_number"), *(amount_text(x["amount"]) for x in [*actual.get("lines", []),
-                                                                                *actual.get("order", [])]
+    """ORDER.read on the real cost: the order number, every amount and every count of actual.json in the page text – an
+    amount by its figure (a coupon's -10.00 on a page that prints -$10.00)."""
+    values = [actual.get("order_number"), *(amount_text(abs(float(x["amount"]))) for x in [*actual.get("lines", []),
+                                                                                            *actual.get("order", [])]
                                             if x.get("amount") is not None),
               *(x["count"] for x in actual.get("lines", []) if x.get("count") is not None)]
     values = [v for v in values if v not in (None, "")]
