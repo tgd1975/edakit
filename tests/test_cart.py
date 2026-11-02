@@ -310,7 +310,7 @@ def actual_of(j, change=None):
                    {"label": "Total", "amount": 40.0, "kind": "total"}]}
     if change:
         change(a)
-    page = "\n".join([a["order_number"], *(f"{x['label']} {'-' if x['amount'] < 0 else ''}${abs(x['amount']):.2f}"
+    page = "\n".join([a["order_number"] or "", *(f"{x['label']} {'-' if x['amount'] < 0 else ''}${abs(x['amount']):.2f}"
                                            + (f" ({x['count']} joints)" if x.get("count") else "")
                                            for x in a["lines"] + a["order"])])
     return a, page
