@@ -188,8 +188,8 @@ def test_order_writes_no_bom_for_it_and_keeps_its_parts(project, monkeypatch, ca
     usb_board(project)
     assert cli_run(project, monkeypatch, "order") == 0
     out = project.root / "build" / "edakit" / "order"
-    assert sorted(f.name for f in out.iterdir()) == ["bom_main.csv", "cart_berrybase.csv", "cart_lcsc.csv",
-                                                     "hand_assembly.md"]
+    assert sorted(f.name for f in out.iterdir()) == ["basket.json", "bom_main.csv", "cart_berrybase.csv",
+                                                     "cart_lcsc.csv", "hand_assembly.md"]
     assert "SOL-333011,5,333011,J9" in (out / "cart_berrybase.csv").read_text()
     assert "C27834,10," in (out / "cart_lcsc.csv").read_text()
     hand = (out / "hand_assembly.md").read_text()

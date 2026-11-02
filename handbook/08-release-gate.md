@@ -592,6 +592,32 @@ boards. Each other project's hand-assembly list is written beside as `hand_assem
 rounds every line up to its own minimum and pack size on the upload; `moq` and `step` in `order` give them to edakit
 where the cost estimate should know them.
 
+`edakit order` also writes `basket.json`: every cart's lines with their need – what the parts cart is held to.
+
+**The LCSC cart.** The skill cart fills it too (`/edakit:cart parts`), from `cart_lcsc.csv` and the supplier's profile
+`edakit/suppliers/lcsc.toml` – the BOM tool `https://www.lcsc.com/bom`, its upload, its cart button, the buttons never
+to touch. It reads the cart first and keeps the lines already there apart (`before`): they are yours, never changed or
+deleted. It uploads the basket, reads every line back – code, quantity after LCSC's rounding, stock, price, mark – and
+the parcel's weight into `<out>/lcsc/cart.json`, the page text into `cart_page.txt`, puts the lines into the cart and
+stops before the checkout. `edakit order check` holds that to `basket.json` (ORDER.basket): every line there, as many
+pieces or more – more is LCSC's rounding, named –, none short of stock or marked, no line that is neither the basket's
+nor there before, every value in the page text. Exit 0 passed, 2 a finding – nothing more goes into the cart, 1 a
+file missing. The profile is provisional until a parts order records its labels.
+
+**The combined shipment.** LCSC ships a JLCPCB order with its own when the JLCPCB order goes to LCSC's warehouse in
+Hong Kong – an address entered at JLCPCB's checkout and unchangeable afterwards – and the LCSC checkout ticks it to
+combine (`[combine]` of the profile: the address and the conditions as LCSC's help page gives them, with the date it
+was read). When the job is for JLCPCB and the basket has LCSC lines, `edakit cart prepare` puts the step into the job:
+the address, the conditions, the weight above which only express is left. Whether to combine is yours, before
+JLCPCB's checkout and before LCSC shows the combined prices: `edakit order check` adds the weights the skill read –
+JLCPCB's on Quote & Order (`weight_g` in `quote.json`), LCSC's cart – and the routes to compare. The first combined
+order (2026-11-02) cost 74.94 USD for shipping against 48.94 for the two cheapest separate routes: it buys speed and
+one parcel, not a lower price; at 2.8 kg LCSC offered express only. On your choice the skill enters the warehouse's
+address at JLCPCB's checkout and reads it back – the one field of a checkout it sets: no payment method, no coupon, no
+button that orders or pays. After you paid, it checks that the order page shows the warehouse, ticks the JLCPCB order
+at LCSC's checkout and reads LCSC's recalculated methods into `shipping.json`; `edakit order check` lists them by price
+and names the cheapest that arrives by `[cart] needed_by` (10.1) – it stops before LCSC's order button.
+
 ### The order form as data
 
 Every question a maker's form asks has an answer in the project – a key of `[order]` with edakit's default (10.2) – and
@@ -831,6 +857,7 @@ The codes of the order at the maker, generated from the catalog (`edakit/catalog
 | [`ORDER.finish`](../docs/catalog/order.html#ORDER.finish) | lead in the finish | error; replaces B-6 |
 | [`ORDER.review`](../docs/catalog/order.html#ORDER.review) | regulatory review of this order | error, open: pending; replaces B-7 |
 | [`ORDER.confirm`](../docs/catalog/order.html#ORDER.confirm) | the maker's confirmations as released and as the sheet | error |
+| [`ORDER.basket`](../docs/catalog/order.html#ORDER.basket) | the supplier's cart = the basket | error |
 
 Rule, why, fix and sources of each: `edakit explain CODE`, or the code on its page of the catalog.
 <!-- edakit:end -->

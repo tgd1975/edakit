@@ -108,7 +108,7 @@ Each engine decides one kind of relation – on the graph, the parts, the simula
 | GEO | copper, holes, print, widths and distances on plan and Gerber files |
 | FILES | manufacturing files and sheets complete and consistent |
 | PARTS | parts entries complete, well-formed, verified, orderable |
-| ORDER | the order at the maker is the release: form, parts, quote, read, files, finish, review, confirm |
+| ORDER | the order at the maker is the release: form, parts, quote, read, files, finish, review, confirm; the supplier's cart is the basket |
 | DOCS | documents and requirements quote the design |
 | HINT | patterns that need judgement, as notes |
 <!-- edakit:end -->

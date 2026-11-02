@@ -21,6 +21,7 @@
     edakit stock [--refresh]         what JLCPCB says about the assembled parts, as a dated snapshot (check PARTS.stock)
     edakit cost [--json F]           the order for `quantity` boards from BOM, board and the dated fee table
     edakit order [--out DIR]         the assembler's BOM, a cart per other supplier, the hand-assembly list (PARTS.supplier)
+    edakit order check               the supplier's cart as the skill cart read it back, against the basket (ORDER.basket)
     edakit cart fields|prepare|check|confirm|actual   the order at the maker: its form from [order], the job of the skill
                                      cart, ORDER.form to ORDER.review on what it brought back, the maker's confirmations
                                      after the order (M-2 on --sign), the real cost (never orders, never pays)
@@ -191,8 +192,11 @@ def build_parser():
     p.add_argument("--json", help="also write the estimate as JSON to this file")
     _common(p)
 
-    p = sub.add_parser("order", help="assembler's BOM, one cart per other supplier, hand-assembly list for all sets")
+    p = sub.add_parser("order", help="assembler's BOM, one cart per other supplier, hand-assembly list for all sets; "
+                                     "check: the supplier's cart as the skill cart read it back (ORDER.basket)")
+    p.add_argument("action", nargs="?", choices=["check"], help="check the supplier's cart against basket.json")
     p.add_argument("--out", help="folder for the files (default: <artifacts>/order)")
+    p.add_argument("--supplier", help="check: the supplier whose cart is checked (default: lcsc)")
     p.add_argument("--with", dest="with_", action="append", metavar="CONFIG",
                    help="another project's edakit.toml whose carts go into the same files (several times)")
     _common(p)
