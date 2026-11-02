@@ -36,9 +36,6 @@ to touch.
 - [ ] TD-82 - **pytree's pictures:** pick what of the private repository may go onto `docs/projects/pytree.md` – the
       page is text only, from its README and chapter 13; say too whether that much about the gift may stand before
       Christmas. *(edakit, documentation session)*
-- [ ] TD-57 - **The real cost of the first order:** once an order the skill cart put into a maker's cart is paid,
-      `/edakit:cart actual` on its order page or saved invoice – `edakit cart actual` (handbook 8.4, step 5) has run
-      on recorded data only; the real cost, the project's fee table and the order record come from it. *(edakit-80)*
 
 ## What edakit needs from EasyEDA Pro and easyeda-mcp-pro ([upstream/README.md](upstream/README.md))
 
@@ -84,6 +81,11 @@ Built on 2026-11-01 (#174, edakit 0.4.14); what is left after the owner's review
 Done or dropped, newest first, each with its date and the commit that closed it. What closed before 2026-11-01 is
 taken from the history of this file; an item rewritten on its way is listed once, in its last form.
 
+- [x] TD-57 - **The real cost of the first order:** done on pytree's paid order of 2026-11-02 – the order page read
+      into `actual.json`, `edakit cart actual` (branch cart-confirm, #220) wrote `actual.md`, the project's fee table
+      `hardware/fees/jlcpcb.json` (setup, stencil, the PCB price for 100 × 170 mm) and the order record; a fee whose
+      count the page lacks is named, not written. Two fixes on the way: an amount printed -$10.00, an order without
+      a number. *(edakit-80)* [2026-11-02]
 - [x] TD-95 - **OK for #215:** given; merged without a version (#215, 1d177e1). *(edakit-96)* [2026-11-02]
 - [x] TD-94 - **N.1 + N.3** The site's navigation as tabs by reader with "Inside edakit", the start page's first screen,
       How it works without "The words", the glossary's ten words first, the budgets in style.md and test_style.py; the
