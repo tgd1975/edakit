@@ -22,3 +22,5 @@ patch
   engine DEF: DEF.derive, a warning when a part's value lies outside its record's window or the record's inputs
   changed since (grade inputs). Handbook chapter 19 begins.
 - T.9: a TextMate grammar for `.circuit` files and VS Code's language configuration (`editors/vscode/`).
+- T.10: handbook chapter 19, the circuit language: its forms, words and quantities, statements, definitions,
+  derivations, the compiler, the hash and the commands; 3.1, 2.7 and 10 name the `.circuit` form.

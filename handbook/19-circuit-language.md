@@ -1,12 +1,122 @@
 # 19 The circuit language
 
 For you if a circuit repeats itself, comes in variants, or has values that follow from a rule – an LED's series
-resistor, a divider, a pull-up. After this chapter you can derive a block's values with `edakit block add --set` and
-read what edakit holds a derived value to. The notation is
+resistor, a divider, a pull-up. After this chapter you can write a project's graph as `.circuit` source, compile and
+check it, format it, move a JSON or TOML project to it, and derive a block's values. The notation in full is
 [circuit-dsl-language.md](../docs/concepts/new/circuit-dsl-language.md); this chapter grows with the steps of
 [circuit-dsl-toolchain.md](../docs/concepts/new/circuit-dsl-toolchain.md).
 
-## 19.1 Derivations
+## 19.1 One graph, three forms
+
+A project writes its circuit in one of three forms, named by `[project] graph` in edakit.toml: the JSON graph, the
+TOML graph (3.1), or the language – `hardware/graph.circuit`. The compiler turns the language into the resolved graph
+in today's JSON format; the engines, the simulation, the gate, the schematic, the firmware contract and the project's
+scripts read it unchanged. Like the TOML form's, the resolved graph is generated beside the source as
+`hardware/graph.json`, committed, and checked for drift.
+
+The language is declarative and finite: definitions, usages, loops over integer ranges, named derivation rules and
+variants as differences – no conditionals, no free expressions, no file access. A compile is a function from the
+source and the parts entries to the resolved graph; the same input gives the same bytes. Behaviour stays in the parts
+entries, layout in the board files, the checks in the engines: the language composes and decides nothing an engine
+decides. The regulatory review reads the resolved graph's `purpose` as it reads a JSON graph's – support, not legal
+advice (chapter 15).
+
+| File | Role |
+| --- | --- |
+| `hardware/graph.circuit` | the source, named by `[project] graph` |
+| `hardware/graph.json` | the resolved graph, written by `edakit graph json --write`; in no hash |
+| `edakit/blocks/<name>.circuit` | edakit's blocks as definitions; the JSON beside each is generated from it |
+
+Encoding UTF-8, lines ending in LF, no tabs; `edakit graph fmt` writes lines of at most 118 characters.
+
+## 19.2 Words, strings and quantities
+
+A statement starts at the first column with a keyword; lines indented deeper belong to it. `def`, `for` and
+`variant` own their indented lines as a body, one level deeper; every other statement takes them as continuation
+lines. `#` starts a comment, outside quotes. A word is a run of characters without blanks, `"` and `#` – `+5V`,
+`U1.3V3(OUT)`, `LIM.v`, `4k7`; a `(` inside a word extends it to its `)`. A string is `"…"` with `\"` and `\\`; a line
+break inside reads as one space, so a long text runs over continuation lines.
+
+A pin word is `DES.WORD`: the part's designator, a dot, and the pin's number, name or role, read as the Design reads
+every pin word (3.1, a pin by number, name or role). A word that names no pin is a compile error with the candidates
+– stricter than the TOML form, which leaves it to STRUCT.pin. A pin whose name holds `#` (`OE#`) is written by its
+role or number.
+
+| Form | Examples | Meaning |
+| --- | --- | --- |
+| number, multiplier, unit | `330Ω`, `4k7`, `2R2`, `100nF`, `22 µF`, `10 mA`, `16 MHz` | the multiplier may stand for the decimal point |
+| range | `0..5.5 V`, `2 mA .. 15 mA`, `0 V` | both ends in one unit, which may stand on the second only |
+| tolerance | `10 mA ± 20 %`, `3.3 V +/- 5 %` | the range `x·(1−p)` to `x·(1+p)` |
+
+Units: `V A W Ω F H Hz °C s m %`, with `ohm`, `ohms` and `R` for Ω; multipliers `p n u µ m k M G`. A plain number where a
+unit is expected takes that unit; a lone `m` is the metre, `mA` milli. A bare number at one end of a range takes the
+other end's unit but not its multiplier, so `2..15 mA` is refused – write `2 mA..15 mA`.
+
+## 19.3 The statements of a graph
+
+```text
+graph led-bar version 1.0 date 2026-10-25
+description "Example for edakit: a Raspberry Pi Pico 2 drives eight LEDs through a TLC5916"
+purpose private market EU
+  notes "An example board for edakit, built for testing."
+convention v "per net: [min, max] in V over all intended operating states"
+
+part U2 ic TLC5916IDR lcsc C90107 "TLC5916 8-channel constant-current LED driver"
+  nc SDO
+  notes "I_OUT = 15 x 1.26 V / R1 = 9.45 mA per output."
+part R1 resistor 0805W8F2001T5E lcsc C17604 value 2k "R-EXT 2 k (sets the LED current)"
+part J1 connector B2B-PH-K-S(LF)(SN) lcsc C131337 no-bom source reversible "5 V input"
+
+net LED_SDI 0..3.4 V U1.GP3 (locked) U2.SDI fn spi.tx fn_bus LED
+  accept LVL.undefined "Floating until the firmware runs, but harmless: R2 holds OE high."
+net GND 0 V J1.2 U2.GND R1.2
+
+set cables []
+layout fixed SW1 D2 D3
+layout near R1 U2
+```
+
+| Statement | What it writes into the graph |
+| --- | --- |
+| `graph NAME [version V] [date D]` | `name`, `version`, `date` – the first statement of a main file |
+| `description "…"`, `purpose USE [market M] [country C]`, `convention KEY "…"` | the keys of the same name |
+| `ground NAME`, `grounds NAME …`, `accept KEY "reason"`, `lock PINWORD NET` | `ground`, `grounds`, the graph's `accept`, `locks.pins` |
+| `part DES TYPE PARTNO [KEY VALUE …] ["label"]` | a component: `-` for a missing TYPE or PARTNO; continuation lines `nc`, `pins N=NAME`, `alias NAME = WORD`, `accept`, `notes`, `function`, `set KEY JSON` |
+| `net NAME [RANGE] PINWORD [(locked)] … [KEY VALUE …]` | a net; a later `net NAME` adds pins; `(locked)` writes `locks.pins` |
+| `cable NAME FROM TO A=B … [KEY VALUE]` | a cable with its pin pairs by word |
+| `layout fixed\|edge\|near\|loop\|apart\|note …` | the hand-over to the layout |
+| `set KEY JSON` | any key of the graph as JSON; a dotted key reaches one level down |
+
+A part's attributes are the graph's keys (3.1), each read by its kind: `no-bom` for `bom: false`, `off_board` alone
+for true, a key unknown to the attribute table an error that names the nearest one. A part's pin map is written only
+where it differs from its entry's; `alias led1 = PD6` gives a module's pins the project's names, replaced before the
+words are read.
+
+## 19.4 Definitions and the block library
+
+A definition is a block written in the language: its parameters with defaults, its ports with their descriptions,
+its parts, nets and derivations, the codes it was checked against, its optional parts and ports, its notes.
+
+```text
+def led (i = 10 mA)
+  title "LED with series resistor, driven by a signal"
+  port in "the driving signal: a GPIO or a logic output"
+  port gnd "ground"
+  part R1 resistor 0805W8F1500T5E lcsc C17471 value 150 "{as}: LED series resistor"
+  part D1 led KT-0805G lcsc C2297 value green "{as}: LED (green 0805)"
+  net in R1.1
+  net anode @in R1.2 D1.anode
+  net gnd D1.cathode
+  derive R1.value series_resistor(i)
+  covers LIM.v LIM.i LIM.p
+```
+
+`@in` gives a net the range of the net its port joins; `{as}` passes through to `block add`. The 26 blocks of 14.5
+are written so, in `edakit/blocks/<name>.circuit`, and the JSON `block add` reads is generated from them – `python -m
+edakit.lang.blocks --write`, held to the sources by a test. A definition's errors are compile errors: a port that is
+none of its nets, a part or net twice, a derivation whose target it does not have.
+
+## 19.5 Derivations
 
 A derivation is a rule of edakit's that derives a part's value from the parameters, the ranges of the nets it is
 bound to and the entries of the parts: the series resistor of an LED from its current, a divider from its output
@@ -49,3 +159,40 @@ The rules, generated from their table (`edakit/lang/rules.py`), each choosing fr
 | `pullup` | `v` (the supply: a port's upper bound or a quantity), `i_sink` (the sink current – the I2C table's), `v_ol` (the low level – the I2C table's), `c_bus` (optional), `t_rise` (optional) | value: R_min = (v − v_ol) / i_sink; R_max = t_rise / (0.8473 · c_bus), else the table's r_max_ohm; the value nearest √(R_min · R_max) | E24; [R_min, R_max] |
 | `rc` | `f_c` (the corner frequency), `c` (optional), `r` (optional) | value: R = 1 / (2π f_c C), C = 1 / (2π f_c R) | E24 for a resistor, E6 for a capacitor; one step |
 <!-- edakit:end -->
+
+## 19.6 What the compiler does
+
+`edakit graph json` reads the source and writes the resolved graph; every phase collects all its errors before it
+stops, each as `PATH:LINE: TEXT`. The phases: read the statements; check the names across the project – a
+designator, a definition, a parameter or an instance twice names both places –; apply a variant's chain; put in the
+parameters; expand the loops and the usages; read every pin word through the parts entries and the Design; evaluate
+the derivations; assemble the graph in today's key order. A compile error stops `edakit check`, `sim` and the gate as
+a broken TOML graph does, with file and line.
+
+The compiler reads no simulation config, no board file and no sign-off; it writes no parts entry – a part without
+one whose pins are named by word is an error that names `edakit part add KEY` – and allocates no designator.
+
+## 19.7 The resolved graph and the hash
+
+The resolved graph is the JSON graph of 3.1 in every key, plus `derivations` where the source has derivations. The
+circuit hash takes the compiled data as the TOML form takes a TOML graph's – arranged, `[release] hash_ignore`
+applied, `purpose` whole –, so a comment, a blank line or a statement moved changes nothing, a changed pin or value
+does. `graph_sha256` names the source's bytes. The generated `graph.json` is in no hash.
+
+`edakit graph json --check` exits 2 and lists what differs when the committed file is not what the source compiles
+to; `edakit hook` runs it before each commit (2.7). `edakit check` reports the same as SYNC.graph, an error of stage
+G, for a TOML graph as for a language one; a generated file not written yet is the hook's to report.
+
+## 19.8 Commands and the editor
+
+| Command | What it does |
+| --- | --- |
+| `edakit graph json [--write\|--check] [--map FILE]` | the resolved graph; written beside the source; drift; the source map – where each part, net, lock and accept was written |
+| `edakit graph fmt [--check] [FILE …]` | the canonical layout, comments kept; `--check` exits 2 at the first line that would change |
+| `edakit graph convert --to circuit [--dry-run]` | a JSON or TOML project moved to `hardware/graph.circuit`: flat statements, read back before anything is written, `[project] graph` and `edakit` set, the circuit sign-offs carried over |
+| `edakit graph derive [--write]` | every derivation record evaluated again |
+| `edakit block add NAME … --set P=V [--part DES=KEY]` | a block's derivations run (19.5) |
+
+A converted project needs the edakit that reads the language: `[project] edakit` names it, and an older plugin says
+so at the session start (STRUCT.edakit). For VS Code, `editors/vscode/` holds a TextMate grammar and the language
+configuration, generated from the reader's keywords (`python -m edakit.lang.grammar --write`).

@@ -46,7 +46,7 @@ board, the schematic or the checks (the earlier one-file form) is refused with a
 | `distributors` | `["lcsc"]` | where the agent part-selector searches, in this order: `lcsc`, `rs`, `farnell`, `mouser`, `digikey`, `reichelt` (4.2) |
 | `lock` | `auto` | EasyEDA claim between Claude sessions: `auto` (when `CLAUDE_CODE_SESSION_ID` is set) or `off` |
 | `agreements` | `true` | the working agreements (11.4), one line each, in the context of every Claude Code session in the project – below |
-| `graph` | `hardware/graph.json` | the hardware graph (3.1): a `.json` file, or a `.toml` file with the same keys – below |
+| `graph` | `hardware/graph.json` | the hardware graph (3.1): a `.json` file, a `.toml` file with the same keys – below –, or a `.circuit` file of the circuit language (chapter 19) |
 | `parts` | `hardware/parts` | parts database, one JSON per part (LCSC number or manufacturer part number) |
 | `sim` | `hardware/sim.json` | simulation config (chapter 5) |
 | `sim_plugin` | – | optional Python file with `MODELS` and `checks` (5.1) |
@@ -62,7 +62,7 @@ board, the schematic or the checks (the earlier one-file form) is refused with a
 | `stock_max_age_days` | `14` | an older snapshot (or snapshot row) is pending in PARTS.stock – it blocks the release, not `edakit check` |
 | `spare_pct` | `0` | `edakit order`: spares on every cart line, in % of `quantity` sets (rounded up) |
 | `toolchain` | `easyeda` | the EDA tool the boards are drawn in: `easyeda` (EasyEDA Pro through the bridge) or `kicad` (KiCad 10, chapter 16) – below |
-| `edakit` | – | the edakit the project needs: comparisons such as `">=0.4"` or `">=0.4, <0.5"` (`>=`, `>`, `<=`, `<`, `==`), another form is an error; a running edakit that does not meet it is the note STRUCT.edakit of `edakit check`, and the SessionStart hook says so (2.3) |
+| `edakit` | – | the edakit the project needs: comparisons such as `">=0.4"` or `">=0.4, <0.5"` (`>=`, `>`, `<=`, `<`, `==`), another form is an error; a running edakit that does not meet it is the note STRUCT.edakit of `edakit check`, and the SessionStart hook says so (2.3); `edakit graph convert --to circuit` sets it to the version that reads the language |
 
 - `agreements` – the plugin hook adds them at session start; `false` turns them off, not the lines of the project's
   scripts and agents the hook adds after them (11.4).
@@ -1348,7 +1348,9 @@ edakit.toml                 the table of contents: project, boards, where the fi
 hardware/requirements.toml  what the circuit must do: needs and requirements, if [project] requirements names it
 hardware/graph.toml         the hardware graph (only source of parts and connections), ground net, check settings;
                             hardware/graph.json in a project that has not converted
-hardware/graph.json         beside a TOML graph: the resolved graph, generated (edakit graph json --write), never edited
+hardware/graph.circuit      the graph in the circuit language, where [project] graph names it (chapter 19)
+hardware/graph.json         beside a TOML or .circuit graph: the resolved graph, generated (edakit graph json --write),
+                            never edited
 hardware/parts/*.json       parts database; an own footprint as data in its entry (footprint_data, 4.5)
 hardware/datasheet/<name>.* the board as a part for other projects: parts entry and datasheet (edakit part datasheet)
 hardware/sim.json           simulation scenarios
