@@ -37,7 +37,7 @@ to touch.
       `docs/concepts/new/documentation-newcomer.md` and closes TD-98 – the Bash sandbox cannot start on this machine
       (Ubuntu's `kernel.apparmor_restrict_unprivileged_userns`). *(edakit-c1)*
 - [ ] TD-99 - **Decide on parts on hand (PartsLedger):** a decision round in Claude Code's form on
-      `docs/concepts/new/parts-on-hand.md` – six decisions, recommendations first: the maker's bin as a source of
+      `docs/concepts/new/parts-on-hand.md` – seven decisions, recommendations first: the maker's bin as a source of
       hand-soldered parts, only the rest ordered, the way back into the bin, PartsLedger's name; nothing is built
       before. *(edakit-96)*
 - [ ] TD-82 - **pytree's pictures:** pick what of the private repository may go onto `docs/projects/pytree.md` – the
