@@ -29,10 +29,6 @@ to touch.
 
 ## For the owner
 
-- [ ] TD-100 - **OK for #222:** the steps (N.2), the handbook declared complete (N.4), the eval case first-circuit
-      (N.5) – merged with `python3 .github/merge.py 222` as a patch version. *(edakit-c1)*
-- [ ] TD-101 - **`sudo apt install socat`** – the sandbox of Bash in `claude plugin eval` needs it, so that the eval
-      first-circuit (N.5) can run on this machine; a cloud run does without it. *(edakit-c1)*
 - [ ] TD-99 - **Decide on parts on hand (PartsLedger):** a decision round in Claude Code's form on
       `docs/concepts/new/parts-on-hand.md` – six decisions, recommendations first: the maker's bin as a source of
       hand-soldered parts, only the rest ordered, the way back into the bin, PartsLedger's name; nothing is built
@@ -73,20 +69,23 @@ Built on 2026-11-01 (#174, edakit 0.4.14); what is left after the owner's review
 
 ## The documentation for a newcomer ([documentation-newcomer.md](docs/concepts/new/documentation-newcomer.md))
 
-- [ ] TD-96 - **N.2** The steps: `docs/steps/` with its index and ten pages, the tabs "A circuit" and "A board",
-      `tests/test_steps_pages.py`, the style guide's section and its counts – built in #222, merged after TD-100.
-      *(edakit-c1)*
-- [ ] TD-97 - **N.4** The handbook declared complete: the line on its index, "The short way" in each chapter's first
-      paragraph – built in #222, merged after TD-100. *(edakit-c1)*
 - [ ] TD-98 - **N.5** The newcomer's test: the eval case `evals/first-circuit` (built in #222) run once – a one-line
       idea to a checked graph with the site alone –, its result and the pages it opened into the concept's status
-      line; waits for TD-100 and TD-101. *(edakit-c1)*
+      line; the first run is under way. *(edakit-c1)*
 
 ## Closed todos
 
 Done or dropped, newest first, each with its date and the commit that closed it. What closed before 2026-11-01 is
 taken from the history of this file; an item rewritten on its way is listed once, in its last form.
 
+- [x] TD-101 - **`sudo apt install socat`:** done; the eval first-circuit runs on this machine. *(edakit-c1)*
+      [2026-11-02]
+- [x] TD-100 - **OK for #222:** given; merged as edakit 1.0.1 (#222). *(edakit-c1)* [2026-11-02]
+- [x] TD-97 - **N.4** The handbook declared complete: its index's first line, "The short way" in each chapter's first
+      paragraph (#222, edakit 1.0.1). *(edakit-c1)* [2026-11-02]
+- [x] TD-96 - **N.2** The steps: `docs/steps/` with its index and ten pages in the tabs "A circuit" and "A board",
+      `tests/test_steps_pages.py`, the style guide's section and its counts (#222, edakit 1.0.1). *(edakit-c1)*
+      [2026-11-02]
 - [x] TD-57 - **The real cost of the first order:** done on pytree's paid order of 2026-11-02 – the order page read
       into `actual.json`, `edakit cart actual` (branch cart-confirm, #220) wrote `actual.md`, the project's fee table
       `hardware/fees/jlcpcb.json` (setup, stencil, the PCB price for 100 × 170 mm) and the order record; a fee whose
