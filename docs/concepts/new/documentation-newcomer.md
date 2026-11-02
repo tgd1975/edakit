@@ -5,14 +5,19 @@ form (the table at the end): six as recommended, the newcomer's test as the eval
 had set itself – the budgets, the shape of a steps page, the ten pages, the tabs, the order of the steps – confirmed.
 N.1 and N.3 built the same day on the owner's word (#215); N.2, N.4 and N.5's eval case built the same day on the
 owner's word (#222, edakit 1.0.1); the eval's run waits for a cloud session – on this machine the Bash sandbox cannot
-start (Ubuntu restricts user namespaces), and a first try stopped after two pages without a shell. A cloud run as the
-user `eval` on 2026-11-02 (TD-102) scored 0.83 (Sonnet, 1.18 USD, 94 turns): `DONE: 5 components, 5 nets, 5 parts
-entries; 2 note, 5 accepted; requirements: 2 needs, 2 requirements`; checked-graph, names-pages, ran-check and two-leds
-passed, few-pages failed with eleven pages – `site/README.md`, `docs/quickstart.md`, `docs/steps/README.md`, the seven
-steps `01` to `07`, `handbook/03-hardware-graph.md`; besides them it read the plugin's `skills/`, `examples/`,
-`edakit/parts/` and `edakit/sim/netlist.py` (TD-103). It does not count yet: Bash could write neither the workspace nor
-its own temporary directory ("Read-only file system") as `eval` either, so the graph came through the Write tool and
-`edakit schematic draw` failed. Asked for by the
+start (Ubuntu restricts user namespaces), and a first try stopped after two pages without a shell. Two cloud runs on
+2026-11-02 did not count (TD-102): as root 0.33, as the user `eval` 0.83 – in both Bash could not write the workspace,
+which the harness keeps under `TMPDIR` while denying writes to `/tmp`. The run that counts, the same day with
+`TMPDIR=/srv/evaltmp` and the case as fixed for TD-103 (`d3485c3`): 0.875 (Sonnet, 0.88 USD, 32 turns) – `DONE: 6
+components, 5 nets, 5 parts entries; 3 note, 6 accepted; requirements: 1 need, 1 requirement`; a graph of its own, the
+clean check, the DONE line, `edakit check` run, two LEDs and no read of edakit's code passed; `few-pages` failed:
+thirteen pages opened (twelve counted; `handbook/02-setup.md` read from an offset after a Grep) – `site/README.md`,
+`docs/quickstart.md`, `docs/steps/README.md`, the steps `01` to `04`, and the handbook's chapters 14, 3, 2, 4, 10 and
+5. Its `MISSING:` line: no page shows a minimal `edakit.toml` for a hand-wired circuit; the parts library has no 9 V
+battery and no switch, and no page says to write the entries by hand; how a switch opens in `sim.json` and how to
+model a 9 V cell are only implied; how to accept PATH.reverse for a keyed connector is not described; where `edakit`
+lives when the plugin is not active is not said. It wrote every file by hand from the handbook and ran no skill,
+taking the prompt's bar on edakit's code for one on the skills too. Asked for by the
 owner the day after the documentation concept was built ("I am still not happy with the documentation; it is more
 compact after the revision, but when somebody new looks at it, they run away – think about what we could do so that it
 is not so overwhelming, and write a concept"). Written against main at `37a0745`, with
