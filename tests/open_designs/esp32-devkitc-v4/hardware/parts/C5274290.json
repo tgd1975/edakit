@@ -28,11 +28,12 @@
   "checked": [
    "working voltage",
    "breakdown voltage",
-   "leakage"
+   "leakage",
+   "bidirectional (symbol p. 1, I–V curve p. 2 symmetric)"
   ],
   "open": [
    "vr_max_v is the working peak reverse voltage VRWM; breakdown starts at 5.6 V min",
-   "the datasheet does not say whether it is uni- or bidirectional; the footprint is marked BI – modelled as a diode with its cathode on the line"
+   "bidirectional (values.tvs, symbol p. 1, I–V curve p. 2): the SPICE model is one junction with its cathode on the line – right for lines from 0 V up, wrong for negative ones"
   ]
  },
  "package": "SOD-523",
@@ -42,7 +43,7 @@
  "values": {
   "ir_a": 1e-06,
   "ir_at_v": 5.0,
-  "tvs": true
+  "tvs": "bidirectional"
  },
  "limits": {
   "vr_max_v": 5.0,
