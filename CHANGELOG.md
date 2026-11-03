@@ -8,6 +8,10 @@ written once, by `.github/merge.py`, from the fragments in [changes/](changes/RE
 update edakit@edakit`, then `/reload-plugins` or a new session; `edakit version` names the version that runs and what an
 update brings.
 
+## 1.1.9 – 2026-11-03
+
+- The handbook (16.1, 17.11) and step 9 no longer name *Design → Import Changes* as a click that always comes: since E-2 edakit writes the Channel ID itself, and the click is asked for only if EasyEDA's DRC still waits for the import.
+
 ## 1.1.8 – 2026-11-03
 
 - Handbook 5.5 links the test layers of chapter 19; Working on edakit and Adding a rule point to chapter 19 instead of restating the test layers and the evals.
