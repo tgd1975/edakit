@@ -15,8 +15,9 @@ extreme of its nets' ranges, a second wire of one net between two boards stopped
 that run through cables were never judged by REQ.value/switch. The Adafruit Micro-Lipo added two: a charger's status
 LEDs behind their resistors were taken for a floating net, and a PROG resistor behind a solder jumper – a second charge
 current – was counted neither by LIM.i/charge nor by the charger model. The Fuzz Face added one: a base held by a
-resistor to a supply that comes in at a connector, which no pin types, was taken as floating. Parts here are test
-entries, not datasheets."""
+resistor to a supply that comes in at a connector, which no pin types, was taken as floating. The WLED controller
+(ADLSC) added one: the gate of the reverse-polarity N-MOSFET in the ground return, tied straight to the net the supply
+comes in on, was taken as floating – the same rails now serve both. Parts here are test entries, not datasheets."""
 
 import json
 import shutil
@@ -509,6 +510,64 @@ def test_several_wires_of_one_net_between_two_boards():
         out = simulate(p)
         assert not [c for c in out["checks"] if c["id"] == "SIM.converge" and c["result"] == "fail"]   # before: failed
         assert all(s.get("status") != "error" for s in out["scenarios"])
+
+
+# --- the WLED controller (ADLSC): a low-side reverse-polarity MOSFET --------------------------------------------------
+NMOS = {"lcsc": "C9000514", "mpn": "test N-MOSFET", "kind": "nmos", "verified": {"by": "test"},
+        "pins": {"1": {"name": "G", "type": "passive", "role": "gate"},
+                 "2": {"name": "D", "type": "passive", "role": "drain"},
+                 "3": {"name": "S", "type": "passive", "role": "source"}},
+        "limits": {"vds_max_v": 60, "vgs_max_v": 20}}
+TERMINAL = {"lcsc": "C9000515", "mpn": "test terminal", "kind": "connector", "verified": {"by": "test"},
+            "pins": {"1": {"name": "1", "type": "passive", "role": "pin1"},
+                     "2": {"name": "2", "type": "passive", "role": "pin2"}}}
+
+
+def low_side(gate_net, reversible=True):
+    """ADLSC's input: the terminal J1 brings 5 V on VIN (pin 2) and its return on VRTN (pin 1); Q1 sits in the ground
+    return – drain on VRTN, source on GND – with its gate on `gate_net`; C1 from VIN to GND – no resistor, no supply pin
+    holds VIN. With `gate_net` "CTRL", R2 joins the gate to a net only an MCU pin drives (U1's GPIO, an input until the
+    firmware runs)."""
+    res = {"lcsc": "C9000510", "mpn": "test resistor", "kind": "resistor",
+           "pins": {"1": {"name": "1", "type": "passive"}, "2": {"name": "2", "type": "passive"}},
+           "values": {"value_ohm": 10000}}
+    mcu = {"lcsc": "C9000511", "mpn": "test MCU", "kind": "ic", "needs": {"decoupling": False},
+           "pins": {"1": {"name": "GP0", "type": "bidirectional"}, "2": {"name": "GND", "type": "ground"}}}
+    j1 = {"designator": "J1", "type": "connector", "lcsc": "C9000515", "pins": {"1": "1", "2": "2"}}
+    if reversible:
+        j1["source"] = "reversible"
+    cap = {"lcsc": "C9000512", "mpn": "test capacitor", "kind": "capacitor",
+           "pins": {"1": {"name": "1", "type": "passive"}, "2": {"name": "2", "type": "passive"}},
+           "values": {"value_f": 1e-7}}
+    comps = [j1, {"designator": "Q1", "type": "transistor", "lcsc": "C9000514", "pins": {"1": "G", "2": "D", "3": "S"}},
+             {"designator": "C1", "type": "capacitor", "lcsc": "C9000512", "pins": {"1": "1", "2": "2"}}]
+    nets = {"VIN": ["J1.2", "C1.1"], "VRTN": ["J1.1", "Q1.2"], "GND": ["Q1.3", "C1.2"]}
+    nets.setdefault(gate_net, []).append("Q1.1")
+    if gate_net == "CTRL":
+        comps += [{"designator": "U1", "type": "ic", "lcsc": "C9000511", "pins": {"1": "GP0", "2": "GND"}},
+                  {"designator": "R2", "type": "resistor", "lcsc": "C9000510", "pins": {"1": "1", "2": "2"}}]
+        nets["CTRL"].append("R2.1")
+        nets["GPIO"] = ["R2.2", "U1.1"]
+        nets["GND"].append("U1.2")
+    graph = {"name": "t", "version": "1", "ground": "GND", "components": comps,
+             "nets": [{"name": n, "pins": p, "v": [-0.2, 5.25]} for n, p in nets.items()]}
+    return Design.from_data(graph, {"C9000514": NMOS, "C9000515": TERMINAL, "C9000510": res, "C9000511": mcu,
+                                    "C9000512": cap})
+
+
+def test_a_gate_on_the_net_the_supply_comes_in_on_is_defined():
+    """ADLSC's Q1 (AOD442): the reverse-polarity N-MOSFET in the ground return has its gate straight on +5V_IN – the
+    terminal's plus, on which no part has a supply pin. Before: LVL.undefined, '+5V_IN' was no rail. A net the board's
+    supply comes in on – a reversible source's pins, a simulation source's plus (paths.inputs) – defines the gate. A
+    gate only an MCU pin drives through its resistor stays undefined."""
+    from edakit.engines.levels import control_pins
+    undefined = "Q1: no resistor from the gate to its source or a rail – the MOSFET is undefined while the firmware is " \
+                "not running"
+    assert [f.text for f in control_pins(low_side("VIN"))] == []           # before: found
+    sim = {"sources": {"J1": {"plus": "2", "minus": "1"}}}
+    assert [f.text for f in control_pins(low_side("VIN", reversible=False), sim)] == []
+    assert [f.text for f in control_pins(low_side("VIN", reversible=False))] == [undefined]   # nothing says VIN is one
+    assert [f.text for f in control_pins(low_side("CTRL"), sim)] == [undefined]
 
 
 @pytest.mark.skipif(not shutil.which("ngspice"), reason="ngspice not installed")

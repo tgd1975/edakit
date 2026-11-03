@@ -15,6 +15,7 @@ from functools import lru_cache
 from ..catalog import HERE
 from ..circuit import resistor_like, resistors_to, supply_nets
 from ..findings import Finding
+from .paths import inputs
 
 
 @lru_cache(maxsize=1)
@@ -49,21 +50,16 @@ def must_not_float(info):
 
 def run(ctx):
     d = ctx.joined
-    return (undefined_inputs(d) + control_pins(d, fed_nets(d, ctx.sim)) + contention(d) + straps(d) + open_inputs(d)
+    return (undefined_inputs(d) + control_pins(d, ctx.sim) + contention(d) + straps(d) + open_inputs(d)
             + released_nets(d) + analog_nodes(d))
 
 
 def fed_nets(d, sim):
-    """The nets the simulation's sources feed – sim.json sources, the plus pin and each rail of `outputs`: a supply
-    brought in at a connector is a rail although no pin types it (a pedal's effect board fed from another board has
-    no IC on it). Ground is not fed."""
-    out = set()
-    for des, src in ((sim or {}).get("sources") or {}).items():
-        if des not in d.comps or not isinstance(src, dict):
-            continue
-        rails = [src.get("plus")] + [o.get("plus") for o in (src.get("outputs") or {}).values() if isinstance(o, dict)]
-        out |= {d.pin_net.get(f"{des}.{p}") for p in rails if p is not None}
-    return out - {None, d.ground}
+    """The nets the board's supply comes in on although no pin types them a supply (paths.inputs): every pin of a
+    reversible source, the plus of a sim.json source and each rail of its `outputs` – a pedal's effect board fed from
+    another board has no IC on it, and a reverse-polarity MOSFET in the ground return has its gate on the input net.
+    Ground is not fed."""
+    return inputs(d, sim) - {None, d.ground}
 
 
 def held_nets(d, fed=frozenset()):
@@ -109,13 +105,15 @@ def undefined_inputs(d):
     return out
 
 
-def control_pins(d, fed=frozenset()):
+def control_pins(d, sim=None):
     """LVL.undefined: a transistor whose control pin (base, gate) has no resistor to the roles of [control] – its
-    emitter, its source – or to a rail: a net a pin defines at reset (a push-pull output, a supply), a net a source of
-    the simulation feeds (`fed`), ground, or a net resistors hold to them (held_nets: a bias divider's middle – the base
-    of an analog stage biased by resistors)."""
+    emitter, its source – or to a rail: a net a pin defines at reset (a push-pull output, a supply), a net the board's
+    supply comes in on (fed_nets: a pedal's effect board fed at its connector, the gate of a reverse-polarity MOSFET in
+    the ground return on the input net), ground, or a net resistors hold to them (held_nets: a bias divider's middle –
+    the base of an analog stage biased by resistors)."""
+    fed = fed_nets(d, sim)
     rails = {name for name, net in d.nets.items() if any(defines(d.pin_info(r).get("type")) for r in net["pins"])}
-    held = rails | supply_nets(d) | {d.ground} | set(fed) | held_nets(d, fed)
+    held = rails | supply_nets(d) | {d.ground} | fed | held_nets(d, fed)
     out = []
     for role, c in data()["control"].items():
         for des in d.comps_of_kind(*c["kinds"]):

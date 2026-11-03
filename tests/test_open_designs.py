@@ -10,6 +10,11 @@ published; a finding that appears or goes is a change in edakit to look at, not 
                                    https://github.com/adafruit/Adafruit-MicroLipo-PCB, CC BY-SA 3.0 – an MCP73831
                                    charging a LiPo on a JST PH socket from USB-C, 100 mA by R_PROG and 555 mA with a
                                    solder jumper, two status LEDs on STAT
+  atoomnetmarc-adlsc               atoomnetmarc's ADLSC, a WLED controller, KiCad schematic Kicad/ADLSC.kicad_sch
+                                   (V1.0) at commit 3aecf18 of https://github.com/atoomnetmarc/ADLSC, Apache 2.0 – an
+                                   ESP32-DevKitC (WROVER-E) in sockets, a 74AHCT125 shifting the LED data to 5 V, a
+                                   5 V input with a low-side reverse-polarity MOSFET, polyfuse, supervisor and TVS
+                                   diodes, two LED power outputs switched by P-MOSFETs and fused with 3 A glass fuses
   corne-cherry-left                foostan's Corne keyboard v4, left half (corne-cherry hotswap), KiCad schematic
                                    pcbs/common/left.kicad_sch at commit 63366fb of https://github.com/foostan/crkbd,
                                    CC BY 4.0 – an RP2040 board with USB-C, 23 keys each on its own GPIO (no matrix), a

@@ -1,0 +1,57 @@
+{
+ "lcsc": "C17408",
+ "mpn": "0805W8F1000T5E",
+ "manufacturer": "UNI-ROYAL(厚声)",
+ "kind": "resistor",
+ "package": "0805",
+ "footprint": "R0805",
+ "jlc_class": "Basic Part",
+ "datasheet": {
+  "url": "https://datasheet.lcsc.com/datasheet/pdf/0a975aaa49b7c97f38a963127be4a823.pdf?productCode=C17408",
+  "pinout_page": null
+ },
+ "pins": {
+  "1": {
+   "name": "1",
+   "type": "passive",
+   "role": "1"
+  },
+  "2": {
+   "name": "2",
+   "type": "passive",
+   "role": "2"
+  }
+ },
+ "values": {
+  "value_ohm": 100.0,
+  "tolerance": 0.01
+ },
+ "limits": {
+  "p_max_w": 0.125,
+  "v_max_v": 150,
+  "t_min_c": -55,
+  "t_max_c": 155
+ },
+ "spice": {},
+ "sources": [
+  "UNI-ROYAL Thick Film Chip Resistors data sheet V.3 (Feb. 12, 2019), LCSC's copy https://datasheet.lcsc.com/datasheet/pdf/0a975aaa49b7c97f38a963127be4a823.pdf?productCode=C17408, read 2026-10-31 (one document for the series – the same file as for C17630; it does not print the order code 0805W8F1000T5E)",
+  "order code (section 2–3, p. 2): 0805 = size, W8 = 1/8 W, F = ±1 %, 1000 = 100 × 10^0 Ω, T = tape and reel, 5 = 5000 pcs, E = lead free",
+  "ratings (section 7, p. 5): 0805 max. working voltage 150 V, max. overload voltage 300 V, operating temperature −55…155 °C; power rated up to 70 °C ambient, derated above (section 9, figure 1)",
+  "mpn, manufacturer, footprint, jlc_class, pin numbers and names: EasyEDA library data of C17408 via edakit part import, read 2026-10-31",
+  "stock: JLCPCB 7 746 178 pcs, Basic Part (edakit stock --lcsc, 2026-10-31)"
+ ],
+ "notes": "100 Ω gate resistor (block nmos-switch). Library draft, sibling of C17630, C17414 and C17471.",
+ "verified": {
+  "by": "Claude (datasheet check, library draft)",
+  "date": "2026-10-31",
+  "datasheet": "UNI-ROYAL Thick Film Chip Resistors V.3 (2019-02-12)",
+  "datasheet_sha256": "11cd644d5d8a34a6d12775afb80bf58d8fc11f0c3b700dbd0f7a59942ceaa5ef",
+  "checked": [
+   "order code 0805W8F1000T5E: W8 = 1/8 W, F = ±1 %, 1000 = 100 Ω (p. 2)",
+   "0805: 150 V max. working voltage, −55…155 °C (p. 5)"
+  ],
+  "open": [
+   "the power derating above 70 °C ambient (figure 1, p. 5) is a curve – p_max_w is the value up to 70 °C"
+  ]
+ }
+}

@@ -1,0 +1,103 @@
+{
+ "lcsc": "C3279959",
+ "mpn": "TSM160P02CS RLG",
+ "manufacturer": "Taiwan Semiconductor(台湾半导体)",
+ "kind": "pmos",
+ "package": "SOP-8",
+ "footprint": "SOIC-8_L4.9-W3.9-P1.27-LS6.0-BL",
+ "jlc_class": "Extended Part",
+ "datasheet": {
+  "url": "https://datasheet.lcsc.com/datasheet/pdf/e5c077315dba1ba5dff78b9db82ed95a.pdf?productCode=C3279959",
+  "pinout_page": 1
+ },
+ "pins": {
+  "1": {
+   "name": "S",
+   "type": "passive",
+   "role": "source"
+  },
+  "2": {
+   "name": "S",
+   "type": "passive",
+   "role": "source"
+  },
+  "3": {
+   "name": "S",
+   "type": "passive",
+   "role": "source"
+  },
+  "4": {
+   "name": "G",
+   "type": "passive",
+   "role": "gate"
+  },
+  "5": {
+   "name": "D",
+   "type": "passive",
+   "role": "drain"
+  },
+  "6": {
+   "name": "D",
+   "type": "passive",
+   "role": "drain"
+  },
+  "7": {
+   "name": "D",
+   "type": "passive",
+   "role": "drain"
+  },
+  "8": {
+   "name": "D",
+   "type": "passive",
+   "role": "drain"
+  }
+ },
+ "values": {
+  "vgs_th_v": [
+   -1.0,
+   -0.5,
+   -0.3
+  ],
+  "rds_on_max_ohm": {
+   "-1.8": 0.028,
+   "-2.5": 0.022,
+   "-4.5": 0.016
+  },
+  "vsd_v_at_1a": 1.0
+ },
+ "limits": {
+  "vds_max_v": 20,
+  "vgs_max_v": 10,
+  "id_max_a": 7,
+  "p_max_w": 2.5,
+  "tj_max_c": 150,
+  "rth_ja_k_per_w": 50
+ },
+ "spice": {
+  "model": ".model TSM160P02 PMOS(LEVEL=1 VTO=-0.5 KP=41.7 RD=0.01 IS=1.7e-12)"
+ },
+ "sources": [
+  "Taiwan Semiconductor TSM160P02CS data sheet, Version B2209 – LCSC product data of C3279959, https://datasheet.lcsc.com/datasheet/pdf/e5c077315dba1ba5dff78b9db82ed95a.pdf?productCode=C3279959, read 2026-11-03 (edakit part fetch): p. 1 product summary, absolute maximum ratings, thermal resistance; p. 2 electrical characteristics, ordering information (TSM160P02CS RLG, SOP-8)",
+  "vds_max_v 20, vgs_max_v ±10: p. 1 absolute maximum ratings",
+  "id_max_a 7: ID at TC = 100 °C (−11 A at TC = 25 °C, −14 A silicon limited) – no rating at an ambient temperature is given, the lower one taken",
+  "p_max_w 2.5: computed from RθJA 50 °C/W and TJ 150 °C at TA 25 °C – the data sheet gives PD 5 W at TC = 25 °C only; rth_ja_k_per_w 50: p. 1 RθJA max (FR-4, still air); tj_max_c 150: p. 1",
+  "vgs_th_v −1.0 / −0.5 / −0.3 V (max / typ / min, VGS = VDS, ID −250 µA); rds_on_max_ohm 16 / 22 / 28 mΩ at VGS −4.5 / −2.5 / −1.8 V: p. 2 static characteristics",
+  "vsd_v_at_1a 1.0: p. 2 VSD max at IS −1 A (no typical value)",
+  "pins 1–3 S, 4 G, 5–8 D: EasyEDA symbol of C3279959 (edakit part import) – the usual SOP-8 single MOSFET",
+  "spice: assumption – level 1 fitted by Claude: VTO = VGS(th) typ, KP and RD so that RDS(on) meets 16 mΩ at −4.5 V and 22 mΩ at −2.5 V (28.5 mΩ at −1.8 V); IS as the library's AO3401A"
+ ],
+ "notes": "P-channel MOSFET: ADLSC's high-side switch of each LED output (Q2 for +5V_LED1, Q4 for +5V_LED2).",
+ "verified": {
+  "by": "Claude (datasheet check, open-design transcription)",
+  "date": "2026-11-03",
+  "datasheet": "Taiwan Semiconductor TSM160P02CS data sheet, Version B2209",
+  "checked": [
+   "p. 1: VDS −20 V, VGS ±10 V, ID −11 / −7 A (TC 25 / 100 °C), RθJA 50 °C/W, TJ −55 … 150 °C",
+   "p. 2: VGS(th) −0.3 / −0.5 / −1.0 V, RDS(on) max 16 / 22 / 28 mΩ, VSD max −1 V"
+  ],
+  "open": [
+   "the pin-out drawing of p. 1 is an image: the pins follow the EasyEDA symbol",
+   "SPICE model is a level-1 fit, not the maker's"
+  ]
+ }
+}
