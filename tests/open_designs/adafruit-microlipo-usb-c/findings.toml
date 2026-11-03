@@ -23,19 +23,6 @@ place = "U1.3"
 judged = "real"
 why = "A pack whose JST plug is wired the other way round puts −4.2 V straight on the charger's VBAT (and C2): nothing on the board blocks it. Adafruit says so itself – 'For use with Adafruit LiPoly/LiIon batteries only! Other batteries may have different voltage, chemistry, polarity or pinout' – and the plug's polarity differs between makers."
 
-[[check]]
-code = "PARTS.supplier"
-place = "SJ1"
-judged = "known gap"
-why = "SJ1 is two pads of the board's copper, bridged with solder – nothing is bought. edakit reads a part outside the BOM (bom false) without an LCSC number as one bought separately and has no way to say 'copper, no part'."
-
-[[check]]
-code = "PARTS.verified"
-grade = "device"
-place = "SJ1"
-judged = "lacks"
-why = "The transcription names no EasyEDA library device for the jumper's two pads (easyeda_device) – a project that orders the board would."
-
 [[sim]]
 code = "LIM.i"
 place = "U1"
@@ -72,6 +59,8 @@ place = "LED2"
 judged = "known gap"
 why = "As LED1: with STAT not driven by the model, the green LED carries the chain's current while the cell charges (up to 1.6 mA, expected dark) and too little with the cell full (0.7 mA, expected on) – on the board STAT high lights it with a few mA through 470 Ω."
 
+[[fixed]]
+what = "SJ1, two pads of the board's copper bridged with solder, asked for a supplier, a REACH statement and an EasyEDA device (PARTS.supplier, PARTS.fact/reach, PARTS.verified/device): the parts entry says own.what \"copper\" now – nothing bought, nothing to state (TD-127)."
 [[fixed]]
 what = "A charger's status LEDs, each behind its series resistor on the tri-state STAT, taken for a floating net (LVL.undefined/open_drain on STAT) – an LED cathode straight on an output counted as its load, one behind a resistor did not."
 [[fixed]]
@@ -158,9 +147,3 @@ place = "C84256"
 judged = "lacks"
 why = "A board that is sold names the SVHCs above 0.1 % (REACH Art. 33); the transcription took no supplier REACH statement for this part."
 
-[[check]]
-code = "PARTS.fact"
-grade = "reach"
-place = "SOLDERJUMPER_ARROW_NOPASTE"
-judged = "known gap"
-why = "SJ1 is the board's copper and the assembler's solder, no part with a supplier: edakit asks a supplier's REACH statement of it, as of every parts entry – as PARTS.supplier on SJ1, it has no way to say 'copper, no part'."

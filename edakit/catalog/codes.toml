@@ -1135,7 +1135,7 @@ sources = [
 
 [codes."PARTS.verified"]
 title = "parts signed"
-rule = "Every parts entry is verified against its datasheet (verified), no component has an open verify note, and every part is an LCSC part or an EasyEDA device."
+rule = "Every parts entry is verified against its datasheet (verified), no component has an open verify note, and every part is an LCSC part or an EasyEDA device – the board's own copper (own.what copper: a solder jumper, a test pad) excepted."
 why = "The parts database feeds every check. A value copied from a distributor's table without a look at the datasheet is an assumption; the sign-off records who checked what against which revision."
 fix = "Check the part (handbook 4.3) and fill in verified; resolve verify notes in the graph."
 severity = "pending"
@@ -1168,7 +1168,7 @@ sources = [
 
 [codes."PARTS.supplier"]
 title = "supplier per part"
-rule = "Every part bought separately and fitted by hand (bom: false) has an LCSC number or an order entry in its parts entry ({supplier: code} or {supplier: {code, moq, step}}), so that edakit order can put it into a cart. A C99… number is an EasyEDA user-library entry, not an LCSC number: LCSC does not sell it. A warning."
+rule = "Every part bought separately and fitted by hand (bom: false) has an LCSC number or an order entry in its parts entry ({supplier: code} or {supplier: {code, moq, step}}), so that edakit order can put it into a cart – an own part (own, the board's copper among them) excepted. A C99… number is an EasyEDA user-library entry, not an LCSC number: LCSC does not sell it. A warning."
 why = "The assembler's BOM leaves out every hand-soldered part, module and cable. What has no supplier and no order code is written into an order list by hand, late and without spares or the supplier's minimum – a 50-pack that does not exist, one LED short for the last board."
 fix = "Add order to the parts entry, e.g. {\"berrybase\": \"OSM5DK7331A\"} or {\"lcsc\": {\"moq\": 20, \"step\": 20}}, or give the component its LCSC number – for a C99… library number the supplier the part really comes from; then edakit order. Accept the warning in the sign-off file if the part is at hand already."
 severity = "warning"
@@ -1182,7 +1182,7 @@ sources = [
 
 [codes."PARTS.fact"]
 title = "required facts given"
-rule = "Every fact a check needs and the profile requires is in the entry: lead for a through-hole part, functions on MCU pins a net's fn uses, hot_loop of a switching regulator, compliance.radio of a module or microcontroller, compliance.rohs of every part the BOM lists (bom not false: true, false or the exemption – a note, for a board that is sold a warning), mpn and manufacturer of every assembled part with a maker of [cart] makers that matches the BOM by manufacturer part number (PCBWay, Eurocircuits, AISLER – bom.match in the profile; an error when the planned maker is one of them, else a warning, grade other_maker), what the model of an LED strip needs – pixels_per_m, i_pixel_a, r_vdd_ohm_per_m, r_gnd_ohm_per_m (the rail resistance is in no LED data sheet: the strip's seller, a measurement, or the project's own value), compliance.reach of every part of a board that is given away or sold. The grade names the fact; its severity is the profile's."
+rule = "Every fact a check needs and the profile requires is in the entry: lead for a through-hole part, functions on MCU pins a net's fn uses, hot_loop of a switching regulator, compliance.radio of a module or microcontroller, compliance.rohs of every part the BOM lists (bom not false: true, false or the exemption – a note, for a board that is sold a warning), mpn and manufacturer of every assembled part with a maker of [cart] makers that matches the BOM by manufacturer part number (PCBWay, Eurocircuits, AISLER – bom.match in the profile; an error when the planned maker is one of them, else a warning, grade other_maker), what the model of an LED strip needs – pixels_per_m, i_pixel_a, r_vdd_ohm_per_m, r_gnd_ohm_per_m (the rail resistance is in no LED data sheet: the strip's seller, a measurement, or the project's own value), compliance.reach of every part of a board that is given away or sold – no compliance fact of the board's own copper (own.what copper: a solder jumper, a test pad), which is the bare board's and its maker's. The grade names the fact; its severity is the profile's."
 why = "A check without its fact checks nothing and says so only here."
 fix = "Fill in the fact from the datasheet (handbook 4.1)."
 severity = "note"

@@ -29,34 +29,6 @@ place = "POT3"
 judged = "lacks"
 why = "POT3, the volume (A250K): the TT Electronics P160 with PC pins that stands in has no LCSC number in the catalogue (the solder-lug P160KNP-0QC20A250K, C6249458, has one), and a KiCad design names no EasyEDA device."
 
-[[check]]
-code = "PARTS.verified"
-grade = "device"
-place = "TP1"
-judged = "criterion"
-why = "TP1 (Q1C) is a plated pad of the board for the probe of the bias procedure (KiCad footprint TestPoint_THTPad_2.5x2.5mm_Drill1.2mm) – copper, nothing to buy or place: edakit asks every component for an LCSC part or an EasyEDA device."
-
-[[check]]
-code = "PARTS.verified"
-grade = "device"
-place = "TP2"
-judged = "criterion"
-why = "TP2 (Q2C) is a plated pad of the board for the probe of the bias procedure (KiCad footprint TestPoint_THTPad_2.5x2.5mm_Drill1.2mm) – copper, nothing to buy or place: edakit asks every component for an LCSC part or an EasyEDA device."
-
-[[check]]
-code = "PARTS.verified"
-grade = "device"
-place = "TP3"
-judged = "criterion"
-why = "TP3 (G) is a plated ground pad of the board for the probe (KiCad footprint TestPoint_THTPad_2.5x2.5mm_Drill1.2mm) – copper, nothing to buy or place: edakit asks every component for an LCSC part or an EasyEDA device."
-
-[[check]]
-code = "PARTS.verified"
-grade = "device"
-place = "TP4"
-judged = "criterion"
-why = "TP4 (G) is a plated ground pad of the board for the probe (KiCad footprint TestPoint_THTPad_2.5x2.5mm_Drill1.2mm) – copper, nothing to buy or place: edakit asks every component for an LCSC part or an EasyEDA device."
-
 [[sim]]
 code = "LIM.v"
 place = "Q2_C"
@@ -75,6 +47,8 @@ place = "POT2"
 judged = "real"
 why = "The fuzz control POT2 (B1K) is Q2's emitter resistor: Q2's emitter current, 0.66–0.97 mA, flows through its track, and C3 (22 µF) on its wiper sits at half the emitter voltage – 0.33–0.48 V across the half of the track between Q2's emitter and the wiper. Turned while playing, the wiper's step moves C3's charge – the crackle of a control with DC on it (maker-coverage CK-30). It is the circuit's, not this board's: the Fuzz Face's fuzz control is Q2's variable emitter degeneration, 1 kΩ bypassed through its wiper (ElectroSmash's analysis)."
 
+[[fixed]]
+what = "The test points TP1 to TP4 – the board's plated pads for a wire or a probe asked for an LCSC part or an EasyEDA device (PARTS.verified/device on each): their entry says own.what \"copper\" now – the board's own, nothing to buy or pick (TD-127)."
 [[fixed]]
 what = "TRIM2, Q2's collector trimmer with 3.2–4.9 V across it by design, held to one DC level on both sides like a pot turned while playing (REQ.value/switch): the kind potentiometer had no way to say trimmer. values adjust \"trimmer\" – the Bourns 3296W entries carry it – leaves it out of the rule (TD-126)."
 [[fixed]]

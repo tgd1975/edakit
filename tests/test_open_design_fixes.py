@@ -1032,3 +1032,29 @@ def test_a_trimmer_is_not_held_to_a_panel_pot_s_rule(tmp_path):
         return sorted({r["item"] for r in out["checks"] if r["id"] == "REQ.value" and r["result"] != "pass"})
     assert switch("a", "trimmer") == ["POT2"]                        # before: POT2, TRIM2
     assert switch("b", None) == ["POT2", "TRIM2"]
+
+
+def test_board_copper_is_nothing_to_buy(project):
+    """The Micro-Lipo's SJ1 – two pads bridged with solder – and the pedals' and the Fuzz Face's plated pads for wires
+    and probes: edakit asked each for an LCSC part or an EasyEDA device (PARTS.verified/device), SJ1 – a switch outside
+    the BOM – for a supplier (PARTS.supplier) and, on a board that is sold, a REACH statement (PARTS.fact/reach).
+    own.what "copper" says the board's own copper: none of the three is asked of it; a handmade part still is."""
+    from helpers import check
+    pad = {"mpn": "SOLDERJUMPER", "kind": "switch", "verified": {"by": "test"},
+           "pins": {"1": {"name": "1", "type": "passive", "role": "throw_a"},
+                    "2": {"name": "2", "type": "passive", "role": "common"}}}
+
+    def found(what):
+        project.save_part("SOLDERJUMPER", {**pad, "own": {"what": what, "notes": "two pads, bridged with solder"}})
+        g = project.graph()
+        g["graph"]["components"] = [c for c in g["graph"]["components"] if c["designator"] != "SJ1"]
+        g["graph"]["components"].append({"designator": "SJ1", "type": "switch", "part": "SOLDERJUMPER", "bom": False,
+                                         "pins": {"1": "1", "2": "2"}, "nc": ["1", "2"]})
+        g["graph"]["purpose"] = {"use": "sale", "market": "EU"}
+        project.save_graph(g)
+        cfg = project.config()
+        d = Design.from_config(cfg)
+        return sorted({(f.code, f.grade) for f in check(d, cfg).findings
+                       if f.code.startswith("PARTS.") and ("SJ1" in f.text or f.place in ("SJ1", "SOLDERJUMPER"))})
+    assert found("copper") == []          # before: PARTS.fact/reach, PARTS.verified/device (PARTS.supplier: an own part)
+    assert found("handmade") == [("PARTS.fact", "reach"), ("PARTS.verified", "device")]

@@ -12,132 +12,6 @@ why = "The transcription has no requirements file: what the published design mus
 [[check]]
 code = "PARTS.verified"
 grade = "device"
-place = "9v1"
-judged = "criterion"
-why = "9v1 is a plated pad of the board for a wire (KiCad footprint TestPoint_THTPad_D2.0mm_Drill1.0mm, board reference 9v1) – copper, nothing to buy or place: edakit asks every component for an LCSC part or an EasyEDA device."
-
-[[check]]
-code = "PARTS.verified"
-grade = "device"
-place = "InG1"
-judged = "criterion"
-why = "InG1 is a plated pad of the board for a wire (KiCad footprint TestPoint_THTPad_D2.0mm_Drill1.0mm, board reference InG1) – copper, nothing to buy or place: edakit asks every component for an LCSC part or an EasyEDA device."
-
-[[check]]
-code = "PARTS.verified"
-grade = "device"
-place = "In1"
-judged = "criterion"
-why = "In1 is a plated pad of the board for a wire (KiCad footprint TestPoint_THTPad_D2.0mm_Drill1.0mm, board reference In) – copper, nothing to buy or place: edakit asks every component for an LCSC part or an EasyEDA device."
-
-[[check]]
-code = "PARTS.verified"
-grade = "device"
-place = "InG5"
-judged = "criterion"
-why = "InG5 is a plated pad of the board for a wire (KiCad footprint TestPoint_THTPad_D2.0mm_Drill1.0mm, board reference InG) – copper, nothing to buy or place: edakit asks every component for an LCSC part or an EasyEDA device."
-
-[[check]]
-code = "PARTS.verified"
-grade = "device"
-place = "Out1"
-judged = "criterion"
-why = "Out1 is a plated pad of the board for a wire (KiCad footprint TestPoint_THTPad_D2.0mm_Drill1.0mm, board reference Out) – copper, nothing to buy or place: edakit asks every component for an LCSC part or an EasyEDA device."
-
-[[check]]
-code = "PARTS.verified"
-grade = "device"
-place = "InG3"
-judged = "criterion"
-why = "InG3 is a plated pad of the board for a wire (KiCad footprint TestPoint_THTPad_D2.0mm_Drill1.0mm, board reference OutG) – copper, nothing to buy or place: edakit asks every component for an LCSC part or an EasyEDA device."
-
-[[check]]
-code = "PARTS.verified"
-grade = "device"
-place = "ts_send1"
-judged = "criterion"
-why = "ts_send1 is a plated pad of the board for a wire (KiCad footprint TestPoint_THTPad_D2.0mm_Drill1.0mm, board reference ts_send) – copper, nothing to buy or place: edakit asks every component for an LCSC part or an EasyEDA device."
-
-[[check]]
-code = "PARTS.verified"
-grade = "device"
-place = "ts_in1"
-judged = "criterion"
-why = "ts_in1 is a plated pad of the board for a wire (KiCad footprint TestPoint_THTPad_D2.0mm_Drill1.0mm, board reference ts_in) – copper, nothing to buy or place: edakit asks every component for an LCSC part or an EasyEDA device."
-
-[[check]]
-code = "PARTS.verified"
-grade = "device"
-place = "ts_out1"
-judged = "criterion"
-why = "ts_out1 is a plated pad of the board for a wire (KiCad footprint TestPoint_THTPad_D2.0mm_Drill1.0mm, board reference ts_out) – copper, nothing to buy or place: edakit asks every component for an LCSC part or an EasyEDA device."
-
-[[check]]
-code = "PARTS.verified"
-grade = "device"
-place = "ts_rtn1"
-judged = "criterion"
-why = "ts_rtn1 is a plated pad of the board for a wire (KiCad footprint TestPoint_THTPad_D2.0mm_Drill1.0mm, board reference ts_rtn) – copper, nothing to buy or place: edakit asks every component for an LCSC part or an EasyEDA device."
-
-[[check]]
-code = "PARTS.verified"
-grade = "device"
-place = "SW_TS1"
-judged = "criterion"
-why = "SW_TS1 is a plated pad of the board for a wire (KiCad footprint TestPoint_THTPad_D2.0mm_Drill1.0mm, board reference SW_TS) – copper, nothing to buy or place: edakit asks every component for an LCSC part or an EasyEDA device."
-
-[[check]]
-code = "PARTS.verified"
-grade = "device"
-place = "swGnd2"
-judged = "criterion"
-why = "swGnd2 is a plated pad of the board for a wire (KiCad footprint TestPoint_THTPad_D2.0mm_Drill1.0mm, board reference swGnd) – copper, nothing to buy or place: edakit asks every component for an LCSC part or an EasyEDA device."
-
-[[check]]
-code = "PARTS.verified"
-grade = "device"
-place = "Rat_send1"
-judged = "criterion"
-why = "Rat_send1 is a plated pad of the board for a wire (KiCad footprint TestPoint_THTPad_D2.0mm_Drill1.0mm, board reference Rat_send) – copper, nothing to buy or place: edakit asks every component for an LCSC part or an EasyEDA device."
-
-[[check]]
-code = "PARTS.verified"
-grade = "device"
-place = "Rat_in1"
-judged = "criterion"
-why = "Rat_in1 is a plated pad of the board for a wire (KiCad footprint TestPoint_THTPad_D2.0mm_Drill1.0mm, board reference Rat_in) – copper, nothing to buy or place: edakit asks every component for an LCSC part or an EasyEDA device."
-
-[[check]]
-code = "PARTS.verified"
-grade = "device"
-place = "Rat_out1"
-judged = "criterion"
-why = "Rat_out1 is a plated pad of the board for a wire (KiCad footprint TestPoint_THTPad_D2.0mm_Drill1.0mm, board reference Rat_out) – copper, nothing to buy or place: edakit asks every component for an LCSC part or an EasyEDA device."
-
-[[check]]
-code = "PARTS.verified"
-grade = "device"
-place = "Rat_rtn1"
-judged = "criterion"
-why = "Rat_rtn1 is a plated pad of the board for a wire (KiCad footprint TestPoint_THTPad_D2.0mm_Drill1.0mm, board reference Rat_rtn) – copper, nothing to buy or place: edakit asks every component for an LCSC part or an EasyEDA device."
-
-[[check]]
-code = "PARTS.verified"
-grade = "device"
-place = "SW_RAT1"
-judged = "criterion"
-why = "SW_RAT1 is a plated pad of the board for a wire (KiCad footprint TestPoint_THTPad_D2.0mm_Drill1.0mm, board reference SW_RAT) – copper, nothing to buy or place: edakit asks every component for an LCSC part or an EasyEDA device."
-
-[[check]]
-code = "PARTS.verified"
-grade = "device"
-place = "swGnd1"
-judged = "criterion"
-why = "swGnd1 is a plated pad of the board for a wire (KiCad footprint TestPoint_THTPad_D2.0mm_Drill1.0mm, board reference swGnd) – copper, nothing to buy or place: edakit asks every component for an LCSC part or an EasyEDA device."
-
-[[check]]
-code = "PARTS.verified"
-grade = "device"
 place = "POT1"
 judged = "lacks"
 why = "POT1, the distortion pot, A100K: the TT Electronics P160 order code that stands in has no LCSC number in the catalogue (the B100K of POT6 has one), and a KiCad design names no EasyEDA device."
@@ -200,6 +74,8 @@ code = "LIM.v"
 place = "C19"
 judged = "real"
 why = "C19 (10 µF electrolytic, the TS output coupling) sits with its plus – pad 1 of the CP_Radial_D5.0mm footprint, the square pad with the '+' – at ts_out, held at 0 V by R27, and its minus at R26 from Q2's emitter, 3.0–3.4 V: reverse-biased in every state. The schematic draws an unpolarized Device:C, the footprint is polarized. Turned round, the finding goes (tests/test_open_designs.py)."
+[[fixed]]
+what = "The 18 pads for the wires that leave the board – the board's plated pads for a wire or a probe asked for an LCSC part or an EasyEDA device (PARTS.verified/device on each): their entry says own.what \"copper\" now – the board's own, nothing to buy or pick (TD-127)."
 [[fixed]]
 what = "A base biased by resistors – the TS's 2SC1815 followers through 510 kΩ from the divider node VREF – judged as floating while 'the firmware is not running' (LVL.undefined): only a resistor to the emitter or to a net a pin types counted, not ground and not a divider's middle."
 [[fixed]]

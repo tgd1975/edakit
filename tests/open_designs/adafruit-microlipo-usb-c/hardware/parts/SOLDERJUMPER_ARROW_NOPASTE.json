@@ -3,6 +3,10 @@
  "manufacturer": "Adafruit (board copper)",
  "kind": "switch",
  "package": "two pads on the board, bridged with solder – no part",
+ "own": {
+  "what": "copper",
+  "notes": "two pads of the board's copper with no paste, bridged with solder for the 500 mA mode: nothing to buy or place"
+ },
  "footprint": "SOLDERJUMPER_ARROW_NOPASTE",
  "datasheet": {
   "url": "https://github.com/adafruit/Adafruit-MicroLipo-PCB/blob/d8ab4b0f00c69a9f337a8d697bd15e0b9bae2e25/Adafruit%20USB%20C%20microlipo%20charger.sch",
