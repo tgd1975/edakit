@@ -4,7 +4,7 @@ Open work that needs the owner's computer, a maker or the owner's word. The stat
 and plans the sections name; this list is what is left to do of them, in the order it can be done. No item is deleted.
 
 **Layout.** Every item, in every section, open or closed, is a line with a checkbox and an ID unique in this file,
-counted up and never reused – whoever adds an item takes the next free ID and counts it up here. Next free ID: TD-149.
+counted up and never reused – whoever adds an item takes the next free ID and counts it up here. Next free ID: TD-150.
 
 - Open: `- [ ] TD-<n> - **Title:** what and why.` – a step's own name after the dash (`- [ ] TD-31 - **D.4** …`).
 - Done: ticked, the commit that did it, the date at the end, moved to [Closed todos](#closed-todos), newest first –
@@ -31,10 +31,8 @@ to touch.
 
 - [ ] TD-108 - **A photo of the delivered tree:** one picture of the lit tree in its hill into pytree's `docs/img/` –
       it replaces the render on `docs/projects/pytree.md`. *(edakit-ce)*
-- [ ] TD-143 - **The 23 lines of the live run in LCSC's cart:** keep them for the next parts order or remove them – the
-      skill never deletes a line. *(edakit-5e)*
-- [ ] TD-148 - **OK for #326 (step 10, parts you solder yourself):** https://github.com/tgd1975/edakit/pull/326 – the
-      inventory as an option on the steps page; merged by `python3 .github/merge.py 326` on your word. *(edakit-87)*
+- [ ] TD-149 - **OK for #332 (the LESD5D5.0CT1G is a bidirectional TVS):** https://github.com/tgd1975/edakit/pull/332 –
+      merged by `python3 .github/merge.py 332` on your word. *(edakit-c6)*
 
 ## The parts order ([docs/concepts/done/parts-order.md](docs/concepts/done/parts-order.md))
 
@@ -47,12 +45,6 @@ to touch.
 - [ ] TD-147 - **Step 3, the live run:** the next parts order with your inventory named in `edakit.local.toml` – the
       carts shortened by what is on hand, `hand_assembly.md` naming what to take; what the run finds goes into handbook
       8.4. Waits for an inventory file of yours (`edakit inventory template FILE`). *(edakit-87)*
-
-## The parts library ([edakit/parts/](edakit/parts/))
-
-- [ ] TD-145 - **Is the LESD5D5.0CT1G bidirectional?** Read its datasheet: if it blocks both ways, `values.tvs:
-      "bidirectional"` (TD-132) in `edakit/parts/C5274290.json` and the DevKitC's copy
-      (`tests/open_designs/esp32-devkitc-v4`), and check what LIM.v and PATH.reverse then find there. *(edakit-38)*
 
 ## What edakit needs from EasyEDA Pro and easyeda-mcp-pro ([upstream/README.md](upstream/README.md))
 
@@ -72,6 +64,12 @@ Nothing to do until there is an answer or a release; whichever session learns of
 
 ## Closed todos
 
+- [x] TD-145 - **Is the LESD5D5.0CT1G bidirectional?** Yes – symbol p. 1 and I–V curve p. 2; `values.tvs
+      "bidirectional"` in both entries, the DevKitC's findings unchanged (LIM.v on D6 only, no PATH.reverse); #332, its
+      OK is TD-149. *(edakit-38)* [2026-11-03]
+- [x] TD-148 - **OK for #326 (step 10, parts you solder yourself):** given; merged (#326, no version). *(edakit-87)* [2026-11-03]
+- [x] TD-143 - **The 23 lines of the live run in LCSC's cart:** settled by the owner in LCSC's cart. *(edakit-5e)*
+      [2026-11-03]
 - [x] TD-146 - **OK for #321 (parts on hand):** given; merged as edakit 1.1.14 (#321). *(edakit-87)* [2026-11-03]
 - [x] TD-142 - **OK for #310:** given; merged as edakit 1.1.13 (#310). *(edakit-5e)* [2026-11-03]
 - [x] TD-133 - **A charger's status output in the simulation:** the charger model drives STAT – the Micro-Lipo's LEDs as
