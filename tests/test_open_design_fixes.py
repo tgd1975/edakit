@@ -1008,3 +1008,27 @@ def test_a_ground_tied_to_the_line_is_hazardous():
                         "the low-voltage side shows nothing hazardous, and edakit checks no isolation")]   # before: none
     assert tied(10000) == []
     assert tied(0, ("pin1", "pin2")) == []
+
+
+@pytest.mark.skipif(not shutil.which("ngspice"), reason="ngspice not installed")
+def test_a_trimmer_is_not_held_to_a_panel_pot_s_rule(tmp_path):
+    """The Fuzz Face's TRIM2, Q2's collector resistor (a Bourns 3296W, 50 kΩ): 3.2–4.9 V across it by design, between
+    the collector and the output tap, both in the signal path. REQ.value/switch held it to one DC level like a pot
+    turned while playing – edakit could not tell a trimmer from a panel pot. values adjust "trimmer" leaves it out; the
+    fuzz pot POT2 is still found, and without the value TRIM2 is again."""
+    from edakit import config
+    from edakit.sim import run as simrun
+    from test_open_designs import copy
+
+    def switch(name, adjust):
+        cfg = copy("whbeers-fuzz-face", tmp_path / name)
+        if adjust is None:
+            f = tmp_path / name / "whbeers-fuzz-face" / "hardware" / "parts" / "C83686.json"
+            e = json.loads(f.read_text(encoding="utf-8"))
+            del e["values"]["adjust"]
+            f.write_text(json.dumps(e, indent=1), encoding="utf-8")
+            cfg = config.load(tmp_path / name / "whbeers-fuzz-face" / "edakit.toml")
+        out = simrun.run_all(Design.from_config(cfg), engines.load_sim(cfg))
+        return sorted({r["item"] for r in out["checks"] if r["id"] == "REQ.value" and r["result"] != "pass"})
+    assert switch("a", "trimmer") == ["POT2"]                        # before: POT2, TRIM2
+    assert switch("b", None) == ["POT2", "TRIM2"]

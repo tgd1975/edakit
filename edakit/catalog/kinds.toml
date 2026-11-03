@@ -35,6 +35,7 @@ behavior = ["ldo", "buck", "boost", "buck_boost", "mcu", "cc_sink", "opamp", "lo
 regulator = ["ldo", "buck", "boost", "buck_boost", "none"]
 color = ["red", "green", "blue", "yellow", "orange", "white", "warm_white", "amber", "uv", "ir", "rgb"]
 dielectric = ["C0G", "NP0", "X5R", "X7R", "X7S", "X6S", "Y5V", "electrolytic", "polymer", "tantalum", "film"]
+adjust = ["panel", "trimmer"]   # a potentiometer turned while the board runs, or one set once at the bench
 
 [free]
 values = ["polarized", "tolerance", "iout_accuracy", "iout_gain", "hfe_min", "hfe_max", "efficiency", "usb_c",
@@ -92,7 +93,8 @@ values = ["value_ohm", "r_max_ohm", "tolerance"]
 [kinds.potentiometer]
 roles = ["end_a", "wiper", "end_b"]
 limits = ["v_max_v"]
-values = ["value_ohm", "tolerance"]
+values = ["value_ohm", "tolerance",
+          "adjust"]                          # trimmer: set once at the bench – REQ.value/switch leaves it out
 
 [kinds.capacitor]
 roles = ["plus", "minus", "1", "2"]          # a capacitor without polarity: its pin numbers

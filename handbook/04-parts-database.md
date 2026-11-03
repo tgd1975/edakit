@@ -263,6 +263,9 @@ entry's, the entry's before the default of the pin type. The sections below give
   `v_rms_max_v` in V rms, of the entry (`connector`, `varistor`) or of a pin. On an AC net (3.1, net `ac`) LIM.v
   holds the rms of what the part sees to it, and not its DC rating (`v_max_v`, a pin's `v_min_v`); elsewhere the DC
   rating holds. A rating the datasheet gives only for AC goes there, not into `v_max_v`.
+- a potentiometer set once at the bench and not turned while the board runs – a bias trimmer, a multiturn 3296:
+  `values.adjust: "trimmer"` (`"panel"`, the default, a pot on the front panel). REQ.value/switch holds a panel pot in
+  a signal path to one DC level on both sides – the scratch of a control turned while playing –, a trimmer not.
 - a TVS diode: `values.tvs: true`, its working voltage (VRWM) as `vr_max_v` – LIM.v holds the reverse voltage to it
   without the derating factor; a bidirectional one (the CA suffix) `values.tvs: "bidirectional"`: LIM.v holds it either
   way, and PATH.reverse takes it as a part that tolerates a reversed source.

@@ -75,10 +75,7 @@ place = "POT2"
 judged = "real"
 why = "The fuzz control POT2 (B1K) is Q2's emitter resistor: Q2's emitter current, 0.66–0.97 mA, flows through its track, and C3 (22 µF) on its wiper sits at half the emitter voltage – 0.33–0.48 V across the half of the track between Q2's emitter and the wiper. Turned while playing, the wiper's step moves C3's charge – the crackle of a control with DC on it (maker-coverage CK-30). It is the circuit's, not this board's: the Fuzz Face's fuzz control is Q2's variable emitter degeneration, 1 kΩ bypassed through its wiper (ElectroSmash's analysis)."
 
-[[sim]]
-code = "REQ.value"
-place = "TRIM2"
-judged = "known gap"
-why = "TRIM2 is Q2's collector resistor, 3.2–4.9 V across it by design, between Q2's collector and the output tap, both in the signal path. REQ.value/switch (CK-30) holds every pot in a signal path to one DC level on both sides – the pop and the scratch of a control turned while playing. A trimmer is set once at the bench (the bias procedure) and not turned while playing; edakit cannot tell it from a panel pot: the potentiometer kind has no field for it, and one is catalog data (edakit/catalog/kinds.toml), which this transcription does not change. What would: a value in kinds.toml's potentiometer – say adjust = \"trimmer\" –, the Bourns 3296W entries marked with it, and REQ.value/switch leaving trimmers out."
+[[fixed]]
+what = "TRIM2, Q2's collector trimmer with 3.2–4.9 V across it by design, held to one DC level on both sides like a pot turned while playing (REQ.value/switch): the kind potentiometer had no way to say trimmer. values adjust \"trimmer\" – the Bourns 3296W entries carry it – leaves it out of the rule (TD-126)."
 [[fixed]]
 what = "Q2's base – Q1's collector, held by TRIM1 from 9V0 – judged as floating while 'the firmware is not running' (LVL.undefined): the board has no IC, 9V0 comes in at the connector J1 from the Noise Floor IO board, and no pin types it as a supply. Now the net a source of sim.json feeds (its plus pin) is a rail for the transistors' control pins."
