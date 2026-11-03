@@ -40,11 +40,9 @@ A session in this repository works by [CLAUDE.md](../CLAUDE.md). In short:
 
 ## Tests
 
-Every check is seen red once: a fault built into a copy of an example, the code expected, the repaired circuit
-without it. `tests/fixtures/led-bar` is the project the tests build their faults into; `tests/reference.py` holds a
-reference circuit per domain with its seeded faults; `tests/open_designs/` holds published open designs with every
-finding judged. Stages L and F run on a written export (`tests/test_fab_run.py`). What each layer proves, why these
-circuits and what a new one must bring: [How edakit is tested](../handbook/19-verification.md) (handbook 19).
+What the tests prove, layer by layer – from every check seen red once on the example led-bar to the published open
+designs –, which circuits they run on and what a new one must bring:
+[How edakit is tested](../handbook/19-verification.md) (handbook 19).
 
 The documentation has tests of its own:
 
@@ -62,9 +60,9 @@ uvx ruff check edakit tests
 
 ## Evals
 
-`evals/` holds typical tasks on the reference circuits – find a seeded fault, report the coverage, add an LED – for
-`claude plugin eval`, graded by a judge model. They measure whether Claude with the plugin does the job, not whether
-the code is right; the tests do that. The baseline and how to run them: [evals](../evals/README.md).
+`evals/` holds typical tasks for `claude plugin eval`. What they measure:
+[handbook 19.8](../handbook/19-verification.md#198-the-evals); the cases, the baseline and how to run them:
+[evals](../evals/README.md).
 
 ## The site
 
