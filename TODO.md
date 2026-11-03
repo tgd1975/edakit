@@ -125,7 +125,8 @@ Nothing to do until there is an answer or a release; whichever session learns of
 - [x] TD-121 - **A LiPo charger as an open design:** `tests/open_designs/adafruit-microlipo-usb-c/`, CC BY-SA 3.0, 27
       findings judged – edakit 1.1.4 (#281). *(ccr-de7c0e28)* [2026-11-03]
 - [x] TD-113 - **OK for the circuit language:** given; merged as edakit 1.1.3 (#279) – T.1 to T.27, the decisions 1
-      to 48 confirmed; circuit-dsl.md, its language and its plan moved to `done/`. *(friendly-mccarthy)* [2026-11-03]
+      to 48 confirmed; circuit-dsl.md, its language and its plan moved to `done/`. Withdrawn by #287 (1.1.6) on the
+      owner's word: a beta on the branch since, the concepts back in `new/`. *(friendly-mccarthy)* [2026-11-03]
 - [x] TD-116 - **The job sysml:** run on the branch by `workflow_dispatch` – 4 passed, read with the standard
       library 2025-12 that systree loads (decision 45); main runs it with every merge. *(friendly-mccarthy)*
       [2026-11-03]
