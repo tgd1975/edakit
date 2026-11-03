@@ -17,6 +17,7 @@ where they are; a link to a file the site does not carry goes to the file on Git
 
 from __future__ import annotations
 
+import hashlib
 import html
 import itertools
 import json
@@ -559,7 +560,8 @@ def config(nav):
                  "toggle": {"icon": "material/brightness-4", "name": "Light mode"}},
             ],
         },
-        "extra_css": ["brand/edakit.css"],
+        # the file's hash in its URL: a browser that cached the old styles fetches the new ones with the new pages
+        "extra_css": ["brand/edakit.css?v=" + hashlib.sha256((ROOT / "docs/brand/edakit.css").read_bytes()).hexdigest()[:8]],
         "markdown_extensions": ["tables", "admonition", "attr_list", "md_in_html", "def_list",
                                 {"toc": {"permalink": True}},
                                 {"pymdownx.superfences": {"custom_fences": [
