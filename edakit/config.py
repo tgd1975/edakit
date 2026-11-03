@@ -278,6 +278,7 @@ class Config:
     docs_decimal: str = "."                    # [docs] decimal: "." or "," in quoted numbers
     toolchain: str = "easyeda"                 # [project] toolchain: "easyeda" or "kicad" (edakit/toolchain)
     edakit: str | None = None                  # [project] edakit: the edakit the project needs, ">=0.4" (STRUCT.edakit)
+    parts_dirs: list = field(default_factory=list)   # [project] parts as a list (a variant): its folders, the own first
     order: dict = field(default_factory=dict)  # [order] of edakit.toml: the project's order keys for every board
     cart: dict | None = None                   # [cart] with its defaults (makers.cart); "given": the table is there
 
@@ -926,6 +927,18 @@ def _agents(agents):
     return out, problems
 
 
+def _parts(p, root):
+    """[project] parts: the parts folder – a path, or a list of paths for a variant: its own folder first, then its
+    base's; an entry is looked up in that order. Returns (paths, problems)."""
+    value = p.get("parts", "hardware/parts")
+    names = [value] if isinstance(value, str) else value
+    if not isinstance(names, list) or not names or not all(isinstance(n, str) and n.strip() for n in names):
+        return [root / "hardware" / "parts"], ['[project] parts: a path or a list of paths, e.g. "hardware/parts"; a '
+                                               'variant names its own folder first: ["hardware/parts", '
+                                               '"../../hardware/parts"]']
+    return [Path(n) if Path(n).is_absolute() else root / n for n in names], []
+
+
 def _requirements(p, root):
     """[project] requirements: the requirements file of `edakit req` – a path, or a list of paths: a variant names the
     main project's file and its own. Relative to edakit.toml. Returns (paths, problems); without the key no file."""
@@ -980,6 +993,8 @@ def load(path=None) -> Config:
     if not isinstance(p.get("agreements", True), bool):
         problems.append("[project] agreements: true or false")
     requirements, bad = _requirements(p, root)
+    problems += bad
+    parts_dirs, bad = _parts(p, root)
     problems += bad
     problems += _unknown("[docs]", raw.get("docs", {}), DOCS_KEYS)
     doc_files = raw.get("docs", {}).get("files", [])
@@ -1058,7 +1073,7 @@ def load(path=None) -> Config:
     return Config(
         path=path, root=root, project=p["name"],
         graph=rel("graph", "hardware/graph.json"),
-        parts=rel("parts", "hardware/parts"),
+        parts=parts_dirs[0],
         sim_config=rel("sim", "hardware/sim.json"),
         sim_plugin=rel("sim_plugin", "") if p.get("sim_plugin") else None,
         schematic_file=schematic_file,
@@ -1074,7 +1089,7 @@ def load(path=None) -> Config:
         lock=p.get("lock", "auto"),
         agreements=p.get("agreements", True),
         raw=raw,
-        requirements=requirements,
+        requirements=requirements, parts_dirs=parts_dirs,
         domains=list(p["domains"]) if "domains" in p else None,
         stock=rel("stock", "hardware/stock.json"),
         stock_margin_pct=float(p.get("stock_margin_pct", 0)),

@@ -10,6 +10,9 @@ only with the largest model.
 | `fault-guitar-sim` | the same, for a fault only the simulation shows | the line; `edakit sim` ran; no finding invented |
 | `coverage` | what went unchecked for lack of data | the codes and the field named; `edakit check --coverage` ran |
 | `add-led` | a status LED on GP8 from the block library, until check and sim are clean | the graph has it; block add, check and sim ran; the `DONE:` line |
+| `add-led-circuit` | the same on led-bar in the circuit language (`led-bar-circuit`, handbook 20) | the source has the usage, the resolved graph the LED; block add, check and sim ran; the `DONE:` line |
+| `repeat-leds` | four LEDs with their resistors on GP16 to GP19, written as one `for` | the source has a loop, the resolved graph GP19's net; check and sim ran; the `DONE:` line |
+| `variant-smd` | a variant in `variants/smd/` with J1 assembled (`bom yes`) and another button | the variant file names its base and sets `bom yes`; check ran; the `DONE:` line |
 | `requirements-inventory` | the inventory for the requirements file of led-bar with a two-line README (#97) | the README's eight LEDs and USB port are candidates; a candidate read from the circuit says inferred; the list "already checked by edakit"; no candidate edakit derived (judge) |
 | `first-reader` | a reader new to edakit follows the start page and the quickstart to the first finding on the walkthrough's example, with only those pages | `edakit check` ran; PATH.reverse named; what it means and why it is accepted (judge) |
 | `first-circuit` | a reader new to edakit makes a checked circuit of a one-line idea – a 9 V battery, a switch, two LEDs – with the site's Markdown as the only guide, no board (documentation-newcomer.md, N.5) | `edakit check` ran; a graph with two LEDs; the pages named as `site/…`; the `DONE:` line without an open error; a graph of its own with battery, switch and two LEDs, every acceptance with a reason (judge on the graph); the last check clean and the DONE line true to it (judge on the trace); at most six documentation pages opened with Read – a page read on from an offset not counted again –; no Read, Grep, Glob or Bash into edakit's code (`edakit/` of the plugin) |
@@ -59,3 +62,20 @@ What the first runs changed in edakit: `bin/edakit` falls back to the plugin's `
 `edakit sim` reports artifacts it could not write as a note after its complete results; the SessionStart hook names the
 path of `bin/edakit` when edakit is not on PATH; the flyback finding names the motor's winding instead of a coil, which
 a run had taken for a relay.
+
+## The circuit language, 2026-11-03
+
+One run per case, Sonnet 5.5, the plugin at the branch of the circuit language (`28b5c1c`; the two cases whose grader
+threw again at `9d1289e`); in a cloud container as the user `eval` with `TMPDIR=/srv/evaltmp`.
+
+| Case | Sonnet 5.5 | Turns | Cost |
+|---|---|---|---|
+| add-led-circuit | 1.00 | 5 | 0.13 USD |
+| repeat-leds | 1.00 – first 0.80: the grader `source-has-a-for` threw | 8 | 0.17 USD |
+| variant-smd | 1.00 – first 0.75: the grader `variant-file` threw | 10 | 0.18 USD |
+
+What the runs changed: the runner compiles a regex grader as JavaScript, which knows no inline `(?m)` – the flag goes
+to `flags`, and a test refuses inline flags in every grader; handbook 20.7 says what a variant keeps beside its source,
+which the run of variant-smd had to find out. repeat-leds wrote its loop of parts and nets by hand, not with `use
+led` – the case asks for a loop only. The copy of the second runs was not synced again after it was unpacked:
+`bin/edakit` wanted to rebuild edakit from PyPI, which a run cannot reach, and Sonnet took the copy's `.venv` instead.

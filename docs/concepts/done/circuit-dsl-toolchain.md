@@ -1,6 +1,8 @@
 # Implementation plan: the circuit language toolchain
 
-Status 2026-10-31: plan for [circuit-dsl.md](circuit-dsl.md) and its detail concept
+Status 2026-11-03: done – T.1 to T.27 built on one branch, merged as #279; the decisions of the session (1 to
+47) confirmed by the owner the same day; left: the bell's own conversion (TD-122). 2026-10-31: plan for
+[circuit-dsl.md](circuit-dsl.md) and its detail concept
 [circuit-dsl-language.md](circuit-dsl-language.md), asked for by the owner the same day; nothing of the language
 built yet. It is written for one session that builds all four stages – the reader, the compiler, the quantities
 and derivation rules, the engine DEF, the formatter, the converter, the block library as definitions, the editor
@@ -8,9 +10,9 @@ grammar; the project constructs, `block add` on the language, the fixtures, eval
 KerML exports with the electrical library; the language server and the VS Code extension – without a question
 answered in between. What the language is, statement by statement, is the detail concept's; this plan says which
 module, which function, which command, which test and which handbook section each step adds, and in which order.
-The ground rules of [implementation-plan.md](../done/implementation-plan.md) hold – one step, one commit, add-feature's
+The ground rules of [implementation-plan.md](implementation-plan.md) hold – one step, one commit, add-feature's
 order, no key no change, hashes named, the bell told –; the TOML form of
-[circuit-language-plan.md](../done/circuit-language-plan.md) is built and settled (L.1 to L.8 on 2026-10-31,
+[circuit-language-plan.md](circuit-language-plan.md) is built and settled (L.1 to L.8 on 2026-10-31,
 merged in `2f4628a`): the Design resolves pin words, `edakit graph json` writes the resolved graph beside a TOML
 source and `--check` finds its drift, `edakit graph convert` moves a project, `block add` writes TOML through a
 line editor, the hook line and the handbook are there; the language builds on these, and every step names what
@@ -88,7 +90,7 @@ one; `edakit graph convert --to circuit` setting `[project] edakit`.
 | T.7 | Definitions; the block library as `.circuit` with the generated JSON | M | T.4 | 1 |
 | T.8 | Derivation rules and records; `block add --set` and `--part`; `edakit graph derive`; the engine DEF | M | T.7 | 1 |
 | T.9 | The TextMate grammar | S | T.2 | 1 |
-| T.10 | Handbook chapter 19, reference, README – stage 1 | M | T.5–T.9 | 1 |
+| T.10 | Handbook chapter 20, reference, README – stage 1 | M | T.5–T.9 | 1 |
 | T.11 | Usages | M | T.8 | 2 |
 | T.12 | Repetition | S | T.11 | 2 |
 | T.13 | `param`, `alias`, `include` | S–M | T.11 | 2 |
@@ -344,7 +346,7 @@ silences it; `tests/test_block.py` – `block add led --as STATUS --connect in=S
 `edakit/parts/` from its datasheet, with `edakit part import` and the entry's sources as the library asks
 (handbook 4.1), or uses an existing entry whose value fits another `i` – writes the part and the record;
 `edakit graph derive` reports a changed entry and `--write` rewrites; `tests/test_graph_show.py` – the record
-shown. Handbook: 14.5 for `--set` and `--part`; chapter 19 (T.10) for the rules and DEF. Done when: all tests
+shown. Handbook: 14.5 for `--set` and `--part`; chapter 20 (T.10) for the rules and DEF. Done when: all tests
 pass, led-bar's report is unchanged, and `edakit rules` lists DEF.
 
 **T.9 The TextMate grammar.** Files: `editors/vscode/syntaxes/circuit.tmLanguage.json`,
@@ -357,14 +359,14 @@ the site's build does not have); no `.gitattributes` in edakit (the handbook nam
 for projects). Tests: `tests/test_lang_grammar.py` – the grammar is valid JSON, every keyword of `reader.KEYWORDS`
 is matched by a pattern of it, the language configuration names `#`. Done when: the test passes.
 
-**T.10 Handbook chapter 19, reference, README – stage 1.** Files: `handbook/19-circuit-language.md` (new
+**T.10 Handbook chapter 20, reference, README – stage 1.** Files: `handbook/20-circuit-language.md` (new
 chapter; `docs/pages.py` picks chapters up by its glob), `handbook/03-hardware-graph.md` (3.1: the language as
 the third form of the graph, one paragraph after the TOML form, link to 19; "The JSON generated beside a TOML
 graph": the same for a `.circuit` graph, SYNC.graph beside the hook), `handbook/02-setup.md` (2.7: `edakit hook`
 checks the generated graph of a TOML and a `.circuit` source), `handbook/10-reference.md` (10.1: `[project] graph`
 may name a `.circuit`, `[project] edakit` set by the converter; 10.5: `edakit graph json|fmt|convert|derive`,
 `block add --set --part`, `edakit hook`'s steps; 10.6: the files), `handbook/14-design.md` (14.5), `README.md`
-("What is in here", "Status and limits"), `handbook/README.md` (the chapter list). Chapter 19: the frame and the
+("What is in here", "Status and limits"), `handbook/README.md` (the chapter list). Chapter 20: the frame and the
 files (language 1 and 2), the lexical form and quantities (3 and
 4), the statements of stage 1 – the graph, parts, nets, cables, layout, definitions, derivations – each with a
 short example, the compiler's phases and errors (6), the rules with the generated table
@@ -480,7 +482,7 @@ the interview: JSON, TOML or the language, and how a project starts in the langu
 circuit`; the hook stays `edakit hook install`, which checks either source since T.4), `agents/project-surveyor.md`
 (the resolved graph as a guard rail), `docs/steps/04-design-the-circuit.md` (one sentence and a link to 19: the
 graph may be written in the language, the resolved `graph.json` beside it is what the step shows),
-`handbook/19-circuit-language.md` (the statements of stage 2: usages, repetition, parameters, aliases, includes,
+`handbook/20-circuit-language.md` (the statements of stage 2: usages, repetition, parameters, aliases, includes,
 variants, requirements; the bell's model as the worked example, its four configurations checked by one `edakit
 hook`; `block add` on the language), `handbook/03-hardware-graph.md` (3.4), `handbook/08-release-gate.md` (8.2),
 `handbook/10-reference.md`, `handbook/17-walkthrough.md` and `handbook/18-walkthrough-kicad.md` (one sentence
@@ -538,7 +540,7 @@ decisions. Done when: the tests pass.
 **T.23 The requirements export; the optional CI job.** Files: `edakit/lang/export/sysml.py` (requirement usages
 with `doc`, `binding`, `status`, `subject`, `require constraint` with the condition as `doc`, `verify` as
 strings, `satisfy … by …` from the graph's `satisfies`, the need-to-requirement derivation with the Requirement
-Derivation library's `#derivation` metadata), `handbook/19-circuit-language.md` (the exports: files, the mapping
+Derivation library's `#derivation` metadata), `handbook/20-circuit-language.md` (the exports: files, the mapping
 in short, the conformance test; no import procedure of a graphical tool – language 12, item 18),
 `.github/workflows/tests.yml` (a job `sysml` with `continue-on-error: true`: `pip install systree`,
 `pytest -m sysml`; Rust is on GitHub's Ubuntu runners; not a required check – `.github/rulesets/main.json` stays
@@ -582,7 +584,7 @@ compiles and, on the session's machine or in the report's instructions, activate
 
 **T.27 The CI job of the extension; handbook of stage 4.** Files: `.github/workflows/tests.yml` (a job `vscode`:
 `actions/setup-node` 20, `npm ci` and `npm run compile` in `editors/vscode`; not a required check, as `sysml`),
-`handbook/19-circuit-language.md` (the editor: install, the server, what each feature does, `graph show` at the
+`handbook/20-circuit-language.md` (the editor: install, the server, what each feature does, `graph show` at the
 cursor, the findings at their statements), `handbook/02-setup.md` (one line to the chapter), `README.md`. Done
 when: the job runs on a push and the handbook describes the editor.
 
@@ -792,12 +794,49 @@ Written by the session that builds the plan: number, date, decision, reason. Sta
    `systree.get_stdlib_path()` and fails when it cannot, instead of reading without it. Decision 39's dependency
    stays: the reader accepts it with the standard library too. Reason: the plan's default "a standard reader's
    objection wins".
+43. 2026-11-03, T.17, in place of 33: the bell's repository is public and was cloned at its `cfb0ab0`. The sources of
+   `tests/fixtures/bell/` carry its texts in full, and esp32 and a fifth configuration, esp32tht (the bell's D-23,
+   later than circuit-dsl.md), are written from its graphs after the concept's model: esp32 a variant of smd – the
+   module swap with its alias map, `vlogic` set once, `net +5V without S1.a S2.a`, `+3V3` –, esp32tht a variant of
+   esp32 with the through-hole parts and the layout. With `BELL_ROOT` all five compile canonically equal to the bell's
+   graphs but for what language 11's LED step adds: the five records of its derivation and the LEDs' `value`. 267
+   lines against the 431 of the flat conversion, which reads all five without error. `graph fmt` lays a long JSON of
+   `set` out one member to a line, the closing brackets ending the last line – the old layout left them at odd
+   depths. Reason: the plan's test; every text is the bell's, none invented.
+44. 2026-11-03, T.10, in place of 22's number: the language's chapter is 20, `handbook/20-circuit-language.md`.
+   verification-and-validation.md, decided with the owner on 2026-11-03, gives chapter 19 to how edakit is tested;
+   it was written against a main without this branch's chapter. Reason: the number the owner confirmed stands, and
+   this chapter was not on main yet.
+45. 2026-11-03, T.19: the three evals ran once each with Sonnet 5.5 in this container as the user `eval`, with the
+   environment's `EDAKIT_EVAL_TOKEN` as the run's credential – 1.00 each (0.47 USD), after the first runs of
+   repeat-leds and variant-smd gave 0.80 and 0.75 (0.39 USD): two graders threw, the runner compiling a regex as
+   JavaScript, which knows no inline `(?m)`; a test now refuses inline flags in every grader. `tests.yml` was started for the branch with `workflow_dispatch` – it runs on main and pull
+   requests only –: its first run found `graph fmt --check FILE` failing on Python 3.12, where argparse leaves the
+   files after an option over; fixed, the second run green, the job sysml with the standard library among it.
+   Reason: what the plan's protocol asks before the owner's OK, run where it can be.
+46. 2026-11-03, T.23, in place of 39's dependency: with the standard library at hand (decision 42), a requirement's
+   `from` is written as the RequirementDerivation library's `#derivation connection` – one per original, its
+   derived requirements as `#derive` ends –, the form of the release's own examples (VehicleRequirementDerivation);
+   KerML, which has not that library, keeps a `dependency` per pair, and the JSON a ConnectionUsage with the
+   metadata named. Syster resolves types but neither imports nor metadata names nor `::>` ends, so the conformance
+   test holds `<derivation>`, `<original>` and `<derive>` to the standard library's text. Subject and require stay
+   documentation, as 39 says. Reason: the plan's form, possible now.
+47. 2026-11-03, T.17: `edakit check` and `edakit sim` of the bell's five configurations from the modeled sources
+   report what its TOML graphs report – sim the same comparisons, check the same findings – once each resistor
+   the bell chose otherwise than the LED step's `i = 10 mA` derive carries `accept DEF.derive` with the bell's own
+   reason: R3 and R4 of main (330 Ω, D-11; tht inherits them, smd gives D-11's figures), all five of esp32 (100 Ω,
+   D-14's formula with the output's 30 Ω the rule does not model), all five of esp32tht (D-23). Reason: an
+   accepted derivation is how the language records a value chosen on purpose; every reason is the bell's text.
+48. 2026-11-03: the three concepts move to `docs/concepts/done/` in #279 itself, below its numbering commit – the
+   handbook, `codes.toml`, `edakit/lang/__init__.py` and the tests name them, and the build check holds the links, so
+   a move after the merge would be a version of its own for paths alone. `TODO.md` gets the one link there; TD-113 is
+   ticked through the notes lane after the merge. Reason: CLAUDE.md, a concept moves once it is built.
 
 ## Not in this plan
 
 The bell's conversion and its variants in its repository (the owner's word, L.9 of the TOML plan, kept in
 `TODO.md`); the tree and the pedal; the TOML form itself (built,
-[circuit-language-plan.md](../done/circuit-language-plan.md)); free expressions (language 5.8 and circuit-dsl.md
+[circuit-language-plan.md](circuit-language-plan.md)); free expressions (language 5.8 and circuit-dsl.md
 item 4); part picking; a SysML v2 reader of edakit's own; a Pygments lexer; clients for editors other than VS
 Code; publishing the extension; a second level of `for`; removing a part in a variant; the `variation` block of
 SysML v2 in the export.
@@ -805,9 +844,9 @@ SysML v2 in the export.
 ## Sources
 
 -  [circuit-dsl.md](circuit-dsl.md) and [circuit-dsl-language.md](circuit-dsl-language.md) at main after
-  `2f4628a`; [circuit-language-plan.md](../done/circuit-language-plan.md) (settled: L.1 to L.8 built on
-  2026-10-31, its "State after the build"); [implementation-plan.md](../done/implementation-plan.md) (the ground rules);
-  [circuit-language.md](../done/circuit-language.md) (the decisions, the prototype's round trip).
+  `2f4628a`; [circuit-language-plan.md](circuit-language-plan.md) (settled: L.1 to L.8 built on
+  2026-10-31, its "State after the build"); [implementation-plan.md](implementation-plan.md) (the ground rules);
+  [circuit-language.md](circuit-language.md) (the decisions, the prototype's round trip).
 -  edakit at `2f4628a`: `edakit/cli.py` (the `graph` parser, the routing), `edakit/graph_form.py` (`design_of`,
   `resolved`, `generated_path`, `main_json`, `to_toml`, `written`, `entry_map`, `set_graph`, `canonical`,
   `main_convert`), `edakit/toml_edit.py` (`Doc`, `literal`, `line`), `tests/test_pin_words.py`,
@@ -831,7 +870,7 @@ SysML v2 in the export.
   `edakit/version.py` and `edakit/agreements.py` (STRUCT.edakit), `edakit/config.py` (`[project] edakit`),
   `changes/README.md`, `.github/versions.py` (`NO_VERSION`), `.github/rulesets/main.json` (the required checks),
   `docs/steps/04-design-the-circuit.md`, `handbook/02-setup.md` (2.7), `handbook/18-walkthrough-kicad.md`,
-  [versioning.md](../done/versioning.md).
+  [versioning.md](versioning.md).
 - Syster's `systree` on [PyPI](https://pypi.org/pypi/systree/json) (the API, the CLI installed from crates.io on
   first use); [pygls](https://pypi.org/project/pygls/) as the language-server frame, named in circuit-dsl.md; the
   release repository of SysML v2 for the installers of the pilot implementation.

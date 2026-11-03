@@ -20,7 +20,7 @@ The working rules for sessions in this repository are in [CLAUDE.md](../CLAUDE.m
 | Path | Kind | Content |
 |---|---|---|
 | [README.md](../README.md) | Documentation | The start page – also of the site |
-| [handbook/](../handbook/README.md) | Documentation | The handbook, chapters 1 to 19 |
+| [handbook/](../handbook/README.md) | Documentation | The handbook, chapters 1 to 20 |
 | [docs/](.) | Documentation | Documentation beside the handbook: the entry pages – the [quickstart](quickstart.md), [how it works](how-it-works.md), the [projects](projects/README.md) with their pictures, the [glossary](glossary.md) –, the reader pages [adding a rule](adding-a-rule.md), [working on edakit](working-on-edakit.md) and [architecture](architecture.md), the [style guide](style.md), [brand/](brand/README.md) (logo, colours, type), `pictures/` and this page – all of `docs/` except `concepts/`, `catalog/` and `pages.py` |
 | [examples/coin-cell-led/](../examples/coin-cell-led/README.md) | Documentation | The project of the walkthrough (handbook 17): its README and `docs/decisions.md` are documentation, its `edakit.toml` and `hardware/` project data the tests hold to the chapter |
 | [examples/blinker-555/](../examples/blinker-555/README.md) | Documentation | The project of the KiCad walkthrough (handbook 18): its README and `docs/decisions.md` are documentation, its `edakit.toml` and `hardware/` project data the tests hold to the chapter |
