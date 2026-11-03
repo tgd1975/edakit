@@ -8,6 +8,10 @@ written once, by `.github/merge.py`, from the fragments in [changes/](changes/RE
 update edakit@edakit`, then `/reload-plugins` or a new session; `edakit version` names the version that runs and what an
 update brings.
 
+## 1.1.13 – 2026-11-03
+
+- `edakit order check` finds a number written with its unit right after it, as LCSC's cart writes the weight ("1,500g"); before, ORDER.basket reported the weight as not in the page text. The LCSC profile is recorded (2026-11-03) with the BOM tool's steps "Create BOM" and the dialog of "Add to Cart" (keys `mapping`, `cart_dialog`), "Submit BOM" and "Secure Checkout" among the buttons never pressed; the skill cart's mode parts follows them.
+
 ## 1.1.12 – 2026-11-03
 
 - The known gaps of the open designs closed (TD-124 to TD-133): a connector no longer hands a reversed source on from pin to pin (PATH.reverse); a low-side N-MOSFET in the ground return cuts a reversed source off ground (`[reverse] cuts` in catalog/paths.toml); `values.tvs: "bidirectional"` for a TVS that blocks both ways.
