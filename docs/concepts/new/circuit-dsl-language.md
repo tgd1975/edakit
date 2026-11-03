@@ -1,7 +1,8 @@
 # The circuit language: the notation, what it means, and its definition on SysML v2 and KerML
 
-Status 2026-11-03: built with [circuit-dsl-toolchain.md](circuit-dsl-toolchain.md) (#279); where the build deviates,
-the plan's decisions say so – 6, 15, 27, 28 and 32 confirmed by the owner. 2026-10-31: detail concept to
+Status 2026-11-03: built with [circuit-dsl-toolchain.md](circuit-dsl-toolchain.md), merged as 1.1.3 and withdrawn from main in 1.1.4 on the owner's word – a beta, the explorative DSL, on the branch
+`claude/friendly-mccarthy-n4kt6y`, switched on per project in edakit.toml (circuit-dsl-toolchain.md, decision 48);
+the deviations 6, 15, 27, 28 and 32 confirmed by the owner. 2026-10-31: detail concept to
 [circuit-dsl.md](circuit-dsl.md), asked for by the owner the same day. It
 fixes what that concept leaves to "the language": every construct with its syntax, its meaning, what it writes
 into the resolved graph and the errors it raises; how the compiler resolves names and expands usages, loops and
@@ -19,7 +20,7 @@ source through the CLI and `graph show`; nothing of the circuit lives only in Ea
 
 - **One graph, two forms.** A project writes its circuit in the language (`hardware/graph.circuit`) or flat –
   `hardware/graph.toml` or `hardware/graph.json`, the forms of
-  [circuit-language-plan.md](circuit-language-plan.md), built on 2026-10-31 –; the compiler
+  [circuit-language-plan.md](../done/circuit-language-plan.md), built on 2026-10-31 –; the compiler
   turns the language into the resolved graph in today's JSON format, which the engines, the simulation, the hash,
   the schematic, the firmware contract and the project's scripts read unchanged. The resolved graph is generated,
   committed and checked (section 8). The language adds one key to the graph, `derivations`.
@@ -968,10 +969,10 @@ and language projects alike), the other sixteen acked as written:
   `edakit/engines/sim.py` (LIM.i on an LED, `led_on_min_a`), `edakit/config.py` (`PROJECT_KEYS`,
   `_requirements`, `[release] publish.decisions`), `edakit/requirements.py`, `edakit/graph_show.py`,
   `edakit/parts/C17630.json`, `edakit/parts/C2297.json`, `tests/fixtures/led-bar`, handbook 3.1, 10.1, 14.5; the
-  prototype [translate.py and bell.circuit](prototypes/circuit-language/) (`statements`, `Reader`,
-  `Pins`, the width 118), its translation of led-bar; [circuit-language.md](circuit-language.md) (the
+  prototype [translate.py and bell.circuit](../done/prototypes/circuit-language/) (`statements`, `Reader`,
+  `Pins`, the width 118), its translation of led-bar; [circuit-language.md](../done/circuit-language.md) (the
   decisions, the rules of the round trip, "Every field of the graph");
-  [circuit-language-plan.md](circuit-language-plan.md) (settled: L.1 to L.8 built on 2026-10-31, its
+  [circuit-language-plan.md](../done/circuit-language-plan.md) (settled: L.1 to L.8 built on 2026-10-31, its
   "State after the build").
 - KerML 1.0 (formal/26-03-01): clauses 7.4.6 (connector ends), 7.4.13 (semantic metadata), 10.1 to 10.4 (model
   interchange, the file extensions, the JSON serialization: `@id`, `@type`, references, root namespaces), read from
