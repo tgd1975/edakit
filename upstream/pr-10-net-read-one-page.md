@@ -1,7 +1,7 @@
 # Pull request – draft (M-11)
 
 Not posted – waits for the owner's word, with the issue ([issue-10-net-read-one-page.md](issue-10-net-read-one-page.md)).
-From the fork's `fix/net-read-one-page` (`149dbe3`, on `upstream/main` `017f423`); "#<issue>" is filled in when the
+From the fork's `fix/net-read-one-page` (`1b90910`, rebased onto `upstream/main` `5f845f0` on 2026-11-03); "#<issue>" is filled in when the
 issue is posted.
 
 ### Title
@@ -21,11 +21,11 @@ Fixes #<issue>
 
 ## Risk
 
-Low – one argument in `easyeda-bridge-extension/src/dispatcher.ts`. The `dispatcher.js` budget holds (242,699 of 243,000; `.eext` 203,832 of 204,000). Revert to roll back.
+Low – one argument in `easyeda-bridge-extension/src/dispatcher.ts`. The size budgets hold (`dispatcher.js` 248,309 of 248,314; `.eext` 206,179 of 206,184). Revert to roll back.
 
 ## Validation
 
 - A test in `dispatcher.test.ts`: a flag of another loaded schematic on a wire end stays out of the net (fails without the fix).
-- On main 017f423: `pnpm verify:fast` and the extension tests (610) green.
-- Live on EasyEDA Pro 3.2.209 with 1.8.0: reproduced, and gone with the other tab closed. The rebuilt extension not run live.
+- On main 5f845f0: `pnpm verify:fast` and the extension tests (619) green.
+- Live on EasyEDA Pro 3.2.209 with 1.8.0 (the net code is the same in 1.8.1): reproduced, and gone with the other tab closed. The rebuilt extension not run live.
 ````
