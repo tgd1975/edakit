@@ -61,7 +61,7 @@ there; "(8.2)" alone does not.
 ## Budgets
 
 The lightest pages have a count, so that a newcomer meets the words one at a time
-([documentation-newcomer](concepts/new/documentation-newcomer.md), decision 4):
+([documentation-newcomer](concepts/done/documentation-newcomer.md), decision 4):
 
 - The start page: at most 120 words before the first picture, the two-minute command within its first 40 lines.
 - How it works: at most 1,100 words and 15 glossary terms – a term counts when the page uses it, linked or not. The
@@ -132,7 +132,7 @@ named as the project's own. The gallery shows what is built, nothing planned.
 
 The steps (`docs/steps/`) are the person's manual: what you do, what you are asked, what you decide and what you get,
 one page per step of the walkthrough's table. The handbook is the complete one, for the assistant and for looking
-things up ([documentation-newcomer](concepts/new/documentation-newcomer.md)). A steps page is written in the entry
+things up ([documentation-newcomer](concepts/done/documentation-newcomer.md)). A steps page is written in the entry
 register, with these additions:
 
 - **A budget.** At most 400 words, the index at most 300, all of them together at most 4,000. A page that would take

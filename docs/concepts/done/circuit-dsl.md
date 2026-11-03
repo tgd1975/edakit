@@ -1,7 +1,9 @@
 # A language of its own for the circuit: what it would have to be, on which basis, and when
 
-Status 2026-10-31: concept, asked for by the owner after the review of
-[circuit-language.md](../done/circuit-language.md) deferred the language of that sketch. It answers four
+Status 2026-11-03: built – all four stages on one branch, merged as #279 ("When it brings value"); the decisions
+of the plan confirmed by the owner; left: the bell's own conversion (TD-122). 2026-11-02: decided. 2026-10-31:
+concept, asked for by the owner after the review of
+[circuit-language.md](circuit-language.md) deferred the language of that sketch. It answers four
 questions: whether a fitting language exists already, what a language of edakit's own would have to be able to
 do to be worth building, on which basis – SysML v2, KerML, an existing circuit language, or something else –,
 and when it would bring value. It takes a position on each, with the alternative it sets aside where that
@@ -509,11 +511,12 @@ by number, nets by name – which holds only because the usages bind `anode = LE
 would be `STEP1_ANODE`, and `sim.json`, `schematic.toml` and the board files name nets.
 
 **Four projects, one repository, one hook.** Each project keeps its `edakit.toml`; `[project] graph` names the
-`.circuit` file and `[project] parts` the folders, the variant's first, then main's. A change of the main file
-changes the three variants' resolved graphs wherever they inherit it, so the bell needs one step that runs `graph
-json --write` in all four projects – a `graphs` target in its Makefile – and the pre-commit hook of L.5 runs
-`--check` in all four; the bell has no hook today. The diff of each resolved graph shows what the change reached; a
-variant's circuit hash, and with it M-1 and M-6, move only where that diff is not empty.
+`.circuit` file and `[project] parts` the folders, the variant's first, then main's. A change of the main file changes
+the three variants' resolved graphs wherever they inherit it, so the bell needs one step that runs `graph json
+--write` in all four projects – a `graphs` target in its Makefile – and `edakit hook` (handbook 2.7) runs `--check` in
+all four: its block runs every variant whose files or the main project's `hardware/` are staged. The diff of each
+resolved graph shows what the change reached; a variant's circuit hash, and with it M-1 and M-6, move only where that
+diff is not empty.
 
 **What stays per project:** the board file, `schematic.toml`, `sim.json`, `signoff.json`, the firmware; all of
 them name parts by designator and nets by name, which is why the usages name both.
@@ -665,7 +668,7 @@ that `hardware/requirements.toml` holds today – `[[need]]` N- in someone's wor
 testable sentence with `from` (needs, decisions, a standard, a sign-off), `binding` must, should or may, `verify` as
 rows of the gate protocol, a sign-off M-, a project script or an acceptance step, and a status draft, accepted or
 dropped; DOCS.ref, DOCS.need, DOCS.evidence and DOCS.draft check it, the gate evaluates the evidence, the circuit
-hash takes the file byte for byte ([requirements.md](../done/requirements.md); the file covers the circuit only, its
+hash takes the file byte for byte ([requirements.md](requirements.md); the file covers the circuit only, its
 decision 3). SysML v2 has the model for exactly this, in its Systems Library and one domain library:
 
 | edakit today | SysML v2 |
@@ -731,7 +734,7 @@ toolchain" below.
 
 Not before, and not without, these:
 
-1.  **The TOML form is built** ([circuit-language-plan.md](../done/circuit-language-plan.md), L.1 to L.9; L.1 to
+1.  **The TOML form is built** ([circuit-language-plan.md](circuit-language-plan.md), L.1 to L.9; L.1 to
    L.8 built on 2026-10-31, L.9 the bell's): pins by name or role, the resolved `graph.json` beside the form,
    `--check` in the hook. The language compiles to the same artifact; without it, it has no target.
 2. **Blocks want parameters.** Measured in the projects: three or more blocks whose values a project changes – the
@@ -748,9 +751,13 @@ Not before, and not without, these:
 6. **A budget of size L** for the first stage, and the readiness to maintain a construct, not a key, per change.
 
 Whether and when to build it is the owner's decision, due when the triggers hold; then stage 1 first, so that the
-value is measured before the cost is paid. The alternatives: a prototype now on the bell and led-bar, as the sketch
-was – a decision on evidence sooner, but a prototype that waits for the TOML form to have a target –; or not at all,
-which is TOML with names, `block add` with parameters as flags and `graph show` for slices.
+value is measured before the cost is paid. **Decided 2026-11-02 by the owner: built now, all four stages on one
+branch**, as [circuit-dsl-toolchain.md](circuit-dsl-toolchain.md) plans it – triggers 1, 3 and 4 hold (L.1 to L.9
+built, the bell's variants at hand, the graph's shape since the cut only gaining keys), trigger 5 is measured by the
+build's own evals (T.19), trigger 2 was not counted and trigger 6 is the owner's go. The alternatives: a prototype now
+on the bell and led-bar, as the sketch was – a decision on evidence sooner, but a prototype that waits for the TOML
+form to have a target –; or not at all, which is TOML with names, `block add` with parameters as flags and `graph
+show` for slices.
 
 The stages, each useful on its own:
 
@@ -804,7 +811,7 @@ are [circuit-dsl-toolchain.md](circuit-dsl-toolchain.md).
 | Resolver and compiler | names resolved across files – `include`d files, a variant chain in order, definitions from the project's files and then edakit's library, requirements files – into one namespace per project; usages and loops expanded, redefinitions applied, pin words to numbers through the entries (L.1, L.2), the derivation records and the resolved requirements written, a stable order: a function from files to the resolved graph | the prototype's writer to JSON; L.5's `edakit graph json` for TOML, once built | L | 1 for definitions, 2 for projects |
 | Quantities and derivation rules | quantities with units, ranges and tolerances as the inputs; `series_resistor`, `divider`, `pullup`, `rc` … as functions with their corners, units and series, evaluated by the compiler into the records; free expressions with the units checked only when a project needs them (item 4) | `QUANTITY` and `MULTIPLIERS` in circuit.py for `330Ω`, `4k7`, `100nF`; `v_range` for nets; `UNITS` in engines/quantities.py; the simulation's LED model and LIM.i know the corners | M | 1 |
 | Engine DEF | `DEF.derive` from the graph's `derivations`: a part's value against its record's derived value and series, numbers only, with the catalog's severities and the domains' grades | the engines' frame, the catalog's code table, STRUCT.identity as the pattern | S | 1 |
-| `edakit graph json` for `.circuit` | `--write` the resolved graph, `--check` the drift, per project; the pre-commit hook of L.5 runs it | `edakit graph show`; `edakit firmware --check` as the pattern; the bell has no hook today | S on L.5 | 2 |
+| `edakit graph json` for `.circuit` | `--write` the resolved graph, `--check` the drift, per project; `edakit hook` runs it | `edakit graph show`; `edakit firmware --check` as the pattern; `edakit hook` with `graph json --check` for a TOML graph | S on L.5 | 1 |
 | `edakit graph fmt` | the canonical layout, comments kept, so that a diff shows data | the prototype's writer, which lays out but keeps no comments | S to M | 1 |
 | `edakit graph convert --to circuit` | a JSON or TOML graph as flat statements – no usages: those come from `block add` or by hand | the prototype's writer | S | 2 |
 | `block add` on the language | writes a usage with its bindings and designators, `--set` for parameters, `--without` for optional parts | `block add` on JSON, `plan()` in block.py, `--without` | M | 1 for `--set`, 2 for usages |
@@ -920,7 +927,7 @@ A](https://github.com/Systems-Modeling/SysML-v2-Release/blob/master/sysml/src/ex
 - edakit at `bd227e3`: handbook 3, 4 and 14.5 (the blocks), `edakit/blocks/*.json`, `block.py`, `circuit.py`
   (`QUANTITY`), `engines/quantities.py`, `release/gate.py` (`state_hash`), `config.py` (`[project] requirements`),
   `catalog/codes.toml` (DOCS.ref, the HINT codes), `tests/fixtures/led-bar`, `tests/reference.py`, `evals/`, the
-  prototype [translate.py and bell.circuit](../done/prototypes/circuit-language/),
-  [maker-coverage.md](../done/maker-coverage.md) (the owner's projects, FT-23, FT-24, the stability of the model),
-  [circuit-language.md](../done/circuit-language.md) (the sketch, its review and decisions) and
-  [circuit-language-plan.md](../done/circuit-language-plan.md).
+  prototype [translate.py and bell.circuit](prototypes/circuit-language/),
+  [maker-coverage.md](maker-coverage.md) (the owner's projects, FT-23, FT-24, the stability of the model),
+  [circuit-language.md](circuit-language.md) (the sketch, its review and decisions) and
+  [circuit-language-plan.md](circuit-language-plan.md).

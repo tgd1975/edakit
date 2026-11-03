@@ -1,0 +1,34 @@
+variant smd of ../../hardware/graph.circuit
+  set name "christmas-bell-smd"
+  set version "0.1"
+  set date "2026-10-26"
+  description "Automatic Christmas bell, variant SMD (D-11): the circuit of the main board with 0805 LEDs, an SMD
+      servo header and an SMD buffer capacitor; JLCPCB's Economic assembly places everything but the Nano's female
+      headers."
+  purpose private market EU
+    notes "Automatic Christmas bell, SMD variant, for the owner's home, built and used by the owner – not sold or
+        given away (D-16). Powered from a USB port or power bank through the Nano's USB; no battery holder, no mains,
+        no radio."
+  part J1 connector "HX PZ2.54-1x3P TP-YQ" lcsc C41417360 bom yes "Servo (GND, +5 V, signal), SMD header"
+    notes "Standard servo plug: brown = GND (1), red = +5 V (2), orange = signal (3). SMD header, placed by JLCPCB
+      (D-11)."
+  part C1 capacitor "RVT1C102M1010 1000uF 16V SMD" lcsc C3359 bom yes "Buffer capacitor for the servo (SMD)"
+    notes "Absorbs the servo's start-up peaks so the Nano does not reset. SMD can: the Economic assembly places it
+      (D-11)."
+  part LED5 led KT-0805G lcsc C2297 bom yes "0805 LED, green, countdown step 1"
+    notes "D-11: KT-0805 series, pin 1 = anode, pin 2 = cathode (footprint mark at pad 2)"
+  part LED4 led KT-0805G lcsc C2297 bom yes "0805 LED, green, countdown step 2"
+    notes "D-11: KT-0805 series, pin 1 = anode, pin 2 = cathode (footprint mark at pad 2)"
+  part LED3 led KT-0805Y lcsc C2296 bom yes "0805 LED, yellow, countdown step 3"
+    notes "D-11: KT-0805 series, pin 1 = anode, pin 2 = cathode (footprint mark at pad 2)"
+  part LED2 led KT-0805Y lcsc C2296 bom yes "0805 LED, yellow, countdown step 4"
+    notes "D-11: KT-0805 series, pin 1 = anode, pin 2 = cathode (footprint mark at pad 2)"
+  part LED1 led KT-0805R lcsc C2295 bom yes "0805 LED, red, countdown step 5"
+    notes "D-11: KT-0805 series, pin 1 = anode, pin 2 = cathode (footprint mark at pad 2)"
+  for n in 3..4
+    part R{n}
+      accept DEF.derive "D-11: the series resistors stay 330 Ω – 5.8–9.0 mA (red, yellow) and 3.7–6.6 mA (green) in
+        the simulation"
+  accept HINT.bulk "C1 1000 µF / 16 V electrolytic on +5V, next to J1 (it buffers the Nano's 5V pin)"
+  accept HINT.debounce "debounced in firmware: src/firmware/buttons.ino, 50 ms (DEBOUNCE_DELAY)"
+  accept HINT.esd "J1 is the servo's own cable inside the bell's frame, plugged once; no TVS – like the main board"

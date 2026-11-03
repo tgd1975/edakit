@@ -32,7 +32,9 @@ are. What one role decides lives in a file of its own, with one owner and one ha
   after an `easyeda` script ran through `edakit run`, what it changed and what is from before it (8.6). `pcb dump` and
   `route all` take off what they made again; `route all` and `route pours` mark a change of `pcb:<b>` gone.
 
-Complete example: [tests/fixtures/led-bar](../tests/fixtures/led-bar/). A key edakit does not know is an error with
+Complete example: [tests/fixtures/led-bar](../tests/fixtures/led-bar/). The smallest project – a circuit without a
+board of its own, written by hand – is in 2.7: `[project]` with `name`, `graph` and `requirements`, and
+`[boards.main]` with `wired = true`. A key edakit does not know is an error with
 the list of the known ones – a typo does not fall back to a default unnoticed. An edakit.toml that still holds the
 board, the schematic or the checks (the earlier one-file form) is refused with a list of what goes where.
 
@@ -46,8 +48,8 @@ board, the schematic or the checks (the earlier one-file form) is refused with a
 | `distributors` | `["lcsc"]` | where the agent part-selector searches, in this order: `lcsc`, `rs`, `farnell`, `mouser`, `digikey`, `reichelt` (4.2) |
 | `lock` | `auto` | EasyEDA claim between Claude sessions: `auto` (when `CLAUDE_CODE_SESSION_ID` is set) or `off` |
 | `agreements` | `true` | the working agreements (11.4), one line each, in the context of every Claude Code session in the project – below |
-| `graph` | `hardware/graph.json` | the hardware graph (3.1): a `.json` file, or a `.toml` file with the same keys – below |
-| `parts` | `hardware/parts` | parts database, one JSON per part (LCSC number or manufacturer part number) |
+| `graph` | `hardware/graph.json` | the hardware graph (3.1): a `.json` file, a `.toml` file with the same keys – below –, or a `.circuit` file of the circuit language (chapter 20) |
+| `parts` | `hardware/parts` | parts database, one JSON per part (LCSC number or manufacturer part number); a list of folders for a variant of the circuit language – its own first, then its base's (`["hardware/parts", "../../hardware/parts"]`, chapter 20): an entry is taken from the first that has it, and the circuit hash takes the entries the graph uses |
 | `sim` | `hardware/sim.json` | simulation config (chapter 5) |
 | `sim_plugin` | – | optional Python file with `MODELS` and `checks` (5.1) |
 | `schematic` | `hardware/schematic.toml` | the schematic file (10.3) |
@@ -62,7 +64,7 @@ board, the schematic or the checks (the earlier one-file form) is refused with a
 | `stock_max_age_days` | `14` | an older snapshot (or snapshot row) is pending in PARTS.stock – it blocks the release, not `edakit check` |
 | `spare_pct` | `0` | `edakit order`: spares on every cart line, in % of `quantity` sets (rounded up) |
 | `toolchain` | `easyeda` | the EDA tool the boards are drawn in: `easyeda` (EasyEDA Pro through the bridge) or `kicad` (KiCad 10, chapter 16) – below |
-| `edakit` | – | the edakit the project needs: comparisons such as `">=0.4"` or `">=0.4, <0.5"` (`>=`, `>`, `<=`, `<`, `==`), another form is an error; a running edakit that does not meet it is the note STRUCT.edakit of `edakit check`, and the SessionStart hook says so (2.3) |
+| `edakit` | – | the edakit the project needs: comparisons such as `">=0.4"` or `">=0.4, <0.5"` (`>=`, `>`, `<=`, `<`, `==`), another form is an error; a running edakit that does not meet it is the note STRUCT.edakit of `edakit check`, and the SessionStart hook says so (2.3); `edakit graph convert --to circuit` sets it to the version that reads the language |
 
 - `agreements` – the plugin hook adds them at session start; `false` turns them off, not the lines of the project's
   scripts and agents the hook adds after them (11.4).
@@ -527,10 +529,23 @@ status = "accepted"
 | `verify` | requirement | a list of what tests it – below; `edakit req` shows it as written, the gate evaluates it (8.7) |
 | `status` | both | `draft` (written, not approved – also an entry without `status`), `accepted` (only you set it), `dropped` – below |
 | `reason` | both | why; required with `dropped` |
+| `subject` | requirement | the part, net, usage or definition it is about (`led`, `+5V`); DOCS.ref resolves it against the graph and, for a `.circuit` graph, its usages and definitions |
+| `require` | requirement | the condition as stated, kept as text and checked for its form – a quantity reference, an operator (`<`, `<=`, `>`, `>=`, `==`, `within`) and a quantity: `"D.i within 2 mA .. 15 mA"`; what checks it is what `verify` names |
+
+A part or a net of the graph names what it answers with `satisfies` (`["R-3"]`), and a decision with `decision`
+(`["D-8"]`): DOCS.ref holds `satisfies` to the requirements of the files and – with `[release] publish.decisions` – a
+`decision` to the headings `## D-…` of the decision log; `edakit req` lists a requirement's parts and nets. The same
+file may be written in the notation of the circuit language, `hardware/requirements.circuit` (chapter 20), read to
+the same entries and hashed byte for byte as well.
 
 `verify`, one kind per entry:
 
 - `{ rows = "…" }` – rows of the gate protocol, a pattern over "ID scenario item check" as `accept` match them (8.2);
+  the rows of the simulation are those of `edakit sim --json <file>` (its `checks`: `id`, `scenario`, `item`,
+  `check`), e.g. `SIM.state fresh/on/vf-min D1 LED on`. SIM.state's items are designators and nets – an LED's
+  checks `LED on`, `LED dark`, `LED current (…)`, a regulator's `output voltage (…)`, a blocking diode's `diode
+  blocks` –, so `SIM.state * D1 LED on` is D1 lit in every scenario that turns it on, `SIM.state used/* D? LED on`
+  every LED at the end voltage;
 - `{ signoff = "M-1" }` – a manual check, which counts when its `note` names the requirement's ID after
   "requirements met:";
 - `{ script = "…" }` – a project script of kind `check` or the id of a `[[release.stages]]`: it passes when the check
@@ -618,7 +633,9 @@ The project's pre-commit hook: edakit's block written or renewed (install), what
   session start prints, 2.7)
 - **install** – **Reads:** the same. **Writes:** edakit's block into the hook – a new hook, after the header of one the
   project has, or the older block renewed –, the hook made executable, `git config core.hooksPath` when unset; names
-  every line outside the block that runs edakit itself, for the project to take out
+  every line outside the block that runs edakit itself, for the project to take out. A step the session may not do –
+  Claude Code guards git's configuration, a sandbox refuses a write – is a line `failed: …` with the command to run in
+  a terminal of your own, and exit 1
 - **run** – what the block calls. **Reads:** the staged paths, every edakit.toml of the repository and the files each
   names. **Writes:** what its steps write. A configuration runs when its edakit.toml, its `hardware/`, the main
   project's `hardware/` or a file it names is staged: `edakit check`, `edakit sim`, with a TOML graph `edakit graph
@@ -676,7 +693,7 @@ Rule, why, fix and sources of a code.
 ### edakit graph
 
 <!-- edakit:generated command graph -->
-`edakit graph [--json JSON] [--write] [--check] [--dry-run] {show,json,convert} [name]`
+`edakit graph [--json JSON] [--write] [--check] [--dry-run] [--to {toml,circuit}] [--out DIR] [--map FILE] {show,json,convert,fmt,derive,sysml,kerml} [name] [files ...]`
 
 What the graph says about one part or net; the resolved graph as JSON; a JSON graph moved to TOML.
 <!-- edakit:end -->
@@ -710,6 +727,20 @@ What the graph says about one part or net; the resolved graph as JSON; a JSON gr
 - **Left by hand after it:** with `[firmware]` `edakit firmware` (the contract's `state_sha256` is the new circuit hash
   – convert says so), and the project scripts that read `graph` show as outdated once – `edakit run` or
   `edakit scripts stamp` (8.6)
+
+### edakit lsp
+
+<!-- edakit:generated command lsp -->
+`edakit lsp`
+
+The language server of the circuit language over stdio (the extra lsp: pygls).
+<!-- edakit:end -->
+
+`edakit lsp` – EasyEDA: no
+
+- The language server of the circuit language over stdio, for an editor (chapter 20). **Reads:** the editor's text,
+  the project's edakit.toml and parts entries. **Writes:** – . Needs the extra `lsp` (pygls); without it exit 1 and
+  what to install.
 
 ### edakit domains
 
@@ -759,7 +790,7 @@ Mistakes built into a copy of the design one at a time: what no code catches.
 ### edakit block
 
 <!-- edakit:generated command block -->
-`edakit block [--as INSTANCE] [--connect PORT=NET [PORT=NET ...]] [--without DES [DES ...]] [--board BOARD] [--file FILE] [--dry-run] {list,show,add} [name]`
+`edakit block [--as INSTANCE] [--connect PORT=NET [PORT=NET ...]] [--without DES [DES ...]] [--board BOARD] [--set PARAM=VALUE [PARAM=VALUE ...]] [--part DES=KEY [DES=KEY ...]] [--file FILE] [--dry-run] {list,show,add} [name]`
 
 Building blocks: list, show, or add one to the graph.
 <!-- edakit:end -->
@@ -1349,7 +1380,9 @@ edakit.toml                 the table of contents: project, boards, where the fi
 hardware/requirements.toml  what the circuit must do: needs and requirements, if [project] requirements names it
 hardware/graph.toml         the hardware graph (only source of parts and connections), ground net, check settings;
                             hardware/graph.json in a project that has not converted
-hardware/graph.json         beside a TOML graph: the resolved graph, generated (edakit graph json --write), never edited
+hardware/graph.circuit      the graph in the circuit language, where [project] graph names it (chapter 20)
+hardware/graph.json         beside a TOML or .circuit graph: the resolved graph, generated (edakit graph json --write),
+                            never edited
 hardware/parts/*.json       parts database; an own footprint as data in its entry (footprint_data, 4.5)
 hardware/datasheet/<name>.* the board as a part for other projects: parts entry and datasheet (edakit part datasheet)
 hardware/sim.json           simulation scenarios

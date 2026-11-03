@@ -1,7 +1,7 @@
 """`edakit hook`: the project's pre-commit hook (handbook 2.7). edakit owns one block of it – `install` writes and
 renews that block and sets core.hooksPath, the project's own steps around it stay –, `check` says what is missing for
 the session start, and `run`, which the block calls, runs the steps of every configuration whose files are staged:
-`edakit check`, `edakit sim`, with a TOML graph `edakit graph json --check`, with [firmware] `edakit firmware --check`,
+`edakit check`, `edakit sim`, with a TOML or a .circuit graph `edakit graph json --check`, with [firmware] `edakit firmware --check`,
 with [docs] `edakit docs`. A failing step blocks the commit; never bypass it with --no-verify.
 
 The block finds edakit itself: $EDAKIT, else `edakit` on the PATH (inside Claude Code), else the plugin installation in
@@ -113,13 +113,18 @@ EDAKIT_CALL = re.compile(r"(?:^|[\s;&|(])(?:\S*/)?edakit(?:\.sh)?\s+(?:check|sim
 SAYS = re.compile(r"^\s*(?:echo|printf)\b")
 
 
+FAILED = "failed: "        # the start of a line of install() for a step that could not be done
+
+
 def install(root):
-    """Write or renew edakit's block, make the hook executable and set core.hooksPath -> [what was done]."""
+    """Write or renew edakit's block, make the hook executable and set core.hooksPath -> [what was done]. A step the
+    session may not do – Claude Code guards git's configuration, a sandbox refuses a write – is a line that starts with
+    FAILED and names the command to run by hand; the steps after it are not tried."""
     root = Path(root)
     folder, active = hooks_dir(root)
     f = folder / "pre-commit"
     rel = os.path.relpath(f, root)
-    done = []
+    done, outside = [], []
     if f.is_file():
         text = f.read_text(encoding="utf-8")
         m = _block(text)
@@ -139,28 +144,35 @@ def install(root):
         rest = new.replace(BLOCK, "")
         for i, line in enumerate(rest.splitlines(), 1):
             if not line.lstrip().startswith("#") and not SAYS.match(line) and EDAKIT_CALL.search(line):
-                done.append(f"{rel} line {i} outside the block runs edakit itself – `{line.strip()[:70]}`: the "
-                            "block does that now, take the line out")
+                outside.append(f"{rel} line {i} outside the block runs edakit itself – `{line.strip()[:70]}`: the "
+                               "block does that now, take the line out")
     else:
-        folder.mkdir(parents=True, exist_ok=True)
         new = f"{SHEBANG}\n# Pre-commit hook (edakit handbook 2.7). Never bypass it with --no-verify.\n{BLOCK}"
         done.append(f"{rel} written")
-    if not f.is_file() or new != f.read_text(encoding="utf-8"):
-        f.write_text(new, encoding="utf-8")
-    mode = f.stat().st_mode
-    if not mode & stat.S_IXUSR:
-        f.chmod(mode | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH)
-        done.append(f"{rel} made executable")
+    try:
+        folder.mkdir(parents=True, exist_ok=True)
+        if not f.is_file() or new != f.read_text(encoding="utf-8"):
+            f.write_text(new, encoding="utf-8")
+        mode = f.stat().st_mode
+        if not mode & stat.S_IXUSR:
+            f.chmod(mode | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH)
+            done.append(f"{rel} made executable")
+    except OSError as e:
+        return [f"{FAILED}{rel} not written ({e.strerror or e}) – run `edakit hook install` in a terminal of your own"]
+    done += outside
     if not active:
-        _git(root, "config", "core.hooksPath", os.path.relpath(folder, root))
-        done.append(f"git config core.hooksPath {os.path.relpath(folder, root)}")
+        hooks = os.path.relpath(folder, root)
+        if _git(root, "config", "core.hooksPath", hooks) is None:
+            done.append(f"{FAILED}git config core.hooksPath {hooks} refused – run it in a terminal of your own")
+        else:
+            done.append(f"git config core.hooksPath {hooks}")
     return done
 
 
 # --- run ----------------------------------------------------------------------------------------------------------
 
 def configs(root):
-    """[{path, dir, inputs, toml_graph, firmware, docs}] of the repository's edakit.toml files, paths relative."""
+    """[{path, dir, inputs, generated_graph, firmware, docs}] of the repository's edakit.toml files, paths relative."""
     from .config import ConfigError, load
     root = Path(root)
     listed = _git(root, "ls-files", "--cached", "--others", "--exclude-standard", "*edakit.toml", "edakit.toml")
@@ -172,7 +184,7 @@ def configs(root):
             cfg = load(root / name)
         except ConfigError:                            # edakit check names what is wrong – it runs all the same
             d = str(Path(name).parent)
-            out.append({"path": name, "dir": "" if d == "." else d, "inputs": [], "toml_graph": False,
+            out.append({"path": name, "dir": "" if d == "." else d, "inputs": [], "generated_graph": False,
                         "firmware": False, "docs": False})
             continue
         inputs = [cfg.graph, cfg.parts, cfg.sim_config, *cfg.requirements, *cfg.docs]
@@ -183,7 +195,8 @@ def configs(root):
             if p.is_relative_to(root):
                 rel.append(str(p.relative_to(root)))
         d = str(Path(name).parent)
-        out.append({"path": name, "dir": "" if d == "." else d, "inputs": rel, "toml_graph": cfg.graph.suffix == ".toml",
+        out.append({"path": name, "dir": "" if d == "." else d, "inputs": rel,
+                    "generated_graph": cfg.graph.suffix in (".toml", ".circuit"),
                     "firmware": cfg.firmware is not None, "docs": bool(cfg.docs)})
     return out
 
@@ -192,8 +205,16 @@ def _pin_tables(graph):
     """The files of doc_pin_table in a graph – under locks, or checks in the older form; {file: …} or a path."""
     import tomllib
     try:
-        text = graph.read_text(encoding="utf-8")
-        data = tomllib.loads(text) if graph.suffix == ".toml" else json.loads(text)
+        if graph.suffix == ".circuit":                 # compiled, as every reader of the graph reads it
+            from .config import ConfigError
+            from .design import load_graph
+            try:
+                data = load_graph(graph)
+            except ConfigError:
+                return []
+        else:
+            text = graph.read_text(encoding="utf-8")
+            data = tomllib.loads(text) if graph.suffix == ".toml" else json.loads(text)
     except (OSError, ValueError):
         return []
     data = data.get("graph", data) if isinstance(data, dict) else {}    # as design.py reads it
@@ -221,7 +242,7 @@ def plan(staged, cfgs):
         if not any(_touches(p, c) for p in staged):
             continue
         steps = [["check"], ["sim"]]
-        if c["toml_graph"]:
+        if c["generated_graph"]:
             steps.append(["graph", "json", "--check"])
         if c["firmware"]:
             steps.append(["firmware", "--check"])
@@ -265,9 +286,10 @@ def main(args):
     if args.action == "run":
         return run(root)
     if args.action == "install":
-        for line in install(root):
+        lines = install(root)
+        for line in lines:
             print(line)
-        return 0
+        return 1 if any(line.startswith(FAILED) for line in lines) else 0
     problems = check(root)
     for p in problems:
         print(f"{p['what']}: {p['text']}")

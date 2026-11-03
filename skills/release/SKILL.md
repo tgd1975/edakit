@@ -7,6 +7,7 @@ description: Release a hardware state for manufacturing with the edakit release 
 
 Goal: **the board is correct when it goes to the manufacturer, and the tooling – not a gut feeling – makes sure.**
 Concept: `${CLAUDE_PLUGIN_ROOT}/handbook/08-release-gate.md`.
+Where the session does not find `edakit` on the PATH, it is `${CLAUDE_PLUGIN_ROOT}/bin/edakit`.
 
 ## Procedure
 
