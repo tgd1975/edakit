@@ -41,6 +41,7 @@ program](06-schematic.md#65-drawn-without-an-eda-program) – and the hand-over 
 |---|---|---|
 | 10 | [Reference](10-reference.md) | you need a key of edakit.toml, of a board or schematic file, or a command |
 | 9 | [EasyEDA API](09-easyeda-api.md) | you call the API directly or something behaves strangely |
+| 19 | [Verification and validation](19-verification.md) | you want to know how far a finding or a clean check can be trusted, or you add a reference circuit or an open design |
 
 ## Reading paths
 

@@ -1,0 +1,2 @@
+patch
+- Handbook chapter 19, "Verification and validation: how edakit is tested": what a clean check proves and what it does not, the test layers, the reference circuits and the open designs – each with why it is there –, how a finding on them is judged, and what a new reference circuit or open design must bring. Its lists are generated (`python -m edakit.catalog.handbook --write`, kinds `references`, `designs`, `tally`); the catalog's pages show the same why.

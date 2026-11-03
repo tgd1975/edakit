@@ -110,6 +110,14 @@ def test_what_edakit_sim_finds_is_what_is_judged(name, tmp_path):
 
 
 @pytest.mark.parametrize("name", NAMES)
+def test_every_design_says_why_it_was_chosen(name):
+    """Admission rule 5 (handbook 19.7): the README has a paragraph that starts with **Why this design:** – what the
+    design brings that no reference circuit and no other design covers; handbook 19.5 and the catalog show it."""
+    from edakit.catalog import handbook
+    assert len(handbook.open_design(DESIGNS / name)["why"].split()) >= 12, f"{name}: no Why this design paragraph"
+
+
+@pytest.mark.parametrize("name", NAMES)
 def test_every_finding_is_judged_with_a_reason(name):
     j = judged(name)
     for f in j.get("check", []) + j.get("sim", []):

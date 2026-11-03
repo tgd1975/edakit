@@ -171,7 +171,8 @@ structure, artifacts, limits and levels of the basic kinds, parts, files, docume
 ![The reference circuit of the domain power: the led-bar with a battery block, BT20 and D20 onto +5V – the holder suggests the domain](../docs/catalog/circuits/power.svg)
 
 Each domain has such a reference circuit with the faults it must catch, drawn on its page of the
-[catalog](../docs/catalog/index.html).
+[catalog](../docs/catalog/index.html). Why each and what a new one must bring: the reference circuits
+([19.4](19-verification.md#194-the-reference-circuits)).
 
 The interview of a new project asks for no domain: there is no graph yet, and the graph decides (skill new-project). A
 domain file sets severities (also per purpose: `[severity.sale]`), switches codes or topics on, and names the facts a
@@ -322,7 +323,7 @@ code reports. On the tests' led-bar, 24 of 45 are caught without the simulation 
 R-EXT and the OE pull-up a hundred times larger: the LEDs dim with R-EXT, and nothing says how bright they should be
 (a load's `expect` would). The list is for reading, not a list of faults; a class of mistakes it shows again and again
 is a candidate. The reference circuits per domain (`tests/reference.py`) carry the seeded faults each domain must catch
-with exactly its codes.
+with exactly its codes (the reference circuits, [19.4](19-verification.md#194-the-reference-circuits)).
 
 ### The proposals Action
 

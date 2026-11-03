@@ -189,6 +189,13 @@ What `edakit cart prepare` writes for one order: the release's upload files with
 maker's form and the expected parts. The skill cart fills the form from it. `edakit cart check` holds the page to it.
 Handbook: [8.4 Ordering at the manufacturer (up to the cart; you order and pay)](../handbook/08-release-gate.md#84-ordering-at-the-manufacturer-up-to-the-cart-you-order-and-pay).
 
+### Known gap
+
+A finding edakit raises wrongly, found on an open design and not fixed yet. It is one of four judgements of such a
+finding. The others are real (the design has the fault), lacks (a fact is missing) and criterion (edakit's yardstick,
+not the design's).
+Handbook: [19.6 How a finding is judged](../handbook/19-verification.md#196-how-a-finding-is-judged).
+
 ### Maker
 
 The manufacturer that builds the board: JLCPCB, PCBWay, Eurocircuits or AISLER. Its profile in `edakit/makers/`
@@ -211,6 +218,12 @@ Handbook: [2.1 What talks to what](../handbook/02-setup.md#21-what-talks-to-what
 
 What someone wants, in their own words, numbered `N-…` in the requirements file.
 Handbook: [3.6 Requirements](../handbook/03-hardware-graph.md#36-requirements).
+
+### Open design
+
+A published circuit transcribed as published into a project in `tests/open_designs/`, its parts entries from
+datasheets. Every finding edakit raises on it is judged, so a false alarm of a new rule shows there first.
+Handbook: [19.5 The open designs](../handbook/19-verification.md#195-the-open-designs).
 
 ### Order record
 
@@ -267,6 +280,12 @@ Handbook: [11.6 When edakit falls short: feature proposals](../handbook/11-worki
 The report of a gate run. It lists every stage and every finding, then the decision and its reasons.
 Handbook: [8.3 The decision](../handbook/08-release-gate.md#83-the-decision).
 
+### Reference circuit
+
+One of edakit's own test circuits, one per domain, added to the example led-bar. It passes clean, and each of its
+seeded faults raises exactly its codes.
+Handbook: [19.4 The reference circuits](../handbook/19-verification.md#194-the-reference-circuits).
+
 ### Release
 
 A gate run that ended RELEASED. Every stage ran and passed, every warning is accepted, every sign-off is signed for the
@@ -296,6 +315,12 @@ Handbook: [5.2 Scenarios](../handbook/05-simulation.md#52-scenarios).
 
 `hardware/schematic.toml` says how the schematic is laid out and drawn.
 Handbook: [10.3 The schematic file](../handbook/10-reference.md#103-the-schematic-file).
+
+### Seeded fault
+
+A mistake built into a copy of a test circuit on purpose, with the codes it must raise – exactly those. Every check is
+seen red on one before it counts.
+Handbook: [19.2 The layers](../handbook/19-verification.md#192-the-layers).
 
 ### Severity
 
