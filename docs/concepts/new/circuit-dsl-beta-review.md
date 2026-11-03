@@ -4,7 +4,10 @@ Status 2026-11-03: concept, from the review of the branch `claude/friendly-mccar
 main at `46ad6af`, asked for by the owner the same day. The yardstick was the owner's word of decision 48 of
 [circuit-dsl-toolchain.md](circuit-dsl-toolchain.md): the original form is the default without a word about the DSL,
 every facet of the DSL works only in a project whose edakit.toml switches it on, the site has a top-level section
-"Explorative DSL". Nothing built: the steps B.1 to B.6 start on the owner's word, on the branch, and the branch is not
+"Explorative DSL". Built the same day on the owner's word ("setze das … dokument um"): B.1 to B.6 on the branch
+`claude/gracious-fermat-vsbycc`, five commits on the DSL branch's tip `5ee220f` (`1dd3e31` to `460a3e4`) – the DSL
+branch itself is another session's and unchanged; it takes them as a fast-forward. The decisions below taken as
+recommended, for the owner to confirm. Left: the owner's confirmation and the fast-forward; the branch is not
 proposed for main until the owner asks (decision 48).
 
 ## Why
@@ -120,13 +123,45 @@ until the owner asks for its pull request (decision 48); the steps are its own c
 
 ## Decisions
 
-Open for the owner, the recommendation first:
+Taken on 2026-11-03 as recommended, while building, for the owner to confirm:
 
-1. **DEF without the switch (B.1):** off without the switch – recommended, it is what decision 49 and
-   `docs/dsl/README.md` say –, or on for every project, since a `derivations` key reaches a JSON graph only by hand.
-2. **The link from the evals' README (B.6):** keep it – the evals are a source behind "Inside edakit", and their page
-   says what it covers – or cut it so that only the tab leads into the DSL.
-3. **The branch name in the beta notice (B.5):** drop it – recommended – or keep it until the merge.
+1. **DEF without the switch (B.1):** off without the switch – it is what decision 49 and `docs/dsl/README.md` say;
+   the alternative was on for every project, since a `derivations` key reaches a JSON graph only by hand.
+2. **The link from the evals' README (B.6):** kept – the evals are a source behind "Inside edakit", and their page
+   says what it covers; the alternative was to cut it so that only the tab leads into the DSL.
+3. **The branch name in the beta notice (B.5):** dropped; the notice says how a project switches the DSL on.
+
+## As built
+
+On `claude/gracious-fermat-vsbycc`, each step test first, `tests/test_beta.py` holding the side without the switch:
+
+- **B.1** (`1dd3e31`): `graph_findings` in `edakit/engines/__init__.py` runs DEF only where the project's config has
+  `dsl`; without a project it does not run.
+- **B.2, B.3** (`5289e66`): `build_parser(dsl=False)` in `edakit/cli.py` is main's parser word for word – no DSL
+  action, no `lsp`, no `--to`, `--out`, `--map`, `--set`, `--part`. `dsl_words(argv)` opens the DSL's parser only for
+  a command line that names one of them – `lsp`, a DSL action after `graph`, after `graph` or `block` `--to circuit`,
+  `--to toml` or another of the options; the other commands' own `--out` stays theirs. `dsl_used(args)` names the
+  command a project without the switch refuses. Only `graph fmt` takes files beyond its positionals (the 3.11 and
+  3.12 case of the fragment); `graph show U1 extra` is exit 2 again. `handbook.commands()` lists the parser's commands
+  as on main. One way it differs from the plan of B.2: the DSL's parser keeps `--to` as a choice of `toml` and
+  `circuit` instead of a string checked in `main_convert` – `graph convert --to x` never reaches it, since
+  `dsl_words` opens it for those two values or another word of the DSL only.
+- **B.4** (`e978861`): `graph_form.sources(cfg)` – the two messages of `graph json` name "a TOML graph" as on main,
+  "or a .circuit graph" with the switch.
+- **B.5** (`649de4e`): the notice of the six pages of `docs/dsl/` names the switch, not a branch, and a test holds
+  it; `beta.dsl_of` answers False for an edakit.toml that cannot be read or is no UTF-8.
+- **B.6** (`460a3e4`): the session start reads `[beta] dsl` with tomllib where there is one – a table, `beta.dsl =
+  true`, an inline table, as edakit.toml's check and `dsl_of` read them –, the regular expression only without it;
+  `config.py` takes the DSL's page from `beta.DOC`; the docstring of `engines/project.py` says "with the switch".
+
+Checked on the branch: `pytest -q -n auto` 3545 passed, the same 34 environment failures as main (no ngspice, a font
+metric); the bell's golden tests with `BELL_ROOT` 19 passed; handbook, block JSON and catalog generated without a
+diff; `mkdocs build --strict` green; `ruff check` green. led-bar without the switch, against the main the branch last
+merged (`fe47cd3`): `version`, `check`, `graph json --check` and `--write`, `req`, `domains`, `gate`, `hook check`,
+`rules`, `explain LIM.v`, `graph show`, `block add --dry-run` and `part lint` byte for byte the same, and the errors
+of `edakit bogus`, `graph bogus`, `graph convert --to x` and `graph show U1 extra` too; what differs is what decision
+49 decides – the refusal line of a DSL command, `edakit lsp` and `explain` of the DSL's codes by name. With the switch
+`convert --to circuit`, `check`, `fmt --check A B`, `sysml`, `block add --set` and `graph json --check` work.
 
 ## Sources
 
