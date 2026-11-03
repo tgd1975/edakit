@@ -43,8 +43,8 @@ POUR_MIN_WIDTH_MM = 0.25         # pour_only: the narrowest neck the computed po
 POUR_MIN_PIECE_MM2 = 2.0         # pour_regions: the smallest piece of a shared layer that gets an outline
 HEADER_KEEP_MM = 1.27            # on_headers: the plastic of a 2.54 mm pin header, half its width around each pin
 PASTE_GAP_MM = 0.4               # [release] assembly paste_gap_mm: SMD pads of different parts, assembled side (GEO.spacing)
-MAX_BARE_MM = 5.0                # [copper] max_bare_mm: largest copper-free circle on a poured layer (GEO.pour)
-MAX_BARE_MM2 = 20.0              # [copper] max_bare_mm2: largest copper-free piece on a poured layer (GEO.pour) – the
+MAX_BARE_MM = 5.0                # [copper] max_bare_mm: largest copper-free circle on a poured or seen layer (GEO.pour)
+MAX_BARE_MM2 = 20.0              # [copper] max_bare_mm2: largest copper-free piece on a poured or seen layer (GEO.pour) – the
                                  # area of the 5 mm circle, π × 2.5² = 19.6 mm²
 UNIFORM = {"led": "row"}         # uniform: LEDs side by side point the same way – the plan check without the key
 UNIFORM_WAYS = ("row", "+x", "-x", "+y", "-y")
@@ -428,7 +428,7 @@ def _net_classes(nc):
 
 
 def _copper(name, c):
-    """[copper] of a board file (GEO.pour): max_bare_mm (largest copper-free circle on a poured layer, mm), max_bare_mm2
+    """[copper] of a board file (GEO.pour): max_bare_mm (largest copper-free circle on a poured or seen layer, mm), max_bare_mm2
     (largest copper-free piece there, mm²) and min_cover {layer: least copper share in % of the board area}; without it
     no share is required."""
     if not isinstance(c, dict):
