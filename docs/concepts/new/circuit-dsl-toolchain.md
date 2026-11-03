@@ -784,6 +784,14 @@ Written by the session that builds the plan: number, date, decision, reason. Sta
    @types/vscode 1.90.0), `package-lock.json` committed, `node_modules/` and `out/` ignored; the CI job uses the
    runner's Node instead of `actions/setup-node`, whose pinned commit the session could not read. It is not
    published, as the plan says. Reason: reproducible builds without an action edakit does not pin yet.
+42. 2026-11-03, T.20: the conformance test ran once with SysML v2's standard library, release 2025-12 – cloned with
+   git from Systems-Modeling/SysML-v2-Release, since the session's network refused the archive systree downloads. It
+   found `ScalarQuantityValue` undefined: the name is in `Quantities`, not in `ISQ`, so `Electrical.sysml` imports
+   `Quantities` as well. Then the library, the exports of led-bar-circuit and the export of a definition, a variant
+   and requirements read without an error. The CI job sysml loads the standard library with
+   `systree.get_stdlib_path()` and fails when it cannot, instead of reading without it. Decision 39's dependency
+   stays: the reader accepts it with the standard library too. Reason: the plan's default "a standard reader's
+   objection wins".
 
 ## Not in this plan
 
