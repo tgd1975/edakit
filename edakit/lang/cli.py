@@ -1,10 +1,12 @@
-"""The language's own actions of `edakit graph`: fmt (T.5), derive (T.8), and with the later steps sysml, kerml.
+"""The language's own actions of `edakit graph`: fmt, derive, sysml and kerml (handbook 19).
 
     edakit graph fmt [--check] [FILE …]   the canonical layout of the project's source files, or of the files named;
                                           --check writes nothing and exits 2 naming the first file and line that
                                           would change
     edakit graph derive [--write]         every derivation record evaluated again with the entries and nets as they
                                           are now; --write rewrites the records of a JSON graph
+    edakit graph sysml|kerml [--out DIR]  the project as SysML v2 or KerML, textual and as JSON, with the electrical
+                                          library (export/)
 """
 
 from __future__ import annotations

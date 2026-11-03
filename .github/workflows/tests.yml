@@ -83,8 +83,9 @@ jobs:
 
   sysml:
     # The conformance of the circuit language's exports (handbook 19): the electrical library and the exports of the
-    # test projects read by systree's SysML v2 and KerML reader. Optional – Rust's reader is alpha, the job's failure
-    # blocks nothing, and it is no required check of the rulesets.
+    # test projects read by systree's SysML v2 and KerML reader, against the standard library systree loads (release
+    # 2025-12). Optional – Rust's reader is alpha, the job's failure blocks nothing, and it is no required check of the
+    # rulesets.
     needs: lane
     if: ${{ !cancelled() && needs.lane.outputs.only != 'true' }}
     runs-on: ubuntu-24.04
@@ -96,7 +97,12 @@ jobs:
           persist-credentials: false
       - uses: astral-sh/setup-uv@07a047e608db84b3d8c06cd9a7c7dcc9c355c18e # v10.3.2
       - name: Conformance with a standard reader
-        run: uv run --group dev --group sysml pytest -q -rs -m sysml tests/test_lang_export.py
+        shell: bash
+        run: |
+          SYSML_STDLIB="$(uv run --group dev --group sysml python -c \
+            'import systree.cli as s; s.get_stdlib_path(); print(s.get_stdlib_path())' | tail -n 1)"
+          export SYSML_STDLIB
+          uv run --group dev --group sysml pytest -q -rs -m sysml tests/test_lang_export.py
 
   vscode:
     # The VS Code extension of the circuit language compiles (editors/vscode, handbook 19.11) – Node from the runner's

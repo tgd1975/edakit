@@ -269,9 +269,12 @@ Quantities are written in base SI units, `0.01 [SI::A]`; a name that is no ident
 nets, cables, blocks, the circuit, its metadata, requirements and the rules as calculation definitions. The kernel
 view, KerML, writes the same tree with KerML's keywords; it has no requirement, so a requirement is a feature there.
 The JSON beside each is an array of elements with a stable `@id` (UUID 5 of the project and the qualified name),
-`@type` and their relationships. The library and the exports are read by a standard reader in a test of their own
-(`pytest -m sysml`, the optional dependency group `sysml` with Syster's `systree`), an optional job of the CI; a
-graphical tool's import is no test of edakit's.
+`@type` and their relationships.
+
+The library and the exports are read by a standard reader in a test of their own (`pytest -m sysml`, the optional
+dependency group `sysml` with Syster's `systree`), against the standard library of SysML v2 where `SYSML_STDLIB` names
+its folder `sysml.library`, an optional job of the CI that loads the release 2025-12; a graphical tool's import is no
+test of edakit's.
 
 ## 19.11 Commands
 

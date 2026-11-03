@@ -3,6 +3,7 @@ library package Electrical {
          * derivation rules – what an edakit project is in SysML v2's terms. Generated into no project; imported
          * by every export of `edakit graph sysml`. */
     private import ScalarValues::*;
+    private import Quantities::*;
     private import ISQ::*;
     private import SI::*;
 
