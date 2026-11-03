@@ -48,6 +48,7 @@ every other one (result). Without [cart] the maker is JLCPCB and the makers are 
 
 from __future__ import annotations
 
+import datetime as dt
 import fnmatch
 import re
 import tomllib
@@ -70,7 +71,7 @@ RULE_KEYS = ("thicknesses_mm", "thicknesses_for", "remark_max", "placeholder", "
              "former_placeholder",
              "silkscreen_on", "tooling_min", "class_of_sides")
 SECTIONS = ("PCB", "PCBA", "Shipping")
-CART_KEYS = ("maker", "makers", "ship_to", "shipping", "tolerance", "profiles")
+CART_KEYS = ("maker", "makers", "ship_to", "shipping", "tolerance", "profiles", "needed_by")
 TOLERANCE = 0.10                 # [cart] tolerance: per price line, in the maker's currency, before ORDER.quote warns
 
 
@@ -360,7 +361,8 @@ def load(key, profiles=None, root=None):
 
 def cart(raw):
     """[cart] with its defaults: maker (jlcpcb), makers ([maker]), ship_to, shipping {maker: method}, tolerance,
-    profiles {maker: path}. Returns (cart, problems)."""
+    profiles {maker: path}, needed_by (the date the order must arrive by – the cheapest shipping that meets it,
+    edakit order check). Returns (cart, problems)."""
     c = raw if raw is not None else {}
     if not isinstance(c, dict):
         return {}, ["[cart] must be a table"]
@@ -392,8 +394,15 @@ def cart(raw):
     if not (isinstance(profiles, dict) and all(isinstance(v, str) and v for v in profiles.values())):
         out.append('[cart] profiles must be a table of maker = the path of its profile')
         profiles = {}
+    needed = c.get("needed_by")
+    if needed is not None:
+        try:
+            needed = dt.date.fromisoformat(str(needed))
+        except ValueError:
+            out.append(f'[cart] needed_by must be the date the order must arrive by, e.g. "2026-12-10" – not {needed!r}')
+            needed = None
     return {"maker": maker, "makers": list(makers), "ship_to": c.get("ship_to"), "shipping": dict(shipping),
-            "tolerance": float(tol), "profiles": dict(profiles), "given": raw is not None}, out
+            "tolerance": float(tol), "profiles": dict(profiles), "needed_by": needed, "given": raw is not None}, out
 
 
 def of(cfg):

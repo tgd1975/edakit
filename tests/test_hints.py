@@ -237,9 +237,10 @@ def test_h8_simulation_sources_and_fuses(project):
 def test_the_order_checks_are_in_the_catalog():
     """ORDER.form to ORDER.review (edakit cart check, handbook 8.4) are the codes of the engine ORDER, titled as cart
     names them, each replacing its check ID of before (B-1 to B-7); ORDER.confirm (edakit cart confirm, 2026-11-02)
-    replaces none."""
-    from edakit import cart, catalog
-    assert set(cart.CHECKS) == {c for c in catalog.codes() if c.startswith("ORDER.")}
+    replaces none; ORDER.basket is edakit order check's (the supplier's cart, parts-order.md step 2)."""
+    from edakit import cart, catalog, order
+    assert set(cart.CHECKS) | {order.CODE} == {c for c in catalog.codes() if c.startswith("ORDER.")}
     assert all(catalog.code(c)["title"] == cart.CHECKS[c] for c in cart.CHECKS)
+    assert catalog.code(order.CODE)["title"] == order.TITLE
     assert sorted(catalog.old_map()[f"B-{i}"][0] for i in range(1, 8)) == sorted(set(cart.CHECKS) - {"ORDER.confirm"})
 

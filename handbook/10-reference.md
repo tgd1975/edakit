@@ -179,6 +179,7 @@ every check runs as before.
 | `shipping` | `{}` | per maker, the name of its shipping method: `{ jlcpcb = "DHL Express" }`; `edakit cart prepare` needs it for the maker |
 | `tolerance` | `0.10` | per price line, in the maker's currency, before ORDER.quote warns |
 | `profiles` | `{}` | a project's own maker profiles, `{ name = "hardware/makers/name.toml" }`, beside the shipped ones (`jlcpcb`, `pcbway`, `eurocircuits`, `aisler` in `edakit/makers/`) |
+| `needed_by` | – | the date the order must arrive by, `"2026-12-10"`: after a combined shipment `edakit order check` names the cheapest of LCSC's methods that arrives by then (8.4) |
 
 A maker's profile holds no defaults of the board. What it holds:
 
@@ -896,9 +897,9 @@ Estimate the order: PCB, PCBA fees, parts, extras, shipping, VAT; drivers, budge
 ### edakit order
 
 <!-- edakit:generated command order -->
-`edakit order [--out OUT] [--with CONFIG]`
+`edakit order [--out OUT] [--supplier SUPPLIER] [--with CONFIG] [{check}]`
 
-Assembler's BOM, one cart per other supplier, hand-assembly list for all sets.
+Assembler's BOM, one cart per other supplier, hand-assembly list for all sets; check: the supplier's cart as the skill cart read it back (ORDER.basket).
 <!-- edakit:end -->
 
 `edakit order [--out DIR] [--with CONFIG …]` – EasyEDA: no

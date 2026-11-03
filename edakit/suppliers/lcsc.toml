@@ -1,0 +1,50 @@
+# LCSC – the supplier's profile for the parts cart of the skill cart (handbook 8.4, docs/concepts/new/parts-order.md
+# decisions 3 and 5). Data, no code: `edakit order` writes cart_lcsc.csv in the BOM tool's columns, the skill uploads
+# it, reads every line back into <out>/lcsc/cart.json and stops before the checkout; `edakit order check` holds the
+# cart to basket.json (ORDER.basket).
+#
+# Provisional: the BOM tool's address, its formats and its sections were read on 2026-11-02 from
+# https://www.lcsc.com/bom (the page is drawn by JavaScript – no button label was in its text); "Add to Cart" and the
+# rounding come from the first parts order of 2026-11-02 (pytree, docs/bestellung/2026-10-25_usb_baum: "BOM Tool" →
+# Upload, LCSC rounded 100 Ω 10 → 50). The next parts order records the labels and sets `recorded`.
+
+name = "LCSC"
+recorded = false                          # provisional: the next parts order records it
+start = "https://www.lcsc.com/bom"
+currency = "USD"
+formats = ["csv", "xls", "xlsx"]          # "Support .xls, .xlsx and .csv files under 4MB" – up to 800 lines
+max_lines = 800
+columns = ["LCSC Part Number", "Quantity", "Comment"]   # cart_lcsc.csv, as `edakit order` writes it
+upload = "Upload BOM File"
+cart = "Add to Cart"
+never = ["Checkout", "Pay", "Pay Now", "Submit Order", "Place Order", "Buy Now"]
+rounds = "the BOM tool rounds each line up to LCSC's minimum and multiple on the upload (2026-11-02: 100 Ω 10 → 50) – a quantity above the basket's is LCSC's rounding, one below it a finding"
+
+# The combined shipment (decision 5): a paid JLCPCB order goes to LCSC's warehouse in Hong Kong and ships with the
+# LCSC order in one parcel. The skill enters this address at JLCPCB's checkout and reads it back – the one field of a
+# checkout it sets; never a payment method, a coupon or a button that orders or pays – and after the owner paid
+# both, ticks the JLCPCB order at LCSC's checkout, stopping before its order button.
+[combine]
+maker = "jlcpcb"
+page = "https://www.lcsc.com/faqs/ordering-quotation/combine-lcsc-jlcpcb-orders"
+read = "2026-11-02"
+"Country/ Region" = "Hong Kong, China"
+State = "NT"
+City = "KWAI CHUNG"
+"Street Address" = "NOS.35/41 TAI LIN PAI ROAD"
+"Building/ House No." = "FTB1 2/F Gold Base IND. BLDG."
+"Postal Code" = "999077"
+"First Name" = "Sean"                    # "Recipient (Our warehouse staff or your name)": the warehouse's, so no name
+"Last Name" = "Chan"                     # of the owner goes into the form
+"Cell/Mobile Number" = "(+852) 36112905" # the warehouse's
+conditions = [
+  "both orders in the same currency and under the same customer ID",
+  "one JLCPCB order only – \"LCSC cannot combine multiple JLCPCB orders\"",
+  "JLCPCB's address cannot be changed after its checkout",
+  "once combined, the orders cannot be split",
+  "the LCSC order not shipped yet",
+]
+# What the first combined order showed (parts-order.md, "What the shipping cost on 2026-11-02"): together 2.8 kg LCSC
+# offered express only, and combining cost 74.94 USD against 48.94 for the two cheapest separate routes – it buys
+# speed and one parcel, not a lower price. LCSC shows the combined prices only after JLCPCB is paid.
+express_above_g = 2000
