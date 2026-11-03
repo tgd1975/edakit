@@ -15,7 +15,8 @@ From any worktree on any branch; the checkout stays as it is until the merge:
 4. then the files in the checkout go back to its commit – unless they were edited again meanwhile – and come back
    with main: the main clone on main is fast-forwarded here, a code branch gets them with its next rebase.
 
-Run it in the background; progress goes to stdout line by line. A merge through the lane is no version.
+Run it in the background; progress goes to stdout line by line. A merge through the lane is no version. The pull
+request is opened and merged through REST (merge.py's pr_create, pr_merge), so the lane runs in a cloud session too.
 """
 
 import argparse
@@ -117,6 +118,7 @@ def main(argv=None):
     root = Path(git(Path.cwd(), "rev-parse", "--show-toplevel").stdout.strip())
     files = sorted({Path(os.path.abspath(f)).relative_to(root).as_posix() for f in args.files})
     branch = f"notes/{slug(args.message)}-{dt.datetime.now():%H%M%S}"
+    title = args.message.splitlines()[0]      # the pull request's title and the merge's subject: the first line
     message = args.message + "\n\nCo-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"
     pr = None
     for round_ in range(1, ROUNDS + 1):
@@ -130,14 +132,12 @@ def main(argv=None):
         if pr is None:
             body = ("The notes lane (docs/concepts/done/versioning.md): only docs/concepts/ and TODO.md, merged by "
                     ".github/notes.py once the checks are green – no version." + FOOTER)
-            url = m.run("gh", "pr", "create", "--base", "main", "--head", branch, "--title", args.message,
-                        "--body", body).stdout.strip()
-            pr = url.rstrip("/").rsplit("/", 1)[-1]
+            pr = m.pr_create(branch, title, body)
             m.say(f"pull request #{pr}")
         m.wait(commit, m.required(root))
-        r = m.run("gh", "pr", "merge", pr, *m.MERGE, "--match-head-commit", commit, "--delete-branch",
-                  "--subject", f"Merge branch '{branch}': {args.message}", "--body", "", check=False)
+        r = m.pr_merge(pr, commit, f"Merge branch '{branch}': {title}")
         if r.returncode == 0:
+            m.delete_branch(branch)
             m.say(f"merged #{pr}")
             break
         m.say(f"merge refused: {(r.stderr or r.stdout).strip()} – again on the newest main")

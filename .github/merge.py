@@ -12,12 +12,15 @@ In a worktree of its own, so the session's checkout stays as it is:
    Dependabot branch (dependabot/…) that changes uv.lock or pyproject.toml gets its fragment here, patch with the
    pull request's title, since Dependabot writes none;
 3. pushed, the checks waited for (test, kicad, build, paths, version – about five minutes);
-4. merged with --match-head-commit while main still has the number it was numbered from – a push of TODO.md or a
-   concept meanwhile changes nothing; a version merged meanwhile does, for a pull request that is a version: then from
-   1 again, since two merges must never share a number.
+4. merged only while its head is the commit the checks ran on, and while main still has the number it was numbered
+   from – a push of TODO.md or a concept meanwhile changes nothing; a version merged meanwhile does, for a pull request
+   that is a version: then from 1 again, since two merges must never share a number.
 
 The workflow release.yml then sets the tag v<number> and the GitHub release. --dry-run does 1 and 2 and shows the diff.
 Progress goes to stdout line by line, for a monitor.
+
+Every call to GitHub is REST through `gh api` – on the owner's machine as in a cloud session, whose GitHub proxy
+refuses GraphQL and with it `gh pr view`, `gh pr create` and `gh pr merge`.
 """
 
 import argparse
@@ -43,7 +46,7 @@ WAIT_S = 45 * 60
 
 
 NAME = "merge"   # the prefix of the progress lines; .github/notes.py sets its own
-MERGE = ("--merge",)   # merge commits only; main has no bypass, so no flag takes one (.github/rulesets/)
+MERGE = "merge"   # merge commits only (merge_method); main has no bypass, so no call takes one (.github/rulesets/)
 
 
 def say(*args):
@@ -59,6 +62,34 @@ def run(*cmd, cwd=ROOT, check=True):
 
 def gh_json(*args):
     return json.loads(run("gh", *args).stdout)
+
+
+# --- pull requests through REST: `gh pr` speaks GraphQL, which a cloud session's GitHub proxy refuses -----------------
+def pr_view(n):
+    """Pull request #n as `gh pr view --json number,state,headRefName,baseRefName,title,isCrossRepository` gave it."""
+    p = gh_json("api", f"repos/{v.REPO}/pulls/{n}")
+    head = p["head"].get("repo") or {}
+    return {"number": p["number"], "state": p["state"].upper(), "headRefName": p["head"]["ref"],
+            "baseRefName": p["base"]["ref"], "title": p["title"],
+            "isCrossRepository": head.get("full_name") != p["base"]["repo"]["full_name"]}
+
+
+def pr_create(branch, title, body):
+    """Open a pull request of `branch` into main; its number."""
+    return gh_json("api", "-X", "POST", f"repos/{v.REPO}/pulls", "-f", f"head={branch}", "-f", "base=main",
+                   "-f", f"title={title}", "-f", f"body={body}")["number"]
+
+
+def pr_merge(n, sha, subject):
+    """Merge #n with a merge commit (MERGE) titled `subject`, its message empty – only while the pull request's head
+    is `sha`, the commit the checks ran on: GitHub refuses it otherwise (409). The process; returncode 0: merged."""
+    return run("gh", "api", "-X", "PUT", f"repos/{v.REPO}/pulls/{n}/merge", "-f", f"merge_method={MERGE}",
+               "-f", f"sha={sha}", "-f", f"commit_title={subject}", "-f", "commit_message=", check=False)
+
+
+def delete_branch(branch):
+    """Delete the merged branch on origin – nothing when GitHub deleted it already or refuses."""
+    return run("gh", "api", "-X", "DELETE", f"repos/{v.REPO}/git/refs/heads/{branch}", check=False)
 
 
 DEPENDABOT = "dependabot/"
@@ -243,7 +274,7 @@ def main(argv=None):
     ap.add_argument("--dry-run", action="store_true", help="number in a worktree, show the diff, push nothing")
     args = ap.parse_args(argv)
 
-    pr = gh_json("pr", "view", str(args.pr), "--json", "number,state,headRefName,baseRefName,title,isCrossRepository")
+    pr = pr_view(args.pr)
     if pr["state"] != "OPEN" or pr["baseRefName"] != "main" or pr["isCrossRepository"]:
         raise SystemExit(f"#{args.pr}: not an open pull request from this repository into main")
     branch = pr["headRefName"]
@@ -267,8 +298,7 @@ def main(argv=None):
             if again(n, main_n, now):
                 say(f"main became {now} while the checks ran – numbered again")
                 continue
-            r = run("gh", "pr", "merge", str(args.pr), *MERGE, "--match-head-commit", sha,
-                    "--subject", f"Merge branch '{branch}': {pr['title']}", "--body", "", check=False)
+            r = pr_merge(args.pr, sha, f"Merge branch '{branch}': {pr['title']}")
             if r.returncode:
                 say(f"merge refused: {(r.stderr or r.stdout).strip()} – again")
                 continue
