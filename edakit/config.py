@@ -127,7 +127,6 @@ ORDER_KEYS = tuple(ORDER)                       # [order] (FILES.order)
 BOARD_ONLY = ("tab_zones", "size_mm", "layers")  # [order] keys of a board file only, not of edakit.toml
 FIRMWARE_KEYS = ("mcu", "out", "gpio")    # [firmware]: the board's firmware contract (edakit firmware), opt-in
 BETA_KEYS = ("dsl",)   # [beta]: what is switched on before it is part of edakit – dsl, the explorative DSL (docs/dsl/)
-DSL_DOC = "docs/dsl/README.md"
 DOCS_KEYS = ("files", "decimal")                     # [docs]: Markdown files with quoted values (edakit docs, DOCS.quote)
 
 # [scripts.<name>]: a project script that touches edakit's flow – what it reads and writes; edakit/scripts.py
@@ -954,7 +953,8 @@ def _beta(beta, p, requirements):
         problems.append("[beta] dsl: true or false")
         dsl = False
     if not dsl:
-        why = f"the explorative DSL, a beta – edakit reads it with [beta] dsl = true ({DSL_DOC})"
+        from .beta import DOC
+        why = f"the explorative DSL, a beta – edakit reads it with [beta] dsl = true ({DOC})"
         if str(p.get("graph", "")).endswith(".circuit"):
             problems.append(f"[project] graph: {p['graph']} is {why}")
         if isinstance(p.get("parts"), list):

@@ -1,8 +1,8 @@
 """SYNC, GEO, PARTS and DOCS before the layout: what `edakit check` checks beyond the graph – own parts against their
 source and footprint copies against their data (SYNC.source, SYNC.footprint), holes and formed leads on the
 footprint geometry (GEO.hole, GEO.formed), stock, supplier, footprint data and the sign-off of every part (PARTS.*),
-the requirements file (DOCS.*), the project's scripts and agents (SYNC.scripts, SYNC.agents), the resolved graph
-generated beside a TOML or a .circuit graph (SYNC.graph).
+the requirements file (DOCS.*), the project's scripts and agents (SYNC.scripts, SYNC.agents), and in a project with
+the explorative DSL switched on ([beta] dsl = true) the resolved graph generated beside its source (SYNC.graph).
 
 These checks live with what they read (part.py, stock.py, order.py, footprint.py, checks.py, requirements.py,
 scripts.py) and report into a Recorder: an error, a warning, a pending point, a note or a draft of the requirements

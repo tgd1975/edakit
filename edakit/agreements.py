@@ -28,8 +28,8 @@ so that every session knows it – a project that keeps working agreements of it
 (python3 older than 3.11) or in a file that does not parse the entries cannot be read; one line then says that the
 project registers some and that edakit scripts lists them.
 
-A project that switches the explorative DSL on – `[beta] dsl = true`, read by hand like toolchain – gets one line
-more: where its source is and that the graph.json beside it is generated, with the path of docs/dsl/README.md.
+A project that switches the explorative DSL on – `[beta] dsl = true`, read with tomllib where there is one – gets
+one line more: where its source is and that the graph.json beside it is generated, with the path of docs/dsl/README.md.
 
 Last, where `edakit` is not on PATH, one line with the path of the plugin's bin/edakit – a session finds its command line
 without searching for it.
@@ -185,8 +185,16 @@ DSL = ("The explorative DSL is switched on ([beta] dsl = true): a graph or requi
 
 
 def dsl(path):
-    """True when edakit.toml sets dsl = true in [beta] – read by hand, like the hook's other keys."""
+    """True when edakit.toml sets dsl = true in [beta] – with tomllib as edakit reads it (a table, `beta.dsl` or an
+    inline table); without tomllib, or in a file that does not parse, by hand from a table [beta], like the hook's
+    other keys."""
     text = path.read_text(encoding="utf-8", errors="replace")
+    try:
+        import tomllib
+        beta = tomllib.loads(text).get("beta")
+        return isinstance(beta, dict) and beta.get("dsl") is True
+    except (ImportError, ValueError):     # tomllib's TOMLDecodeError is a ValueError
+        pass
     beta = re.search(r"^\[beta\][^\n]*\n(.*?)(?=^\[|\Z)", text, re.M | re.S)
     return bool(beta and re.search(r"^\s*dsl\s*=\s*true\b", beta.group(1), re.M))
 

@@ -176,6 +176,17 @@ def test_the_session_start_names_the_dsl_only_where_it_is_on(project):
     assert "The explorative DSL is switched on ([beta] dsl = true)" in context and "docs/dsl/README.md" in context
 
 
+
+@pytest.mark.parametrize("form", ["\n[beta]\ndsl = true\n", "\n[beta]  # on\ndsl = true  # the DSL\n"])
+@pytest.mark.parametrize("first", ["beta = { dsl = true }\n", "beta.dsl = true\n"])
+def test_every_spelling_of_the_switch_is_read_alike(project, form, first):
+    from edakit import agreements
+    toml = project.root / "edakit.toml"
+    base = toml.read_text()
+    for text in (base + form, first + base):
+        toml.write_text(text)
+        assert config.load(toml).dsl is True and beta.dsl_of(toml) is True and agreements.dsl(toml) is True, text
+
 def test_the_catalog_and_edakit_rules_leave_the_dsl_s_codes_out(capsys):
     beta_codes = [n for n in catalog.codes() if catalog.beta(n)]
     assert sorted(beta_codes) == ["DEF.derive", "SYNC.graph"]
