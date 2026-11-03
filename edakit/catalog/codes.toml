@@ -547,17 +547,18 @@ sources = [
 
 [codes."PATH.reverse"]
 title = "reverse polarity blocked"
-rule = "What a reversed source (a battery holder, a source marked reversible) reaches through fuses, switches and push buttons is only capacitors without polarity, holders, connectors – their contacts are separate, a connector hands nothing on from one pin to another –, the anode of a blocking diode – on a negative rail (the protected net declared at or below 0 V) its cathode – or the drain of a PMOS whose source and gate are outside; a polarized capacitor it reaches is reverse biased (grade polarized)."
+rule = "What a reversed source (a battery holder, a source marked reversible) reaches through fuses, switches and push buttons is only capacitors without polarity, holders, connectors – their contacts are separate, a connector hands nothing on from one pin to another –, the anode of a blocking diode – on a negative rail (the protected net declared at or below 0 V) its cathode – or the drain of a PMOS whose source and gate are outside; an N-MOSFET in the ground return – drain on the source's return, source on ground, gate from the plus side – cuts the board's ground off, and then only the parts between the source's own nets count; a polarized capacitor it reaches is reverse biased (grade polarized)."
 why = "A battery inserted the wrong way drives the supply negative; every IC on that rail conducts through its substrate diodes and dies within milliseconds."
-fix = "A Schottky diode in series, or a PMOS in the supply path with its gate to ground (block reverse-pmos)."
+fix = "A Schottky diode in series, a PMOS in the supply path with its gate to ground (block reverse-pmos), or an NMOS in the ground return with its gate to the plus side."
 severity = "error"
 grades = { polarized = "warning" }
 details = [
-  "reverse polarity from the topology: what a reversed source (battery holders, `\"source\": \"reversible\"` on the component) reaches through fuses, switches and push buttons may only be a capacitor, a holder, a connector – it passes nothing on from one contact to another –, the anode of a diode whose cathode is outside, or the drain of a PMOS whose source and gate are outside – finds e.g.: the protection diode bypassed, an IC directly on the battery",
+  "reverse polarity from the topology: what a reversed source (battery holders, `\"source\": \"reversible\"` on the component) reaches through fuses, switches and push buttons may only be a capacitor, a holder, a connector – it passes nothing on from one contact to another –, the anode of a diode whose cathode is outside, or the drain of a PMOS whose source and gate are outside; behind an N-MOSFET in the ground return (`[reverse] cuts`) only the parts across the source's own nets – finds e.g.: the protection diode bypassed, an IC directly on the battery",
 ]
 replaces = ["G-10"]
 sources = [
   "TI SLVA139, Reverse Current/Battery Protection Circuits (2003) – https://www.ti.com/lit/an/slva139/slva139.pdf",
+  "Open design atoomnetmarc-adlsc (handbook 19.5, 2026-11-03): the reverse-polarity N-MOSFET in the ground return (Q1, AOD442) – the README's own test: reversed, the board draws about 10 mA –, 18 false findings while PATH.reverse did not know it",
   "Open design adafruit-microlipo-usb-c (handbook 19.5, 2026-11-03): a connector passing every pin to every pin carried the reversed cell from JP4's VBAT pad to 5V and through the USB-C receptacle to CC1 and CC2",
 ]
 

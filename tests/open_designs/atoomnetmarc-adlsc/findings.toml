@@ -50,124 +50,15 @@ why = "Q3's base hangs on R21 from GPIO4 alone: while the ESP32 is held in reset
 
 [[check]]
 code = "PATH.reverse"
-place = "D1.2"
-judged = "known gap"
-why = "J1's return runs through Q1, the N-MOSFET in the ground return (drain on 0V_IN, source on GND, gate on +5V_IN): wired the wrong way round, its gate sits below its source and its body diode blocks, so the board's ground is cut off and nothing between +5V_IN and GND sees a reversed voltage – the README's own test: reversed, D1 turns red and the board draws about 10 mA. PATH.reverse knows the series diode and the high-side P-MOSFET as blocks (catalog/paths.toml [reverse]), not the low-side N-MOSFET: it walks from J1's pins as if GND were the return. The fix is a block of the catalog's, which this transcription does not change. D1 is the reverse indicator: reversed, it lights through R1 on purpose."
-
-[[check]]
-code = "PATH.reverse"
-place = "D3.1"
-judged = "known gap"
-why = "The low-side reverse protection again (Q1 in the ground return cuts a reversed supply off GND; PATH.reverse does not know it, see D1.2). D3 (F1's indicator) sits between +5V_IN and +5V, both on the plus side."
-
-[[check]]
-code = "PATH.reverse"
 place = "D4.1"
 judged = "known gap"
-why = "The low-side reverse protection again (Q1 in the ground return cuts a reversed supply off GND; PATH.reverse does not know it, see D1.2). D4 sits between J1's two pins and does see the reversed 5 V – harmless for the bidirectional SMBJ5.0CA (VBR ≥ 6.4 V both ways), but the parts schema has no field that says a TVS is bidirectional (values tvs only)."
+why = "Q1 in the ground return cuts a reversed supply off GND, and PATH.reverse knows it (catalog/paths.toml [reverse] cuts) – but D4 sits between J1's two pins and does see the reversed 5 V: harmless for the bidirectional SMBJ5.0CA (VBR ≥ 6.4 V both ways), but the parts schema has no field that says a TVS is bidirectional (values tvs only)."
 
 [[check]]
 code = "PATH.reverse"
 place = "D4.2"
 judged = "known gap"
-why = "The low-side reverse protection again (Q1 in the ground return cuts a reversed supply off GND; PATH.reverse does not know it, see D1.2). As D4.1: the bidirectional TVS across the input blocks the reversed 5 V, which edakit cannot know."
-
-[[check]]
-code = "PATH.reverse"
-place = "D5.1"
-judged = "known gap"
-why = "The low-side reverse protection again (Q1 in the ground return cuts a reversed supply off GND; PATH.reverse does not know it, see D1.2). D5 (+5V to GND) sees nothing reversed with GND cut off."
-
-[[check]]
-code = "PATH.reverse"
-place = "Q1.1"
-judged = "known gap"
-why = "The low-side reverse protection again (Q1 in the ground return cuts a reversed supply off GND; PATH.reverse does not know it, see D1.2). Q1's gate is the blocking device's own: reversed, VGS ≤ 0 holds it off."
-
-[[check]]
-code = "PATH.reverse"
-place = "Q1.2"
-judged = "known gap"
-why = "The low-side reverse protection again (Q1 in the ground return cuts a reversed supply off GND; PATH.reverse does not know it, see D1.2). Q1's drain on 0V_IN is the blocking side: its body diode is reverse biased."
-
-[[check]]
-code = "PATH.reverse"
-place = "Q2.1"
-judged = "known gap"
-why = "The low-side reverse protection again (Q1 in the ground return cuts a reversed supply off GND; PATH.reverse does not know it, see D1.2). Q2 and Q4 switch the LED outputs from +5V_IN: their sources on the plus side see nothing reversed."
-
-[[check]]
-code = "PATH.reverse"
-place = "Q2.2"
-judged = "known gap"
-why = "The low-side reverse protection again (Q1 in the ground return cuts a reversed supply off GND; PATH.reverse does not know it, see D1.2). As Q2.1: a source pin of the LED switch Q2 on the plus side."
-
-[[check]]
-code = "PATH.reverse"
-place = "Q2.3"
-judged = "known gap"
-why = "The low-side reverse protection again (Q1 in the ground return cuts a reversed supply off GND; PATH.reverse does not know it, see D1.2). As Q2.1: a source pin of the LED switch Q2 on the plus side."
-
-[[check]]
-code = "PATH.reverse"
-place = "Q4.1"
-judged = "known gap"
-why = "The low-side reverse protection again (Q1 in the ground return cuts a reversed supply off GND; PATH.reverse does not know it, see D1.2). As Q2.1: a source pin of the LED switch Q4 on the plus side."
-
-[[check]]
-code = "PATH.reverse"
-place = "Q4.2"
-judged = "known gap"
-why = "The low-side reverse protection again (Q1 in the ground return cuts a reversed supply off GND; PATH.reverse does not know it, see D1.2). As Q2.1: a source pin of the LED switch Q4 on the plus side."
-
-[[check]]
-code = "PATH.reverse"
-place = "Q4.3"
-judged = "known gap"
-why = "The low-side reverse protection again (Q1 in the ground return cuts a reversed supply off GND; PATH.reverse does not know it, see D1.2). As Q2.1: a source pin of the LED switch Q4 on the plus side."
-
-[[check]]
-code = "PATH.reverse"
-place = "R1.1"
-judged = "known gap"
-why = "The low-side reverse protection again (Q1 in the ground return cuts a reversed supply off GND; PATH.reverse does not know it, see D1.2). R1 feeds the reverse indicator D1 from +5V_IN."
-
-[[check]]
-code = "PATH.reverse"
-place = "R19.1"
-judged = "known gap"
-why = "The low-side reverse protection again (Q1 in the ground return cuts a reversed supply off GND; PATH.reverse does not know it, see D1.2). R19 is the gate pull-up of Q2 and Q4 from +5V_IN."
-
-[[check]]
-code = "PATH.reverse"
-place = "R2.1"
-judged = "known gap"
-why = "The low-side reverse protection again (Q1 in the ground return cuts a reversed supply off GND; PATH.reverse does not know it, see D1.2). R2 feeds the power LED D2 from +5V_IN."
-
-[[check]]
-code = "PATH.reverse"
-place = "R3.1"
-judged = "known gap"
-why = "The low-side reverse protection again (Q1 in the ground return cuts a reversed supply off GND; PATH.reverse does not know it, see D1.2). R3 feeds F1's indicator D3 from +5V_IN."
-
-[[check]]
-code = "PATH.reverse"
-place = "U1.3"
-judged = "known gap"
-why = "The low-side reverse protection again (Q1 in the ground return cuts a reversed supply off GND; PATH.reverse does not know it, see D1.2). The MAX809's VCC on +5V sees nothing reversed with GND cut off."
-
-[[check]]
-code = "PATH.reverse"
-place = "U2.14"
-judged = "known gap"
-why = "The low-side reverse protection again (Q1 in the ground return cuts a reversed supply off GND; PATH.reverse does not know it, see D1.2). The 74AHCT125's VCC on +5V sees nothing reversed with GND cut off."
-
-[[check]]
-code = "PATH.reverse"
-grade = "polarized"
-place = "C2.1"
-judged = "known gap"
-why = "The low-side reverse protection again (Q1 in the ground return cuts a reversed supply off GND; PATH.reverse does not know it, see D1.2). C2, 470 µF on +5V, is never reverse biased."
+why = "As D4.1: the bidirectional TVS across the input blocks the reversed 5 V, which edakit cannot know."
 
 [[sim]]
 code = "LIM.i"
@@ -223,5 +114,7 @@ place = "D6"
 judged = "criterion"
 why = "D6 – LED output 1's indicator, 10 kΩ from +5V_LED1 – gets 0.2 mA, below edakit's 1 mA for an LED that is on. The 10 kΩ dim it on purpose: the README tests it as lit ('D2 green is on', 'D6 and D12 will get brighter')."
 
+[[fixed]]
+what = "The reverse-polarity N-MOSFET in the ground return (Q1) unknown to PATH.reverse, which walked from J1's pins as if GND were the return – 18 findings on the plus side and on Q1 itself (D1.2, D3.1, D5.1, Q1, Q2, Q4, R1.1, R2.1, R3.1, R19.1, U1.3, U2.14, C2.1): a low-side N-MOSFET is now a cut of catalog/paths.toml [reverse], and only the parts between the terminal's own nets count (TD-125)."
 [[fixed]]
 what = "The gate of the reverse-polarity N-MOSFET in the ground return, tied straight to the net the supply comes in on (Q1 on +5V_IN), taken as floating (LVL.undefined on Q1)."

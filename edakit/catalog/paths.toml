@@ -17,6 +17,12 @@ blocks = [
                                                                       # protected side – reversed, + reaches the cathode
   { kind = "pmos", role = "drain", outside = ["source", "gate"] },    # body diode blocks, VGS <= 0
 ]
+cuts = [                                     # take a reversed source's return off ground: the board's ground floats,
+                                             # only the parts between the source's own nets see the reversed voltage
+  { kind = "nmos", role = "drain", ground = "source", gate = "gate" },   # a low-side N-MOSFET: drain on the return,
+                                             # source on ground, gate from the plus side (straight or through a
+                                             # resistor) – reversed, VGS <= 0 and its body diode blocks
+]
 
 [supply]                                     # PATH.unfed: what a supply reaches
 inputs = { battery_holder = "plus", connector = "vbus" }   # pin roles where a supply comes in (role prefix)

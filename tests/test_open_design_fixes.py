@@ -820,3 +820,42 @@ def test_a_connector_hands_a_reversed_source_on_to_none_of_its_other_pins():
                        comps, parts) == []                                 # before: ["U1.1"]
     assert reversed_at({"VBAT": ["BT1.1", "J1.1", "U1.1"], "5V": ["J1.2"], "GND": ["BT1.2", "U1.2"]},
                        comps, parts) == ["U1.1"]
+
+
+def ground_return(gate="VIN", leak=False):
+    """ADLSC's input in brief: the terminal J1 (reversible) brings VIN on pin 2 and its return VRTN on pin 1; Q1 in
+    the ground return – drain on VRTN, source on GND, gate on `gate` –; U1's supply from VIN to GND, U2's straight
+    across VIN and VRTN. `gate` "VG": through R1 from VIN; "CTRL": a net nothing on the plus side holds. `leak`: R2
+    from VRTN to GND beside Q1."""
+    res = {"lcsc": "C9000510", "mpn": "test resistor", "kind": "resistor",
+           "pins": {"1": {"name": "1", "type": "passive"}, "2": {"name": "2", "type": "passive"}},
+           "values": {"value_ohm": 10000}}
+    j1 = {"designator": "J1", "type": "connector", "lcsc": "C9000515", "pins": {"1": "1", "2": "2"},
+          "source": "reversible"}
+    comps = [j1, {"designator": "Q1", "type": "transistor", "lcsc": "C9000514", "pins": {"1": "G", "2": "D", "3": "S"}},
+             {"designator": "U1", "type": "ic", "lcsc": "C9000517", "pins": {"1": "VDD", "2": "GND"}},
+             {"designator": "U2", "type": "ic", "lcsc": "C9000517", "pins": {"1": "VDD", "2": "GND"}}]
+    nets = {"VIN": ["J1.2", "U1.1", "U2.1"], "VRTN": ["J1.1", "Q1.2", "U2.2"], "GND": ["Q1.3", "U1.2"]}
+    nets.setdefault(gate, []).append("Q1.1")
+    if gate == "VG":
+        comps.append({"designator": "R1", "type": "resistor", "lcsc": "C9000510", "pins": {"1": "1", "2": "2"}})
+        nets["VIN"].append("R1.1")
+        nets["VG"].append("R1.2")
+    if leak:
+        comps.append({"designator": "R2", "type": "resistor", "lcsc": "C9000510", "pins": {"1": "1", "2": "2"}})
+        nets["VRTN"].append("R2.1")
+        nets["GND"].append("R2.2")
+    return nets, comps, {"C9000510": res, "C9000514": NMOS, "C9000515": TERMINAL, "C9000517": LOGIC}
+
+
+def test_a_low_side_mosfet_cuts_a_reversed_source_off_ground():
+    """ADLSC's Q1 (AOD442) in the ground return: reversed, its gate sits below its source and its body diode blocks –
+    the board's ground floats, and only what sits across the terminal's own two nets sees the reversed 5 V. Before:
+    PATH.reverse knew the series diode and the high-side P-MOSFET only, and walked from J1's pins as if GND were the
+    return – 20 findings on the ADLSC, Q1's own pins among them. Now U2, straight across VIN and VRTN, is still found;
+    U1 behind the cut and Q1 are not. A gate through a resistor from the plus side cuts as well; a gate the plus side
+    does not hold, or a resistor beside Q1 from the return to ground, does not."""
+    assert reversed_at(*ground_return()) == ["U2.1", "U2.2"]          # before: Q1.1, Q1.2, U1.1, U2.1, U2.2
+    assert reversed_at(*ground_return("VG")) == ["U2.1", "U2.2"]
+    assert reversed_at(*ground_return("CTRL")) == ["Q1.2", "U1.1", "U2.1", "U2.2"]
+    assert reversed_at(*ground_return(leak=True)) == ["Q1.1", "Q1.2", "R2.1", "U1.1", "U2.1", "U2.2"]

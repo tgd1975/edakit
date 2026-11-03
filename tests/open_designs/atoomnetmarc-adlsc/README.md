@@ -62,5 +62,6 @@ DevKitC's own circuit (AMS1117-3.3, EN network, Schottky from USB) is taken from
 (`verified`).
 
 **What edakit finds** – and how each finding is judged – is in `findings.toml`, held by `tests/test_open_designs.py`.
-The design showed one false alarm of edakit, fixed and held by `tests/test_open_design_fixes.py`, and one gap that is
-kept: PATH.reverse does not know the low-side reverse-polarity N-MOSFET.
+The design showed two false alarms of edakit, fixed and held by `tests/test_open_design_fixes.py` – Q1's gate taken
+as floating, and the low-side reverse-polarity N-MOSFET unknown to PATH.reverse (TD-125) –, and one gap that is kept:
+the parts schema cannot say that the TVS D4 is bidirectional.
