@@ -8,6 +8,11 @@ written once, by `.github/merge.py`, from the fragments in [changes/](changes/RE
 update edakit@edakit`, then `/reload-plugins` or a new session; `edakit version` names the version that runs and what an
 update brings.
 
+## 1.1.5 – 2026-11-03
+
+- The parts at LCSC with the skill cart (`/edakit:cart parts`): `edakit order` writes `basket.json`, the supplier profile `edakit/suppliers/lcsc.toml` (provisional), and `edakit order check` holds LCSC's cart as the skill read it back to the basket – the new code ORDER.basket; lines already in the cart are listed, never touched.
+- The combined shipment (`/edakit:cart combine`): a job at JLCPCB whose basket has LCSC lines carries LCSC's warehouse address and the conditions; `edakit order check` prints both carts' weights and the routes to compare, and after combining the cheapest of LCSC's methods that arrives by the new key `[cart] needed_by`. On the owner's choice the skill enters that address at JLCPCB's checkout – the one field of a checkout it sets (docs/concepts/new/parts-order.md, steps 2 and 3).
+
 ## 1.1.4 – 2026-11-03
 
 - Handbook chapter 19, "Verification and validation: how edakit is tested": what a clean check proves and what it does not, the test layers, the reference circuits and the open designs – each with why it is there –, how a finding on them is judged, and what a new reference circuit or open design must bring. Its lists are generated (`python -m edakit.catalog.handbook --write`, kinds `references`, `designs`, `tally`); the catalog's pages show the same why.
