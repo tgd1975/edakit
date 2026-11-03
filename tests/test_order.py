@@ -44,7 +44,7 @@ def p5(project):
 def test_j1_lands_in_the_lcsc_cart(project, monkeypatch, capsys):
     assert order(project, monkeypatch) == 0
     d = out_dir(project)
-    assert sorted(p.name for p in d.iterdir()) == ["bom_main.csv", "cart_lcsc.csv", "hand_assembly.md"]
+    assert sorted(p.name for p in d.iterdir()) == ["basket.json", "bom_main.csv", "cart_lcsc.csv", "hand_assembly.md"]
     assert read_csv(d / "cart_lcsc.csv") == [["LCSC Part Number", "Quantity", "Comment"],
                                              ["C131337", "5", "B2B-PH-K-S(LF)(SN): J1 (5 + 0)"]]
     out = capsys.readouterr().out
@@ -230,3 +230,124 @@ def test_the_basket_sums_by_code():
     assert list(got) == ["berrybase", "lcsc"]
     c1 = next(g for g in got["lcsc"] if g["code"] == "C1")
     assert (c1["qty"], c1["need"], [n for n, _ in c1["parts"]]) == (30, 20, ["tree", "bell"])
+
+
+# --- the supplier's cart: edakit order check (docs/concepts/new/parts-order.md, steps 2 and 3) -----------------------
+
+def lcsc_cart(project, change=None, page_change=None, weight=None):
+    """cart.json and cart_page.txt as the skill cart writes them when LCSC's cart shows the basket exactly."""
+    basket = json.loads((out_dir(project) / "basket.json").read_text())
+    c = {"supplier": "lcsc", "read": "2026-11-02T10:00:00+01:00", "currency": "USD", "before": [],
+         "lines": [{"code": b["code"], "quantity": b["qty"], "stock": 12000, "price": 0.5, "mark": ""}
+                   for b in basket["suppliers"]["lcsc"]]}
+    if weight is not None:
+        c["weight_g"] = weight
+    if change:
+        change(c)
+    page = "\n".join([*(f"{g['code']} Qty {g['quantity']:,} In stock {g['stock']:,} ${g['price']}" for g in
+                        c["lines"] + c["before"] if "stock" in g), *(f"{g['code']} {g['quantity']}" for g in c["before"]
+                                                                       if "stock" not in g),
+                      *([f"Weight {weight} g"] if weight is not None else [])])
+    d = out_dir(project) / "lcsc"
+    d.mkdir(exist_ok=True)
+    (d / "cart.json").write_text(json.dumps(c))
+    (d / "cart_page.txt").write_text(page_change(page) if page_change else page)
+
+
+def test_the_lcsc_profile():
+    from edakit import order as o
+    p = o.supplier("lcsc")
+    assert p["recorded"] is False and p["start"] == "https://www.lcsc.com/bom" and "Checkout" in p["never"]
+    assert p["columns"] == o.LCSC_HEAD
+    addr = o.address(p["combine"])
+    assert p["combine"]["maker"] == "jlcpcb" and addr["Postal Code"] == "999077" and addr["City"] == "KWAI CHUNG"
+    assert "page" not in addr and o.supplier("berrybase") is None
+
+
+def test_the_basket_file(project, monkeypatch):
+    assert order(project, monkeypatch) == 0
+    b = json.loads((out_dir(project) / "basket.json").read_text())
+    assert b["projects"][0]["label"] == "led-bar" and b["projects"][0]["quantity"] == 5
+    assert b["suppliers"]["lcsc"] == [{"code": "C131337", "qty": 5, "need": 5, "item": "B2B-PH-K-S(LF)(SN)",
+                                       "comment": "B2B-PH-K-S(LF)(SN): J1 (5 + 0)"}]
+
+
+def test_a_cart_as_the_basket_passes(project, monkeypatch, capsys):
+    order(project, monkeypatch)
+    lcsc_cart(project, lambda c: c["lines"][0].update(quantity=50, stock=1000))
+    capsys.readouterr()
+    assert order(project, monkeypatch, "check") == 0
+    out = capsys.readouterr().out
+    assert "PASS    ORDER.basket LCSC's cart = basket: 1 lines" in out
+    assert "C131337: 50 instead of 5 – the supplier's rounding" in out and "never Checkout" in out
+    assert "## Findings\n\n- none" in (out_dir(project) / "lcsc" / "check.md").read_text()
+
+
+@pytest.mark.parametrize("change, page_change, expected", [
+    (lambda c: c["lines"].clear(), None, "C131337 (B2B-PH-K-S(LF)(SN), 5 pieces) is not in the cart"),
+    (lambda c: c["lines"][0].update(quantity=4), None, "C131337: 4 in the cart, the basket asks 5 (need 5)"),
+    (lambda c: c["lines"][0].update(stock=3), None, "C131337: 3 in stock, 5 in the cart"),
+    (lambda c: c["lines"][0].update(mark="Discontinued"), None, 'C131337: marked "Discontinued"'),
+    (lambda c: c["lines"].append({"code": "C999", "quantity": 5, "stock": 10, "price": 1}), None,
+     "C999 (5): in the cart, not in the basket and not there before"),
+    (None, lambda p: p.replace("Qty 5", "Qty ?"), "C131337: 5 not in the page text – read, not made up"),
+])
+def test_each_finding_of_order_check(project, monkeypatch, capsys, change, page_change, expected):
+    order(project, monkeypatch)
+    lcsc_cart(project, change, page_change)
+    capsys.readouterr()
+    assert order(project, monkeypatch, "check") == 2
+    out = capsys.readouterr().out
+    assert "FAIL    ORDER.basket" in out and expected in out and "The parts order stops" in out
+
+
+def test_lines_there_before_are_the_owners(project, monkeypatch, capsys):
+    """2026-11-02 LCSC's cart held 25 lines of earlier work: listed, never touched, never a finding."""
+    order(project, monkeypatch)
+    lcsc_cart(project, lambda c: c.update(before=[{"code": "C25804", "quantity": 100},
+                                                  {"code": "C131337", "quantity": 10}]))
+    capsys.readouterr()
+    assert order(project, monkeypatch, "check") == 0
+    out = capsys.readouterr().out
+    assert "in the cart before, not touched: C25804 x 100, C131337 x 10" in out
+    assert "C131337: in the cart before the upload too (10) – the owner decides" in out
+
+
+def test_check_needs_the_basket_and_the_cart(project, monkeypatch, capsys):
+    assert order(project, monkeypatch, "check") == 1
+    assert "basket.json is not there" in capsys.readouterr().err
+    order(project, monkeypatch)
+    assert order(project, monkeypatch, "check") == 1
+    assert "cart.json is not there – the skill cart reads the cart back" in capsys.readouterr().err
+    assert order(project, monkeypatch, "check", "--supplier", "berrybase") == 1
+    assert "no profile for supplier berrybase" in capsys.readouterr().err
+
+
+def test_the_cheapest_shipping_that_arrives_in_time():
+    """The methods LCSC offered after combining on 2026-11-02 (parts-order.md): DHL Express was paid, the cheapest
+    express was cheaper."""
+    import datetime as dt
+    from edakit import order as o
+    ship = {"currency": "USD", "methods": [{"method": "DHL Express", "amount": 68.40, "days": "2-5 working days"},
+                                           {"method": "FedEx IE", "amount": 56.94, "days": "2-5 working days"},
+                                           {"method": "Global Direct", "amount": 18.37, "days": "7-15 working days"}]}
+    page = "DHL Express $68.40\nFedEx IE $56.94\nGlobal Direct $18.37"
+    monday = dt.date(2026, 11, 2)
+    assert o.arrival("2-5 working days", monday) == dt.date(2026, 11, 9) and o.arrival("–", monday) is None
+    rows, bad = o.shipping_choice(ship, page, dt.date(2026, 11, 10), monday)
+    assert not bad and rows[0].startswith("  Global Direct: 18.37 USD") and "cheapest that arrives by 2026-11-10: " \
+        "FedEx IE, 56.94 USD" in rows[-1]
+    rows, _ = o.shipping_choice(ship, page, None, monday)
+    assert "cheapest: Global Direct" in rows[-1]
+    rows, _ = o.shipping_choice(ship, page, dt.date(2026, 11, 3), monday)
+    assert "no method arrives by 2026-11-03" in rows[-1]
+    _, bad = o.shipping_choice(ship, page.replace("68.40", "86.40"), None, monday)
+    assert bad == ["shipping DHL Express: 68.4 not in the page text"]
+
+
+@pytest.mark.parametrize("value, ok", [('"2026-12-10"', True), ("2026-12-10", True), ('"soon"', False)])
+def test_needed_by(value, ok):
+    import tomllib
+    from edakit import makers
+    c, bad = makers.cart(tomllib.loads(f"needed_by = {value}"))
+    assert (not bad) == ok and (c["needed_by"].isoformat() == "2026-12-10" if ok else c["needed_by"] is None)

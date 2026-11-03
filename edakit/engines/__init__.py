@@ -9,7 +9,6 @@ catalog/paths.toml and the tables.
     REQUIRES  what a part requires on its pins is there and in range    requires.py
     PATHS     what a reversed, unfed or misplaced supply reaches        paths.py
     PARTS     parts entries complete: the facts the profile requires    parts.py
-    DEF       every derived value is the value its record derives       derive.py
     HINT      patterns that need judgement, as notes                    hint.py
     SIM       the scenarios run and reach their states (stage E)        sim.py
 
@@ -69,9 +68,9 @@ def report(findings, prof, graph, notes=True):
 
 
 def graph_findings(ctx):
-    from . import derive, hint, levels, limits, parts, paths, requires, struct
+    from . import hint, levels, limits, parts, paths, requires, struct
     out = []
-    for engine in (struct, limits, levels, requires, paths, parts, derive, hint):
+    for engine in (struct, limits, levels, requires, paths, parts, hint):
         out += engine.run(ctx)
     return out
 

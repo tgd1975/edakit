@@ -820,3 +820,38 @@ def test_a_bare_orders_pcb_price_is_for_the_gerber_size(prepared, monkeypatch, c
     assert "fee table: PCB 60 × 50 mm, 5 boards: 5.20" in capsys.readouterr().out
     own = json.loads((prepared.root / "hardware" / "fees" / "jlcpcb.json").read_text())
     assert (own["pcb"]["prices"][0]["w_mm"], own["pcb"]["prices"][0]["h_mm"]) == (60.0, 50.0)
+
+
+def test_the_combined_shipment_in_the_job(prepared, monkeypatch, capsys):
+    """The example's J1 is an LCSC line: the job at JLCPCB carries LCSC's warehouse (parts-order.md, decision 5),
+    another maker's none; edakit order check then adds both carts' weights before JLCPCB's checkout."""
+    from edakit.design import Design
+    k = job(prepared)["combine"]
+    assert (k["supplier"], k["lines"], k["address"]["Postal Code"], k["express_above_g"]) == ("lcsc", 1, "999077", 2000)
+    assert "this project's parts" in k["basket"] and any("one JLCPCB order only" in c for c in k["conditions"])
+    cfg = prepared.config()
+    from edakit import cart as c
+    assert c.combine_of(cfg, Design.from_config(cfg), makers.load("pcbway")) is None
+    cart(prepared, monkeypatch, "prepare")
+    out = capsys.readouterr().out
+    assert "combine  the basket has 1 LCSC line" in out and "City: KWAI CHUNG" in out
+    assert "(but LCSC's warehouse, below, on the owner's choice)" in out
+    write_quote(prepared, lambda q: q.update(weight_g=1340))
+    assert cli.main(["order"]) == 0
+    d = cfg.artifacts / "order"
+    assert "basket.json" in job_basket(prepared)
+    (d / "lcsc").mkdir()
+    (d / "lcsc" / "cart.json").write_text(json.dumps({"supplier": "lcsc", "weight_g": 1500, "before": [], "lines": [
+        {"code": "C131337", "quantity": 5, "stock": 900, "mark": ""}]}))
+    (d / "lcsc" / "cart_page.txt").write_text("C131337 5 900 in stock\nWeight 1500 g")
+    capsys.readouterr()
+    assert cli.main(["order", "check"]) == 0
+    out = capsys.readouterr().out
+    assert "jlcpcb: main 1340 g" in out and "parts cart: 1500 g" in out
+    assert "together 2840 g – above 2000 g LCSC offered express only" in out
+
+
+def job_basket(project):
+    """The job prepared again once edakit order wrote the basket: it names the file."""
+    assert cli.main(["cart", "prepare"]) == 0
+    return job(project)["combine"]["basket"]

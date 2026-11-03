@@ -594,7 +594,7 @@ offline and held by a test; the first reader as an eval case; the pipeline drawi
   `README.md` and `handbook/`; the references to the handbook as `handbook N` and `handbook/NN-` over the `.py`, `.md`,
   `.toml`, `.sh` and `.json` files of `edakit/`, `skills/`, `agents/` and `.claude/`.
 - For the gallery, main at `a6ae71a`: handbook 8.3 (section 12 of the protocol, `edakit release publish`),
-  [circuit-dsl.md](circuit-dsl.md) (the bell's four configurations, its D-11 to D-15),
+  [circuit-dsl.md](../new/circuit-dsl.md) (the bell's four configurations, its D-11 to D-15),
   [docs/glossary.md](../../glossary.md) (variant, station), [docs/style.md](../../style.md) (the entry register's
   length).
 - `examples/coin-cell-led`: `edakit check` in 0.2 s, `edakit explain PATH.reverse`, on 2026-10-31.

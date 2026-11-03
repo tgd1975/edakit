@@ -16,9 +16,6 @@ dependencies = [
     "svgelements>=1.9.6",
 ]
 
-[project.optional-dependencies]
-lsp = ["pygls>=2.0"]       # edakit lsp: the language server of the circuit language (handbook 20)
-
 [project.scripts]
 edakit = "edakit.cli:main"
 
@@ -26,9 +23,6 @@ edakit = "edakit.cli:main"
 dev = [
     "pytest>=8",
     "pytest-xdist>=3.8.0",
-]
-sysml = [               # the conformance test of the circuit language's exports (pytest -m sysml); never installed by default
-    "systree>=0.4.4a0",
 ]
 
 [build-system]
@@ -44,8 +38,7 @@ packages = ["edakit"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 markers = ["ngspice: needs ngspice on PATH", "freerouting: downloads and runs Freerouting",
-           "kicad: needs kicad-cli of KiCad 10, skipped with another major (the CI job kicad runs them)",
-           "sysml: needs the SysML v2 reader of systree (the optional group sysml, the CI job sysml)"]
+           "kicad: needs kicad-cli of KiCad 10, skipped with another major (the CI job kicad runs them)"]
 pythonpath = ["tests"]
 
 [tool.ruff]

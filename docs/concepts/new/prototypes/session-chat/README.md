@@ -8,7 +8,10 @@ The sketch of [session-chat.md](../../session-chat.md), not on the site's naviga
 - `chat.py` – the fence turned into HTML, as `docs/pages.py` would do it on assembly; the tally under the chat counted
   from the entries. `python3 chat.py session.md out/session.html` writes a standalone page.
 - `chat.css` – the chat's styles in the tokens of `docs/brand/tokens.json`, for `docs/brand/edakit.css`.
+- `example.md` – steps 8 and 9, shortened: every kind of entry once, the layout example of the concept's section 4;
+  `out/example.html`, `out/example-light.png` (720 px, light) and `out/example-dark-phone.png` (390 px, dark).
 - `out/session.html` – the rendered page; `out/session-light.png` its top at 900 px, light, up to step 6;
   `out/session-dark-phone.png` steps 8 and 9 at 390 px, dark.
 
-Its tally, counted by `chat.py`: 8 messages typed, 15 answers in 5 forms, 7 things done outside the chat.
+Its tally, counted by `chat.py`: 8 messages typed, 15 answers in 5 forms, 6 things done outside the chat. The click in EasyEDA carries a
+footnote (`†`): KiCad needs none, and the issues reported to EasyEDA.

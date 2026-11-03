@@ -46,8 +46,7 @@ You bring the idea, what the board must do, and the decisions on money, purpose 
 rest: the parts with their datasheets, the values, the rules, the simulation, the schematic and the PCB in EasyEDA Pro
 or KiCad, and the manufacturing files. They take the order up to the cart at JLCPCB, PCBWay, Eurocircuits or AISLER.
 Each maker's quote comes with its price, the parts it has in stock and its lead time, checked by edakit. You order, pay
-and hold the boards. The circuit is text in your repository: a graph, or source in the [circuit
-language](https://tgd1975.github.io/edakit/handbook/20-circuit-language/) with blocks, loops and variants.
+and hold the boards.
 
 The [walkthrough](https://tgd1975.github.io/edakit/handbook/17-walkthrough/) shows it on a small board: 14 steps, six of
 them yours, seven decisions. Every step is checked by [rules](https://tgd1975.github.io/edakit/catalog/) and reviewers,
