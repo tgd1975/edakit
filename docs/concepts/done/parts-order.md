@@ -2,9 +2,10 @@
 
 Status 2026-11-03: done – decided on 2026-11-02 in a decision round in Claude Code's form (decisions 1 to 3 as
 recommended, 5 against the recommendation – the skill enters the warehouse address –, 4 decided by Claude and
-confirmed) and built: step 1 merged (#203), steps 2 and 3 merged as edakit 1.1.5 (#265). Left is the live run of the
-skill cart's modes `parts` and `combine` at the next parts order, which also records the BOM tool's labels and sets
-`recorded` in `edakit/suppliers/lcsc.toml` – TODO.md TD-111.
+confirmed) and built: step 1 merged (#203), steps 2 and 3 merged as edakit 1.1.5 (#265). The live run of the skill
+cart's mode `parts` ran on 2026-11-03 – four projects, 23 lines, nothing ordered – and recorded
+`edakit/suppliers/lcsc.toml` (#310); left is the live run of `combine` at the next JLCPCB order with LCSC lines –
+TODO.md TD-144.
 
 ## Why
 

@@ -4,7 +4,7 @@ Open work that needs the owner's computer, a maker or the owner's word. The stat
 and plans the sections name; this list is what is left to do of them, in the order it can be done. No item is deleted.
 
 **Layout.** Every item, in every section, open or closed, is a line with a checkbox and an ID unique in this file,
-counted up and never reused – whoever adds an item takes the next free ID and counts it up here. Next free ID: TD-142.
+counted up and never reused – whoever adds an item takes the next free ID and counts it up here. Next free ID: TD-145.
 
 - Open: `- [ ] TD-<n> - **Title:** what and why.` – a step's own name after the dash (`- [ ] TD-31 - **D.4** …`).
 - Done: ticked, the commit that did it, the date at the end, moved to [Closed todos](#closed-todos), newest first –
@@ -31,14 +31,16 @@ to touch.
 
 - [ ] TD-108 - **A photo of the delivered tree:** one picture of the lit tree in its hill into pytree's `docs/img/` –
       it replaces the render on `docs/projects/pytree.md`. *(edakit-ce)*
-- [ ] TD-141 - **OK for #305:** https://github.com/tgd1975/edakit/pull/305 – parts-order.md moves to done/, the
-      paths follow; a patch, tests green. *(parts-order-done)*
+- [ ] TD-142 - **OK for #310:** https://github.com/tgd1975/edakit/pull/310 – LCSC's profile recorded by the live
+      run, ORDER.basket reads "1,500g"; a patch. *(edakit-5e)*
+- [ ] TD-143 - **The 23 lines of the live run in LCSC's cart:** keep them for the next parts order or remove them – the
+      skill never deletes a line. *(edakit-5e)*
 
 ## The parts order ([docs/concepts/done/parts-order.md](docs/concepts/done/parts-order.md))
 
-- [ ] TD-111 - **Live run at the next parts order:** the skill cart's modes `parts` and `combine` at LCSC and JLCPCB,
-      nothing ordered or paid by the skill – it records the BOM tool's labels into `edakit/suppliers/lcsc.toml`, sets
-      `recorded`, and what it finds goes into handbook 8.4; #265 is on main (1.1.5). *(edakit-4f)*
+- [ ] TD-144 - **Live run of `combine`:** the skill cart's mode `combine` at the next JLCPCB order whose basket has
+      LCSC lines – the warehouse address at JLCPCB's checkout, after the payment the tick at LCSC's checkout and its
+      methods in `shipping.json`; what it finds into `lcsc.toml` and handbook 8.4. *(edakit-5e)*
 
 ## How edakit is tested ([docs/concepts/done/verification-and-validation.md](docs/concepts/done/verification-and-validation.md))
 
@@ -89,6 +91,10 @@ Nothing to do until there is an answer or a release; whichever session learns of
 
 ## Closed todos
 
+- [x] TD-111 - **Live run at the next parts order:** mode `parts` ran on 2026-11-03 – four projects, 23 lines into
+      LCSC's cart, nothing ordered; the profile recorded and the weight's "1,500g" read (#310); `combine` split off as
+      TD-144. *(edakit-5e)* [2026-11-03]
+- [x] TD-141 - **OK for #305:** given; merged as edakit 1.1.10 (#305). *(edakit-5e)* [2026-11-03]
 - [x] TD-138 - **Step 10 ends with the assembled board:** JLCPCB's preview of TD-137 at M-2 in
       `docs/steps/10-order-the-board.md` (#300). *(edakit-f9)* [2026-11-03]
 - [x] TD-137 - **A screenshot of JLCPCB's assembly preview of coin-cell-led:** Gerber, BOM and CPL of the gate run of
