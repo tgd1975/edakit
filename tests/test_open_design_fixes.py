@@ -12,7 +12,9 @@ starved of its minimum load, and a row could not be released while another is sc
 five: a switch of three poles could not be described (roles, simulation, REQ.value/switch), a base biased by
 resistors to ground or a divider node was taken as floating, a coupling capacitor's voltage was taken from extreme to
 extreme of its nets' ranges, a second wire of one net between two boards stopped the simulation, and contacts on nets
-that run through cables were never judged by REQ.value/switch. Parts here are test entries, not datasheets."""
+that run through cables were never judged by REQ.value/switch. The ESPurna-H added one: a need on a regulator's VOUT
+pin left open was taken as not connected, though its tab – the same terminal – carries the output. Parts here are
+test entries, not datasheets."""
 
 import json
 import shutil
@@ -530,3 +532,42 @@ def test_a_contact_on_a_net_that_crosses_a_cable_is_still_in_the_signal_path():
         rows = [c for c in simulate(p)["checks"] if c["item"] == "SW20" and c["check"].startswith("DC across")]
         assert rows and {c["result"] for c in rows} == {"warn"}             # before: no rows – never judged
         assert "REMOTE 3.3 V" in rows[0]["check"] and "SIG_R 0 V" in rows[0]["check"]
+
+
+# --- the ESPurna-H (espurna-h): a regulator's output on its tab --------------------------------------------------------
+LDO = {"lcsc": "C9000514", "mpn": "test LDO", "kind": "ic", "verified": {"by": "test"},
+       "pins": {"1": {"name": "GND", "type": "ground"},
+                "2": {"name": "VOUT", "type": "power_output", "needs": [{"what": "capacitor", "c_min_f": 22e-6}]},
+                "3": {"name": "VIN", "type": "power_in"}, "4": {"name": "VOUT", "type": "power_output"},
+                "5": {"name": "SENSE", "type": "input", "needs": [{"what": "pull_up", "r_max_ohm": 1e5}]}},
+       "needs": {"decoupling": False}}
+
+
+def tab_regulator(out_pins, farad=1e-5):
+    """U1, an LDO whose entry asks for 22 µF on VOUT (pin 2) – VOUT is pin 2 and the tab (pin 4), as on an AMS1117 –,
+    with `out_pins` on OUT and the others left open; C1 (`farad`) from OUT to GND."""
+    cap = {"lcsc": "C9000515", "mpn": "test capacitor", "kind": "capacitor",
+           "pins": {"1": {"name": "1", "type": "passive"}, "2": {"name": "2", "type": "passive"}},
+           "values": {"value_f": farad}}
+    nets = {"VIN": ["U1.3"], "GND": ["U1.1", "C1.2"], "OUT": [f"U1.{p}" for p in out_pins] + ["C1.1"]}
+    comps = [{"designator": "U1", "type": "ic", "lcsc": "C9000514",
+              "pins": {n: p["name"] for n, p in LDO["pins"].items()},
+              "nc": [n for n in LDO["pins"] if n not in ("1", "3", *out_pins)]},
+             {"designator": "C1", "type": "capacitor", "lcsc": "C9000515", "pins": {"1": "1", "2": "2"}}]
+    graph = {"name": "t", "version": "1", "ground": "GND", "components": comps,
+             "nets": [{"name": n, "pins": p, "v": [0, 5.5]} for n, p in nets.items()]}
+    return Design.from_data(graph, {"C9000514": LDO, "C9000515": cap})
+
+
+def test_a_need_on_a_pin_left_open_is_judged_where_its_terminal_is_connected():
+    """The ESPurna-H's AMS1117-3.3 (IC1): the Eagle device takes VOUT from the tab (pin 4) and leaves pin 2 – VOUT
+    too, the same node inside the part – on no net; the library's entry asks for 22 µF on pin 2. Before:
+    REQ.missing, 'not connected', though C12 sits on the output. Now the need is judged on the net of the pin of the
+    same name: 10 µF there is too little (REQ.value), 22 µF is enough. A pin left open with no other pin of its name
+    (SENSE) is still missing what it needs."""
+    sense = ("REQ.missing", "U1.SENSE (5): not connected – needs a pull up of at most 100 kΩ")
+    assert sorted((f.code, f.text) for f in pin_needs(tab_regulator(["4"]))) == [
+        sense, ("REQ.value", "U1.4: needs a capacitor of at least 22 µF to GND – C1 on OUT: 10 µF")]
+    assert [(f.code, f.text) for f in pin_needs(tab_regulator(["4"], 2.2e-5))] == [sense]
+    assert sorted((f.code, f.text) for f in pin_needs(tab_regulator(["2", "4"]))) == [
+        sense, ("REQ.value", "U1.2: needs a capacitor of at least 22 µF to GND – C1 on OUT: 10 µF")]

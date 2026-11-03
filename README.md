@@ -147,6 +147,7 @@ MIT – see [LICENSE](LICENSE) –, except for third-party material the tests us
 | `tests/open_designs/guitarml-classic-boost/`, `guitarml-ts-rat-combo/` | Keith Bloemer (GuitarML), *GuitarPedalPCBs* | MIT, notice in the README |
 | `tests/open_designs/corne-cherry-v3-left/` | foostan, *Corne Cherry* v3 | MIT, notice in the README |
 | `tests/open_designs/corne-cherry-left/` | foostan, *Corne keyboard* v4 | [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/) |
+| `tests/open_designs/espurna-h/` | Xose Pérez (tinkerman.cat), *ESPurna-H* v0.8 | [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/) (the repository says 3.0, the schematic 4.0) |
 | `tests/open_designs/sparkfun-logic-level-converter/` | SparkFun Electronics, *Logic Level Converter* | [CC BY-SA 3.0](https://creativecommons.org/licenses/by-sa/3.0/) |
 | `tests/open_designs/esp32-devkitc-v4/` | Espressif Systems, *ESP32-DevKitC V4* schematic | none stated – only the circuit's facts are transcribed, not the drawing |
 | `tests/fixtures/jlcpcb/`, `easyeda/`, `datasheets/`, `makers/` | short excerpts of the pages and API answers of JLCPCB, LCSC, EasyEDA, AISLER, Eurocircuits and PCBway, with source and date, for the parsers' tests | the sites' own; not under MIT |

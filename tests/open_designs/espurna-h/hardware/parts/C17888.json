@@ -1,0 +1,53 @@
+{
+ "lcsc": "C17888",
+ "mpn": "1206W4F0000T5E",
+ "manufacturer": "UNI-ROYAL(厚声)",
+ "kind": "resistor",
+ "package": "1206",
+ "footprint": "R1206",
+ "jlc_class": "Basic Part",
+ "datasheet": {
+  "url": "https://datasheet.lcsc.com/datasheet/pdf/0a975aaa49b7c97f38a963127be4a823.pdf?productCode=C17888",
+  "pinout_page": null
+ },
+ "pins": {
+  "1": {
+   "name": "1",
+   "type": "passive",
+   "role": "1"
+  },
+  "2": {
+   "name": "2",
+   "type": "passive",
+   "role": "2"
+  }
+ },
+ "values": {
+  "value_ohm": 0.0,
+  "r_max_ohm": 0.05
+ },
+ "limits": {
+  "p_max_w": 0.25
+ },
+ "spice": {},
+ "sources": [
+  "UNI-ROYAL Thick Film Chip Resistors data sheet V.3 (Feb. 12, 2019), LCSC's copy https://datasheet.lcsc.com/datasheet/pdf/0a975aaa49b7c97f38a963127be4a823.pdf?productCode=C17888, read 2026-11-03",
+  "order code 1206W4F0000T5E: 1206, W4 = 1/4 W, 0000 = 0 Ω (jumper)",
+  "7. ratings, jumper 1206: resistance < 50 mΩ (r_max_ohm), rated current 2 A, max. overload current 10 A",
+  "pins 1, 2 as the library's chip resistors",
+  "JLCPCB catalogue (edakit part search, 2026-11-03): Basic Part"
+ ],
+ "verified": {
+  "by": "Claude (datasheet check, open-design transcription)",
+  "date": "2026-11-03",
+  "datasheet": "UNI-ROYAL Thick Film Chip Resistors V.3 (2019-02-12)",
+  "datasheet_sha256": "11cd644d5d8a34a6d12775afb80bf58d8fc11f0c3b700dbd0f7a59942ceaa5ef",
+  "checked": [
+   "jumper: < 50 mΩ, 2 A rated, 10 A overload"
+  ],
+  "open": [
+   "the jumper's 2 A rating has no field of a resistor's entry (i_max_a is not in the resistor schema)",
+   "the schematic names 0R in 1206; this order code stands in"
+  ]
+ }
+}

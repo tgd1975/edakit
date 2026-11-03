@@ -15,6 +15,10 @@ published; a finding that appears or goes is a change in edakit to look at, not 
   esp32-devkitc-v4                Espressif ESP32-DevKitC V4, schematic Rev V4 (2017-12-06),
                                    https://dl.espressif.com/dl/schematics/esp32_devkitc_v4-sch.pdf – no licence stated;
                                    the circuit's facts transcribed: usb, radio and power in one board
+  espurna-h                        Xose Pérez's ESPurna-H v0.8, Eagle schematic espurna-h/v0.8/espurna-h.sch at commit
+                                   f433874 of https://github.com/xoseperez/espurna-board, CC BY-SA 4.0 – an ESP8266 wall
+                                   switch on mains: an HLK-PM01, a 10 A relay on a 2N7002 with its flyback diode, an
+                                   HLW8012 power monitor whose 0 Ω resistor ties GND to the line
   guitarml-classic-boost           GuitarML's Classic Boost v2 (LPB-1 style), KiCad schematic ClassicBoost_1590a/
                                    ClassicBoost_v2.kicad_sch at commit e2fa7e1 of
                                    https://github.com/GuitarML/GuitarPedalPCBs, MIT – one 2N5088 common-emitter stage,

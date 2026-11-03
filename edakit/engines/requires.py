@@ -516,8 +516,10 @@ def pin_needs(d, gaps=None):
     judged on the capacitors layout.near places next to the part where it names any on the net – the local
     decoupling –, else on the net's sum. A minimum the nominal values meet but the capacitance left at the DC across
     them (values dc_bias) does not: REQ.value/bias; an ESR window (esr_min_ohm, esr_max_ohm) the capacitors' esr_ohm
-    do not fill: REQ.value/esr (maker-coverage FT-9, CK-14). A needs entry of the wrong form: PARTS.schema. `gaps`, a
-    list, collects (capacitor, what is missing) where data was lacking – for the coverage report."""
+    do not fill: REQ.value/esr (maker-coverage FT-9, CK-14). A need on a pin left open is judged at a connected pin of
+    its name, the same terminal inside the part (a regulator's VOUT on pin 2 and on its tab). A needs entry of the
+    wrong form: PARTS.schema. `gaps`, a list, collects (capacitor, what is missing) where data was lacking – for the
+    coverage report."""
     n = needs()["pin"]
     grounds = {d.ground} | set(d.graph.get("grounds") or [])
     supplies = supply_nets(d) - grounds
@@ -554,10 +556,14 @@ def pin_needs(d, gaps=None):
                 if key not in seen:
                     out.append(Finding("PARTS.schema", "P", key, f"{key}: pin {num} needs must be a list of requirements"))
                 continue
-            ref, net = f"{des}.{num}", d.pin_net.get(f"{des}.{num}")
+            pins = part.get("pins") or {}
+            ref = f"{des}.{num}"
+            if ref not in d.pin_net and info.get("name"):   # left open: a connected pin of its name is the same
+                ref = next((f"{des}.{n}" for n, p in pins.items()   # terminal inside the part – a regulator's VOUT
+                            if p.get("name") == info["name"] and f"{des}.{n}" in d.pin_net), ref)   # on its tab
+            net = d.pin_net.get(ref)
             place, who = f"{ref} ({info.get('name', num)})", d.pin_text(ref)
             on = (("component", des),) + ((("net", net),) if net else ())
-            pins = part.get("pins") or {}
             for need in pin_needs_list:
                 problems = pin_needs_problems(need, pins)
                 if problems:
