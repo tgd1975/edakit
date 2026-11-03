@@ -33,7 +33,7 @@ Once: the country you ship to and the shipping method.
 
 For M-2 JLCPCB shows the board with its parts as they will be placed, here the walkthrough's:
 
-![JLCPCB's placement preview of the walkthrough's board: D1, R1 and SW1 placed, the pads of the cell holder bare – it is soldered by hand](../../examples/coin-cell-led/docs/jlcpcb_assembly_main_top.png)
+![JLCPCB's placement preview of the walkthrough's board: D1, R1 and SW1 placed, the cell holder's pads bare for soldering by hand](../../examples/coin-cell-led/docs/jlcpcb_assembly_main_top.png)
 
 ## What you have
 

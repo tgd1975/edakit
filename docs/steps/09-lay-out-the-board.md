@@ -23,7 +23,7 @@ Then it places the parts, routes with Freerouting, pours the ground, prints the 
 In EasyEDA you click nothing here: edakit writes what EasyEDA's import would set. Only if its check still waits
 for the import, Claude asks you for one click: *Design → Import Changes*.
 
-![The walkthrough's routed board, all layers from above: the ground pour over the round board, the tracks from the cell holder's "+" pad to the switch, the resistor and the LED](../../examples/coin-cell-led/docs/board_main_layers.png)
+![The walkthrough's routed board, all layers from above: the ground pour and the tracks from the cell holder to the switch, the resistor and the LED](../../examples/coin-cell-led/docs/board_main_layers.png)
 
 ## What you are asked
 
