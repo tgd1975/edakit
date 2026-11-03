@@ -48,9 +48,17 @@ KEYED = {"components": "designator", "nets": "name", "cables": "name"}   # the t
 
 
 def load_graph(path):
-    """The graph of a file (the inner object): a .toml file through graph_of_toml, else JSON, {"graph": {...}} or the
-    inner object directly."""
+    """The graph of a file (the inner object): a .toml file through graph_of_toml, a .circuit file compiled
+    (lang/compile.py), else JSON, {"graph": {...}} or the inner object directly."""
     path = Path(path)
+    if path.suffix == ".circuit":                          # the circuit language: compiled (edakit/lang)
+        from .config import ConfigError
+        from .lang.compile import compile_path
+        from .lang.reader import CompileError
+        try:
+            return compile_path(path)
+        except CompileError as e:
+            raise ConfigError(str(e)) from None
     text = path.read_text(encoding="utf-8")
     if path.suffix == ".toml":
         return graph_of_toml(text, path)
@@ -90,6 +98,13 @@ def graph_of_toml(text, where="graph"):
 
 
 def load_parts(directory):
+    """{key: entry} of a parts folder – or of a list of folders, the first that has an entry winning (a variant's)."""
+    if isinstance(directory, (list, tuple)):
+        out = {}
+        for d in directory:
+            for key, entry in load_parts(d).items():
+                out.setdefault(key, entry)
+        return out
     return {p.stem: json.loads(p.read_text(encoding="utf-8")) for p in sorted(Path(directory).glob("*.json"))
             if p.name != "README.json"}
 
@@ -331,7 +346,7 @@ class Design:
 
     @classmethod
     def from_config(cls, cfg):
-        return cls(cfg.graph, cfg.parts, list(cfg.boards))
+        return cls(cfg.graph, getattr(cfg, "parts_dirs", None) or cfg.parts, list(cfg.boards))
 
     @classmethod
     def from_data(cls, graph, parts, boards=None, graph_path="graph.json"):

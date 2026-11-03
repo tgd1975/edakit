@@ -1,0 +1,61 @@
+{
+ "lcsc": "C142824",
+ "mpn": "0239003.MXP",
+ "manufacturer": "Littelfuse(美国力特)",
+ "kind": "fuse",
+ "package": "5 × 20 mm glass cartridge (D 5.2 × L 20 mm), in clips",
+ "footprint": "FUSE-TH_BD5.8-L22.5-P26.50-D0.7",
+ "jlc_class": "Extended Part",
+ "datasheet": {
+  "url": "https://datasheet.lcsc.com/datasheet/pdf/0502c49b85e64752b197c4d795e7f46f.pdf?productCode=C142824",
+  "pinout_page": null
+ },
+ "pins": {
+  "1": {
+   "name": "1",
+   "type": "passive",
+   "role": "1"
+  },
+  "2": {
+   "name": "2",
+   "type": "passive",
+   "role": "2"
+  }
+ },
+ "values": {
+  "r_min_ohm": 0.04877,
+  "r_max_ohm": 0.04877
+ },
+ "limits": {
+  "i_hold_a": 3.0,
+  "v_max_v": 250
+ },
+ "spice": {},
+ "hints": [
+  "time lag (Slo-Blo): 100 % of the rating for 4 hours minimum, 135 % opens within 1 hour, 200 % within 5 … 120 s (p. 1, the table's encoding garbled in the PDF's text layer – read from the page)",
+  "interrupting rating of the 3 A cartridge: 100 A at 250 VAC – a low breaking capacity"
+ ],
+ "sources": [
+  "Littelfuse 239 Series, 5 × 20 mm, Slo-Blo® Fuse data sheet (© 2009, revised September 9, 2010) – LCSC product data of C142824, https://datasheet.lcsc.com/datasheet/pdf/0502c49b85e64752b197c4d795e7f46f.pdf?productCode=C142824, read 2026-11-03 (edakit part fetch; the text names the series, the order code by its part numbering system)",
+  "p. 2 electrical characteristic specification, amp code 003.: 3 A, 250 V, interrupting rating 100 A @ 250 VAC, nominal cold resistance 0.04877 Ω, nominal melting I²t 129.51 A²s",
+  "p. 4 part numbering system: 0239 xxxx M X P – series 239, amp code, M = 1000 pcs, X = filler, P = lead-free; the cartridge (0239 000P, 20 × 5.2 mm) as against the axial-lead 0239 000XEP",
+  "i_hold_a 3.0: the rated current, which the fuse carries for 4 hours minimum (electrical characteristics for series, p. 1) – a glass fuse has no hold current of its own",
+  "r_min_ohm, r_max_ohm 0.04877: the nominal cold resistance, no tolerance given",
+  "mpn, manufacturer, jlc_class: EasyEDA library data of C142824 (edakit part import, 2026-11-03); its footprint is an axial pattern, ADLSC holds the cartridge in two PCB clips"
+ ],
+ "notes": "The schematic's 'T3AL250V 5x20mm 3A slow blow fuse' in two fuse clips: Littelfuse's 0239003.MXP stands in (5 × 20 mm, time lag, 3 A, 250 V, low breaking capacity).",
+ "verified": {
+  "by": "Claude (datasheet check, open-design transcription)",
+  "date": "2026-11-03",
+  "datasheet": "Littelfuse 239 Series, 5 × 20 mm, Slo-Blo® Fuse data sheet (© 2009, revised September 9, 2010)",
+  "checked": [
+   "amp code 003. row of p. 2",
+   "part numbering of p. 4",
+   "series opening times of p. 1"
+  ],
+  "open": [
+   "the temperature rerating curve (p. 3) is a drawing without values in the text: no i_hold_vs_temp",
+   "the schematic names no maker: a stand-in; the fuse clips are not in the graph"
+  ]
+ }
+}

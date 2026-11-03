@@ -9,6 +9,7 @@ argument-hint: "<what changes>"
 The only source is the hardware graph (`[project] graph` in edakit.toml). **Never change the schematic or the PCB
 directly** – EasyEDA content is generated and gets regenerated. Why: `${CLAUDE_PLUGIN_ROOT}/handbook/01-approach.md`,
 format: `03-hardware-graph.md`. Change: $ARGUMENTS
+Where the session does not find `edakit` on the PATH, it is `${CLAUDE_PLUGIN_ROOT}/bin/edakit`.
 
 This is the circuit designer's side. EasyEDA – schematic and PCB – is the PCB designer's, in a session of its own
 (skill pcb-round, handbook 14.1); this skill ends with the hand-over.
@@ -36,6 +37,9 @@ beside the wiring; the decision stays in `notes` and the decision log. After the
 keeps the resolved `hardware/graph.json` beside a TOML graph – generated, committed with it, never edited; `edakit
 graph json 2>&1 | cat` shows the pin numbers the words stand for, and the diff of the generated file shows a
 connection a parts entry moved (a role corrected) although the TOML did not change.
+A graph in the circuit language (`hardware/graph.circuit`, handbook 20): change the source – a part statement, a
+usage's binding, a variant's redefinition –, then `edakit graph json --write`; the diff of the resolved `graph.json`
+shows the exact pins the change reached, in every variant whose source inherits it.
 A new LCSC number without parts entry → part-search skill first. A part that replaces another one in the same
 place: `edakit part diff OLD NEW 2>&1 | cat` before the graph changes (handbook 7.3) – it gives the pad map by position,
 the roles that move, the holes and the graph change; take the map from it, not from the datasheet drawings. A board

@@ -6,8 +6,15 @@ codes of each stage, the parts schema, the check IDs of before with the codes th
 A generated section sits between `<!-- edakit:generated KIND ARGS -->` and `<!-- edakit:end -->` in a chapter of
 handbook/; KIND is table (ARGS: engine prefixes – code, title and severity, each code linked to its engine's page of
 the catalog), codes (the same with the rule and its details), engines (each engine's prefix and what it decides),
-kinds (the parts schema), replaced (the map of before) or command (ARGS: a subcommand – its synopsis and help line from the command line's own parser). Without
+kinds (the parts schema), replaced (the map of before), rules (the circuit language's derivation rules, lang/rules.py)
+or command (ARGS: a subcommand – its synopsis and help line from the command line's own parser). Without
 --write the command lists the sections that differ from the catalog; tests/test_catalog.py holds the handbook to it.
+
+Chapter 19 takes three more kinds from the tests' own data, not the catalog (the concept
+verification-and-validation.md): references (each reference circuit of tests/reference.py with its
+domain, its description, why it stands for its domain and its seeded faults), designs (each open design of
+tests/open_designs/ with its licence, why it was chosen, its findings counted by judgement and its known gaps) and
+tally (the counts of both).
 """
 
 from __future__ import annotations
@@ -19,6 +26,8 @@ from pathlib import Path
 from . import codes, old_map
 
 ROOT = Path(__file__).resolve().parents[2] / "handbook"
+TESTS = ROOT.parent / "tests"
+JUDGEMENTS = ("real", "lacks", "criterion", "known gap")
 BLOCK = re.compile(r"(<!-- edakit:generated ([a-z]+)([^>]*) -->\n)(.*?)(<!-- edakit:end -->)", re.S)
 
 
@@ -111,6 +120,101 @@ def commands():
     return list(build_parser()._subparsers._group_actions[0].choices)
 
 
+# --- chapter 19: the reference circuits and the open designs of the tests ---------------------------------------------
+def reference():
+    """tests/reference.py of the repository as a module: REFERENCES, WHY and FAULTS."""
+    import importlib.util
+    spec = importlib.util.spec_from_file_location("edakit_reference_circuits", TESTS / "reference.py")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+def paragraph(text, label):
+    """The paragraph of a README that starts with the bold label, on one line – "" when there is none."""
+    if label not in text:
+        return ""
+    return " ".join(text.split(label, 1)[1].split("\n\n", 1)[0].split())
+
+
+def open_design(path):
+    """An open design of tests/open_designs/: its title, licence, why, findings counted by judgement, false alarms
+    fixed and known gaps [(stage, code, place, why)]."""
+    import tomllib
+    readme = (path / "README.md").read_text(encoding="utf-8")
+    company = tomllib.loads((path / "edakit.toml").read_text(encoding="utf-8"))["project"]["company"]
+    judged = tomllib.loads((path / "findings.toml").read_text(encoding="utf-8"))
+    found = [(stage, f) for stage in ("check", "sim") for f in judged.get(stage, [])]
+    return {"name": path.name, "title": readme.splitlines()[0].lstrip("# ").split(" – ")[0],
+            "licence": company.split("(", 1)[1].split(")", 1)[0] if "(" in company else None,
+            "why": paragraph(readme, "**Why this design:**"),
+            "counts": {j: sum(1 for _, f in found if f["judged"] == j) for j in JUDGEMENTS},
+            "fixed": len(judged.get("fixed", [])),
+            "gaps": [(stage, f["code"], f["place"], " ".join(f["why"].split())) for stage, f in found
+                     if f["judged"] == "known gap"]}
+
+
+def open_designs():
+    return [open_design(p) for p in sorted((TESTS / "open_designs").iterdir()) if (p / "edakit.toml").is_file()]
+
+
+def counted(counts):
+    return ", ".join(f"{n} {j}" for j, n in counts.items() if n) or "none"
+
+
+def references_section():
+    """Each reference circuit: its domain, what it is, why, and its seeded faults with the codes each raises."""
+    from .. import profile
+    ref, out = reference(), []
+    for name, build in ref.REFERENCES.items():
+        domain = f"domain `{name}`" if name in profile.names() else "no domain – core, on every board"
+        out.append(f"**{name}** – {domain} · [drawing and faults](../docs/catalog/circuit-{name}.html)  ")
+        out.append(" ".join((build.__doc__ or "").split()) + "  ")
+        out.append(f"*Why:* {ref.WHY[name]}")
+        out.append("")
+        out += [f"- {what} → {', '.join(f'`{c}`' for c in sorted(found))}" for what, _, found in ref.FAULTS[name]]
+        out.append("")
+    return "\n".join(out)
+
+
+def designs_section():
+    """Each open design: its licence, why, its findings counted by judgement, the false alarms fixed, its known gaps by
+    code and place – their reasons are on the design's catalog page and in its findings.toml."""
+    out = []
+    for d in open_designs():
+        licence = d["licence"] or "no licence stated – only the circuit's facts transcribed"
+        out.append(f"**{d['title']}** (`{d['name']}`) – {licence} · "
+                   f"[drawing and findings](../docs/catalog/open-{d['name']}.html)  ")
+        out.append(f"*Why:* {d['why']}  ")
+        out.append(f"Findings judged: {counted(d['counts'])}; false alarms fixed: {d['fixed']}.")
+        gaps = {}
+        for _, code, place, _ in d["gaps"]:
+            gaps.setdefault(code, []).append(place)
+        if gaps:
+            out[-1] += "  "
+            out.append("Known gaps – each with its reason on the design's page: "
+                       + "; ".join(f"`{code}` at {', '.join(places)}" for code, places in gaps.items()) + ".")
+        out.append("")
+    return "\n".join(out)
+
+
+def tally_section():
+    """The counts of chapter 19: reference circuits, seeded faults, their codes, the domains without a circuit, the
+    open designs and their judgements."""
+    from .. import profile
+    ref, designs = reference(), open_designs()
+    faults = [f for fs in ref.FAULTS.values() for f in fs]
+    raised = {c for _, _, found in faults for c in found}
+    bare = sorted(set(profile.names()) - set(ref.REFERENCES))
+    total = {j: sum(d["counts"][j] for d in designs) for j in JUDGEMENTS}
+    return "\n".join([
+        f"- Reference circuits: {len(ref.REFERENCES)}, with {len(faults)} seeded faults that raise {len(raised)} "
+        f"codes: {', '.join(f'`{c}`' for c in sorted(raised))}.",
+        f"- Domains without a reference circuit: {', '.join(f'`{n}`' for n in bare) or 'none'}.",
+        f"- Open designs: {len(designs)}, with {sum(total.values())} findings judged – {counted(total)}; "
+        f"{sum(d['fixed'] for d in designs)} false alarms fixed."])
+
+
 def render(kind, args):
     if kind == "table":
         return table_section(args.split())
@@ -122,8 +226,17 @@ def render(kind, args):
         return kinds_section()
     if kind == "replaced":
         return replaced_section()
+    if kind == "rules":                                  # the circuit language's derivation rules (lang/rules.py)
+        from ..lang.rules import describe
+        return describe() + "\n"
     if kind == "command":
         return command_section(args)
+    if kind == "references":
+        return references_section()
+    if kind == "designs":
+        return designs_section()
+    if kind == "tally":
+        return tally_section()
     raise ValueError(f"unknown generated section {kind!r}")
 
 

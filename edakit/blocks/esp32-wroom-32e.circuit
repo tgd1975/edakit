@@ -1,0 +1,84 @@
+def esp32-wroom-32e
+  title "ESP32-WROOM-32E with EN delay, BOOT button, auto-program and a CH340C USB-UART"
+  about "The ESP32-WROOM-32E (no regulator on the module) with what its datasheet and Espressif's DevKitC V4 put
+      around it: 10 kΩ / 1 µF RC delay at EN, 22 µF and 100 nF at 3V3, a BOOT button from IO0 to ground, and the
+      auto-program circuit – two NPN transistors driven by DTR# and RTS# of a CH340C USB-UART at 3.3 V, so that
+      esptool resets the module into the bootloader and a terminal that asserts both lines does not hold it in reset.
+      The ports take a 3.3 V rail of at least 0.5 A and the D+/D− of a USB receptacle (block usb-c-data)."
+  port 3v3 "the 3.3 V rail, at least 0.5 A (module datasheet table 14) – the block has no regulator"
+  port usb_dp "USB D+ (to the receptacle's joined D+ behind its ESD protection, block usb-c-data)"
+  port usb_dn "USB D− (to the receptacle's joined D−)"
+  port gnd "ground"
+  part U1 module ESP32-WROOM-32E-N4 lcsc C701341 "{as}: ESP32-WROOM-32E"
+    nc SENSOR_VP SENSOR_VN IO34 IO35 IO32 IO33 IO25 IO26 IO27 IO14 IO12 IO13 17 18 19 20 21 22 IO15 IO2 IO4 IO16 IO17
+    nc IO5 IO18 IO19 32 IO21 IO22 IO23
+    notes "GPIOs in nc until the project uses them; strapping pins IO12 (low at power-up), IO2, IO15, IO5 – LVL.boot
+      checks what is connected."
+  part U2 ic CH340C lcsc C84681 config 3v3 "{as}: USB-UART CH340C"
+    nc NC. 8 9 10 11 12 R232
+    notes "3.3 V operation: V3 joined to VCC; no crystal (built-in clock); unused MODEM inputs and R232 may float
+      (datasheet note under the pin table)."
+  part R1 resistor 0805W8F1002T5E lcsc C17414 value 10k "{as}: EN pull-up 10 k"
+  part C1 capacitor CL21B105KBFNNNE lcsc C28323 value 1uF "{as}: EN delay 1 µF"
+  part C2 capacitor CL21A226MAQNNNE lcsc C45783 value 22uF "{as}: 3V3 bulk 22 µF"
+  part C3 capacitor CC0805KRX7R9BB104 lcsc C49678 value 100nF "{as}: 3V3 100 nF at the module"
+  part C4 capacitor CC0805KRX7R9BB104 lcsc C49678 value 100nF "{as}: CH340C VCC 100 nF"
+  part SW1 button TS-1187A-B-A-B lcsc C318884 "{as}: BOOT (IO0)"
+    nc B D
+    notes "Pins 1/2 and 3/4 are connected inside."
+  part Q1 transistor "S8050 J3Y" lcsc C2146 "{as}: auto-program EN"
+  part Q2 transistor "S8050 J3Y" lcsc C2146 "{as}: auto-program IO0"
+  part R2 resistor 0805W8F1002T5E lcsc C17414 value 10k "{as}: DTR to Q1 base 10 k"
+  part R3 resistor 0805W8F1002T5E lcsc C17414 value 10k "{as}: RTS to Q2 base 10 k"
+  net 3v3 U1.3V3 U2.VCC U2.V3 R1.1 C2.1 C3.1 C4.1
+  net gnd U1.GND U2.GND C1.2 C2.2 C3.2 C4.2 SW1.C
+  net en @3v3 U1.EN R1.2 C1.1 Q1.collector
+    notes "Chip enable: R1/C1 delay it at power-up, Q1 pulls it low for a reset."
+  net io0 @3v3 U1.IO0 SW1.A Q2.collector
+    notes "Strapping pin GPIO0: high (internal pull-up) = SPI boot, low at reset = download boot – by SW1 or Q2."
+  net dtr @3v3 U2.13 R2.1 Q2.emitter
+  net rts @3v3 U2.14 R3.1 Q1.emitter
+  net q1_base @3v3 Q1.base R2.2
+  net q2_base @3v3 Q2.base R3.2
+  net txd @3v3 U1.TXD0 U2.RXD fn uart.tx
+  net rxd @3v3 U1.RXD0 U2.TXD fn uart.rx
+  net usb_dp 0..3.6 V U2.D+
+  net usb_dn 0..3.6 V U2.D-
+  covers REQ.missing LVL.boot LVL.undefined REQ.function
+  notes "EN: 10 kΩ / 1 µF – 'the recommended setting for the RC delay circuit is usually R = 10 kΩ and C = 1 µF'
+      (ESP32-WROOM-32E datasheet v2.1, 9 Peripheral Schematics; tSTBL ≥ 50 µs, table 9); esptool's boot-mode-selection
+      page: with the two-transistor circuit a capacitor of 1–10 µF from EN to ground 'is necessary for the reset
+      circuitry to work reliably'. The DevKitC V4 has 100 nF there (edakit's REQ.value finding on that design)."
+  notes "3V3: 22 µF + 100 nF at the module – C1/C2 of the module datasheet's figure 9 and C21/C22 of the DevKitC V4
+      (22 µF/10 V, 0.1 µF/50 V); the ESP32 Hardware Design Guidelines ask for at least a 10 µF on the rail for the
+      Wi-Fi TX bursts (379 mA peak, module datasheet table 16), which 22 µF covers with room for the DC-bias loss of
+      an 0805 X5R at 3.3 V."
+  notes "BOOT: SW1 from IO0 to ground, no external pull-up and no capacitor – IO0's internal pull-up (about 45 kΩ)
+      holds SPI boot (module datasheet table 4), the button is the strong pull-down esptool asks for; the DevKitC
+      revision of 2018-06-07 marks the 100 nF across the BOOT button (C15) as not fitted."
+  notes "Auto-program as on the DevKitC V4: Q1 base through 10 kΩ from DTR#, emitter on RTS#, collector on EN; Q2 base
+      through 10 kΩ from RTS#, emitter on DTR#, collector on IO0. DTR#/RTS# pin levels → EN/IO0: 1/1 → 1/1, 0/0 → 1/1,
+      1/0 → 0/1 (reset), 0/1 → 1/0 (IO0 low while EN rises = download). S8050 (C2146, library) for the DevKitC's
+      SS8050: a design choice – about 0.26 mA base current, hFE ≥ 200, VEB reverse at most 3.3 V against 5 V allowed."
+  notes "CH340C at 3.3 V: VCC and V3 joined on 3v3 with 100 nF (CH340 datasheet 3C, pin table and 5.1); no crystal;
+      UD+/UD− go straight to the USB lines – the transceiver and the USB pull-up are inside, no series resistors. One
+      supply for CH340C and module (datasheet 7.6) – no current flows back through the I/O pins."
+  notes "The module needs a 3.3 V supply of at least 0.5 A (datasheet table 14): an LDO block on 5 V (BL-5) or the
+      board's own; a Pico's 3V3(OUT) (300 mA) is not enough – this is why the block's simulation fails in edakit's
+      example (test table)."
+  notes "sim.json: the module's TXD0 net under its mcu outputs ({\"mcu\": {\"U…\": {\"outputs\": [\"…_TXD\"]}}}), so
+      that the CH340C's RXD is simulated; the CH340C has no behaviour model (no supply current in the simulation)."
+  notes "The txd net carries an accept for LVL.undefined: the module entry lacks U0TXD's internal pull-up – remove the
+      accept once the entry has \"pull\": \"up\" on TXD0."
+  notes "A reset button is not part of the block: one from EN to ground if wanted (the module datasheet's figure 9 has
+      it) – R1/C1 stay the EN delay, the button block's own 10 kΩ would double R1."
+  notes "Before USB enumeration the CH340C reads DTR# as a configuration input (CH340 datasheet 5.1) – the state of
+      Q1/Q2 in that moment is not checked by this block."
+  notes "Keep copper away from the antenna end (the entry's antenna keep-out, GEO.keepout)."
+  notes "U2 runs in its config 3v3 (CH340DS1 3C, 5.1): V3 joined to VCC, VCC 3.1–3.6 V – the entry's configs hold the
+      5 V mode's range and thresholds apart."
+  set test {
+      "connect": {"3v3": "3V3", "usb_dp": "SIG", "usb_dn": "SIG2"},
+      "about": "SIG and SIG2 stand in for the D+/D− of a USB receptacle, which the example lacks; the example's 3V3 comes from the Pico 2.",
+      "sim": false,
+      "why": "the example's 3V3 is the Pico 2's 3V3(OUT) (i_out_max_a 0.3 A); the ESP32-WROOM-32E alone draws up to 0.379 A (i_core_a, Wi-Fi TX peak) – LIM.i fails on U1 in every scenario (393 mA). With the module's TXD0 net as an mcu output the simulation has no other failure."}

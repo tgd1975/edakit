@@ -1,0 +1,51 @@
+{
+ "lcsc": "C435442",
+ "mpn": "TG-11315A250T002BG",
+ "manufacturer": "Walter Electronic",
+ "kind": "fuse",
+ "package": "axial, D4.3 × L11 mm (thermal cutoff)",
+ "jlc_class": "Extended Part",
+ "datasheet": {
+  "url": "https://datasheet.lcsc.com/datasheet/pdf/a2cd2ee1b327c5e49abcbab741f9618a.pdf?productCode=C435442",
+  "pinout_page": null
+ },
+ "pins": {
+  "1": {
+   "name": "1",
+   "type": "passive",
+   "role": "1"
+  },
+  "2": {
+   "name": "2",
+   "type": "passive",
+   "role": "2"
+  }
+ },
+ "values": {
+  "r_max_ohm": 0.01
+ },
+ "limits": {
+  "v_max_v": 250,
+  "i_max_a": 15
+ },
+ "sources": [
+  "Walter Electronic TG series thermal cutoff specification (MS-DE-031-60, 7th edition), LCSC's copy https://datasheet.lcsc.com/datasheet/pdf/a2cd2ee1b327c5e49abcbab741f9618a.pdf?productCode=C435442, read 2026-11-03",
+  "3. ratings: 15 A, 250 V AC; type table: TG113 rated functioning temperature 113 °C (cut-off 108 ± 2 °C, holding 81 °C, maximum 200 °C); the series' lowest are TG66 (66 °C) and TG77 (77 °C)",
+  "r_max_ohm 0.01: no resistance given – an assumption for the simulation (a closed thermal cutoff is a short piece of wire)",
+  "pins: the two axial leads, 1 and 2"
+ ],
+ "verified": {
+  "by": "Claude (datasheet check, open-design transcription)",
+  "date": "2026-11-03",
+  "datasheet": "Walter Electronic TG series (MS-DE-031-60, 7th edition)",
+  "datasheet_sha256": "c8ac0644478d5b055739030d22e02f9e0f28b16a29a93ea9c064302e0529adb8",
+  "checked": [
+   "15 A, 250 V AC",
+   "TG113 temperatures"
+  ],
+  "open": [
+   "the README's bill of materials names an SF70E (SEFUSE, 73 °C) thermal fuse, which LCSC does not sell; the Walter TG113 (113 °C) stands in – the trip temperature is in no check of edakit",
+   "r_max_ohm assumed"
+  ]
+ }
+}

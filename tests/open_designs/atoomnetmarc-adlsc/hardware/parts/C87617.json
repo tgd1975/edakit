@@ -1,0 +1,77 @@
+{
+ "lcsc": "C87617",
+ "mpn": "AOD442",
+ "manufacturer": "AOS",
+ "kind": "nmos",
+ "package": "TO-252 (DPAK)",
+ "footprint": "TO-252-3_L6.5-W5.8-P4.58-BL",
+ "jlc_class": "Extended Part",
+ "datasheet": {
+  "url": "https://datasheet.lcsc.com/datasheet/pdf/011223d17b106d635827f4167d138bd1.pdf?productCode=C87617",
+  "pinout_page": 1
+ },
+ "pins": {
+  "1": {
+   "name": "G",
+   "type": "passive",
+   "role": "gate"
+  },
+  "2": {
+   "name": "D",
+   "type": "passive",
+   "role": "drain"
+  },
+  "3": {
+   "name": "S",
+   "type": "passive",
+   "role": "source"
+  }
+ },
+ "values": {
+  "vgs_th_v": [
+   1.6,
+   2.1,
+   2.7
+  ],
+  "rds_on_max_ohm": {
+   "4.5": 0.025,
+   "10": 0.02
+  },
+  "vsd_v_at_1a": 0.7
+ },
+ "limits": {
+  "vds_max_v": 60,
+  "vgs_max_v": 20,
+  "id_max_a": 7,
+  "p_max_w": 2.1,
+  "is_body_max_a": 32,
+  "tj_max_c": 150,
+  "rth_ja_k_per_w": 60
+ },
+ "spice": {
+  "model": ".model AOD442 NMOS(LEVEL=1 VTO=2.1 KP=58 RD=0.0178 IS=1.7e-12)"
+ },
+ "sources": [
+  "AOS AOD442/AOI442 data sheet Rev 0 (Aug 2009) – LCSC product data of C87617, https://datasheet.lcsc.com/datasheet/pdf/011223d17b106d635827f4167d138bd1.pdf?productCode=C87617, read 2026-11-03 (edakit part fetch): p. 1 product summary, TO252 top view, absolute maximum ratings and thermal characteristics; p. 2 electrical characteristics",
+  "vds_max_v 60, vgs_max_v ±20: p. 1 absolute maximum ratings",
+  "id_max_a 7 and p_max_w 2.1: IDSM and PDSM at TA = 25 °C, the simulation's ambient (5 A and 1.3 W at 70 °C; 37 A and 60 W at TC = 25 °C on a heat sink) – the board has no heat sink; the junction temperature is LIM.t's, from rth_ja_k_per_w",
+  "rth_ja_k_per_w 60: p. 1 RθJA steady state max (typ 51; 1 in² FR-4, 2 oz copper, note A); tj_max_c 150: note A, PDSM is based on TJ 150 °C (the absolute maximum TJ is 175 °C)",
+  "vgs_th_v 1.6 / 2.1 / 2.7 V; rds_on_max_ohm 25 mΩ at VGS 4.5 V and 20 mΩ at 10 V (ID 20 A, TJ 25 °C; 37 mΩ at 10 V and TJ 125 °C): p. 2 static parameters",
+  "vsd_v_at_1a 0.7: p. 2 VSD typ at IS = 1 A (max 1 V); is_body_max_a 32: p. 2 IS",
+  "pins 1 G, 2 D (the tab), 3 S: EasyEDA symbol of C87617 (edakit part import) and the TO252 drawing of p. 1",
+  "spice: assumption – level 1 fitted by Claude: VTO = VGS(th) typ, KP and RD so that RDS(on) meets 25 mΩ at 4.5 V and 20 mΩ at 10 V; IS from VSD 0.7 V at 1 A"
+ ],
+ "notes": "N-channel MOSFET in ADLSC's ground return: the low-side reverse-polarity protection.",
+ "verified": {
+  "by": "Claude (datasheet check, open-design transcription)",
+  "date": "2026-11-03",
+  "datasheet": "AOS AOD442/AOI442 data sheet Rev 0 (Aug 2009)",
+  "checked": [
+   "p. 1: VDS 60 V, VGS ±20 V, IDSM 7 / 5 A and PDSM 2.1 / 1.3 W at TA 25 / 70 °C, RθJA 51 / 60 K/W",
+   "p. 2: VGS(th) 1.6 / 2.1 / 2.7 V, RDS(on) 20 / 25 mΩ max at 10 / 4.5 V, VSD 0.7 V typ at 1 A"
+  ],
+  "open": [
+   "SPICE model is a level-1 fit, not AOS's model"
+  ]
+ }
+}

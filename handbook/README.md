@@ -32,6 +32,7 @@ program](06-schematic.md#65-drawn-without-an-eda-program) – and the hand-over 
 | 16 | [KiCad as the tool chain](16-kicad.md) | you weigh KiCad against EasyEDA Pro, the default, or draw in KiCad (`toolchain = "kicad"`) |
 | 17 | [Walkthrough on EasyEDA: a coin cell, a button, an LED](17-walkthrough.md) | you want to see every step once, on the smallest board |
 | 18 | [Walkthrough on KiCad: a 555 blinker](18-walkthrough-kicad.md) | you draw in KiCad, run a board from cells behind a power switch, or want an IC through every step |
+| 20 | [The circuit language](20-circuit-language.md) | your circuit repeats itself, comes in variants, or has values that follow from a rule |
 | 12 | [Troubleshooting](12-troubleshooting.md) | something fails |
 | 13 | [Lessons learned](13-lessons-learned.md) | you want the history of edakit and what it learned |
 
@@ -41,6 +42,7 @@ program](06-schematic.md#65-drawn-without-an-eda-program) – and the hand-over 
 |---|---|---|
 | 10 | [Reference](10-reference.md) | you need a key of edakit.toml, of a board or schematic file, or a command |
 | 9 | [EasyEDA API](09-easyeda-api.md) | you call the API directly or something behaves strangely |
+| 19 | [Verification and validation](19-verification.md) | you want to know how far a finding or a clean check can be trusted, or you add a reference circuit or an open design |
 
 ## Reading paths
 

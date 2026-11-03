@@ -4,7 +4,7 @@ Open work that needs the owner's computer, a maker or the owner's word. The stat
 and plans the sections name; this list is what is left to do of them, in the order it can be done. No item is deleted.
 
 **Layout.** Every item, in every section, open or closed, is a line with a checkbox and an ID unique in this file,
-counted up and never reused – whoever adds an item takes the next free ID and counts it up here. Next free ID: TD-113.
+counted up and never reused – whoever adds an item takes the next free ID and counts it up here. Next free ID: TD-139.
 
 - Open: `- [ ] TD-<n> - **Title:** what and why.` – a step's own name after the dash (`- [ ] TD-31 - **D.4** …`).
 - Done: ticked, the commit that did it, the date at the end, moved to [Closed todos](#closed-todos), newest first –
@@ -33,16 +33,87 @@ to touch.
       it replaces the render on `docs/projects/pytree.md`. *(edakit-ce)*
 - [ ] TD-110 - **OK for #265:** the parts at LCSC and the combined shipment (parts-order.md, steps 2 and 3) – merged
       with `python3 .github/merge.py 265` on your word. *(edakit-4f)*
-- [ ] TD-112 - **OK for #267:** the gaps of the newcomer's eval closed – a 9 V snap and a slide switch in the library,
-      the smallest edakit.toml, edakit off the PATH, refused writes in new-project and `hook install`, SIM.state's
-      rows; then documentation-newcomer.md moves to `done/`. Merged with `python3 .github/merge.py 267` on your word.
-      *(edakit-df)*
+- [ ] TD-123 - **OK for chapter 19 and the four open designs:** the branch `ccr-de7c0e28-hcr2zn` (TD-117 to TD-121, a
+      patch; 3402 tests green) – opened as a pull request and merged with `python3 .github/merge.py <n>` on your word;
+      then TD-117 to TD-121 are ticked and the concept moves to `done/`. *(ccr-de7c0e28)*
+- [ ] TD-134 - **Delete the branches a cloud session cannot delete:** its proxy refuses deleting a ref (`git push
+      --delete` and REST, 403); GitHub deletes the branch of a merged pull request itself, so only these are left –
+      `notes/verification-and-validation-concept-for-071535` (superseded by #274), `notes/td-103-closed-236-the-second-
+      run-in-the-124730` (no pull request; TD-103 closed on main another way), `claude/exciting-einstein-l7ito9` and
+      `claude/pensive-cray-kuzv7n` (both contained in main): `git push origin --delete <branch>`. *(ccr-de7c0e28)*
+- [ ] TD-135 - **The layers picture of coin-cell-led:** `pictures/board_main_layers.png` of the gate run with stage F
+      (`<reports>/<run>/pictures/`, or the Gerber ZIP of its `fab/main/`) into `examples/coin-cell-led/docs/` – the
+      board as made shows no copper under the mask; for TD-136. *(quirky-bell)*
+- [ ] TD-137 - **A screenshot of JLCPCB's assembly preview of coin-cell-led:** at the next `/edakit:cart`, once BOM and
+      CPL are uploaded, into `examples/coin-cell-led/docs/jlcpcb_assembly_main_top.png` – only your account shows it;
+      for TD-138. *(quirky-bell)*
+
+## The steps ([docs/steps/](docs/steps/README.md))
+
+- [ ] TD-136 - **Step 9 shows the routed board:** the tracks and the ground pour, `board_main_layers.png` of TD-135
+      under the paragraph on placing and routing in `docs/steps/09-lay-out-the-board.md`. *(quirky-bell)*
+- [ ] TD-138 - **Step 10 ends with the assembled board:** JLCPCB's preview of TD-137 at M-2 in
+      `docs/steps/10-order-the-board.md`, as the last picture of the steps. *(quirky-bell)*
 
 ## The parts order ([docs/concepts/new/parts-order.md](docs/concepts/new/parts-order.md))
 
 - [ ] TD-111 - **Live run at the next parts order:** the skill cart's modes `parts` and `combine` at LCSC and JLCPCB,
       nothing ordered or paid by the skill – it records the BOM tool's labels into `edakit/suppliers/lcsc.toml`, sets
       `recorded`, and what it finds goes into handbook 8.4; after #265. *(edakit-4f)*
+
+## The circuit language ([docs/concepts/done/circuit-dsl-toolchain.md](docs/concepts/done/circuit-dsl-toolchain.md))
+
+- [ ] TD-122 - **The bell in the language, in its own repository:** its five graphs as `.circuit` – `edakit graph
+      convert --to circuit` keeps the sign-offs (rehashed); the modeled sources of `tests/fixtures/bell/` add the
+      LED step's records, the LEDs' `value` and eleven `accept DEF.derive` with the bell's reasons – check and sim
+      as today, a new circuit hash and new sign-offs –, the bell's choice, after TD-113 (decisions 43, 47).
+      *(friendly-mccarthy)*
+
+## How edakit is tested ([docs/concepts/new/verification-and-validation.md](docs/concepts/new/verification-and-validation.md))
+
+- [ ] TD-117 - **VV.1–VV.4 Handbook chapter 19:** the "why" of every reference circuit and open design into its
+      source, the generator of 19.4, 19.5 and the counts of 19.9, the chapter with its links and glossary entries, the
+      countable admission rules as tests – one branch, a patch, on the owner's word. *(ccr-de7c0e28)*
+- [ ] TD-118 - **A WLED controller as an open design:** a published ESP32 LED-strip controller transcribed into
+      `tests/open_designs/`, every finding judged – through the admission rules of 19.7 (FT-21); after TD-117.
+      *(ccr-de7c0e28)*
+- [ ] TD-119 - **A Fuzz Face as an open design:** a published germanium or silicon Fuzz Face, its bias across the
+      transistors' spread (FT-17) – no germanium datasheet could be read so far (maker-coverage.md, GTP 1); after
+      TD-117. *(ccr-de7c0e28)*
+- [ ] TD-120 - **A relay board with an HLK-PM01 as an open design:** mains stays unchecked (rules-at-scale.md,
+      decision 7), so it holds LIM.hazardous's recognition and the low-voltage side only; after TD-117.
+      *(ccr-de7c0e28)*
+- [ ] TD-121 - **A LiPo charger as an open design:** a published single-cell charger board, its charger hints and the
+      cell's limits judged against real datasheets; after TD-117. *(ccr-de7c0e28)*
+
+The known gaps the four new designs showed, each closed only by catalog or domain data (add-rule or add-feature, on the
+owner's word); each design's `findings.toml` has the findings and their reasons. All after TD-123.
+
+- [ ] TD-124 - **A connector passes no reversed source:** `edakit/catalog/paths.toml [reverse]` lets a connector pass
+      from every pin to every pin, so PATH.reverse reaches parts behind a jumper header – `connector` from `passes` to
+      `tolerates` (adafruit-microlipo-usb-c: U1.4, LED1.2, R6.2, R5.2). *(ccr-de7c0e28)*
+- [ ] TD-125 - **A low-side reverse-polarity MOSFET as a block:** PATH.reverse knows the series diode and the high-side
+      P-MOSFET, not an N-MOSFET in the ground return – a block in `paths.toml`, and only parts between the source's own
+      nets reported (atoomnetmarc-adlsc: 20 findings). *(ccr-de7c0e28)*
+- [ ] TD-126 - **A trimmer is not a panel pot:** REQ.value/switch takes the DC across a bias trimmer for a pot turned
+      while playing – a field of the kind potentiometer in `kinds.toml` that marks a trimmer, skipped by the rule
+      (whbeers-fuzz-face: TRIM2). *(ccr-de7c0e28)*
+- [ ] TD-127 - **Board copper is nothing to buy:** a solder jumper or a test pad gets PARTS.verified, PARTS.supplier
+      and PARTS.fact/reach – a way to say "copper, nothing to buy" (adafruit-microlipo-usb-c: SJ1; the pads of the
+      pedals and the Fuzz Face, judged criterion). *(ccr-de7c0e28)*
+- [ ] TD-128 - **A varistor kind:** its rms and DC ratings, held against the line's voltage – the ESPurna-H's S10K250
+      (250 V rms, below 230 V + 10 %) stands in as kind `ic` and nothing checks it. *(ccr-de7c0e28)*
+- [ ] TD-129 - **AC nets and AC ratings:** terminals and modules rated in V rms are held against the peak, and a
+      divider's taps cannot say they move together (espurna-h: JP2, JP42, U$1.2, R51 to R53). *(ccr-de7c0e28)*
+- [ ] TD-130 - **A mains terminal as a supply input:** a role in `paths.toml [supply]`, so that PATH.unfed sees the
+      module fed (espurna-h: U$1.1, U$1.2; `reversible` sends PATH.reverse across the mains side). *(ccr-de7c0e28)*
+- [ ] TD-131 - **A ground tied to mains:** edakit holds every voltage against the board's own ground, so a low-voltage
+      side tied to the line looks safe – the graph says so, or a check finds the bridged isolation barrier
+      (espurna-h: R42 ties GND to the line); handbook 19.9 names the gap. *(ccr-de7c0e28)*
+- [ ] TD-132 - **A bidirectional TVS:** the parts schema has `tvs: true` only, so a bidirectional TVS across the input
+      is judged as one direction (atoomnetmarc-adlsc: D4). *(ccr-de7c0e28)*
+- [ ] TD-133 - **A charger's status output in the simulation:** the charger model does not drive STAT, so its LEDs
+      are neither lit nor dark as expected (adafruit-microlipo-usb-c: SIM.state LED1, LED2). *(ccr-de7c0e28)*
 
 ## What edakit needs from EasyEDA Pro and easyeda-mcp-pro ([upstream/README.md](upstream/README.md))
 
@@ -64,6 +135,19 @@ Nothing to do until there is an answer or a release; whichever session learns of
 
 ## Closed todos
 
+- [x] TD-113 - **OK for the circuit language:** given; merged as edakit 1.1.3 (#279) – T.1 to T.27, the decisions 1
+      to 48 confirmed; circuit-dsl.md, its language and its plan moved to `done/`. *(friendly-mccarthy)* [2026-11-03]
+- [x] TD-116 - **The job sysml:** run on the branch by `workflow_dispatch` – 4 passed, read with the standard
+      library 2025-12 that systree loads (decision 45); main runs it with every merge. *(friendly-mccarthy)*
+      [2026-11-03]
+- [x] TD-115 - **The bell in the language, the test:** T.17's test run with `BELL_ROOT` against the bell's `cfb0ab0` –
+      all five configurations canonically equal but for the LED step's additions, esp32 and esp32tht written
+      (decision 43, `28b5c1c`); its own conversion is TD-122. *(friendly-mccarthy)* [2026-11-03]
+- [x] TD-114 - **The three evals of the language:** run once each with Sonnet 5.5 – 1.00 each, after two graders'
+      regexes were made JavaScript (`9d1289e`); the table in `evals/README.md` (decision 45). *(friendly-mccarthy)*
+      [2026-11-03]
+- [x] TD-112 - **OK for #267:** given; merged as edakit 1.1.2 (#267) – the newcomer's gaps closed;
+      documentation-newcomer.md moved to `done/`. *(edakit-df)* [2026-11-02]
 - [x] TD-105 - **E-18 (a pin on a second net while another schematic of the project is open):** checked live on
       EasyEDA Pro 3.2.209, still the newest, and against the docs – not EasyEDA's, nothing to report there: a V_LED flag
       of `layout_tree` sits on the end of the template's wire from U4.11, and easyeda-mcp-pro takes the flags of every
@@ -98,7 +182,7 @@ taken from the history of this file; an item rewritten on its way is listed once
       `edakit/`. Two runs with it, 0.875 each, in the concept's status line. *(edakit-c1)* [2026-11-02]
 - [x] TD-102 - **Run the eval first-circuit in a cloud session:** done on 2026-11-02 as the user `eval` with
       `TMPDIR=/srv/evaltmp` – 0.875, 0.88 USD, 32 turns, Bash wrote the workspace; the result in the status line of
-      `docs/concepts/new/documentation-newcomer.md`. Two runs the same day did not count (root 0.33, `eval` 0.83):
+      `docs/concepts/done/documentation-newcomer.md`. Two runs the same day did not count (root 0.33, `eval` 0.83):
       Bash read-only, the workspace under `/tmp`, which the harness denies. *(edakit-c1)* [2026-11-02]
 - [x] TD-98 - **N.5** The newcomer's test: the eval case `evals/first-circuit` run once in a cloud session (TD-102) –
       0.875, thirteen pages opened, the gaps of its `MISSING:` line – into the concept's status line. *(edakit-c1)*

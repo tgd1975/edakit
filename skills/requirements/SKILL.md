@@ -8,6 +8,7 @@ argument-hint: "<what the circuit must do – or the requirement to change>"
 
 Wanted: $ARGUMENTS. The file, its keys and an example: `${CLAUDE_PLUGIN_ROOT}/handbook/03-hardware-graph.md` (3.6)
 and `10-reference.md` (10.4); what the gate does with each requirement: `08-release-gate.md` (8.7).
+Where the session does not find `edakit` on the PATH, it is `${CLAUDE_PLUGIN_ROOT}/bin/edakit`.
 
 You are the requirements engineer, in the conversation with the user: you collect, ask back and write drafts – the
 user decides. You write the requirements file and the project's decision log, **never the graph**, the parts or the

@@ -1,0 +1,67 @@
+{
+ "lcsc": "C68883",
+ "mpn": "LL4148-GS08",
+ "manufacturer": "VISHAY(威世)",
+ "kind": "diode",
+ "package": "MiniMELF (SOD-80)",
+ "footprint": "SOD-80_L3.5-W1.5-RD",
+ "jlc_class": "Extended Part",
+ "datasheet": {
+  "url": "https://datasheet.lcsc.com/datasheet/pdf/300293b12d1f49abb83555dbb8ac6c8b.pdf?productCode=C68883",
+  "pinout_page": 1
+ },
+ "pins": {
+  "1": {
+   "name": "C",
+   "type": "passive",
+   "role": "cathode"
+  },
+  "2": {
+   "name": "A",
+   "type": "passive",
+   "role": "anode"
+  }
+ },
+ "values": {
+  "vf_v": 1.0,
+  "vf_at_a": 0.05,
+  "ir_a": 2.5e-08,
+  "ir_at_v": 20
+ },
+ "limits": {
+  "vr_max_v": 75,
+  "if_max_a": 0.3,
+  "ifsm_max_a": 2,
+  "p_max_w": 0.5,
+  "rth_ja_k_per_w": 300,
+  "tj_max_c": 175
+ },
+ "spice": {
+  "model": ".model LL4148 D(IS=7.8n N=2.35 RS=0.94 BV=75 IBV=1u CJO=2p TT=4n)",
+  "source": "the library's 1N4148W model (edakit/parts/C81598.json: fitted to VF max 0.715 V at 1 mA, 0.855 V at 10 mA, 1.0 V at 50 mA) – the LL4148's 'electrical data identical with the 1N4148' and its VF max 1.0 V at 50 mA agree"
+ },
+ "sources": [
+  "Vishay Semiconductors LL4148, LL4448 Small Signal Fast Switching Diodes, document 85557, Rev. 1.9, 27-Mar-13, LCSC's copy https://datasheet.lcsc.com/datasheet/pdf/300293b12d1f49abb83555dbb8ac6c8b.pdf?productCode=C68883, read 2026-11-03",
+  "absolute maximum ratings: VRRM 100 V, VR 75 V, IFSM 2 A (1 µs), IFRM 500 mA, IF 300 mA, IF(AV) 150 mA, Ptot 500 mW; RthJA 300 K/W, TJ 175 °C",
+  "electrical characteristics: VF 860 / 1000 mV at 50 mA (typ / max), IR ≤ 25 nA at 20 V, ≤ 5 µA at 75 V, CD 4 pF, trr 4 … 8 ns",
+  "pins: EasyEDA symbol of C68883 (edakit part import 2026-11-03): 1 C, 2 A"
+ ],
+ "verified": {
+  "by": "Claude (datasheet check, open-design transcription)",
+  "date": "2026-11-03",
+  "datasheet": "Vishay LL4148, document 85557, Rev. 1.9 (2013-03-27)",
+  "datasheet_sha256": "2b4cf0ce2a1a1fb5b19aeb895d59c8fa9474a503cc56dff17e1690a26c069ceb",
+  "checked": [
+   "ratings",
+   "VF, IR",
+   "symbol pins 1 C, 2 A"
+  ],
+  "open": [
+   "the schematic names 1N4148 in SOD80 (MiniMELF); Vishay's LL4148 stands in",
+   {
+    "text": "cathode band at pad 1 of the footprint",
+    "when": "order"
+   }
+  ]
+ }
+}

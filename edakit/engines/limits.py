@@ -148,8 +148,9 @@ def charge_currents(d, sim=None):
     """LIM.i/charge: a linear charger's programmed current – values prog_v of its entry over the resistor from its PROG
     pin (role prog) to ground: MCP73831 1000 V / R_PROG, TP4056 1100 V or 1200 V by maker – within the charger's own
     i_out_max_a and within the cell's i_charge_max_a (sim.json cells) where a battery holder with a cell state in any
-    supply scenario sits on the charger's battery pin (role bat)."""
-    from ..circuit import resistors_to
+    supply scenario sits on the charger's battery pin (role bat). A resistor behind a switch or solder jumper on PROG
+    counts in the position that programs the most (circuit.prog_resistors)."""
+    from ..circuit import prog_resistors, switch_positions
     out = []
     cells = (sim or {}).get("cells") or {}
     # every holder with a cell state in any supply scenario – not only one named "cells"
@@ -161,11 +162,15 @@ def charge_currents(d, sim=None):
         prog = d.net_of(des, "prog")
         if not is_number(k) or not prog:
             continue
-        rs = [r for _, r, _ in resistors_to(d, prog, {d.ground}) if is_number(r) and r > 0]
+        rs = prog_resistors(d, prog)
         if not rs:
             continue
         r = 1 / sum(1 / x for x in rs)
         i_set = k / r
+        via = ""
+        if len(rs) > len(prog_resistors(d, prog, closed=[])):         # a switch on PROG adds a resistor
+            switches = [s for s in sorted(d.comps_of_kind("switch"), key=natural_key) if switch_positions(d, s, prog)]
+            via = f" (with {', '.join(switches)} in the position that programs the most)"
         bounds = []
         if is_number(most := (part.get("limits") or {}).get("i_out_max_a")):
             bounds.append((most, f"i_out_max_a of {d.entry_key(des)}"))
@@ -176,7 +181,7 @@ def charge_currents(d, sim=None):
                     bounds.append((lim, f"i_charge_max_a of cells.{state} in sim.json ({h})"))
         for most, src in bounds:
             if i_set > most * (1 + 1e-9):
-                out.append(Finding("LIM.i", "G", des, f"{des}: R_PROG {r:.4g} Ω programs {num(i_set, 'A')} "
+                out.append(Finding("LIM.i", "G", des, f"{des}: R_PROG {r:.4g} Ω{via} programs {num(i_set, 'A')} "
                                    f"({k:g} V / R_PROG), allowed ≤ {num(most, 'A')}", src, grade="charge",
                                    on=(("component", des),), data={"value": i_set, "limit": most, "unit": "A"}))
     return out

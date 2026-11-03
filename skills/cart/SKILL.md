@@ -9,6 +9,7 @@ argument-hint: "[--board B] [--maker M] | confirm | actual"
 What it is for and how the checks work: `${CLAUDE_PLUGIN_ROOT}/handbook/08-release-gate.md` (8.4), the maker's
 profile `${CLAUDE_PLUGIN_ROOT}/edakit/makers/<maker>.toml`. edakit is deterministic and knows the release; you read
 and fill pages that change. Nothing you bring back counts until `edakit cart check` has checked it.
+Where the session does not find `edakit` on the PATH, it is `${CLAUDE_PLUGIN_ROOT}/bin/edakit`.
 
 **Never** (the owner's decision of 2026-10-30): you do not press "Order", "Buy", "Checkout", "Pay", "Submit order", any
 button of the job's `never` list or any button that places or pays an order; you do not open the checkout; you do not

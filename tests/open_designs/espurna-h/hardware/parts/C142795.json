@@ -1,0 +1,52 @@
+{
+ "lcsc": "C142795",
+ "mpn": "0217.500MXP",
+ "manufacturer": "Littelfuse",
+ "kind": "fuse",
+ "package": "5 × 20 mm cartridge (in a fuse holder)",
+ "jlc_class": "Extended Part",
+ "datasheet": {
+  "url": "https://datasheet.lcsc.com/datasheet/pdf/13c1548f8471affa446f03721ffbee7f.pdf?productCode=C142795",
+  "pinout_page": null
+ },
+ "pins": {
+  "1": {
+   "name": "1",
+   "type": "passive",
+   "role": "1"
+  },
+  "2": {
+   "name": "2",
+   "type": "passive",
+   "role": "2"
+  }
+ },
+ "values": {
+  "r_min_ohm": 0.2065,
+  "r_max_ohm": 2.0
+ },
+ "limits": {
+  "v_max_v": 250,
+  "i_max_a": 0.5
+ },
+ "sources": [
+  "Littelfuse 217 Series, 5 × 20 mm, Fast-acting Fuse, revised 05/08/17, LCSC's copy https://datasheet.lcsc.com/datasheet/pdf/13c1548f8471affa446f03721ffbee7f.pdf?productCode=C142795, read 2026-11-03",
+  "electrical characteristic specifications by item, amp code .500: 0.5 A, 250 V, interrupting rating 35 A at 250 VAC, nominal cold resistance 0.2065 Ω (r_min_ohm), max. voltage drop at rated current 1000 mV – 2.0 Ω (r_max_ohm)",
+  "electrical characteristics for series: 150 % of the rating 60 min minimum, 210 % 30 min maximum, 275 % 0.05 … 2 s – IEC 60127-2 sheet 2, fast-acting",
+  "pins: the two caps of the cartridge, 1 and 2 – the holder's four pads (Eagle FUSE_5MM: 1, 2 one clip, 3, 4 the other) as one pin each"
+ ],
+ "verified": {
+  "by": "Claude (datasheet check, open-design transcription)",
+  "date": "2026-11-03",
+  "datasheet": "Littelfuse 217 Series (revised 2017-05-08)",
+  "datasheet_sha256": "4f9d35d1bfb3f62320664a46bfbab4c2130068466dd093e48d169a97636bfeed",
+  "checked": [
+   "rating 0.5 A 250 V",
+   "cold resistance, voltage drop"
+  ],
+  "open": [
+   "the README's bill of materials names a '500mA 250V fuse' in a 5 × 20 holder without type or maker; this fast-acting Littelfuse fuse stands in, the holder is not an entry",
+   "250 V is an AC rms rating"
+  ]
+ }
+}

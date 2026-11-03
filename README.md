@@ -46,7 +46,8 @@ You bring the idea, what the board must do, and the decisions on money, purpose 
 rest: the parts with their datasheets, the values, the rules, the simulation, the schematic and the PCB in EasyEDA Pro
 or KiCad, and the manufacturing files. They take the order up to the cart at JLCPCB, PCBWay, Eurocircuits or AISLER.
 Each maker's quote comes with its price, the parts it has in stock and its lead time, checked by edakit. You order, pay
-and hold the boards.
+and hold the boards. The circuit is text in your repository: a graph, or source in the [circuit
+language](https://tgd1975.github.io/edakit/handbook/20-circuit-language/) with blocks, loops and variants.
 
 The [walkthrough](https://tgd1975.github.io/edakit/handbook/17-walkthrough/) shows it on a small board: 14 steps, six of
 them yours, seven decisions. Every step is checked by [rules](https://tgd1975.github.io/edakit/catalog/) and reviewers,
@@ -147,8 +148,12 @@ MIT – see [LICENSE](LICENSE) –, except for third-party material the tests us
 | `tests/open_designs/guitarml-classic-boost/`, `guitarml-ts-rat-combo/` | Keith Bloemer (GuitarML), *GuitarPedalPCBs* | MIT, notice in the README |
 | `tests/open_designs/corne-cherry-v3-left/` | foostan, *Corne Cherry* v3 | MIT, notice in the README |
 | `tests/open_designs/corne-cherry-left/` | foostan, *Corne keyboard* v4 | [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/) |
+| `tests/open_designs/espurna-h/` | Xose Pérez (tinkerman.cat), *ESPurna-H* v0.8 | [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/) (the repository says 3.0, the schematic 4.0) |
 | `tests/open_designs/sparkfun-logic-level-converter/` | SparkFun Electronics, *Logic Level Converter* | [CC BY-SA 3.0](https://creativecommons.org/licenses/by-sa/3.0/) |
+| `tests/open_designs/adafruit-microlipo-usb-c/` | Limor Fried/Ladyada for Adafruit Industries, *Adafruit Micro-Lipo Charger with USB Type C Jack* | [CC BY-SA 3.0](https://creativecommons.org/licenses/by-sa/3.0/), the text Adafruit asks for in the README |
+| `tests/open_designs/atoomnetmarc-adlsc/` | atoomnetmarc, *ADLSC* (a WLED controller) | [Apache 2.0](https://www.apache.org/licenses/LICENSE-2.0), the licence's text in the folder's LICENSE |
 | `tests/open_designs/esp32-devkitc-v4/` | Espressif Systems, *ESP32-DevKitC V4* schematic | none stated – only the circuit's facts are transcribed, not the drawing |
+| `tests/open_designs/whbeers-fuzz-face/` | whbeers, *Random Input* (a Fuzz Face) | [CC0 1.0](https://creativecommons.org/publicdomain/zero/1.0/) |
 | `tests/fixtures/jlcpcb/`, `easyeda/`, `datasheets/`, `makers/` | short excerpts of the pages and API answers of JLCPCB, LCSC, EasyEDA, AISLER, Eurocircuits and PCBway, with source and date, for the parsers' tests | the sites' own; not under MIT |
 
 This is a reading of the sources' licences, not legal advice.

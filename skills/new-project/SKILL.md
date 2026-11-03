@@ -10,6 +10,7 @@ Project: $ARGUMENTS. The approach and why: `${CLAUDE_PLUGIN_ROOT}/handbook/01-ap
 `10-reference.md` (10.1). A complete small example to copy from: `${CLAUDE_PLUGIN_ROOT}/tests/fixtures/led-bar/`
 (shipped with the plugin); a real one, taken through EasyEDA to the gate, with variants:
 https://github.com/tgd1975/automatic_christmas_bell.
+Where the session does not find `edakit` on the PATH, it is `${CLAUDE_PLUGIN_ROOT}/bin/edakit`.
 
 You set the project up the way this project needs it: every file and key from an answer, none left at the example's
 value unasked. You propose each with its reason and write only after the user's OK – no silent change. You delete
@@ -104,7 +105,7 @@ From the answers – each file and key proposed with the answer that sets it, wr
 |---|---|
 | `edakit.toml` | the table of contents (handbook 10.1), from `tests/fixtures/led-bar/edakit.toml` with its comments, every value from the answers: `[project]` (`name`, `company`, `quantity`, `distributors`, `graph = "hardware/graph.toml"`), one `[boards.<name>]` per board, `[release] assembly`, and where the answers set them `[cart]` (`maker`, `makers`, `ship_to`, `shipping`), `[order]` for every board, `[cost]`, `[firmware]`, `[docs]`, `[scripts.*]`, `[agents.*]`. Moving: `graph`, `parts`, `sim`, `signoff` name the project's files where they lie |
 | `hardware/boards/<name>.toml` | per made board, when its size is known: from the example's board file, outline and holes, `[order]` and `thickness_mm` where they differ; leave `place` and `routing.classes` minimal until the parts exist. Otherwise the PCB designer starts it, and the order's answers wait in the decision log. None for a bought or hand-wired board, none without a PCB |
-| `hardware/graph.toml` | the graph as TOML (handbook 3.1): `name`, `version = "0.1"`, `date`, `description`; `[purpose]` with `use`, `market`, `country` where the user names one, `notes` – the purpose from the interview –; `[conventions]` with `pin_reference = "'<designator>.<pin>' with the pin's name or role, else its symbol number – the parts entry says which pin that is"`. No part and no net yet: circuit-design writes the first `[components.<designator>]` and `[nets.<name>]` tables. Then `edakit graph json --write` writes the resolved `hardware/graph.json` beside it – generated, committed with the TOML, never edited. Moving: the project's circuit converted into edakit's format is written as this TOML too; a graph in edakit's JSON form stays where it lies until the user agrees to `edakit graph convert` (a proposal like any other) |
+| `hardware/graph.toml` | the graph as TOML (handbook 3.1): `name`, `version = "0.1"`, `date`, `description`; `[purpose]` with `use`, `market`, `country` where the user names one, `notes` – the purpose from the interview –; `[conventions]` with `pin_reference = "'<designator>.<pin>' with the pin's name or role, else its symbol number – the parts entry says which pin that is"`. No part and no net yet: circuit-design writes the first `[components.<designator>]` and `[nets.<name>]` tables. Then `edakit graph json --write` writes the resolved `hardware/graph.json` beside it – generated, committed with the TOML, never edited. Moving: the project's circuit converted into edakit's format is written as this TOML too; a graph in edakit's JSON form stays where it lies until the user agrees to `edakit graph convert` (a proposal like any other). Where the circuit repeats itself or comes in variants, the graph may be written in the circuit language instead – `hardware/graph.circuit`, `graph = "hardware/graph.circuit"` (handbook 20) –; `edakit graph convert --to circuit` moves a JSON or TOML graph there. `edakit hook install` checks either form |
 | `hardware/schematic.toml` | `style` from the answer on the drawing, nothing else yet: `[layout]` and its notes are the circuit designer's once the graph has parts (handbook 10.3). Moving: a schematic file of the project's own keeps its keys and gets `style` – the inventory's answer, else the user's |
 | `hardware/parts/` | empty; every LCSC number gets an entry through the part-search skill or the agent part-selector |
 | `hardware/sim.json` | from the example: sources (the supply connector – of a bought board on a cable its connector, the cable in the path), supplies at min/nominal/max, loads, corners; with several sources `combine_sources` (handbook 5.2) |
@@ -141,6 +142,11 @@ report names them.
   Moving: an EasyEDA MCP server of the project's own (`.mcp.json`) goes – the plugin brings the pinned one, and two
   would run with every tool twice; agents and hooks that name its tools (`mcp__easyeda__…`) get the plugin's names
   (`mcp__plugin_edakit_easyeda__…`).
+- **A write refused.** Claude Code guards `.claude/settings.json` and git's configuration, and a sandbox may refuse
+  them: `edakit hook install` then names the step that failed and exits 1. Nothing else waits for either – write the
+  other files, go on with section 5, and put each refused step under **Open** in the report as the user's to do: the
+  settings block above for `.claude/settings.json`, `edakit hook install` (or the `git config core.hooksPath …` it
+  names) in a terminal of their own. Do not retry it another way.
 
 ## 5. First run and hand-over
 

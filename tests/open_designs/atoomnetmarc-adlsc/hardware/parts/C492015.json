@@ -1,0 +1,96 @@
+{
+ "lcsc": "C492015",
+ "mpn": "SMD1812P050TF/30",
+ "manufacturer": "PTTC(聚鼎)",
+ "kind": "fuse",
+ "package": "1812",
+ "footprint": "F1812",
+ "jlc_class": "Extended Part",
+ "datasheet": {
+  "url": "https://datasheet.lcsc.com/datasheet/pdf/5924fae82fd3309516a7c95a1674c927.pdf?productCode=C492015",
+  "pinout_page": null
+ },
+ "pins": {
+  "1": {
+   "name": "1",
+   "type": "passive",
+   "role": "1"
+  },
+  "2": {
+   "name": "2",
+   "type": "passive",
+   "role": "2"
+  }
+ },
+ "values": {
+  "r_min_ohm": 0.15,
+  "r_max_ohm": 1.0,
+  "i_hold_vs_temp": [
+   [
+    -40,
+    0.77
+   ],
+   [
+    -20,
+    0.68
+   ],
+   [
+    0,
+    0.59
+   ],
+   [
+    23,
+    0.5
+   ],
+   [
+    40,
+    0.44
+   ],
+   [
+    50,
+    0.4
+   ],
+   [
+    60,
+    0.37
+   ],
+   [
+    70,
+    0.33
+   ],
+   [
+    85,
+    0.29
+   ]
+  ]
+ },
+ "limits": {
+  "i_hold_a": 0.5,
+  "i_trip_a": 1.0,
+  "v_max_v": 30,
+  "i_max_a": 100,
+  "p_max_w": 0.8,
+  "t_min_c": -40,
+  "t_max_c": 85
+ },
+ "spice": {},
+ "sources": [
+  "PTTC SMD1812 series data sheet, revision R (2017-06-22) – LCSC product data of C492015, https://datasheet.lcsc.com/datasheet/pdf/5924fae82fd3309516a7c95a1674c927.pdf?productCode=C492015, read 2026-11-03 (edakit part fetch)",
+  "p. 2 electrical characteristics, row SMD1812P050TF/30: Ihold 0.50 A, Itrip 1.00 A, Vmax 30 V DC, Imax 100 A, Pd typ 0.8 W, time to trip 0.15 s at 8 A, Rmin 0.150 Ω, R1max 1.000 Ω (one hour after tripping or reflow)",
+  "p. 5 thermal derating chart, row SMD1812P050TF/30: 0.77 / 0.68 / 0.59 / 0.50 / 0.44 / 0.40 / 0.37 / 0.33 / 0.29 A at −40 / −20 / 0 / 23 / 40 / 50 / 60 / 70 / 85 °C; operating temperature −40 … +85 °C (p. 11)",
+  "r_max_ohm 1.0: R1max – the simulation takes the highest resistance in service",
+  "mpn, manufacturer, footprint, jlc_class: EasyEDA library data of C492015 (edakit part import, 2026-11-03)"
+ ],
+ "notes": "The schematic's 'Polyfuse 0.5A >5V' in 1812: PTTC's SMD1812P050TF/30 stands in (0.5 A hold, 30 V).",
+ "verified": {
+  "by": "Claude (datasheet check, open-design transcription)",
+  "date": "2026-11-03",
+  "datasheet": "PTTC SMD1812 series data sheet, revision R (2017-06-22)",
+  "checked": [
+   "row SMD1812P050TF/30 of the electrical characteristics and the derating chart"
+  ],
+  "open": [
+   "the schematic names no maker or order code: a stand-in"
+  ]
+ }
+}

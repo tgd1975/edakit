@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# The newcomer's test of docs/concepts/new/documentation-newcomer.md (step N.5): the site's Markdown – the start page,
+# The newcomer's test of docs/concepts/done/documentation-newcomer.md (step N.5): the site's Markdown – the start page,
 # docs/ without the concepts, the handbook and the walkthrough's example – under site/, and an empty git repository
 # beside it for the project of a one-line idea.
 set -euo pipefail

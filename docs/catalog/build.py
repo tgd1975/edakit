@@ -344,12 +344,18 @@ def circuits_section(items):
     return "".join(out) + "</div>"
 
 
+def why_of(name):
+    """Why a reference circuit stands for its domain (tests/reference.py, WHY) as a paragraph – none for led-bar."""
+    import reference
+    return f'<p><em>Why:</em> {md(reference.WHY[name])}</p>' if name in reference.WHY else ""
+
+
 def circuit_body(name, about, doms, svg, faults):
-    """A reference circuit's page: the drawing and its seeded faults."""
+    """A reference circuit's page: what it is and why, the drawing and its seeded faults."""
     rows = "".join(f'<tr><td>{escape(what)}</td><td>{code_links(sorted(codes))}</td></tr>' for what, _, codes in faults)
     table = (f'<table class="faults"><thead><tr><th>Seeded fault</th><th>Codes it raises</th></tr></thead>'
              f'<tbody>{rows}</tbody></table>' if faults else "")
-    return (f'<article class="circuit" id="circuit-{name}"><p>{md(about)}</p><p class="meta">Domains on: '
+    return (f'<article class="circuit" id="circuit-{name}"><p>{md(about)}</p>{why_of(name)}<p class="meta">Domains on: '
             f'{domains_on(doms)} · <a href="circuits/{name}.svg">SVG</a></p><div class="drawing">{svg_inline(svg)}</div>'
             f'{table}</article>')
 
@@ -385,7 +391,9 @@ def open_designs_section(designs):
 
 
 def open_design_body(name, title, source, svg, j):
-    """An open design's page: the drawing and every finding judged."""
+    """An open design's page: why it was chosen, the drawing and every finding judged."""
+    from edakit.catalog import handbook
+    why = handbook.paragraph((OPEN / name / "README.md").read_text(encoding="utf-8"), "**Why this design:**")
     rows = "".join(
         f'<tr><td>{stage}</td><td><a href="{href(f["code"])}"><code>{escape(f["code"])}</code></a>'
         + (f'/{escape(f["grade"])}' if f.get("grade") else "") + f'</td><td>{escape(f["place"])}</td>'
@@ -395,7 +403,8 @@ def open_design_body(name, title, source, svg, j):
              f'<th>Judged</th><th>Why</th></tr></thead><tbody>{rows}</tbody></table></div>' if rows
              else "<p>edakit raises nothing beyond notes.</p>")
     fixed = "".join(f"<li>{md(f['what'])}</li>" for f in j.get("fixed", []))
-    return (f'<article class="circuit" id="open-{name}"><p class="meta">{links(md(source))} · '
+    return (f'<article class="circuit" id="open-{name}">' + (f'<p><em>Why:</em> {md(why)}</p>' if why else "")
+            + f'<p class="meta">{links(md(source))} · '
             f'<a href="circuits/open-{name}.svg">SVG</a></p><div class="drawing">{svg_inline(svg)}</div>{table}'
             + (f'<p class="meta">edakit\'s false alarms on this design, fixed</p><ul>{fixed}</ul>' if fixed else "")
             + "</article>")

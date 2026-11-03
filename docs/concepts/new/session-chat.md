@@ -1,0 +1,202 @@
+# A session as a chat: what a person types, what Claude asks
+
+Status 2026-11-03: concept, asked for by the owner the same day ("beim Herzeigen der GitHub Pages ist mir aufgefallen,
+dass die Beschreibung sehr technisch ist … was fehlt ist ein typischer Chatablauf … auch so gelayoutet … dann sehen
+die potentiellen Anwender, dass das wirklich im besten Fall ein Auftrag und ein paar Fragen sind, die zu beantworten
+sind"). Written against main at `ae2b400`. A prototype of page, parser and styles is in
+[prototypes/session-chat](prototypes/session-chat/README.md). Decided the same day in a decision round in Claude
+Code's form (the table at the end): decisions 1, 2, 3 and 5 as recommended; decision 4, the format, and what Claude
+set itself are open. Nothing built on the site: every step starts on the owner's word.
+
+## Why
+
+The site shows what edakit *runs*, not what a person *does*. The entry pages – the start page, the quickstart, How it
+works, the ten steps – quote 14 outputs of `$ edakit …` and one exchange between a person and Claude: the five lines of
+a decision round in How it works. The steps pages say "What you are asked" as a list of questions, without the answers
+and without what comes before and after them.
+
+A visitor who does not know Claude Code reads that as a tool chain to learn: commands, files, codes. What edakit is
+meant to be is the other thing – you say what the board must do, Claude asks back where only you can decide, and
+everything else happens without you. The walkthrough proves it on a real board (14 steps, six of them yours, seven
+decisions), but in 714 lines of a handbook chapter that a visitor does not open.
+
+A chat shows it at a glance: few bubbles on the right, the forms Claude puts in front of you, and the quiet lines of
+what ran in between.
+
+**The yardstick.** The chat is text in the repository, the page's source, held by a test to the example's files.
+Nothing of it exists only in EasyEDA or in someone's head. It also makes visible what is not yet chat – the install,
+two clicks in EasyEDA, the new sessions, paying – instead of hiding it.
+
+## The proposal
+
+### 1. One page "A session", and a short excerpt on the start page
+
+- **`docs/session.md`**, in the tab Start after the start page: "A session" (Start then has six of eight entries).
+  The walkthrough's board from the first sentence to the cart, as a chat: about 50 entries, ten step dividers that link
+  the steps pages, three pictures from the example. An entry page by the style guide: two paragraphs before the chat,
+  sentences of at most 20 words on average – a chat line counts as a sentence.
+- **The start page** gets six lines of it under "What it does": the first sentence, the form as one line, one question
+  of the decision round, "Round, please.", "Stopped at the cart.", and the tally – with the link "the whole session".
+  The start page's budget (120 words before the first picture) is untouched: the excerpt stands below the pictures.
+- **How it works** keeps its decision round; it becomes a `chat` fence with the same five lines, so it looks as on the
+  new page.
+
+### 2. What the chat says
+
+- **The record, not an invention.** Every line comes from the example `examples/coin-cell-led/` – its
+  `docs/decisions.md`, its graph, requirements and outputs – and from the walkthrough. Claude's lines are shortened;
+  the page says so once, in its intro, and links the walkthrough for the full story.
+- **Honest about the rest.** What a person does outside the chat stands in the chat, set apart ("You, outside the
+  chat"): the install, creating the EasyEDA project by hand, *Import Changes*, a new session for the layout, starting
+  the reviewers, checking the preview, ordering and paying, testing the boards. Each such line is also a requirement
+  E-… in `upstream/README.md` or a step of the steps pages; when one goes away, its line goes.
+- **The tally** under the chat: "Your part: 8 messages typed, 15 answers in 5 forms, 7 things done outside the chat."
+  Counted from the entries when the site is assembled, never typed by hand. That is the owner's point in one line – a
+  task and a few questions – and its limits beside it.
+- **Not legal advice.** The reviewers' entry says once that the regulatory review is support, not legal advice
+  (CLAUDE.md, "Regulatory content").
+- **Order of a new run.** The chat follows a session with today's edakit on the example, not the dates of the record:
+  LIM.i on the cell's current comes up in the first decision round (step 5), where a new project meets it, though D-7
+  was taken after the reviews. The chat names no decision numbers, so the two orders do not clash.
+
+### 3. The format: a `chat` fence, turned into HTML on assembly
+
+The page's source is Markdown with one fenced block in a small line format – readable as it is on GitHub, where the
+fence shows as a plain transcript:
+
+```text
+--- 5 Decide on what was found
+form: Two findings, one to confirm
+  ? PATH.reverse: a CR2032 put in upside down reaches R1 and D1. Protect against it?
+  - No protection (recommended): D1 blocks, 3.2 V against its rated 5 V.
+  - A Schottky diode in series: it costs 0.3 V, the margin a used cell needs.
+  > No protection
+claude: Written to docs/decisions.md, each with its reason and date.
+```
+
+Seven kinds of entry: `---` a step divider, `you:`, `claude:`, `ran:` (what Claude ran, a quiet line), `do:` (outside
+the chat), `img:` (a picture Claude shows), `form:` with `?` question, `-` option (the recommended first) and `>`
+answer. An indented line continues the entry above.
+
+`docs/pages.py` turns each `chat` fence into HTML while it assembles the pages (it rewrites links there already), and
+appends the tally. No MkDocs plugin and no Python function in `mkdocs.yml`: the build stays the two commands of
+`pages.yml`. The prototype's `chat.py` is that step in 130 lines.
+
+### 4. The layout
+
+In the brand's tokens (`docs/brand/tokens.json`), in `docs/brand/edakit.css`, for light and dark:
+
+- **You** – a bubble on the right in the accent teal, white text.
+- **Claude** – a bubble on the left on the surface colour, a thin line.
+- **The form** – a card like Claude Code's question form: title and count, each question with its options, the
+  recommended one first and darker, the answer right-aligned in teal. A question without options is one row.
+- **Ran** – a small grey line with a left rule, commands in mono; no bubble, so the eye skips it.
+- **Outside the chat** – a dashed box in copper across the width: it must stand out, not hide.
+- **A step** – a divider with the step's name, linked to its steps page.
+- **Pictures** – a card on Claude's side, at most 24 rem wide.
+
+At 390 px the bubbles take 92 % of the width; nothing scrolls sideways. The prototype's screenshots:
+`out/session-light.png` (900 px, light) and `out/session-dark-phone.png` (390 px, dark).
+
+### 5. The test
+
+`tests/test_session_page.py`, like the steps' test holds quoted outputs:
+
+- every fence parses; every step divider names a steps page;
+- every code (`PATH.reverse`, `LIM.i`) is in the catalog; every `/edakit:` command is a skill; every `edakit …`
+  command exists;
+- every number with a unit in a Claude, form or ran line appears in the example's files or in chapter 17 (1.22 mA,
+  10.7 mA, 52.60 USD, Ø 44 mm …);
+- every `do:` line is matched by a requirement E-… of `upstream/README.md` or by a "What you do" of a steps page;
+- the page within the entry register of `tests/test_style.py`.
+
+## The chat, as drafted
+
+The full draft is [prototypes/session-chat/session.md](prototypes/session-chat/session.md). Its course, by step:
+
+| Step | You | Claude asks | Outside the chat |
+| --- | --- | --- | --- |
+| 1 Install | – | – | the plugin, uv, ngspice, once |
+| 2 Start a project | the idea in one sentence; "ok" | one form, 8 questions | – |
+| 3 What it must do | "fine", "yes", "accept" | 1 mA? 2.5 V? accept the drafts? | – |
+| 4 Design | – | – (the red LED, said, not asked) | – |
+| 5 Findings | – | one form: PATH.reverse, LIM.i, the red LED to confirm | – |
+| 6 Parts and cost | – | one form: who places BT1 | – |
+| 7 Drawing | "a board" | stop here or a board? | – |
+| 8 Reviews | – | one form: who uses it, R-2's number | start the reviewers |
+| 9 Layout | "Round, please." | size and shape? | install EasyEDA, create the project, a new session, *Import Changes* |
+| 10 Order | "Release it and put it into the cart." | one form: shipping | check the preview, order and pay; test the boards |
+
+## Steps
+
+| Step | What | Size | Waits for |
+| --- | --- | --- | --- |
+| S.1 | The page `docs/session.md` from the prototype's draft, its place in `NAV`, the link from the steps index | S | the decisions |
+| S.2 | The fence in `docs/pages.py`, the tally; How it works' decision round as a fence | S | S.1 |
+| S.3 | The styles in `docs/brand/edakit.css`; checked at 1440 and 390 px, light and dark | S | S.2 |
+| S.4 | `tests/test_session_page.py` | S | S.1 |
+| S.5 | The excerpt on the start page | XS | S.1–S.3 |
+| S.6 | A live run: a session on a fresh copy of the example, its first questions held against the chat; differences fixed in the chat or reported | S, a session on the owner's machine | S.1, decision 3 |
+
+S.1 to S.5 are one branch and one pull request, a `patch` (`docs/`, `README.md` and the site are outside a project's
+reading, but `docs/pages.py` is code: a fragment all the same). About one session. Each step starts on the owner's word
+and comes into `TODO.md` when it does.
+
+## Measures – done when
+
+- A visitor on the start page sees, without scrolling past the second screen, one sentence typed by a person and a
+  question of Claude's.
+- The session page: at most 1,000 words, the chat's tally under it, every `do:` line matched, every number held.
+- The site's build strict and green; the page right at 390 px, light and dark.
+- On GitHub, `README.md` and `docs/session.md` read as plain text without a broken line.
+
+## Alternatives
+
+- **A recorded session**, cut and pasted. Authentic, but Claude's real lines are long, the numbers move with each run,
+  and a recording cannot be held by a test. Recommended as the check (S.6), not as the text.
+- **A video or an animated terminal** (asciinema). Shows the pace, but is no text: no search, no test, out of date with
+  the next version, and against the yardstick. Possible later for the outreach (`outreach.md`), not on the site.
+- **Screenshots of Claude Code.** Look real, read badly on a phone, cannot be searched or tested.
+- **Bubbles written as HTML** in the Markdown (`md_in_html`). No change to `pages.py`, but a page of `<div>`s that
+  reads badly on GitHub and is easy to break.
+- **The chat inside the steps pages**, a piece per page. Each page gains, but nobody sees the whole – the point is
+  that it is short from end to end. A later step, once the fence exists.
+- **Circuit only** (steps 2 to 7). Shorter and without a single click, but it hides the board, which is what most
+  visitors want.
+
+## Costs and risks
+
+- **Work.** About one session for S.1 to S.5, the owner's tokens; S.6 a session on the owner's machine.
+- **Drift.** A changed interview or output leaves the chat behind. Held by the test for numbers, codes, commands and
+  `do:` lines; the wording of a question is not held – the live run (S.6) and a look once a version.
+- **A promise too good.** The chat shows the best case. The `do:` lines and the tally keep it honest; the intro says
+  that Claude's answers are shortened, and the walkthrough has the three gate runs and the second review round.
+- **A second format** to know beside Markdown. Seven kinds of entry, documented in the style guide's section on entry
+  pages.
+
+## Decisions
+
+Taken by the owner on 2026-11-03 in a decision round in Claude Code's form, the recommendation first.
+
+| # | Question | Recommendation | Alternatives | Decision |
+| --- | --- | --- | --- | --- |
+| 1 | Where | a page "A session" in Start, six lines of it on the start page, How it works' round as a fence | only on the start page; only the page; inside the steps pages | 2026-11-03: as recommended |
+| 2 | Which session | the walkthrough's board from the first sentence to the cart | the circuit only (steps 2–7); two chats, a short circuit and a long board | 2026-11-03: as recommended |
+| 3 | Where the lines come from | the example's record, shortened, held by a test; a live run checks it once (S.6) | a recorded session, cut; the record alone, no live run | 2026-11-03: as recommended |
+| 4 | The format | a `chat` fence, turned into HTML by `docs/pages.py`, plain text on GitHub | HTML bubbles in the Markdown; screenshots | open |
+| 5 | What is not chat | in the chat as "outside the chat", with the tally | left out for a shorter page; in a list under the chat | 2026-11-03: as recommended |
+
+Set by Claude, open for confirmation together with decision 4: the seven kinds of entry; the layout of section 4; the tally's wording; the page's
+name "A session" and its place after the start page; the budget of 1,000 words; no decision numbers in the chat.
+
+## Sources
+
+- edakit at `ae2b400`: `README.md`, `docs/quickstart.md`, `docs/how-it-works.md` ("A decision round"),
+  `docs/steps/*.md`, `docs/pages.py` (`NAV`, the assembly, `markdown_extensions`), `docs/brand/edakit.css`,
+  `docs/brand/tokens.json`, `docs/style.md`, `docs/organisation.md`.
+- The record: `handbook/17-walkthrough.md`, `examples/coin-cell-led/docs/decisions.md` (D-1 to D-7), the example's
+  pictures.
+- The counts: `$ edakit` at the start of a line and `You:`/`Claude:` in the entry pages, by `grep`; the tally by the
+  prototype's `chat.py`.
+- [documentation-newcomer.md](../done/documentation-newcomer.md) – the steps, the tabs, the entry's budgets;
+  [outreach.md](outreach.md) – where edakit is shown.

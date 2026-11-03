@@ -1,0 +1,75 @@
+{
+ "lcsc": "C8545",
+ "mpn": "2N7002",
+ "manufacturer": "CJ(江苏长电/长晶)",
+ "kind": "nmos",
+ "package": "SOT-23",
+ "footprint": "SOT-23-3_L2.9-W1.3-P1.90-LS2.4-BR",
+ "jlc_class": "Basic Part",
+ "datasheet": {
+  "url": "https://datasheet.lcsc.com/datasheet/pdf/a141b8bd86b14475955ac8c4d3eea0a8.pdf?productCode=C8545",
+  "pinout_page": 1
+ },
+ "pins": {
+  "1": {
+   "name": "G",
+   "type": "passive",
+   "role": "gate"
+  },
+  "2": {
+   "name": "S",
+   "type": "passive",
+   "role": "source"
+  },
+  "3": {
+   "name": "D",
+   "type": "passive",
+   "role": "drain"
+  }
+ },
+ "values": {
+  "vgs_th_v": [
+   1.0,
+   1.6,
+   2.5
+  ],
+  "rds_on_max_ohm": {
+   "5": 7.0,
+   "10": 5.0
+  }
+ },
+ "limits": {
+  "vds_max_v": 60,
+  "vgs_max_v": 20,
+  "id_max_a": 0.115,
+  "p_max_w": 0.225,
+  "rth_ja_k_per_w": 556,
+  "tj_max_c": 150
+ },
+ "spice": {
+  "model": ".model 2N7002 NMOS(LEVEL=1 VTO=1.6 KP=0.875 RD=0.764 IS=1e-12)",
+  "source": "VTO the typical VGS(th) 1.6 V; KP and RD fitted to the typical RDS(on) – 1.1 Ω at VGS 5 V (50 mA), 0.9 Ω at 10 V (500 mA): R = RD + 1/(KP·(VGS − VTO)) gives KP 0.875 A/V², RD 0.764 Ω (as the BSS138 of sparkfun-logic-level-converter)"
+ },
+ "sources": [
+  "Jiangsu Changjiang Electronics Technology (CJ) 2N7002, SOT-23 plastic-encapsulate MOSFETs, J, Sep. 2016, LCSC's copy https://datasheet.lcsc.com/datasheet/pdf/a141b8bd86b14475955ac8c4d3eea0a8.pdf?productCode=C8545, read 2026-11-03",
+  "pins p. 1: 1 gate, 2 source, 3 drain = the EasyEDA symbol of C8545 (edakit part import 2026-11-03: 1 G, 2 S, 3 D)",
+  "maximum ratings p. 1: VDS 60 V, VGS ±20 V, ID 0.115 A, PD 0.225 W, RθJA 556 °C/W, TJ 150 °C",
+  "electrical characteristics p. 2: VGS(th) 1 / 1.6 / 2.5 V at 250 µA; RDS(on) 0.9 / 5 Ω at VGS 10 V, 500 mA and 1.1 / 7 Ω at VGS 5 V, 50 mA; VSD 0.55 … 1.2 V at 115 mA"
+ ],
+ "verified": {
+  "by": "Claude (datasheet check, open-design transcription)",
+  "date": "2026-11-03",
+  "datasheet": "CJ 2N7002 (J, Sep. 2016)",
+  "datasheet_sha256": "7941fb423af7c6c6c8979063a7e8819bb19217ece275efcce18948950a41d9f6",
+  "checked": [
+   "pinout",
+   "ratings",
+   "threshold",
+   "RDS(on) at 5 V and 10 V"
+  ],
+  "open": [
+   "RDS(on) below VGS 5 V is not specified – the board drives the gates from 3.3 V",
+   "the schematic names 2N7002 for Q3 and Q4 without a maker, the README's bill of materials for Q2 too; CJ's C8545 stands in"
+  ]
+ }
+}

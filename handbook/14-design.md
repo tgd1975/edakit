@@ -110,6 +110,7 @@ Each engine decides one kind of relation – on the graph, the parts, the simula
 | PARTS | parts entries complete, well-formed, verified, orderable |
 | ORDER | the order at the maker is the release: form, parts, quote, read, files, finish, review, confirm |
 | DOCS | documents and requirements quote the design |
+| DEF | every derived value is the value its record derives |
 | HINT | patterns that need judgement, as notes |
 <!-- edakit:end -->
 
@@ -171,7 +172,8 @@ structure, artifacts, limits and levels of the basic kinds, parts, files, docume
 ![The reference circuit of the domain power: the led-bar with a battery block, BT20 and D20 onto +5V – the holder suggests the domain](../docs/catalog/circuits/power.svg)
 
 Each domain has such a reference circuit with the faults it must catch, drawn on its page of the
-[catalog](../docs/catalog/index.html).
+[catalog](../docs/catalog/index.html). Why each and what a new one must bring: the reference circuits
+([19.4](19-verification.md#194-the-reference-circuits)).
 
 The interview of a new project asks for no domain: there is no graph yet, and the graph decides (skill new-project). A
 domain file sets severities (also per purpose: `[severity.sale]`), switches codes or topics on, and names the facts a
@@ -322,7 +324,7 @@ code reports. On the tests' led-bar, 24 of 45 are caught without the simulation 
 R-EXT and the OE pull-up a hundred times larger: the LEDs dim with R-EXT, and nothing says how bright they should be
 (a load's `expect` would). The list is for reading, not a list of faults; a class of mistakes it shows again and again
 is a candidate. The reference circuits per domain (`tests/reference.py`) carry the seeded faults each domain must catch
-with exactly its codes.
+with exactly its codes (the reference circuits, [19.4](19-verification.md#194-the-reference-circuits)).
 
 ### The proposals Action
 
@@ -484,6 +486,15 @@ stands in the block's own `test` table:
 `sim: false` and `remove_supplies` need a `why`. The blocks' parts come from the parts library and are drafts until
 they are signed there (the parts library, 4.1). That makes a block a good start, not a sign-off: values, ratings and
 the review are still the project's. A project's own blocks are JSON files of the same form, added with `--file`.
+
+### The source of a block
+
+Each block is written as a definition of the circuit language, `edakit/blocks/<name>.circuit`, and its JSON is
+generated from it: `python -m edakit.lang.blocks` lists a JSON that differs from its source, `--write` writes it
+again, and a test holds every JSON to its source. The JSON keeps the form above and gains two keys: `params`, the
+block's parameters with their defaults (`{"i": {"default": "10 mA"}}`), and `derivations`, the rules its values are
+derived by – `led`, `i2c-pullups` and `battery-sense` have them. `add --set i=4mA` runs them, `--part R1=KEY` takes
+another entry where the block's value lies outside what the rule derives (20.5).
 
 ## 14.6 Where the ideas came from
 

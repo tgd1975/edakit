@@ -1,0 +1,188 @@
+# What edakit check and edakit sim find on the published Adafruit Micro-Lipo Charger with USB Type C Jack, and how each
+# finding is judged (the words as in esp32-devkitc-v4/findings.toml): real (a point of the design), lacks (a fact the
+# transcription or the datasheets lack), criterion (edakit's own yardstick, not the design's), known gap (edakit judges
+# it wrong, not fixed yet – with the reason). As delivered (SJ1 open, 100 mA) the charger passes every limit; what is
+# real comes from the 500 mA mode and from a reversed pack. The simulation's cell is Adafruit's 500 mAh LiPo.
+
+[[check]]
+code = "DOCS.file"
+place = "edakit.toml"
+judged = "criterion"
+why = "The transcription has no requirements file: what the published design must do stands in its own documents, not in edakit's form. edakit requires the file before a release (handbook 3.6); it is no point of the design."
+
+[[check]]
+code = "LIM.i"
+grade = "charge"
+place = "U1"
+judged = "real"
+why = "With SJ1 closed, R3 (10 kΩ) and R4 (2.2 kΩ) in parallel are 1.80 kΩ: 1000 V / 1.80 kΩ = 555 mA, above the MCP73831's 500 mA and below its PROG window of 2 … 67 kΩ (DS20001984H p. 4) – and above 1C of the 500 mAh cell the product page names for this mode. 2.5 kΩ, as the micro-USB Micro-Lipo of the same repository has, would give 500 mA; the schematic's own table says 2.0K = 500mA."
+
+[[check]]
+code = "PATH.reverse"
+place = "U1.3"
+judged = "real"
+why = "A pack whose JST plug is wired the other way round puts −4.2 V straight on the charger's VBAT (and C2): nothing on the board blocks it. Adafruit says so itself – 'For use with Adafruit LiPoly/LiIon batteries only! Other batteries may have different voltage, chemistry, polarity or pinout' – and the plug's polarity differs between makers."
+
+[[check]]
+code = "PATH.reverse"
+place = "U1.4"
+judged = "known gap"
+why = "Reached only through the connectors: the reversed cell's VBAT is pad 5 of JP4, and catalog/paths.toml lets a connector pass a reversed source from every pin to every pin – on to 5V (JP4 pad 1), and through the receptacle X2 to CC1 and CC2. A header's or a receptacle's pins are separate contacts; the charger's VDD sees no reversed voltage. The fix is the catalog's data (a connector among the parts that tolerate a reversed source, not among those that pass it on), which this transcription does not change."
+
+[[check]]
+code = "PATH.reverse"
+place = "LED1.2"
+judged = "known gap"
+why = "As U1.4: the red LED's anode is on 5V, which the reversed cell reaches only through JP4's other pads in edakit's model – a connector passing every pin to every pin (catalog/paths.toml)."
+
+[[check]]
+code = "PATH.reverse"
+place = "R6.2"
+judged = "known gap"
+why = "As U1.4: CC1 is reached from VBAT through JP4 and then through X2's other contacts – a connector passing every pin to every pin (catalog/paths.toml); a resistor takes a reversed voltage without harm anyway."
+
+[[check]]
+code = "PATH.reverse"
+place = "R5.2"
+judged = "known gap"
+why = "As R6.2, on CC2: reached through JP4 and X2 only in edakit's model of a connector (catalog/paths.toml)."
+
+[[check]]
+code = "PARTS.supplier"
+place = "SJ1"
+judged = "known gap"
+why = "SJ1 is two pads of the board's copper, bridged with solder – nothing is bought. edakit reads a part outside the BOM (bom false) without an LCSC number as one bought separately and has no way to say 'copper, no part'."
+
+[[check]]
+code = "PARTS.verified"
+grade = "device"
+place = "SJ1"
+judged = "lacks"
+why = "The transcription names no EasyEDA library device for the jumper's two pads (easyeda_device) – a project that orders the board would."
+
+[[sim]]
+code = "LIM.i"
+place = "U1"
+judged = "real"
+why = "The 500 mA mode charges with 555 mA in the model, above the MCP73831's 500 mA (LIM.i/charge, a warning) – the static finding seen in the operating point."
+
+[[sim]]
+code = "LIM.backfeed"
+place = "CN2"
+judged = "real"
+why = "555 mA into Adafruit's 500 mAh cell: above its quick-charge maximum of 1C (PKCELL 503035 specification, 500 mA), the cell the product page names as the smallest for this mode."
+
+[[sim]]
+code = "LIM.i"
+place = "X2"
+judged = "real"
+why = "In the 500 mA mode the board draws 556–558 mA; with 5.1 kΩ Rd it asks a USB-C source for Default USB Power, 500 mA from a USB 2.0 port. Default power from a USB 3.x port (900 mA) carries it."
+
+[[sim]]
+code = "LIM.t"
+place = "U1"
+judged = "real"
+why = "In the 500 mA mode the SOT-23-5 dissipates 0.57 W from a cell at 3.7 V and 1.1 W from one at 3.0 V: 157–278 °C at 230 K/W. The MCP73831 then regulates its temperature and cuts the current (DS20001984H 6.1.1.3: 1.54 W worst case) – the 500 mA the jumper promises are not reached from a low cell; edakit's model has no thermal regulation and shows the dissipation."
+
+[[sim]]
+code = "SIM.state"
+place = "LED1"
+judged = "known gap"
+why = "The charger model does not drive STAT (the status outputs are among what the simulation leaves out, decision 17 of rules-at-scale.md: edakit check --coverage lists them): STAT floats in the model, and the two LEDs carry the current of the chain 5V – LED1 – R1 – R2 – LED2 – GND, 2 µA to 1.6 mA by the corner – the red LED too dim while charging, too bright with the cell full. On the board STAT is low while charging and lights it with about 6 mA through 470 Ω."
+
+[[sim]]
+code = "SIM.state"
+place = "LED2"
+judged = "known gap"
+why = "As LED1: with STAT not driven by the model, the green LED carries the chain's current while the cell charges (up to 1.6 mA, expected dark) and too little with the cell full (0.7 mA, expected on) – on the board STAT high lights it with a few mA through 470 Ω."
+
+[[fixed]]
+what = "A charger's status LEDs, each behind its series resistor on the tri-state STAT, taken for a floating net (LVL.undefined/open_drain on STAT) – an LED cathode straight on an output counted as its load, one behind a resistor did not."
+[[fixed]]
+what = "R4 behind the solder jumper SJ1 – the 500 mA mode – counted by neither LIM.i/charge nor the simulation's charger model, which read only resistors straight from PROG to ground: the check now holds the position that programs the most, the model the contacts a load closes."
+
+# PARTS.fact/reach (#95): the design is sold, and the transcription took no supplier REACH statements.
+
+[[check]]
+code = "PARTS.fact"
+grade = "reach"
+place = "C15850"
+judged = "lacks"
+why = "A board that is sold names the SVHCs above 0.1 % (REACH Art. 33); the transcription took no supplier REACH statement for this part."
+
+[[check]]
+code = "PARTS.fact"
+grade = "reach"
+place = "C2297"
+judged = "lacks"
+why = "A board that is sold names the SVHCs above 0.1 % (REACH Art. 33); the transcription took no supplier REACH statement for this part."
+
+[[check]]
+code = "PARTS.fact"
+grade = "reach"
+place = "C23179"
+judged = "lacks"
+why = "A board that is sold names the SVHCs above 0.1 % (REACH Art. 33); the transcription took no supplier REACH statement for this part."
+
+[[check]]
+code = "PARTS.fact"
+grade = "reach"
+place = "C23186"
+judged = "lacks"
+why = "A board that is sold names the SVHCs above 0.1 % (REACH Art. 33); the transcription took no supplier REACH statement for this part."
+
+[[check]]
+code = "PARTS.fact"
+grade = "reach"
+place = "C25804"
+judged = "lacks"
+why = "A board that is sold names the SVHCs above 0.1 % (REACH Art. 33); the transcription took no supplier REACH statement for this part."
+
+[[check]]
+code = "PARTS.fact"
+grade = "reach"
+place = "C2848620"
+judged = "lacks"
+why = "A board that is sold names the SVHCs above 0.1 % (REACH Art. 33); the transcription took no supplier REACH statement for this part."
+
+[[check]]
+code = "PARTS.fact"
+grade = "reach"
+place = "C295747"
+judged = "lacks"
+why = "A board that is sold names the SVHCs above 0.1 % (REACH Art. 33); the transcription took no supplier REACH statement for this part."
+
+[[check]]
+code = "PARTS.fact"
+grade = "reach"
+place = "C4190"
+judged = "lacks"
+why = "A board that is sold names the SVHCs above 0.1 % (REACH Art. 33); the transcription took no supplier REACH statement for this part."
+
+[[check]]
+code = "PARTS.fact"
+grade = "reach"
+place = "C424093"
+judged = "lacks"
+why = "A board that is sold names the SVHCs above 0.1 % (REACH Art. 33); the transcription took no supplier REACH statement for this part."
+
+[[check]]
+code = "PARTS.fact"
+grade = "reach"
+place = "C492404"
+judged = "lacks"
+why = "A board that is sold names the SVHCs above 0.1 % (REACH Art. 33); the transcription took no supplier REACH statement for this part."
+
+[[check]]
+code = "PARTS.fact"
+grade = "reach"
+place = "C84256"
+judged = "lacks"
+why = "A board that is sold names the SVHCs above 0.1 % (REACH Art. 33); the transcription took no supplier REACH statement for this part."
+
+[[check]]
+code = "PARTS.fact"
+grade = "reach"
+place = "SOLDERJUMPER_ARROW_NOPASTE"
+judged = "known gap"
+why = "SJ1 is the board's copper and the assembler's solder, no part with a supplier: edakit asks a supplier's REACH statement of it, as of every parts entry – as PARTS.supplier on SJ1, it has no way to say 'copper, no part'."

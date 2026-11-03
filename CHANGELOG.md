@@ -8,6 +8,85 @@ written once, by `.github/merge.py`, from the fragments in [changes/](changes/RE
 update edakit@edakit`, then `/reload-plugins` or a new session; `edakit version` names the version that runs and what an
 update brings.
 
+## 1.1.4 – 2026-11-03
+
+- Handbook chapter 19, "Verification and validation: how edakit is tested": what a clean check proves and what it does not, the test layers, the reference circuits and the open designs – each with why it is there –, how a finding on them is judged, and what a new reference circuit or open design must bring. Its lists are generated (`python -m edakit.catalog.handbook --write`, kinds `references`, `designs`, `tally`); the catalog's pages show the same why.
+- Four more open designs: a WLED controller (atoomnetmarc's ADLSC), a Fuzz Face (whbeers' Random Input), a mains relay board with an HLK-PM01 (ESPurna-H) and a LiPo charger (Adafruit's USB-C Micro-Lipo) – every finding judged.
+- LIM.i/charge and the simulation's charger count a PROG resistor behind a switch or solder jumper: LIM.i/charge in the position that programs the most, the simulation in the position the load closes.
+- LVL.undefined: a tri-state output whose net holds only LEDs behind their series resistors is their load, not a floating net (a charger's STAT); a base or gate held to the net the supply comes in on – a sim.json source's plus, a reversible source's pins – is defined although no pin types that net a supply.
+- REQ.missing/REQ.value: a need on a pin left open is judged at a connected pin of the same name, the same terminal inside the part (a regulator's VOUT on its tab).
+
+## 1.1.3 – 2026-11-03
+
+- The circuit language, step T.1 of circuit-dsl-toolchain.md: quantities with units, ranges and tolerances
+  (`edakit/lang/units.py`) and the E-series E6 to E96 of IEC 60063 as a catalog table (`tables/series.toml`).
+- T.2: the reader of the circuit language – `edakit/lang/tokens.py`, `model.py`, `reader.py` and the attribute
+  table `schema.py`: every statement of language 5 with its file and line, every error at once.
+- T.3: the attribute table held to handbook 3.1 by a test; an unknown key names the nearest known one.
+- T.4: a `.circuit` graph is compiled wherever a graph is read – `edakit check`, `sim`, the gate, the circuit hash
+  (its compiled data, as a TOML graph's) and `edakit graph json --write|--check`, which writes and checks the
+  resolved graph.json beside it; `--map FILE` writes where each part and net was written. New: SYNC.graph, an
+  error of stage G when the generated graph.json beside a TOML or a .circuit graph no longer is what its source
+  resolves to; `edakit hook` runs `graph json --check` for a .circuit graph as for a TOML one.
+- T.5: `edakit graph fmt [--check] [FILE …]` lays a `.circuit` source out canonically, comments kept.
+- T.6: `edakit graph convert --to circuit` moves a JSON or TOML project to `hardware/graph.circuit`: flat
+  statements, read back before anything is written, `[project] graph` and `edakit` set, the resolved graph.json
+  beside it, the sign-offs of scope circuit carried over.
+- T.7: the block library's source is `edakit/blocks/<name>.circuit`, definitions of the language; the JSON
+  `block add` reads is generated from it (`python -m edakit.lang.blocks --write`) and gains `params` and
+  `derivations` – led, i2c-pullups and battery-sense; `block add` reads them only with `--set` (T.8).
+- T.8: derivation rules (`series_resistor`, `divider`, `pullup`, `rc`); `edakit block add --set PARAM=VALUE`
+  derives a block's values and writes the record into the graph's `derivations`, `--part DES=KEY` takes an
+  entry inside the window; `edakit graph derive [--write]`; `edakit graph show` lists a part's records. New
+  engine DEF: DEF.derive, a warning when a part's value lies outside its record's window or the record's inputs
+  changed since (grade inputs). Handbook chapter 20 begins.
+- T.9: a TextMate grammar for `.circuit` files and VS Code's language configuration (`editors/vscode/`).
+- T.10: handbook chapter 20, the circuit language: its forms, words and quantities, statements, definitions,
+  derivations, the compiler, the hash and the commands; 3.1, 2.7 and 10 name the `.circuit` form.
+- T.11: `use DEF INSTANCE (PARAM = VALUE) PORT = NET … PART = DES …` – a definition of the project's or of
+  edakit's block library expanded into parts and nets, its derivations evaluated into the graph's records.
+- T.12: `for VAR in A..B` – parts, nets, usages, locks, cables and layout once per value, `{n}`, `{n+k}` put in.
+- T.13: `param NAME = QUANTITY`, `alias NAME = PINWORD` checked against the entry, `include PATH` – one
+  namespace over the main file and the files it includes.
+- T.14: variants – `variant NAME of PATH` with redefinitions and additions over its base, in a chain;
+  `[project] parts` may be a list of folders, and the circuit hash of such a project takes the entries its graph
+  uses; a project with one folder hashes as before.
+- T.15: requirements may be written in the notation (`hardware/requirements.circuit`); a requirement gains
+  `subject` and `require`, a part or net `satisfies` and `decision` – DOCS.ref resolves all four.
+- T.16: `edakit block add` on a `.circuit` graph writes a `use` statement after the parts and the resolved graph.json.
+- T.17: the test project led-bar-circuit – led-bar in the circuit language – for the tests and the evals.
+- `edakit graph fmt --check FILE …` takes its files after the option on Python 3.11 and 3.12 as well.
+- `edakit graph fmt` writes a `set` whose JSON does not fit the line one member to a line, compact where a member
+  fits, the closing brackets at the end of the last line; the block library's sources are laid out so.
+- T.18: the skills circuit-design, hardware-change and new-project and the agent project-surveyor know the
+  circuit language; handbook 20 describes usages, loops, parameters, variants and requirements in the notation.
+- T.20–T.23: `edakit graph sysml` and `edakit graph kerml` export a project as SysML v2 and KerML, textual and
+  as JSON, with the electrical library `edakit/lang/library/Electrical.sysml`; the requirements with it. The
+  optional dependency group `sysml` (systree) and the CI job sysml read them with a standard reader.
+- The SysML v2 export writes a requirement's `from` as a `#derivation connection` of the standard's
+  RequirementDerivation library; KerML keeps a `dependency` per pair.
+- T.24–T.27: the source map places a finding at its statement; `edakit lsp`, the language server (the extra
+  `lsp`, pygls): errors and findings as they are typed, go to definition, hover, completion, formatting; the VS
+  Code extension in `editors/vscode/`; the CI job vscode compiles it.
+
+## 1.1.2 – 2026-11-02
+
+- The parts library has a slide switch, SS-12D00-G3 (C22355741), and a 9 V battery snap with leads (C70374), both
+  drafts from their datasheets; handbook 4.1 says how `edakit part add` lists the library by kind and how an entry the
+  library lacks is written.
+- `edakit hook install` names a step the session may not do – the hook's write, `git config core.hooksPath` – as a
+  line `failed: …` with the command to run by hand, and exits 1; before, a refused `git config` was reported as done.
+  The skill new-project goes on without them and puts them in its report.
+- Every skill that runs `edakit` names `${CLAUDE_PLUGIN_ROOT}/bin/edakit` for a session that does not find it on the
+  PATH – before the project has an edakit.toml, the session start does not.
+- The handbook: the smallest edakit.toml for a circuit without a board of its own (2.7, 10.1); a switch closed unless
+  the load lists it in `open`, a 9 V block as one cell state (5.1, 5.2); the form of the rows a requirement's `verify`
+  names, SIM.state's among them (10.4). The newcomer's eval of documentation-newcomer.md found these missing.
+
+## 1.1.1 – 2026-11-02
+
+- A pin of the template on a second net while another schematic of the project is open is easyeda-mcp-pro's, not EasyEDA's: its net reading takes the net flags of every open schematic but the wires of the focused one (M-11, checked live on pytree, TD-105). SYNC.schematic's reason, the `saved` finding of `schematic check` and handbook 6.2 and 12 say so; the check still closes the other schematics first.
+
 ## 1.1.0 – 2026-11-02
 
 - **When updating:** easyeda-mcp-pro is pinned to 1.8.0 (was 1.6.0), and server and bridge extension must have the

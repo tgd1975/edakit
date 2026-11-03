@@ -5,6 +5,10 @@
 reference of its development board; the PDF states no licence. What is here are the circuit's facts – parts,
 values, connections – transcribed for testing edakit, not the drawing.
 
+**Why this design:** the board many ESP32 projects start from: usb, radio and power on one board – the USB-UART
+bridge, the two transistors of the auto-program circuit, the 3.3 V regulator, the module's bands and e.i.r.p. The
+domain radio has no reference circuit; this design was the first to stand in for it.
+
 **Transcribed:** micro-USB J1 (VBUS, D−, D+, ID open, GND and shell) with the ESD diodes D4–D6 (LESD5D5.0CT1G), the
 Schottky D3 (BAT760-7) from VBUS to EXT_5V, the AMS1117-3.3 U2 with C1 and C3 (22 µF / 10 V), the power LED D1 with R2
 (2 kΩ); the CP2102N-A01-GQFN28 U1 with C19, C20, the VBUS divider R25/R26 (22.1 kΩ / 47.5 kΩ), the RSTb pull-up R24

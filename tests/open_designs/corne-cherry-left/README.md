@@ -17,6 +17,11 @@ are transcribed into edakit's graph, not the drawing; unnamed nets got names (LE
 stated below are left out or stand in; the parts entries are written from the parts' datasheets. This is a reading of
 the repository's files, not legal advice.
 
+**Why this design:** a split keyboard many makers build. Its v4 left half brings what no reference circuit has: an
+RP2040 with its crystal and USB-C port, 23 keys each on a GPIO of its own, and a chain of 23 SK6812MINI-E that runs
+one diode below 5 V while its data comes from a 3.3 V pin. It is the one LED chain on a board among the designs, and
+with the v3 it shows the same keyboard without and with a matrix.
+
 **No key matrix:** the Corne v4 wires each of its 23 keys from its own RP2040 GPIO to GND (QMK's direct pins) – no
 rows, no columns, no diode per key. edakit's matrix rules (REQ.missing/matrix, REQ.forbidden/matrix) have nothing to
 judge here. The older versions with a Pro Micro and a diode per key appear only in the build guides (the parts list

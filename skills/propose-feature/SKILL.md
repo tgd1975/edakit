@@ -8,6 +8,7 @@ argument-hint: "<the gap or the project decision that lists it – or an issue n
 
 Wanted: $ARGUMENTS. The whole loop: `${CLAUDE_PLUGIN_ROOT}/handbook/11-working-with-claude.md` (11.6); seal, Action
 and who may propose are the same as for rules (14.4).
+Where the session does not find `edakit` on the PATH, it is `${CLAUDE_PLUGIN_ROOT}/bin/edakit`.
 
 A feature proposal is an issue in `tgd1975/edakit`. The Action proposals there triages it – accepted and built into
 the one open pull request of feature proposals, rejected with the reason, or a question back – and works only on

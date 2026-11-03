@@ -995,7 +995,7 @@ def fetch(cfg, key, url=None):
     pdftotext), names_mpn ('yes', 'no', the longer variant named; None unchecked). The parts entry is never touched
     – a change there would lapse its sign-offs (handbook 4.3). It reads the parts database only: a datasheet is
     fetched before the part is in the graph, also before there is a graph."""
-    entry = load_parts(cfg.parts).get(key)
+    entry = load_parts(cfg.parts_dirs or cfg.parts).get(key)
     if entry is None:
         raise PartError(f"no parts entry {key} in {cfg.relative(cfg.parts)} – edakit part import {key} for an LCSC "
                         "number")

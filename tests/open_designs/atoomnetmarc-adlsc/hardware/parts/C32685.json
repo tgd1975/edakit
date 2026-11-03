@@ -1,0 +1,68 @@
+{
+ "lcsc": "C32685",
+ "mpn": "RVT1C471M1010",
+ "manufacturer": "HONOR(荣誉)",
+ "kind": "capacitor",
+ "package": "SMD aluminium electrolytic, D10 × L10.2 mm (case 1010)",
+ "footprint": "CAP-SMD_BD10.0-L10.3-W10.3-LS11.0-FD",
+ "jlc_class": "Extended Part",
+ "datasheet": {
+  "url": "https://datasheet.lcsc.com/datasheet/pdf/4ec4cfc2b89f173d2532ed891957b1a7.pdf?productCode=C32685",
+  "pinout_page": 3
+ },
+ "pins": {
+  "1": {
+   "name": "1",
+   "type": "passive",
+   "role": "plus"
+  },
+  "2": {
+   "name": "2",
+   "type": "passive",
+   "role": "minus"
+  }
+ },
+ "values": {
+  "value_f": 0.00047,
+  "dielectric": "electrolytic",
+  "polarized": true,
+  "tolerance": 0.2
+ },
+ "limits": {
+  "v_max_v": 16,
+  "i_ripple_a": 0.3,
+  "t_min_c": -55,
+  "t_max_c": 105
+ },
+ "body": {
+  "h_mm": 10.7
+ },
+ "spice": {},
+ "hints": [
+  "rated ripple current 300 mA at 105 °C and 120 Hz (p. 3)",
+  "leakage current ≤ 0.01·C·V or 3 µA after 2 minutes – 75 µA at 470 µF and 16 V (p. 1)",
+  "the data sheet names neither an ESR nor a permitted reverse voltage"
+ ],
+ "sources": [
+  "HONORCAP Chip Type Aluminum Electrolytic Capacitors, RVT series data sheet (5 pages, scanned, no revision) – LCSC's copy for C32685, https://datasheet.lcsc.com/datasheet/pdf/4ec4cfc2b89f173d2532ed891957b1a7.pdf?productCode=C32685, read 2026-11-03 as images (the same file as the library entry C3359's, sha256 285ae57a…)",
+  "part number (p. 4): RVT = series, 1C = 16 V, 471 = 470 µF, M = ±20 %, 1010 = case 10 × 10.2 mm",
+  "specifications (p. 1): −55 … +105 °C; tolerance ±20 %; leakage 0.01CV or 3 µA; tan δ 0.20 at 16 V; load life 2000 h at 105 °C",
+  "standard sizes (p. 3): 470 µF / 16 V in 8 × 10.2 (240 mA) or 10 × 10.2 mm (300 mA ripple, 105 °C, 120 Hz)",
+  "dimensions (p. 3, fig. 1): D 10, L 10.2 ± 0.5 mm (h_mm 10.7)",
+  "pin 1 = plus, pin 2 = minus: as the library entry C3359 of the same footprint family (the EasyEDA footprint prints '+' at pad 1)",
+  "mpn, manufacturer, footprint, jlc_class: EasyEDA library data of C32685 (edakit part import, 2026-11-03)"
+ ],
+ "notes": "The schematic's '16V 470uF' in a 10 × 10.5 SMD case (CP_Elec_10x10.5): HONORCAP's RVT1C471M1010 stands in. ADLSC's bulk capacitor on +5V.",
+ "verified": {
+  "by": "Claude (datasheet check, open-design transcription)",
+  "date": "2026-11-03",
+  "datasheet": "HONORCAP Chip Type Aluminum Electrolytic Capacitors, RVT series data sheet (5 pages, scanned, no revision)",
+  "checked": [
+   "RVT1C471M1010: 16 V, 470 µF, ±20 %, 10 × 10.2 mm, 300 mA ripple (pp. 1, 3, 4)"
+  ],
+  "open": [
+   "no reverse-voltage limit, no ESR in the data sheet",
+   "the schematic names no maker: a stand-in"
+  ]
+ }
+}

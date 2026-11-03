@@ -14,7 +14,6 @@
    "label": "{as}: Eurorack power 10-pin (pin 1 = red stripe = −12 V)",
    "part": "BH254V-10P",
    "lcsc": "C492442",
-   "source": "reversible",
    "pins": {
     "1": "1",
     "2": "2",
@@ -27,6 +26,7 @@
     "9": "9",
     "10": "10"
    },
+   "source": "reversible",
    "notes": "Pins 1/2 −12 V (red stripe), 3–8 GND, 9/10 +12 V. Print '−12V' or 'red stripe' beside pin 1 on the silkscreen."
   },
   {

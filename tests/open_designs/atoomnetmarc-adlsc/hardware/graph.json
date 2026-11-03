@@ -1,0 +1,1135 @@
+{
+ "graph": {
+  "name": "atoomnetmarc-adlsc",
+  "version": "1.0",
+  "date": "2026-11-03",
+  "description": "ADLSC, Atoomnet's Digital Led String Controller (atoomnetmarc/ADLSC, V1.0), as published: a WLED controller – 5 V from a Mean Well IRM-60-5ST through push-in terminals, a bidirectional TVS and an N-MOSFET in the ground return against reversed wires, a 0.5 A polyfuse and a MAX809M supervisor for the logic, an ESP32-DevKitC with ESP32-WROVER-E behind a Schottky, a 74AHCT125 shifting two data lines to 5 V through 100 Ω, two LED power outputs switched by P-MOSFETs from GPIO4 and fused with 3 A glass fuses, TVS diodes and indicator LEDs throughout, 470 µF on +5V. Transcribed for edakit's tests.",
+  "purpose": {
+   "use": "private",
+   "market": "EU",
+   "notes": "A hobby controller its author builds and publishes for others to build for themselves (README, CONTRIBUTING.md). The transcription is a test of edakit, not a product."
+  },
+  "conventions": {
+   "pin_reference": "'<designator>.<pin>' with the pin numbers of the LCSC parts' entries – the EasyEDA symbols where there is one (A1: J3 in the EasyEDA order, see its notes; the green KT-0805G LEDs 1 = A, 2 = K)",
+   "v": "per net: [min, max] in V over all intended operating states – the IRM-60-5's 5 V ± 2.5 %, the supply wires reversed",
+   "source": "atoomnetmarc/ADLSC at 3aecf18, Kicad/ADLSC.kicad_sch (V1.0, 2025-01-05), https://github.com/atoomnetmarc/ADLSC"
+  },
+  "cables": [],
+  "layout": {},
+  "locks": {},
+  "components": [
+   {
+    "designator": "A1",
+    "type": "module",
+    "label": "ESP32-DevKitC with ESP32-WROVER-E, plugged into 2 × 19 sockets",
+    "part": "ESP32-DEVKITC-VE",
+    "lcsc": "C20437001",
+    "pins": {
+     "1": "3V3",
+     "2": "EN",
+     "3": "VP",
+     "4": "VN",
+     "5": "IO34",
+     "6": "IO35",
+     "7": "IO32",
+     "8": "IO33",
+     "9": "IO25",
+     "10": "IO26",
+     "11": "IO27",
+     "12": "IO14",
+     "13": "IO12",
+     "14": "GND",
+     "15": "IO13",
+     "16": "D2",
+     "17": "D3",
+     "18": "CMD",
+     "19": "5V",
+     "20": "GND",
+     "21": "IO23",
+     "22": "IO22",
+     "23": "TX",
+     "24": "RX",
+     "25": "IO21",
+     "26": "GND",
+     "27": "IO19",
+     "28": "IO18",
+     "29": "IO5",
+     "30": "IO17",
+     "31": "IO16",
+     "32": "IO4",
+     "33": "IO0",
+     "34": "IO2",
+     "35": "IO15",
+     "36": "D1",
+     "37": "D0",
+     "38": "CLK"
+    },
+    "nc": [
+     "1",
+     "3",
+     "4",
+     "5",
+     "6",
+     "7",
+     "8",
+     "11",
+     "12",
+     "13",
+     "15",
+     "16",
+     "17",
+     "18",
+     "21",
+     "22",
+     "23",
+     "24",
+     "25",
+     "27",
+     "28",
+     "29",
+     "30",
+     "31",
+     "33",
+     "34",
+     "35",
+     "36",
+     "37",
+     "38"
+    ],
+    "notes": "ADLSC's symbol numbers J3 from CLK (20) to GND (38); the EasyEDA symbol of C20437001 from GND (20) to CLK (38) – the pins are written in the latter. 3V3, IO5, IO18, IO19, IO21, IO22, IO23 go only to the Pmod positions J2/J5 and R4, R6, R7, R9, R13, R17, which the schematic marks not fitted: nc here."
+   },
+   {
+    "designator": "C1",
+    "type": "capacitor",
+    "label": "U2 decoupling 100 nF",
+    "part": "CC0805KRX7R9BB104",
+    "lcsc": "C49678",
+    "pins": {
+     "1": "1",
+     "2": "2"
+    },
+    "nc": [],
+    "value": "100nF"
+   },
+   {
+    "designator": "C2",
+    "type": "capacitor",
+    "label": "+5V bulk 470 µF / 16 V",
+    "part": "RVT1C471M1010",
+    "lcsc": "C32685",
+    "pins": {
+     "1": "1",
+     "2": "2"
+    },
+    "nc": [],
+    "value": "470uF"
+   },
+   {
+    "designator": "C3",
+    "type": "capacitor",
+    "label": "gate–source 100 nF of Q2 and Q4",
+    "part": "CC0805KRX7R9BB104",
+    "lcsc": "C49678",
+    "pins": {
+     "1": "1",
+     "2": "2"
+    },
+    "nc": [],
+    "value": "100nF"
+   },
+   {
+    "designator": "D1",
+    "type": "led",
+    "label": "red: supply reversed",
+    "part": "NCD0805R1",
+    "lcsc": "C84256",
+    "pins": {
+     "1": "-",
+     "2": "+"
+    },
+    "nc": []
+   },
+   {
+    "designator": "D2",
+    "type": "led",
+    "label": "green: 5 V input present",
+    "part": "KT-0805G",
+    "lcsc": "C2297",
+    "pins": {
+     "1": "A",
+     "2": "K"
+    },
+    "nc": []
+   },
+   {
+    "designator": "D3",
+    "type": "led",
+    "label": "red: polyfuse F1 tripped",
+    "part": "NCD0805R1",
+    "lcsc": "C84256",
+    "pins": {
+     "1": "-",
+     "2": "+"
+    },
+    "nc": []
+   },
+   {
+    "designator": "D4",
+    "type": "diode",
+    "label": "TVS at the 5 V input (SMBJ5.0CA)",
+    "part": "SMBJ5.0CA",
+    "lcsc": "C83323",
+    "pins": {
+     "1": "K",
+     "2": "A"
+    },
+    "nc": [],
+    "notes": "Bidirectional: the entry's pin 1 on the protected line, whichever pad the drawing gives it."
+   },
+   {
+    "designator": "D5",
+    "type": "diode",
+    "label": "TVS on +5V (SMBJ5.0CA)",
+    "part": "SMBJ5.0CA",
+    "lcsc": "C83323",
+    "pins": {
+     "1": "K",
+     "2": "A"
+    },
+    "nc": [],
+    "notes": "Bidirectional: the entry's pin 1 on the protected line, whichever pad the drawing gives it."
+   },
+   {
+    "designator": "D6",
+    "type": "led",
+    "label": "green: LED output 1 powered",
+    "part": "KT-0805G",
+    "lcsc": "C2297",
+    "pins": {
+     "1": "A",
+     "2": "K"
+    },
+    "nc": []
+   },
+   {
+    "designator": "D7",
+    "type": "diode",
+    "label": "TVS on LED output 1 (SMBJ5.0CA)",
+    "part": "SMBJ5.0CA",
+    "lcsc": "C83323",
+    "pins": {
+     "1": "K",
+     "2": "A"
+    },
+    "nc": [],
+    "notes": "Bidirectional: the entry's pin 1 on the protected line, whichever pad the drawing gives it."
+   },
+   {
+    "designator": "D8",
+    "type": "led",
+    "label": "red: fuse F2 blown",
+    "part": "NCD0805R1",
+    "lcsc": "C84256",
+    "pins": {
+     "1": "-",
+     "2": "+"
+    },
+    "nc": []
+   },
+   {
+    "designator": "D9",
+    "type": "led",
+    "label": "green: DATA1 activity",
+    "part": "KT-0805G",
+    "lcsc": "C2297",
+    "pins": {
+     "1": "A",
+     "2": "K"
+    },
+    "nc": []
+   },
+   {
+    "designator": "D10",
+    "type": "led",
+    "label": "green: DATA2 activity",
+    "part": "KT-0805G",
+    "lcsc": "C2297",
+    "pins": {
+     "1": "A",
+     "2": "K"
+    },
+    "nc": []
+   },
+   {
+    "designator": "D11",
+    "type": "led",
+    "label": "red: fuse F3 blown",
+    "part": "NCD0805R1",
+    "lcsc": "C84256",
+    "pins": {
+     "1": "-",
+     "2": "+"
+    },
+    "nc": []
+   },
+   {
+    "designator": "D12",
+    "type": "led",
+    "label": "green: LED output 2 powered",
+    "part": "KT-0805G",
+    "lcsc": "C2297",
+    "pins": {
+     "1": "A",
+     "2": "K"
+    },
+    "nc": []
+   },
+   {
+    "designator": "D13",
+    "type": "diode",
+    "label": "TVS on LED output 2 (SMBJ5.0CA)",
+    "part": "SMBJ5.0CA",
+    "lcsc": "C83323",
+    "pins": {
+     "1": "K",
+     "2": "A"
+    },
+    "nc": [],
+    "notes": "Bidirectional: the entry's pin 1 on the protected line, whichever pad the drawing gives it."
+   },
+   {
+    "designator": "D14",
+    "type": "diode",
+    "label": "+5V to the DevKitC's 5V pin (SS34): no back-feed from its USB",
+    "part": "SS34",
+    "lcsc": "C8678",
+    "pins": {
+     "1": "K",
+     "2": "A"
+    },
+    "nc": []
+   },
+   {
+    "designator": "F1",
+    "type": "fuse",
+    "label": "polyfuse 0.5 A for the logic",
+    "part": "SMD1812P050TF/30",
+    "lcsc": "C492015",
+    "pins": {
+     "1": "1",
+     "2": "2"
+    },
+    "nc": []
+   },
+   {
+    "designator": "F2",
+    "type": "fuse",
+    "label": "LED output 1: T3AL250V 5 × 20 mm in clips",
+    "part": "0239003.MXP",
+    "lcsc": "C142824",
+    "pins": {
+     "1": "1",
+     "2": "2"
+    },
+    "nc": []
+   },
+   {
+    "designator": "F3",
+    "type": "fuse",
+    "label": "LED output 2: T3AL250V 5 × 20 mm in clips",
+    "part": "0239003.MXP",
+    "lcsc": "C142824",
+    "pins": {
+     "1": "1",
+     "2": "2"
+    },
+    "nc": []
+   },
+   {
+    "designator": "J1",
+    "type": "connector",
+    "label": "5 V input from the Mean Well IRM-60-5ST",
+    "part": "1824810000",
+    "lcsc": "C6368244",
+    "pins": {
+     "1": "1",
+     "2": "2"
+    },
+    "nc": [],
+    "source": "reversible",
+    "notes": "Push-in terminal for the wires from the 5 V supply: they can be swapped – ADLSC's README tests it.",
+    "off_board": true
+   },
+   {
+    "designator": "J3",
+    "type": "connector",
+    "label": "LED power output 1 (+5V_LED1, GND)",
+    "part": "1824810000",
+    "lcsc": "C6368244",
+    "pins": {
+     "1": "1",
+     "2": "2"
+    },
+    "nc": [],
+    "off_board": true
+   },
+   {
+    "designator": "J4",
+    "type": "connector",
+    "label": "LED data outputs (DATA1, DATA2)",
+    "part": "1824810000",
+    "lcsc": "C6368244",
+    "pins": {
+     "1": "1",
+     "2": "2"
+    },
+    "nc": [],
+    "off_board": true
+   },
+   {
+    "designator": "J6",
+    "type": "connector",
+    "label": "LED power output 2 (+5V_LED2, GND)",
+    "part": "1824810000",
+    "lcsc": "C6368244",
+    "pins": {
+     "1": "1",
+     "2": "2"
+    },
+    "nc": [],
+    "off_board": true
+   },
+   {
+    "designator": "Q1",
+    "type": "transistor",
+    "label": "reverse-polarity protection in the ground return (AOD442)",
+    "part": "AOD442",
+    "lcsc": "C87617",
+    "pins": {
+     "1": "G",
+     "2": "D",
+     "3": "S"
+    },
+    "nc": []
+   },
+   {
+    "designator": "Q2",
+    "type": "transistor",
+    "label": "LED power switch, output 1 (TSM160P02CS)",
+    "part": "TSM160P02CS RLG",
+    "lcsc": "C3279959",
+    "pins": {
+     "1": "S",
+     "2": "S",
+     "3": "S",
+     "4": "G",
+     "5": "D",
+     "6": "D",
+     "7": "D",
+     "8": "D"
+    },
+    "nc": []
+   },
+   {
+    "designator": "Q3",
+    "type": "transistor",
+    "label": "gate driver of Q2 and Q4 from POWER_ON (MMBT2222)",
+    "part": "MMBT2222LT1G",
+    "lcsc": "C43496",
+    "pins": {
+     "1": "B",
+     "2": "E",
+     "3": "C"
+    },
+    "nc": []
+   },
+   {
+    "designator": "Q4",
+    "type": "transistor",
+    "label": "LED power switch, output 2 (TSM160P02CS)",
+    "part": "TSM160P02CS RLG",
+    "lcsc": "C3279959",
+    "pins": {
+     "1": "S",
+     "2": "S",
+     "3": "S",
+     "4": "G",
+     "5": "D",
+     "6": "D",
+     "7": "D",
+     "8": "D"
+    },
+    "nc": []
+   },
+   {
+    "designator": "R1",
+    "type": "resistor",
+    "label": "D1 220 Ω",
+    "part": "0805W8F2200T5E",
+    "lcsc": "C17557",
+    "pins": {
+     "1": "1",
+     "2": "2"
+    },
+    "nc": [],
+    "value": "220"
+   },
+   {
+    "designator": "R2",
+    "type": "resistor",
+    "label": "D2 10 kΩ",
+    "part": "0805W8F1002T5E",
+    "lcsc": "C17414",
+    "pins": {
+     "1": "1",
+     "2": "2"
+    },
+    "nc": [],
+    "value": "10k"
+   },
+   {
+    "designator": "R3",
+    "type": "resistor",
+    "label": "D3 220 Ω across F1",
+    "part": "0805W8F2200T5E",
+    "lcsc": "C17557",
+    "pins": {
+     "1": "1",
+     "2": "2"
+    },
+    "nc": [],
+    "value": "220"
+   },
+   {
+    "designator": "R5",
+    "type": "resistor",
+    "label": "MAX809 RESET to EN 100 Ω",
+    "part": "0805W8F1000T5E",
+    "lcsc": "C17408",
+    "pins": {
+     "1": "1",
+     "2": "2"
+    },
+    "nc": [],
+    "value": "100"
+   },
+   {
+    "designator": "R8",
+    "type": "resistor",
+    "label": "DATA1_3V pull-down 10 kΩ",
+    "part": "0805W8F1002T5E",
+    "lcsc": "C17414",
+    "pins": {
+     "1": "1",
+     "2": "2"
+    },
+    "nc": [],
+    "value": "10k"
+   },
+   {
+    "designator": "R10",
+    "type": "resistor",
+    "label": "D6 10 kΩ",
+    "part": "0805W8F1002T5E",
+    "lcsc": "C17414",
+    "pins": {
+     "1": "1",
+     "2": "2"
+    },
+    "nc": [],
+    "value": "10k"
+   },
+   {
+    "designator": "R11",
+    "type": "resistor",
+    "label": "D8 220 Ω across F2",
+    "part": "0805W8F2200T5E",
+    "lcsc": "C17557",
+    "pins": {
+     "1": "1",
+     "2": "2"
+    },
+    "nc": [],
+    "value": "220"
+   },
+   {
+    "designator": "R12",
+    "type": "resistor",
+    "label": "DATA1 series 100 Ω",
+    "part": "0805W8F1000T5E",
+    "lcsc": "C17408",
+    "pins": {
+     "1": "1",
+     "2": "2"
+    },
+    "nc": [],
+    "value": "100"
+   },
+   {
+    "designator": "R14",
+    "type": "resistor",
+    "label": "DATA2_3V pull-down 10 kΩ",
+    "part": "0805W8F1002T5E",
+    "lcsc": "C17414",
+    "pins": {
+     "1": "1",
+     "2": "2"
+    },
+    "nc": [],
+    "value": "10k"
+   },
+   {
+    "designator": "R15",
+    "type": "resistor",
+    "label": "D9 10 kΩ",
+    "part": "0805W8F1002T5E",
+    "lcsc": "C17414",
+    "pins": {
+     "1": "1",
+     "2": "2"
+    },
+    "nc": [],
+    "value": "10k"
+   },
+   {
+    "designator": "R16",
+    "type": "resistor",
+    "label": "DATA2 series 100 Ω",
+    "part": "0805W8F1000T5E",
+    "lcsc": "C17408",
+    "pins": {
+     "1": "1",
+     "2": "2"
+    },
+    "nc": [],
+    "value": "100"
+   },
+   {
+    "designator": "R18",
+    "type": "resistor",
+    "label": "D10 10 kΩ",
+    "part": "0805W8F1002T5E",
+    "lcsc": "C17414",
+    "pins": {
+     "1": "1",
+     "2": "2"
+    },
+    "nc": [],
+    "value": "10k"
+   },
+   {
+    "designator": "R19",
+    "type": "resistor",
+    "label": "gate pull-up 10 kΩ of Q2 and Q4",
+    "part": "0805W8F1002T5E",
+    "lcsc": "C17414",
+    "pins": {
+     "1": "1",
+     "2": "2"
+    },
+    "nc": [],
+    "value": "10k"
+   },
+   {
+    "designator": "R20",
+    "type": "resistor",
+    "label": "gate resistor 100 Ω to Q3",
+    "part": "0805W8F1000T5E",
+    "lcsc": "C17408",
+    "pins": {
+     "1": "1",
+     "2": "2"
+    },
+    "nc": [],
+    "value": "100"
+   },
+   {
+    "designator": "R21",
+    "type": "resistor",
+    "label": "Q3 base 1 kΩ",
+    "part": "0805W8F1001T5E",
+    "lcsc": "C17513",
+    "pins": {
+     "1": "1",
+     "2": "2"
+    },
+    "nc": [],
+    "value": "1k"
+   },
+   {
+    "designator": "R22",
+    "type": "resistor",
+    "label": "D11 220 Ω across F3",
+    "part": "0805W8F2200T5E",
+    "lcsc": "C17557",
+    "pins": {
+     "1": "1",
+     "2": "2"
+    },
+    "nc": [],
+    "value": "220"
+   },
+   {
+    "designator": "R23",
+    "type": "resistor",
+    "label": "D12 10 kΩ",
+    "part": "0805W8F1002T5E",
+    "lcsc": "C17414",
+    "pins": {
+     "1": "1",
+     "2": "2"
+    },
+    "nc": [],
+    "value": "10k"
+   },
+   {
+    "designator": "U1",
+    "type": "ic",
+    "label": "5 V supervisor MAX809M: EN low below 4.38 V",
+    "part": "MAX809MTRG",
+    "lcsc": "C233679",
+    "pins": {
+     "1": "GND",
+     "2": "RESET#",
+     "3": "VCC"
+    },
+    "nc": []
+   },
+   {
+    "designator": "U2",
+    "type": "ic",
+    "label": "3.3 V → 5 V level shifter for the LED data (74AHCT125)",
+    "part": "74AHCT125D,118",
+    "lcsc": "C554502",
+    "pins": {
+     "1": "1OE#",
+     "2": "1A",
+     "3": "1Y",
+     "4": "2OE#",
+     "5": "2A",
+     "6": "2Y",
+     "7": "GND",
+     "8": "3Y",
+     "9": "3A",
+     "10": "3OE#",
+     "11": "4Y",
+     "12": "4A",
+     "13": "4OE#",
+     "14": "VCC"
+    },
+    "nc": [
+     "8",
+     "11"
+    ],
+    "notes": "Gates C and D unused: inputs 3A, 4A and enables to GND, outputs 3Y, 4Y open."
+   }
+  ],
+  "nets": [
+   {
+    "name": "+5V",
+    "pins": [
+     "C1.1",
+     "C2.1",
+     "D3.1",
+     "D5.1",
+     "D14.2",
+     "F1.2",
+     "U1.3",
+     "U2.14"
+    ],
+    "v": [
+     0,
+     5.125
+    ],
+    "notes": "behind the polyfuse F1: U1, U2, C2 and through D14 the DevKitC"
+   },
+   {
+    "name": "+5V_IN",
+    "pins": [
+     "C3.1",
+     "D4.1",
+     "F1.1",
+     "J1.2",
+     "Q1.1",
+     "Q2.1",
+     "Q2.2",
+     "Q2.3",
+     "Q4.1",
+     "Q4.2",
+     "Q4.3",
+     "R1.1",
+     "R2.1",
+     "R3.1",
+     "R19.1"
+    ],
+    "v": [
+     0,
+     5.125
+    ],
+    "notes": "the 5 V input behind the terminal J1, before the polyfuse; the LED outputs are switched from it"
+   },
+   {
+    "name": "0V_IN",
+    "pins": [
+     "D1.2",
+     "D4.2",
+     "J1.1",
+     "Q1.2"
+    ],
+    "v": [
+     -0.2,
+     5.125
+    ],
+    "notes": "the supply's minus, before Q1: reversed it carries the supply's plus (Q1 off, the board floats)"
+   },
+   {
+    "name": "GND",
+    "pins": [
+     "A1.14",
+     "A1.20",
+     "A1.26",
+     "C1.2",
+     "C2.2",
+     "D2.2",
+     "D5.2",
+     "D6.2",
+     "D7.2",
+     "D9.2",
+     "D10.2",
+     "D12.2",
+     "D13.2",
+     "J3.2",
+     "J6.2",
+     "Q1.3",
+     "Q3.2",
+     "R8.2",
+     "R14.2",
+     "U1.1",
+     "U2.1",
+     "U2.4",
+     "U2.7",
+     "U2.9",
+     "U2.10",
+     "U2.12",
+     "U2.13"
+    ],
+    "v": [
+     0,
+     0
+    ]
+   },
+   {
+    "name": "+5V_LED1",
+    "pins": [
+     "D7.1",
+     "D8.1",
+     "F2.2",
+     "J3.1",
+     "R10.1"
+    ],
+    "v": [
+     0,
+     5.125
+    ]
+   },
+   {
+    "name": "+5V_LED2",
+    "pins": [
+     "D11.1",
+     "D13.1",
+     "F3.2",
+     "J6.1",
+     "R23.1"
+    ],
+    "v": [
+     0,
+     5.125
+    ]
+   },
+   {
+    "name": "A1_5V",
+    "pins": [
+     "A1.19",
+     "D14.1"
+    ],
+    "v": [
+     0,
+     5.125
+    ],
+    "notes": "the DevKitC's 5V pin (EXT_5V) behind the Schottky D14"
+   },
+   {
+    "name": "D10_A",
+    "pins": [
+     "D10.1",
+     "R18.2"
+    ],
+    "v": [
+     0,
+     5.125
+    ]
+   },
+   {
+    "name": "D11_A",
+    "pins": [
+     "D11.2",
+     "R22.2"
+    ],
+    "v": [
+     0,
+     5.125
+    ]
+   },
+   {
+    "name": "D12_A",
+    "pins": [
+     "D12.1",
+     "R23.2"
+    ],
+    "v": [
+     0,
+     5.125
+    ]
+   },
+   {
+    "name": "D1_K",
+    "pins": [
+     "D1.1",
+     "R1.2"
+    ],
+    "v": [
+     0,
+     5.125
+    ]
+   },
+   {
+    "name": "D2_A",
+    "pins": [
+     "D2.1",
+     "R2.2"
+    ],
+    "v": [
+     0,
+     5.125
+    ]
+   },
+   {
+    "name": "D3_A",
+    "pins": [
+     "D3.2",
+     "R3.2"
+    ],
+    "v": [
+     0,
+     5.125
+    ]
+   },
+   {
+    "name": "D6_A",
+    "pins": [
+     "D6.1",
+     "R10.2"
+    ],
+    "v": [
+     0,
+     5.125
+    ]
+   },
+   {
+    "name": "D8_A",
+    "pins": [
+     "D8.2",
+     "R11.2"
+    ],
+    "v": [
+     0,
+     5.125
+    ]
+   },
+   {
+    "name": "D9_A",
+    "pins": [
+     "D9.1",
+     "R15.2"
+    ],
+    "v": [
+     0,
+     5.125
+    ]
+   },
+   {
+    "name": "DATA1",
+    "pins": [
+     "J4.1",
+     "R12.2",
+     "R15.1"
+    ],
+    "v": [
+     0,
+     5.125
+    ]
+   },
+   {
+    "name": "DATA1_3V",
+    "pins": [
+     "A1.9",
+     "R8.1",
+     "U2.2"
+    ],
+    "v": [
+     0,
+     3.4
+    ],
+    "notes": "GPIO25 (WLED's data GPIO), pulled down by R8"
+   },
+   {
+    "name": "DATA2",
+    "pins": [
+     "J4.2",
+     "R16.2",
+     "R18.1"
+    ],
+    "v": [
+     0,
+     5.125
+    ]
+   },
+   {
+    "name": "DATA2_3V",
+    "pins": [
+     "A1.10",
+     "R14.1",
+     "U2.5"
+    ],
+    "v": [
+     0,
+     3.4
+    ],
+    "notes": "GPIO26: the second LED data line (or the clock of an APA102-type strip)"
+   },
+   {
+    "name": "POWER_ON",
+    "pins": [
+     "A1.32",
+     "R21.2"
+    ],
+    "v": [
+     0,
+     3.4
+    ],
+    "notes": "GPIO4: WLED's relay GPIO – high switches Q3 on, Q2 and Q4 on"
+   },
+   {
+    "name": "Q2_D",
+    "pins": [
+     "F2.1",
+     "Q2.5",
+     "Q2.6",
+     "Q2.7",
+     "Q2.8",
+     "R11.1"
+    ],
+    "v": [
+     0,
+     5.125
+    ]
+   },
+   {
+    "name": "Q2_G",
+    "pins": [
+     "C3.2",
+     "Q2.4",
+     "Q4.4",
+     "R19.2",
+     "R20.2"
+    ],
+    "v": [
+     0,
+     5.125
+    ]
+   },
+   {
+    "name": "Q3_B",
+    "pins": [
+     "Q3.1",
+     "R21.1"
+    ],
+    "v": [
+     0,
+     3.4
+    ]
+   },
+   {
+    "name": "Q3_C",
+    "pins": [
+     "Q3.3",
+     "R20.1"
+    ],
+    "v": [
+     0,
+     5.125
+    ]
+   },
+   {
+    "name": "Q4_D",
+    "pins": [
+     "F3.1",
+     "Q4.5",
+     "Q4.6",
+     "Q4.7",
+     "Q4.8",
+     "R22.1"
+    ],
+    "v": [
+     0,
+     5.125
+    ]
+   },
+   {
+    "name": "RESET",
+    "pins": [
+     "A1.2",
+     "R5.2"
+    ],
+    "v": [
+     0,
+     5.125
+    ],
+    "notes": "the MAX809's push-pull RESET through R5 to the DevKitC's EN – high at its own supply, +5V"
+   },
+   {
+    "name": "U1_RESET",
+    "pins": [
+     "R5.1",
+     "U1.2"
+    ],
+    "v": [
+     0,
+     5.125
+    ]
+   },
+   {
+    "name": "U2_1Y",
+    "pins": [
+     "R12.1",
+     "U2.3"
+    ],
+    "v": [
+     0,
+     5.125
+    ]
+   },
+   {
+    "name": "U2_2Y",
+    "pins": [
+     "R16.1",
+     "U2.6"
+    ],
+    "v": [
+     0,
+     5.125
+    ]
+   }
+  ]
+ }
+}

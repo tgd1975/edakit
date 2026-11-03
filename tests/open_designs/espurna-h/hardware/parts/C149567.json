@@ -1,0 +1,54 @@
+{
+ "lcsc": "C149567",
+ "mpn": "WSL25121L000FEA18",
+ "manufacturer": "Vishay Intertech",
+ "kind": "resistor",
+ "package": "2512",
+ "footprint": "R2512",
+ "jlc_class": "Extended Part",
+ "datasheet": {
+  "url": "https://datasheet.lcsc.com/datasheet/pdf/45f37f78b4dcafe2218302bf29327f6f.pdf?productCode=C149567",
+  "pinout_page": null
+ },
+ "pins": {
+  "1": {
+   "name": "1",
+   "type": "passive",
+   "role": "1"
+  },
+  "2": {
+   "name": "2",
+   "type": "passive",
+   "role": "2"
+  }
+ },
+ "values": {
+  "value_ohm": 0.001,
+  "tolerance": 0.01
+ },
+ "limits": {
+  "p_max_w": 2.0,
+  "t_min_c": -65,
+  "t_max_c": 170
+ },
+ "spice": {},
+ "sources": [
+  "Vishay Dale WSL...18 High Power, Power Metal Strip resistors, document 31057, revision 16-May-2018, LCSC's copy https://datasheet.lcsc.com/datasheet/pdf/45f37f78b4dcafe2218302bf29327f6f.pdf?productCode=C149567, read 2026-11-03",
+  "global part number WSL2512 1L000 F EA 18: 2512, 0.001 Ω, ±1 %, lead-free tape and reel, high power option",
+  "standard electrical specifications: WSL2512...18 2.0 W at 70 °C, 0.0005 … 0.04 Ω at ±1 %; operating temperature −65 … +170 °C",
+  "maximum working voltage (P × R)^½: 'the WSL is not voltage sensitive, but is limited by power' – no v_max_v entered, the power holds it",
+  "pins 1, 2 as a chip resistor's"
+ ],
+ "verified": {
+  "by": "Claude (datasheet check, open-design transcription)",
+  "date": "2026-11-03",
+  "datasheet": "Vishay WSL...18 High Power, document 31057 (2018-05-16)",
+  "datasheet_sha256": "d9fda1b8212aa87428adb4d397a352c63c82c0c6a882148a5275dd79f624f7c3",
+  "checked": [
+   "value, tolerance and power from the part number and the specification table"
+  ],
+  "open": [
+   "the schematic names '0.001R' in 2512; the BOM links an unnamed AliExpress shunt – this Vishay part stands in"
+  ]
+ }
+}

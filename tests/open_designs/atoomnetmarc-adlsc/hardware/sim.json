@@ -1,0 +1,113 @@
+{
+ "about": "The Mean Well IRM-60-5ST the ADLSC README names feeds J1; WLED's current limit of 5 A (README) shared by the two LED outputs, and the 3 A of the two fuses; the ESP32 at its TX peak. Values with 'note' are assumptions.",
+ "ambient_c": 25,
+ "sources": {
+  "J1": {
+   "plus": "2",
+   "minus": "1",
+   "r_ohm": 0.02,
+   "i_max_a": 10,
+   "note": "Mean Well IRM-60-5: 5 V, 10 A rated, voltage tolerance ±2.5 % including line and load regulation (IRM-60 specification, LCSC copy of C6969430, read 2026-11-03); r_ohm: two 0.5 m wires of AWG 18, the README's least gauge – the length is an assumption"
+  }
+ },
+ "supplies": {
+  "psu-min": {
+   "J1": 4.875
+  },
+  "psu-nom": {
+   "J1": 5.0
+  },
+  "psu-max": {
+   "J1": 5.125
+  }
+ },
+ "loads": {
+  "standby": {
+   "about": "WLED runs, the LED power off (POWER_ON low), the data lines low",
+   "gpio": {
+    "DATA1_3V": 0,
+    "DATA2_3V": 0,
+    "POWER_ON": 0
+   },
+   "leds_on": [
+    "D2"
+   ]
+  },
+  "wled_5a": {
+   "about": "the LED power on, WLED's current limit of 5 A (README: 'Current limit to 5A') shared by the two outputs, the data lines high",
+   "gpio": {
+    "DATA1_3V": 1,
+    "DATA2_3V": 1,
+    "POWER_ON": 1
+   },
+   "leds_on": [
+    "D2",
+    "D6",
+    "D12"
+   ],
+   "external": {
+    "J3": {
+     "plus": "1",
+     "minus": "2",
+     "i_a": 2.5
+    },
+    "J6": {
+     "plus": "1",
+     "minus": "2",
+     "i_a": 2.5
+    }
+   },
+   "note": "an even split between the two sections is an assumption; the 80 × 8 matrix the README configures draws 35 A at full white – WLED's limit keeps it at 5 A"
+  },
+  "fuses_3a": {
+   "about": "each LED output at its fuse's rating, 3 A – the README sizes the fuses as (10 A − 1 A) / 3 for the 10 A supply",
+   "gpio": {
+    "DATA1_3V": 1,
+    "DATA2_3V": 1,
+    "POWER_ON": 1
+   },
+   "leds_on": [
+    "D2",
+    "D6",
+    "D12"
+   ],
+   "external": {
+    "J3": {
+     "plus": "1",
+     "minus": "2",
+     "i_a": 3.0
+    },
+    "J6": {
+     "plus": "1",
+     "minus": "2",
+     "i_a": 3.0
+    }
+   }
+  }
+ },
+ "corners": [
+  "min",
+  "max"
+ ],
+ "mcu": {
+  "A1": {
+   "outputs": [
+    "DATA1_3V",
+    "DATA2_3V",
+    "POWER_ON"
+   ],
+   "pullups": [],
+   "pullup_ohm": 45000,
+   "note": "WLED drives the LED data on GPIO25 (and GPIO26) and the LED power on GPIO4 (README, Firmware and ESP32 pins)"
+  }
+ },
+ "report": [
+  "+5V_IN",
+  "0V_IN",
+  "+5V",
+  "A1_5V",
+  "+5V_LED1",
+  "+5V_LED2",
+  "RESET"
+ ]
+}
