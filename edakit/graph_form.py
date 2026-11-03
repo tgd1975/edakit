@@ -117,6 +117,12 @@ def keyed(graph):
     return out
 
 
+def sources(cfg):
+    """What a resolved graph is generated from, as a message names it: a TOML graph – and a .circuit one where the
+    project switches the explorative DSL on ([beta] dsl = true)."""
+    return "a TOML or a .circuit graph" if getattr(cfg, "dsl", False) else "a TOML graph"
+
+
 def drift(cfg):
     """What differs between the generated graph.json and what the source resolves to now, compared canonically – None
     when it is current, not written (the hook's --check says so; language 12, item 16) or the graph is JSON, the source
@@ -148,7 +154,7 @@ def main_json(cfg, args):
     if args.check:
         if out is None:
             print(f"{cfg.relative(cfg.graph)} is the graph – nothing is generated from a JSON graph (edakit graph json "
-                  "--check checks the file beside a TOML or a .circuit graph)")
+                  f"--check checks the file beside {sources(cfg)})")
             return 0
         rel = cfg.relative(out)
         if not out.exists():
@@ -178,7 +184,7 @@ def main_json(cfg, args):
     if args.write:
         if out is None:
             print(f"edakit graph json: {cfg.relative(cfg.graph)} is the graph itself – --write writes the file beside "
-                  "a TOML or a .circuit graph, never over a JSON one", file=sys.stderr)
+                  f"{sources(cfg)}, never over a JSON one", file=sys.stderr)
             return 1
         text = render(g, indent_of(out))
         same = out.exists() and out.read_text(encoding="utf-8") == text

@@ -135,6 +135,16 @@ def test_the_dsl_s_words_open_the_dsl_s_parser():
                                            ["graph", "convert", "--to=toml"], ["graph", "json", "--map", "m"],
                                            ["block", "add", "led", "--set", "i=4mA"]))
 
+
+def test_graph_json_of_a_json_project_says_what_main_says(project, capsys):
+    toml = str(project.root / "edakit.toml")
+    assert cli.main(["graph", "json", "--check", "--config", toml]) == 0
+    assert cli.main(["graph", "json", "--write", "--config", toml]) == 1
+    out = capsys.readouterr()
+    assert "(edakit graph json --check checks the file beside a TOML graph)" in out.out
+    assert "--write writes the file beside a TOML graph, never over a JSON one" in out.err
+    assert ".circuit" not in out.out + out.err
+
 def test_the_language_server_answers_one_line_without_the_switch(tmp_path):
     from edakit.lang import server
     f = tmp_path / "x.circuit"
