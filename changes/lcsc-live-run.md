@@ -1,2 +1,0 @@
-patch
-- `edakit order check` finds a number written with its unit right after it, as LCSC's cart writes the weight ("1,500g"); before, ORDER.basket reported the weight as not in the page text. The LCSC profile is recorded (2026-11-03) with the BOM tool's steps "Create BOM" and the dialog of "Add to Cart" (keys `mapping`, `cart_dialog`), "Submit BOM" and "Secure Checkout" among the buttons never pressed; the skill cart's mode parts follows them.
