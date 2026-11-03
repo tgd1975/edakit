@@ -1,5 +1,8 @@
 # Editors for the circuit language
 
+The circuit language is the explorative DSL, a beta that a project switches on with `[beta] dsl = true`
+([docs/dsl/](../docs/dsl/README.md)).
+
 The circuit language's sources – `hardware/graph.circuit` and the files it includes, `edakit/blocks/*.circuit` – are
 plain text; any editor reads them. For VS Code:
 
@@ -8,7 +11,7 @@ plain text; any editor reads them. For VS Code:
   designators, quantities with units (`0..5.5 V`, `4k7`), codes (`LIM.v`), `(locked)` and `{n}` in a loop.
 - `vscode/language-configuration.json` – `#` line comments, brackets, quotes closed as they are opened.
 - `vscode/package.json`, `vscode/src/extension.ts` – the extension: the client of `edakit lsp`, the commands and
-  tasks of `edakit graph`; `npm ci && npm run compile` builds it (handbook 20.12).
+  tasks of `edakit graph`; `npm ci && npm run compile` builds it (docs/dsl/editor.md).
 
 The grammar is generated from the reader's keywords and the attribute table; `tests/test_lang_grammar.py` holds it
 to them. GitHub shows `.circuit` files as plain text: a project may lend them another language's colours with a line

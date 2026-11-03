@@ -86,9 +86,12 @@ def test_the_check_exit_codes(project, capsys):
     assert cli.main(args) == 0
 
 
-def test_files_named_need_no_project(tmp_path, capsys):
+def test_files_named_are_formatted_where_their_project_switches_the_dsl_on(tmp_path, capsys):
     f = tmp_path / "x.circuit"
     f.write_text("part  R1 resistor X\n")
+    assert cli.main(["graph", "fmt", "--check", str(f)]) == 1                 # no project: the beta is not on
+    assert "[beta] dsl = true" in capsys.readouterr().err and f.read_text() == "part  R1 resistor X\n"
+    (tmp_path / "edakit.toml").write_text('[project]\nname = "x"\n\n[beta]\ndsl = true\n')
     assert cli.main(["graph", "fmt", "--check", str(f)]) == 2
     assert cli.main(["graph", "fmt", str(f)]) == 0 and f.read_text() == "part R1 resistor X\n"
 

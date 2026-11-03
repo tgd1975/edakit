@@ -191,7 +191,7 @@ def test_a_circuit_graph_is_checked_as_a_toml_one(tmp_path):
     graph json --check, as a TOML one does; a JSON one does not."""
     root = _repo(tmp_path)
     (root / "edakit.toml").write_text('[project]\nname = "a"\ngraph = "hardware/graph.circuit"\n\n[boards.main]\n'
-                                      'template = "t"\n')
+                                      'template = "t"\n\n[beta]\ndsl = true\n')
     (root / "hardware").mkdir()
     (root / "hardware" / "graph.circuit").write_text("graph a\n")
     [c] = h.configs(root)

@@ -4,6 +4,7 @@
 
 [table]
 about = "E-series of preferred numbers for resistors and capacitors: E6, E12, E24, E96"
+beta = "dsl"                 # the explorative DSL's: not on the catalog's page of tables
 source = "IEC 60063:2015, the series as tabulated in the Python package eseries 1.2.1 (Sixty North AS, MIT), eseries/eseries.py, _E"
 tag = "r"
 

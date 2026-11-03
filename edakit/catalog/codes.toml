@@ -55,6 +55,7 @@ decides = "documents and requirements quote the design"
 [engines.DEF]
 prefix = "DEF"
 decides = "every derived value is the value its record derives"
+beta = "dsl"                 # the explorative DSL's: out of the catalog, the handbook and `edakit rules` (edakit/beta.py)
 
 [engines.HINT]
 prefix = "HINT"
@@ -830,20 +831,21 @@ details = [
 ]
 replaces = []
 sources = [
-  "docs/concepts/done/circuit-dsl-language.md, section 7",
-  "docs/concepts/done/circuit-dsl-toolchain.md, T.8",
+  "docs/concepts/new/circuit-dsl-language.md, section 7",
+  "docs/concepts/new/circuit-dsl-toolchain.md, T.8",
 ]
 
 [codes."SYNC.graph"]
 title = "the resolved graph current"
-rule = "Beside a TOML or a .circuit graph the generated graph.json is what the source resolves to now, with the parts entries as they are."
+beta = "dsl"
+rule = "In a project with the explorative DSL switched on, beside a TOML or a .circuit graph the generated graph.json is what the source resolves to now, with the parts entries as they are."
 why = "Scripts, the firmware and a reviewer's diff read the generated file; one written before a change describes the old circuit, and the pre-commit hook is not the only way a file reaches a commit."
 fix = "edakit graph json --write writes it again; commit it with the source (handbook 3.1)."
 severity = "error"
 replaces = []
 sources = [
   "edakit handbook 3.1, The JSON generated beside a TOML graph",
-  "docs/concepts/done/circuit-dsl-language.md, section 8 and item 16",
+  "docs/concepts/new/circuit-dsl-language.md, section 8 and item 16",
 ]
 
 [codes."SYNC.agents"]

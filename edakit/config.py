@@ -126,6 +126,8 @@ ORDER = {
 ORDER_KEYS = tuple(ORDER)                       # [order] (FILES.order)
 BOARD_ONLY = ("tab_zones", "size_mm", "layers")  # [order] keys of a board file only, not of edakit.toml
 FIRMWARE_KEYS = ("mcu", "out", "gpio")    # [firmware]: the board's firmware contract (edakit firmware), opt-in
+BETA_KEYS = ("dsl",)   # [beta]: what is switched on before it is part of edakit – dsl, the explorative DSL (docs/dsl/)
+DSL_DOC = "docs/dsl/README.md"
 DOCS_KEYS = ("files", "decimal")                     # [docs]: Markdown files with quoted values (edakit docs, DOCS.quote)
 
 # [scripts.<name>]: a project script that touches edakit's flow – what it reads and writes; edakit/scripts.py
@@ -279,6 +281,7 @@ class Config:
     toolchain: str = "easyeda"                 # [project] toolchain: "easyeda" or "kicad" (edakit/toolchain)
     edakit: str | None = None                  # [project] edakit: the edakit the project needs, ">=0.4" (STRUCT.edakit)
     parts_dirs: list = field(default_factory=list)   # [project] parts as a list (a variant): its folders, the own first
+    dsl: bool = False                          # [beta] dsl: the explorative DSL – the circuit language – switched on
     order: dict = field(default_factory=dict)  # [order] of edakit.toml: the project's order keys for every board
     cart: dict | None = None                   # [cart] with its defaults (makers.cart); "given": the table is there
 
@@ -939,6 +942,27 @@ def _parts(p, root):
     return [Path(n) if Path(n).is_absolute() else root / n for n in names], []
 
 
+def _beta(beta, p, requirements):
+    """[beta]: (dsl, problems). The explorative DSL is read only where `dsl = true` switches it on: without it a
+    `.circuit` graph or requirements file and a list of parts folders – a variant's – are refused, the project is
+    edakit's JSON or TOML one."""
+    if not isinstance(beta, dict):
+        return False, ["[beta]: a table, e.g. [beta] dsl = true"]
+    problems = _unknown("[beta]", beta, BETA_KEYS)
+    dsl = beta.get("dsl", False)
+    if not isinstance(dsl, bool):
+        problems.append("[beta] dsl: true or false")
+        dsl = False
+    if not dsl:
+        why = f"the explorative DSL, a beta – edakit reads it with [beta] dsl = true ({DSL_DOC})"
+        if str(p.get("graph", "")).endswith(".circuit"):
+            problems.append(f"[project] graph: {p['graph']} is {why}")
+        if isinstance(p.get("parts"), list):
+            problems.append(f'[project] parts: a path, e.g. "hardware/parts" – a list of folders is {why}')
+        problems += [f"[project] requirements: {r.name} is {why}" for r in requirements if r.suffix == ".circuit"]
+    return dsl, problems
+
+
 def _requirements(p, root):
     """[project] requirements: the requirements file of `edakit req` – a path, or a list of paths: a variant names the
     main project's file and its own. Relative to edakit.toml. Returns (paths, problems); without the key no file."""
@@ -982,7 +1006,7 @@ def load(path=None) -> Config:
 
     moved = _one_file_form(raw, path.name)
     problems = _unknown(path.name, raw, ("project", "boards", "release", "cost", "extra", "firmware", "docs",
-                                         "scripts", "agents", "order", "cart"),
+                                         "scripts", "agents", "order", "cart", "beta"),
                         ("schematic", "checks", "net_classes", "sim"))
     problems += _unknown("[project]", p, PROJECT_KEYS, ("ground",))
     problems += _unknown("[release]", raw.get("release", {}), RELEASE_KEYS, ("signoff",))
@@ -995,6 +1019,8 @@ def load(path=None) -> Config:
     requirements, bad = _requirements(p, root)
     problems += bad
     parts_dirs, bad = _parts(p, root)
+    problems += bad
+    dsl, bad = _beta(raw.get("beta", {}), p, requirements)
     problems += bad
     problems += _unknown("[docs]", raw.get("docs", {}), DOCS_KEYS)
     doc_files = raw.get("docs", {}).get("files", [])
@@ -1089,7 +1115,7 @@ def load(path=None) -> Config:
         lock=p.get("lock", "auto"),
         agreements=p.get("agreements", True),
         raw=raw,
-        requirements=requirements, parts_dirs=parts_dirs,
+        requirements=requirements, parts_dirs=parts_dirs, dsl=dsl,
         domains=list(p["domains"]) if "domains" in p else None,
         stock=rel("stock", "hardware/stock.json"),
         stock_margin_pct=float(p.get("stock_margin_pct", 0)),

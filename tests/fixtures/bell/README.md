@@ -1,6 +1,6 @@
 # The bell's sources, modeled
 
-The Christmas bell's five configurations in the circuit language, as `docs/concepts/done/circuit-dsl.md` ("The bell's
+The Christmas bell's five configurations in the circuit language, as `docs/concepts/new/circuit-dsl.md` ("The bell's
 variants as the test") models them: the main file with the alias map on U1, `param vlogic` and language 11's LED step
 as a definition; `smd` and `tht` as variants of it; `esp32` as a variant of `smd` – the module swap, the alias map
 replaced, `vlogic` set once, `net +5V without S1.a S2.a`; `esp32tht` as a variant of `esp32` with the through-hole parts

@@ -82,7 +82,7 @@ jobs:
         run: uv run --group dev pytest -q -rs -m kicad tests/test_kicad_live.py
 
   sysml:
-    # The conformance of the circuit language's exports (handbook 20): the electrical library and the exports of the
+    # The conformance of the circuit language's exports (docs/dsl/, the explorative DSL – a beta): the electrical library and the exports of the
     # test projects read by systree's SysML v2 and KerML reader, against the standard library systree loads (release
     # 2025-12). Optional – Rust's reader is alpha, the job's failure blocks nothing, and it is no required check of the
     # rulesets.
@@ -105,7 +105,7 @@ jobs:
           uv run --group dev --group sysml pytest -q -rs -m sysml tests/test_lang_export.py
 
   vscode:
-    # The VS Code extension of the circuit language compiles (editors/vscode, handbook 20.11) – Node from the runner's
+    # The VS Code extension of the circuit language compiles (editors/vscode, docs/dsl/editor.md) – Node from the runner's
     # image; optional, no required check of the rulesets.
     needs: lane
     if: ${{ !cancelled() && needs.lane.outputs.only != 'true' }}

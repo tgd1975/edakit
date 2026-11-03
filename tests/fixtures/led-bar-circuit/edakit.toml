@@ -16,6 +16,9 @@ signoff = "hardware/signoff.json"       # sign-offs, bound to the hashes of circ
 artifacts = "build/edakit"       # caches, previews, routing files, exports (not versioned)
 reports = "build/release"        # one folder per release-gate run
 
+[beta]
+dsl = true                       # the explorative DSL: the graph is the circuit language (docs/dsl/README.md)
+
 [boards.main]
 title = "LED bar"                # page name of the readable schematic
 template = "generated_main"      # generated from the graph, replaced on every run

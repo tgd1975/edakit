@@ -68,7 +68,8 @@ from pathlib import Path
 
 PREFIX = {"need": "N", "requirement": "R"}           # [[need]] N-<n>, [[requirement]] R-<n>
 KEYS = {"need": ("id", "text", "who", "source", "status", "reason"),
-        "requirement": ("id", "text", "source", "from", "binding", "verify", "status", "reason", "subject", "require")}
+        "requirement": ("id", "text", "source", "from", "binding", "verify", "status", "reason")}
+DSL_KEYS = ("subject", "require")    # a requirement's keys of the explorative DSL – read only with [beta] dsl = true
 STATUS = ("draft", "accepted", "dropped")
 BINDING = ("must", "should", "may")
 VERIFY = ("rows", "signoff", "script", "accept")
@@ -141,8 +142,10 @@ def _verify(raw):
     return out
 
 
-def _entry(kind, i, raw, path):
-    """One [[need]] or [[requirement]]: (Entry or None, its ID or None, problems – each starting with the ID)."""
+def _entry(kind, i, raw, path, dsl=False):
+    """One [[need]] or [[requirement]]: (Entry or None, its ID or None, problems – each starting with the ID); dsl adds
+    the DSL's keys subject and require."""
+    known = KEYS[kind] + (DSL_KEYS if dsl and kind == "requirement" else ())
     prefix = PREFIX[kind]
     if not isinstance(raw, dict):
         return None, None, [f"[[{kind}]] {i}: must be a table"]
@@ -150,7 +153,7 @@ def _entry(kind, i, raw, path):
     eid = eid if isinstance(eid, str) and ENTRY_ID.fullmatch(eid) and eid[0] == prefix else None
     bad = [] if eid else [f"id is missing ({prefix}-<n>)" if "id" not in raw else
                           f"id {raw['id']!r} – a {kind} is {prefix}-<n>, e.g. {prefix}-1"]
-    bad += [f"unknown key '{k}' (known: {', '.join(KEYS[kind])})" for k in raw if k not in KEYS[kind]]
+    bad += [f"unknown key '{k}' (known: {', '.join(known)})" for k in raw if k not in known]
     bad += _text(raw, "text", required=True) + _text(raw, "source") + _text(raw, "reason")
     bad += _choice(raw, "status", STATUS, required=False)            # without the key a draft
     reason = raw.get("reason", "")
@@ -159,7 +162,8 @@ def _entry(kind, i, raw, path):
     if kind == "need":
         bad += _text(raw, "who")
     else:
-        bad += _choice(raw, "binding", BINDING) + _verify(raw) + _text(raw, "subject") + _text(raw, "require")
+        bad += _choice(raw, "binding", BINDING) + _verify(raw)
+        bad += (_text(raw, "subject") + _text(raw, "require")) if dsl else []
         refs = raw.get("from", [])
         if not isinstance(refs, list) or not all(isinstance(r, str) and r.strip() for r in refs):
             bad.append('from must be a list of texts, e.g. ["N-2", "D-8"]')
@@ -173,7 +177,7 @@ def _entry(kind, i, raw, path):
                  subject=raw.get("subject", ""), require=raw.get("require", "")), eid, []
 
 
-def read(path):
+def read(path, dsl=False):
     """(entries, problems) of one requirements file: the entries without a problem – the needs, then the requirements,
     each in file order – and what is wrong, each problem starting with the entry's ID ([[need]] 3 without one). A
     .circuit file is read in the circuit language's notation (lang/requirements.py)."""
@@ -192,7 +196,7 @@ def read(path):
             problems.append(f"{kind} must be an array of tables: [[{kind}]]")
             continue
         for i, raw in enumerate(items, 1):
-            entry, eid, bad = _entry(kind, i, raw, path)
+            entry, eid, bad = _entry(kind, i, raw, path, dsl)
             if eid and eid in seen:
                 bad.append(f"{eid}: twice in this file")
             seen.add(eid)
@@ -211,7 +215,7 @@ def load(cfg):
         if not path.is_file():
             out.append(f"{name}: not found – named in [project] requirements")
             continue
-        found, bad = read(path)
+        found, bad = read(path, getattr(cfg, "dsl", False))
         for e in found:
             if e.id in home:
                 bad.append(f"{e.id}: already in {home[e.id]}")
@@ -411,7 +415,7 @@ def check(rep, cfg):
         for kind, text in e.verify:
             if why := unresolved(kind, text, cfg, catalog, signoffs):
                 found(e, "DOCS.ref", f"{e.id}: verify {kind} {repr(text) if kind == 'rows' else text} – {why}")
-    for e, msg in graph_refs(cfg, reqs, by_id):
+    for e, msg in (graph_refs(cfg, reqs, by_id) if getattr(cfg, "dsl", False) else []):   # the DSL's keys only
         if e is not None:
             found(e, "DOCS.ref", msg)
         else:

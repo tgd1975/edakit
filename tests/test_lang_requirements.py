@@ -58,7 +58,7 @@ def test_the_notation_reads_to_the_toml_form_s_entries(tmp_path):
     (tmp_path / "r.circuit").write_text(REQUIREMENTS)
     (tmp_path / "r.toml").write_text(TOML)
     a, pa = read(tmp_path / "r.circuit")
-    b, pb = read(tmp_path / "r.toml")
+    b, pb = read(tmp_path / "r.toml", dsl=True)          # the TOML form with the DSL's keys, as a DSL project reads it
     assert pa == pb == [] and plain(a) == plain(b)
 
 

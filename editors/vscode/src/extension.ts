@@ -1,4 +1,4 @@
-// The client of the circuit language's server (handbook 20): it starts `edakit lsp`, which answers errors, findings,
+// The client of the circuit language's server (docs/dsl/editor.md, the explorative DSL): it starts `edakit lsp`, which answers errors, findings,
 // go to definition, hover, completion and formatting; the commands run edakit's graph actions in a terminal.
 import * as path from "path";
 import * as vscode from "vscode";

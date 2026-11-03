@@ -11,7 +11,9 @@ reader and the compiler the command line uses.
                                      keywords, designators and nets
     formatted(path, text)            the canonical layout (fmt.py)
 
-Positions are 0-based, as the protocol counts them. The functions take the editor's text, saved or not.
+Positions are 0-based, as the protocol counts them. The functions take the editor's text, saved or not. In a file
+whose project has not switched the explorative DSL on ([beta] dsl = true, edakit/beta.py) the diagnostics are that
+one line and the rest answers nothing.
 """
 
 from __future__ import annotations
@@ -47,8 +49,17 @@ def compiled(path, text):
         return None, None, None, list(e.errors)
 
 
+def _off(path):
+    from ..beta import dsl_of
+    return not dsl_of(path)
+
+
 def diagnostics(path, text):
     """[{line, col, end, message, severity, code}] of a source."""
+    if _off(path):
+        from ..beta import refusal
+        return [{"line": 0, "col": 0, "end": 0, "message": refusal(Path(path).name), "severity": "warning",
+                 "code": ""}]
     root = project_of(path)[0]
     me = _rel(path, root)
     graph, smap, design, errors = compiled(path, text)
@@ -108,6 +119,8 @@ def _entry_path(dirs, key):
 
 def definition(path, text, line, col):
     """(file, 0-based line) the word at the position names, or None."""
+    if _off(path):
+        return None
     word, _ = word_at(text, line, col)
     root, dirs, _ = _project(path)
     src = read(text, _rel(path, root))
@@ -139,6 +152,8 @@ def definition(path, text, line, col):
 
 def hover(path, text, line, col):
     """Markdown for the word at the position, or None."""
+    if _off(path):
+        return None
     word, _ = word_at(text, line, col)
     graph, smap, design, _ = compiled(path, text)
     if design is None or not word:
@@ -169,6 +184,8 @@ def hover(path, text, line, col):
 
 def completion(path, text, line, col):
     """[label] for the position."""
+    if _off(path):
+        return []
     lines = text.splitlines()
     before = lines[line][:col] if line < len(lines) else ""
     graph, smap, design, _ = compiled(path, text)
@@ -194,6 +211,8 @@ def completion(path, text, line, col):
 
 def formatted(path, text):
     from .fmt import format
+    if _off(path):
+        return None
     try:
         return format(text, str(path))
     except CompileError:

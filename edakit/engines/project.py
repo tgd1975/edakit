@@ -136,7 +136,7 @@ def run(design, cfg):
     else:   # required (requirements decision 5): open like a sign-off, edakit check passes, the gate does not release
         rec.pending.append(("DOCS.file", f"{cfg.path.name}: [project] requirements names no requirements file – "
                                          "write it with /edakit:requirements"))
-    if lines := drift(cfg):
+    if getattr(cfg, "dsl", False) and (lines := drift(cfg)):      # the explorative DSL's generated graph
         rel = cfg.relative(generated_path(cfg))
         rec.errors.append(("SYNC.graph", f"{rel}: drift from {cfg.relative(cfg.graph)} – {'; '.join(lines[:6])}"
                                          + (f" (+{len(lines) - 6})" if len(lines) > 6 else "")))

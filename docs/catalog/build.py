@@ -60,7 +60,7 @@ def engine_title(name, e):
     return e["prefix"] + ("" if name == e["prefix"] else f" – {name.lower()}")
 
 
-ENGINE_PAGES = [(f'{e["prefix"].lower()}.html', engine_title(n, e)) for n, e in catalog.engines().items()]
+ENGINE_PAGES = [(f'{e["prefix"].lower()}.html', engine_title(n, e)) for n, e in catalog.released_engines().items()]
 PAGES = [("index.html", "Overview"), *ENGINE_PAGES, ("domains.html", "Domains"), ("tables.html", "Tables"),
          ("schema.html", "Parts schema"), ("circuits.html", "Reference circuits"), ("open-designs.html", "Open designs"),
          ("candidates.html", "maker-coverage candidates"), ("before.html", "Check IDs of before")]
@@ -147,7 +147,7 @@ BOARD_ENGINES = ("SYNC", "GEO", "FILES", "ORDER")     # the rest decide on the c
 
 def severities(names):
     """'5 errors · 4 warnings · 1 note' – the catalog's default severities of these codes."""
-    n = Counter(catalog.codes()[c]["severity"] for c in names)
+    n = Counter(catalog.released_codes()[c]["severity"] for c in names)
     words = {"error": "error", "warning": "warning", "note": "note", "pending": "pending"}
     return " · ".join(f"{k} {words.get(s, s)}{'s' if k > 1 and s != 'pending' else ''}" for s, k in
                       sorted(n.items(), key=lambda x: ["error", "warning", "pending", "note"].index(x[0])
@@ -158,14 +158,14 @@ def engines_section():
     """The engines as cards in two groups – on the circuit, on the board and the order –, each linking its page with
     what it decides, its number of codes and their severities; the old anchor engine-<prefix> on its card."""
     def card(name, e):
-        names = [c for c in catalog.codes() if catalog.engine_of(c) == name]
+        names = [c for c in catalog.released_codes() if catalog.engine_of(c) == name]
         label = "" if name == e["prefix"] else f' <span class="muted">{escape(name)}</span>'
         return (f'<a class="ecard" id="engine-{e["prefix"]}" href="{e["prefix"].lower()}.html">'
                 f'<span class="ehead"><code>{e["prefix"]}</code>{label}<span class="ecount">{len(names)}</span></span>'
                 f'<span class="edecides">{md(e["decides"])}</span><span class="esev">{severities(names)}</span></a>')
     groups = []
     for title, board in (("On the circuit", False), ("On the board and the order", True)):
-        cards = "".join(card(n, e) for n, e in catalog.engines().items() if (n in BOARD_ENGINES) == board)
+        cards = "".join(card(n, e) for n, e in catalog.released_engines().items() if (n in BOARD_ENGINES) == board)
         groups.append(f'<h3>{title}</h3><div class="ecards">{cards}</div>')
     return f'<section id="engines"><h2>Engines</h2><p>{ENGINES_ABOUT}</p>{"".join(groups)}</section>'
 
@@ -205,11 +205,11 @@ def codes_section():
     one page land here and open their engine) and linking the entry on its engine's page; the filter opens what it
     finds."""
     groups = []
-    for eng, e in catalog.engines().items():
-        names = [n for n in catalog.codes() if catalog.engine_of(n) == eng]
-        rows = "".join(f'<tr id="{escape(n)}" data-text="{text_of(n, catalog.codes()[n])}"><td><a href="{href(n)}">'
-                       f'<code>{escape(n)}</code></a></td><td>{escape(catalog.codes()[n]["title"])}</td>'
-                       f'<td>{chip(catalog.codes()[n]["severity"])}</td></tr>' for n in names)
+    for eng, e in catalog.released_engines().items():
+        names = [n for n in catalog.released_codes() if catalog.engine_of(n) == eng]
+        rows = "".join(f'<tr id="{escape(n)}" data-text="{text_of(n, catalog.released_codes()[n])}"><td><a href="{href(n)}">'
+                       f'<code>{escape(n)}</code></a></td><td>{escape(catalog.released_codes()[n]["title"])}</td>'
+                       f'<td>{chip(catalog.released_codes()[n]["severity"])}</td></tr>' for n in names)
         groups.append(f'<details class="group"><summary><code>{e["prefix"]}</code> <span class="muted">– '
                       f'{md(e["decides"])} · {len(names)}</span></summary><div class="scroll"><table class="codes">'
                       f'<tbody>{rows}</tbody></table></div></details>')
@@ -222,10 +222,10 @@ def codes_section():
 
 def engine_body(eng, e):
     """An engine's page: what it decides, and each of its codes with rule, why, fix and sources."""
-    names = [n for n in catalog.codes() if catalog.engine_of(n) == eng]
+    names = [n for n in catalog.released_codes() if catalog.engine_of(n) == eng]
     lead = e["decides"][:1].upper() + e["decides"][1:]
     return (f'<p class="lead">{md(lead)} – {len(names)} codes.</p><p>{ENGINES_ABOUT}</p>{FILTER}'
-            + "".join(code_entry(n, catalog.codes()[n]) for n in names))
+            + "".join(code_entry(n, catalog.released_codes()[n]) for n in names))
 
 
 DOMAINS_ABOUT = ('A project names its domains in <code>[project] domains</code>; without the key every domain the graph '
@@ -286,7 +286,7 @@ def sections(t, path=""):
 
 def tables_section():
     out = []
-    for name in catalog.table_names():
+    for name in catalog.released_tables():
         t = catalog.table(name)
         head = t.get("table") or {}
         body = []
@@ -643,11 +643,11 @@ def page(current, title, intro, body, sub=(), h1=None):
 def index_body(items, designs):
     """The index: the counters, the engines, every code in one list, and the rest of the catalog by name – every
     anchor of the one page before (a code, engine-, domain-, table-, circuit-, open-) lands on a row here."""
-    codes = catalog.codes()
+    codes = catalog.released_codes()
     grades = sum(len(e.get("grades") or {}) for e in codes.values())
     sources = len({s for e in codes.values() for s in e.get("sources", [])})
     tiles = "".join(f'<div class="tile"><span class="big">{v}</span><span class="lbl">{k}</span></div>' for k, v in (
-        ("Engines", len(catalog.engines())), ("Codes", len(codes)), ("Grades", grades),
+        ("Engines", len(catalog.released_engines())), ("Codes", len(codes)), ("Grades", grades),
         ("Hints", sum(1 for n in codes if n.startswith("HINT."))), ("Domains", len(profile.domains())),
         ("Sources cited", sources), ("Reference circuits", len(items)), ("Open designs", len(designs))))
 
@@ -658,7 +658,7 @@ def index_body(items, designs):
             + row("Domains", "domains.html", [(f"domain-{n}", f"domains.html#domain-{n}", f"<code>{n}</code>")
                                               for n in profile.domains()])
             + row("Tables", "tables.html", [(f"table-{n}", f"tables.html#table-{n}", f"<code>{n}</code>")
-                                            for n in catalog.table_names()])
+                                            for n in catalog.released_tables()])
             + '<p><a href="schema.html">Parts schema</a> – what a parts entry of each kind may give.</p>'
             + row("Reference circuits", "circuits.html", [(f"circuit-{n}", f"circuit-{n}.html", escape(n))
                                                           for n, *_ in items])
@@ -680,14 +680,14 @@ def pages(items, designs):
     """{file name: html} of every page."""
     titles = dict(PAGES)
     out = {"index.html": page("index.html", "edakit rule catalog", INDEX_ABOUT, index_body(items, designs))}
-    for eng, e in catalog.engines().items():
+    for eng, e in catalog.released_engines().items():
         f = f'{e["prefix"].lower()}.html'
-        names = [n for n in catalog.codes() if catalog.engine_of(n) == eng]
+        names = [n for n in catalog.released_codes() if catalog.engine_of(n) == eng]
         out[f] = page(f, titles[f], "", engine_body(eng, e), [(f"#{n}", n, False) for n in names],
                       h1=f'<code>{e["prefix"]}</code>' + ("" if eng == e["prefix"] else f" {escape(eng.lower())}"))
     out["domains.html"] = page("domains.html", "Domains", DOMAINS_ABOUT, domains_section())
     out["tables.html"] = page("tables.html", "Tables", TABLES_ABOUT, tables_section(),
-                              [(f"#table-{n}", n, False) for n in catalog.table_names()])
+                              [(f"#table-{n}", n, False) for n in catalog.released_tables()])
     out["schema.html"] = page("schema.html", "Parts schema", "", kinds_section())
     circuit_nav = [(f"circuit-{n}.html", n, False) for n, *_ in items]
     out["circuits.html"] = page("circuits.html", "Reference circuits", CIRCUITS_ABOUT, circuits_section(items),

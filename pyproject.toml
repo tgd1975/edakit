@@ -17,7 +17,7 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-lsp = ["pygls>=2.0"]       # edakit lsp: the language server of the circuit language (handbook 20)
+lsp = ["pygls>=2.0"]       # edakit lsp: the language server of the circuit language (docs/dsl/editor.md, the explorative DSL)
 
 [project.scripts]
 edakit = "edakit.cli:main"

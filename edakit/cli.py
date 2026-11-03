@@ -70,6 +70,8 @@ from __future__ import annotations
 import argparse
 import sys
 
+DSL_ACTIONS = ("fmt", "derive", "sysml", "kerml")   # `edakit graph` of the explorative DSL ([beta] dsl)
+
 
 def _common(p):
     p.add_argument("--config", help="path to edakit.toml (default: search upwards from the current directory)")
@@ -117,25 +119,23 @@ def build_parser():
 
     p = sub.add_parser("graph", help="what the graph says about one part or net; the resolved graph as JSON; a JSON "
                                      "graph moved to TOML")
-    p.add_argument("action", choices=["show", "json", "convert", "fmt", "derive", "sysml", "kerml"])
-    p.add_argument("name", nargs="?", help="show: a designator (U1) or a net name (LED_CLK); fmt: a .circuit file")
-    p.add_argument("files", nargs="*", help="fmt: further .circuit files (default: the project's source)")
+    # the explorative DSL's actions and options (fmt, derive, sysml, kerml; --to, --out, --map) are parsed but not
+    # shown: a project without [beta] dsl never meets them (edakit/beta.py, docs/dsl/README.md)
+    p.add_argument("action", choices=["show", "json", "convert", *DSL_ACTIONS], metavar="{show,json,convert}")
+    p.add_argument("name", nargs="?", help="show: a designator (U1) or a net name (LED_CLK)")
     p.add_argument("--json", help="show: write the view and its findings as JSON")
-    p.add_argument("--write", action="store_true", help="json: write the resolved graph beside a TOML or a .circuit "
-                                                        "graph (hardware/graph.json); derive: the records again")
+    p.add_argument("--write", action="store_true", help="json: write the resolved graph beside a TOML graph "
+                                                        "(hardware/graph.json)")
     p.add_argument("--check", action="store_true", help="json: compare the generated file with the graph, write "
-                                                        "nothing; exit 2 on drift; fmt: exit 2 where the layout "
-                                                        "would change")
+                                                        "nothing; exit 2 on drift")
     p.add_argument("--dry-run", action="store_true", help="convert: print what would change, write nothing")
-    p.add_argument("--to", choices=["toml", "circuit"], default="toml", help="convert: the form to move the graph to "
-                                                                             "(default toml)")
-    p.add_argument("--out", metavar="DIR", help="sysml, kerml: the folder of the export (default <artifacts>/sysml, "
-                                                "<artifacts>/kerml)")
-    p.add_argument("--map", metavar="FILE", help="json: write the source map of a .circuit graph – where each part, "
-                                                 "net, lock and accept was written")
+    p.add_argument("--to", choices=["toml", "circuit"], default="toml", help=argparse.SUPPRESS)
+    p.add_argument("--out", metavar="DIR", help=argparse.SUPPRESS)
+    p.add_argument("--map", metavar="FILE", help=argparse.SUPPRESS)
+    p.set_defaults(files=[])
     _common(p)
 
-    p = sub.add_parser("lsp", help="the language server of the circuit language over stdio (the extra lsp: pygls)")
+    sub.add_parser("lsp")                         # the explorative DSL's language server: not in the list
 
     p = sub.add_parser("domains", help="the domains of the project: on, off, suggested; the reviewers' questions")
     p.add_argument("--review", choices=["electrical", "regulatory", "pcb"], help="the questions of the enabled domains "
@@ -159,10 +159,8 @@ def build_parser():
     p.add_argument("--without", action="extend", nargs="+", metavar="DES", help="add: leave out these optional parts "
                                                                                 "of the block")
     p.add_argument("--board", help="add: board of the new parts (needed with several boards)")
-    p.add_argument("--set", action="extend", nargs="+", metavar="PARAM=VALUE", help="add: a parameter of the block "
-                                                                                    "(i=10mA): its derivations run")
-    p.add_argument("--part", action="extend", nargs="+", metavar="DES=KEY", help="add: the parts entry a part of "
-                                                                                 "the block takes where --set asks")
+    p.add_argument("--set", action="extend", nargs="+", metavar="PARAM=VALUE", help=argparse.SUPPRESS)   # the DSL's
+    p.add_argument("--part", action="extend", nargs="+", metavar="DES=KEY", help=argparse.SUPPRESS)
     p.add_argument("--file", help="a block from this JSON file instead of the library")
     p.add_argument("--dry-run", action="store_true", help="add: show what would change, write nothing")
     _common(p)
@@ -368,6 +366,7 @@ def build_parser():
     p = sub.add_parser("doctor", help="check the tool chain")
     p.add_argument("--offline", action="store_true", help="skip the bridge part: start no server, ask no bridge")
     _common(p)
+    sub.metavar = "{" + ",".join(c for c in sub.choices if c != "lsp") + "}"   # lsp: the DSL's, unlisted
     return ap
 
 
@@ -416,10 +415,15 @@ def _main(argv=None):
     if args.command == "block" and args.action in ("list", "show"):
         from . import block
         return block.main(None, args)
-    if args.command == "lsp":                                               # the editor's: no project needed
+    if args.command == "lsp":            # the editor's: no project needed – each file's project switches the DSL on
         from .lang import server
         return server.main(args)
-    if args.command == "graph" and args.action == "fmt" and args.name:     # files named: no project needed
+    if args.command == "graph" and args.action == "fmt" and args.name:     # files named: each one's project decides
+        from . import beta
+        off = [f for f in [args.name, *args.files] if not beta.dsl_of(f)]
+        if off:
+            print(beta.refusal(f"edakit graph fmt {off[0]}"), file=sys.stderr)
+            return 1
         from .lang import cli as lang_cli
         return lang_cli.main(None, args)
     from . import config
@@ -436,6 +440,13 @@ def _main(argv=None):
         code, cfg = scripts.before_step(cfg, args)
         if code is not None:
             return code
+    if not cfg.dsl and (args.command == "graph" and (args.action in DSL_ACTIONS or args.to == "circuit" or args.map)
+                        or args.command == "block" and (getattr(args, "set", None) or getattr(args, "part", None))):
+        from . import beta
+        what = (f"edakit graph {args.action}" + (" --to circuit" if args.to == "circuit" else "") +
+                (" --map" if args.map else "") if args.command == "graph" else "edakit block add --set/--part")
+        print(beta.refusal(what), file=sys.stderr)
+        return 1
     if args.command == "check":
         from . import checks
         return checks.main(cfg, args)
@@ -454,7 +465,7 @@ def _main(argv=None):
     if args.command == "graph" and args.action == "show":
         from . import graph_show
         return graph_show.main(cfg, args)
-    if args.command == "graph" and args.action in ("fmt", "derive", "sysml", "kerml"):
+    if args.command == "graph" and args.action in DSL_ACTIONS:
         from .lang import cli as lang_cli
         return lang_cli.main(cfg, args)
     if args.command == "graph":

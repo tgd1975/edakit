@@ -36,7 +36,7 @@ def test_pages_names_the_pages_written_in_order(tmp_path):
     mod = build_module()
     files = [f for f, _ in mod.PAGES]
     assert files[0] == "index.html" and len(files) == len(set(files))
-    assert files[1:1 + len(catalog.engines())] == [f'{e["prefix"].lower()}.html' for e in catalog.engines().values()]
+    assert files[1:1 + len(catalog.released_engines())] == [f'{e["prefix"].lower()}.html' for e in catalog.released_engines().values()]
     written = {f.name for f in PAGE.glob("*.html")}
     sub = {f for f in written if f.startswith(("circuit-", "open-")) and f != "open-designs.html"}
     assert set(files) == written - sub
@@ -49,10 +49,10 @@ def test_every_code_and_every_reference_circuit_is_on_the_pages():
     from edakit.catalog.handbook import page_of
     import reference
     index = (PAGE / "index.html").read_text(encoding="utf-8")
-    assert [c for c in catalog.codes() if f'id="{c}"' not in index] == []
+    assert [c for c in catalog.released_codes() if f'id="{c}"' not in index] == []
     pages = {}
     missing = []
-    for c in catalog.codes():
+    for c in catalog.released_codes():
         f = PAGE / Path(page_of(c)).name
         assert page_of(c) == f"../docs/catalog/{f.name}"
         html = pages.setdefault(f, f.read_text(encoding="utf-8") if f.is_file() else "")
@@ -73,4 +73,4 @@ def test_the_candidate_status_names_known_codes_and_states():
         {"built", "partial", "open", "out"}
     assert (len(s["features"]), len(s["checks"]), len(s["hints"]), len(s["blocks"])) == (24, 31, 19, 18)
     hints = {e["where"].split()[0] for e in s["hints"].values() if e["status"] == "built"}
-    assert hints - set(catalog.codes()) == set()
+    assert hints - set(catalog.released_codes()) == set()
