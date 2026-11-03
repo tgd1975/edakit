@@ -4,7 +4,7 @@ Open work that needs the owner's computer, a maker or the owner's word. The stat
 and plans the sections name; this list is what is left to do of them, in the order it can be done. No item is deleted.
 
 **Layout.** Every item, in every section, open or closed, is a line with a checkbox and an ID unique in this file,
-counted up and never reused – whoever adds an item takes the next free ID and counts it up here. Next free ID: TD-134.
+counted up and never reused – whoever adds an item takes the next free ID and counts it up here. Next free ID: TD-135.
 
 - Open: `- [ ] TD-<n> - **Title:** what and why.` – a step's own name after the dash (`- [ ] TD-31 - **D.4** …`).
 - Done: ticked, the commit that did it, the date at the end, moved to [Closed todos](#closed-todos), newest first –
@@ -39,6 +39,11 @@ to touch.
 - [ ] TD-123 - **OK for chapter 19 and the four open designs:** the branch `ccr-de7c0e28-hcr2zn` (TD-117 to TD-121, a
       patch; 3402 tests green) – opened as a pull request and merged with `python3 .github/merge.py <n>` on your word;
       then TD-117 to TD-121 are ticked and the concept moves to `done/`. *(ccr-de7c0e28)*
+- [ ] TD-134 - **Delete the branches a cloud session cannot delete:** its proxy refuses deleting a ref (`git push
+      --delete` and REST, 403); GitHub deletes the branch of a merged pull request itself, so only these are left –
+      `notes/verification-and-validation-concept-for-071535` (superseded by #274), `notes/td-103-closed-236-the-second-
+      run-in-the-124730` (no pull request; TD-103 closed on main another way), `claude/exciting-einstein-l7ito9` and
+      `claude/pensive-cray-kuzv7n` (both contained in main): `git push origin --delete <branch>`. *(ccr-de7c0e28)*
 
 ## The parts order ([docs/concepts/new/parts-order.md](docs/concepts/new/parts-order.md))
 
