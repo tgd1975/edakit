@@ -4,7 +4,7 @@ Open work that needs the owner's computer, a maker or the owner's word. The stat
 and plans the sections name; this list is what is left to do of them, in the order it can be done. No item is deleted.
 
 **Layout.** Every item, in every section, open or closed, is a line with a checkbox and an ID unique in this file,
-counted up and never reused – whoever adds an item takes the next free ID and counts it up here. Next free ID: TD-147.
+counted up and never reused – whoever adds an item takes the next free ID and counts it up here. Next free ID: TD-148.
 
 - Open: `- [ ] TD-<n> - **Title:** what and why.` – a step's own name after the dash (`- [ ] TD-31 - **D.4** …`).
 - Done: ticked, the commit that did it, the date at the end, moved to [Closed todos](#closed-todos), newest first –
@@ -33,14 +33,18 @@ to touch.
       it replaces the render on `docs/projects/pytree.md`. *(edakit-ce)*
 - [ ] TD-143 - **The 23 lines of the live run in LCSC's cart:** keep them for the next parts order or remove them – the
       skill never deletes a line. *(edakit-5e)*
-- [ ] TD-146 - **OK for #321 (parts on hand):** https://github.com/tgd1975/edakit/pull/321 – `edakit order` takes from
-      your inventory first; merged by `python3 .github/merge.py 321` on your word. *(edakit-87)*
 
 ## The parts order ([docs/concepts/done/parts-order.md](docs/concepts/done/parts-order.md))
 
 - [ ] TD-144 - **Live run of `combine`:** the skill cart's mode `combine` at the next JLCPCB order whose basket has
       LCSC lines – the warehouse address at JLCPCB's checkout, after the payment the tick at LCSC's checkout and its
       methods in `shipping.json`; what it finds into `lcsc.toml` and handbook 8.4. *(edakit-5e)*
+
+## Parts on hand ([docs/concepts/done/parts-on-hand.md](docs/concepts/done/parts-on-hand.md))
+
+- [ ] TD-147 - **Step 3, the live run:** the next parts order with your inventory named in `edakit.local.toml` – the
+      carts shortened by what is on hand, `hand_assembly.md` naming what to take; what the run finds goes into handbook
+      8.4. Waits for an inventory file of yours (`edakit inventory template FILE`). *(edakit-87)*
 
 ## The parts library ([edakit/parts/](edakit/parts/))
 
@@ -66,6 +70,7 @@ Nothing to do until there is an answer or a release; whichever session learns of
 
 ## Closed todos
 
+- [x] TD-146 - **OK for #321 (parts on hand):** given; merged as edakit 1.1.14 (#321). *(edakit-87)* [2026-11-03]
 - [x] TD-142 - **OK for #310:** given; merged as edakit 1.1.13 (#310). *(edakit-5e)* [2026-11-03]
 - [x] TD-133 - **A charger's status output in the simulation:** the charger model drives STAT – the Micro-Lipo's LEDs as
       on the board (#309, edakit 1.1.12). *(ccr-de7c0e28)* [2026-11-03]
@@ -163,7 +168,7 @@ taken from the history of this file; an item rewritten on its way is listed once
       10 –, shown in handbook 17.11 and 18 after the silkscreen (#246, edakit 1.0.10). [2026-11-02]
 - [x] TD-99 - **Decide on parts on hand (PartsLedger):** decided in a decision round – movements 1 and 2, edakit only
       reads the bin; `[project] bin`; need plus spares; siblings shown, kits as data; profiles partsledger, csv, xlsx;
-      the name open while it is a concept (`docs/concepts/new/parts-on-hand.md`, "Decisions"). [2026-11-02]
+      the name open while it is a concept (`docs/concepts/done/parts-on-hand.md`, "Decisions"). [2026-11-02]
 - [x] TD-83 - **The findings of the chapters' reviews:** fixed or decided (#248, edakit 1.0.8) – the handbook follows
       the code, the sources name the sections they cite, the catalog names pytree and the bell, 14.2's engines table
       generated, 8.4 "you order and pay"; what the reviews left stays left. *(edakit-b7)* [2026-11-02]

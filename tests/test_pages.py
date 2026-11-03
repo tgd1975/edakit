@@ -41,7 +41,8 @@ def test_every_description_is_a_page_of_the_site(tmp_path):
     assert "edakit" in cfg["copyright"] and "issues/new/choose" in cfg["copyright"]   # the version, the feedback line
     features = cfg["theme"]["features"]
     assert "navigation.tabs" in features and "navigation.indexes" in features
-    assert cfg["nav"][0] == {"Start": [{"Start": "index.md"}, {"Quickstart": "start/quickstart.md"},
+    assert cfg["nav"][0] == {"Start": [{"Start": "index.md"}, {"A session": "start/session.md"},
+                                       {"Quickstart": "start/quickstart.md"},
                                        {"How it works": "start/how-it-works.md"},
                                        {"Projects": "start/projects/index.md"}, {"Glossary": "start/glossary.md"}]}
     # every page under its tab: the address's first part is the tab's
@@ -84,7 +85,8 @@ def test_a_source_carries_the_source_line_and_the_concepts_an_index(tmp_path):
     assert "A source" in (docs / "inside" / "skills" / "cart.md").read_text(encoding="utf-8")
     assert "A source" not in (docs / "handbook" / "08-release-gate.md").read_text(encoding="utf-8")
     index = (docs / "inside" / "concepts" / "index.md").read_text(encoding="utf-8")
-    assert "## Open" in index and "(new/parts-on-hand.md)" in index and "prototypes" not in index
+    open_one = sorted(p.name for p in (ROOT / "docs" / "concepts" / "new").glob("*.md"))[0]
+    assert "## Open" in index and f"(new/{open_one})" in index and "prototypes" not in index
     assert "## Decided and built" in index and "(done/documentation.md)" in index
     inside = (docs / "inside" / "index.md").read_text(encoding="utf-8")
     assert "(concepts/index.md)" in inside and "(skills/index.md)" in inside and "(claude.md)" in inside

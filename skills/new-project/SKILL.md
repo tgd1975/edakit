@@ -113,7 +113,7 @@ From the answers – each file and key proposed with the answer that sets it, wr
 | `hardware/requirements.toml` | what the circuit must do – needs and requirements with their evidence, written with the user by the skill requirements and named in `[project] requirements` (handbook 3.6); required before a release (DOCS.file) |
 | `variants/<v>/` | per further build its own `edakit.toml` and files as above, a board of its own in the same EasyEDA project |
 | `docs/decisions.md` | numbered decisions D-1, … with reason and date (the decision-round skill appends); the setup's answers are the first |
-| `.gitignore` | `build/` |
+| `.gitignore` | `build/`, `/edakit.local.toml` – the checkout's own settings, such as the inventory (handbook 10.1) |
 
 **Moving.** The project's files stay where they lie and edakit.toml names them (working agreement 22). Converted are
 only what the inventory proposes and the user accepts – a simulation config of the project's own into `sim.json`, a

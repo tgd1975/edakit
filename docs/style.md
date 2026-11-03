@@ -40,9 +40,9 @@ files, the SessionStart hook reads section 11.4, and six tests hold pages to the
 
 ## Registers
 
-Three, by layer. The entry pages are the start page, the quickstart, "How it works", the glossary and the project
-pages; the guides are the handbook's chapters and the reader pages; the reference is chapter 10, chapter 9 and the
-catalog pages.
+Three, by layer. The entry pages are the start page, the session, the quickstart, "How it works", the glossary and the
+project pages; the guides are the handbook's chapters and the reader pages; the reference is chapter 10, chapter 9 and
+the catalog pages.
 
 | | Entry | Guides | Reference |
 | --- | --- | --- | --- |
@@ -128,6 +128,30 @@ board as made, what edakit found, its variants, what it changed in edakit. The p
 its tag, never drawn by hand; the numbers name their release. A render or a photo of the whole object may stand first,
 named as the project's own. The gallery shows what is built, nothing planned.
 
+## A chat
+
+A session shown as a chat – the page "A session" (`docs/session.md`), six lines of it on the start page, the decision
+round of How it works – is a fence ```` ```chat ```` in the page's Markdown. On GitHub it reads as a plain transcript;
+`docs/pages.py` turns it into the chat's HTML when it assembles the site, its styles in `docs/brand/edakit.css`. One
+entry a line, an indented line continuing the one above:
+
+| Line | What it shows |
+| --- | --- |
+| `--- 5 Decide on what was found` | a step divider, the steps page's title, linked to it |
+| `you:` | what you type, a bubble on the right |
+| `claude:` | what Claude says, a bubble on the left |
+| `form:` with `? question`, `- option` and `> answer` | Claude Code's question form, the recommended option first |
+| `ran:` | what Claude ran, a quiet line |
+| `do:` | what you do outside the chat, a copper box; an indented `† …` under it is its footnote |
+| `img: path \| caption` | a picture Claude shows |
+
+The lines come from the record – the example's files and the walkthrough –, shortened, and name no decision numbers.
+What you do outside the chat stands in it: each `do:` line is a step's "What you do" or a click of `upstream/README.md`,
+a click in EasyEDA with a footnote that says KiCad does without it and links the issue. Under a whole session, one that
+starts with step 1, the site counts your part from the entries; nobody types the tally. The session has at most 1,000
+words, and a chat line counts as a sentence. `tests/test_session_page.py` holds the steps, codes, commands, numbers
+and `do:` lines, and the start page's excerpt and tally.
+
 ## A steps page
 
 The steps (`docs/steps/`) are the person's manual: what you do, what you are asked, what you decide and what you get,
@@ -164,7 +188,7 @@ change freely. `tests/test_steps_pages.py` holds their shape, budgets, outputs, 
 code, block quotes, phrases in quotation marks and section 11.4. In them it counts:
 
 - on the entry pages, the average and the longest sentence;
-- a section over 80 lines without a subheading;
+- a section over 80 lines without a subheading – a chat's step divider counts as one;
 - a chapter of the handbook over 500 lines, its summary not counted, and a paragraph over 120 words;
 - a guide chapter over 450 lines without its summary, a summary that is not the second paragraph, and a section it names
   that the chapter does not have;
