@@ -833,6 +833,17 @@ Written by the session that builds the plan: number, date, decision, reason. Sta
    original form – the JSON or TOML graph – stays the default without a word about the DSL, and every facet of the
    DSL works only in a project whose edakit.toml switches it on; on the site it gets a top-level section of its own,
    "Explorative DSL". No pull request of the DSL is proposed until the owner asks for one.
+49. 2026-11-03, how the beta of 48 is built, on the branch (`aa431ff`): `[beta] dsl = true` in a project's
+   edakit.toml switches the DSL on (`edakit/beta.py`). Without it a `.circuit` graph or requirements file and a list
+   of parts folders are refused by edakit.toml's check, `graph fmt|derive|sysml|kerml`, `convert --to circuit`, `json
+   --map`, `block add --set/--part` and the language server answer with one line naming the switch – `graph fmt FILE`
+   asks the file's own project, edakit's block sources always pass –, the requirement's keys `subject` and `require`
+   are unknown, SYNC.graph does not run. The help does not show the DSL's actions, options or `lsp`; DEF.derive,
+   SYNC.graph and the E-series table carry `beta = "dsl"` in the catalog and are left out of the catalog's pages, the
+   handbook's generated sections and `edakit rules`, `edakit explain` naming them. The handbook, the README, the skills
+   and the agent are main's word for word; the DSL's text – chapter 20 and its lines in chapters 2, 3, 8, 10 and 14 –
+   is `docs/dsl/`, six pages, the site's tab "Explorative DSL" between Reference and Inside edakit. A project with the
+   switch gets one line at the session start. Reason: the owner's "the original variant the default, without a word".
 
 ## Not in this plan
 

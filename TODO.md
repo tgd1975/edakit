@@ -51,12 +51,16 @@ to touch.
       nothing ordered or paid by the skill – it records the BOM tool's labels into `edakit/suppliers/lcsc.toml`, sets
       `recorded`, and what it finds goes into handbook 8.4; #265 is on main (1.1.5). *(edakit-4f)*
 
-## The circuit language ([docs/concepts/new/circuit-dsl-toolchain.md](docs/concepts/new/circuit-dsl-toolchain.md))
+## The explorative DSL ([docs/concepts/new/circuit-dsl-toolchain.md](docs/concepts/new/circuit-dsl-toolchain.md))
+
+A beta on the branch `claude/friendly-mccarthy-n4kt6y`, switched on per project with `[beta] dsl = true`; not for
+main until the owner asks (decisions 48, 49).
 
 - [ ] TD-122 - **The bell in the language, in its own repository:** its five graphs as `.circuit` – `edakit graph
       convert --to circuit` keeps the sign-offs (rehashed); the modeled sources of `tests/fixtures/bell/` add the
       LED step's records, the LEDs' `value` and eleven `accept DEF.derive` with the bell's reasons – check and sim
-      as today, a new circuit hash and new sign-offs –, the bell's choice, after TD-113 (decisions 43, 47).
+      as today, a new circuit hash and new sign-offs –, the bell's choice, once the DSL is in a released edakit
+      (decisions 43, 47, 48).
       *(friendly-mccarthy)*
 
 ## How edakit is tested ([docs/concepts/done/verification-and-validation.md](docs/concepts/done/verification-and-validation.md))
@@ -131,7 +135,8 @@ Nothing to do until there is an answer or a release; whichever session learns of
 - [x] TD-121 - **A LiPo charger as an open design:** `tests/open_designs/adafruit-microlipo-usb-c/`, CC BY-SA 3.0, 27
       findings judged – edakit 1.1.4 (#281). *(ccr-de7c0e28)* [2026-11-03]
 - [x] TD-113 - **OK for the circuit language:** given; merged as edakit 1.1.3 (#279) – T.1 to T.27, the decisions 1
-      to 48 confirmed; circuit-dsl.md, its language and its plan moved to `done/`. *(friendly-mccarthy)* [2026-11-03]
+      to 48 confirmed; circuit-dsl.md, its language and its plan moved to `done/`. Withdrawn by #287 (1.1.6) on the
+      owner's word: a beta on the branch since, the concepts back in `new/`. *(friendly-mccarthy)* [2026-11-03]
 - [x] TD-116 - **The job sysml:** run on the branch by `workflow_dispatch` – 4 passed, read with the standard
       library 2025-12 that systree loads (decision 45); main runs it with every merge. *(friendly-mccarthy)*
       [2026-11-03]
