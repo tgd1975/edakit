@@ -302,8 +302,11 @@ The cases, how to run them and the baseline: [evals](../evals/README.md).
 
 - **Two domains without a reference circuit.** radio and mains (19.4); for mains, spacing and isolation are not
   checked at all.
-- **A low-voltage side tied to the line.** edakit holds every voltage against the board's own ground. Where that
-  ground is tied to mains, as on the ESPurna-H, the low-voltage side looks safe although it is not.
+- **A low-voltage side tied to the line, beyond a terminal.** edakit holds every voltage against the board's own
+  ground. LIM.hazardous/ground names that ground tied to a mains terminal's `line` or `neutral` pin – straight, through
+  a 0 Ω bridge, a fuse, a switch, a diode or a small resistor, as on the ESPurna-H –; mains brought in otherwise (a
+  module's pins, a terminal without those roles) or tied through anything larger stays unseen, and the low-voltage
+  side looks safe although it is not.
 - **The known gaps.** Each listed with its design and reason (19.5).
 - **What no code catches.** `edakit mutate` names the mistakes on led-bar no code reports (from a finding to a rule,
   14.4).

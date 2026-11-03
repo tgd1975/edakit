@@ -983,3 +983,28 @@ def test_a_mains_terminal_feeds_the_module_behind_it():
         return sorted(f.place for f in supply(d) if f.code == "PATH.unfed")
     assert unfed(["line", "neutral"]) == []                          # before: U1.1, U1.2
     assert unfed(["pin1", "pin2"]) == ["U1.1", "U1.2"]
+
+
+def test_a_ground_tied_to_the_line_is_hazardous():
+    """The ESPurna-H's R42 (0 Ω) ties GND to the line behind the shunt, as the HLW8012 requires: every net of the board
+    sits at mains potential against earth. edakit holds every range against GND, so nothing on the low-voltage side
+    read hazardous – the gap was named in handbook 19.9 only. LIM.hazardous/ground names it once mains comes in at a
+    terminal's line or neutral pin; a ground tied through 10 kΩ, or a terminal without those roles, is not."""
+    from edakit.engines.limits import mains_ground
+    res = {"lcsc": "C9000510", "mpn": "test resistor", "kind": "resistor",
+           "pins": {"1": {"name": "1", "type": "passive"}, "2": {"name": "2", "type": "passive"}}}
+
+    def tied(ohm, roles=("line", "neutral")):
+        terminal = {**TERMINAL, "pins": {n: {**p, "role": r} for (n, p), r in zip(TERMINAL["pins"].items(), roles)}}
+        comps = [{"designator": "J1", "type": "connector", "lcsc": "C9000515", "pins": {"1": "1", "2": "2"}},
+                 {"designator": "R42", "type": "resistor", "lcsc": "C9000510", "pins": {"1": "1", "2": "2"}}]
+        nets = {"LINE": ["J1.1", "R42.2"], "NEUTRAL": ["J1.2"], "GND": ["R42.1"]}
+        graph = {"name": "t", "version": "1", "ground": "GND", "components": comps,
+                 "nets": [{"name": n, "pins": p, "v": [-1, 1]} for n, p in nets.items()]}
+        d = Design.from_data(graph, {"C9000515": terminal, "C9000510": {**res, "values": {"value_ohm": ohm}}})
+        return [(f.grade, f.place, f.text) for f in mains_ground(d)]
+    assert tied(0) == [("ground", "GND", "GND: tied to the mains – J1.1 (line) on LINE through R42: every net of the "
+                        "board sits at mains potential against earth, while edakit holds every voltage against GND – "
+                        "the low-voltage side shows nothing hazardous, and edakit checks no isolation")]   # before: none
+    assert tied(10000) == []
+    assert tied(0, ("pin1", "pin2")) == []

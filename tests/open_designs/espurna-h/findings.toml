@@ -4,11 +4,11 @@
 # the reason). tests/test_open_designs.py holds the sets.
 #
 # The mains side is recognised, not checked (rules-at-scale.md, decision 7): LIM.hazardous names the seven nets above
-# the ES1 limit, and edakit measures neither spacing nor isolation. What edakit does not see at all: R42 (0 Ω) ties
-# GND to the line, as the HLW8012 requires – every net of the low-voltage side, the ESP-12F and the headers JP21 and
-# JP22 included, sits at mains potential against earth. edakit's ranges are against the board's own GND, so none of
-# them is hazardous to it; the ESPurna README warns never to connect the board's ground to a computer while it is on
-# mains.
+# the ES1 limit and – grade ground – GND tied to the line by R42 (0 Ω), as the HLW8012 requires: every net of the
+# low-voltage side, the ESP-12F and the headers JP21 and JP22 included, sits at mains potential against earth, while
+# edakit's ranges are against GND. edakit measures neither spacing nor isolation; the ESPurna README warns never to
+# connect the board's ground to a computer while it is on mains. The mains nets are AC nets (net ac): the terminals,
+# the module's input and the varistor are held to their AC ratings.
 # The low-voltage side is checked: the relay pulls in (4.65 V on the coil at the 2N7002's highest threshold, 3.75 V
 # needed) and releases, D3 sits across the coil, the AMS1117 holds 3.3 V at the ESP-12F's 0.5 A, the HLW8012's 5 V
 # pulses reach the ESP's inputs at 2.84 V or more through R45/R46 and R47/R48, SEL switches through Q4.
@@ -20,6 +20,13 @@ code = "DOCS.file"
 place = "edakit.toml"
 judged = "criterion"
 why = "The transcription has no requirements file: what the published design must do stands in its own documents, not in edakit's form. edakit requires the file before a release (handbook 3.6); it is no point of the design."
+
+[[check]]
+code = "LIM.hazardous"
+grade = "ground"
+place = "GND"
+judged = "real"
+why = "R42 (0 Ω) ties GND to the line behind the shunt R41, as the HLW8012 requires: the ESP-12F, the AMS1117 and the headers JP21 and JP22 – the programming port and the external button – sit at mains potential against earth. edakit holds every range against GND, so none of the low-voltage nets reads hazardous; the ESPurna README warns never to connect the board's ground to a computer while it is on mains. Recognised, not checked."
 
 [[check]]
 code = "LIM.hazardous"
@@ -101,6 +108,8 @@ place = "Q4"
 judged = "known gap"
 why = "LIM.range/gate (CK-4) finds Q4 half on at VGS 3.3 V. It only pulls SEL low through R49 (0.5 mA): even the part at its highest threshold holds SEL below 1 mV. The rule does not weigh the current, so it warns where nothing burns – as on the SparkFun converter's BSS138."
 
+[[fixed]]
+what = "GND tied to the line by R42 unseen: edakit holds every voltage against the board's ground, so the low-voltage side looked safe. LIM.hazardous/ground names a ground joined to a mains terminal's line or neutral (TD-131)."
 [[fixed]]
 what = "The module's AC input taken as fed by nothing (PATH.unfed on U$1.1, U$1.2): a connector fed a net only with a vbus role, and marking the terminals reversible would have sent PATH.reverse across the mains side. A connector pin of role line or neutral is a supply input now – JP42.3 and JP2 say so (TD-130)."
 [[fixed]]
