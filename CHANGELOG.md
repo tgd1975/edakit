@@ -8,6 +8,14 @@ written once, by `.github/merge.py`, from the fragments in [changes/](changes/RE
 update edakit@edakit`, then `/reload-plugins` or a new session; `edakit version` names the version that runs and what an
 update brings.
 
+## 1.1.14 – 2026-11-03
+
+- Parts on hand: an inventory – a table with `ID` and `Quantity` in `.md`, `.html`, `.csv`, `.xlsx` or `.ods`, named in
+  the new `edakit.local.toml` beside edakit.toml (in `.gitignore`) – is taken from first by `edakit order`: only the
+  rest is ordered, `hand_assembly.md` says what comes out of the drawer; edakit never lowers a quantity. `edakit
+  inventory` compares the project's hand-soldered parts with it, `edakit inventory template FILE` starts one (handbook
+  8.4, 10.1; docs/concepts/done/parts-on-hand.md). Without the file nothing changes.
+
 ## 1.1.13 – 2026-11-03
 
 - `edakit order check` finds a number written with its unit right after it, as LCSC's cart writes the weight ("1,500g"); before, ORDER.basket reported the weight as not in the page text. The LCSC profile is recorded (2026-11-03) with the BOM tool's steps "Create BOM" and the dialog of "Add to Cart" (keys `mapping`, `cart_dialog`), "Submit BOM" and "Secure Checkout" among the buttons never pressed; the skill cart's mode parts follows them.
