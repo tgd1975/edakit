@@ -594,7 +594,16 @@ def ensure_board(mcp, board):
     print(f"  default board renamed: Board1 -> {board.name} (schematic {board.schematic}, PCB {board.pcb})")
 
 
-PCB = {}  # name and uuid of the PCB this command works on
+PCB = {}  # name and uuid of the PCB this command works on – filled by open_pcb
+
+
+def opened_pcb():
+    """The PCB open_pcb opened in this session. A project script (handbook 8.6) that focuses, activates or saves the
+    PCB before opening it gets told the order instead of a KeyError (#339)."""
+    if "uuid" not in PCB:
+        raise SystemExit("no PCB opened in this session – open the board's PCB first: `open_pcb(mcp, board.pcb)`, "
+                         "then ensure_pcb_focus, activate_pcb, save_pcb")
+    return PCB
 
 
 def open_pcb(mcp, name, wait_s=30):
@@ -614,6 +623,7 @@ def open_pcb(mcp, name, wait_s=30):
 
 def ensure_pcb_focus(mcp, tries=10):
     """EasyEDA sometimes switches the tab on its own – check before writing, get the PCB back otherwise."""
+    opened_pcb()
     info = {}
     for _ in range(tries):
         info = api(mcp, "DMT_SelectControl.getCurrentDocumentInfo") or {}
@@ -637,6 +647,7 @@ def activate_pcb(mcp):
     """The PCB editor answers PCB_Drc.check, getDsnFile and exports only after EasyEDA reported its tab as active.
     That report comes only on a tab switch; openDocument on the current tab does not help. Probe: pcb_answers.
     Remedy: switch to the start page and back."""
+    opened_pcb()
     for _ in range(3):
         if pcb_answers(mcp):
             return
