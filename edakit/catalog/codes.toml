@@ -46,7 +46,7 @@ decides = "parts entries complete, well-formed, verified, orderable"
 
 [engines.ORDER]
 prefix = "ORDER"
-decides = "the order at the maker is the release: form, parts, quote, read, files, finish, review, confirm"
+decides = "the order at the maker is the release: form, parts, quote, read, files, finish, review, confirm; the supplier's cart is the basket"
 
 [engines.DOCS]
 prefix = "DOCS"
@@ -1371,6 +1371,17 @@ severity = "error"
 sources = [
   "The first order at JLCPCB (pytree, 2026-11-02): 'Confirm Production file' a dialog in the order history, 'Confirm Parts Placement' a second browser window; the placement viewer /smt/dfm-result read in the skill's own tab; M-2 written into signoff.json by hand",
   "Ordering at the manufacturer (docs/concepts/done/ordering.md, decided 2026-10-30): edakit prepares the order, Claude fills the maker's form in the owner's browser (skill cart), edakit checks what it brings back; up to the maker's cart button, never further",
+]
+
+[codes."ORDER.basket"]
+title = "the supplier's cart = the basket"
+rule = "edakit order check: the supplier's cart as the skill cart read it back (<out>/<supplier>/cart.json, LCSC) has every line of basket.json – edakit order's, --with projects included – by its code, as many pieces or more (more is the supplier's rounding, named), none with less stock than its quantity and none marked (discontinued, replaced, out of stock); no line that is neither the basket's nor in the cart before the upload; every code, quantity, stock and the weight of cart.json in cart_page.txt, the page text kept, a number as a number of its own. The lines there before the upload are the owner's – listed, never touched, never a finding. With the weights read it prints the parcel together and the routes to compare before the maker's checkout; with shipping.json, LCSC's methods after combining by price and the cheapest arriving by [cart] needed_by."
+why = "The first parts order (2026-11-02) went by hand: three lists merged by a throwaway script, uploaded to a cart that already held 25 lines of earlier work, nothing showing which lines were this order's or whether LCSC had rounded or replaced one. The combined shipment was decided before its prices were known – JLCPCB's address cannot be changed after its checkout – and cost 74.94 USD against 48.94 for the two cheapest separate routes; after combining DHL Express was paid instead of the cheapest express."
+fix = "A line missing or short: upload the basket's line again, never change a line that was there before. Out of stock or marked: another part is a hardware change (skill hardware-change), then edakit order again. A line not read: read the cart again and keep its page text whole."
+severity = "error"
+sources = [
+  "The parts order (docs/concepts/new/parts-order.md, decided 2026-11-02): decision 3 – the skill fills LCSC's cart and stops before the checkout, lines already there only reported; decision 5 – the skill enters LCSC's warehouse at JLCPCB's checkout",
+  "LCSC, 'Combine Your LCSC and JLCPCB Orders', https://www.lcsc.com/faqs/ordering-quotation/combine-lcsc-jlcpcb-orders (read 2026-11-02)",
 ]
 
 [codes."DOCS.quote"]

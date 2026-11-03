@@ -183,6 +183,31 @@ def estimate_of(cfg, board, m):
             "budget_currency": cur, "rate": rate(fees["currency"])}, ""
 
 
+def combine_of(cfg, design, m):
+    """The combined shipment for the job (docs/concepts/new/parts-order.md, decision 5): when a supplier's profile
+    combines with this maker and the project's basket has lines of that supplier – LCSC's warehouse address, the
+    conditions, the weight above which only express is left; None otherwise."""
+    from . import order
+    prof = order.supplier("lcsc")
+    c = (prof or {}).get("combine")
+    if not c or c["maker"] != m.key:
+        return None
+    path = cfg.artifacts / "order" / order.BASKET
+    try:
+        if path.exists():
+            n, src = len(json.loads(path.read_text(encoding="utf-8"))["suppliers"].get("lcsc") or []), cfg.relative(path)
+        else:
+            n, src = len(order.carts(cfg, design)[0].get("lcsc", [])), "this project's parts (edakit order writes the basket)"
+    except order.OrderError as e:
+        raise CartError(str(e)) from None
+    if not n:
+        return None
+    needed = makers.of(cfg).get("needed_by")
+    return {"supplier": "lcsc", "name": prof["name"], "lines": n, "basket": str(src), "page": c["page"],
+            "read": c["read"], "address": order.address(c), "conditions": list(c.get("conditions", [])),
+            "express_above_g": c.get("express_above_g"), "needed_by": needed.isoformat() if needed else None}
+
+
 def prepare(cfg, args):
     """The job of the skill cart for one board at one maker, from the current release – or why there is none."""
     from .release import gate, order_sheet
@@ -267,6 +292,7 @@ def prepare(cfg, args):
         "estimate": estimate, "estimate_why": why, "budget": budget,
         "compliance": {k: design.parts[k].get("compliance") for k in sorted(keys, key=natural_key) if k in design.parts},
         "ship_to": c["ship_to"], "shipping": c["shipping"][m.key], "tolerance": c["tolerance"],
+        "combine": combine_of(cfg, design, m),
     }
     out = folder(cfg, run, board.name, m.key)
     out.mkdir(parents=True, exist_ok=True)
@@ -301,7 +327,20 @@ def show_job(cfg, job, out):
                            f"{e['fees_total']:.2f}, parts {e['parts_total']:.2f})" if e else f"– {job['estimate_why']}"))
     print(f"  shipping {job['shipping']} to {job['ship_to']}")
     print(f"  cart     press only \"{m['cart'] or '– (not recorded: stop before the cart)'}\"; never "
-          + ", ".join(m["never"]) + " – no address, payment method or coupon")
+          + ", ".join(m["never"]) + " – no address, payment method or coupon"
+          + (f" (but {job['combine']['name']}'s warehouse, below, on the owner's choice)" if job.get("combine") else ""))
+    if k := job.get("combine"):
+        print(f"  combine  the basket has {k['lines']} {k['name']} line{'s' if k['lines'] != 1 else ''} ({k['basket']}): "
+              f"one parcel if this order goes to {k['name']}'s warehouse – the owner's choice before the checkout, after "
+              f"both carts' weights (edakit order check); it buys speed, not a lower price")
+        print(f"           the address, from {k['page']} (read {k['read']}) – entered at the checkout and read back, "
+              "nothing else there:")
+        for label, value in k["address"].items():
+            print(f"             {label}: {value}")
+        print("           " + "; ".join(k["conditions"]))
+        print(f"           after the owner paid: the order page shows the warehouse; then at {k['name']}'s checkout the "
+              f"order ticked to combine, its methods read into shipping.json – stop before its order button"
+              + (f"; cheapest arriving by {k['needed_by']}" if k.get("needed_by") else ""))
 
 
 # --- edakit cart check ------------------------------------------------------------------------------------------------
