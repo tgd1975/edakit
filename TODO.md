@@ -31,11 +31,6 @@ to touch.
 
 - [ ] TD-108 - **A photo of the delivered tree:** one picture of the lit tree in its hill into pytree's `docs/img/` –
       it replaces the render on `docs/projects/pytree.md`. *(edakit-ce)*
-- [ ] TD-134 - **Delete the branches a cloud session cannot delete:** its proxy refuses deleting a ref (`git push
-      --delete` and REST, 403); GitHub deletes the branch of a merged pull request itself, so only these are left –
-      `notes/verification-and-validation-concept-for-071535` (superseded by #274), `notes/td-103-closed-236-the-second-
-      run-in-the-124730` (no pull request; TD-103 closed on main another way), `claude/exciting-einstein-l7ito9` and
-      `claude/pensive-cray-kuzv7n` (both contained in main): `git push origin --delete <branch>`. *(ccr-de7c0e28)*
 - [ ] TD-135 - **The layers picture of coin-cell-led:** `pictures/board_main_layers.png` of the gate run with stage F
       (`<reports>/<run>/pictures/`, or the Gerber ZIP of its `fab/main/`) into `examples/coin-cell-led/docs/` – the
       board as made shows no copper under the mask; for TD-136. *(quirky-bell)*
@@ -117,6 +112,9 @@ Nothing to do until there is an answer or a release; whichever session learns of
 
 ## Closed todos
 
+- [x] TD-134 - **Delete the branches a cloud session cannot delete:** deleted by the owner – the four branches
+      checked first: both `claude/…` contained in main, both `notes/…` landed on main another way. *(ccr-de7c0e28,
+      edakit-4f)* [2026-11-03]
 - [x] TD-110 - **OK for #265:** given; merged as edakit 1.1.5 (#265) – the parts at LCSC (`edakit order check`,
       ORDER.basket) and the combined shipment; the live run is TD-111. *(edakit-4f)* [2026-11-03]
 - [x] TD-123 - **OK for chapter 19 and the four open designs:** given; merged as edakit 1.1.4 (#281, `f42bde3`) with
