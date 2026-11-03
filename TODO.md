@@ -4,7 +4,7 @@ Open work that needs the owner's computer, a maker or the owner's word. The stat
 and plans the sections name; this list is what is left to do of them, in the order it can be done. No item is deleted.
 
 **Layout.** Every item, in every section, open or closed, is a line with a checkbox and an ID unique in this file,
-counted up and never reused – whoever adds an item takes the next free ID and counts it up here. Next free ID: TD-140.
+counted up and never reused – whoever adds an item takes the next free ID and counts it up here. Next free ID: TD-141.
 
 - Open: `- [ ] TD-<n> - **Title:** what and why.` – a step's own name after the dash (`- [ ] TD-31 - **D.4** …`).
 - Done: ticked, the commit that did it, the date at the end, moved to [Closed todos](#closed-todos), newest first –
@@ -97,11 +97,6 @@ owner's word); each design's `findings.toml` has the findings and their reasons.
 E-1 to E-17 on EasyEDA Pro and M-1 to M-10 on easyeda-mcp-pro, checked live on EasyEDA Pro 3.2.209 and posted on
 2026-11-01; what each asks and where it stands is in upstream/README.md – the items here say only what is left to do.
 
-- [ ] TD-109 - **M-11 (easyeda-mcp-pro's net reading takes a net flag of another open schematic):** post the issue
-      and the pull request from the fork's `fix/net-read-one-page` (`149dbe3`, local) on the owner's "posten?" – drafts in
-      `upstream/issue-10-net-read-one-page.md` and `pr-10-…`; until a release takes it, `schematic check` keeps closing
-      the other schematics. *(edakit-7b)*
-
 ### Waiting for upstream
 
 Nothing to do until there is an answer or a release; whichever session learns of one takes it.
@@ -109,9 +104,15 @@ Nothing to do until there is an answer or a release; whichever session learns of
 - [ ] TD-36 - **EasyEDA, #45 to #52 and our comments to #36 and #38:** answer questions; when a release fixes one,
       check it live, take it up and say so in upstream/README.md. EasyEDA's first answer is often "update to the latest
       version".
+- [ ] TD-140 - **M-11, easyeda-mcp-pro #864 and #865:** answer questions; when a release takes the fix, raise the
+      pin, check it live on pytree's `tree` with `layout_tree` open, and drop the closing of the other schematics in
+      `schematic check` and stage S. *(edakit-7b)*
 
 ## Closed todos
 
+- [x] TD-109 - **M-11 (easyeda-mcp-pro's net reading takes a net flag of another open schematic):** posted on the
+      owner's word as #864 and #865, from the fork's `fix/net-read-one-page` rebased onto 1.8.1's main (#294); the
+      wait for the release is TD-140. [2026-11-03]
 - [x] TD-134 - **Delete the branches a cloud session cannot delete:** deleted by the owner – the four branches
       checked first: both `claude/…` contained in main, both `notes/…` landed on main another way. *(ccr-de7c0e28,
       edakit-4f)* [2026-11-03]
