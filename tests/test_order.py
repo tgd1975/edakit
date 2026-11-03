@@ -205,7 +205,7 @@ def test_a_supplier_name_becomes_a_file_name(project, monkeypatch):
 def test_one_basket_for_several_projects(project, monkeypatch, capsys):
     """--with: the carts of another project go into the same files – one line per code, the pieces summed, the comment
     naming each project; two configs of one EasyEDA project are told apart by their boards (the bell's variants,
-    2026-11-02, docs/concepts/new/parts-order.md decision 1)."""
+    2026-11-02, docs/concepts/done/parts-order.md decision 1)."""
     assert order(project, monkeypatch) == 0
     alone = {r[0]: int(r[1]) for r in read_csv(out_dir(project) / "cart_lcsc.csv")[1:]}
     assert order(project, monkeypatch, "--with", str(project.root / "edakit.toml")) == 0
@@ -232,7 +232,7 @@ def test_the_basket_sums_by_code():
     assert (c1["qty"], c1["need"], [n for n, _ in c1["parts"]]) == (30, 20, ["tree", "bell"])
 
 
-# --- the supplier's cart: edakit order check (docs/concepts/new/parts-order.md, steps 2 and 3) -----------------------
+# --- the supplier's cart: edakit order check (docs/concepts/done/parts-order.md, steps 2 and 3) -----------------------
 
 def lcsc_cart(project, change=None, page_change=None, weight=None):
     """cart.json and cart_page.txt as the skill cart writes them when LCSC's cart shows the basket exactly."""
