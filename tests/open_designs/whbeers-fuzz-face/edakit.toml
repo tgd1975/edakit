@@ -1,0 +1,17 @@
+# Random Input (whbeers/random_input at 723a89d, CC0 1.0), a re-creation of the Dallas Arbiter Fuzz Face, transcribed
+# from its published KiCad schematic for edakit's tests (maker-coverage FT-21; FT-17: the bias across the transistors'
+# spread). Source, licence and what was transcribed: README.md. Not a project to order: no layout, no EasyEDA documents.
+
+[project]
+name = "whbeers-fuzz-face"
+company = "whbeers design (CC0 1.0), transcribed for edakit"
+quantity = 5
+graph = "hardware/graph.json"
+parts = "hardware/parts"
+sim = "hardware/sim.json"
+artifacts = "build/edakit"
+reports = "build/release"
+domains = ["guitar"]
+
+[boards.main]
+title = "Random Input effect board"

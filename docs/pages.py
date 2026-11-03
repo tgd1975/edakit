@@ -107,6 +107,7 @@ NAV = [
         ("handbook/16-kicad.md", "16 KiCad"),
         ("handbook/17-walkthrough.md", "17 Walkthrough on EasyEDA"),
         ("handbook/18-walkthrough-kicad.md", "18 Walkthrough on KiCad"),
+        ("handbook/19-verification.md", "19 How edakit is tested"),
     ]),
     ("Reference", [              # what is looked up: an overview pointing into the handbook, the catalog, the changelog
         ("docs/reference/README.md", "Overview"),

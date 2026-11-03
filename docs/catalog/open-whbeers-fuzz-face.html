@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Random Input (whbeers) – edakit rule catalog</title><link rel="icon" type="image/svg+xml" href="../brand/edakit-favicon.svg"><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;600&display=swap"><style>
+:root {
+  /* a reference, read by section: a sidebar of contents, entries in one column, drawings full width */
+  --bg: #f4f6f6; --surface: #ffffff; --ink: #1d2626; --muted: #5d6b6b; --line: #d5dddd; --accent: #0e6c6a;
+  --err: #b42318; --warn: #a15c07; --pend: #6941c6; --note: #475467; --ok: #087443;
+  --display: "IBM Plex Sans", "Helvetica Neue", Arial, sans-serif; --body: "IBM Plex Sans", "Helvetica Neue", Arial, sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #111717; --surface: #182020; --ink: #e3eaea; --muted: #97a6a6; --line: #2c3838; --accent: #5cc4c0;
+  --err: #f97066; --warn: #fdb022; --pend: #b692f6; --note: #98a2b3; --ok: #47cd89; color-scheme: dark; } }
+:root[data-theme="dark"] {
+  --bg: #111717; --surface: #182020; --ink: #e3eaea; --muted: #97a6a6; --line: #2c3838; --accent: #5cc4c0;
+  --err: #f97066; --warn: #fdb022; --pend: #b692f6; --note: #98a2b3; --ok: #47cd89; color-scheme: dark; }
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--ink); font: 15px/1.55 var(--body); }
+a { color: var(--accent); }
+code { font-family: var(--mono); font-size: 0.9em; }
+.layout { display: grid; grid-template-columns: 15rem minmax(0, 1fr); gap: 2rem; max-width: 84rem; margin: 0 auto;
+  padding: 1.5rem 1.25rem 4rem; }
+nav { position: sticky; top: 1rem; align-self: start; max-height: calc(100vh - 2rem); overflow: auto; font-size: 0.9rem; }
+nav ol { list-style: none; padding: 0; margin: 0; display: grid; gap: 0.2rem; }
+nav ol ol { padding-left: 0.9rem; margin: 0.2rem 0 0.4rem; }
+nav a { text-decoration: none; color: var(--ink); }
+nav a:hover, nav a:focus-visible { color: var(--accent); }
+nav a[aria-current="page"] { color: var(--accent); font-weight: 600; }
+nav .label { color: var(--muted); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.04em; }
+nav ol.engines { display: flex; flex-wrap: wrap; gap: 0.2rem 0.7rem; }
+nav ol.engines > li:has(ol.sub) { flex-basis: 100%; }
+header.top h1 { font: 600 2rem/1.15 var(--display); margin: 0 0 0.4rem; text-wrap: balance; }
+header.top p { color: var(--muted); max-width: 70ch; margin: 0; }
+header.top p.brand { margin-bottom: 0.6rem; }
+p.lead { font-size: 1.05rem; }
+:target { scroll-margin-top: 1rem; }
+tr:target td, tr:target th { background: color-mix(in srgb, var(--surface) 80%, var(--accent)); }
+article:target { outline: 2px solid var(--accent); outline-offset: 2px; }
+ul.inline { list-style: none; padding: 0; display: flex; flex-wrap: wrap; gap: 0.3rem 1rem; max-width: none; }
+table.codes tr.sec th { background: transparent; border-bottom: 1px solid var(--ink); padding-top: 0.9rem; font-weight: 400; }
+table.codes td:first-child { white-space: nowrap; }
+.card h3 a { text-decoration: none; }
+h2 { font: 600 1.45rem/1.2 var(--display); margin: 2.6rem 0 0.8rem; padding-top: 0.6rem; border-top: 2px solid var(--ink);
+  text-wrap: balance; }
+h3 { font: 600 1.1rem/1.3 var(--display); margin: 1.6rem 0 0.6rem; }
+h4 { font: 600 1rem/1.3 var(--display); margin: 0; }
+p, li, dd { max-width: 75ch; }
+.muted, .meta { color: var(--muted); }
+.brand a { display: inline-flex; align-items: center; gap: 0.5rem; }
+.brand img { display: block; }
+.meta { font-size: 0.85rem; margin: 0.4rem 0 0; }
+.tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(9.5rem, 1fr)); gap: 0.75rem; margin: 1rem 0; }
+.tile { background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 0.8rem; display: grid; }
+.tile .big { font: 600 1.8rem/1 var(--display); font-variant-numeric: tabular-nums; }
+.tile .of { color: var(--muted); font-size: 0.85rem; }
+.tile .lbl { font-weight: 600; margin-top: 0.3rem; }
+.tile .sub { color: var(--muted); font-size: 0.8rem; }
+.scroll { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; background: var(--surface); font-size: 0.9rem; }
+th, td { text-align: left; vertical-align: top; padding: 0.45rem 0.6rem; border-bottom: 1px solid var(--line); }
+th { font-weight: 600; background: color-mix(in srgb, var(--surface) 85%, var(--accent)); }
+td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+.chips { display: flex; flex-wrap: wrap; gap: 0.3rem; }
+.chip { display: inline-block; font-size: 0.75rem; line-height: 1.5; padding: 0 0.45rem; border-radius: 999px;
+  border: 1px solid currentColor; white-space: nowrap; }
+.chip.error { color: var(--err); } .chip.warning { color: var(--warn); } .chip.pending { color: var(--pend); }
+.chip.note { color: var(--note); } .chip.built { color: var(--ok); } .chip.partial { color: var(--warn); }
+.chip.open { color: var(--muted); } .chip.out { color: var(--muted); text-decoration: line-through; }
+.engine > h3 { border-bottom: 1px solid var(--line); padding-bottom: 0.3rem; }
+article.code { background: var(--surface); border: 1px solid var(--line); border-left: 3px solid var(--accent);
+  border-radius: 4px; padding: 0.8rem 1rem; margin: 0.7rem 0; }
+article.code header { display: flex; flex-wrap: wrap; gap: 0.5rem 1rem; align-items: baseline; justify-content: space-between; }
+article.code .rule { margin: 0.5rem 0; }
+article.code dl, .card dl { display: grid; grid-template-columns: 7.5rem minmax(0, 1fr); gap: 0.3rem 0.8rem; margin: 0.4rem 0 0; }
+dt { font-weight: 600; color: var(--muted); font-size: 0.85rem; }
+dd { margin: 0; }
+ul.details { margin: 0.3rem 0; padding-left: 1.2rem; font-size: 0.9rem; }
+ol.sources, ul.sources { margin: 0; padding-left: 1.2rem; font-size: 0.85rem; }
+.filter { display: flex; gap: 0.6rem; align-items: center; flex-wrap: wrap; }
+.filter input { font: inherit; padding: 0.35rem 0.6rem; border: 1px solid var(--line); border-radius: 4px;
+  background: var(--surface); color: var(--ink); min-width: 16rem; }
+.filter input:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.ecards { display: grid; grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr)); gap: .75rem; margin: .5rem 0 1.5rem; }
+.ecard { display: flex; flex-direction: column; gap: .35rem; padding: .8rem .9rem; border: 1px solid var(--line);
+  border-radius: 8px; background: var(--surface); color: var(--ink); text-decoration: none; }
+.ecard:hover, .ecard:focus-visible { border-color: var(--accent); }
+.ehead { display: flex; align-items: baseline; gap: .4rem; font-weight: 600; }
+.ehead code { font-size: 1.05rem; color: var(--accent); }
+.ecount { margin-left: auto; font-size: 1.3rem; font-weight: 700; }
+.edecides { font-size: .92rem; }
+.esev { font-size: .8rem; color: var(--muted); }
+details.group { border-top: 1px solid var(--line); padding: .4rem 0; }
+details.group > summary { cursor: pointer; padding: .3rem 0; font-weight: 600; }
+details.group table { margin-top: .4rem; }
+.cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(22rem, 1fr)); gap: 1rem; }
+.card, .table-card, article.circuit { background: var(--surface); border: 1px solid var(--line); border-radius: 6px;
+  padding: 0.9rem 1rem; }
+.card h3, .table-card h3, article.circuit h3 { margin-top: 0; }
+.table-card { margin: 0.8rem 0; }
+ul.review { padding-left: 1.2rem; font-size: 0.88rem; }
+article.circuit { margin: 1rem 0; }
+.drawing { overflow-x: auto; background: #ffffff; border: 1px solid var(--line); border-radius: 4px; margin: 0.6rem 0; }
+.drawing svg { display: block; width: 100%; min-width: 46rem; height: auto; }
+table.faults { margin-top: 0.4rem; }
+table.kv { width: auto; min-width: 24rem; }
+table.kv tr.sec th { background: transparent; border-bottom: 1px solid var(--ink); padding-top: 0.9rem; }
+table.kv .src { font-weight: 400; color: var(--muted); font-size: 0.85rem; margin-left: 0.5rem; }
+table.kv td.val { font-variant-numeric: tabular-nums; }
+table.cand td:first-child { white-space: nowrap; }
+td, dd, li { overflow-wrap: anywhere; }
+footer { color: var(--muted); font-size: 0.85rem; margin-top: 3rem; }
+@media (max-width: 52rem) {
+  .layout { grid-template-columns: minmax(0, 1fr); gap: 1rem; padding: 1rem 1rem 3rem; }
+  nav { position: static; max-height: none; }
+  nav > ol { display: flex; flex-wrap: wrap; gap: 0.3rem 0.9rem; }
+  nav ol ol.sub { display: none; }
+  article.code dl, .card dl { grid-template-columns: minmax(0, 1fr); }
+  .cards { grid-template-columns: minmax(0, 1fr); }
+  table.kv { min-width: 0; }
+}
+@media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto !important; } }
+</style></head><body><div class="layout"><nav aria-label="Rule catalog"><ol><li><a href="index.html" title="Overview">Overview</a></li><li><span class="label">Engines</span><ol class="engines"><li><a href="struct.html" title="STRUCT">STRUCT</a></li><li><a href="sync.html" title="SYNC">SYNC</a></li><li><a href="lim.html" title="LIM – limits">LIM</a></li><li><a href="lvl.html" title="LVL – levels">LVL</a></li><li><a href="req.html" title="REQ – requires">REQ</a></li><li><a href="path.html" title="PATH – paths">PATH</a></li><li><a href="sim.html" title="SIM">SIM</a></li><li><a href="geo.html" title="GEO">GEO</a></li><li><a href="files.html" title="FILES">FILES</a></li><li><a href="parts.html" title="PARTS">PARTS</a></li><li><a href="order.html" title="ORDER">ORDER</a></li><li><a href="docs.html" title="DOCS">DOCS</a></li><li><a href="def.html" title="DEF">DEF</a></li><li><a href="hint.html" title="HINT">HINT</a></li></ol></li><li><a href="domains.html" title="Domains">Domains</a></li><li><a href="tables.html" title="Tables">Tables</a></li><li><a href="schema.html" title="Parts schema">Parts schema</a></li><li><a href="circuits.html" title="Reference circuits">Reference circuits</a></li><li><a href="open-designs.html" title="Open designs">Open designs</a><ol class="sub"><li><a href="open-adafruit-microlipo-usb-c.html">Adafruit Micro-Lipo Charger with USB Type C Jack</a></li><li><a href="open-atoomnetmarc-adlsc.html">ADLSC, Atoomnet&#x27;s Digital Led String Controller</a></li><li><a href="open-corne-cherry-left.html">Corne keyboard v4, left half</a></li><li><a href="open-corne-cherry-v3-left.html">Corne Cherry keyboard v3, left half</a></li><li><a href="open-esp32-devkitc-v4.html">ESP32-DevKitC V4</a></li><li><a href="open-espurna-h.html">ESPurna-H</a></li><li><a href="open-guitarml-classic-boost.html">GuitarML Classic Boost v2</a></li><li><a href="open-guitarml-ts-rat-combo.html">GuitarML Tubescreamer/Rat combo</a></li><li><a href="open-sparkfun-logic-level-converter.html">SparkFun Logic Level Converter</a></li><li><a href="open-whbeers-fuzz-face.html" aria-current="page">Random Input (whbeers)</a></li></ol></li><li><a href="candidates.html" title="maker-coverage candidates">maker-coverage candidates</a></li><li><a href="before.html" title="Check IDs of before">Check IDs of before</a></li></ol></nav><main><header class="top"><p class="meta brand"><a href="../"><picture><source media="(prefers-color-scheme: dark)" srcset="../brand/edakit-mark-dark.svg"><img src="../brand/edakit-mark.svg" width="28" height="28" alt=""></picture>edakit documentation</a></p><h1>Random Input (whbeers)</h1></header><article class="circuit" id="open-whbeers-fuzz-face"><p><em>Why:</em> the Fuzz Face is the two-transistor circuit whose bias makers fight with: Q1&#x27;s collector drives Q2&#x27;s base directly and Q2&#x27;s emitter feeds back to Q1&#x27;s base through 100 kΩ, so the operating point rests on both transistors&#x27; gain and leakage – and they pull it in opposite directions, the case of the spread&#x27;s corners per part (FT-17, handbook 5.2). No reference circuit has a direct-coupled pair, and the open designs&#x27; stages are a divider-held common emitter (the Classic Boost) and followers (the combo). This one names its bias targets on the schematic – TP2, Q2&#x27;s collector, at 5.0 V, TP1 at 500–700 mV – and replaces the collector resistors with trimmers to reach them, so the simulation can hold the bias to the design&#x27;s own window, show how far the spread moves it at one setting, and show the trimmers&#x27; range covering it. It is also a board without an IC, fed through a connector from another board, and its fuzz control carries DC. Makers build the Fuzz Face as one of the first fuzzes: a dozen parts, a sound tied to the transistors, and the reputation for picky bias.</p><p class="meta">whbeers, <em>Random Input Fuzz Effect (Based on Fuzz Face)</em>, <a href="https://github.com/whbeers/random_input">https://github.com/whbeers/random_input</a> at commit 723a89d (723a89dc1e80f91f0c3cb20f7c51139a3609353c, 2023-03-27), the schematic <code>hardware/random_input.kicad_sch</code> (KiCad 7, rev v0.27, 2023-03-04), read on 2026-11-03 from a read-only clone. The repository&#x27;s README calls it &quot;a re-creation of the original Dallas Arbiter Fuzz Face effect circuit&quot; that &quot;emphasizes the ability to easily fine-tune the bias of each transistor … Besides this emphasis, it remains true to the original&quot;; by its versioning a v0.XX design has been &quot;produced, tested&quot;. The netlist was resolved from the schematic (wires, labels, power symbols) by a reader outside this repository and checked against the board file <code>hardware/random_input.kicad_pcb</code> of the same commit: all 39 pins of the 17 parts are on the same 12 nets there. The board is the effect board of the author&#x27;s <em>Noise Floor</em> platform, <a href="https://github.com/whbeers/noise_floor">https://github.com/whbeers/noise_floor</a> at commit d0fd4e7 (d0fd4e7e6e0613f3478bcc411c881ca6a524d33f, 2023-03-30, schematic <code>hardware/noise_floor.kicad_sch</code> rev v0.32), whose IO board feeds it at its connector E1; its schematic and board file were read for the supply only. · <a href="circuits/open-whbeers-fuzz-face.svg">SVG</a></p><div class="drawing"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1768 1104" font-family="DejaVu Sans, Arial, Helvetica, sans-serif" stroke-linecap="round" stroke-linejoin="round">
+<rect width="1768" height="1104" fill="#ffffff"/>
+<polyline points="10,1094 1758,1094 1758,10 10,10 10,1094" fill="none" stroke="#888888" stroke-width="1.5"/>
+<polyline points="1368,1094 1758,1094 1758,974 1368,974 1368,1094" fill="none" stroke="#888888" stroke-width="1.5"/>
+<text x="1380" y="996" dy="0.35em" font-size="16" text-anchor="start" fill="#000000" font-weight="bold" xml:space="preserve">Random Input effect board</text>
+<text x="1380" y="1020" dy="0.35em" font-size="8" text-anchor="start" fill="#000000" xml:space="preserve">whbeers-fuzz-face · board main</text>
+<text x="1380" y="1038" dy="0.35em" font-size="8" text-anchor="start" fill="#000000" xml:space="preserve">graph v1.0 (2026-11-03) · 449 x 280 mm</text>
+<text x="1380" y="1056" dy="0.35em" font-size="7" text-anchor="start" fill="#000000" xml:space="preserve">drawn by edakit schematic draw – change the graph, not this drawing</text>
+<polyline points="44.52,750 648,750 648,40 44.52,40 44.52,750" fill="none" stroke="#888888" stroke-width="1" stroke-dasharray="6 4"/>
+<polyline points="710.36,163.5 1188,163.5 1188,40 710.36,40 710.36,163.5" fill="none" stroke="#888888" stroke-width="1" stroke-dasharray="6 4"/>
+<polyline points="1250.36,163.5 1728,163.5 1728,40 1250.36,40 1250.36,163.5" fill="none" stroke="#888888" stroke-width="1" stroke-dasharray="6 4"/>
+<polyline points="40.36,933.5 368,933.5 368,810 40.36,810 40.36,933.5" fill="none" stroke="#888888" stroke-width="1" stroke-dasharray="6 4"/>
+<polyline points="430.36,933.5 758,933.5 758,810 430.36,810 430.36,933.5" fill="none" stroke="#888888" stroke-width="1" stroke-dasharray="6 4"/>
+<text x="54.52" y="62" dy="0" font-size="16" text-anchor="start" fill="#000000" font-weight="bold" xml:space="preserve">J1 530470410</text>
+<text x="720.36" y="62" dy="0" font-size="16" text-anchor="start" fill="#000000" font-weight="bold" xml:space="preserve">TP1 TestPoint_THTPad_2.5x2.5mm_Drill1.2…</text>
+<text x="1260.36" y="62" dy="0" font-size="16" text-anchor="start" fill="#000000" font-weight="bold" xml:space="preserve">TP2 TestPoint_THTPad_2.5x2.5mm_Drill1.2…</text>
+<text x="50.36" y="832" dy="0" font-size="16" text-anchor="start" fill="#000000" font-weight="bold" xml:space="preserve">TP3 G: ground for the probe</text>
+<text x="440.36" y="832" dy="0" font-size="16" text-anchor="start" fill="#000000" font-weight="bold" xml:space="preserve">TP4 G: ground for the probe</text>
+<polyline points="118,440 128,440" fill="none" stroke="#16801a" stroke-width="1.2"/>
+<polyline points="128,440 128,640" fill="none" stroke="#16801a" stroke-width="1.2"/>
+<polyline points="128,640 148,640" fill="none" stroke="#16801a" stroke-width="1.2"/>
+<polyline points="148,640 158,640" fill="none" stroke="#16801a" stroke-width="1.2"/>
+<polyline points="158,640 178,640" fill="none" stroke="#16801a" stroke-width="1.2"/>
+<polyline points="218,640 228,640" fill="none" stroke="#16801a" stroke-width="1.2"/>
+<polyline points="228,640 248,640" fill="none" stroke="#16801a" stroke-width="1.2"/>
+<polyline points="288,640 328,640" fill="none" stroke="#16801a" stroke-width="1.2"/>
+<polyline points="198,660 198,730" fill="none" stroke="#16801a" stroke-width="1.2"/>
+<polyline points="118,430 138,430" fill="none" stroke="#16801a" stroke-width="1.2"/>
+<polyline points="138,430 138,600" fill="none" stroke="#16801a" stroke-width="1.2"/>
+<polyline points="138,600 148,600" fill="none" stroke="#16801a" stroke-width="1.2"/>
+<polyline points="118,420 138,420" fill="none" stroke="#16801a" stroke-width="1.2"/>
+<polyline points="138,420 138,310" fill="none" stroke="#16801a" stroke-width="1.2"/>
+<polyline points="138,310 148,310" fill="none" stroke="#16801a" stroke-width="1.2"/>
+<polyline points="148,310 158,310" fill="none" stroke="#16801a" stroke-width="1.2"/>
+<polyline points="158,310 178,310" fill="none" stroke="#16801a" stroke-width="1.2"/>
+<polyline points="218,310 228,310" fill="none" stroke="#16801a" stroke-width="1.2"/>
+<polyline points="228,310 268,310" fill="none" stroke="#16801a" stroke-width="1.2"/>
+<polyline points="308,310 348,310" fill="none" stroke="#16801a" stroke-width="1.2"/>
+<polyline points="288,330 288,370" fill="none" stroke="#16801a" stroke-width="1.2"/>
+<polyline points="158,410 518,410" fill="none" stroke="#16801a" stroke-width="1.2"/>
+<polyline points="558,410 628,410" fill="none" stroke="#16801a" stroke-width="1.2"/>
+<polyline points="538,430 538,440" fill="none" stroke="#16801a" stroke-width="1.2"/>
+<polyline points="538,440 538,480" fill="none" stroke="#16801a" stroke-width="1.2"/>
+<polyline points="508,500 498,500" fill="none" stroke="#16801a" stroke-width="1.2"/>
+<polyline points="498,500 478,500" fill="none" stroke="#16801a" stroke-width="1.2"/>
+<polyline points="438,500 398,500" fill="none" stroke="#16801a" stroke-width="1.2"/>
+<polyline points="328,440 328,460" fill="none" stroke="#16801a" stroke-width="1.2"/>
+<polyline points="308,490 298,490" fill="none" stroke="#16801a" stroke-width="1.2"/>
+<polyline points="298,490 248,490" fill="none" stroke="#16801a" stroke-width="1.2"/>
+<polyline points="228,510 228,520" fill="none" stroke="#16801a" stroke-width="1.2"/>
+<polyline points="228,520 228,540" fill="none" stroke="#16801a" stroke-width="1.2"/>
+<polyline points="348,490 388,490" fill="none" stroke="#16801a" stroke-width="1.2"/>
+<polyline points="328,440 538,440" fill="none" stroke="#16801a" stroke-width="1.2"/>
+<polyline points="158,410 158,310" fill="none" stroke="#16801a" stroke-width="1.2"/>
+<polyline points="118,410 128,410" fill="none" stroke="#16801a" stroke-width="1.2"/>
+<polyline points="128,410 128,130" fill="none" stroke="#16801a" stroke-width="1.2"/>
+<polyline points="128,130 148,130" fill="none" stroke="#16801a" stroke-width="1.2"/>
+<polyline points="148,130 158,130" fill="none" stroke="#16801a" stroke-width="1.2"/>
+<polyline points="158,130 198,130" fill="none" stroke="#16801a" stroke-width="1.2"/>
+<polyline points="218,150 218,160" fill="none" stroke="#16801a" stroke-width="1.2"/>
+<polyline points="218,160 218,180" fill="none" stroke="#16801a" stroke-width="1.2"/>
+<polyline points="218,220 218,280" fill="none" stroke="#16801a" stroke-width="1.2"/>
+<polyline points="888,120 958,120" fill="none" stroke="#16801a" stroke-width="1.2"/>
+<polyline points="1428,120 1468,120" fill="none" stroke="#16801a" stroke-width="1.2"/>
+<circle cx="158" cy="310" r="2.2" fill="#16801a" stroke="#16801a" stroke-width="1.2"/>
+<circle cx="538" cy="440" r="2.2" fill="#16801a" stroke="#16801a" stroke-width="1.2"/>
+<text x="153" y="635.5" dy="0.35em" font-size="6" text-anchor="middle" fill="#1f3a9f" xml:space="preserve">EFFECT_IN</text>
+<text x="193.5" y="730" dy="0.35em" font-size="6" text-anchor="start" fill="#1f3a9f" transform="rotate(-90 193.5 730)" xml:space="preserve">EFFECT_IN</text>
+<text x="233" y="635.5" dy="0.35em" font-size="6" text-anchor="middle" fill="#1f3a9f" xml:space="preserve">C2_IN</text>
+<text x="328" y="635.5" dy="0.35em" font-size="6" text-anchor="end" fill="#1f3a9f" xml:space="preserve">Q1_B</text>
+<text x="493" y="495.5" dy="0.35em" font-size="6" text-anchor="middle" fill="#1f3a9f" xml:space="preserve">Q1_B</text>
+<text x="338" y="405.5" dy="0.35em" font-size="6" text-anchor="middle" fill="#1f3a9f" xml:space="preserve">9V0</text>
+<text x="243" y="305.5" dy="0.35em" font-size="6" text-anchor="middle" fill="#1f3a9f" xml:space="preserve">OUT_TAP</text>
+<text x="213.5" y="280" dy="0.35em" font-size="6" text-anchor="start" fill="#1f3a9f" transform="rotate(-90 213.5 280)" xml:space="preserve">OUT_TAP</text>
+<text x="348" y="305.5" dy="0.35em" font-size="6" text-anchor="end" fill="#1f3a9f" xml:space="preserve">Q2_C</text>
+<text x="283.5" y="370" dy="0.35em" font-size="6" text-anchor="start" fill="#1f3a9f" transform="rotate(-90 283.5 370)" xml:space="preserve">Q2_C</text>
+<text x="388" y="485.5" dy="0.35em" font-size="6" text-anchor="end" fill="#1f3a9f" xml:space="preserve">Q2_C</text>
+<text x="1468" y="115.5" dy="0.35em" font-size="6" text-anchor="end" fill="#1f3a9f" xml:space="preserve">Q2_C</text>
+<text x="628" y="405.5" dy="0.35em" font-size="6" text-anchor="end" fill="#1f3a9f" xml:space="preserve">Q1_C_Q2_B</text>
+<text x="433" y="435.5" dy="0.35em" font-size="6" text-anchor="middle" fill="#1f3a9f" xml:space="preserve">Q1_C_Q2_B</text>
+<text x="958" y="115.5" dy="0.35em" font-size="6" text-anchor="end" fill="#1f3a9f" xml:space="preserve">Q1_C_Q2_B</text>
+<text x="398" y="495.5" dy="0.35em" font-size="6" text-anchor="start" fill="#1f3a9f" xml:space="preserve">Q2_E</text>
+<text x="278" y="485.5" dy="0.35em" font-size="6" text-anchor="middle" fill="#1f3a9f" xml:space="preserve">Q2_E</text>
+<text x="223.5" y="525" dy="0.35em" font-size="6" text-anchor="middle" fill="#1f3a9f" transform="rotate(-90 223.5 525)" xml:space="preserve">FUZZ_CTL</text>
+<text x="163" y="125.5" dy="0.35em" font-size="6" text-anchor="middle" fill="#1f3a9f" xml:space="preserve">EFFECT_OUT</text>
+<text x="213.5" y="165" dy="0.35em" font-size="6" text-anchor="middle" fill="#1f3a9f" transform="rotate(-90 213.5 165)" xml:space="preserve">PRE_VOLUME</text>
+<polyline points="148,600 154,600" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="154,604 154,596" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="156,602.5 156,597.5" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="158,601 158,599" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="538,520 538,526" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="534,526 542,526" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="535.5,528 540.5,528" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="537,530 539,530" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="208,490 202,490" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="202,486 202,494" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="200,487.5 200,492.5" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="198,489 198,491" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="228,580 228,586" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="224,586 232,586" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="225.5,588 230.5,588" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="227,590 229,590" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="218,110 218,104" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="222,104 214,104" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="220.5,102 215.5,102" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="219,100 217,100" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="218,890 224,890" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="224,894 224,886" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="226,892.5 226,887.5" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="228,891 228,889" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="608,890 614,890" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="614,894 614,886" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="616,892.5 616,887.5" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="618,891 618,889" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="118,410 108,410" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="118,420 108,420" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="118,430 108,430" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="118,440 108,440" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polygon points="88,450 108,450 108,400 88,400" fill="#ffffff" stroke="#8b1a1a" stroke-width="1.2"/>
+<text x="109.5" y="407" dy="0.35em" font-size="5" text-anchor="start" fill="#555555" xml:space="preserve">1</text>
+<text x="109.5" y="417" dy="0.35em" font-size="5" text-anchor="start" fill="#555555" xml:space="preserve">2</text>
+<text x="109.5" y="427" dy="0.35em" font-size="5" text-anchor="start" fill="#555555" xml:space="preserve">3</text>
+<text x="109.5" y="437" dy="0.35em" font-size="5" text-anchor="start" fill="#555555" xml:space="preserve">4</text>
+<text x="108" y="394" dy="0.35em" font-size="7" text-anchor="end" fill="#000000" xml:space="preserve">J1</text>
+<text x="108" y="456" dy="0.35em" font-size="6" text-anchor="end" fill="#000000" xml:space="preserve">530470410</text>
+<polyline points="178,640 188,640" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="218,640 208,640" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polygon points="188,644 208,644 208,636 188,636" fill="#ffffff" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="198,660 198,648" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polygon points="198,644 199.6,648 196.4,648" fill="#8b1a1a" stroke="#8b1a1a" stroke-width="1.2"/>
+<text x="198" y="629" dy="0.35em" font-size="7" text-anchor="middle" fill="#000000" xml:space="preserve">POT1</text>
+<text x="202" y="653" dy="0.35em" font-size="6" text-anchor="start" fill="#000000" xml:space="preserve">100k</text>
+<polyline points="288,640 278,640" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="248,640 258,640" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="278,640 270.5,640" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="265.5,640 258,640" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="270.5,633 270.5,647" fill="none" stroke="#8b1a1a" stroke-width="2.4"/>
+<polyline points="265.5,633 265.5,647" fill="none" stroke="#8b1a1a" stroke-width="2.4"/>
+<text x="275" y="646" dy="0.35em" font-size="7" text-anchor="middle" fill="#000000" xml:space="preserve">+</text>
+<text x="268" y="626" dy="0.35em" font-size="7" text-anchor="middle" fill="#000000" xml:space="preserve">C2</text>
+<text x="268" y="654" dy="0.35em" font-size="6" text-anchor="middle" fill="#000000" xml:space="preserve">2.2uF</text>
+<polyline points="178,310 188,310" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="218,310 208,310" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polygon points="188,314 208,314 208,306 188,306" fill="#ffffff" stroke="#8b1a1a" stroke-width="1.2"/>
+<text x="198" y="299" dy="0.35em" font-size="7" text-anchor="middle" fill="#000000" xml:space="preserve">R2</text>
+<text x="198" y="321" dy="0.35em" font-size="6" text-anchor="middle" fill="#000000" xml:space="preserve">470</text>
+<polyline points="268,310 278,310" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="308,310 298,310" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polygon points="278,314 298,314 298,306 278,306" fill="#ffffff" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="288,330 288,318" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polygon points="288,314 289.6,318 286.4,318" fill="#8b1a1a" stroke="#8b1a1a" stroke-width="1.2"/>
+<text x="288" y="299" dy="0.35em" font-size="7" text-anchor="middle" fill="#000000" xml:space="preserve">TRIM2</text>
+<text x="292" y="323" dy="0.35em" font-size="6" text-anchor="start" fill="#000000" xml:space="preserve">50k</text>
+<polyline points="518,410 528,410" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="558,410 548,410" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polygon points="528,414 548,414 548,406 528,406" fill="#ffffff" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="538,430 538,418" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polygon points="538,414 539.6,418 536.4,418" fill="#8b1a1a" stroke="#8b1a1a" stroke-width="1.2"/>
+<text x="538" y="399" dy="0.35em" font-size="7" text-anchor="middle" fill="#000000" xml:space="preserve">TRIM1</text>
+<text x="542" y="423" dy="0.35em" font-size="6" text-anchor="start" fill="#000000" xml:space="preserve">100k</text>
+<polyline points="508,500 525,500" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="525,507 525,493" fill="none" stroke="#8b1a1a" stroke-width="2.4"/>
+<polyline points="538,480 538,490" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="525,497 538,490" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="538,520 538,510" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="525,503 538,510" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polygon points="538,510 534.79,509.63 535.93,507.52" fill="#8b1a1a" stroke="#8b1a1a" stroke-width="1.2"/>
+<text x="513" y="497" dy="0.35em" font-size="5" text-anchor="middle" fill="#555555" xml:space="preserve">2</text>
+<text x="541" y="485" dy="0.35em" font-size="5" text-anchor="start" fill="#555555" xml:space="preserve">3</text>
+<text x="541" y="515" dy="0.35em" font-size="5" text-anchor="start" fill="#555555" xml:space="preserve">1</text>
+<text x="542" y="496" dy="0.35em" font-size="7" text-anchor="start" fill="#000000" xml:space="preserve">Q1</text>
+<text x="542" y="505" dy="0.35em" font-size="6" text-anchor="start" fill="#000000" xml:space="preserve">2N3904</text>
+<polyline points="478,500 468,500" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="438,500 448,500" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polygon points="468,496 448,496 448,504 468,504" fill="#ffffff" stroke="#8b1a1a" stroke-width="1.2"/>
+<text x="458" y="489" dy="0.35em" font-size="7" text-anchor="middle" fill="#000000" xml:space="preserve">R3</text>
+<text x="458" y="511" dy="0.35em" font-size="6" text-anchor="middle" fill="#000000" xml:space="preserve">100k</text>
+<polyline points="328,460 328,477" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="321,477 335,477" fill="none" stroke="#8b1a1a" stroke-width="2.4"/>
+<polyline points="348,490 338,490" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="331,477 338,490" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="308,490 318,490" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="325,477 318,490" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polygon points="318,490 318.37,486.79 320.48,487.93" fill="#8b1a1a" stroke="#8b1a1a" stroke-width="1.2"/>
+<text x="331" y="465" dy="0.35em" font-size="5" text-anchor="middle" fill="#555555" transform="rotate(-90 331 465)" xml:space="preserve">2</text>
+<text x="343" y="493" dy="0.35em" font-size="5" text-anchor="end" fill="#555555" transform="rotate(-90 343 493)" xml:space="preserve">3</text>
+<text x="313" y="493" dy="0.35em" font-size="5" text-anchor="end" fill="#555555" transform="rotate(-90 313 493)" xml:space="preserve">1</text>
+<text x="323" y="494" dy="0.35em" font-size="7" text-anchor="end" fill="#000000" transform="rotate(-90 323 494)" xml:space="preserve">Q2</text>
+<text x="332" y="494" dy="0.35em" font-size="6" text-anchor="end" fill="#000000" transform="rotate(-90 332 494)" xml:space="preserve">2N3904</text>
+<polyline points="208,490 218,490" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="248,490 238,490" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polygon points="218,494 238,494 238,486 218,486" fill="#ffffff" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="228,510 228,498" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polygon points="228,494 229.6,498 226.4,498" fill="#8b1a1a" stroke="#8b1a1a" stroke-width="1.2"/>
+<text x="228" y="479" dy="0.35em" font-size="7" text-anchor="middle" fill="#000000" xml:space="preserve">POT2</text>
+<text x="232" y="503" dy="0.35em" font-size="6" text-anchor="start" fill="#000000" xml:space="preserve">1k</text>
+<polyline points="228,540 228,550" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="228,580 228,570" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="228,550 228,557.5" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="228,562.5 228,570" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="221,557.5 235,557.5" fill="none" stroke="#8b1a1a" stroke-width="2.4"/>
+<polyline points="221,562.5 235,562.5" fill="none" stroke="#8b1a1a" stroke-width="2.4"/>
+<text x="234" y="553" dy="0.35em" font-size="7" text-anchor="middle" fill="#000000" transform="rotate(-90 234 553)" xml:space="preserve">+</text>
+<text x="214" y="560" dy="0.35em" font-size="7" text-anchor="middle" fill="#000000" transform="rotate(-90 214 560)" xml:space="preserve">C3</text>
+<text x="242" y="560" dy="0.35em" font-size="6" text-anchor="middle" fill="#000000" transform="rotate(-90 242 560)" xml:space="preserve">22uF</text>
+<polyline points="218,110 218,120" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="218,150 218,140" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polygon points="214,120 214,140 222,140 222,120" fill="#ffffff" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="198,130 210,130" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polygon points="214,130 210,131.6 210,128.4" fill="#8b1a1a" stroke="#8b1a1a" stroke-width="1.2"/>
+<text x="205" y="134" dy="0.35em" font-size="7" text-anchor="end" fill="#000000" transform="rotate(-90 205 134)" xml:space="preserve">POT3</text>
+<text x="229" y="130" dy="0.35em" font-size="6" text-anchor="middle" fill="#000000" transform="rotate(-90 229 130)" xml:space="preserve">250k</text>
+<polyline points="218,220 218,210" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="218,180 218,190" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="218,210 218,202.5" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="218,197.5 218,190" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="225,202.5 211,202.5" fill="none" stroke="#8b1a1a" stroke-width="2.4"/>
+<polyline points="225,197.5 211,197.5" fill="none" stroke="#8b1a1a" stroke-width="2.4"/>
+<text x="204" y="200" dy="0.35em" font-size="7" text-anchor="middle" fill="#000000" transform="rotate(-90 204 200)" xml:space="preserve">C4</text>
+<text x="232" y="200" dy="0.35em" font-size="6" text-anchor="middle" fill="#000000" transform="rotate(-90 232 200)" xml:space="preserve">10nF</text>
+<polyline points="888,120 878,120" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polygon points="858,130 878,130 878,110 858,110" fill="#ffffff" stroke="#8b1a1a" stroke-width="1.2"/>
+<text x="879.5" y="117" dy="0.35em" font-size="5" text-anchor="start" fill="#555555" xml:space="preserve">1</text>
+<text x="878" y="104" dy="0.35em" font-size="7" text-anchor="end" fill="#000000" xml:space="preserve">TP1</text>
+<text x="878" y="136" dy="0.35em" font-size="6" text-anchor="end" fill="#000000" xml:space="preserve">TestPoint_THTPad_2.5x2.5mm_Drill1.2mm</text>
+<polyline points="1428,120 1418,120" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polygon points="1398,130 1418,130 1418,110 1398,110" fill="#ffffff" stroke="#8b1a1a" stroke-width="1.2"/>
+<text x="1419.5" y="117" dy="0.35em" font-size="5" text-anchor="start" fill="#555555" xml:space="preserve">1</text>
+<text x="1418" y="104" dy="0.35em" font-size="7" text-anchor="end" fill="#000000" xml:space="preserve">TP2</text>
+<text x="1418" y="136" dy="0.35em" font-size="6" text-anchor="end" fill="#000000" xml:space="preserve">TestPoint_THTPad_2.5x2.5mm_Drill1.2mm</text>
+<polyline points="218,890 208,890" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polygon points="188,900 208,900 208,880 188,880" fill="#ffffff" stroke="#8b1a1a" stroke-width="1.2"/>
+<text x="209.5" y="887" dy="0.35em" font-size="5" text-anchor="start" fill="#555555" xml:space="preserve">1</text>
+<text x="208" y="874" dy="0.35em" font-size="7" text-anchor="end" fill="#000000" xml:space="preserve">TP3</text>
+<text x="208" y="906" dy="0.35em" font-size="6" text-anchor="end" fill="#000000" xml:space="preserve">TestPoint_THTPad_2.5x2.5mm_Drill1.2mm</text>
+<polyline points="608,890 598,890" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polygon points="578,900 598,900 598,880 578,880" fill="#ffffff" stroke="#8b1a1a" stroke-width="1.2"/>
+<text x="599.5" y="887" dy="0.35em" font-size="5" text-anchor="start" fill="#555555" xml:space="preserve">1</text>
+<text x="598" y="874" dy="0.35em" font-size="7" text-anchor="end" fill="#000000" xml:space="preserve">TP4</text>
+<text x="598" y="906" dy="0.35em" font-size="6" text-anchor="end" fill="#000000" xml:space="preserve">TestPoint_THTPad_2.5x2.5mm_Drill1.2mm</text>
+</svg>
+</div><div class="scroll"><table class="faults"><thead><tr><th>Stage</th><th>Code</th><th>Where</th><th>Judged</th><th>Why</th></tr></thead><tbody><tr><td>check</td><td><a href="docs.html#DOCS.file"><code>DOCS.file</code></a></td><td>edakit.toml</td><td><span class="chip pending">criterion</span></td><td>The transcription has no requirements file: what the published design must do stands in its own documents, not in edakit&#x27;s form. edakit requires the file before a release (handbook 3.6); it is no point of the design.</td></tr><tr><td>check</td><td><a href="parts.html#PARTS.verified"><code>PARTS.verified</code></a>/device</td><td>POT1</td><td><span class="chip note">lacks</span></td><td>POT1, the input volume (A100K): the TT Electronics P160 order code that stands in has no LCSC number in the catalogue, and a KiCad design names no EasyEDA device.</td></tr><tr><td>check</td><td><a href="parts.html#PARTS.verified"><code>PARTS.verified</code></a>/device</td><td>POT3</td><td><span class="chip note">lacks</span></td><td>POT3, the volume (A250K): the TT Electronics P160 with PC pins that stands in has no LCSC number in the catalogue (the solder-lug P160KNP-0QC20A250K, C6249458, has one), and a KiCad design names no EasyEDA device.</td></tr><tr><td>check</td><td><a href="parts.html#PARTS.verified"><code>PARTS.verified</code></a>/device</td><td>TP1</td><td><span class="chip pending">criterion</span></td><td>TP1 (Q1C) is a plated pad of the board for the probe of the bias procedure (KiCad footprint TestPoint_THTPad_2.5x2.5mm_Drill1.2mm) – copper, nothing to buy or place: edakit asks every component for an LCSC part or an EasyEDA device.</td></tr><tr><td>check</td><td><a href="parts.html#PARTS.verified"><code>PARTS.verified</code></a>/device</td><td>TP2</td><td><span class="chip pending">criterion</span></td><td>TP2 (Q2C) is a plated pad of the board for the probe of the bias procedure (KiCad footprint TestPoint_THTPad_2.5x2.5mm_Drill1.2mm) – copper, nothing to buy or place: edakit asks every component for an LCSC part or an EasyEDA device.</td></tr><tr><td>check</td><td><a href="parts.html#PARTS.verified"><code>PARTS.verified</code></a>/device</td><td>TP3</td><td><span class="chip pending">criterion</span></td><td>TP3 (G) is a plated ground pad of the board for the probe (KiCad footprint TestPoint_THTPad_2.5x2.5mm_Drill1.2mm) – copper, nothing to buy or place: edakit asks every component for an LCSC part or an EasyEDA device.</td></tr><tr><td>check</td><td><a href="parts.html#PARTS.verified"><code>PARTS.verified</code></a>/device</td><td>TP4</td><td><span class="chip pending">criterion</span></td><td>TP4 (G) is a plated ground pad of the board for the probe (KiCad footprint TestPoint_THTPad_2.5x2.5mm_Drill1.2mm) – copper, nothing to buy or place: edakit asks every component for an LCSC part or an EasyEDA device.</td></tr><tr><td>sim</td><td><a href="lim.html#LIM.v"><code>LIM.v</code></a></td><td>Q2_C</td><td><span class="chip warning">real</span></td><td>The bias of a Fuzz Face rests on its transistors&#x27; gain (FT-17). Trimmed for the typical pair (TRIM2 at 5.05 kΩ: TP2 at 5.0 V), a pair at the low end of the 2N3904&#x27;s hFE (40) puts Q2&#x27;s collector at 3.8 V, Q1 at the low end with Q2 at the high end at 3.4 V – outside 4.5–5.5 V; the high end stays inside (5.1 V, Q1 high with Q2 low 5.2 V). Q1 weighs most: its base current through the 100 kΩ feedback sets Q2&#x27;s emitter. The design&#x27;s answer is its trimmers and its bias procedure: retrimmed, every pair reaches 5.0 V with TRIM2 between 3.4 and 5.4 kΩ (the extra scenarios &#x27;retrimmed&#x27;, inside the window). A builder who changes the transistors trims again.</td></tr><tr><td>sim</td><td><a href="lim.html#LIM.v"><code>LIM.v</code></a></td><td>Q1_C_Q2_B</td><td><span class="chip note">lacks</span></td><td>TP1&#x27;s window, 500–700 mV, is the schematic&#x27;s for &#x27;medium gain NPN Germanium transistors&#x27;: no germanium data sheet could be read, the silicon 2N3904 stands in, and with silicon Q1&#x27;s collector – Q2&#x27;s base – sits two base-emitter voltages above ground, 1.3–1.6 V over the spread whatever TRIM1 (Q2&#x27;s emitter must carry Q1&#x27;s base-emitter voltage through the 100 kΩ). A germanium pair&#x27;s 0.2–0.3 V junctions put it inside; its spread and leakage need a data sheet the transcription lacks (maker-coverage GTP 1).</td></tr><tr><td>sim</td><td><a href="req.html#REQ.value"><code>REQ.value</code></a></td><td>POT2</td><td><span class="chip warning">real</span></td><td>The fuzz control POT2 (B1K) is Q2&#x27;s emitter resistor: Q2&#x27;s emitter current, 0.66–0.97 mA, flows through its track, and C3 (22 µF) on its wiper sits at half the emitter voltage – 0.33–0.48 V across the half of the track between Q2&#x27;s emitter and the wiper. Turned while playing, the wiper&#x27;s step moves C3&#x27;s charge – the crackle of a control with DC on it (maker-coverage CK-30). It is the circuit&#x27;s, not this board&#x27;s: the Fuzz Face&#x27;s fuzz control is Q2&#x27;s variable emitter degeneration, 1 kΩ bypassed through its wiper (ElectroSmash&#x27;s analysis).</td></tr><tr><td>sim</td><td><a href="req.html#REQ.value"><code>REQ.value</code></a></td><td>TRIM2</td><td><span class="chip open">known gap</span></td><td>TRIM2 is Q2&#x27;s collector resistor, 3.2–4.9 V across it by design, between Q2&#x27;s collector and the output tap, both in the signal path. REQ.value/switch (CK-30) holds every pot in a signal path to one DC level on both sides – the pop and the scratch of a control turned while playing. A trimmer is set once at the bench (the bias procedure) and not turned while playing; edakit cannot tell it from a panel pot: the potentiometer kind has no field for it, and one is catalog data (edakit/catalog/kinds.toml), which this transcription does not change. What would: a value in kinds.toml&#x27;s potentiometer – say adjust = &quot;trimmer&quot; –, the Bourns 3296W entries marked with it, and REQ.value/switch leaving trimmers out.</td></tr></tbody></table></div><p class="meta">edakit's false alarms on this design, fixed</p><ul><li>Q2&#x27;s base – Q1&#x27;s collector, held by TRIM1 from 9V0 – judged as floating while &#x27;the firmware is not running&#x27; (LVL.undefined): the board has no IC, 9V0 comes in at the connector J1 from the Noise Floor IO board, and no pin types it as a supply. Now the net a source of sim.json feeds (its plus pin) is a rail for the transistors&#x27; control pins.</li></ul></article><footer>Written by <code>docs/catalog/build.py</code>; <code>tests/test_catalog_page.py</code> holds it to the catalog.</footer></main></div><script>
+const q = document.getElementById('q');
+if (q) q.addEventListener('input', () => {
+  const s = q.value.trim().toLowerCase();
+  document.querySelectorAll('[data-text]').forEach(a => { a.hidden = s && !a.dataset.text.includes(s); });
+  document.querySelectorAll('.group').forEach(g => {
+    g.hidden = s && !g.querySelector('[data-text]:not([hidden])');
+    if (g.tagName === 'DETAILS') g.open = !!s && !g.hidden;
+  });
+});
+function openTarget() {
+  const id = decodeURIComponent(location.hash.slice(1));
+  const el = id && document.getElementById(id);
+  const d = el && el.closest('details');
+  if (d) { d.open = true; el.scrollIntoView(); }
+}
+window.addEventListener('hashchange', openTarget);
+openTarget();
+</script></body></html>

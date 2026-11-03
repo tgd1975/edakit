@@ -15,6 +15,7 @@ from functools import lru_cache
 from ..catalog import HERE
 from ..circuit import resistor_like, resistors_to, supply_nets
 from ..findings import Finding
+from .paths import inputs
 
 
 @lru_cache(maxsize=1)
@@ -49,15 +50,24 @@ def must_not_float(info):
 
 def run(ctx):
     d = ctx.joined
-    return (undefined_inputs(d) + control_pins(d) + contention(d) + straps(d) + open_inputs(d) + released_nets(d)
-            + analog_nodes(d))
+    return (undefined_inputs(d) + control_pins(d, ctx.sim) + contention(d) + straps(d) + open_inputs(d)
+            + released_nets(d) + analog_nodes(d))
 
 
-def held_nets(d):
-    """Nets a resistor path holds while the firmware is not running: a resistor to a net a pin defines, to a supply or
-    ground – or to a net held so itself, as a divider's middle is."""
+def fed_nets(d, sim):
+    """The nets the board's supply comes in on although no pin types them a supply (paths.inputs): every pin of a
+    reversible source, the plus of a sim.json source and each rail of its `outputs` – a pedal's effect board fed from
+    another board has no IC on it, and a reverse-polarity MOSFET in the ground return has its gate on the input net.
+    Ground is not fed."""
+    return inputs(d, sim) - {None, d.ground}
+
+
+def held_nets(d, fed=frozenset()):
+    """Nets a resistor path holds while the firmware is not running: a resistor to a net a pin defines, to a supply
+    (a supply pin's net, a net a source feeds: `fed`) or ground – or to a net held so itself, as a divider's middle
+    is."""
     held = {name for name, net in d.nets.items() if any(pin_defines(d.pin_info(r)) for r in net["pins"])}
-    held |= supply_nets(d) | {d.ground}
+    held |= supply_nets(d) | {d.ground} | set(fed)
     edges = resistor_like(d)
     pulled = set()
     grew = True
@@ -95,12 +105,15 @@ def undefined_inputs(d):
     return out
 
 
-def control_pins(d):
+def control_pins(d, sim=None):
     """LVL.undefined: a transistor whose control pin (base, gate) has no resistor to the roles of [control] – its
-    emitter, its source – or to a rail: a net a pin defines at reset (a push-pull output, a supply), ground, or a net
-    resistors hold to them (held_nets: a bias divider's middle – the base of an analog stage biased by resistors)."""
+    emitter, its source – or to a rail: a net a pin defines at reset (a push-pull output, a supply), a net the board's
+    supply comes in on (fed_nets: a pedal's effect board fed at its connector, the gate of a reverse-polarity MOSFET in
+    the ground return on the input net), ground, or a net resistors hold to them (held_nets: a bias divider's middle –
+    the base of an analog stage biased by resistors)."""
+    fed = fed_nets(d, sim)
     rails = {name for name, net in d.nets.items() if any(defines(d.pin_info(r).get("type")) for r in net["pins"])}
-    held = rails | supply_nets(d) | {d.ground} | held_nets(d)
+    held = rails | supply_nets(d) | {d.ground} | fed | held_nets(d, fed)
     out = []
     for role, c in data()["control"].items():
         for des in d.comps_of_kind(*c["kinds"]):
@@ -212,10 +225,28 @@ def sinks_led(d, ref):
     return part.get("kind") in ("led", "led_rgb") and str(d.pin_info(ref).get("role") or "").startswith("cathode")
 
 
+def led_load(d, ref):
+    """A pin on a net of outputs that let go that is their load, not a line anything reads: an LED's cathode on it
+    (sinks_led), or a resistor whose far side holds nothing but LEDs – a status LED behind its series resistor, from
+    the supply into the output or from the output to ground (the MCP73831's STAT: red while charging, green when the
+    charge is complete)."""
+    if sinks_led(d, ref):
+        return True
+    des = ref.partition(".")[0]
+    part = d.part(des) or {}
+    if part.get("kind") != "resistor":
+        return False
+    far = {d.pin_net.get(f"{des}.{n}") for n in part.get("pins") or {}} - {d.pin_net.get(ref), None}
+    others = [r for net in far for r in d.nets[net]["pins"] if r.partition(".")[0] != des]
+    return len(far) == 1 and bool(others) and all(
+        (d.part(r.partition(".")[0]) or {}).get("kind") in ("led", "led_rgb") for r in others)
+
+
 def released_nets(d):
     """LVL.undefined/open_drain: a net whose only drivers are open-drain or tri-state outputs and that nothing pulls up
     – released, it floats. An I2C line is REQ.missing's (needs.toml [i2c]); a net that holds nothing but the outputs
-    and LED cathodes is the outputs' load – an LED from the supply into a 555's discharge pin."""
+    and their LEDs is the outputs' load – an LED from the supply into a 555's discharge pin, a charger's status LEDs
+    behind their resistors (led_load)."""
     from ..circuit import i2c_name
     from .requires import i2c_line
     held = held_nets(d)                  # a resistor path to a defined net – through a divider or a series chain too
@@ -232,8 +263,8 @@ def released_nets(d):
         if name in held:
             continue
         others = [r for r in net["pins"] if r not in open_]
-        if others and all(sinks_led(d, r) for r in others):
-            continue                     # the outputs sink LEDs: released, the LEDs are dark and nothing reads the net
+        if others and all(led_load(d, r) for r in others):
+            continue                     # the outputs drive LEDs: released, nothing reads the net
         roles = {i.get("role") for i in infos}
         fix = ("a pull-down to ground – the B line of an RS-485 bias pair (REQ.value/failsafe)" if roles & {"rs485_b"}
                else "a pull-up to the bus supply – the A line of an RS-485 bias pair (REQ.value/failsafe)"

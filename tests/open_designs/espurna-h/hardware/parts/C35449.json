@@ -1,0 +1,78 @@
+{
+ "lcsc": "C35449",
+ "mpn": "SRD-05VDC-SL-C",
+ "manufacturer": "Ningbo Songle Relay",
+ "kind": "relay",
+ "package": "THT 19.2 × 15.6 mm, 5 pins",
+ "footprint": "RELAY-TH_SRD-XXVDC-XL-C",
+ "jlc_class": "Extended Part",
+ "datasheet": {
+  "url": "https://datasheet.lcsc.com/datasheet/pdf/9ddfe54b7529126320ff1ddcabf6bab7.pdf?productCode=C35449",
+  "pinout_page": 2
+ },
+ "pins": {
+  "1": {
+   "name": "1",
+   "type": "passive",
+   "role": "coil_plus"
+  },
+  "2": {
+   "name": "2",
+   "type": "passive",
+   "role": "no"
+  },
+  "3": {
+   "name": "3",
+   "type": "passive",
+   "role": "nc"
+  },
+  "4": {
+   "name": "4",
+   "type": "passive",
+   "role": "coil_minus"
+  },
+  "5": {
+   "name": "5",
+   "type": "passive",
+   "role": "common"
+  }
+ },
+ "values": {
+  "coil_ohm": 70,
+  "v_operate_v": 3.75,
+  "v_release_v": 0.5,
+  "r_contact_ohm": 0.1
+ },
+ "limits": {
+  "v_coil_max_v": 6.5,
+  "i_contact_max_a": 10,
+  "i_switch_max_a": 10,
+  "v_max_v": 250,
+  "t_min_c": -40,
+  "t_max_c": 85
+ },
+ "sources": [
+  "Songle SRD series data sheet (单组转换型 7A/10A/15A, two pages, no revision printed), LCSC's copy https://datasheet.lcsc.com/datasheet/pdf/9ddfe54b7529126320ff1ddcabf6bab7.pdf?productCode=C35449, read 2026-11-03",
+  "ordering information p. 1: SRD-05VDC-S L-C = 5 V coil, S sealed, L 0.36 W coil, C changeover (1C)",
+  "coil table p. 1, 0.36 W (L), 5 VDC: 71.4 mA, 70 Ω ±10 %, pick-up 75 % max (3.75 V), drop-out 10 % min (0.5 V), overload 130 % (6.5 V, v_coil_max_v)",
+  "contact data p. 1: contact resistance 100 mΩ (1 A 6 VDC), load 7 A / 10 A / 15 A at 250 VAC by version, max. switching voltage 250 VAC; safety approvals p. 2 (CQC, TÜV): 10 A 250 VAC – the ESPurna-H README calls it a 10 A relay: i_contact_max_a and i_switch_max_a 10 A, v_max_v 250 (an AC rms value)",
+  "insulation p. 1: coil to contacts 1500 VAC 1 min, open contacts 1000 VAC 1 min; −40 … +85 °C",
+  "pins: PCB drawing p. 2 (bottom view, C type): coil between the two pins of one column, common the offset pin beside it, NC the contact closed at rest, NO the other – the EasyEDA footprint of C35449 (edakit part import, pad positions): pad 5 the offset pin (common), pads 1 and 4 the coil, pad 3 NC, pad 2 NO; the ESPurna-H Eagle package SRD-5VDC-SL-C (COMMON, COIL1/COIL2, OPEN, CLOSED) rotated by 180° gives the same pads"
+ ],
+ "verified": {
+  "by": "Claude (datasheet check, open-design transcription)",
+  "date": "2026-11-03",
+  "datasheet": "Songle SRD series (two pages)",
+  "datasheet_sha256": "1812789b19a42e028ebc8da2682445f67bc47a509e27ecec839b490ade91fc02",
+  "checked": [
+   "coil data of the 5 V 0.36 W coil",
+   "contact rating 10 A 250 VAC",
+   "pinout from the bottom view against the footprint's pads"
+  ],
+  "open": [
+   "the coil has no polarity: coil_plus is the pin on 5V in this design",
+   "the version's current rating (7, 10 or 15 A) is not in the part number; 10 A taken from the approvals and the design's README",
+   "the contact rating is an AC rms value; edakit compares voltages as DC – the relay's v_max_v is not held to a net (a relay is no passive part in LIM.v)"
+  ]
+ }
+}

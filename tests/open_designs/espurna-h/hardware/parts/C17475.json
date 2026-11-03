@@ -1,0 +1,54 @@
+{
+ "lcsc": "C17475",
+ "mpn": "0805W8F1502T5E",
+ "manufacturer": "UNI-ROYAL(厚声)",
+ "kind": "resistor",
+ "package": "0805",
+ "footprint": "R0805",
+ "jlc_class": "Basic Part",
+ "datasheet": {
+  "url": "https://datasheet.lcsc.com/datasheet/pdf/0a975aaa49b7c97f38a963127be4a823.pdf?productCode=C17475",
+  "pinout_page": null
+ },
+ "pins": {
+  "1": {
+   "name": "1",
+   "type": "passive",
+   "role": "1"
+  },
+  "2": {
+   "name": "2",
+   "type": "passive",
+   "role": "2"
+  }
+ },
+ "values": {
+  "value_ohm": 15000.0,
+  "tolerance": 0.01
+ },
+ "limits": {
+  "p_max_w": 0.125,
+  "v_max_v": 150
+ },
+ "spice": {},
+ "sources": [
+  "UNI-ROYAL Thick Film Chip Resistors data sheet V.3 (Feb. 12, 2019), LCSC's copy https://datasheet.lcsc.com/datasheet/pdf/0a975aaa49b7c97f38a963127be4a823.pdf?productCode=C17475, read 2026-11-03",
+  "order code 0805W8F1502T5E: 0805, W8 = 1/8 W, F = ±1 %, value 15000 Ω (2. explanation of part no.)",
+  "6. resistance range: 0805 1/8 W at 70 °C; 7. ratings: 0805 max. working voltage 150 V, overload 300 V, −55 … 155 °C – the working voltage is the DC or the RMS AC continuous voltage (9. voltage rating)",
+  "pins 1, 2 as the library's 0805 resistors of the same series (C17414)",
+  "JLCPCB catalogue (edakit part search, 2026-11-03): Basic Part"
+ ],
+ "verified": {
+  "by": "Claude (datasheet check, open-design transcription)",
+  "date": "2026-11-03",
+  "datasheet": "UNI-ROYAL Thick Film Chip Resistors V.3 (2019-02-12)",
+  "datasheet_sha256": "11cd644d5d8a34a6d12775afb80bf58d8fc11f0c3b700dbd0f7a59942ceaa5ef",
+  "checked": [
+   "order code: size, power, tolerance, value",
+   "table 7: 0805 max. working voltage 150 V"
+  ],
+  "open": [
+   "the schematic names the value and the 0805 size only; this order code stands in"
+  ]
+ }
+}

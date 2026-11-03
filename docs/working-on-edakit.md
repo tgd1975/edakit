@@ -43,7 +43,8 @@ A session in this repository works by [CLAUDE.md](../CLAUDE.md). In short:
 Every check is seen red once: a fault built into a copy of an example, the code expected, the repaired circuit
 without it. `tests/fixtures/led-bar` is the project the tests build their faults into; `tests/reference.py` holds a
 reference circuit per domain with its seeded faults; `tests/open_designs/` holds published open designs with every
-finding judged. Stages L and F run on a written export (`tests/test_fab_run.py`).
+finding judged. Stages L and F run on a written export (`tests/test_fab_run.py`). What each layer proves, why these
+circuits and what a new one must bring: [How edakit is tested](../handbook/19-verification.md) (handbook 19).
 
 The documentation has tests of its own:
 

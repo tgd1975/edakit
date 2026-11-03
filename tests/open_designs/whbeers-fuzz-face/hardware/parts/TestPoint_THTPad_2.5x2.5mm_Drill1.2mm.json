@@ -1,0 +1,27 @@
+{
+ "mpn": "TestPoint_THTPad_2.5x2.5mm_Drill1.2mm",
+ "kind": "connector",
+ "package": "plated through-hole square pad 2.5 × 2.5 mm, drill 1.2 mm, on the board",
+ "own": {
+  "what": "handmade",
+  "notes": "a plated pad of the board for a probe (KiCad footprint TestPoint:TestPoint_THTPad_2.5x2.5mm_Drill1.2mm, symbol Connector:TestPoint): copper, no part to buy"
+ },
+ "pins": {
+  "1": {
+   "name": "1",
+   "type": "passive"
+  }
+ },
+ "sources": [
+  "the design's board (hardware/random_input.kicad_pcb of whbeers/random_input at 723a89d): footprint TestPoint:TestPoint_THTPad_2.5x2.5mm_Drill1.2mm for TP1 (Q1C), TP2 (Q2C), TP3 and TP4 (G), read 2026-11-03"
+ ],
+ "verified": {
+  "by": "Claude (datasheet check, open-design transcription)",
+  "date": "2026-11-03",
+  "datasheet": "none – a pad of the board; the board file gives its size",
+  "checked": [
+   "pad size and drill"
+  ],
+  "open": []
+ }
+}

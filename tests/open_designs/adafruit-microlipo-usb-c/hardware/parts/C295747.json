@@ -1,0 +1,75 @@
+{
+ "lcsc": "C295747",
+ "mpn": "S2B-PH-SM4-TB(LF)(SN)",
+ "manufacturer": "JST",
+ "kind": "battery_holder",
+ "package": "JST PH, 2 circuits, 2.0 mm, SMT, side entry (right angle), two solder tabs",
+ "footprint": "CONN-SMD_P2.00_S2B-PH-SM4-TB-LF-SN",
+ "jlc_class": "Extended Part",
+ "datasheet": {
+  "url": "https://datasheet.lcsc.com/datasheet/pdf/2474e9261ed7c5f86b55d373e724589d.pdf?productCode=C295747",
+  "pinout_page": 1
+ },
+ "pins": {
+  "1": {
+   "name": "1",
+   "type": "passive",
+   "role": "minus",
+   "hint": "circuit No. 1: the cell's minus as Adafruit's chargers and cells wire it (GND); JST assigns no polarity"
+  },
+  "2": {
+   "name": "2",
+   "type": "passive",
+   "role": "plus",
+   "hint": "circuit No. 2: the cell's plus as Adafruit's chargers and cells wire it (VBAT)"
+  },
+  "3": {
+   "name": "3",
+   "type": "mechanical",
+   "role": "tab",
+   "hint": "solder tab, no contact"
+  },
+  "4": {
+   "name": "4",
+   "type": "mechanical",
+   "role": "tab",
+   "hint": "solder tab, no contact"
+  }
+ },
+ "values": {
+  "r_contact_ohm": 0.02
+ },
+ "limits": {
+  "i_max_a": 2.0,
+  "v_max_v": 100,
+  "t_min_c": -25,
+  "t_max_c": 85
+ },
+ "spice": {},
+ "compliance": {
+  "rohs": true,
+  "source": "JST PH data sheet p. 1: RoHS2 compliance; LCSC product data C295747 (isEnvironment), read 2026-11-03"
+ },
+ "sources": [
+  "JST PH connector data sheet (2.0 mm pitch, disconnectable crimp style, 3 pages), LCSC's copy https://datasheet.lcsc.com/datasheet/pdf/2474e9261ed7c5f86b55d373e724589d.pdf?productCode=C295747, read 2026-11-03",
+  "p. 1 specifications: current rating 2 A AC/DC (AWG #24), voltage rating 100 V AC/DC, temperature −25 … +85 °C including the temperature rise of the current, contact resistance 10 mΩ initial, 20 mΩ max after the environmental tests – r_contact_ohm the latter; applicable wire AWG #32 … #24",
+  "p. 3 SMT side entry: B2B-PH-SM4-TB top entry, S2B-PH-SM4-TB side entry, 2 circuits, 2.0 mm pitch",
+  "kind battery_holder: the part is the cell's connector – a LiPo pack with a JST PH plug goes here, and edakit puts a cell state of sim.json on a battery holder (handbook 5.1); roles plus and minus as the Adafruit MicroLipo wires it (pin 1 GND, pin 2 VBAT), the polarity Adafruit's cells share – 'other brands may have reverse polarity' (Adafruit, product 1578)",
+  "pins 1 … 4, footprint CONN-SMD_P2.00_S2B-PH-SM4-TB-LF-SN: EasyEDA library data of C295747, https://easyeda.com/api/products/C295747/components?version=6.4.19.5, read 2026-11-03 (edakit part import) – pins 3 and 4 are the solder tabs",
+  "LCSC product data C295747 (2026-11-03): JST S2B-PH-SM4-TB(LF)(SN), 2 A, 100 V, −25 … 85 °C, 28 255 pcs; JLCPCB catalogue (edakit part import, 2026-11-03): Extended Part"
+ ],
+ "verified": {
+  "by": "Claude (datasheet check, open-design transcription)",
+  "date": "2026-11-03",
+  "datasheet": "JST PH connector data sheet (LCSC's copy)",
+  "datasheet_sha256": "19ec5596816894cd526c3f2e0dd6752e9ea68bd5ff4886ab93bc2966da4677ca",
+  "checked": [
+   "current 2 A (AWG #24), voltage 100 V, −25 … 85 °C, contact resistance 20 mΩ max",
+   "the SMT side-entry model S2B-PH-SM4-TB, 2 circuits"
+  ],
+  "open": [
+   "the schematic names a JST PH right-angle connector (CN2, JST_2PIN, package JSTPH2: two contacts and two solder tabs) without a part number; JST's S2B-PH-SM4-TB stands in",
+   "which circuit lies on which side of the land pattern was not compared with the Adafruit package pad by pad – the roles follow the schematic's pin numbers"
+  ]
+ }
+}

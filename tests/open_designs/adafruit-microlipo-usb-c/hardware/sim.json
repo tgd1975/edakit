@@ -1,0 +1,93 @@
+{
+ "about": "A USB port feeds the board through the USB-C receptacle; a one-cell LiPo of 500 mAh sits on the JST connector – nearly empty, half charged or full. SJ1 open as delivered (100 mA), soldered closed in the 500 mA mode. Values with 'note' are assumptions.",
+ "ambient_c": 25,
+ "sources": {
+  "X2": {
+   "plus": "A4",
+   "minus": "A1",
+   "r_ohm": 0.3,
+   "i_max_a": 0.5,
+   "note": "USB 2.0 port and cable: 0.3 Ω source resistance (assumed, as edakit's example); with 5.1 kΩ Rd on CC1 and CC2 a USB-C source offers Default USB Power – 500 mA from a USB 2.0 port"
+  }
+ },
+ "cells": {
+  "low": {
+   "v": 3.0,
+   "r": 0.2,
+   "i_charge_max_a": 0.5,
+   "note": "Adafruit's 500 mAh LiPo (product 1578: PKCELL Li-Polymer 503035 500mAh 3.7V with PCM, specification QA.S.0228 ed. A, 2014-08-21): 3.0 V end of discharge, quick charge 1C = 500 mA at most, charge 0 … 45 °C; r 0.2 Ω with its protection circuit assumed – the specification gives none"
+  },
+  "nominal": {
+   "v": 3.7,
+   "r": 0.2,
+   "i_charge_max_a": 0.5,
+   "note": "the same cell at its nominal 3.7 V"
+  },
+  "full": {
+   "v": 4.2,
+   "r": 0.2,
+   "i_charge_max_a": 0.5,
+   "note": "the same cell at its charging voltage 4.2 V: the charger's constant-voltage end"
+  }
+ },
+ "supplies": {
+  "usb-min, cell low": {
+   "X2": 4.75,
+   "CN2": "low"
+  },
+  "usb-nom, cell nominal": {
+   "X2": 5.0,
+   "CN2": "nominal"
+  },
+  "usb-max, cell low": {
+   "X2": 5.25,
+   "CN2": "low"
+  }
+ },
+ "loads": {
+  "100mA": {
+   "about": "as delivered: SJ1 open, R3 alone on PROG – 100 mA; the red LED lights while the cell charges",
+   "open": [
+    "SJ1"
+   ],
+   "leds_on": [
+    "LED1"
+   ]
+  },
+  "500mA": {
+   "about": "SJ1 soldered closed: R3 and R4 in parallel on PROG – the 500 mA mode",
+   "leds_on": [
+    "LED1"
+   ]
+  },
+  "complete": {
+   "about": "the cell full: the charger holds 4.2 V and charges no more – the green LED lights",
+   "matrix": false,
+   "open": [
+    "SJ1"
+   ],
+   "leds_on": [
+    "LED2"
+   ]
+  }
+ },
+ "extra_scenarios": [
+  {
+   "name": "usb-nom, cell full",
+   "supply": {
+    "X2": 5.0,
+    "CN2": "full"
+   },
+   "load": "complete"
+  }
+ ],
+ "corners": [
+  "min",
+  "max"
+ ],
+ "report": [
+  "5V",
+  "VBAT",
+  "STAT"
+ ]
+}

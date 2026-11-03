@@ -1,0 +1,134 @@
+{
+ "lcsc": "C424093",
+ "mpn": "MCP73831T-2ACI/OT",
+ "manufacturer": "Microchip Technology",
+ "kind": "ic",
+ "package": "SOT-23-5",
+ "footprint": "SOT-23-5_L3.0-W1.7-P0.95-LS2.8-BL",
+ "jlc_class": "Extended Part",
+ "datasheet": {
+  "url": "https://ww1.microchip.com/downloads/en/DeviceDoc/MCP73831-Family-Data-Sheet-DS20001984H.pdf",
+  "pinout_page": 1
+ },
+ "pins": {
+  "1": {
+   "name": "STAT",
+   "type": "output",
+   "drive": "tristate",
+   "role": "stat",
+   "hint": "MCP73831: tri-state – low while charging, high when the charge is complete, high impedance in shutdown or without a battery (table 5-1, p. 15); sinks ≤ 25 mA, sources ≤ 35 mA, VOL ≤ 1 V at 4 mA (p. 4)"
+  },
+  "2": {
+   "name": "VSS",
+   "type": "ground",
+   "role": "gnd"
+  },
+  "3": {
+   "name": "VBAT",
+   "type": "power_output",
+   "role": "bat",
+   "hint": "battery +: VREG 4.168 … 4.232 V (option -2); reverse leakage ≤ 2 µA when off; sources 6 µA (typ) to detect a battery (p. 3–4, 13)",
+   "needs": [
+    {
+     "what": "capacitor",
+     "c_min_f": 4.7e-06,
+     "source": "Microchip MCP73831/2 data sheet DS20001984H (Revision H, June 2020), 3.2 p. 11 and 6.1.1.4 p. 18: bypass VBAT to VSS with a minimum of 4.7 µF for loop stability when the battery is disconnected"
+    }
+   ]
+  },
+  "4": {
+   "name": "VDD",
+   "type": "power_in",
+   "role": "vin",
+   "v_max_v": 7.0,
+   "needs": [
+    {
+     "what": "capacitor",
+     "c_min_f": 4.7e-06,
+     "source": "Microchip MCP73831/2 data sheet DS20001984H (Revision H, June 2020), 3.1 p. 11: bypass VDD to VSS with a minimum of 4.7 µF"
+    }
+   ]
+  },
+  "5": {
+   "name": "PROG",
+   "type": "analog",
+   "role": "prog",
+   "hint": "fast charge current IREG = 1000 V / RPROG (5.1.2, p. 15); PROG open (≥ 70 … 200 kΩ) or driven high disables the charger, 25 µA supply current (5.2.2, p. 4)",
+   "needs": [
+    {
+     "what": "pull_down",
+     "r_min_ohm": 2000,
+     "r_max_ohm": 67000,
+     "source": "Microchip MCP73831/2 data sheet DS20001984H (Revision H, June 2020), p. 4 PROG input, charge impedance range 2 … 67 kΩ; RPROG from PROG to VSS (3.5, p. 11)"
+    }
+   ]
+  }
+ },
+ "values": {
+  "behavior": "charger",
+  "vout_v": 4.2,
+  "prog_v": 1000,
+  "i_pre_ratio": 0.1,
+  "v_pre_v": 2.793,
+  "i_term_ratio": 0.075,
+  "r_on_ohm": 0.35,
+  "v_headroom_v": 0.2,
+  "uvlo_v": 3.6,
+  "iq_a": 0.0015
+ },
+ "limits": {
+  "vdd_max_v": 7.0,
+  "vdd_op_min_v": 4.5,
+  "vdd_op_max_v": 6.0,
+  "tj_max_c": 125,
+  "t_min_c": -40,
+  "t_max_c": 85,
+  "rth_ja_k_per_w": 230,
+  "i_out_max_a": 0.5
+ },
+ "hints": [
+  "charge current IREG = 1000 V / RPROG (2 kΩ → about 500 mA, 10 kΩ → 100 mA); option AC: preconditioning at 10 % below 66.5 % of VREG, termination at 7.5 % of IREG, recharge below 96.5 % of VREG (p. 3–4, 26)",
+  "linear charger: worst-case dissipation (VDDmax − VPTHmin) × IREGmax, e.g. 1.54 W at 5.5 V and 550 mA – thermal regulation in SOT-23-5 (6.1.1.3, p. 18); thermal shutdown at 150 °C (4.10)",
+  "hot-pluggable sources (USB cable, wall supply): input overvoltage protection, e.g. a transient suppressor from V+ to 0 V (6.1.1.2, p. 18)"
+ ],
+ "compliance": {
+  "rohs": true,
+  "radio": "none",
+  "source": "LCSC product data C424093 (2026-10-31): RoHS certificates listed (isRohsCert, ROHS3); the data sheet states nothing"
+ },
+ "sources": [
+  "Microchip MCP73831/2 data sheet DS20001984H (Revision H, June 2020), from Microchip https://ww1.microchip.com/downloads/en/DeviceDoc/MCP73831-Family-Data-Sheet-DS20001984H.pdf, read 2026-10-31 (LCSC links revision G of July 2014; revision H changes the test conditions and the battery-detection values, appendix A p. 25)",
+  "pins: p. 1 package types and table 3-1 p. 11, SOT-23-5: 1 STAT, 2 VSS, 3 VBAT, 4 VDD, 5 PROG – EasyEDA symbol of C424093 (edakit part import 2026-10-31): the same",
+  "part number: 2 = VREG 4.20 V, options AC, I = -40 … 85 °C, OT = SOT-23-5 (product identification system, p. 26)",
+  "vdd_max_v 7.0, VDD v_max_v 7.0: p. 3 absolute maximum VDD 7.0 V; all other inputs and outputs -0.3 … VDD + 0.3 V",
+  "vdd_op_min_v 4.5, vdd_op_max_v 6.0: 3.1 p. 11, recommended supply [VREG (typical) + 0.3 V] … 6 V = 4.5 … 6 V for the -2 option; the DC table p. 3 gives supply voltage 3.75 … 6 V",
+  "tj_max_c 125, t_min_c -40, t_max_c 85: p. 5 operating temperature range TJ -40 … 125 °C, specified ambient -40 … 85 °C; absolute maximum TJ 'internally limited'",
+  "rth_ja_k_per_w 230: p. 5 θJA SOT-23-5 typ 230 °C/W (JC51-7 four-layer board, natural convection); note 2: about 130 °C/W or better with a large copper area – the higher figure entered",
+  "vout_v 4.2: p. 3 regulated output voltage VREG 4.168 / 4.20 / 4.232 V (MCP7383X-2) – the constant-voltage level, entered as the output voltage",
+  "p. 3–5: ISS 510 / 1500 µA charging, 53 / 200 µA charge complete, 25 / 50 µA PROG floating, 0.1 / 2 µA below VSTOP; UVLO start 3.3 / 3.45 / 3.6 V, stop 3.2 / 3.38 / 3.5 V; IREG 90 / 100 / 110 mA at 10 kΩ, 450 / 505 / 550 mA at 2 kΩ; RDSON 350 mΩ; TSD 150 °C",
+  "LCSC product data C424093 (2026-10-31): Microchip MCP73831T-2ACI/OT, 9 202 pcs; JLCPCB catalogue (edakit part search, 2026-10-31): Extended Part, 11 336 pcs"
+ ],
+ "notes": "Linear 1-cell Li-ion/Li-Po charger, 4.20 V, 15–500 mA set by RPROG, tri-state STAT. No charger behaviour yet (FT-4): behaviour none. Library draft, group power.",
+ "verified": {
+  "by": "Claude (datasheet check, library draft)",
+  "date": "2026-10-31",
+  "datasheet": "Microchip MCP73831/2 data sheet DS20001984H (Revision H, June 2020)",
+  "datasheet_sha256": "75297f2a5235599368381adfb63df2652cc22d757f171f388147b2ab3d32776f",
+  "checked": [
+   "SOT-23-5 pinout p. 1 and table 3-1 p. 11 = EasyEDA symbol of C424093 (1 STAT, 2 VSS, 3 VBAT, 4 VDD, 5 PROG)",
+   "absolute maximum p. 3: VDD 7.0 V, I/O -0.3 … VDD + 0.3 V, TJ internally limited",
+   "DC characteristics p. 3–5: VREG 4.20 V ±0.75 %, IREG = 1000 V / RPROG, RPROG 2 … 67 kΩ, STAT currents and levels, θJA 230 °C/W, TJ -40 … 125 °C",
+   "capacitors: minimum 4.7 µF at VDD (3.1) and at VBAT (3.2, 6.1.1.4)",
+   "options AC: 10 % / 66.5 % / 7.5 % / 96.5 % (p. 26)",
+   "2026-10-31: prog_v 1000 V – I_REG = 1000 V / R_PROG, Microchip DS20001984H section 5.1.2 (as read for the library draft and for FT-4)",
+   "2026-10-31: behaviour charger (schema-gaps E3) – DS20001984H: options AC of the -2 variant (Product Identification System): IPREG/IREG 10 % (i_pre_ratio), VPTH/VREG 66.5 % of 4.20 V = 2.793 V (v_pre_v), ITERM/IREG 7.5 % (i_term_ratio); RDSON 350 mΩ typ at VDD 3.75 V, TJ 105 °C (r_on_ohm); VPDEXIT VBAT + 200 mV max (v_headroom_v); VSTART 3.6 V max (uvlo_v); ISS 1500 µA max while charging (iq_a); i_out_max_a 0.5 – 'Programmable Charge Current: 15 mA to 500 mA' (p. 1)"
+  ],
+  "open": [
+   "VBAT has no absolute maximum of its own: 'all inputs and outputs -0.3 … VDD + 0.3 V' would forbid a cell on VBAT with VDD absent, which the data sheet itself specifies (reverse leakage with VDD floating) – not entered",
+   "STAT and PROG absolute maximum relative to VDD – no field",
+   "rth_ja_k_per_w is a typical value (230 °C/W, 130 °C/W with large copper); no maximum given",
+   "charge current law, preconditioning, termination and recharge thresholds have no fields (FT-4); vout_v holds the regulation voltage meanwhile",
+   "no i_out_max_a: the data sheet gives the programmable range 15 … 500 mA (p. 1) and the PROG window 2 … 67 kΩ, no rating of the VBAT current"
+  ]
+ }
+}

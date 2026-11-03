@@ -1,0 +1,405 @@
+{
+ "graph": {
+  "name": "adafruit-microlipo-usb-c",
+  "version": "1.0",
+  "date": "2026-11-03",
+  "description": "Adafruit Micro-Lipo Charger for LiPoly Batt with USB Type C Jack (product 4410) as published: USB-C 5 V with 5.1 kΩ on CC1 and CC2 into an MCP73831 linear charger, 100 mA set by 10 kΩ on PROG, 2.2 kΩ in parallel through the solder jumper SJ1 for the 500 mA mode, a red LED that lights while charging and a green one when the charge is complete on STAT, the cell on a JST PH connector, the breakout pads 5V, D−, D+, GND, VBAT. Transcribed for edakit's tests.",
+  "purpose": {
+   "use": "sale",
+   "market": "EU",
+   "notes": "Adafruit sells the board (product 4410), also through distributors in the EU; the transcription is a test of edakit, not a product."
+  },
+  "conventions": {
+   "pin_reference": "'<designator>.<pin>' with the pin numbers of the EasyEDA/LCSC symbol",
+   "v": "per net: [min, max] in V over all intended operating states – USB 2.0 at the receptacle (4.75 … 5.25 V), one Li-ion/LiPo cell on VBAT (up to the charger's 4.232 V)",
+   "source": "Adafruit USB C microlipo charger.sch (Limor Fried/Ladyada for Adafruit Industries, CC BY-SA 3.0) at commit d8ab4b0 of https://github.com/adafruit/Adafruit-MicroLipo-PCB"
+  },
+  "cables": [],
+  "layout": {},
+  "locks": {},
+  "components": [
+   {
+    "designator": "X2",
+    "type": "connector",
+    "label": "USB-C receptacle: 5 V in, D+ and D− to the pads",
+    "part": "TYPE-C-31-M-13C",
+    "lcsc": "C2848620",
+    "pins": {
+     "A1": "GND",
+     "A4": "VBUS",
+     "A5": "CC1",
+     "A6": "D+",
+     "A7": "D-",
+     "A8": "SBU1",
+     "A9": "VBUS",
+     "A12": "GND",
+     "B1": "GND",
+     "B4": "VBUS",
+     "B5": "CC2",
+     "B6": "D+",
+     "B7": "D-",
+     "B8": "SBU2",
+     "B9": "VBUS",
+     "B12": "GND",
+     "S1": "SHIELD"
+    },
+    "nc": [
+     "A8",
+     "B8",
+     "S1"
+    ],
+    "notes": "USB_C in the schematic (CUI CUSB31-CFM2AX-01-X, pads A1B12, B1A12, A4B9, B4A9 paired): SBU1 and SBU2 open; the shell's four legs M1–M4 have no pin in the symbol and no net on the board – open as published."
+   },
+   {
+    "designator": "R5",
+    "type": "resistor",
+    "label": "CC2 Rd 5.1 kΩ",
+    "part": "0603WAF5101T5E",
+    "lcsc": "C23186",
+    "value": "5.1k",
+    "pins": {
+     "1": "1",
+     "2": "2"
+    },
+    "nc": []
+   },
+   {
+    "designator": "R6",
+    "type": "resistor",
+    "label": "CC1 Rd 5.1 kΩ",
+    "part": "0603WAF5101T5E",
+    "lcsc": "C23186",
+    "value": "5.1k",
+    "pins": {
+     "1": "1",
+     "2": "2"
+    },
+    "nc": []
+   },
+   {
+    "designator": "C1",
+    "type": "capacitor",
+    "label": "5V bypass 10 µF",
+    "part": "CL21A106KAYNNNE",
+    "lcsc": "C15850",
+    "value": "10uF",
+    "pins": {
+     "1": "1",
+     "2": "2"
+    },
+    "nc": []
+   },
+   {
+    "designator": "U1",
+    "type": "ic",
+    "label": "Li-ion/LiPo charger 4.2 V (MCP73831)",
+    "part": "MCP73831T-2ACI/OT",
+    "lcsc": "C424093",
+    "pins": {
+     "1": "STAT",
+     "2": "VSS",
+     "3": "VBAT",
+     "4": "VDD",
+     "5": "PROG"
+    },
+    "nc": [],
+    "notes": "IREG = 1000 V / RPROG: R3 10 kΩ alone 100 mA, R3 with R4 through SJ1 1.80 kΩ – 555 mA (DS20001984H 5.1.2)."
+   },
+   {
+    "designator": "C2",
+    "type": "capacitor",
+    "label": "VBAT bypass 10 µF",
+    "part": "CL21A106KAYNNNE",
+    "lcsc": "C15850",
+    "value": "10uF",
+    "pins": {
+     "1": "1",
+     "2": "2"
+    },
+    "nc": []
+   },
+   {
+    "designator": "R3",
+    "type": "resistor",
+    "label": "PROG 10 kΩ: 100 mA",
+    "part": "0603WAF1002T5E",
+    "lcsc": "C25804",
+    "value": "10k",
+    "pins": {
+     "1": "1",
+     "2": "2"
+    },
+    "nc": []
+   },
+   {
+    "designator": "SJ1",
+    "type": "switch",
+    "label": "solder jumper: 500 mA mode, open as delivered",
+    "part": "SOLDERJUMPER_ARROW_NOPASTE",
+    "bom": false,
+    "pins": {
+     "1": "1",
+     "2": "2"
+    },
+    "nc": [],
+    "notes": "Two pads, no paste: open as the board is made; 'change it over to 500mA mode by soldering closed the jumper on the front' (Adafruit, product 4410)."
+   },
+   {
+    "designator": "R4",
+    "type": "resistor",
+    "label": "PROG 2.2 kΩ behind SJ1: 500 mA mode",
+    "part": "0603WAF2201T5E",
+    "lcsc": "C4190",
+    "value": "2.2k",
+    "pins": {
+     "1": "1",
+     "2": "2"
+    },
+    "nc": []
+   },
+   {
+    "designator": "LED1",
+    "type": "led",
+    "label": "red: charging (STAT low)",
+    "part": "NCD0805R1",
+    "lcsc": "C84256",
+    "pins": {
+     "1": "-",
+     "2": "+"
+    },
+    "nc": []
+   },
+   {
+    "designator": "R1",
+    "type": "resistor",
+    "label": "red LED 470 Ω",
+    "part": "0603WAF4700T5E",
+    "lcsc": "C23179",
+    "value": "470",
+    "pins": {
+     "1": "1",
+     "2": "2"
+    },
+    "nc": []
+   },
+   {
+    "designator": "R2",
+    "type": "resistor",
+    "label": "green LED 470 Ω",
+    "part": "0603WAF4700T5E",
+    "lcsc": "C23179",
+    "value": "470",
+    "pins": {
+     "1": "1",
+     "2": "2"
+    },
+    "nc": []
+   },
+   {
+    "designator": "LED2",
+    "type": "led",
+    "label": "green: charge complete (STAT high)",
+    "part": "KT-0805G",
+    "lcsc": "C2297",
+    "pins": {
+     "1": "A",
+     "2": "K"
+    },
+    "nc": []
+   },
+   {
+    "designator": "CN2",
+    "type": "battery_holder",
+    "label": "the cell: JST PH 2-pin, right angle",
+    "part": "S2B-PH-SM4-TB(LF)(SN)",
+    "lcsc": "C295747",
+    "pins": {
+     "1": "1",
+     "2": "2",
+     "3": "3",
+     "4": "4"
+    },
+    "nc": [
+     "3",
+     "4"
+    ],
+    "notes": "JST_2PIN in the schematic: pin 1 GND, pin 2 VBAT; the package's two solder tabs NC1, NC2 are on no net. Typed battery_holder so that a cell state of sim.json sits on it."
+   },
+   {
+    "designator": "JP4",
+    "type": "connector",
+    "label": "breakout pads: 5V, D−, D+, GND, VBAT",
+    "part": "PZ254V-11-05P",
+    "lcsc": "C492404",
+    "pins": {
+     "1": "1",
+     "2": "2",
+     "3": "3",
+     "4": "4",
+     "5": "5"
+    },
+    "nc": [],
+    "bom": false,
+    "notes": "HEADER-1X5 in the schematic, a row of 70-mil pads (0.1\" breakout pads); a 1 × 5 header stands in, not fitted."
+   }
+  ],
+  "nets": [
+   {
+    "name": "5V",
+    "pins": [
+     "X2.A4",
+     "X2.A9",
+     "X2.B4",
+     "X2.B9",
+     "C1.1",
+     "U1.4",
+     "LED1.2",
+     "JP4.1"
+    ],
+    "v": [
+     0,
+     5.25
+    ]
+   },
+   {
+    "name": "GND",
+    "pins": [
+     "X2.A1",
+     "X2.A12",
+     "X2.B1",
+     "X2.B12",
+     "R5.1",
+     "R6.1",
+     "C1.2",
+     "U1.2",
+     "C2.2",
+     "R3.2",
+     "R4.2",
+     "LED2.2",
+     "CN2.1",
+     "JP4.4"
+    ],
+    "v": [
+     0,
+     0
+    ]
+   },
+   {
+    "name": "CC1",
+    "pins": [
+     "X2.A5",
+     "R6.2"
+    ],
+    "v": [
+     0,
+     5.25
+    ]
+   },
+   {
+    "name": "CC2",
+    "pins": [
+     "X2.B5",
+     "R5.2"
+    ],
+    "v": [
+     0,
+     5.25
+    ]
+   },
+   {
+    "name": "D+",
+    "pins": [
+     "X2.A6",
+     "X2.B6",
+     "JP4.3"
+    ],
+    "v": [
+     0,
+     3.6
+    ]
+   },
+   {
+    "name": "D-",
+    "pins": [
+     "X2.A7",
+     "X2.B7",
+     "JP4.2"
+    ],
+    "v": [
+     0,
+     3.6
+    ]
+   },
+   {
+    "name": "VBAT",
+    "pins": [
+     "U1.3",
+     "C2.1",
+     "CN2.2",
+     "JP4.5"
+    ],
+    "v": [
+     0,
+     4.25
+    ]
+   },
+   {
+    "name": "PROG",
+    "pins": [
+     "U1.5",
+     "R3.1",
+     "SJ1.2"
+    ],
+    "v": [
+     0,
+     1.1
+    ]
+   },
+   {
+    "name": "PROG_500",
+    "pins": [
+     "SJ1.1",
+     "R4.1"
+    ],
+    "v": [
+     0,
+     1.1
+    ]
+   },
+   {
+    "name": "STAT",
+    "pins": [
+     "U1.1",
+     "R1.2",
+     "R2.2"
+    ],
+    "v": [
+     0,
+     5.25
+    ]
+   },
+   {
+    "name": "LED_RED",
+    "pins": [
+     "LED1.1",
+     "R1.1"
+    ],
+    "v": [
+     0,
+     5.25
+    ]
+   },
+   {
+    "name": "LED_GREEN",
+    "pins": [
+     "R2.1",
+     "LED2.1"
+    ],
+    "v": [
+     0,
+     5.25
+    ]
+   }
+  ]
+ }
+}

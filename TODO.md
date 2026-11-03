@@ -4,7 +4,7 @@ Open work that needs the owner's computer, a maker or the owner's word. The stat
 and plans the sections name; this list is what is left to do of them, in the order it can be done. No item is deleted.
 
 **Layout.** Every item, in every section, open or closed, is a line with a checkbox and an ID unique in this file,
-counted up and never reused – whoever adds an item takes the next free ID and counts it up here. Next free ID: TD-135.
+counted up and never reused – whoever adds an item takes the next free ID and counts it up here. Next free ID: TD-139.
 
 - Open: `- [ ] TD-<n> - **Title:** what and why.` – a step's own name after the dash (`- [ ] TD-31 - **D.4** …`).
 - Done: ticked, the commit that did it, the date at the end, moved to [Closed todos](#closed-todos), newest first –
@@ -33,14 +33,24 @@ to touch.
       it replaces the render on `docs/projects/pytree.md`. *(edakit-ce)*
 - [ ] TD-110 - **OK for #265:** the parts at LCSC and the combined shipment (parts-order.md, steps 2 and 3) – merged
       with `python3 .github/merge.py 265` on your word. *(edakit-4f)*
-- [ ] TD-123 - **OK for chapter 19 and the four open designs:** the branch `ccr-de7c0e28-hcr2zn` (TD-117 to TD-121, a
-      patch; 3402 tests green) – opened as a pull request and merged with `python3 .github/merge.py <n>` on your word;
-      then TD-117 to TD-121 are ticked and the concept moves to `done/`. *(ccr-de7c0e28)*
 - [ ] TD-134 - **Delete the branches a cloud session cannot delete:** its proxy refuses deleting a ref (`git push
       --delete` and REST, 403); GitHub deletes the branch of a merged pull request itself, so only these are left –
       `notes/verification-and-validation-concept-for-071535` (superseded by #274), `notes/td-103-closed-236-the-second-
       run-in-the-124730` (no pull request; TD-103 closed on main another way), `claude/exciting-einstein-l7ito9` and
       `claude/pensive-cray-kuzv7n` (both contained in main): `git push origin --delete <branch>`. *(ccr-de7c0e28)*
+- [ ] TD-135 - **The layers picture of coin-cell-led:** `pictures/board_main_layers.png` of the gate run with stage F
+      (`<reports>/<run>/pictures/`, or the Gerber ZIP of its `fab/main/`) into `examples/coin-cell-led/docs/` – the
+      board as made shows no copper under the mask; for TD-136. *(quirky-bell)*
+- [ ] TD-137 - **A screenshot of JLCPCB's assembly preview of coin-cell-led:** at the next `/edakit:cart`, once BOM and
+      CPL are uploaded, into `examples/coin-cell-led/docs/jlcpcb_assembly_main_top.png` – only your account shows it;
+      for TD-138. *(quirky-bell)*
+
+## The steps ([docs/steps/](docs/steps/README.md))
+
+- [ ] TD-136 - **Step 9 shows the routed board:** the tracks and the ground pour, `board_main_layers.png` of TD-135
+      under the paragraph on placing and routing in `docs/steps/09-lay-out-the-board.md`. *(quirky-bell)*
+- [ ] TD-138 - **Step 10 ends with the assembled board:** JLCPCB's preview of TD-137 at M-2 in
+      `docs/steps/10-order-the-board.md`, as the last picture of the steps. *(quirky-bell)*
 
 ## The parts order ([docs/concepts/new/parts-order.md](docs/concepts/new/parts-order.md))
 
@@ -56,25 +66,10 @@ to touch.
       as today, a new circuit hash and new sign-offs –, the bell's choice, after TD-113 (decisions 43, 47).
       *(friendly-mccarthy)*
 
-## How edakit is tested ([docs/concepts/new/verification-and-validation.md](docs/concepts/new/verification-and-validation.md))
-
-- [ ] TD-117 - **VV.1–VV.4 Handbook chapter 19:** the "why" of every reference circuit and open design into its
-      source, the generator of 19.4, 19.5 and the counts of 19.9, the chapter with its links and glossary entries, the
-      countable admission rules as tests – one branch, a patch, on the owner's word. *(ccr-de7c0e28)*
-- [ ] TD-118 - **A WLED controller as an open design:** a published ESP32 LED-strip controller transcribed into
-      `tests/open_designs/`, every finding judged – through the admission rules of 19.7 (FT-21); after TD-117.
-      *(ccr-de7c0e28)*
-- [ ] TD-119 - **A Fuzz Face as an open design:** a published germanium or silicon Fuzz Face, its bias across the
-      transistors' spread (FT-17) – no germanium datasheet could be read so far (maker-coverage.md, GTP 1); after
-      TD-117. *(ccr-de7c0e28)*
-- [ ] TD-120 - **A relay board with an HLK-PM01 as an open design:** mains stays unchecked (rules-at-scale.md,
-      decision 7), so it holds LIM.hazardous's recognition and the low-voltage side only; after TD-117.
-      *(ccr-de7c0e28)*
-- [ ] TD-121 - **A LiPo charger as an open design:** a published single-cell charger board, its charger hints and the
-      cell's limits judged against real datasheets; after TD-117. *(ccr-de7c0e28)*
+## How edakit is tested ([docs/concepts/done/verification-and-validation.md](docs/concepts/done/verification-and-validation.md))
 
 The known gaps the four new designs showed, each closed only by catalog or domain data (add-rule or add-feature, on the
-owner's word); each design's `findings.toml` has the findings and their reasons. All after TD-123.
+owner's word); each design's `findings.toml` has the findings and their reasons.
 
 - [ ] TD-124 - **A connector passes no reversed source:** `edakit/catalog/paths.toml [reverse]` lets a connector pass
       from every pin to every pin, so PATH.reverse reaches parts behind a jumper header – `connector` from `passes` to
@@ -122,6 +117,18 @@ Nothing to do until there is an answer or a release; whichever session learns of
 
 ## Closed todos
 
+- [x] TD-123 - **OK for chapter 19 and the four open designs:** given; merged as edakit 1.1.4 (#281, `f42bde3`) with
+      merge.py and notes.py through REST; the concept moved to `done/`. *(ccr-de7c0e28)* [2026-11-03]
+- [x] TD-117 - **VV.1–VV.4 Handbook chapter 19:** `handbook/19-verification.md`, its lists generated from the tests'
+      data, the countable admission rules as tests – edakit 1.1.4 (#281). *(ccr-de7c0e28)* [2026-11-03]
+- [x] TD-118 - **A WLED controller as an open design:** `tests/open_designs/atoomnetmarc-adlsc/`, Apache 2.0, 36
+      findings judged – edakit 1.1.4 (#281). *(ccr-de7c0e28)* [2026-11-03]
+- [x] TD-119 - **A Fuzz Face as an open design:** `tests/open_designs/whbeers-fuzz-face/`, CC0 1.0, a silicon 2N3904
+      for the germanium pair, 11 findings judged – edakit 1.1.4 (#281). *(ccr-de7c0e28)* [2026-11-03]
+- [x] TD-120 - **A relay board with an HLK-PM01 as an open design:** `tests/open_designs/espurna-h/`, CC BY-SA 4.0,
+      21 findings judged – edakit 1.1.4 (#281). *(ccr-de7c0e28)* [2026-11-03]
+- [x] TD-121 - **A LiPo charger as an open design:** `tests/open_designs/adafruit-microlipo-usb-c/`, CC BY-SA 3.0, 27
+      findings judged – edakit 1.1.4 (#281). *(ccr-de7c0e28)* [2026-11-03]
 - [x] TD-113 - **OK for the circuit language:** given; merged as edakit 1.1.3 (#279) – T.1 to T.27, the decisions 1
       to 48 confirmed; circuit-dsl.md, its language and its plan moved to `done/`. *(friendly-mccarthy)* [2026-11-03]
 - [x] TD-116 - **The job sysml:** run on the branch by `workflow_dispatch` – 4 passed, read with the standard

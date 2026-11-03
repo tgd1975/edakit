@@ -331,6 +331,16 @@ class Netlist:
         pins = self.role_pins(des)
         return self.pn(pins[role] if required else pins.get(role))
 
+    def contacts(self, des):
+        """[(pole, role, role)] of the contacts a switch closes in this scenario: none when the load lists it in
+        `open`, else every pole ("" the first, "_2" the second – a 3PDT's three) from its common to the load's throw
+        (throw_a by default; a pole without that throw connected: its throw_b)."""
+        if des in self.load.get("open", []):
+            return []
+        throw = self.load.get("throw", {}).get(des, "throw_a")
+        return [(pole, "common" + pole, throw + pole if self.rn(des, throw + pole) else "throw_b" + pole)
+                for pole in sorted(switch_sets(self.d.part(des))) or [""]]
+
     def pin_on(self, des, net):
         """The first pin of `des` on `net` ('U1.4'), None without one."""
         return next((f"{des}.{n}" for n in (self.d.part(des) or {}).get("pins", {})
@@ -544,12 +554,8 @@ class Netlist:
                              (c, t), p.get("r_contact_ohm", 0.05))
             self.meta["relays"][des] = {"on": on, "coil": (a, b)}
         elif kind == "switch":
-            if des in self.load.get("open", []):
-                return
-            throw = self.load.get("throw", {}).get(des, "throw_a")
-            for pole in sorted(switch_sets(part)) or [""]:     # every pole: "" the first, "_2" the second (3PDT) …
-                a = self.rn(des, "common" + pole)
-                b = self.rn(des, throw + pole) or self.rn(des, "throw_b" + pole)
+            for pole, ra, rb in self.contacts(des):
+                a, b = self.rn(des, ra), self.rn(des, rb)
                 if a and b:
                     self.add(f"R_{des}{pole.replace('_', '_P')} {a} {b} {p.get('r_on_ohm', 0.05)}", des, "switch",
                              (a, b), p.get("r_on_ohm", 0.05))
@@ -1074,19 +1080,22 @@ class Netlist:
 
     def ic_charger(self, des, part):
         """Linear Li-ion charger (TP4056, MCP73831): roles vin, bat, prog, gnd. Constant current prog_v / R_PROG (the
-        resistors from PROG to ground, in parallel) – i_pre_ratio of it below v_pre_v (precondition) –, constant voltage
-        at vout_v (the float voltage): the current falls to 0 as the cell reaches it, held by a stiffness of
-        CHARGER_CV_OHM. The pass element limits the current to (V(vin) − V(bat) − v_headroom_v) / r_on_ohm; below
-        uvlo_v at vin, and without a PROG resistor, it does not charge. iq_a from vin. Termination (i_term_ratio) is a
-        state of the charge cycle, not of an operating point: the model charges while the cell is below the float
-        voltage."""
-        from ..circuit import resistors_to
+        resistors from PROG to ground, in parallel, and those behind a switch or solder jumper the load closes) –
+        i_pre_ratio of it below v_pre_v (precondition) –, constant voltage at vout_v (the float voltage): the current
+        falls to 0 as the cell reaches it, held by a stiffness of CHARGER_CV_OHM. The pass element limits the current
+        to (V(vin) − V(bat) − v_headroom_v) / r_on_ohm; below uvlo_v at vin, and without a PROG resistor, it does not
+        charge. iq_a from vin. Termination (i_term_ratio) is a state of the charge cycle, not of an operating point:
+        the model charges while the cell is below the float voltage."""
+        from ..circuit import prog_resistors
         p, tag = values(part), des.lower()
         vin, bat, gnd = self.rn(des, "vin"), self.rn(des, "bat"), self._gnd_of(des)
         prog_net = self.d.net_of(des, "prog")
         if vin is None or bat is None:
             return
-        rs = [r for _, r, _ in resistors_to(self.d, prog_net, {self.d.ground}) if r and r > 0] if prog_net else []
+        closed = [self.d.net_of(sw, b if self.d.net_of(sw, a) == prog_net else a)
+                  for sw in self.d.comps_of_kind("switch") for _, a, b in self.contacts(sw)
+                  if prog_net in (self.d.net_of(sw, a), self.d.net_of(sw, b))]
+        rs = prog_resistors(self.d, prog_net, closed) if prog_net else []
         r_prog = 1 / sum(1 / r for r in rs) if rs else None
         i_set = p["prog_v"] / r_prog if r_prog and p.get("prog_v") else 0.0
         pre, v_pre = p.get("i_pre_ratio", 1.0), p.get("v_pre_v", 0.0)

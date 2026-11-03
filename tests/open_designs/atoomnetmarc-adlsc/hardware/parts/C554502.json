@@ -1,0 +1,176 @@
+{
+ "lcsc": "C554502",
+ "mpn": "74AHCT125D,118",
+ "manufacturer": "Nexperia(安世)",
+ "kind": "ic",
+ "package": "SO14 (SOT108-1)",
+ "footprint": "SOP-14_L8.6-W3.9-P1.27-LS6.0-BL",
+ "jlc_class": "Extended Part",
+ "datasheet": {
+  "url": "https://datasheet.lcsc.com/datasheet/pdf/33455ddf1a2caad74dbc68b2f4560849.pdf?productCode=C554502",
+  "pinout_page": 3
+ },
+ "pins": {
+  "1": {
+   "name": "1OE#",
+   "type": "input",
+   "role": "oe_n",
+   "v_max_v": 7,
+   "v_min_v": -0.5,
+   "hint": "output enable, active low: high puts nY into its high-impedance OFF-state (section 1, function table 3); tied to GND the output always drives"
+  },
+  "2": {
+   "name": "1A",
+   "type": "input",
+   "role": "a",
+   "v_max_v": 7,
+   "v_min_v": -0.5,
+   "hint": "data input, TTL levels with Schmitt-trigger action: VIH ≥ 2.0 V, VIL ≤ 0.8 V at VCC 4.5–5.5 V (table 6); overvoltage tolerant to 5.5 V – a 3.3 V output drives it"
+  },
+  "3": {
+   "name": "1Y",
+   "type": "output",
+   "role": "y",
+   "drive": "tristate",
+   "v_rel_max_v": 0.5,
+   "v_min_v": -0.5,
+   "i_max_a": 0.025,
+   "i_inject_max_a": 0.02,
+   "hint": "3-state output: VOH ≥ 3.8 V at −8 mA and ≥ 4.4 V at −50 µA (VCC 4.5 V, −40 … 85 °C, table 6); IO ±25 mA, IOK ±20 mA (table 4)"
+  },
+  "4": {
+   "name": "2OE#",
+   "type": "input",
+   "role": "oe_n",
+   "v_max_v": 7,
+   "v_min_v": -0.5,
+   "hint": "output enable, active low: high puts nY into its high-impedance OFF-state (section 1, function table 3); tied to GND the output always drives"
+  },
+  "5": {
+   "name": "2A",
+   "type": "input",
+   "role": "a",
+   "v_max_v": 7,
+   "v_min_v": -0.5,
+   "hint": "data input, TTL levels with Schmitt-trigger action: VIH ≥ 2.0 V, VIL ≤ 0.8 V at VCC 4.5–5.5 V (table 6); overvoltage tolerant to 5.5 V – a 3.3 V output drives it"
+  },
+  "6": {
+   "name": "2Y",
+   "type": "output",
+   "role": "y",
+   "drive": "tristate",
+   "v_rel_max_v": 0.5,
+   "v_min_v": -0.5,
+   "i_max_a": 0.025,
+   "i_inject_max_a": 0.02,
+   "hint": "3-state output: VOH ≥ 3.8 V at −8 mA and ≥ 4.4 V at −50 µA (VCC 4.5 V, −40 … 85 °C, table 6); IO ±25 mA, IOK ±20 mA (table 4)"
+  },
+  "7": {
+   "name": "GND",
+   "type": "ground",
+   "role": "gnd"
+  },
+  "8": {
+   "name": "3Y",
+   "type": "output",
+   "role": "y",
+   "drive": "tristate",
+   "v_rel_max_v": 0.5,
+   "v_min_v": -0.5,
+   "i_max_a": 0.025,
+   "i_inject_max_a": 0.02,
+   "hint": "3-state output: VOH ≥ 3.8 V at −8 mA and ≥ 4.4 V at −50 µA (VCC 4.5 V, −40 … 85 °C, table 6); IO ±25 mA, IOK ±20 mA (table 4)"
+  },
+  "9": {
+   "name": "3A",
+   "type": "input",
+   "role": "a",
+   "v_max_v": 7,
+   "v_min_v": -0.5,
+   "hint": "data input, TTL levels with Schmitt-trigger action: VIH ≥ 2.0 V, VIL ≤ 0.8 V at VCC 4.5–5.5 V (table 6); overvoltage tolerant to 5.5 V – a 3.3 V output drives it"
+  },
+  "10": {
+   "name": "3OE#",
+   "type": "input",
+   "role": "oe_n",
+   "v_max_v": 7,
+   "v_min_v": -0.5,
+   "hint": "output enable, active low: high puts nY into its high-impedance OFF-state (section 1, function table 3); tied to GND the output always drives"
+  },
+  "11": {
+   "name": "4Y",
+   "type": "output",
+   "role": "y",
+   "drive": "tristate",
+   "v_rel_max_v": 0.5,
+   "v_min_v": -0.5,
+   "i_max_a": 0.025,
+   "i_inject_max_a": 0.02,
+   "hint": "3-state output: VOH ≥ 3.8 V at −8 mA and ≥ 4.4 V at −50 µA (VCC 4.5 V, −40 … 85 °C, table 6); IO ±25 mA, IOK ±20 mA (table 4)"
+  },
+  "12": {
+   "name": "4A",
+   "type": "input",
+   "role": "a",
+   "v_max_v": 7,
+   "v_min_v": -0.5,
+   "hint": "data input, TTL levels with Schmitt-trigger action: VIH ≥ 2.0 V, VIL ≤ 0.8 V at VCC 4.5–5.5 V (table 6); overvoltage tolerant to 5.5 V – a 3.3 V output drives it"
+  },
+  "13": {
+   "name": "4OE#",
+   "type": "input",
+   "role": "oe_n",
+   "v_max_v": 7,
+   "v_min_v": -0.5,
+   "hint": "output enable, active low: high puts nY into its high-impedance OFF-state (section 1, function table 3); tied to GND the output always drives"
+  },
+  "14": {
+   "name": "VCC",
+   "type": "power_in",
+   "role": "vcc",
+   "v_max_v": 7
+  }
+ },
+ "values": {
+  "behavior": "logic",
+  "icc_a": 0.003,
+  "vih_v": 2.0,
+  "vil_v": 0.8
+ },
+ "limits": {
+  "vdd_max_v": 7,
+  "vdd_op_min_v": 4.5,
+  "vdd_op_max_v": 5.5,
+  "tj_max_c": 150,
+  "rth_ja_k_per_w": 99,
+  "t_min_c": -40,
+  "t_max_c": 125
+ },
+ "hints": [
+  "74AHCT125: VCC 4.5–5.5 V (table 5) – fed from a 5 V rail that sags below 4.5 V it leaves its specified range",
+  "icc_a 3 mA: ΔICC ≤ 1.5 mA per input held at VCC − 2.1 V (table 6) for the two inputs a 3.3 V output holds high; with every input at GND or VCC, ICC ≤ 20 µA (−40 … 85 °C)"
+ ],
+ "spice": {},
+ "sources": [
+  "Nexperia 74AHC125; 74AHCT125 product data sheet Rev. 7 (28 February 2024) – LCSC product data of C554502, https://datasheet.lcsc.com/datasheet/pdf/33455ddf1a2caad74dbc68b2f4560849.pdf?productCode=C554502, read 2026-11-03 (edakit part fetch; the text names the family, not the order code 74AHCT125D,118)",
+  "pins: table 2 (p. 3) – 1OE 1, 1A 2, 1Y 3, 2OE 4, 2A 5, 2Y 6, GND 7, 3Y 8, 3A 9, 3OE 10, 4Y 11, 4A 12, 4OE 13, VCC 14 – the EasyEDA symbol of C554502 (edakit part import) numbers them alike",
+  "limiting values, table 4 (p. 3): VCC −0.5 … 7.0 V, VI −0.5 … 7.0 V, IIK −20 mA, IOK ±20 mA (VO < −0.5 V or > VCC + 0.5 V), IO ±25 mA, ICC 75 mA, Ptot 500 mW; note 2: SO14 derates 10.1 mW/K above 100 °C – rth_ja_k_per_w 99 and tj_max_c 150 computed from it (1 / 10.1 mW/K, 100 °C + 500 mW × 99 K/W)",
+  "recommended operating conditions, table 5 (p. 4): 74AHCT125 VCC 4.5 … 5.5 V, VI 0 … 5.5 V, Tamb −40 … +125 °C",
+  "static characteristics of the 74AHCT125, table 6 (pp. 4–5): VIH 2.0 V, VIL 0.8 V; VOH 4.4 V (−50 µA), 3.94 / 3.8 / 3.70 V (−8 mA at 25 °C / 85 °C / 125 °C); VOL 0.1 / 0.36 V; IOZ ±2.5 µA; ICC 2 / 20 / 40 µA; ΔICC 1.35 / 1.5 / 1.5 mA per input at VI = VCC − 2.1 V",
+  "mpn, manufacturer, footprint, jlc_class: EasyEDA library data of C554502 (edakit part import, 2026-11-03); JLCPCB catalogue 2026-11-03: Extended"
+ ],
+ "notes": "Quad buffer with TTL inputs at 5 V: ADLSC's 3.3 V → 5 V level shifter for the LED data lines.",
+ "verified": {
+  "by": "Claude (datasheet check, open-design transcription)",
+  "date": "2026-11-03",
+  "datasheet": "Nexperia 74AHC125; 74AHCT125 product data sheet Rev. 7 (28 February 2024)",
+  "checked": [
+   "pin table 2 against the EasyEDA symbol",
+   "limiting values table 4, recommended table 5, 74AHCT125 static characteristics table 6"
+  ],
+  "open": [
+   "the behaviour model 'logic' holds the outputs low; the simulation does not pass nA through to nY",
+   "rth_ja_k_per_w is derived from the Ptot derating of note 2, not stated"
+  ]
+ }
+}
