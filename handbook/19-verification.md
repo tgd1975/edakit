@@ -62,7 +62,7 @@ repository alone.
 <!-- edakit:generated tally -->
 - Reference circuits: 7, with 15 seeded faults that raise 8 codes: `LIM.i`, `LIM.p`, `LIM.range`, `PATH.reverse`, `REQ.forbidden`, `REQ.missing`, `REQ.value`, `SIM.response`.
 - Domains without a reference circuit: `mains`, `radio`.
-- Open designs: 6, with 149 findings judged – 51 real, 58 lacks, 39 criterion, 1 known gap; 19 false alarms fixed.
+- Open designs: 7, with 176 findings judged – 57 real, 70 lacks, 40 criterion, 9 known gap; 21 false alarms fixed.
 <!-- edakit:end -->
 
 ## 19.3 The example led-bar
@@ -174,6 +174,19 @@ source, its licence and what was changed; the README of the repository lists the
 The designs, from their READMEs and `findings.toml`:
 
 <!-- edakit:generated designs -->
+**Adafruit Micro-Lipo Charger with USB Type C Jack** (`adafruit-microlipo-usb-c`) – CC BY-SA 3.0 · [drawing and findings](../docs/catalog/open-adafruit-microlipo-usb-c.html)  
+*Why:* the first charger among edakit's test circuits – no reference circuit has one (`power` is three AA cells beside USB), and no other open design charges a cell. It puts a linear Li-ion charger with its behaviour model on a published board: the current R_PROG programs, held against the MCP73831's 500 mA and the cell's 1C (LIM.i/charge, LIM.backfeed into the cell), the charger's heat at a low cell (LIM.t), a second charge current set by a solder jumper, a LiPo pack whose JST plug can come reversed (PATH.reverse on a battery holder), two status LEDs on a tri-state output – the domain power with a real charger, and HINT.lithium and HINT.charge_termination on a part makers use. Makers build and copy it everywhere: the MCP73831 with a PROG resistor, two LEDs and a JST PH socket is the charger of most hobby LiPo projects – Adafruit's Micro-Lipo boards, the same circuit on Feathers and countless clones –, so a false alarm here would meet many.  
+Findings judged: 6 real, 12 lacks, 1 criterion, 8 known gap; false alarms fixed: 2.
+
+- Known gap: `PATH.reverse` at U1.4 (check) – Reached only through the connectors: the reversed cell's VBAT is pad 5 of JP4, and catalog/paths.toml lets a connector pass a reversed source from every pin to every pin – on to 5V (JP4 pad 1), and through the receptacle X2 to CC1 and CC2. A header's or a receptacle's pins are separate contacts; the charger's VDD sees no reversed voltage. The fix is the catalog's data (a connector among the parts that tolerate a reversed source, not among those that pass it on), which this transcription does not change.
+- Known gap: `PATH.reverse` at LED1.2 (check) – As U1.4: the red LED's anode is on 5V, which the reversed cell reaches only through JP4's other pads in edakit's model – a connector passing every pin to every pin (catalog/paths.toml).
+- Known gap: `PATH.reverse` at R6.2 (check) – As U1.4: CC1 is reached from VBAT through JP4 and then through X2's other contacts – a connector passing every pin to every pin (catalog/paths.toml); a resistor takes a reversed voltage without harm anyway.
+- Known gap: `PATH.reverse` at R5.2 (check) – As R6.2, on CC2: reached through JP4 and X2 only in edakit's model of a connector (catalog/paths.toml).
+- Known gap: `PARTS.supplier` at SJ1 (check) – SJ1 is two pads of the board's copper, bridged with solder – nothing is bought. edakit reads a part outside the BOM (bom false) without an LCSC number as one bought separately and has no way to say 'copper, no part'.
+- Known gap: `PARTS.fact` at SOLDERJUMPER_ARROW_NOPASTE (check) – SJ1 is the board's copper and the assembler's solder, no part with a supplier: edakit asks a supplier's REACH statement of it, as of every parts entry – as PARTS.supplier on SJ1, it has no way to say 'copper, no part'.
+- Known gap: `SIM.state` at LED1 (sim) – The charger model does not drive STAT (the status outputs are among what the simulation leaves out, decision 17 of rules-at-scale.md: edakit check --coverage lists them): STAT floats in the model, and the two LEDs carry the current of the chain 5V – LED1 – R1 – R2 – LED2 – GND, 2 µA to 1.6 mA by the corner – the red LED too dim while charging, too bright with the cell full. On the board STAT is low while charging and lights it with about 6 mA through 470 Ω.
+- Known gap: `SIM.state` at LED2 (sim) – As LED1: with STAT not driven by the model, the green LED carries the chain's current while the cell charges (up to 1.6 mA, expected dark) and too little with the cell full (0.7 mA, expected on) – on the board STAT high lights it with a few mA through 470 Ω.
+
 **Corne keyboard v4, left half** (`corne-cherry-left`) – CC BY 4.0 · [drawing and findings](../docs/catalog/open-corne-cherry-left.html)  
 *Why:* a split keyboard many makers build. Its v4 left half brings what no reference circuit has: an RP2040 with its crystal and USB-C port, 23 keys each on a GPIO of its own, and a chain of 23 SK6812MINI-E that runs one diode below 5 V while its data comes from a 3.3 V pin. It is the one LED chain among the designs, and with the v3 it shows the same keyboard without and with a matrix.  
 Findings judged: 32 real, 4 lacks, 3 criterion; false alarms fixed: 5.
