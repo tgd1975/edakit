@@ -68,34 +68,15 @@ def instrument-buffer
       capacitance (source r_ohm, l_h, c_f) come from its maker."
   notes "vref from block pedal-power; on a board without it two 10 kΩ from vcc to ground with ≥ 10 µF at the middle."
   set test {
-     "connect": {
-      "vcc": "+5V",
-      "vref": "3V3"
-     },
-     "about": "in and out become the nets T_IN and T_OUT; vref on the example's 3V3 – inside the OPA991's rail-to-rail input range on +5V (a real board: half the supply)",
-     "sim": {
-      "ac": {
-       "band": {
-        "about": "R3 / C2: 1/(2π · 2.2 MΩ · 10 nF) = 7.2 Hz; R1 / C1: 1/(2π · 10 kΩ · 100 pF) = 159 kHz",
-        "input": "T_IN",
-        "output": "T_OUT",
-        "expect": {
-         "gain_db": [
-          {
-           "at_hz": 1000,
-           "min": -0.5,
-           "max": 0.5
-          }
-         ],
-         "low_hz": {
-          "max": 20
-         },
-         "high_hz": {
-          "min": 100000,
-          "max": 250000
-         }
-        }
-       }
-      }
-     }
-     }
+      "connect": {"vcc": "+5V", "vref": "3V3"},
+      "about": "in and out become the nets T_IN and T_OUT; vref on the example's 3V3 – inside the OPA991's rail-to-rail input range on +5V (a real board: half the supply)",
+      "sim": {
+        "ac": {
+          "band": {
+            "about": "R3 / C2: 1/(2π · 2.2 MΩ · 10 nF) = 7.2 Hz; R1 / C1: 1/(2π · 10 kΩ · 100 pF) = 159 kHz",
+            "input": "T_IN",
+            "output": "T_OUT",
+            "expect": {
+              "gain_db": [{"at_hz": 1000, "min": -0.5, "max": 0.5}],
+              "low_hz": {"max": 20},
+              "high_hz": {"min": 100000, "max": 250000}}}}}}

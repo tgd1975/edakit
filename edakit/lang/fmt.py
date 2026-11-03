@@ -109,6 +109,31 @@ def flow(out, indent, items, cont=None, prefix=None, comment=None, wrap=True):
     out.add(line)
 
 
+def _compact(value):
+    return json.dumps(value, ensure_ascii=False, separators=(", ", ": "))
+
+
+def _json_lines(value, ind):
+    """[(indent, text)] of a list's or a table's members below its opening bracket: one to a line, compact where the
+    line fits, else opened in turn two deeper; each closing bracket ends the last line of its members – no line below
+    the statement is less indented than the first, as the reader asks of continuation lines."""
+    items = list(value.items()) if isinstance(value, dict) else [(None, v) for v in value]
+    close = "}" if isinstance(value, dict) else "]"
+    out = []
+    for n, (k, v) in enumerate(items):
+        prefix = "" if k is None else json.dumps(k, ensure_ascii=False) + ": "
+        text = prefix + _compact(v)
+        if ind + len(text) + 2 <= WIDTH or not isinstance(v, (dict, list)) or not v:
+            out.append((ind, text))
+        else:
+            out.append((ind, prefix + ("{" if isinstance(v, dict) else "[")))
+            out.extend(_json_lines(v, ind + STEP))
+        if n < len(items) - 1:
+            out[-1] = (out[-1][0], out[-1][1] + ",")
+    out[-1] = (out[-1][0], out[-1][1] + close)
+    return out
+
+
 def _key(item):
     k = item[1][0].raw
     return "bom" if k == "no-bom" else k
@@ -167,11 +192,10 @@ class Formatter:
         if len(head) + len(compact) <= WIDTH or not isinstance(value, (dict, list)) or not value:
             self.out.add(head + compact + comment)
             return
-        lines = json.dumps(value, ensure_ascii=False, indent=1).splitlines()
-        lines[-1] = " " + lines[-1]                     # the closing bracket as deep as the first line below the head
-        self.out.add(head + lines[0] + comment)
-        for ln in lines[1:]:
-            self.out.add(" " * (indent + STEP) + ln)
+        lines = _json_lines(value, indent + 2 * STEP)
+        self.out.add(head + ("{" if isinstance(value, dict) else "[") + comment)
+        for ind, ln in lines:
+            self.out.add(" " * ind + ln)
 
     def node_of(self, st):
         if not st.keyword.keyword("part", "net"):

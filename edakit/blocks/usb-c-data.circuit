@@ -54,10 +54,5 @@ def usb-c-data
   notes "sim.json: the receptacle under sources (plus \"A4B9\", minus \"A1B12\") when it powers the board; a bulk
       capacitor behind F1 (HINT.bulk) – more than 10 µF directly on VBUS is HINT.usb_inrush."
   set test {
-     "connect": {
-      "vbus": "+5V",
-      "dp": "SIG",
-      "dn": "SIG2"
-     },
-     "about": "SIG and SIG2 stand in for the D+/D− of a USB device (a USB-UART or an MCU), which the example lacks."
-     }
+      "connect": {"vbus": "+5V", "dp": "SIG", "dn": "SIG2"},
+      "about": "SIG and SIG2 stand in for the D+/D− of a USB device (a USB-UART or an MCU), which the example lacks."}

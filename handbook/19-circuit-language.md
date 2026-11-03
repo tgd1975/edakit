@@ -85,7 +85,7 @@ layout near R1 U2
 | `net NAME [RANGE] PINWORD [(locked)] … [KEY VALUE …]` | a net; a later `net NAME` adds pins; `(locked)` writes `locks.pins` |
 | `cable NAME FROM TO A=B … [KEY VALUE]` | a cable with its pin pairs by word |
 | `layout fixed\|edge\|near\|loop\|apart\|note …` | the hand-over to the layout |
-| `set KEY JSON` | any key of the graph as JSON; a dotted key reaches one level down |
+| `set KEY JSON` | any key of the graph as JSON; a dotted key reaches one level down; `graph fmt` writes a JSON too long for the line one member to a line below it |
 
 A part's attributes are the graph's keys (3.1), each read by its kind: `no-bom` for `bom: false`, `off_board` alone
 for true, a key unknown to the attribute table an error that names the nearest one. A part's pin map is written only

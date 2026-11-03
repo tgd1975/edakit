@@ -59,26 +59,10 @@ def addressable-led-input
       MCU's high level with the buffer's 2.0 V. The behaviour model of the buffer holds Y low – the simulation does
       not pass the data through."
   set test {
-     "connect": {
-      "in": "SIG",
-      "vcc": "+5V"
-     },
-     "why": "the example's +5V is USB behind its SS34 and sinks to 4.44 V with all LEDs on at USB 4.75 V – a rail of the example, not of the block: the test leaves out the supply case usb-min (VCC 4.5–5.5 V, SCLS378P 5.3); R3 left out – OE# is tied to GND, dout stays open in the example",
-     "without": [
-      "R3"
-     ],
-     "remove_supplies": [
-      "usb-min"
-     ],
-     "sim": {
-      "mcu": {
-       "U1": {
-        "outputs": [
-         "SIG"
-        ]
-       }
-      }
-     }
-     }
+      "connect": {"in": "SIG", "vcc": "+5V"},
+      "why": "the example's +5V is USB behind its SS34 and sinks to 4.44 V with all LEDs on at USB 4.75 V – a rail of the example, not of the block: the test leaves out the supply case usb-min (VCC 4.5–5.5 V, SCLS378P 5.3); R3 left out – OE# is tied to GND, dout stays open in the example",
+      "without": ["R3"],
+      "remove_supplies": ["usb-min"],
+      "sim": {"mcu": {"U1": {"outputs": ["SIG"]}}}}
   optional parts R3
   optional ports dout

@@ -29,26 +29,11 @@ def servo-connector
   notes "The signal: a GPIO directly; on a long cable a series resistor at the MCU protects the pin (HINT.cable_line).
       Whether a 3.3 V signal is enough for a 5 V servo, its data sheet says – none was read here."
   set test {
-     "connect": {
-      "sig": "SIG",
-      "vservo": "+5V"
-     },
-     "sim": {
-      "loads": {
-       "t_servo": {
-        "about": "block test: a servo holding its position, 0.2 A at J2 (2 → 3), LEDs off – within the example's 0.5 A USB source",
-        "gpio": {
-         "LED_OE": 1
-        },
-        "leds_on": [],
-        "external": {
-         "J2": {
-          "plus": "2",
-          "minus": "3",
-          "i_a": 0.2
-         }
-        }
-       }
-      }
-     }
-     }
+      "connect": {"sig": "SIG", "vservo": "+5V"},
+      "sim": {
+        "loads": {
+          "t_servo": {
+            "about": "block test: a servo holding its position, 0.2 A at J2 (2 → 3), LEDs off – within the example's 0.5 A USB source",
+            "gpio": {"LED_OE": 1},
+            "leds_on": [],
+            "external": {"J2": {"plus": "2", "minus": "3", "i_a": 0.2}}}}}}

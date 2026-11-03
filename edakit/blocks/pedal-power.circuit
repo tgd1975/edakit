@@ -48,31 +48,17 @@ def pedal-power
       voltages under supplies (e.g. 8.5, 9, 9.6 V)."
   notes "A bulk capacitor on vplus as well where relay coils or LEDs switch there (HINT.bulk)."
   set test {
-     "connect": {},
-     "about": "vplus, out and vref become the nets T_VPLUS, T_OUT and T_VREF; the jack J1 becomes J2 – a 9 V source beside the example's 5 V J1",
-     "sim": {
-      "sources": {
-       "J2": {
-        "plus": "2",
-        "minus": "1",
-        "r_ohm": 0.5,
-        "i_max_a": 0.1,
-        "note": "values for the test: a 9 V outlet of a pedal supply, not a data sheet's"
-       }
-      },
-      "supplies": {
-       "usb-min": {
-        "J1": 4.75,
-        "J2": 8.5
-       },
-       "usb-nom": {
-        "J1": 5.0,
-        "J2": 9.0
-       },
-       "usb-max": {
-        "J1": 5.25,
-        "J2": 9.6
-       }
-      }
-     }
-     }
+      "connect": {},
+      "about": "vplus, out and vref become the nets T_VPLUS, T_OUT and T_VREF; the jack J1 becomes J2 – a 9 V source beside the example's 5 V J1",
+      "sim": {
+        "sources": {
+          "J2": {
+            "plus": "2",
+            "minus": "1",
+            "r_ohm": 0.5,
+            "i_max_a": 0.1,
+            "note": "values for the test: a 9 V outlet of a pedal supply, not a data sheet's"}},
+        "supplies": {
+          "usb-min": {"J1": 4.75, "J2": 8.5},
+          "usb-nom": {"J1": 5.0, "J2": 9.0},
+          "usb-max": {"J1": 5.25, "J2": 9.6}}}}

@@ -43,27 +43,11 @@ def cable-input
   notes "sim.json: the in net under the MCU's inputs. The contact is off the board and not simulated; closed, the line
       and the input sit at 0 V and the pull-up carries the 0.7 mA."
   set test {
-     "connect": {
-      "in": "SIG",
-      "vcc": "3V3"
-     },
-     "sim": {
-      "mcu": {
-       "U1": {
-        "outputs": [
-         "LED_SDI",
-         "LED_CLK",
-         "LED_LE",
-         "LED_OE"
-        ],
-        "inputs": [
-         "SIG"
-        ],
-        "pullups": [
-         "BTN"
-        ],
-        "pullup_ohm": 50000
-       }
-      }
-     }
-     }
+      "connect": {"in": "SIG", "vcc": "3V3"},
+      "sim": {
+        "mcu": {
+          "U1": {
+            "outputs": ["LED_SDI", "LED_CLK", "LED_LE", "LED_OE"],
+            "inputs": ["SIG"],
+            "pullups": ["BTN"],
+            "pullup_ohm": 50000}}}}

@@ -67,61 +67,23 @@ def relay-bypass
   notes "sim.json: ctl and mute under the MCU's outputs; a load with ctl high and \"relays_on\": [<K>], a load with
       mute high – REQ.value/switch holds every contact on signal nets at one DC level in each."
   set test {
-     "connect": {
-      "ctl": "SIG",
-      "mute": "SIG2",
-      "vplus": "+5V"
-     },
-     "about": "in, out, fx_in and fx_out become T_IN, T_OUT, T_FX_IN and T_FX_OUT – the effect is left out; the relay is K1, the PhotoMOS OK1",
-     "sim": {
-      "mcu": {
-       "U1": {
-        "outputs": [
-         "LED_SDI",
-         "LED_CLK",
-         "LED_LE",
-         "LED_OE",
-         "SIG",
-         "SIG2"
-        ],
-        "pullups": [
-         "BTN"
-        ],
-        "pullup_ohm": 50000
-       }
-      },
-      "loads": {
-       "engaged": {
-        "about": "effect on: relay pulled in",
-        "gpio": {
-         "LED_OE": 1,
-         "SIG": 1
-        },
-        "relays_on": [
-         "K1"
-        ],
-        "leds_on": []
-       },
-       "muted": {
-        "about": "bypass, output muted",
-        "gpio": {
-         "LED_OE": 1,
-         "SIG2": 1
-        },
-        "leds_on": []
-       },
-       "engaged_muted": {
-        "about": "effect on, output muted",
-        "gpio": {
-         "LED_OE": 1,
-         "SIG": 1,
-         "SIG2": 1
-        },
-        "relays_on": [
-         "K1"
-        ],
-        "leds_on": []
-       }
-      }
-     }
-     }
+      "connect": {"ctl": "SIG", "mute": "SIG2", "vplus": "+5V"},
+      "about": "in, out, fx_in and fx_out become T_IN, T_OUT, T_FX_IN and T_FX_OUT – the effect is left out; the relay is K1, the PhotoMOS OK1",
+      "sim": {
+        "mcu": {
+          "U1": {
+            "outputs": ["LED_SDI", "LED_CLK", "LED_LE", "LED_OE", "SIG", "SIG2"],
+            "pullups": ["BTN"],
+            "pullup_ohm": 50000}},
+        "loads": {
+          "engaged": {
+            "about": "effect on: relay pulled in",
+            "gpio": {"LED_OE": 1, "SIG": 1},
+            "relays_on": ["K1"],
+            "leds_on": []},
+          "muted": {"about": "bypass, output muted", "gpio": {"LED_OE": 1, "SIG2": 1}, "leds_on": []},
+          "engaged_muted": {
+            "about": "effect on, output muted",
+            "gpio": {"LED_OE": 1, "SIG": 1, "SIG2": 1},
+            "relays_on": ["K1"],
+            "leds_on": []}}}}

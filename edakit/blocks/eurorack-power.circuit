@@ -52,51 +52,16 @@ def eurorack-power
       \"9\", \"v_ratio\": 1}, \"n12\": {\"plus\": \"1\", \"v_ratio\": -1}}} and the supply \"J1\": 12 (handbook 5.1);
       each rail's current is its own row (J1:p12, J1:n12)."
   set test {
-     "connect": {
-      "p12": "+12V",
-      "n12": "-12V"
-     },
-     "nets": {
-      "+12V": [
-       0,
-       12.6
-      ],
-      "-12V": [
-       -12.6,
-       0
-      ]
-     },
-     "sim": {
-      "sources": {
-       "J2": {
-        "minus": "3",
-        "r_ohm": 0.1,
-        "outputs": {
-         "p12": {
-          "plus": "9",
-          "v_ratio": 1
-         },
-         "n12": {
-          "plus": "1",
-          "v_ratio": -1
-         }
-        },
-        "note": "the bus board's ±12 V on the header that becomes J2 in the example: one source, two rails against GND (pin 3) – values for the test, not a data sheet's"
-       }
-      },
-      "supplies": {
-       "usb-min": {
-        "J1": 4.75,
-        "J2": 11.4
-       },
-       "usb-nom": {
-        "J1": 5.0,
-        "J2": 12.0
-       },
-       "usb-max": {
-        "J1": 5.25,
-        "J2": 12.6
-       }
-      }
-     }
-     }
+      "connect": {"p12": "+12V", "n12": "-12V"},
+      "nets": {"+12V": [0, 12.6], "-12V": [-12.6, 0]},
+      "sim": {
+        "sources": {
+          "J2": {
+            "minus": "3",
+            "r_ohm": 0.1,
+            "outputs": {"p12": {"plus": "9", "v_ratio": 1}, "n12": {"plus": "1", "v_ratio": -1}},
+            "note": "the bus board's ±12 V on the header that becomes J2 in the example: one source, two rails against GND (pin 3) – values for the test, not a data sheet's"}},
+        "supplies": {
+          "usb-min": {"J1": 4.75, "J2": 11.4},
+          "usb-nom": {"J1": 5.0, "J2": 12.0},
+          "usb-max": {"J1": 5.25, "J2": 12.6}}}}

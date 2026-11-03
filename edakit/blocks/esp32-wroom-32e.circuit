@@ -78,12 +78,7 @@ def esp32-wroom-32e
   notes "U2 runs in its config 3v3 (CH340DS1 3C, 5.1): V3 joined to VCC, VCC 3.1–3.6 V – the entry's configs hold the
       5 V mode's range and thresholds apart."
   set test {
-     "connect": {
-      "3v3": "3V3",
-      "usb_dp": "SIG",
-      "usb_dn": "SIG2"
-     },
-     "about": "SIG and SIG2 stand in for the D+/D− of a USB receptacle, which the example lacks; the example's 3V3 comes from the Pico 2.",
-     "sim": false,
-     "why": "the example's 3V3 is the Pico 2's 3V3(OUT) (i_out_max_a 0.3 A); the ESP32-WROOM-32E alone draws up to 0.379 A (i_core_a, Wi-Fi TX peak) – LIM.i fails on U1 in every scenario (393 mA). With the module's TXD0 net as an mcu output the simulation has no other failure."
-     }
+      "connect": {"3v3": "3V3", "usb_dp": "SIG", "usb_dn": "SIG2"},
+      "about": "SIG and SIG2 stand in for the D+/D− of a USB receptacle, which the example lacks; the example's 3V3 comes from the Pico 2.",
+      "sim": false,
+      "why": "the example's 3V3 is the Pico 2's 3V3(OUT) (i_out_max_a 0.3 A); the ESP32-WROOM-32E alone draws up to 0.379 A (i_core_a, Wi-Fi TX peak) – LIM.i fails on U1 in every scenario (393 mA). With the module's TXD0 net as an mcu output the simulation has no other failure."}

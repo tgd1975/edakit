@@ -66,53 +66,22 @@ def rs485
   notes "R4 and R5, the idle bias, belong to one node of a bus: on every other node `--without R4 R5` leaves them
       out."
   set test {
-     "connect": {
-      "di": "SIG",
-      "ro": "SIG2",
-      "vcc": "3V3"
-     },
-     "sim": {
-      "mcu": {
-       "U1": {
-        "outputs": [
-         "LED_SDI",
-         "LED_CLK",
-         "LED_LE",
-         "LED_OE",
-         "SIG"
-        ],
-        "inputs": [
-         "SIG2"
-        ],
-        "pullups": [
-         "BTN"
-        ],
-        "pullup_ohm": 50000
-       }
-      },
-      "loads": {
-       "t_idle": {
-        "about": "UART idle (TX high), termination off",
-        "gpio": {
-         "LED_OE": 1,
-         "SIG": 1
-        },
-        "leds_on": []
-       },
-       "t_term": {
-        "about": "UART idle, termination switched on (SW2 is the block's SW1 in the example)",
-        "gpio": {
-         "LED_OE": 1,
-         "SIG": 1
-        },
-        "dip_closed": {
-         "SW2": [
-          1
-         ]
-        },
-        "leds_on": []
-       }
-      }
-     }
-     }
+      "connect": {"di": "SIG", "ro": "SIG2", "vcc": "3V3"},
+      "sim": {
+        "mcu": {
+          "U1": {
+            "outputs": ["LED_SDI", "LED_CLK", "LED_LE", "LED_OE", "SIG"],
+            "inputs": ["SIG2"],
+            "pullups": ["BTN"],
+            "pullup_ohm": 50000}},
+        "loads": {
+          "t_idle": {
+            "about": "UART idle (TX high), termination off",
+            "gpio": {"LED_OE": 1, "SIG": 1},
+            "leds_on": []},
+          "t_term": {
+            "about": "UART idle, termination switched on (SW2 is the block's SW1 in the example)",
+            "gpio": {"LED_OE": 1, "SIG": 1},
+            "dip_closed": {"SW2": [1]},
+            "leds_on": []}}}}
   optional parts R4 R5

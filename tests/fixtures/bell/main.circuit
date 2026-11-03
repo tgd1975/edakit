@@ -1,7 +1,13 @@
 graph christmas-bell version 0.3 date 2026-10-25
-description "Automatic Christmas bell: an Arduino Nano counts down on five LEDs, then a servo swings a real bell."
+description "Automatic Christmas bell: an Arduino Nano counts down on five LEDs, then a servo swings a real bell.
+    Start and reset buttons. Taken over from the Fritzing drawing weihnachtsglocke.fzz."
 purpose private market EU
-  notes "Built and used by the owner – not sold or given away (D-16)."
+  notes "Automatic Christmas bell for the owner's home, built and used by the owner – not sold or given away (D-16).
+      Powered from a USB port or power bank through the Nano's USB; no battery holder, no mains, no radio."
+convention pin_reference "'<designator>.<pin>' with the pin's name or role, else its symbol number – the parts entry
+    says which pin that is"
+convention v "per net: [min, max] in V over all operating states"
+convention accept "per net or component: {code: reason} accepts a finding on purpose (edakit explain <code>)"
 param vlogic = 0..5.5 V
 
 part U1 module "Arduino Nano V3" lcsc C9900187880 no-bom "Arduino Nano 3 (plugged in)"
@@ -9,15 +15,22 @@ part U1 module "Arduino Nano V3" lcsc C9900187880 no-bom "Arduino Nano 3 (plugge
   alias led1 = PD6 led2 = PD5 led3 = PD2 led4 = PD3 led5 = PD4
   alias servo = PB0 btn_start = PB4 btn_reset = PB3
   accept STRUCT.entry "VIN stays free: the Nano runs from its USB socket"
-  notes "Plugs into two 1x15 female headers, pitch 2.54 mm; its labels of pins 14/15 are swapped."
+  notes "Plugs into two 1x15 female headers, pitch 2.54 mm (hand-soldered, not in the graph). Powered through its USB
+    socket; its 5V pin (USB minus a Schottky diode) supplies the servo, C1 and the buttons. Pin names are the library
+    symbol's ATmega port names; its labels of pins 14/15 are swapped (pin 14 = D11 = PB3, pin 15 = D12 = PB4 on the
+    Nano)."
 part J1 connector PZ254V-11-03P lcsc C2937625 no-bom "Servo (GND, +5 V, signal)"
+  notes "Standard servo plug: brown = GND (1), red = +5 V (2), orange = signal (3)."
 part C1 capacitor "1000uF 16V" lcsc C439782 no-bom "Buffer capacitor for the servo"
+  notes "Absorbs the servo's start-up peaks so the Nano does not reset."
 part S1 button K2-1102SP-C4SC-04 lcsc C127509 "Start button"
+  notes "1/2 and 3/4 are connected inside the button."
 part S2 button K2-1102SP-C4SC-04 lcsc C127509 "Reset button"
+  notes "1/2 and 3/4 are connected inside the button."
 part R7 resistor "4.7 kΩ 0805" lcsc C17673 value 4.7kΩ "Pull-down, start button"
 part R6 resistor "4.7 kΩ 0805" lcsc C17673 value 4.7kΩ "Pull-down, reset button"
 for n in 8..9
-  part R{n} resistor "100 Ω 2512 1 W" lcsc C35218 value 100Ω "Base load for USB power banks (R8 ∥ R9 = 50 Ω)"
+  part R{n} resistor "100 Ω 2512 1 W" lcsc C35218 value 100Ω "Base load for USB power banks (R8 ∥ R9 = 50 Ω, 100 mA)"
     notes "Keeps a power bank from switching off: the circuit alone draws 35–75 mA (D-8)."
 
 def led (color = green, i = 10 mA) ports in gnd
@@ -58,3 +71,5 @@ net LED_G2 vlogic U1.led2 (locked)
 net LED_Y1 vlogic U1.led3 (locked)
 net LED_Y2 vlogic U1.led4 (locked)
 net LED_R vlogic U1.led5 (locked)
+
+set cables []

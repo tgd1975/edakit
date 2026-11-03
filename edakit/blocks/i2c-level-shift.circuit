@@ -51,37 +51,15 @@ def i2c-level-shift
   notes "sim.json: nothing needed for the idle state; to see a low cross over, the controller's SDA pin under its mcu
       outputs with a load at 0 and one at 1 (as the block's test does)."
   set test {
-     "connect": {
-      "sda_lv": "SIG",
-      "scl_lv": "SIG2",
-      "v_lv": "3V3",
-      "v_hv": "+5V"
-     },
-     "sim": {
-      "mcu": {
-       "U1": {
-        "outputs": [
-         "LED_SDI",
-         "LED_CLK",
-         "LED_LE",
-         "LED_OE",
-         "SIG"
-        ],
-        "pullups": [
-         "BTN"
-        ],
-        "pullup_ohm": 50000
-       }
-      },
-      "loads": {
-       "sda_high": {
-        "about": "the controller releases SDA: both sides high",
-        "gpio": {
-         "LED_OE": 1,
-         "SIG": 1
-        },
-        "leds_on": []
-       }
-      }
-     }
-     }
+      "connect": {"sda_lv": "SIG", "scl_lv": "SIG2", "v_lv": "3V3", "v_hv": "+5V"},
+      "sim": {
+        "mcu": {
+          "U1": {
+            "outputs": ["LED_SDI", "LED_CLK", "LED_LE", "LED_OE", "SIG"],
+            "pullups": ["BTN"],
+            "pullup_ohm": 50000}},
+        "loads": {
+          "sda_high": {
+            "about": "the controller releases SDA: both sides high",
+            "gpio": {"LED_OE": 1, "SIG": 1},
+            "leds_on": []}}}}

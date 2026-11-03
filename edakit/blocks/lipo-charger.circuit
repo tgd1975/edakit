@@ -121,29 +121,8 @@ def lipo-charger
       by design (DW01A Rev B p. 3), so its GND, TD and the VCC capacitor to it count as on ground (PATH.ground,
       REQ.missing/pin, the decoupling)."
   set test {
-     "connect": {
-      "vbus": "+5V",
-      "sys": "SYS",
-      "cell": "BAT",
-      "cell_n": "BAT_N"
-     },
-     "nets": {
-      "SYS": [
-       0,
-       5.5
-      ],
-      "BAT": [
-       0,
-       4.35
-      ],
-      "BAT_N": [
-       -0.2,
-       0.1
-      ]
-     },
-     "why": "the example's +5V is USB behind its SS34 and sinks to 4.44 V with all LEDs on at USB 4.75 V – below the MCP73831-2's 4.5 V operating minimum (VREG + 0.3 V, DS20001984H 3.1); a rail of the example, not of the block: the test leaves out the supply case usb-min",
-     "remove_supplies": [
-      "usb-min"
-     ]
-     }
+      "connect": {"vbus": "+5V", "sys": "SYS", "cell": "BAT", "cell_n": "BAT_N"},
+      "nets": {"SYS": [0, 5.5], "BAT": [0, 4.35], "BAT_N": [-0.2, 0.1]},
+      "why": "the example's +5V is USB behind its SS34 and sinks to 4.44 V with all LEDs on at USB 4.75 V – below the MCP73831-2's 4.5 V operating minimum (VREG + 0.3 V, DS20001984H 3.1); a rail of the example, not of the block: the test leaves out the supply case usb-min",
+      "remove_supplies": ["usb-min"]}
   set graph {"grounds": ["cell_n"]}

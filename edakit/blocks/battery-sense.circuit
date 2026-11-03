@@ -55,42 +55,16 @@ def battery-sense (v_out = 2.75 V, i = 275 uA)
   notes "sim.json: the en net under the MCU's outputs and a load that sets it high (gpio) – the scenario shows the
       voltage at the ADC; in the others en is low and the divider dark."
   set test {
-     "connect": {
-      "bat": "+5V",
-      "en": "SIG",
-      "adc": "VBAT_ADC"
-     },
-     "nets": {
-      "VBAT_ADC": [
-       0,
-       2.75
-      ]
-     },
-     "sim": {
-      "mcu": {
-       "U1": {
-        "outputs": [
-         "LED_SDI",
-         "LED_CLK",
-         "LED_LE",
-         "LED_OE",
-         "SIG"
-        ],
-        "pullups": [
-         "BTN"
-        ],
-        "pullup_ohm": 50000
-       }
-      },
-      "loads": {
-       "measure": {
-        "about": "firmware reads the battery: SIG high, LEDs off",
-        "gpio": {
-         "LED_OE": 1,
-         "SIG": 1
-        },
-        "leds_on": []
-       }
-      }
-     }
-     }
+      "connect": {"bat": "+5V", "en": "SIG", "adc": "VBAT_ADC"},
+      "nets": {"VBAT_ADC": [0, 2.75]},
+      "sim": {
+        "mcu": {
+          "U1": {
+            "outputs": ["LED_SDI", "LED_CLK", "LED_LE", "LED_OE", "SIG"],
+            "pullups": ["BTN"],
+            "pullup_ohm": 50000}},
+        "loads": {
+          "measure": {
+            "about": "firmware reads the battery: SIG high, LEDs off",
+            "gpio": {"LED_OE": 1, "SIG": 1},
+            "leds_on": []}}}}

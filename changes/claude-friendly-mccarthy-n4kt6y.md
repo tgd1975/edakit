@@ -36,6 +36,8 @@ patch
   `subject` and `require`, a part or net `satisfies` and `decision` – DOCS.ref resolves all four.
 - T.16: `edakit block add` on a `.circuit` graph writes a `use` statement after the parts and the resolved graph.json.
 - T.17: the test project led-bar-circuit – led-bar in the circuit language – for the tests and the evals.
+- `edakit graph fmt` writes a `set` whose JSON does not fit the line one member to a line, compact where a member
+  fits, the closing brackets at the end of the last line; the block library's sources are laid out so.
 - T.18: the skills circuit-design, hardware-change and new-project and the agent project-surveyor know the
   circuit language; handbook 19 describes usages, loops, parameters, variants and requirements in the notation.
 - T.20–T.23: `edakit graph sysml` and `edakit graph kerml` export a project as SysML v2 and KerML, textual and

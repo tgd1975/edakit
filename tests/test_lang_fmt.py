@@ -91,3 +91,18 @@ def test_files_named_need_no_project(tmp_path, capsys):
     f.write_text("part  R1 resistor X\n")
     assert cli.main(["graph", "fmt", "--check", str(f)]) == 2
     assert cli.main(["graph", "fmt", str(f)]) == 0 and f.read_text() == "part R1 resistor X\n"
+
+
+def test_a_set_of_json_too_long_for_a_line_is_one_member_to_a_line():
+    import json
+
+    from edakit.lang.reader import read
+    long = "Wi-Fi channels 1-13 only " * 6
+    text = ('graph demo\nset purpose.radio {"U1": {"bands_mhz": [[2412, 2472]], "notes": "' + long + '"}, '
+            '"U2": {"bands_mhz": []}}\n')
+    out = format(text)
+    assert out.splitlines()[1:] == ['set purpose.radio {', '    "U1": {', '      "bands_mhz": [[2412, 2472]],',
+                                    f'      "notes": "{long}"}},', '    "U2": {"bands_mhz": []}}']
+    assert format(out) == out and read(out, "x").errors == []
+    tail = "".join(out.splitlines()[1:])
+    assert json.loads(tail[tail.index("{"):]) == json.loads(text.splitlines()[1].split(" ", 2)[2])

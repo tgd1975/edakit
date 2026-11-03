@@ -45,43 +45,17 @@ def nmos-switch
   notes "D1 is optional: for a coil or motor it takes the flyback current; for a resistive load or LEDs `--without D1`
       leaves it out."
   set test {
-     "connect": {
-      "in": "SIG",
-      "vplus": "+5V"
-     },
-     "sim": {
-      "mcu": {
-       "U1": {
-        "outputs": [
-         "LED_SDI",
-         "LED_CLK",
-         "LED_LE",
-         "LED_OE",
-         "SIG"
-        ],
-        "pullups": [
-         "BTN"
-        ],
-        "pullup_ohm": 50000
-       }
-      },
-      "loads": {
-       "t_on": {
-        "about": "block test: the switch on with 0.2 A between vplus and load (an external current on the flyback diode D10), LEDs off",
-        "gpio": {
-         "LED_OE": 1,
-         "SIG": 1
-        },
-        "leds_on": [],
-        "external": {
-         "D10": {
-          "plus": "1",
-          "minus": "2",
-          "i_a": 0.2
-         }
-        }
-       }
-      }
-     }
-     }
+      "connect": {"in": "SIG", "vplus": "+5V"},
+      "sim": {
+        "mcu": {
+          "U1": {
+            "outputs": ["LED_SDI", "LED_CLK", "LED_LE", "LED_OE", "SIG"],
+            "pullups": ["BTN"],
+            "pullup_ohm": 50000}},
+        "loads": {
+          "t_on": {
+            "about": "block test: the switch on with 0.2 A between vplus and load (an external current on the flyback diode D10), LEDs off",
+            "gpio": {"LED_OE": 1, "SIG": 1},
+            "leds_on": [],
+            "external": {"D10": {"plus": "1", "minus": "2", "i_a": 0.2}}}}}}
   optional parts D1

@@ -12,7 +12,7 @@ import reference
 from edakit import cli
 from edakit.design import load_graph, load_parts
 from edakit.graph_form import canonical, converted, design_of, indent_of, render
-from edakit.lang.compile import compile_path, resolved_of
+from edakit.lang.compile import resolved_of
 from edakit.lang.convert import to_circuit
 from edakit.lang.fmt import format
 from edakit.lang.reader import read
@@ -58,23 +58,44 @@ def test_the_round_trip_led_bar_convert_compile(project_circuit, tmp_path):
         (reference.EXAMPLE / "hardware" / "graph.json").read_text())["graph"]))
 
 
-@pytest.mark.parametrize("name", ["main", "smd", "tht"])
+# the bell's five configurations: where each source lies in a clone of the bell, and the base it names
+BELL_SOURCES = {"main": "hardware", "smd": "variants/smd/hardware", "tht": "variants/tht/hardware",
+                "esp32": "variants/esp32/hardware", "esp32tht": "variants/esp32tht/hardware"}
+
+
+@pytest.mark.parametrize("name", list(BELL_SOURCES))
 def test_the_bell_s_sources_read_and_are_in_the_canonical_layout(name):
     text = (BELL / f"{name}.circuit").read_text(encoding="utf-8")
     assert read(text, f"{name}.circuit").errors == []
-    assert format(format(text)) == format(text)
+    assert format(text) == text
+
+
+def without_the_step_s_additions(graph):
+    """A graph without what language 11's `def led` adds to the bell's: the records of its derivation and the LEDs'
+    `value`, the colour the definition writes."""
+    g = {k: v for k, v in graph.items() if k != "derivations"}
+    g["components"] = [{k: v for k, v in c.items() if not (c["type"] == "led" and k == "value")}
+                       for c in graph["components"]]
+    return g
 
 
 @pytest.mark.skipif(not os.environ.get("BELL_ROOT"), reason="BELL_ROOT names no clone of the bell")
-def test_the_bell_s_sources_compile_to_its_graphs(tmp_path):
+@pytest.mark.parametrize("name", list(BELL_SOURCES))
+def test_the_bell_s_sources_compile_to_its_graphs(tmp_path, name):
+    """Every configuration of the bell compiles from its source in the language to the graph it has, but for the
+    step's additions: five records and the five LEDs' colours."""
     bell = Path(os.environ["BELL_ROOT"])
     copy = tmp_path / "bell"
     shutil.copytree(bell, copy, ignore=shutil.ignore_patterns(".git", "build"))
-    for name, where in (("main", "hardware"), ("smd", "variants/smd/hardware"), ("tht", "variants/tht/hardware")):
-        want = json.loads((copy / where / "graph.json").read_text())["graph"]
-        (copy / where / "graph.circuit").write_text((BELL / f"{name}.circuit").read_text())
-        got = compile_path(copy / where / "graph.circuit")
-        assert {c["designator"] for c in got["components"]} == {c["designator"] for c in want["components"]}, name
+    for n, where in BELL_SOURCES.items():
+        (copy / where / "graph.circuit").write_text((BELL / f"{n}.circuit").read_text())
+    where = BELL_SOURCES[name]
+    want = converted(json.loads((copy / where / "graph.json").read_text())["graph"])
+    got, _ = resolved_of(copy / where / "graph.circuit")
+    assert canonical(without_the_step_s_additions(got)) == canonical(want)
+    assert len(got["derivations"]) == 5 and "derivations" not in want
+    assert {c["designator"]: c["value"] for c in got["components"] if c["type"] == "led"}.keys() == \
+        {c["designator"] for c in want["components"] if c["type"] == "led"}
 
 
 @pytest.mark.parametrize("case", ["add-led-circuit", "repeat-leds", "variant-smd"])

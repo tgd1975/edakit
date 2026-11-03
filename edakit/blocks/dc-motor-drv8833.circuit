@@ -88,49 +88,23 @@ def dc-motor-drv8833
       bulk capacitor's ripple rating (93 mA rms at 120 Hz; the ceramic C1 is meant to carry the PWM ripple) – a motor
       is a constant current in the operating point, its stall and PWM are the review's."
   set test {
-     "connect": {
-      "vm": "+5V",
-      "vcc": "3V3",
-      "sleep": "SIG",
-      "ain1": "SIG2",
-      "ain2": "GND",
-      "bin1": "GND",
-      "bin2": "GND"
-     },
-     "sim": {
-      "mcu": {
-       "U1": {
-        "outputs": [
-         "LED_SDI",
-         "LED_CLK",
-         "LED_LE",
-         "LED_OE",
-         "SIG",
-         "SIG2"
-        ],
-        "pullups": [
-         "BTN"
-        ],
-        "pullup_ohm": 50000
-       }
-      },
-      "loads": {
-       "t_run": {
-        "about": "the driver awake (nSLEEP high), bridge A forward into a motor at J2 drawing 0.2 A (1 → 2) – within the example's 0.5 A USB source",
-        "gpio": {
-         "LED_OE": 1,
-         "SIG": 1,
-         "SIG2": 1
-        },
-        "leds_on": [],
-        "external": {
-         "J2": {
-          "plus": "1",
-          "minus": "2",
-          "i_a": 0.2
-         }
-        }
-       }
-      }
-     }
-     }
+      "connect": {
+        "vm": "+5V",
+        "vcc": "3V3",
+        "sleep": "SIG",
+        "ain1": "SIG2",
+        "ain2": "GND",
+        "bin1": "GND",
+        "bin2": "GND"},
+      "sim": {
+        "mcu": {
+          "U1": {
+            "outputs": ["LED_SDI", "LED_CLK", "LED_LE", "LED_OE", "SIG", "SIG2"],
+            "pullups": ["BTN"],
+            "pullup_ohm": 50000}},
+        "loads": {
+          "t_run": {
+            "about": "the driver awake (nSLEEP high), bridge A forward into a motor at J2 drawing 0.2 A (1 → 2) – within the example's 0.5 A USB source",
+            "gpio": {"LED_OE": 1, "SIG": 1, "SIG2": 1},
+            "leds_on": [],
+            "external": {"J2": {"plus": "1", "minus": "2", "i_a": 0.2}}}}}}

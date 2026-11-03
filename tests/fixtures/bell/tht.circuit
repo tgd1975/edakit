@@ -1,5 +1,13 @@
 variant tht of ../../hardware/graph.circuit
-  description "Automatic Christmas bell, the THT configuration"
+  set name "christmas-bell-tht"
+  set version "0.1"
+  set date "2026-10-26"
+  description "Automatic Christmas bell, variant THT (D-12): the circuit of the main board with through-hole parts
+      only, no assembly – a bare board to solder by hand."
+  purpose private market EU
+    notes "Automatic Christmas bell, THT variant, for the owner's home, built and used by the owner – not sold or
+        given away (D-16). Powered from a USB port or power bank through the Nano's USB; no battery holder, no mains,
+        no radio."
   for n in 1..5
     part R{n} resistor "330 Ω 1/4 W metal film, THT" lcsc C58608 value 330Ω no-bom
   for n in 6..7
@@ -8,3 +16,6 @@ variant tht of ../../hardware/graph.circuit
     part R{n} resistor "100 Ω 1 W metal film, THT" lcsc C119469 value 100Ω no-bom
   for n in 1..2
     part S{n} button K2-1102DP-C4SW-04 lcsc C110153 no-bom
+  accept HINT.bulk "C1 1000 µF / 16 V electrolytic on +5V, next to J1 (it buffers the Nano's 5V pin)"
+  accept HINT.debounce "debounced in firmware: src/firmware/buttons.ino, 50 ms (DEBOUNCE_DELAY)"
+  accept HINT.esd "J1 is the servo's own cable inside the bell's frame, plugged once; no TVS – like the main board"
