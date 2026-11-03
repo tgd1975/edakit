@@ -12,9 +12,9 @@ starved of its minimum load, and a row could not be released while another is sc
 five: a switch of three poles could not be described (roles, simulation, REQ.value/switch), a base biased by
 resistors to ground or a divider node was taken as floating, a coupling capacitor's voltage was taken from extreme to
 extreme of its nets' ranges, a second wire of one net between two boards stopped the simulation, and contacts on nets
-that run through cables were never judged by REQ.value/switch. The Adafruit Micro-Lipo added two: a charger's
-status LEDs behind their resistors were taken for a floating net, and a PROG resistor behind a solder jumper – a
-second charge current – was counted neither by LIM.i/charge nor by the charger model. The Fuzz Face added one: a base held by a
+that run through cables were never judged by REQ.value/switch. The Adafruit Micro-Lipo added two: a charger's status
+LEDs behind their resistors were taken for a floating net, and a PROG resistor behind a solder jumper – a second charge
+current – was counted neither by LIM.i/charge nor by the charger model. The Fuzz Face added one: a base held by a
 resistor to a supply that comes in at a connector, which no pin types, was taken as floating. Parts here are test
 entries, not datasheets."""
 

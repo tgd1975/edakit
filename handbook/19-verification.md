@@ -62,7 +62,7 @@ repository alone.
 <!-- edakit:generated tally -->
 - Reference circuits: 7, with 15 seeded faults that raise 8 codes: `LIM.i`, `LIM.p`, `LIM.range`, `PATH.reverse`, `REQ.forbidden`, `REQ.missing`, `REQ.value`, `SIM.response`.
 - Domains without a reference circuit: `mains`, `radio`.
-- Open designs: 7, with 176 findings judged – 57 real, 70 lacks, 40 criterion, 9 known gap; 21 false alarms fixed.
+- Open designs: 8, with 187 findings judged – 59 real, 73 lacks, 45 criterion, 10 known gap; 22 false alarms fixed.
 <!-- edakit:end -->
 
 ## 19.3 The example led-bar
@@ -212,6 +212,12 @@ Findings judged: 2 real, 6 lacks, 21 criterion; false alarms fixed: 5.
 Findings judged: 6 lacks, 1 criterion, 1 known gap; false alarms fixed: 0.
 
 - Known gap: `LIM.range` at Q1 (sim) – LIM.range/gate (CK-4) finds the BSS138 half on at VGS 3.1 V: its RDS(on) is specified only at 4.5 V and 10 V. In this shifter the MOSFET carries the pull-up current (0.5 mA) and works half on by design; the rule does not weigh the current, so it warns where nothing burns. Kept: a gate drive of 1.8 V (the low side the shifter is also used with) would leave it barely on – a fact worth seeing.
+
+**Random Input (whbeers)** (`whbeers-fuzz-face`) – CC0 1.0 · [drawing and findings](../docs/catalog/open-whbeers-fuzz-face.html)  
+*Why:* the Fuzz Face is the two-transistor circuit whose bias makers fight with: Q1's collector drives Q2's base directly and Q2's emitter feeds back to Q1's base through 100 kΩ, so the operating point rests on both transistors' gain and leakage – and they pull it in opposite directions, the case of the spread's corners per part (FT-17, handbook 5.2). No reference circuit has a direct-coupled pair, and the open designs' stages are a divider-held common emitter (the Classic Boost) and followers (the combo). This one names its bias targets on the schematic – TP2, Q2's collector, at 5.0 V, TP1 at 500–700 mV – and replaces the collector resistors with trimmers to reach them, so the simulation can hold the bias to the design's own window, show how far the spread moves it at one setting, and show the trimmers' range covering it. It is also a board without an IC, fed through a connector from another board, and its fuzz control carries DC. Makers build the Fuzz Face as one of the first fuzzes: a dozen parts, a sound tied to the transistors, and the reputation for picky bias.  
+Findings judged: 2 real, 3 lacks, 5 criterion, 1 known gap; false alarms fixed: 1.
+
+- Known gap: `REQ.value` at TRIM2 (sim) – TRIM2 is Q2's collector resistor, 3.2–4.9 V across it by design, between Q2's collector and the output tap, both in the signal path. REQ.value/switch (CK-30) holds every pot in a signal path to one DC level on both sides – the pop and the scratch of a control turned while playing. A trimmer is set once at the bench (the bias procedure) and not turned while playing; edakit cannot tell it from a panel pot: the potentiometer kind has no field for it, and one is catalog data (edakit/catalog/kinds.toml), which this transcription does not change. What would: a value in kinds.toml's potentiometer – say adjust = "trimmer" –, the Bourns 3296W entries marked with it, and REQ.value/switch leaving trimmers out.
 <!-- edakit:end -->
 
 ## 19.6 How a finding is judged
