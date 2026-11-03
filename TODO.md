@@ -4,7 +4,7 @@ Open work that needs the owner's computer, a maker or the owner's word. The stat
 and plans the sections name; this list is what is left to do of them, in the order it can be done. No item is deleted.
 
 **Layout.** Every item, in every section, open or closed, is a line with a checkbox and an ID unique in this file,
-counted up and never reused – whoever adds an item takes the next free ID and counts it up here. Next free ID: TD-113.
+counted up and never reused – whoever adds an item takes the next free ID and counts it up here. Next free ID: TD-117.
 
 - Open: `- [ ] TD-<n> - **Title:** what and why.` – a step's own name after the dash (`- [ ] TD-31 - **D.4** …`).
 - Done: ticked, the commit that did it, the date at the end, moved to [Closed todos](#closed-todos), newest first –
@@ -33,12 +33,27 @@ to touch.
       it replaces the render on `docs/projects/pytree.md`. *(edakit-ce)*
 - [ ] TD-110 - **OK for #265:** the parts at LCSC and the combined shipment (parts-order.md, steps 2 and 3) – merged
       with `python3 .github/merge.py 265` on your word. *(edakit-4f)*
+- [ ] TD-113 - **OK for the circuit language:** the branch `claude/friendly-mccarthy-n4kt6y` (T.1–T.27 of
+      circuit-dsl-toolchain.md, a patch) – opened as a pull request and merged with `python3 .github/merge.py <n>` on
+      your word. *(friendly-mccarthy)*
 
 ## The parts order ([docs/concepts/new/parts-order.md](docs/concepts/new/parts-order.md))
 
 - [ ] TD-111 - **Live run at the next parts order:** the skill cart's modes `parts` and `combine` at LCSC and JLCPCB,
       nothing ordered or paid by the skill – it records the BOM tool's labels into `edakit/suppliers/lcsc.toml`, sets
       `recorded`, and what it finds goes into handbook 8.4; after #265. *(edakit-4f)*
+
+## The circuit language ([docs/concepts/new/circuit-dsl-toolchain.md](docs/concepts/new/circuit-dsl-toolchain.md))
+
+- [ ] TD-114 - **The three evals of the language:** `evals/add-led-circuit`, `evals/repeat-leds` and
+      `evals/variant-smd` run once in a cloud session (FT-24, trigger 5) – written with T.19, not run; after TD-113.
+      *(friendly-mccarthy)*
+- [ ] TD-115 - **The bell in the language:** its sources converted in the bell's repository and the test of T.17 run
+      with `BELL_ROOT` – the bell's repository was not in the session's scope; the esp32 variant has no text in
+      circuit-dsl.md yet. *(friendly-mccarthy)*
+- [ ] TD-116 - **The job sysml on main:** its first run after TD-113 reads with the standard library 2025-12 that
+      systree loads – the job is optional, so its result is looked at, not waited for (decision 42).
+      *(friendly-mccarthy)*
 
 ## What edakit needs from EasyEDA Pro and easyeda-mcp-pro ([upstream/README.md](upstream/README.md))
 
