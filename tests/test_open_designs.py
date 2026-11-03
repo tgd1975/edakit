@@ -5,6 +5,11 @@ the design's) or known gap (edakit judges it wrong, not fixed yet, with the reas
 showed are fixed and listed there under [[fixed]] (tests/test_open_design_fixes.py holds them). The designs stay as
 published; a finding that appears or goes is a change in edakit to look at, not to wave through.
 
+  adafruit-microlipo-usb-c         Adafruit's Micro-Lipo Charger with USB Type C Jack (product 4410), Eagle schematic
+                                   "Adafruit USB C microlipo charger.sch" at commit d8ab4b0 of
+                                   https://github.com/adafruit/Adafruit-MicroLipo-PCB, CC BY-SA 3.0 – an MCP73831
+                                   charging a LiPo on a JST PH socket from USB-C, 100 mA by R_PROG and 555 mA with a
+                                   solder jumper, two status LEDs on STAT
   corne-cherry-left                foostan's Corne keyboard v4, left half (corne-cherry hotswap), KiCad schematic
                                    pcbs/common/left.kicad_sch at commit 63366fb of https://github.com/foostan/crkbd,
                                    CC BY 4.0 – an RP2040 board with USB-C, 23 keys each on its own GPIO (no matrix), a

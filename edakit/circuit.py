@@ -185,6 +185,37 @@ def resistors_to(d, net, targets):
     return out
 
 
+def switch_positions(d, des, net):
+    """The nets the switch `des` (kind switch) can join `net` to, one per position of its actuator: the throws of a
+    pole whose common is on `net`, the common of a pole with a throw on it. A solder jumper (common, throw_a) has one."""
+    out = []
+    for pins in switch_sets(d.part(des)).values():
+        at = {role: [d.pin_net.get(f"{des}.{n}") for n in nums] for role, nums in pins.items()}
+        if net in at.get("common", []):
+            out += at.get("throw_a", []) + at.get("throw_b", [])
+        elif net in at.get("throw_a", []) + at.get("throw_b", []):
+            out += at.get("common", [])
+    return [n for n in dict.fromkeys(out) if n and n not in (net, d.ground)]
+
+
+def prog_resistors(d, prog, closed=None):
+    """The resistors that set a linear charger's current (maker-coverage FT-4): from its PROG net to ground, and
+    behind a switch or solder jumper on PROG those from the net it joins PROG to, to ground – the Adafruit Micro-Lipo
+    puts 2.2 kΩ through its jumper SJ1 beside 10 kΩ for its 500 mA mode. `closed`: the nets a scenario's closed
+    contacts join PROG to (the simulation); without it each switch in the position that programs the most current –
+    one throw at a time, as its actuator allows. -> [ohms], in parallel."""
+    def to_ground(net):
+        return [r for _, r, _ in resistors_to(d, net, {d.ground}) if is_number(r) and r > 0]
+    out = to_ground(prog)
+    if closed is not None:
+        return out + [r for net in dict.fromkeys(closed) if net not in (prog, d.ground) for r in to_ground(net)]
+    for des in d.comps_of_kind("switch"):
+        options = [to_ground(net) for net in switch_positions(d, des, prog)]
+        if options:
+            out += max(options, key=lambda rs: sum(1 / r for r in rs))
+    return out
+
+
 def feedback_vout(d, des):
     """(vout, R1, R2) of an adjustable regulator set by its divider (maker-coverage FT-5), or None: values vref_v and a
     pin with the role adj (the reference between the output and ADJ – LM317, AMS1117: VOUT = VREF × (1 + R2/R1)) or fb

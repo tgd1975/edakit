@@ -1,0 +1,46 @@
+{
+ "mpn": "SOLDERJUMPER_ARROW_NOPASTE",
+ "manufacturer": "Adafruit (board copper)",
+ "kind": "switch",
+ "package": "two pads on the board, bridged with solder – no part",
+ "footprint": "SOLDERJUMPER_ARROW_NOPASTE",
+ "datasheet": {
+  "url": "https://github.com/adafruit/Adafruit-MicroLipo-PCB/blob/d8ab4b0f00c69a9f337a8d697bd15e0b9bae2e25/Adafruit%20USB%20C%20microlipo%20charger.sch",
+  "pinout_page": null
+ },
+ "pins": {
+  "1": {
+   "name": "1",
+   "type": "passive",
+   "role": "throw_a",
+   "hint": "the pad to R4"
+  },
+  "2": {
+   "name": "2",
+   "type": "passive",
+   "role": "common",
+   "hint": "the pad on PROG"
+  }
+ },
+ "values": {
+  "r_on_ohm": 0.01
+ },
+ "spice": {},
+ "sources": [
+  "the design itself: Adafruit's Eagle library microbuilder, device SOLDERJUMPER, package SOLDERJUMPER_ARROW_NOPASTE (two SMD pads 1 and 2, no paste – open as the board is made), BOM EXCLUDE, as the schematic 'Adafruit USB C microlipo charger.sch' at commit d8ab4b0 of https://github.com/adafruit/Adafruit-MicroLipo-PCB carries it",
+  "kind switch, roles common and throw_a: open unless a load of sim.json closes it – the board's state as delivered is open (100 mA); 'change it over to 500mA mode by soldering closed the jumper on the front' (Adafruit, product 4410)",
+  "r_on_ohm 0.01: a solder bridge across two pads, assumed – no data sheet"
+ ],
+ "notes": "Copper on the board, no part to buy; the graph names it with bom false.",
+ "verified": {
+  "by": "Claude (open-design transcription)",
+  "date": "2026-11-03",
+  "datasheet": "Adafruit microbuilder Eagle library, package SOLDERJUMPER_ARROW_NOPASTE (in the schematic)",
+  "checked": [
+   "two pads, pad 2 on PROG, pad 1 on R4 (schematic and board file of the same commit)"
+  ],
+  "open": [
+   "the resistance of a solder bridge is assumed (10 mΩ)"
+  ]
+ }
+}

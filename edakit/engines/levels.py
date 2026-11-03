@@ -212,10 +212,28 @@ def sinks_led(d, ref):
     return part.get("kind") in ("led", "led_rgb") and str(d.pin_info(ref).get("role") or "").startswith("cathode")
 
 
+def led_load(d, ref):
+    """A pin on a net of outputs that let go that is their load, not a line anything reads: an LED's cathode on it
+    (sinks_led), or a resistor whose far side holds nothing but LEDs – a status LED behind its series resistor, from
+    the supply into the output or from the output to ground (the MCP73831's STAT: red while charging, green when the
+    charge is complete)."""
+    if sinks_led(d, ref):
+        return True
+    des = ref.partition(".")[0]
+    part = d.part(des) or {}
+    if part.get("kind") != "resistor":
+        return False
+    far = {d.pin_net.get(f"{des}.{n}") for n in part.get("pins") or {}} - {d.pin_net.get(ref), None}
+    others = [r for net in far for r in d.nets[net]["pins"] if r.partition(".")[0] != des]
+    return len(far) == 1 and bool(others) and all(
+        (d.part(r.partition(".")[0]) or {}).get("kind") in ("led", "led_rgb") for r in others)
+
+
 def released_nets(d):
     """LVL.undefined/open_drain: a net whose only drivers are open-drain or tri-state outputs and that nothing pulls up
     – released, it floats. An I2C line is REQ.missing's (needs.toml [i2c]); a net that holds nothing but the outputs
-    and LED cathodes is the outputs' load – an LED from the supply into a 555's discharge pin."""
+    and their LEDs is the outputs' load – an LED from the supply into a 555's discharge pin, a charger's status LEDs
+    behind their resistors (led_load)."""
     from ..circuit import i2c_name
     from .requires import i2c_line
     held = held_nets(d)                  # a resistor path to a defined net – through a divider or a series chain too
@@ -232,8 +250,8 @@ def released_nets(d):
         if name in held:
             continue
         others = [r for r in net["pins"] if r not in open_]
-        if others and all(sinks_led(d, r) for r in others):
-            continue                     # the outputs sink LEDs: released, the LEDs are dark and nothing reads the net
+        if others and all(led_load(d, r) for r in others):
+            continue                     # the outputs drive LEDs: released, nothing reads the net
         roles = {i.get("role") for i in infos}
         fix = ("a pull-down to ground – the B line of an RS-485 bias pair (REQ.value/failsafe)" if roles & {"rs485_b"}
                else "a pull-up to the bus supply – the A line of an RS-485 bias pair (REQ.value/failsafe)"
