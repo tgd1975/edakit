@@ -80,3 +80,42 @@ jobs:
         run: kicad-cli version
       - name: Tests against kicad-cli
         run: uv run --group dev pytest -q -rs -m kicad tests/test_kicad_live.py
+
+  sysml:
+    # The conformance of the circuit language's exports (handbook 20): the electrical library and the exports of the
+    # test projects read by systree's SysML v2 and KerML reader, against the standard library systree loads (release
+    # 2025-12). Optional – Rust's reader is alpha, the job's failure blocks nothing, and it is no required check of the
+    # rulesets.
+    needs: lane
+    if: ${{ !cancelled() && needs.lane.outputs.only != 'true' }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@07a047e608db84b3d8c06cd9a7c7dcc9c355c18e # v10.3.2
+      - name: Conformance with a standard reader
+        shell: bash
+        run: |
+          SYSML_STDLIB="$(uv run --group dev --group sysml python -c \
+            'import systree.cli as s; s.get_stdlib_path(); print(s.get_stdlib_path())' | tail -n 1)"
+          export SYSML_STDLIB
+          uv run --group dev --group sysml pytest -q -rs -m sysml tests/test_lang_export.py
+
+  vscode:
+    # The VS Code extension of the circuit language compiles (editors/vscode, handbook 20.11) – Node from the runner's
+    # image; optional, no required check of the rulesets.
+    needs: lane
+    if: ${{ !cancelled() && needs.lane.outputs.only != 'true' }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: The extension compiles
+        working-directory: editors/vscode
+        run: npm ci --no-audit --no-fund && npm run compile

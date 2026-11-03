@@ -1,0 +1,28 @@
+def npn-switch
+  title "Low-side NPN switch with flyback diode"
+  about "An S8050 switches a load to ground: 1 kΩ base resistor from the signal, 10 kΩ from base to emitter so that it
+      stays off while the firmware is not running, and an SS14 across the load for coils. The buzzer stage of the
+      reference project; up to about 100 mA saturated from a 3.3 V pin."
+  port in "the driving signal (GPIO)"
+  port load "the low side of the load (relay coil, buzzer, LED string)"
+  port vplus "the supply of the load (its high side)"
+  port gnd "ground"
+  part Q1 transistor "S8050 J3Y" lcsc C2146 "{as}: low-side switch"
+  part R1 resistor 0805W8F1001T5E lcsc C17513 value 1k "{as}: base resistor 1 k"
+  part R2 resistor 0805W8F1002T5E lcsc C17414 value 10k "{as}: base-emitter resistor 10 k"
+  part D1 diode SS14 lcsc C2480 "{as}: flyback diode"
+  net in R1.1
+  net base 0..900 mV Q1.base R1.2 R2.1
+  net load @vplus Q1.collector D1.anode
+  net vplus D1.cathode
+  net gnd Q1.emitter R2.2
+  covers LVL.undefined REQ.missing HINT.inductive
+  notes "The load goes between vplus and load: add it to the graph with its pins on these two nets. With a series
+      resistor in front of a coil, vplus is the coil's own plus terminal, so that the diode sits directly across the
+      coil."
+  notes "Base current from 3.3 V about 2.4 mA: saturated up to about 100 mA (forced beta 40, hFE at least 200). For
+      more current a smaller base resistor or a MOSFET; edakit sim shows VCE and the power (LIM)."
+  notes "sim.json: the driving net under the MCU's outputs."
+  notes "D1 is optional: for a coil it takes the flyback current; for LEDs or a resistive load `--without D1` leaves
+      it out."
+  optional parts D1

@@ -550,8 +550,24 @@ def write_all(dst):
     return sorted(REFERENCES)
 
 
+CIRCUIT = ROOT / "tests" / "fixtures" / "led-bar-circuit"   # led-bar in the circuit language: what differs only
+
+
+def copy_of_circuit(dst):
+    """led-bar with its graph in the circuit language: the example, its edakit.toml, graph.circuit and the resolved
+    graph.json from tests/fixtures/led-bar-circuit (T.17 of circuit-dsl-toolchain.md)."""
+    p = Project.copy_of_example(dst)
+    for f in ("edakit.toml", "hardware/graph.circuit", "hardware/graph.json"):
+        shutil.copy(CIRCUIT / f, Path(dst) / f)
+    p.graph_file = Path(dst) / "hardware" / "graph.circuit"
+    return p
+
+
 def write_one(dst, name, fault=None):
-    """One reference circuit – or the example, name led-bar – as a project in dst, with a fault of FAULTS built in."""
+    """One reference circuit – or the example, name led-bar, or led-bar-circuit, the example in the circuit language
+    – as a project in dst, with a fault of FAULTS built in."""
+    if name == "led-bar-circuit":
+        return copy_of_circuit(dst)
     p = Project.copy_of_example(dst)
     if name != "led-bar":
         REFERENCES[name](p)

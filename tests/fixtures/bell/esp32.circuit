@@ -1,0 +1,65 @@
+variant esp32 of ../smd/hardware/graph.circuit
+  set name "christmas-bell-esp32"
+  set version "0.1"
+  set date "2026-10-26"
+  description "Automatic Christmas bell, variant ESP32 (D-13): like the SMD variant, with a LILYGO T-Display V1.1
+      (ESP32, 1.14 inch TFT) instead of the Nano. 3.3 V logic: the buttons switch 3V3, the LEDs run from 3.3 V outputs
+      (yellow-green instead of emerald green, D-14)."
+  purpose private market EU
+    notes "Automatic Christmas bell, ESP32 variant, for the owner's home, built and used by the owner – not sold or
+        given away (D-16). Powered through the T-Display's USB-C only – no cell at the module's battery input, no
+        mains. The T-Display's ESP32 uses Wi-Fi (2.4 GHz, channels 1-13): a web page in the owner's home network –
+        status and control of the countdown, no internet service – and a setup hotspot (WPA2) until the home network
+        is set (D-17); Bluetooth stays off."
+  set purpose.radio {
+      "U1": {
+        "bands_mhz": [[2412, 2472]],
+        "notes": "Wi-Fi channels 1-13 only: the firmware variants/esp32/firmware sets country DE with 802.11d off at every Wi-Fi start (D-13, D-17); Bluetooth is never started; the default power limit"}}
+  param vlogic = 0..3.4 V
+
+  part U1 module "LILYGO TTGO T-Display V1.1" lcsc C18722937 no-bom "LILYGO T-Display V1.1 (plugged in)"
+    nc IO39 IO36 13 IO12 IO15 IO2 IO17 IO22 IO21
+    alias led1 = IO27 led2 = IO26 led3 = IO25 led4 = IO33 led5 = IO32
+    alias servo = IO13 btn_start = IO38 btn_reset = IO37 v3 = 12
+    accept STRUCT.entry -
+    notes "Plugs into two 1x12 female headers, pitch 2.54 mm, rows 22.86 mm apart (hand-soldered, not in the graph).
+      Powered through its USB-C socket; its 5V pin (VBUS behind the module's 1N5819) supplies the servo and C1, its
+      3V3 pin (AP2112K) the buttons. Strapping pins IO12/IO15/IO2 and the second 3V3 pin stay free. LCSC C18722937 is
+      a stand-in for the EasyEDA device: its symbol and footprint are rebuilt in the project (D-13)."
+  part C1
+    notes "Absorbs the servo's start-up peaks so the ESP32 does not reset. SMD can (D-11)."
+  use led step1 (color = yellow-green)
+  use led step2 (color = yellow-green)
+  part LED5 led KT-0805YG lcsc C2292 "0805 LED, yellow-green, countdown step 1"
+    notes "D-14: yellow-green (VF 1.8-2.4 V) instead of emerald green (2.6-3.1 V) – the ESP32's 3.3 V outputs do not
+      drive the emerald green reliably"
+  part LED4 led KT-0805YG lcsc C2292 "0805 LED, yellow-green, countdown step 2"
+    notes "D-14: yellow-green (VF 1.8-2.4 V) instead of emerald green (2.6-3.1 V) – the ESP32's 3.3 V outputs do not
+      drive the emerald green reliably"
+  for n in 1..5
+    part LED{n}
+      accept LIM.p "D-26 (owner, 2026-10-31): 20.7 mW at the forward-voltage minimum, 52 % of the datasheet's 40 mW –
+        accepted, the brightness stays"
+    part R{n} resistor "100 Ω 0805" lcsc C17408 value 100Ω
+      accept DEF.derive "D-14: all five series resistors 100 Ω – (3.3 V − 2.1 V) / (100 Ω + 30 Ω output + 10 Ω LED) ≈
+        8.6 mA; 7.3–11.4 mA over all corners in the simulation"
+      notes "D-14: (3.3 V - 2.1 V) / (100 Ω + 30 Ω GPIO + 10 Ω LED) = 8.6 mA typ."
+  for n in 8..9
+    part R{n}
+      notes "Keeps a power bank from switching off (D-8): with the module's least current (0.04 A, i_core_min_a –
+        D-18) the board draws at least 0.136 A with the base load (simulated, LIM.i … current keeps the supply on)."
+
+  net +5V
+    without S1.a S2.a
+    notes "5V pin of the T-Display: USB VBUS behind the module's 1N5819; supplies the servo and C1."
+  net +3V3 vlogic U1.v3 S1.a S2.a
+    notes "3V3 pin of the T-Display (AP2112K-3.3); switched to the inputs by the buttons (D-13)."
+  net SERVO
+    notes "IO13, 3.3 V PWM into the servo's signal input (D-13)."
+  net BTN_START
+    notes "Pressed = 3.3 V at IO38 (input only), else R7 pulls to GND (D-13)."
+  net BTN_RESET
+    notes "Pressed = 3.3 V at IO37 (input only), else R6 pulls to GND (D-13)."
+
+  accept HINT.bulk "C1 1000 µF / 16 V electrolytic on +5V, next to J1 (it buffers the module's 5V pin)"
+  accept HINT.debounce "debounced in the ESP32 firmware variants/esp32/firmware like buttons.ino (50 ms, D-17)"

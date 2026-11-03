@@ -117,15 +117,25 @@ def build_parser():
 
     p = sub.add_parser("graph", help="what the graph says about one part or net; the resolved graph as JSON; a JSON "
                                      "graph moved to TOML")
-    p.add_argument("action", choices=["show", "json", "convert"])
-    p.add_argument("name", nargs="?", help="show: a designator (U1) or a net name (LED_CLK)")
+    p.add_argument("action", choices=["show", "json", "convert", "fmt", "derive", "sysml", "kerml"])
+    p.add_argument("name", nargs="?", help="show: a designator (U1) or a net name (LED_CLK); fmt: a .circuit file")
+    p.add_argument("files", nargs="*", help="fmt: further .circuit files (default: the project's source)")
     p.add_argument("--json", help="show: write the view and its findings as JSON")
-    p.add_argument("--write", action="store_true", help="json: write the resolved graph beside a TOML graph "
-                                                        "(hardware/graph.json)")
+    p.add_argument("--write", action="store_true", help="json: write the resolved graph beside a TOML or a .circuit "
+                                                        "graph (hardware/graph.json); derive: the records again")
     p.add_argument("--check", action="store_true", help="json: compare the generated file with the graph, write "
-                                                        "nothing; exit 2 on drift")
+                                                        "nothing; exit 2 on drift; fmt: exit 2 where the layout "
+                                                        "would change")
     p.add_argument("--dry-run", action="store_true", help="convert: print what would change, write nothing")
+    p.add_argument("--to", choices=["toml", "circuit"], default="toml", help="convert: the form to move the graph to "
+                                                                             "(default toml)")
+    p.add_argument("--out", metavar="DIR", help="sysml, kerml: the folder of the export (default <artifacts>/sysml, "
+                                                "<artifacts>/kerml)")
+    p.add_argument("--map", metavar="FILE", help="json: write the source map of a .circuit graph – where each part, "
+                                                 "net, lock and accept was written")
     _common(p)
+
+    p = sub.add_parser("lsp", help="the language server of the circuit language over stdio (the extra lsp: pygls)")
 
     p = sub.add_parser("domains", help="the domains of the project: on, off, suggested; the reviewers' questions")
     p.add_argument("--review", choices=["electrical", "regulatory", "pcb"], help="the questions of the enabled domains "
@@ -149,6 +159,10 @@ def build_parser():
     p.add_argument("--without", action="extend", nargs="+", metavar="DES", help="add: leave out these optional parts "
                                                                                 "of the block")
     p.add_argument("--board", help="add: board of the new parts (needed with several boards)")
+    p.add_argument("--set", action="extend", nargs="+", metavar="PARAM=VALUE", help="add: a parameter of the block "
+                                                                                    "(i=10mA): its derivations run")
+    p.add_argument("--part", action="extend", nargs="+", metavar="DES=KEY", help="add: the parts entry a part of "
+                                                                                 "the block takes where --set asks")
     p.add_argument("--file", help="a block from this JSON file instead of the library")
     p.add_argument("--dry-run", action="store_true", help="add: show what would change, write nothing")
     _common(p)
@@ -367,7 +381,16 @@ def main(argv=None):
 
 
 def _main(argv=None):
-    args = build_parser().parse_args(argv)
+    parser = build_parser()
+    args, rest = parser.parse_known_args(argv)
+    if rest and args.command == "graph" and not any(a.startswith("-") for a in rest):
+        # `graph fmt --check A B`: before Python 3.13 argparse fills the positionals before the option and leaves the
+        # files after it over – they are the files the action names
+        if args.name is None:
+            args.name, rest = rest[0], rest[1:]
+        args.files = [*args.files, *rest]
+    elif rest:
+        parser.error(f"unrecognized arguments: {' '.join(rest)}")
     sys.stdout.reconfigure(line_buffering=True)  # progress shows up at once, also when piped
     if args.command == "lock":
         from . import lock
@@ -393,6 +416,12 @@ def _main(argv=None):
     if args.command == "block" and args.action in ("list", "show"):
         from . import block
         return block.main(None, args)
+    if args.command == "lsp":                                               # the editor's: no project needed
+        from .lang import server
+        return server.main(args)
+    if args.command == "graph" and args.action == "fmt" and args.name:     # files named: no project needed
+        from .lang import cli as lang_cli
+        return lang_cli.main(None, args)
     from . import config
     try:
         cfg = config.load(args.config)
@@ -425,6 +454,9 @@ def _main(argv=None):
     if args.command == "graph" and args.action == "show":
         from . import graph_show
         return graph_show.main(cfg, args)
+    if args.command == "graph" and args.action in ("fmt", "derive", "sysml", "kerml"):
+        from .lang import cli as lang_cli
+        return lang_cli.main(cfg, args)
     if args.command == "graph":
         from . import graph_form
         return graph_form.main(cfg, args)

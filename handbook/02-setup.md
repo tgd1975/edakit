@@ -42,6 +42,9 @@ server with 115 tools plus a controlled generic call into the extension API. eda
    domains only – best a Chrome profile of its own, without a saved card –, on the computer that holds the release's
    files. `edakit cart actual --from` a PDF invoice needs pdftotext.
 
+For a graph written in the circuit language, an editor can show its errors and findings as they are typed: the
+language server `edakit lsp` and the VS Code extension of `editors/vscode/` (chapter 20).
+
 ## 2.3 Claude Code: the plugin
 
 ```text
@@ -219,8 +222,8 @@ format, 3.1). The pre-commit hook comes from `edakit hook install`: it writes ed
 into the hook the repository has, after its header, the project's own steps kept – and sets `git config
 core.hooksPath`, which every clone needs once. On every commit that touches a configuration's files – its edakit.toml,
 its `hardware/`, the main project's `hardware/`, a file it names – the block runs `edakit check`, `edakit sim` and,
-with a TOML graph, `edakit graph json --check` – which fails when the generated file no longer matches the TOML
-(`edakit graph json --write` brings it along) –, with `[firmware]` also `edakit firmware --check`, with `[docs]`
+with a TOML or a `.circuit` graph, `edakit graph json --check` – which fails when the generated file no longer
+matches its source (`edakit graph json --write` brings it along) –, with `[firmware]` also `edakit firmware --check`, with `[docs]`
 `edakit docs`. A failing step blocks the commit.
 
 The block finds edakit itself – `$EDAKIT`, the PATH inside Claude

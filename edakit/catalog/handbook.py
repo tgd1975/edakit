@@ -6,7 +6,8 @@ codes of each stage, the parts schema, the check IDs of before with the codes th
 A generated section sits between `<!-- edakit:generated KIND ARGS -->` and `<!-- edakit:end -->` in a chapter of
 handbook/; KIND is table (ARGS: engine prefixes – code, title and severity, each code linked to its engine's page of
 the catalog), codes (the same with the rule and its details), engines (each engine's prefix and what it decides),
-kinds (the parts schema), replaced (the map of before) or command (ARGS: a subcommand – its synopsis and help line from the command line's own parser). Without
+kinds (the parts schema), replaced (the map of before), rules (the circuit language's derivation rules, lang/rules.py)
+or command (ARGS: a subcommand – its synopsis and help line from the command line's own parser). Without
 --write the command lists the sections that differ from the catalog; tests/test_catalog.py holds the handbook to it.
 
 Chapter 19 takes three more kinds from the tests' own data, not the catalog (the concept
@@ -225,6 +226,9 @@ def render(kind, args):
         return kinds_section()
     if kind == "replaced":
         return replaced_section()
+    if kind == "rules":                                  # the circuit language's derivation rules (lang/rules.py)
+        from ..lang.rules import describe
+        return describe() + "\n"
     if kind == "command":
         return command_section(args)
     if kind == "references":

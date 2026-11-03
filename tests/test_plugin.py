@@ -220,6 +220,20 @@ def test_the_requirements_inventory_has_an_eval():
     assert "`requirements-inventory`" in (ROOT / "evals" / "README.md").read_text(encoding="utf-8")
 
 
+def test_every_regex_grader_is_a_javascript_regex():
+    """The runner of the evals compiles a grader's pattern as JavaScript: no inline flags such as `(?m)` – they go
+    to `flags` –, no lookbehind of Python's own forms."""
+    import re
+    for path in sorted((ROOT / "evals").glob("*/graders/*.md")):
+        head = path.read_text(encoding="utf-8").split("---")[1]
+        if "type: regex" not in head:
+            continue
+        pattern = re.search(r"""^pattern: (?:"(.*)"|'(.*)')$""", head, re.M)
+        assert pattern, path
+        text = pattern.group(1) if pattern.group(1) is not None else pattern.group(2)
+        assert not re.search(r"\(\?[aiLmsux]+[):]|\(\?P[<=]", text), f"{path}: an inline flag or Python's named group"
+
+
 def test_a_new_project_has_a_requirements_file():
     files = section(ROOT / "skills" / "new-project" / "SKILL.md", "3. Files")
     assert "hardware/requirements.toml" in files and "docs.file" in files and "skill requirements" in files
