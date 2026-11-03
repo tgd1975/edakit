@@ -8,6 +8,11 @@ written once, by `.github/merge.py`, from the fragments in [changes/](changes/RE
 update edakit@edakit`, then `/reload-plugins` or a new session; `edakit version` names the version that runs and what an
 update brings.
 
+## 1.1.15 – 2026-11-03
+
+- circuit-design: an error or a warning the circuit keeps goes into the decision round; its accept is written only
+  after the user answers (working agreement 4, handbook 11.4).
+
 ## 1.1.14 – 2026-11-03
 
 - Parts on hand: an inventory – a table with `ID` and `Quantity` in `.md`, `.html`, `.csv`, `.xlsx` or `.ods`, named in

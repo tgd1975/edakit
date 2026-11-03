@@ -5,7 +5,7 @@ main at `46ad6af`, asked for by the owner the same day. The yardstick was the ow
 [circuit-dsl-toolchain.md](circuit-dsl-toolchain.md): the original form is the default without a word about the DSL,
 every facet of the DSL works only in a project whose edakit.toml switches it on, the site has a top-level section
 "Explorative DSL". Built the same day on the owner's word ("setze das … dokument um"): B.1 to B.6 on the branch
-`claude/gracious-fermat-vsbycc`, five commits on the DSL branch's tip `5ee220f` (`1dd3e31` to `460a3e4`) – the DSL
+`explorative-dsl-beta-fixes`, five commits on the DSL branch's tip `5ee220f` (`1dd3e31` to `460a3e4`) – the DSL
 branch itself is another session's and unchanged; it takes them as a fast-forward. The decisions below taken as
 recommended and confirmed by the owner the same day (decision 50 of circuit-dsl-toolchain.md). Left: the
 fast-forward of the DSL branch, the session that holds it; the branch is not proposed for main until the owner
@@ -134,7 +134,7 @@ Taken on 2026-11-03 as recommended, while building, and confirmed by the owner t
 
 ## As built
 
-On `claude/gracious-fermat-vsbycc`, each step test first, `tests/test_beta.py` holding the side without the switch:
+On `explorative-dsl-beta-fixes`, each step test first, `tests/test_beta.py` holding the side without the switch:
 
 - **B.1** (`1dd3e31`): `graph_findings` in `edakit/engines/__init__.py` runs DEF only where the project's config has
   `dsl`; without a project it does not run.
