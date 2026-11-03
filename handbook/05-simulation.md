@@ -664,4 +664,5 @@ voltage drop as an upper bound, as information; the simulation computes the drop
 
 The tests in `tests/test_sim.py` build faults into copies of the example (a reversed LED, an overloaded resistor, a too
 narrow voltage range, a too weak supply) and expect the matching check to fail. Do the same for checks you add in a
-plugin: a check that never failed may not work.
+plugin: a check that never failed may not work. The other layers of edakit's tests: verification and validation
+([19.2](19-verification.md#192-the-layers)).
