@@ -7,8 +7,9 @@ every facet of the DSL works only in a project whose edakit.toml switches it on,
 "Explorative DSL". Built the same day on the owner's word ("setze das … dokument um"): B.1 to B.6 on the branch
 `claude/gracious-fermat-vsbycc`, five commits on the DSL branch's tip `5ee220f` (`1dd3e31` to `460a3e4`) – the DSL
 branch itself is another session's and unchanged; it takes them as a fast-forward. The decisions below taken as
-recommended, for the owner to confirm. Left: the owner's confirmation and the fast-forward; the branch is not
-proposed for main until the owner asks (decision 48).
+recommended and confirmed by the owner the same day (decision 50 of circuit-dsl-toolchain.md). Left: the
+fast-forward of the DSL branch, the session that holds it; the branch is not proposed for main until the owner
+asks (decision 48).
 
 ## Why
 
@@ -123,7 +124,7 @@ until the owner asks for its pull request (decision 48); the steps are its own c
 
 ## Decisions
 
-Taken on 2026-11-03 as recommended, while building, for the owner to confirm:
+Taken on 2026-11-03 as recommended, while building, and confirmed by the owner the same day:
 
 1. **DEF without the switch (B.1):** off without the switch – it is what decision 49 and `docs/dsl/README.md` say;
    the alternative was on for every project, since a `derivations` key reaches a JSON graph only by hand.
