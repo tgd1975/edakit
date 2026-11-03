@@ -1,0 +1,128 @@
+<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>A session: from an idea to the cart</title><style>/* The chat of a session (session-chat.md, S.3) – for docs/brand/edakit.css, in the tokens of docs/brand/tokens.json.
+   The prototype's page sets the Material variables itself; on the site Material sets them and the scheme switches. */
+:root {
+  --chat-bg: #f4f6f6; --chat-surface: #ffffff; --chat-ink: #1d2626; --chat-muted: #5d6b6b; --chat-line: #d5dddd;
+  --chat-accent: #0e6c6a; --chat-copper: #b8691f; --chat-you: #0e6c6a; --chat-you-ink: #ffffff;
+}
+[data-md-color-scheme="slate"], .chat-dark {
+  --chat-bg: #111717; --chat-surface: #182020; --chat-ink: #e3eaea; --chat-muted: #97a6a6; --chat-line: #2c3838;
+  --chat-accent: #5cc4c0; --chat-copper: #e0954f; --chat-you: #0e6c6a; --chat-you-ink: #ffffff;
+}
+
+/* the prototype's page only */
+body { margin: 0; background: var(--chat-bg); color: var(--chat-ink);
+       font: 15px/1.55 "IBM Plex Sans", system-ui, sans-serif; }
+main { max-width: 46rem; margin: 0 auto; padding: 1.5rem 16px 3rem; }
+h1 { font-size: 1.7rem; font-weight: 600; margin: 0 0 .8rem; }
+main > p { color: var(--chat-ink); margin: 0 0 .8rem; }
+
+/* the chat */
+.chat, .chat * { box-sizing: border-box; }
+.chat { display: flex; flex-direction: column; gap: .55rem; margin: 1.5rem 0; }
+.chat code { font: .86em "IBM Plex Mono", ui-monospace, monospace; background: none; padding: 0; }
+.chat p { margin: 0; }
+
+.chat-step { display: flex; align-items: center; gap: .6rem; margin: 1.1rem 0 .2rem;
+             color: var(--chat-muted); font-size: .78rem; font-weight: 600; letter-spacing: .04em;
+             text-transform: uppercase; }
+.chat-step::before, .chat-step::after { content: ""; flex: 1; border-top: 1px solid var(--chat-line); }
+
+.chat-msg { max-width: 82%; padding: .55rem .8rem; border-radius: .9rem; }
+.chat-who { display: block; font-size: .72rem; font-weight: 600; opacity: .75; margin-bottom: .1rem; }
+.chat-you { align-self: flex-end; background: var(--chat-you); color: var(--chat-you-ink);
+            border-bottom-right-radius: .25rem; }
+.chat-claude { align-self: flex-start; background: var(--chat-surface); border: 1px solid var(--chat-line);
+               border-bottom-left-radius: .25rem; }
+
+.chat-ran { align-self: flex-start; color: var(--chat-muted); font-size: .8rem; padding-left: .8rem;
+            border-left: 2px solid var(--chat-line); }
+.chat-ran > span { font: 600 .7rem "IBM Plex Mono", monospace; text-transform: uppercase; margin-right: .3rem; }
+
+.chat-do { align-self: stretch; padding: .5rem .8rem; border: 1px dashed var(--chat-copper); border-radius: .5rem;
+           background: color-mix(in srgb, var(--chat-copper) 7%, transparent); }
+.chat-do-label { display: block; font-size: .7rem; font-weight: 600; color: var(--chat-copper);
+                 text-transform: uppercase; letter-spacing: .04em; }
+
+.chat-form { align-self: flex-start; width: min(100%, 34rem); background: var(--chat-surface);
+             border: 1px solid var(--chat-line); border-left: 3px solid var(--chat-accent); border-radius: .5rem;
+             padding: .5rem .8rem .6rem; font-size: .92rem; }
+.chat-form-title { display: flex; justify-content: space-between; font-weight: 600; color: var(--chat-accent);
+                   margin-bottom: .3rem; }
+.chat-form-title span { white-space: nowrap; color: var(--chat-muted); font-weight: 400; font-size: .78rem; }
+.chat-q { padding: .35rem 0; border-top: 1px solid var(--chat-line); }
+.chat-q ol { margin: .25rem 0 .25rem 1.3rem; padding: 0; color: var(--chat-muted); list-style: lower-alpha; }
+.chat-q li.chat-rec { color: var(--chat-ink); }
+.chat-a { text-align: right; }
+.chat-q-row { display: flex; justify-content: space-between; gap: 1rem; align-items: baseline; }
+.chat-q-row .chat-a { white-space: nowrap; }
+.chat-a::before { content: "› "; color: var(--chat-muted); }
+.chat-a { color: var(--chat-accent); font-weight: 600; }
+
+.chat-img { align-self: flex-start; margin: 0; max-width: min(82%, 24rem); background: var(--chat-surface);
+            border: 1px solid var(--chat-line); border-radius: .6rem; padding: .4rem; }
+.chat-img img { display: block; width: 100%; height: auto; border-radius: .3rem; background: #fff; }
+.chat-img figcaption { font-size: .75rem; color: var(--chat-muted); padding: .25rem .2rem 0; }
+
+.chat-tally { margin-top: 1.2rem; padding: .7rem .9rem; border-radius: .5rem; background: var(--chat-surface);
+              border: 1px solid var(--chat-line); }
+
+@media (max-width: 30rem) {
+  .chat-msg, .chat-img { max-width: 92%; }
+}
+</style></head><body><main class="md-typeset"><h1>A session: from an idea to the cart</h1><p>For you if you want to see what working with edakit looks like before you install anything. After this page you know
+what you type, what Claude asks and what is left for you outside the chat.</p><p>The board is the walkthrough&#x27;s: a coin cell, a button and a red LED. Claude&#x27;s answers are shortened. The full
+story, with every file, is the walkthrough.</p><div class="chat">
+<div class="chat-step"><span>1 Install the tools</span></div>
+<div class="chat-do"><span class="chat-do-label">You, outside the chat</span><p>Once: add the plugin in Claude Code, install uv and ngspice.</p></div>
+<div class="chat-step"><span>2 Start a project</span></div>
+<div class="chat-msg chat-you"><span class="chat-who">You</span><p>A board for my desk: a coin cell, a push button and an LED. Press the button and the LED lights.</p></div>
+<div class="chat-msg chat-claude"><span class="chat-who">Claude</span><p>I&#x27;ll set the project up first. One form, the recommended answer first.</p></div>
+<div class="chat-form"><div class="chat-form-title">Set up coin-cell-led<span>8 questions</span></div><div class="chat-q chat-q-row"><p>A PCB or a development board?</p><p class="chat-a">A PCB</p></div><div class="chat-q chat-q-row"><p>Drawn in?</p><p class="chat-a">EasyEDA Pro (recommended)</p></div><div class="chat-q chat-q-row"><p>Who makes it?</p><p class="chat-a">JLCPCB, top side assembled, SMD only</p></div><div class="chat-q chat-q-row"><p>How many sets?</p><p class="chat-a">5</p></div><div class="chat-q chat-q-row"><p>A budget?</p><p class="chat-a">none</p></div><div class="chat-q chat-q-row"><p>What is it for, and where?</p><p class="chat-a">for myself, in the EU</p></div><div class="chat-q chat-q-row"><p>The requirements?</p><p class="chat-a">now</p></div><div class="chat-q chat-q-row"><p>Firmware?</p><p class="chat-a">none</p></div></div>
+<div class="chat-msg chat-claude"><span class="chat-who">Claude</span><p>Here is every file and key, each with the answer behind it. Write them?</p></div>
+<div class="chat-msg chat-you"><span class="chat-who">You</span><p>ok</p></div>
+<div class="chat-ran"><span>ran</span> <code>edakit.toml</code>, <code>hardware/graph.json</code>, <code>docs/decisions.md</code> written</div>
+<div class="chat-step"><span>3 Say what it must do</span></div>
+<div class="chat-msg chat-claude"><span class="chat-who">Claude</span><p>&quot;The LED lights&quot; – from what current on? I suggest at least 1 mA.</p></div>
+<div class="chat-msg chat-you"><span class="chat-who">You</span><p>fine</p></div>
+<div class="chat-msg chat-claude"><span class="chat-who">Claude</span><p>Down to which cell? I suggest a used CR2032 at 2.5 V, the end voltage Rayovac rates its capacity to.</p></div>
+<div class="chat-msg chat-you"><span class="chat-who">You</span><p>yes</p></div>
+<div class="chat-msg chat-claude"><span class="chat-who">Claude</span><p>Two needs and two requirements are drafted in <code>hardware/requirements.toml</code>. R-1: while SW1 is pressed, D1 carries at least 1 mA, from a fresh cell down to 2.5 V. Only you accept them.</p></div>
+<div class="chat-msg chat-you"><span class="chat-who">You</span><p>accept</p></div>
+<div class="chat-step"><span>4 Design the circuit</span></div>
+<div class="chat-ran"><span>ran</span> <code>edakit block add led</code> · <code>edakit part search</code> · <code>edakit check</code> · <code>edakit sim</code></div>
+<div class="chat-msg chat-claude"><span class="chat-who">Claude</span><p>The block&#x27;s green LED needs 2.6 to 3.1 V. A used cell gives it 0.4 mA, and R-1 asks for 1 mA. I took a red one, C84256: 1.22 mA from a used cell, 10.7 mA from a fresh one. Two findings are left for you.</p></div>
+<div class="chat-step"><span>5 Decide on what was found</span></div>
+<div class="chat-form"><div class="chat-form-title">Two findings, one to confirm<span>3 questions</span></div><div class="chat-q"><p>PATH.reverse: a CR2032 put in upside down reaches R1 and D1. Protect against it?</p><ol><li class="chat-rec">No protection (recommended): D1 blocks, 3.2 V against its rated 5 V.</li><li class="">A Schottky diode in series: it costs 0.3 V, the margin a used cell needs.</li></ol><p class="chat-a">No protection</p></div><div class="chat-q"><p>LIM.i: held down, SW1 draws 10.7 mA from a fresh cell. It is rated 3 mA continuous, 15 mA in pulses.</p><ol><li class="chat-rec">Accept it: a press is short (recommended).</li><li class="">A pulse limit per load.</li></ol><p class="chat-a">Accept it</p></div><div class="chat-q chat-q-row"><p>I decided myself: the red LED instead of the block&#x27;s green one. Confirm?</p><p class="chat-a">yes</p></div></div>
+<div class="chat-msg chat-claude"><span class="chat-who">Claude</span><p>Written to <code>docs/decisions.md</code>, each with its reason and date.</p></div>
+<div class="chat-step"><span>6 Settle parts and cost</span></div>
+<div class="chat-ran"><span>ran</span> <code>edakit stock</code> · <code>edakit cost</code></div>
+<div class="chat-form"><div class="chat-form-title">One part needs you<span>1 question</span></div><div class="chat-q"><p>JLCPCB places the holder BT1 only in Standard assembly: 52.60 USD for five boards instead of 20.65.</p><ol><li class="chat-rec">You solder BT1 by hand: two SMD tabs, five holders in the LCSC cart (recommended).</li><li class="">Standard assembly.</li><li class="">A Lian Xin holder Economic places. Its drawing does not say which pad is plus.</li></ol><p class="chat-a">I solder it</p></div></div>
+<div class="chat-step"><span>7 Draw and hand over</span></div>
+<div class="chat-ran"><span>ran</span> <code>edakit schematic draw</code></div>
+<figure class="chat-img"><img src="../../../../../../examples/coin-cell-led/docs/schematic.svg" alt="The drawn schematic"><figcaption>The drawn schematic</figcaption></figure>
+<div class="chat-msg chat-claude"><span class="chat-who">Claude</span><p>A checked circuit and its drawing. That is enough to wire it by hand. Stop here, or on to a board?</p></div>
+<div class="chat-msg chat-you"><span class="chat-who">You</span><p>a board</p></div>
+<div class="chat-step"><span>8 Have it reviewed</span></div>
+<div class="chat-msg chat-claude"><span class="chat-who">Claude</span><p>Two reviewers check it now, each in a session of its own: the electrical one and the regulatory one. The regulatory review is support, not legal advice.</p></div>
+<div class="chat-do"><span class="chat-do-label">You, outside the chat</span><p>Start each reviewer in a new session when Claude asks.</p></div>
+<div class="chat-ran"><span>ran</span> electrical-reviewer: 5 notes · regulatory-reviewer: 4 notes, none blocking</div>
+<div class="chat-form"><div class="chat-form-title">Two notes need you, the rest Claude fixed<span>2 questions</span></div><div class="chat-q"><p>Who uses the board? The cell comes out by hand, and a swallowed coin cell burns.</p><ol><li class="chat-rec">Adults at a desk, out of reach of small children (recommended).</li><li class="">Children: then a holder that needs a tool.</li></ol><p class="chat-a">Adults at a desk</p></div><div class="chat-q chat-q-row"><p>R-2, dark while nobody presses, has no number. At most 1 µA from the cell?</p><p class="chat-a">yes</p></div></div>
+<div class="chat-msg chat-claude"><span class="chat-who">Claude</span><p>Fixed. Both reviewers looked again, found one more slip, and signed.</p></div>
+<div class="chat-step"><span>9 Lay out the board</span></div>
+<div class="chat-do"><span class="chat-do-label">You, outside the chat</span><p>Install EasyEDA Pro. Create the project by hand: File → New → Project, &quot;coin-cell-led&quot;.</p></div>
+<div class="chat-do"><span class="chat-do-label">You, outside the chat</span><p>Start a new session and type <code>/edakit:pcb-round</code>.</p></div>
+<div class="chat-msg chat-claude"><span class="chat-who">Claude</span><p>The board&#x27;s size and shape? And what must stay where a person touches or looks?</p></div>
+<div class="chat-msg chat-you"><span class="chat-who">You</span><p>Round, please.</p></div>
+<div class="chat-msg chat-claude"><span class="chat-who">Claude</span><p>Ø 44 mm. The cell nearly in the middle, 10 mm above it to lever it out. Button, LED and resistor below.</p></div>
+<figure class="chat-img"><img src="../../../../../../examples/coin-cell-led/docs/pcb_plan_main.png" alt="The placement plan"><figcaption>The placement plan</figcaption></figure>
+<div class="chat-do"><span class="chat-do-label">You, outside the chat</span><p>In EasyEDA: Design → Import Changes, once, when Claude says so.</p></div>
+<div class="chat-ran"><span>ran</span> placed · routed with Freerouting · ground poured · labels · DRC clean · pcb-reviewer signed</div>
+<figure class="chat-img"><img src="../../../../../../examples/coin-cell-led/docs/silk_main_top.png" alt="The board"><figcaption>The board</figcaption></figure>
+<div class="chat-step"><span>10 Order the board</span></div>
+<div class="chat-msg chat-you"><span class="chat-who">You</span><p>Release it and put it into the JLCPCB cart.</p></div>
+<div class="chat-ran"><span>ran</span> <code>edakit gate --eda</code>: RELEASED</div>
+<div class="chat-form"><div class="chat-form-title">The order<span>1 question</span></div><div class="chat-q chat-q-row"><p>Ship to which country, and how?</p><p class="chat-a">your answer</p></div></div>
+<div class="chat-ran"><span>ran</span> <code>/edakit:cart</code>: every field set and read back, the quote checked against the estimate. Stopped at the cart.</div>
+<div class="chat-do"><span class="chat-do-label">You, outside the chat</span><p>Check D1&#x27;s cathode in JLCPCB&#x27;s preview, then order and pay.</p></div>
+<div class="chat-do"><span class="chat-do-label">You, outside the chat</span><p>When the boards arrive: solder BT1, test each board against the list.</p></div>
+<div class="chat-tally"><b>Your part:</b> 8 messages typed, 15 answers in 5 forms, 7 things done outside the chat.</div></div></main></body></html>
