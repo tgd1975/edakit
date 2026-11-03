@@ -42,37 +42,6 @@ to touch.
       LCSC lines – the warehouse address at JLCPCB's checkout, after the payment the tick at LCSC's checkout and its
       methods in `shipping.json`; what it finds into `lcsc.toml` and handbook 8.4. *(edakit-5e)*
 
-## How edakit is tested ([docs/concepts/done/verification-and-validation.md](docs/concepts/done/verification-and-validation.md))
-
-The known gaps the four new designs showed, each closed only by catalog or domain data (add-rule or add-feature, on the
-owner's word); each design's `findings.toml` has the findings and their reasons.
-
-- [ ] TD-124 - **A connector passes no reversed source:** `edakit/catalog/paths.toml [reverse]` lets a connector pass
-      from every pin to every pin, so PATH.reverse reaches parts behind a jumper header – `connector` from `passes` to
-      `tolerates` (adafruit-microlipo-usb-c: U1.4, LED1.2, R6.2, R5.2). *(ccr-de7c0e28)*
-- [ ] TD-125 - **A low-side reverse-polarity MOSFET as a block:** PATH.reverse knows the series diode and the high-side
-      P-MOSFET, not an N-MOSFET in the ground return – a block in `paths.toml`, and only parts between the source's own
-      nets reported (atoomnetmarc-adlsc: 20 findings). *(ccr-de7c0e28)*
-- [ ] TD-126 - **A trimmer is not a panel pot:** REQ.value/switch takes the DC across a bias trimmer for a pot turned
-      while playing – a field of the kind potentiometer in `kinds.toml` that marks a trimmer, skipped by the rule
-      (whbeers-fuzz-face: TRIM2). *(ccr-de7c0e28)*
-- [ ] TD-127 - **Board copper is nothing to buy:** a solder jumper or a test pad gets PARTS.verified, PARTS.supplier
-      and PARTS.fact/reach – a way to say "copper, nothing to buy" (adafruit-microlipo-usb-c: SJ1; the pads of the
-      pedals and the Fuzz Face, judged criterion). *(ccr-de7c0e28)*
-- [ ] TD-128 - **A varistor kind:** its rms and DC ratings, held against the line's voltage – the ESPurna-H's S10K250
-      (250 V rms, below 230 V + 10 %) stands in as kind `ic` and nothing checks it. *(ccr-de7c0e28)*
-- [ ] TD-129 - **AC nets and AC ratings:** terminals and modules rated in V rms are held against the peak, and a
-      divider's taps cannot say they move together (espurna-h: JP2, JP42, U$1.2, R51 to R53). *(ccr-de7c0e28)*
-- [ ] TD-130 - **A mains terminal as a supply input:** a role in `paths.toml [supply]`, so that PATH.unfed sees the
-      module fed (espurna-h: U$1.1, U$1.2; `reversible` sends PATH.reverse across the mains side). *(ccr-de7c0e28)*
-- [ ] TD-131 - **A ground tied to mains:** edakit holds every voltage against the board's own ground, so a low-voltage
-      side tied to the line looks safe – the graph says so, or a check finds the bridged isolation barrier
-      (espurna-h: R42 ties GND to the line); handbook 19.9 names the gap. *(ccr-de7c0e28)*
-- [ ] TD-132 - **A bidirectional TVS:** the parts schema has `tvs: true` only, so a bidirectional TVS across the input
-      is judged as one direction (atoomnetmarc-adlsc: D4). *(ccr-de7c0e28)*
-- [ ] TD-133 - **A charger's status output in the simulation:** the charger model does not drive STAT, so its LEDs
-      are neither lit nor dark as expected (adafruit-microlipo-usb-c: SIM.state LED1, LED2). *(ccr-de7c0e28)*
-
 ## What edakit needs from EasyEDA Pro and easyeda-mcp-pro ([upstream/README.md](upstream/README.md))
 
 E-1 to E-17 on EasyEDA Pro and M-1 to M-10 on easyeda-mcp-pro, checked live on EasyEDA Pro 3.2.209 and posted on
@@ -91,6 +60,27 @@ Nothing to do until there is an answer or a release; whichever session learns of
 
 ## Closed todos
 
+- [x] TD-133 - **A charger's status output in the simulation:** the charger model drives STAT – the Micro-Lipo's LEDs as
+      on the board (#309, edakit 1.1.12). *(ccr-de7c0e28)* [2026-11-03]
+- [x] TD-132 - **A bidirectional TVS:** `values.tvs: "bidirectional"` – ADLSC's D4 gone (#309, edakit 1.1.12).
+      *(ccr-de7c0e28)* [2026-11-03]
+- [x] TD-131 - **A ground tied to mains:** LIM.hazardous/ground names it – the ESPurna-H's R42 found, judged real;
+      handbook 19.9 names what stays unseen (#309, edakit 1.1.12). *(ccr-de7c0e28)* [2026-11-03]
+- [x] TD-130 - **A mains terminal as a supply input:** connector roles `line`, `neutral` in `[supply] inputs` –
+      PATH.unfed on the HLK-PM01 gone (#309, edakit 1.1.12). *(ccr-de7c0e28)* [2026-11-03]
+- [x] TD-129 - **AC nets and AC ratings:** net `ac` and `v_rms_max_v` – the ESPurna-H's six LIM.v known gaps gone (#309,
+      edakit 1.1.12). *(ccr-de7c0e28)* [2026-11-03]
+- [x] TD-128 - **A varistor kind:** kind `varistor` (VRMS, VDC) – the ESPurna-H's S10K250 now found below 230 V + 10 %,
+      judged real (#309, edakit 1.1.12). *(ccr-de7c0e28)* [2026-11-03]
+- [x] TD-127 - **Board copper is nothing to buy:** `own.what: "copper"` – no supplier, compliance fact or EasyEDA device
+      asked; 33 findings of SJ1 and the pads gone (#309, edakit 1.1.12). *(ccr-de7c0e28)* [2026-11-03]
+- [x] TD-126 - **A trimmer is not a panel pot:** `values.adjust: "trimmer"` leaves it out of REQ.value/switch – the Fuzz
+      Face's TRIM2 gone (#309, edakit 1.1.12). *(ccr-de7c0e28)* [2026-11-03]
+- [x] TD-125 - **A low-side reverse-polarity MOSFET as a block:** `[reverse] cuts` – an N-MOSFET in the ground return
+      takes a reversed source off ground; ADLSC's 18 known gaps gone (#309, edakit 1.1.12). *(ccr-de7c0e28)*
+      [2026-11-03]
+- [x] TD-124 - **A connector passes no reversed source:** a connector tolerates a reversed source in `paths.toml
+      [reverse]` – the Micro-Lipo's four known gaps gone (#309, edakit 1.1.12). *(ccr-de7c0e28)* [2026-11-03]
 - [x] TD-111 - **Live run at the next parts order:** mode `parts` ran on 2026-11-03 – four projects, 23 lines into
       LCSC's cart, nothing ordered; the profile recorded and the weight's "1,500g" read (#310); `combine` split off as
       TD-144. *(edakit-5e)* [2026-11-03]
