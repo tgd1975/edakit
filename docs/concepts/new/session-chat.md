@@ -96,8 +96,63 @@ In the brand's tokens (`docs/brand/tokens.json`), in `docs/brand/edakit.css`, fo
 - **A step** – a divider with the step's name, linked to its steps page.
 - **Pictures** – a card on Claude's side, at most 24 rem wide.
 
-At 390 px the bubbles take 92 % of the width; nothing scrolls sideways. The prototype's screenshots:
-`out/session-light.png` (900 px, light) and `out/session-dark-phone.png` (390 px, dark).
+At 390 px the bubbles take 92 % of the width; nothing scrolls sideways. The prototype's screenshots of the whole
+session: `out/session-light.png` (900 px, light, up to step 6) and `out/session-dark-phone.png` (390 px, dark, steps 8
+and 9).
+
+#### A concrete example
+
+Steps 8 and 9 of the session, shortened – every kind of entry once: a step divider, Claude, you, a form with options
+and a one-row question, a line of what ran, two things outside the chat, a picture. The source, as it stands in the
+page's Markdown ([prototypes/session-chat/example.md](prototypes/session-chat/example.md)):
+
+```text
+--- 8 Have it reviewed
+claude: Two reviewers check it now, each in a session of its own. The regulatory review is support, not legal advice.
+do: Start each reviewer in a new session when Claude asks.
+ran: electrical-reviewer: 5 notes · regulatory-reviewer: 4 notes, none blocking
+form: Two notes need you, the rest Claude fixed
+  ? Who uses the board? The cell comes out by hand, and a swallowed coin cell burns.
+  - Adults at a desk, out of reach of small children (recommended).
+  - Children: then a holder that needs a tool.
+  > Adults at a desk
+  ? R-2, dark while nobody presses, has no number. At most 1 µA from the cell?
+  > yes
+
+--- 9 Lay out the board
+claude: The board's size and shape? And what must stay where a person touches or looks?
+you: Round, please.
+claude: Ø 44 mm. The cell nearly in the middle, 10 mm above it to lever it out. Button, LED and resistor below.
+img: ../../examples/coin-cell-led/docs/pcb_plan_main.png | The placement plan
+do: In EasyEDA: Design → Import Changes, once, when Claude says so.
+```
+
+What the site shows, rendered by the prototype's `chat.py` with `chat.css` – on a desktop at 720 px in the light
+scheme, on a phone at 390 px in the dark one:
+
+| Desktop, light | Phone, dark |
+| --- | --- |
+| ![The example on a desktop, light: step dividers, Claude's bubbles on the left, your bubble on the right in teal, the form as a card, the copper boxes outside the chat](prototypes/session-chat/out/example-light.png) | ![The same example on a phone, dark](prototypes/session-chat/out/example-dark-phone.png) |
+
+The HTML `docs/pages.py` writes for it, in part – one class a kind of entry, nothing inline, so the styles live in
+`docs/brand/edakit.css` alone:
+
+```html
+<div class="chat">
+<div class="chat-step"><span>8 Have it reviewed</span></div>
+<div class="chat-do"><span class="chat-do-label">You, outside the chat</span><p>Start each reviewer …</p></div>
+<div class="chat-ran"><span>ran</span> electrical-reviewer: 5 notes · …</div>
+<div class="chat-form"><div class="chat-form-title">Two notes need you, the rest Claude fixed<span>2 questions</span></div>
+  <div class="chat-q"><p>Who uses the board? …</p>
+    <ol><li class="chat-rec">Adults at a desk, … (recommended).</li><li>Children: …</li></ol>
+    <p class="chat-a">Adults at a desk</p></div>
+  <div class="chat-q chat-q-row"><p>R-2, dark while nobody presses, …</p><p class="chat-a">yes</p></div></div>
+<div class="chat-msg chat-you"><span class="chat-who">You</span><p>Round, please.</p></div>
+<figure class="chat-img"><img src="…/pcb_plan_main.png" alt="The placement plan"><figcaption>The placement plan</figcaption></figure>
+</div>
+```
+
+An excerpt like this one gets no tally; the tally stands only under a whole session, one that starts with step 1.
 
 ### 5. The test
 

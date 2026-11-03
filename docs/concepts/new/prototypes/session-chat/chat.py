@@ -15,7 +15,8 @@ The format, one entry a line, an indented line continuing the one above:
       - <option>           the recommended one first, marked "(recommended)"
       > <answer>           what the person picked or typed
 
-The tally under the chat is counted from the entries, so it cannot drift from them.
+The tally under the chat is counted from the entries, so it cannot drift from them – under a whole session only, one
+that starts with step 1; an excerpt has none.
 """
 
 from __future__ import annotations
@@ -95,7 +96,7 @@ def render(entries):
         elif kind == "form":
             rows = []
             for q in value["questions"]:
-                opts = "".join(f'<li class="{"chat-rec" if i == 0 else ""}">{code(o)}</li>'
+                opts = "".join(f'<li{" class=\"chat-rec\"" if i == 0 else ""}>{code(o)}</li>'
                                for i, o in enumerate(q["options"]))
                 row = "chat-q" if opts else "chat-q chat-q-row"
                 rows.append(f'<div class="{row}"><p>{code(q["q"])}</p>'
@@ -104,8 +105,9 @@ def render(entries):
             parts.append(f'<div class="chat-form"><div class="chat-form-title">{html.escape(value["title"])}'
                          f'<span>{len(value["questions"])} '
                          f'question{"s" if len(value["questions"]) != 1 else ""}</span></div>{"".join(rows)}</div>')
+    whole = bool(entries) and entries[0][0] == "step" and entries[0][1].startswith("1 ")
     t = tally(entries)
-    parts.append(f'<div class="chat-tally"><b>Your part:</b> {t["typed"]} messages typed, {t["answers"]} answers '
+    parts.append("</div>") if not whole else parts.append(f'<div class="chat-tally"><b>Your part:</b> {t["typed"]} messages typed, {t["answers"]} answers '
                  f'in {t["forms"]} forms, {t["outside"]} things done outside the chat.</div></div>')
     return "\n".join(parts)
 
