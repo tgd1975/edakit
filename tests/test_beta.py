@@ -69,6 +69,25 @@ def test_sync_graph_only_with_the_switch(project):
     assert [f for f in engines_project.run(Design.from_config(cfg), cfg) if f.code == "SYNC.graph"] == []
 
 
+
+def test_def_only_with_the_switch(project):
+    """A derivation record in a JSON graph – written by hand, block add --set is refused – is no finding without the
+    switch; with it, a value outside the record's window is DEF.derive."""
+    from helpers import check
+    g = project.graph()
+    r1 = next(c for c in g["graph"]["components"] if c["designator"] == "R1")
+    g["graph"]["derivations"] = [{"part": "R1", "key": "value", "rule": "series_resistor", "from": "by hand",
+                                  "derived": {"value": 1.0, "unit": "Ω"},
+                                  "series": {"name": "E24", "nearest": 1.0, "window": [0.9, 1.1]}, "inputs": []}]
+    project.save_graph(g)
+    assert r1["value"] not in ("1", "1Ω")
+    rep = check(Design.from_config(project.config()), project.config())
+    assert [w for w in rep.warnings if w[0] == "DEF.derive"] == []
+    toml = project.root / "edakit.toml"
+    toml.write_text(toml.read_text() + "\n[beta]\ndsl = true\n")
+    rep = check(Design.from_config(project.config()), project.config())
+    assert [m for c, m in rep.warnings if c == "DEF.derive"][0].startswith("R1: value ")
+
 @pytest.mark.parametrize("argv", [["graph", "fmt"], ["graph", "derive"], ["graph", "sysml"], ["graph", "kerml"],
                                   ["graph", "convert", "--to", "circuit"], ["graph", "json", "--map", "m.json"],
                                   ["block", "add", "led", "--as", "S", "--connect", "in=SIG", "--set", "i=4mA"]])
