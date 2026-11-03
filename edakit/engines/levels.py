@@ -49,15 +49,29 @@ def must_not_float(info):
 
 def run(ctx):
     d = ctx.joined
-    return (undefined_inputs(d) + control_pins(d) + contention(d) + straps(d) + open_inputs(d) + released_nets(d)
-            + analog_nodes(d))
+    return (undefined_inputs(d) + control_pins(d, fed_nets(d, ctx.sim)) + contention(d) + straps(d) + open_inputs(d)
+            + released_nets(d) + analog_nodes(d))
 
 
-def held_nets(d):
-    """Nets a resistor path holds while the firmware is not running: a resistor to a net a pin defines, to a supply or
-    ground – or to a net held so itself, as a divider's middle is."""
+def fed_nets(d, sim):
+    """The nets the simulation's sources feed – sim.json sources, the plus pin and each rail of `outputs`: a supply
+    brought in at a connector is a rail although no pin types it (a pedal's effect board fed from another board has
+    no IC on it). Ground is not fed."""
+    out = set()
+    for des, src in ((sim or {}).get("sources") or {}).items():
+        if des not in d.comps or not isinstance(src, dict):
+            continue
+        rails = [src.get("plus")] + [o.get("plus") for o in (src.get("outputs") or {}).values() if isinstance(o, dict)]
+        out |= {d.pin_net.get(f"{des}.{p}") for p in rails if p is not None}
+    return out - {None, d.ground}
+
+
+def held_nets(d, fed=frozenset()):
+    """Nets a resistor path holds while the firmware is not running: a resistor to a net a pin defines, to a supply
+    (a supply pin's net, a net a source feeds: `fed`) or ground – or to a net held so itself, as a divider's middle
+    is."""
     held = {name for name, net in d.nets.items() if any(pin_defines(d.pin_info(r)) for r in net["pins"])}
-    held |= supply_nets(d) | {d.ground}
+    held |= supply_nets(d) | {d.ground} | set(fed)
     edges = resistor_like(d)
     pulled = set()
     grew = True
@@ -95,12 +109,13 @@ def undefined_inputs(d):
     return out
 
 
-def control_pins(d):
+def control_pins(d, fed=frozenset()):
     """LVL.undefined: a transistor whose control pin (base, gate) has no resistor to the roles of [control] – its
-    emitter, its source – or to a rail: a net a pin defines at reset (a push-pull output, a supply), ground, or a net
-    resistors hold to them (held_nets: a bias divider's middle – the base of an analog stage biased by resistors)."""
+    emitter, its source – or to a rail: a net a pin defines at reset (a push-pull output, a supply), a net a source of
+    the simulation feeds (`fed`), ground, or a net resistors hold to them (held_nets: a bias divider's middle – the base
+    of an analog stage biased by resistors)."""
     rails = {name for name, net in d.nets.items() if any(defines(d.pin_info(r).get("type")) for r in net["pins"])}
-    held = rails | supply_nets(d) | {d.ground} | held_nets(d)
+    held = rails | supply_nets(d) | {d.ground} | set(fed) | held_nets(d, fed)
     out = []
     for role, c in data()["control"].items():
         for des in d.comps_of_kind(*c["kinds"]):

@@ -149,6 +149,7 @@ MIT – see [LICENSE](LICENSE) –, except for third-party material the tests us
 | `tests/open_designs/corne-cherry-left/` | foostan, *Corne keyboard* v4 | [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/) |
 | `tests/open_designs/sparkfun-logic-level-converter/` | SparkFun Electronics, *Logic Level Converter* | [CC BY-SA 3.0](https://creativecommons.org/licenses/by-sa/3.0/) |
 | `tests/open_designs/esp32-devkitc-v4/` | Espressif Systems, *ESP32-DevKitC V4* schematic | none stated – only the circuit's facts are transcribed, not the drawing |
+| `tests/open_designs/whbeers-fuzz-face/` | whbeers, *Random Input* (a Fuzz Face) | [CC0 1.0](https://creativecommons.org/publicdomain/zero/1.0/) |
 | `tests/fixtures/jlcpcb/`, `easyeda/`, `datasheets/`, `makers/` | short excerpts of the pages and API answers of JLCPCB, LCSC, EasyEDA, AISLER, Eurocircuits and PCBway, with source and date, for the parsers' tests | the sites' own; not under MIT |
 
 This is a reading of the sources' licences, not legal advice.

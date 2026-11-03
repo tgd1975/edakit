@@ -1,0 +1,177 @@
+{
+ "about": "The effect board fed at its connector E1 by the Noise Floor IO board (9V0), no signal – the schematic's bias procedure: 'Start without input signal with circuit powered', TRIM1 for Q1 (TP1, 500–700 mV), TRIM2 for Q2 (TP2, 5.0 V). The load 'trimmed' sets the trimmers for the typical pair of the stand-in 2N3904; spread runs it with both transistors at each end of their hFE (the leakage in max), the extra scenarios with Q1 and Q2 at opposite ends – at the same setting, then retrimmed for each pair (loads 'retrimmed_…', run only there, holding TP2's window). The DC paths do not depend on the pots: POT2's whole track is Q2's emitter resistor whatever the fuzz, POT1 and POT3 sit behind capacitors. Values with 'note' are assumptions.",
+ "ambient_c": 25,
+ "sources": {
+  "J1": {
+   "plus": "2",
+   "minus": "3",
+   "r_ohm": 47.0,
+   "note": "the Noise Floor IO board's 9V0 at its connector E1 (whbeers/noise_floor at d0fd4e7, CC0 1.0): a 9 V pedal supply (centre negative) or a 9 V battery through the B5817WS D1 and the 47 Ω R5, with 100 µF and 100 nF – 8.8 V: 9 V less the Schottky's drop at the pedal's milliampere, about 0.2 V (assumed); the source resistance the 47 Ω"
+  }
+ },
+ "supplies": {
+  "9v": {
+   "J1": 8.8
+  }
+ },
+ "loads": {
+  "trimmed": {
+   "about": "trimmed for the typical pair: TRIM2 at 5.05 kΩ puts TP2 at 5.0 V – the window 4.5 … 5.5 V is the schematic's target, ±0.5 V the test's tolerance; TP1's 500 … 700 mV is the schematic's window for a germanium pair. TRIM1 at half (50 kΩ): with silicon TP1 sits at two base-emitter voltages whatever TRIM1 (README)",
+   "gpio": {},
+   "leds_on": [],
+   "pot": {
+    "TRIM1": 0.5,
+    "TRIM2": 0.101
+   },
+   "expect": {
+    "Q2_C": {
+     "min_v": 4.5,
+     "max_v": 5.5
+    },
+    "Q1_C_Q2_B": {
+     "min_v": 0.5,
+     "max_v": 0.7
+    }
+   }
+  },
+  "retrimmed_both_low": {
+   "about": "retrimmed for a pair at the low end of hFE: TRIM2 at 3.7 kΩ – TP2's window only (TP1's: the load 'trimmed')",
+   "matrix": false,
+   "gpio": {},
+   "leds_on": [],
+   "pot": {
+    "TRIM1": 0.5,
+    "TRIM2": 0.074
+   },
+   "expect": {
+    "Q2_C": {
+     "min_v": 4.5,
+     "max_v": 5.5
+    }
+   }
+  },
+  "retrimmed_both_high": {
+   "about": "retrimmed for a pair at the high end of hFE and leakage: TRIM2 at 5.2 kΩ – TP2's window only (TP1's: the load 'trimmed')",
+   "matrix": false,
+   "gpio": {},
+   "leds_on": [],
+   "pot": {
+    "TRIM1": 0.5,
+    "TRIM2": 0.104
+   },
+   "expect": {
+    "Q2_C": {
+     "min_v": 4.5,
+     "max_v": 5.5
+    }
+   }
+  },
+  "retrimmed_q1_low_q2_high": {
+   "about": "retrimmed for Q1 at the low end, Q2 at the high end: TRIM2 at 3.4 kΩ – TP2's window only (TP1's: the load 'trimmed')",
+   "matrix": false,
+   "gpio": {},
+   "leds_on": [],
+   "pot": {
+    "TRIM1": 0.5,
+    "TRIM2": 0.068
+   },
+   "expect": {
+    "Q2_C": {
+     "min_v": 4.5,
+     "max_v": 5.5
+    }
+   }
+  },
+  "retrimmed_q1_high_q2_low": {
+   "about": "retrimmed for Q1 at the high end, Q2 at the low end: TRIM2 at 5.4 kΩ – TP2's window only (TP1's: the load 'trimmed')",
+   "matrix": false,
+   "gpio": {},
+   "leds_on": [],
+   "pot": {
+    "TRIM1": 0.5,
+    "TRIM2": 0.108
+   },
+   "expect": {
+    "Q2_C": {
+     "min_v": 4.5,
+     "max_v": 5.5
+    }
+   }
+  }
+ },
+ "spread": [
+  "min",
+  "typ",
+  "max"
+ ],
+ "extra_scenarios": [
+  {
+   "name": "9v/trimmed/Q1 low, Q2 high",
+   "supply": {
+    "J1": 8.8
+   },
+   "load": "trimmed",
+   "spread": {
+    "Q1": "min",
+    "Q2": "max"
+   }
+  },
+  {
+   "name": "9v/trimmed/Q1 high, Q2 low",
+   "supply": {
+    "J1": 8.8
+   },
+   "load": "trimmed",
+   "spread": {
+    "Q1": "max",
+    "Q2": "min"
+   }
+  },
+  {
+   "name": "9v/retrimmed/both low",
+   "supply": {
+    "J1": 8.8
+   },
+   "load": "retrimmed_both_low",
+   "spread": "min"
+  },
+  {
+   "name": "9v/retrimmed/both high",
+   "supply": {
+    "J1": 8.8
+   },
+   "load": "retrimmed_both_high",
+   "spread": "max"
+  },
+  {
+   "name": "9v/retrimmed/Q1 low, Q2 high",
+   "supply": {
+    "J1": 8.8
+   },
+   "load": "retrimmed_q1_low_q2_high",
+   "spread": {
+    "Q1": "min",
+    "Q2": "max"
+   }
+  },
+  {
+   "name": "9v/retrimmed/Q1 high, Q2 low",
+   "supply": {
+    "J1": 8.8
+   },
+   "load": "retrimmed_q1_high_q2_low",
+   "spread": {
+    "Q1": "max",
+    "Q2": "min"
+   }
+  }
+ ],
+ "report": [
+  "9V0",
+  "Q1_B",
+  "Q1_C_Q2_B",
+  "Q2_E",
+  "Q2_C",
+  "OUT_TAP"
+ ]
+}

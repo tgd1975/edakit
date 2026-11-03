@@ -1,0 +1,57 @@
+{
+ "lcsc": "C48084",
+ "mpn": "3296W-1-104LF",
+ "manufacturer": "Bourns",
+ "kind": "potentiometer",
+ "package": "3/8\" square multiturn cermet trimmer, top adjust, 3 pins in a row at 2.54 mm (3296W)",
+ "datasheet": {
+  "url": "https://datasheet.lcsc.com/datasheet/pdf/f3070744448347fa84b6bb6eb91e2736.pdf?productCode=C48084"
+ },
+ "pins": {
+  "1": {
+   "name": "1",
+   "type": "passive",
+   "role": "end_a"
+  },
+  "2": {
+   "name": "2",
+   "type": "passive",
+   "role": "wiper"
+  },
+  "3": {
+   "name": "3",
+   "type": "passive",
+   "role": "end_b"
+  }
+ },
+ "values": {
+  "value_ohm": 100000.0,
+  "tolerance": 0.1
+ },
+ "limits": {
+  "v_max_v": 300,
+  "p_max_w": 0.5,
+  "t_min_c": -55,
+  "t_max_c": 125
+ },
+ "sources": [
+  "Bourns 3296 – 3/8\" Square Trimpot Trimming Potentiometer (REV. 04/14, its last page), LCSC's copy for C48084 https://datasheet.lcsc.com/datasheet/pdf/f3070744448347fa84b6bb6eb91e2736.pdf?productCode=C48084, read 2026-11-03",
+  "how to order: 3296 W - 1 - 104 LF = model 3296, style W, standard product, resistance code 104 (100 kΩ – the standard resistance table), LF 100 % tin-plated",
+  "electrical characteristics: standard resistance range 10 Ω to 2 MΩ, tolerance ±10 % std., effective travel 25 turns nom.; environmental characteristics: power rating (300 volts max.) 0.5 W at 70 °C, 0 W at 125 °C, temperature range −55 … +125 °C; p_max_w 0.5 is the rating at 70 °C",
+  "pins: product dimensions 3296W – pins 1, 2, 3 in a row, 2 the wiper; the circuit drawing: 1 CCW, 2 WIPER, 3 CW – as the design's symbol Device:R_Potentiometer_Trim_US (2 the wiper) and its footprint Potentiometer_THT:Potentiometer_Bourns_3296W_Vertical",
+  "JLCPCB catalogue 2026-11-03 (edakit part search): C48084 3296W-1-104LF, BOURNS, Extended Part",
+  "stand-in: the schematic names the value (TRIM1 100K) and the footprint, not the order code; its note asks for multiturn trimpots"
+ ],
+ "verified": {
+  "by": "Claude (datasheet check, open-design transcription)",
+  "date": "2026-11-03",
+  "datasheet": "Bourns 3296 – 3/8\" Square Trimpot Trimming Potentiometer, REV. 04/14",
+  "datasheet_sha256": "6c2cb8e4bf8601a631d811af64177d0a1ab1805d29894134c9e7ac20ad78323e",
+  "checked": [
+   "how to order, the standard resistance table",
+   "electrical and environmental characteristics",
+   "pins of style W"
+  ],
+  "open": []
+ }
+}

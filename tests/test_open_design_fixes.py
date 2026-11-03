@@ -12,7 +12,9 @@ starved of its minimum load, and a row could not be released while another is sc
 five: a switch of three poles could not be described (roles, simulation, REQ.value/switch), a base biased by
 resistors to ground or a divider node was taken as floating, a coupling capacitor's voltage was taken from extreme to
 extreme of its nets' ranges, a second wire of one net between two boards stopped the simulation, and contacts on nets
-that run through cables were never judged by REQ.value/switch. Parts here are test entries, not datasheets."""
+that run through cables were never judged by REQ.value/switch. The Fuzz Face added one: a base held by a resistor to
+a supply that comes in at a connector, which no pin types, was taken as floating. Parts here are test entries, not
+datasheets."""
 
 import json
 import shutil
@@ -530,3 +532,52 @@ def test_a_contact_on_a_net_that_crosses_a_cable_is_still_in_the_signal_path():
         rows = [c for c in simulate(p)["checks"] if c["item"] == "SW20" and c["check"].startswith("DC across")]
         assert rows and {c["result"] for c in rows} == {"warn"}             # before: no rows – never judged
         assert "REMOTE 3.3 V" in rows[0]["check"] and "SIG_R 0 V" in rows[0]["check"]
+
+
+# --- the Fuzz Face (whbeers-fuzz-face): a supply brought in at a connector ---------------------------------------------
+TRIMMER = {"lcsc": "C9000514", "mpn": "test trimmer", "kind": "potentiometer",
+           "pins": {"1": {"name": "1", "type": "passive", "role": "end_a"},
+                    "2": {"name": "2", "type": "passive", "role": "wiper"},
+                    "3": {"name": "3", "type": "passive", "role": "end_b"}},
+           "values": {"value_ohm": 100000}}
+HEADER = {"lcsc": "C9000515", "mpn": "test header", "kind": "connector",
+          "pins": {"1": {"name": "1", "type": "passive"}, "2": {"name": "2", "type": "passive"}}}
+
+
+def fed_stage(bias_to="9V0"):
+    """The Fuzz Face's Q2 in brief: its base held only by a trimmer as a variable resistor (TRIM1: end_a at
+    `bias_to`, wiper and end_b at the base), its emitter through 1 kΩ to GND, its collector through 1 kΩ to 9V0 – the
+    supply the effect board gets at its connector J1 from the IO board. No IC: no pin types 9V0 as a supply. FLOAT: a
+    net only the trimmer reaches."""
+    res = {"lcsc": "C9000510", "mpn": "test resistor", "kind": "resistor",
+           "pins": {"1": {"name": "1", "type": "passive"}, "2": {"name": "2", "type": "passive"}},
+           "values": {"value_ohm": 1000}}
+    comps = [{"designator": "J1", "type": "connector", "lcsc": "C9000515", "pins": {"1": "1", "2": "2"}},
+             {"designator": "Q2", "type": "transistor", "lcsc": "C9000509", "pins": {"1": "E", "2": "B", "3": "C"}},
+             {"designator": "TRIM1", "type": "potentiometer", "lcsc": "C9000514",
+              "pins": {"1": "1", "2": "2", "3": "3"}},
+             {"designator": "R3", "type": "resistor", "lcsc": "C9000510", "pins": {"1": "1", "2": "2"}},
+             {"designator": "R4", "type": "resistor", "lcsc": "C9000510", "pins": {"1": "1", "2": "2"}}]
+    nets = {"9V0": ["J1.1", "R3.2"], "GND": ["J1.2", "R4.2"], "BASE": ["Q2.2", "TRIM1.2", "TRIM1.3"],
+            "EMIT": ["Q2.1", "R4.1"], "COL": ["Q2.3", "R3.1"]}
+    nets.setdefault(bias_to, []).append("TRIM1.1")
+    graph = {"name": "t", "version": "1", "ground": "GND", "components": comps,
+             "nets": [{"name": n, "pins": p, "v": [0, 9]} for n, p in nets.items()]}
+    return Design.from_data(graph, {"C9000509": NPN, "C9000510": res, "C9000514": TRIMMER, "C9000515": HEADER})
+
+
+def undefined(d, sim):
+    return [f.text for f in engines.run(d, None, sim).findings if f.code == "LVL.undefined"]
+
+
+def test_a_base_held_by_a_resistor_to_a_supply_brought_in_at_a_connector_is_defined():
+    """The Fuzz Face's Q2: its base is Q1's collector, held by TRIM1 from 9V0 – the supply the IO board brings in at
+    the effect board's connector, which sim.json's sources name (J1, plus pin 1). No IC types 9V0. Before: LVL.undefined
+    – a resistor to a net no pin typed was no rail. The net a source of the simulation feeds at its plus pin is a rail,
+    as a supply pin's is. Without the source, or with the trimmer to a net the source does not feed, it stays."""
+    sim = {"sources": {"J1": {"plus": "1", "minus": "2"}}}
+    found = ["Q2: no base-emitter resistor – state undefined while the firmware is not running"]
+    assert undefined(fed_stage(), sim) == []                                  # before: found
+    assert undefined(fed_stage(), None) == found                              # nothing says what 9V0 is
+    assert undefined(fed_stage(), {"sources": {"J1": {"plus": "2", "minus": "1"}}}) == found    # GND is no supply
+    assert undefined(fed_stage("FLOAT"), sim) == found                        # a net the source does not feed

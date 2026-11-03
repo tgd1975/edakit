@@ -26,6 +26,11 @@ published; a finding that appears or goes is a change in edakit to look at, not 
   sparkfun-logic-level-converter   SparkFun Logic Level Converter Bi-Directional, Rev V01 (2013-09-26), CC BY-SA 3.0,
                                    https://cdn.sparkfun.com/datasheets/BreakoutBoards/Logic_Level_Bidirectional.pdf –
                                    four BSS138 channels, both directions simulated
+  whbeers-fuzz-face                whbeers' Random Input, a Dallas Arbiter Fuzz Face re-created, KiCad schematic
+                                   hardware/random_input.kicad_sch at commit 723a89d of
+                                   https://github.com/whbeers/random_input, CC0 1.0 – two NPNs direct-coupled, their
+                                   collector resistors trimmers for the bias the schematic names (TP2 5.0 V), the
+                                   silicon 2N3904 for its unnamed germanium pair, fed at a connector from its IO board
 
 Each design's README names its source and licence, what was transcribed and the parts that stand in for unnamed ones.
 """

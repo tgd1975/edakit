@@ -1,0 +1,419 @@
+{
+ "graph": {
+  "name": "whbeers-fuzz-face",
+  "version": "1.0",
+  "date": "2026-11-03",
+  "description": "Random Input, whbeers' re-creation of the Dallas Arbiter Fuzz Face (whbeers/random_input at 723a89d, hardware/random_input.kicad_sch v0.27, CC0 1.0) as published: two NPN transistors direct-coupled – Q1's collector on Q2's base, Q2's emitter fed back to Q1's base through 100 kΩ –, their collector resistors as trimmers (TRIM1 100K, TRIM2 50K) for the bias, the 470 Ω output divider, the B1K fuzz pot with 22 µF, a 2u2 input with an A100K input volume, a 10n output into the A250K volume; the effect board of the Noise Floor platform, fed at its connector E1. Transcribed for edakit's tests.",
+  "purpose": {
+   "use": "private",
+   "market": "EU",
+   "notes": "The author publishes the board for builders who order and build it for themselves. The transcription is a test of edakit, not a product."
+  },
+  "conventions": {
+   "pin_reference": "'<designator>.<pin>' with the pin numbers of the KiCad symbols, which are the parts entries' (Device:Q_NPN_EBC 1 E, 2 B, 3 C; Device:C_Polarized 1 the plus; the pots' 2 the wiper)",
+   "v": "per net: [min, max] in V over the intended operating states – 9V0 from the Noise Floor IO board; nets behind a coupling capacitor at ground with ±4.5 V of signal",
+   "board": "main: the Random Input effect board; the Noise Floor's IO and switch boards are not transcribed (README)",
+   "source": "whbeers/random_input at 723a89d, hardware/random_input.kicad_sch (checked against hardware/random_input.kicad_pcb), https://github.com/whbeers/random_input"
+  },
+  "layout": {},
+  "locks": {},
+  "components": [
+   {
+    "designator": "J1",
+    "type": "connector",
+    "label": "E1: the cable to the Noise Floor IO board (1 effect out, 2 9V0, 3 GND, 4 effect in)",
+    "board": "main",
+    "lcsc": "C504989",
+    "part": "530470410",
+    "pins": {
+     "1": "1",
+     "2": "2",
+     "3": "3",
+     "4": "4"
+    },
+    "nc": []
+   },
+   {
+    "designator": "C2",
+    "type": "capacitor",
+    "label": "input coupling (2u2, polarized: + at Q1's base)",
+    "board": "main",
+    "lcsc": "C1019595",
+    "part": "ESK225M050AC3AA",
+    "value": "2.2uF",
+    "pins": {
+     "1": "+",
+     "2": "-"
+    },
+    "nc": []
+   },
+   {
+    "designator": "POT1",
+    "type": "potentiometer",
+    "label": "Input Volume (A100K) – end and wiper on EFFECT_IN: a variable resistor in series",
+    "board": "main",
+    "part": "P160KN-0QC15A100K",
+    "value": "100k",
+    "pins": {
+     "1": "1",
+     "2": "2",
+     "3": "3"
+    },
+    "nc": []
+   },
+   {
+    "designator": "Q1",
+    "type": "transistor",
+    "label": "input stage, 'NPN Ge' (stand-in 2N3904)",
+    "board": "main",
+    "lcsc": "C124482",
+    "part": "2N3904BU",
+    "value": "2N3904",
+    "pins": {
+     "1": "E",
+     "2": "B",
+     "3": "C"
+    },
+    "nc": []
+   },
+   {
+    "designator": "TRIM1",
+    "type": "potentiometer",
+    "label": "Q1 Bias (100K trimmer, a variable collector resistor)",
+    "board": "main",
+    "lcsc": "C48084",
+    "part": "3296W-1-104LF",
+    "value": "100k",
+    "pins": {
+     "1": "1",
+     "2": "2",
+     "3": "3"
+    },
+    "nc": []
+   },
+   {
+    "designator": "Q2",
+    "type": "transistor",
+    "label": "output stage, 'NPN Ge' (stand-in 2N3904)",
+    "board": "main",
+    "lcsc": "C124482",
+    "part": "2N3904BU",
+    "value": "2N3904",
+    "pins": {
+     "1": "E",
+     "2": "B",
+     "3": "C"
+    },
+    "nc": []
+   },
+   {
+    "designator": "TRIM2",
+    "type": "potentiometer",
+    "label": "Q2 Bias (50K trimmer, a variable collector resistor)",
+    "board": "main",
+    "lcsc": "C83686",
+    "part": "3296W-1-503LF",
+    "value": "50k",
+    "pins": {
+     "1": "1",
+     "2": "2",
+     "3": "3"
+    },
+    "nc": []
+   },
+   {
+    "designator": "R2",
+    "type": "resistor",
+    "label": "collector load to 9V0, the output tap below it",
+    "board": "main",
+    "lcsc": "C58592",
+    "part": "MFR0W4F4700A50",
+    "value": "470",
+    "pins": {
+     "1": "1",
+     "2": "2"
+    },
+    "nc": []
+   },
+   {
+    "designator": "R3",
+    "type": "resistor",
+    "label": "DC feedback from Q2's emitter to Q1's base",
+    "board": "main",
+    "lcsc": "C58597",
+    "part": "MFR0W4F1003A50",
+    "value": "100k",
+    "pins": {
+     "1": "1",
+     "2": "2"
+    },
+    "nc": []
+   },
+   {
+    "designator": "POT2",
+    "type": "potentiometer",
+    "label": "Fuzz (B1K): Q2's emitter resistor, the wiper bypassed by C3",
+    "board": "main",
+    "lcsc": "C6249449",
+    "part": "P160KN-0QC15B1K",
+    "value": "1k",
+    "pins": {
+     "1": "1",
+     "2": "2",
+     "3": "3"
+    },
+    "nc": []
+   },
+   {
+    "designator": "C3",
+    "type": "capacitor",
+    "label": "Fuzz bypass (22u, polarized: + at the wiper)",
+    "board": "main",
+    "lcsc": "C1581191",
+    "part": "ESK226M016AC3AA",
+    "value": "22uF",
+    "pins": {
+     "1": "+",
+     "2": "-"
+    },
+    "nc": []
+   },
+   {
+    "designator": "C4",
+    "type": "capacitor",
+    "label": "output coupling (10n)",
+    "board": "main",
+    "lcsc": "C600459",
+    "part": "R82EC2100AA50J",
+    "value": "10nF",
+    "pins": {
+     "1": "1",
+     "2": "2"
+    },
+    "nc": []
+   },
+   {
+    "designator": "POT3",
+    "type": "potentiometer",
+    "label": "Volume (A250K)",
+    "board": "main",
+    "part": "P160KN-0QC15A250K",
+    "value": "250k",
+    "pins": {
+     "1": "1",
+     "2": "2",
+     "3": "3"
+    },
+    "nc": []
+   },
+   {
+    "designator": "TP1",
+    "type": "connector",
+    "label": "Q1C: Q1's collector, the test point of the bias procedure",
+    "board": "main",
+    "part": "TestPoint_THTPad_2.5x2.5mm_Drill1.2mm",
+    "pins": {
+     "1": "1"
+    },
+    "bom": false,
+    "nc": []
+   },
+   {
+    "designator": "TP2",
+    "type": "connector",
+    "label": "Q2C: Q2's collector, the test point of the bias procedure",
+    "board": "main",
+    "part": "TestPoint_THTPad_2.5x2.5mm_Drill1.2mm",
+    "pins": {
+     "1": "1"
+    },
+    "bom": false,
+    "nc": []
+   },
+   {
+    "designator": "TP3",
+    "type": "connector",
+    "label": "G: ground for the probe",
+    "board": "main",
+    "part": "TestPoint_THTPad_2.5x2.5mm_Drill1.2mm",
+    "pins": {
+     "1": "1"
+    },
+    "bom": false,
+    "nc": []
+   },
+   {
+    "designator": "TP4",
+    "type": "connector",
+    "label": "G: ground for the probe",
+    "board": "main",
+    "part": "TestPoint_THTPad_2.5x2.5mm_Drill1.2mm",
+    "pins": {
+     "1": "1"
+    },
+    "bom": false,
+    "nc": []
+   }
+  ],
+  "nets": [
+   {
+    "name": "GND",
+    "pins": [
+     "C3.2",
+     "J1.3",
+     "POT2.1",
+     "POT3.1",
+     "Q1.1",
+     "TP3.1",
+     "TP4.1"
+    ],
+    "v": [
+     0,
+     0
+    ]
+   },
+   {
+    "name": "9V0",
+    "pins": [
+     "J1.2",
+     "R2.1",
+     "TRIM1.1"
+    ],
+    "v": [
+     8.5,
+     9.0
+    ]
+   },
+   {
+    "name": "EFFECT_IN",
+    "pins": [
+     "J1.4",
+     "POT1.1",
+     "POT1.2"
+    ],
+    "v": [
+     -4.5,
+     4.5
+    ],
+    "instrument": "pickup",
+    "load_min_ohm": 1000000.0
+   },
+   {
+    "name": "C2_IN",
+    "pins": [
+     "C2.2",
+     "POT1.3"
+    ],
+    "v": [
+     -4.5,
+     4.5
+    ],
+    "signal": true
+   },
+   {
+    "name": "Q1_B",
+    "pins": [
+     "C2.1",
+     "Q1.2",
+     "R3.1"
+    ],
+    "v": [
+     0,
+     1.5
+    ],
+    "signal": true
+   },
+   {
+    "name": "Q1_C_Q2_B",
+    "pins": [
+     "Q1.3",
+     "Q2.2",
+     "TP1.1",
+     "TRIM1.2",
+     "TRIM1.3"
+    ],
+    "v": [
+     0,
+     2.0
+    ],
+    "signal": true
+   },
+   {
+    "name": "Q2_E",
+    "pins": [
+     "POT2.3",
+     "Q2.1",
+     "R3.2"
+    ],
+    "v": [
+     0,
+     1.5
+    ],
+    "signal": true
+   },
+   {
+    "name": "FUZZ_CTL",
+    "pins": [
+     "C3.1",
+     "POT2.2"
+    ],
+    "v": [
+     0,
+     1.5
+    ],
+    "signal": true
+   },
+   {
+    "name": "Q2_C",
+    "pins": [
+     "Q2.3",
+     "TP2.1",
+     "TRIM2.2",
+     "TRIM2.3"
+    ],
+    "v": [
+     0,
+     9.0
+    ],
+    "signal": true
+   },
+   {
+    "name": "OUT_TAP",
+    "pins": [
+     "C4.1",
+     "R2.2",
+     "TRIM2.1"
+    ],
+    "v": [
+     8.0,
+     9.0
+    ],
+    "signal": true
+   },
+   {
+    "name": "PRE_VOLUME",
+    "pins": [
+     "C4.2",
+     "POT3.3"
+    ],
+    "v": [
+     -4.5,
+     4.5
+    ],
+    "signal": true
+   },
+   {
+    "name": "EFFECT_OUT",
+    "pins": [
+     "J1.1",
+     "POT3.2"
+    ],
+    "v": [
+     -4.5,
+     4.5
+    ],
+    "signal": true
+   }
+  ]
+ }
+}

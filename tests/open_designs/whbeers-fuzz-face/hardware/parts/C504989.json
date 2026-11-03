@@ -1,0 +1,52 @@
+{
+ "lcsc": "C504989",
+ "mpn": "530470410",
+ "manufacturer": "Molex",
+ "kind": "connector",
+ "package": "PicoBlade 1.25 mm header, 4 circuits, vertical, through hole",
+ "datasheet": {
+  "url": "https://datasheet.lcsc.com/datasheet/pdf/5dd3840c0f8b15621cc52e0a2ecc9435.pdf?productCode=C504989",
+  "pinout_page": 1
+ },
+ "pins": {
+  "1": {
+   "name": "1",
+   "type": "passive"
+  },
+  "2": {
+   "name": "2",
+   "type": "passive"
+  },
+  "3": {
+   "name": "3",
+   "type": "passive"
+  },
+  "4": {
+   "name": "4",
+   "type": "passive"
+  }
+ },
+ "values": {
+  "pitch_mm": 1.25
+ },
+ "sources": [
+  "Molex 530470000-SD, PicoBlade 1.25 header assy DIP VT tin plating type, product customer drawing, revision J1 (released 2022/04/19), LCSC's copy for C504989 https://datasheet.lcsc.com/datasheet/pdf/5dd3840c0f8b15621cc52e0a2ecc9435.pdf?productCode=C504989, read 2026-11-03",
+  "sheet 1: order number 53047**10, the chart's 530470410 = 4 circuits; pitch 1.25 mm; circuit no. 1 indicator mark; recommended PCB hole ⌀ 0.5 ± 0.05 mm (t = 0.8); housing polyamide UL94V-0, terminals phosphor bronze, matte tin; sheet 2: mating housing 51021**00, crimp terminals 500798*00 (AWG 26–28) and 500588*00 (AWG 28–32), product specification PS-51021-010 – not on the drawing",
+  "pins 1 … 4: the circuits, as the design's symbol Connector:Conn_01x04_Socket and footprint Molex_PicoBlade_53047-0410_1x04_P1.25mm_Vertical",
+  "JLCPCB catalogue 2026-11-03 (edakit part search): C504989 530470410, MOLEX, Extended Part",
+  "stand-in: the design's footprint names the Molex 53047-0410 (random_input.pretty), the symbol no order code"
+ ],
+ "verified": {
+  "by": "Claude (datasheet check, open-design transcription)",
+  "date": "2026-11-03",
+  "datasheet": "Molex 530470000-SD, PicoBlade 1.25 header assy DIP VT, revision J1 (2022/04/19)",
+  "datasheet_sha256": "5bfb6c1a2aa5cd53370449157f32bf19b4b2a35646e00cab271239ae6e1f6a19",
+  "checked": [
+   "order number and circuit count",
+   "pitch and circuit numbering"
+  ],
+  "open": [
+   "no electrical ratings on the drawing (product specification PS-51021-010 not read) – current and voltage not judged"
+  ]
+ }
+}
