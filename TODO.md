@@ -51,14 +51,6 @@ to touch.
       nothing ordered or paid by the skill – it records the BOM tool's labels into `edakit/suppliers/lcsc.toml`, sets
       `recorded`, and what it finds goes into handbook 8.4; #265 is on main (1.1.5). *(edakit-4f)*
 
-## The circuit language ([docs/concepts/new/circuit-dsl-toolchain.md](docs/concepts/new/circuit-dsl-toolchain.md))
-
-- [ ] TD-122 - **The bell in the language, in its own repository:** its five graphs as `.circuit` – `edakit graph
-      convert --to circuit` keeps the sign-offs (rehashed); the modeled sources of `tests/fixtures/bell/` add the
-      LED step's records, the LEDs' `value` and eleven `accept DEF.derive` with the bell's reasons – check and sim
-      as today, a new circuit hash and new sign-offs –, the bell's choice, after TD-113 (decisions 43, 47).
-      *(friendly-mccarthy)*
-
 ## How edakit is tested ([docs/concepts/done/verification-and-validation.md](docs/concepts/done/verification-and-validation.md))
 
 The known gaps the four new designs showed, each closed only by catalog or domain data (add-rule or add-feature, on the
@@ -108,6 +100,8 @@ Nothing to do until there is an answer or a release; whichever session learns of
 
 ## Closed todos
 
+- [x] TD-122 - **The bell in the language, in its own repository:** dropped on the owner's word – the DSL is a
+      beta on its own branch (decision 48), the bell need not move to it now. *(friendly-mccarthy)* [2026-11-03]
 - [x] TD-139 - **OK for #291:** given; C70374 and C22355741 signed, merged as edakit 1.1.7 (#291). *(edakit-56)*
       [2026-11-03]
 - [x] TD-109 - **M-11 (easyeda-mcp-pro's net reading takes a net flag of another open schematic):** posted on the
