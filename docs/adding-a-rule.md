@@ -36,10 +36,9 @@ never failed a test is a guess.
 
 ## Against real circuits
 
-A new rule runs on the reference circuits – one per domain in `tests/reference.py`, each with its seeded faults – and
-on the published open designs in `tests/open_designs/`, every finding there judged. A finding on a real design is a
-real fault or a false alarm; a false alarm is fixed before the rule goes in. The circuits and how a finding there is
-judged: [How edakit is tested](../handbook/19-verification.md) (handbook 19).
+A new rule runs on the reference circuits and the published open designs
+([How edakit is tested](../handbook/19-verification.md), handbook 19). A finding on a published design is a real fault
+or a false alarm; a false alarm is fixed before the rule goes in.
 
 ## The generated sections
 

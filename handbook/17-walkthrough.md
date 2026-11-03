@@ -608,10 +608,11 @@ these commands (chapters 6 and 7), each in less than half a minute:
    [ 0.5 min]   EasyEDA waits for the import acknowledgement: open Design → Import Changes once, it shows no changes …
    ```
 
-   The parts came into the PCB without EasyEDA's import, and its DRC waits until the import view has been opened once.
-   edakit has compared schematic and PCB beforehand and nothing differs, so that is your one click (parts without
-   dialogs, 7.3): *Design → Import Changes*, it shows no changes, OK. It comes last, after the silkscreen; then `edakit
-   route drc` reports `DRC: 0 findings`.
+   The parts came into the PCB without EasyEDA's import, and its DRC waited until the import view had been opened
+   once. edakit had compared schematic and PCB beforehand and nothing differed, so that was your one click in this run
+   (parts without dialogs, 7.3): *Design → Import Changes*, it shows no changes, OK – last, after the silkscreen; then
+   `edakit route drc` reports `DRC: 0 findings`. Today edakit first writes the Channel ID the import sets into the
+   schematic parts and runs the DRC again (Import Changes, 7.5); the click is asked for only if the item stays.
 4. `edakit silk apply`: designators where there is room, the board label, and the silkscreen checked on the Gerber
    files:
 

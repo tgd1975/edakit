@@ -20,7 +20,8 @@ $ edakit pcb plan
 ![The walkthrough's placement: a round board, the cell holder in the middle](../../examples/coin-cell-led/docs/pcb_plan_main.png)
 
 Then it places the parts, routes with Freerouting, pours the ground, prints the labels and runs the design rule check.
-In EasyEDA one click is left for you: *Design → Import Changes*, once. Claude says when.
+In EasyEDA you click nothing here: edakit writes what EasyEDA's import would set. Only if its check still waits
+for the import, Claude asks you for one click: *Design → Import Changes*.
 
 ![The walkthrough's routed board, all layers from above: the ground pour over the round board, the tracks from the cell holder's "+" pad to the switch, the resistor and the LED](../../examples/coin-cell-led/docs/board_main_layers.png)
 
