@@ -1058,3 +1058,26 @@ def test_board_copper_is_nothing_to_buy(project):
                        if f.code.startswith("PARTS.") and ("SJ1" in f.text or f.place in ("SJ1", "SOLDERJUMPER"))})
     assert found("copper") == []          # before: PARTS.fact/reach, PARTS.verified/device (PARTS.supplier: an own part)
     assert found("handmade") == [("PARTS.fact", "reach"), ("PARTS.verified", "device")]
+
+
+@pytest.mark.skipif(not shutil.which("ngspice"), reason="ngspice not installed")
+def test_the_charger_model_drives_its_status_output(tmp_path):
+    """The Micro-Lipo's MCP73831 lights the red LED1 (5V – LED1 – R1 – STAT) while it charges and the green LED2
+    (STAT – R2 – LED2 – GND) once the charge is complete. The charger model left STAT floating: both LEDs carried the
+    chain's current, neither lit nor dark as expected (SIM.state on LED1, LED2). Now STAT is low while the current is
+    above termination and high below it; without the stat role the chain is back."""
+    from edakit import config
+    from edakit.sim import run as simrun
+    from test_open_designs import copy
+
+    def states(name, role="stat"):
+        cfg = copy("adafruit-microlipo-usb-c", tmp_path / name)
+        f = tmp_path / name / "adafruit-microlipo-usb-c" / "hardware" / "parts" / "C424093.json"
+        e = json.loads(f.read_text(encoding="utf-8"))
+        e["pins"]["1"]["role"] = role
+        f.write_text(json.dumps(e, indent=1), encoding="utf-8")
+        cfg = config.load(tmp_path / name / "adafruit-microlipo-usb-c" / "edakit.toml")
+        out = simrun.run_all(Design.from_config(cfg), engines.load_sim(cfg))
+        return {(r["item"], r["result"]) for r in out["checks"] if r["id"] == "SIM.state"}
+    assert states("a") == {("LED1", "pass"), ("LED2", "pass")}                    # before: both failed
+    assert ("LED1", "fail") in states("b", "status")

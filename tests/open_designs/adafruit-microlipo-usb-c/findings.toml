@@ -47,18 +47,8 @@ place = "U1"
 judged = "real"
 why = "In the 500 mA mode the SOT-23-5 dissipates 0.57 W from a cell at 3.7 V and 1.1 W from one at 3.0 V: 157–278 °C at 230 K/W. The MCP73831 then regulates its temperature and cuts the current (DS20001984H 6.1.1.3: 1.54 W worst case) – the 500 mA the jumper promises are not reached from a low cell; edakit's model has no thermal regulation and shows the dissipation."
 
-[[sim]]
-code = "SIM.state"
-place = "LED1"
-judged = "known gap"
-why = "The charger model does not drive STAT (the status outputs are among what the simulation leaves out, decision 17 of rules-at-scale.md: edakit check --coverage lists them): STAT floats in the model, and the two LEDs carry the current of the chain 5V – LED1 – R1 – R2 – LED2 – GND, 2 µA to 1.6 mA by the corner – the red LED too dim while charging, too bright with the cell full. On the board STAT is low while charging and lights it with about 6 mA through 470 Ω."
-
-[[sim]]
-code = "SIM.state"
-place = "LED2"
-judged = "known gap"
-why = "As LED1: with STAT not driven by the model, the green LED carries the chain's current while the cell charges (up to 1.6 mA, expected dark) and too little with the cell full (0.7 mA, expected on) – on the board STAT high lights it with a few mA through 470 Ω."
-
+[[fixed]]
+what = "STAT not driven by the charger model: it floated, and the two LEDs carried the chain 5V – LED1 – R1 – R2 – LED2 – GND, the red one too dim while charging and the green one lit (SIM.state on LED1, LED2). The model now holds STAT low while it charges and high once the current falls below i_term_ratio of the set current: 4.3–7.5 mA through LED1 while charging, 4.2 mA through LED2 with the cell full (TD-133)."
 [[fixed]]
 what = "SJ1, two pads of the board's copper bridged with solder, asked for a supplier, a REACH statement and an EasyEDA device (PARTS.supplier, PARTS.fact/reach, PARTS.verified/device): the parts entry says own.what \"copper\" now – nothing bought, nothing to state (TD-127)."
 [[fixed]]
