@@ -8,6 +8,10 @@ written once, by `.github/merge.py`, from the fragments in [changes/](changes/RE
 update edakit@edakit`, then `/reload-plugins` or a new session; `edakit version` names the version that runs and what an
 update brings.
 
+## 1.1.16 – 2026-11-03
+
+- The parts library: C5274290 (LESD5D5.0CT1G) is a bidirectional TVS (`values.tvs = "bidirectional"`, its datasheet's symbol and I–V curve) – LIM.v holds it to VRWM in both directions, PATH.reverse lets a reversed source past it.
+
 ## 1.1.15 – 2026-11-03
 
 - circuit-design: an error or a warning the circuit keeps goes into the decision round; its accept is written only
