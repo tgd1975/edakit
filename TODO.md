@@ -50,8 +50,9 @@ to touch.
 
 - [ ] TD-122 - **The bell in the language, in its own repository:** its five graphs as `.circuit` – `edakit graph
       convert --to circuit` keeps the sign-offs (rehashed); the modeled sources of `tests/fixtures/bell/` add the
-      LED step's records and the LEDs' `value`, a new circuit hash and new sign-offs – the bell's choice, after
-      TD-113 (decision 43). *(friendly-mccarthy)*
+      LED step's records, the LEDs' `value` and eleven `accept DEF.derive` with the bell's reasons – check and sim
+      as today, a new circuit hash and new sign-offs –, the bell's choice, after TD-113 (decisions 43, 47).
+      *(friendly-mccarthy)*
 
 ## How edakit is tested ([docs/concepts/new/verification-and-validation.md](docs/concepts/new/verification-and-validation.md))
 
