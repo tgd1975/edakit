@@ -48,18 +48,6 @@ place = "Q3"
 judged = "real"
 why = "Q3's base hangs on R21 from GPIO4 alone: while the ESP32 is held in reset (by the MAX809 or the EN button), before WLED configures the pin, or with the DevKitC taken out of its sockets (the README flashes it unplugged), nothing defines it – the LED power then rests on leakage. A 10–100 kΩ from base to emitter would hold it off; the README's test (EN held: the outputs dark) shows it stays off in practice."
 
-[[check]]
-code = "PATH.reverse"
-place = "D4.1"
-judged = "known gap"
-why = "Q1 in the ground return cuts a reversed supply off GND, and PATH.reverse knows it (catalog/paths.toml [reverse] cuts) – but D4 sits between J1's two pins and does see the reversed 5 V: harmless for the bidirectional SMBJ5.0CA (VBR ≥ 6.4 V both ways), but the parts schema has no field that says a TVS is bidirectional (values tvs only)."
-
-[[check]]
-code = "PATH.reverse"
-place = "D4.2"
-judged = "known gap"
-why = "As D4.1: the bidirectional TVS across the input blocks the reversed 5 V, which edakit cannot know."
-
 [[sim]]
 code = "LIM.i"
 place = "F2"
@@ -114,6 +102,8 @@ place = "D6"
 judged = "criterion"
 why = "D6 – LED output 1's indicator, 10 kΩ from +5V_LED1 – gets 0.2 mA, below edakit's 1 mA for an LED that is on. The 10 kΩ dim it on purpose: the README tests it as lit ('D2 green is on', 'D6 and D12 will get brighter')."
 
+[[fixed]]
+what = "The bidirectional SMBJ5.0CA across the terminal (D4) judged as one direction – reached by the reversed 5 V on both pins (PATH.reverse on D4.1, D4.2): the parts schema has values tvs \"bidirectional\" now, which PATH.reverse tolerates and LIM.v holds either way (TD-132)."
 [[fixed]]
 what = "The reverse-polarity N-MOSFET in the ground return (Q1) unknown to PATH.reverse, which walked from J1's pins as if GND were the return – 18 findings on the plus side and on Q1 itself (D1.2, D3.1, D5.1, Q1, Q2, Q4, R1.1, R2.1, R3.1, R19.1, U1.3, U2.14, C2.1): a low-side N-MOSFET is now a cut of catalog/paths.toml [reverse], and only the parts between the terminal's own nets count (TD-125)."
 [[fixed]]

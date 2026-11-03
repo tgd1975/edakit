@@ -12,7 +12,7 @@ from collections import defaultdict
 from functools import lru_cache
 
 from ..catalog import HERE
-from ..circuit import polarized, reach, resistor_like, resistor_value, source_outputs
+from ..circuit import polarized, reach, resistor_like, resistor_value, source_outputs, values
 from ..findings import Finding
 
 
@@ -74,7 +74,7 @@ def reverse(d, design):
                                    "a series Schottky diode or a PMOS ahead of it, or a capacitor without polarity",
                                    grade="polarized", on=(("net", net), ("component", des))))
                 continue
-            if k in t["tolerates"]:
+            if k in t["tolerates"] or values(d.part(des)).get("tvs") in t.get("tolerates_tvs", ()):
                 continue
             role = d.pin_info(ref).get("role")
             if any(b["kind"] == k and b["role"] == role and all(d.net_of(des, o) not in side for o in b["outside"])

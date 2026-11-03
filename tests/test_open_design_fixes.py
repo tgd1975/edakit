@@ -859,3 +859,30 @@ def test_a_low_side_mosfet_cuts_a_reversed_source_off_ground():
     assert reversed_at(*ground_return("VG")) == ["U2.1", "U2.2"]
     assert reversed_at(*ground_return("CTRL")) == ["Q1.2", "U1.1", "U2.1", "U2.2"]
     assert reversed_at(*ground_return(leak=True)) == ["Q1.1", "Q1.2", "R2.1", "U1.1", "U2.1", "U2.2"]
+
+
+def tvs_across(tvs):
+    """ground_return() with the TVS D4 (`tvs` its values.tvs) straight across VIN and VRTN – cathode on VIN – in place
+    of U2."""
+    nets, comps, parts = ground_return()
+    comps[-1] = {"designator": "D4", "type": "diode", "lcsc": "C9000501", "pins": {"1": "K", "2": "A"}}
+    nets = {n: [{"U2.1": "D4.1", "U2.2": "D4.2"}.get(r, r) for r in pins] for n, pins in nets.items()}
+    return nets, comps, {**parts, "C9000501": {**TVS, "values": {"tvs": tvs}}}
+
+
+def test_a_bidirectional_tvs_takes_a_reversed_source():
+    """ADLSC's D4, an SMBJ5.0CA across the terminal: bidirectional, it blocks up to its breakdown either way. The
+    parts schema had values tvs true only, so a reversed 5 V across it was judged as across a one-way diode – PATH.reverse
+    on both pins. values tvs "bidirectional" is tolerated, and LIM.v holds it to its working voltage either way; a
+    one-way TVS is still found, and the schema takes nothing but true and "bidirectional"."""
+    from edakit.engines.quantities import part_voltages
+    assert reversed_at(*tvs_across("bidirectional")) == []                  # before: D4.1, D4.2
+    assert reversed_at(*tvs_across(True)) == ["D4.1", "D4.2"]
+    graph = {"name": "t", "version": "1", "ground": "GND",
+             "components": [{"designator": "D4", "type": "diode", "lcsc": "C9000501", "pins": {"1": "K", "2": "A"}}],
+             "nets": [{"name": "LINE", "pins": ["D4.1"], "v": [-6, 3]}, {"name": "GND", "pins": ["D4.2"], "v": [0, 0]}]}
+    volts = {t: [q.hi for q in part_voltages(Design.from_data(graph, {"C9000501": {**TVS, "values": {"tvs": t}}}))
+                 if q.place == "D4"] for t in (True, "bidirectional")}
+    assert volts == {True: [3], "bidirectional": [6]}                       # before: 3 V both
+    assert schema.problems({**TVS, "values": {"tvs": "both"}}) == [
+        "values.tvs: true for a TVS diode, \"bidirectional\" for one that blocks both ways (the CA suffix), not 'both'"]

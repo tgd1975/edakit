@@ -258,6 +258,9 @@ entry's, the entry's before the default of the pin type. The sections below give
 - a polarized capacitor (an electrolytic, a tantalum): `values.polarized: true` and the pin roles `plus` and `minus`;
   `vr_max_v` the reverse voltage the series allows – LIM.v holds it in the declared ranges and the simulation, and
   PATH.reverse reports one a reversed source reaches (both grade `polarized`, warnings).
+- a TVS diode: `values.tvs: true`, its working voltage (VRWM) as `vr_max_v` – LIM.v holds the reverse voltage to it
+  without the derating factor; a bidirectional one (the CA suffix) `values.tvs: "bidirectional"`: LIM.v holds it either
+  way, and PATH.reverse takes it as a part that tolerates a reversed source.
 - a class-2 ceramic (X5R, X7R …): `values.dc_bias`, the share of its capacitance left at a DC across it as
   `[[V, ratio], …]` – the maker's curve for this part, volts from 0 to the rated voltage (KEMET's 4.7 µF 6.3 V 0603
   X5R, C5126849: `[[0, 1.0], [1, 0.97], [2, 0.89], [3, 0.72], [4, 0.54], [5, 0.43], [6.2, 0.35]]`). Makers give it as

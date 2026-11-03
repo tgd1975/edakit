@@ -11,6 +11,8 @@ sources = ["battery_holder"]                 # kinds that may be inserted revers
 passes = ["fuse", "switch", "button"]   # hand a reversed source on unchanged
 tolerates = ["battery_holder", "capacitor", "connector"]   # take a reversed voltage without harm; a connector's
                                              # pins are separate contacts: it hands nothing on from one to another
+tolerates_tvs = ["bidirectional"]            # a TVS of values tvs "bidirectional" blocks a reversed voltage up to its
+                                             # working voltage as it blocks the right one – LIM.v holds both ways
 blocks = [
   { kind = "diode", role = "anode", outside = ["cathode"] },          # the cathode on the protected side
   { kind = "diode", role = "cathode", outside = ["anode"], rail = "negative" },   # a negative rail: the anode on the
