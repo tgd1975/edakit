@@ -1,32 +1,31 @@
 # A language of its own for the circuit: what it would have to be, on which basis, and when
 
-Status 2026-11-03: built – all four stages on one branch, merged as #279 ("When it brings value"); the decisions
-of the plan confirmed by the owner; left: the bell's own conversion (TD-122). 2026-11-02: decided. 2026-10-31:
-concept, asked for by the owner after the review of
-[circuit-language.md](circuit-language.md) deferred the language of that sketch. It answers four
-questions: whether a fitting language exists already, what a language of edakit's own would have to be able to
-do to be worth building, on which basis – SysML v2, KerML, an existing circuit language, or something else –,
-and when it would bring value. It takes a position on each, with the alternative it sets aside where that
-matters; what remains the owner's is whether and when to build it, in "When it brings value". The sources say
-what was read and from where. Reviewed the same day against main at `bd227e3` and corrected: the examples in
-today's form of the graph (`accept`, `locks`), the numbers of the bell and led-bar re-measured, what exists
-already named as existing, the questions the review found open – where assertions run, what `block add --set`
-writes, the names of internal nets, four projects and one hook – answered where they belong, and the list of
-decisions that closed the concept folded into the text on the owner's word. On the owner's questions the same
-day: a project's source over several files with one namespace (item 9), the requirements on SysML v2's model as
-well ("The basis"), and a language server with a VS Code extension as stage 4; on the owner's word after the
-review's second reading, the waiting period of trigger 4 taken out, the SysML v2 tools on GitHub – the pilot's
-installers, Eclipse SysON, Sensmetry's Syside, Syster's `systree` – named in "What exists", "The basis" and
-stage 3, and derived values by named rules of edakit's in place of assertions evaluated from the graph:
-`asserts` dropped, `derivations` as the one key the language adds, DEF over the records only (item 4, the
-owner's ack of the review's recommendation). SysON taken out of the acceptance test on the owner's word the same
-day: the conformance test with a standard reader is the export's check, a graphical import is the user's tool.
-The detail concepts of the same day: [circuit-dsl-language.md](circuit-dsl-language.md) – the notation, its
-meaning and its definition on SysML v2 and KerML, statement by statement – and
-[circuit-dsl-toolchain.md](circuit-dsl-toolchain.md) – the implementation plan of the toolchain, written for one
-session that builds all four stages without a question. Against the yardstick: a language changes nothing about
-what is text – its source and its resolved graph are text in the repository –; what it changes is where
-repetition, parameters and variants are written once instead of many times.
+Status 2026-11-03: built – all four stages, merged as edakit 1.1.3 (#279) and withdrawn from main by #287 on the
+owner's word – a beta, the explorative DSL, on the branch `claude/friendly-mccarthy-n4kt6y`, switched on per project
+in edakit.toml (circuit-dsl-toolchain.md, decision 48). 2026-11-02: decided ("When it brings value"). 2026-10-31:
+concept, asked for by the owner after the review of [circuit-language.md](../done/circuit-language.md) deferred the
+language of that sketch. It answers four questions: whether a fitting language exists already, what a language of
+edakit's own would have to be able to do to be worth building, on which basis – SysML v2, KerML, an existing circuit
+language, or something else –, and when it would bring value. It takes a position on each, with the alternative it
+sets aside where that matters; what remains the owner's is whether and when to build it, in "When it brings value".
+The sources say what was read and from where. Reviewed the same day against main at `bd227e3` and corrected: the
+examples in today's form of the graph (`accept`, `locks`), the numbers of the bell and led-bar re-measured, what
+exists already named as existing, the questions the review found open – where assertions run, what `block add --set`
+writes, the names of internal nets, four projects and one hook – answered where they belong, and the list of decisions
+that closed the concept folded into the text on the owner's word. On the owner's questions the same day: a project's
+source over several files with one namespace (item 9), the requirements on SysML v2's model as well ("The basis"), and
+a language server with a VS Code extension as stage 4; on the owner's word after the review's second reading, the
+waiting period of trigger 4 taken out, the SysML v2 tools on GitHub – the pilot's installers, Eclipse SysON,
+Sensmetry's Syside, Syster's `systree` – named in "What exists", "The basis" and stage 3, and derived values by named
+rules of edakit's in place of assertions evaluated from the graph: `asserts` dropped, `derivations` as the one key the
+language adds, DEF over the records only (item 4, the owner's ack of the review's recommendation). SysON taken out of
+the acceptance test on the owner's word the same day: the conformance test with a standard reader is the export's
+check, a graphical import is the user's tool. The detail concepts of the same day:
+[circuit-dsl-language.md](circuit-dsl-language.md) – the notation, its meaning and its definition on SysML v2 and
+KerML, statement by statement – and [circuit-dsl-toolchain.md](circuit-dsl-toolchain.md) – the implementation plan of
+the toolchain, written for one session that builds all four stages without a question. Against the yardstick: a
+language changes nothing about what is text – its source and its resolved graph are text in the repository –; what it
+changes is where repetition, parameters and variants are written once instead of many times.
 
 ## The short answer
 
@@ -668,7 +667,7 @@ that `hardware/requirements.toml` holds today – `[[need]]` N- in someone's wor
 testable sentence with `from` (needs, decisions, a standard, a sign-off), `binding` must, should or may, `verify` as
 rows of the gate protocol, a sign-off M-, a project script or an acceptance step, and a status draft, accepted or
 dropped; DOCS.ref, DOCS.need, DOCS.evidence and DOCS.draft check it, the gate evaluates the evidence, the circuit
-hash takes the file byte for byte ([requirements.md](requirements.md); the file covers the circuit only, its
+hash takes the file byte for byte ([requirements.md](../done/requirements.md); the file covers the circuit only, its
 decision 3). SysML v2 has the model for exactly this, in its Systems Library and one domain library:
 
 | edakit today | SysML v2 |
@@ -734,7 +733,7 @@ toolchain" below.
 
 Not before, and not without, these:
 
-1.  **The TOML form is built** ([circuit-language-plan.md](circuit-language-plan.md), L.1 to L.9; L.1 to
+1.  **The TOML form is built** ([circuit-language-plan.md](../done/circuit-language-plan.md), L.1 to L.9; L.1 to
    L.8 built on 2026-10-31, L.9 the bell's): pins by name or role, the resolved `graph.json` beside the form,
    `--check` in the hook. The language compiles to the same artifact; without it, it has no target.
 2. **Blocks want parameters.** Measured in the projects: three or more blocks whose values a project changes – the
@@ -927,7 +926,7 @@ A](https://github.com/Systems-Modeling/SysML-v2-Release/blob/master/sysml/src/ex
 - edakit at `bd227e3`: handbook 3, 4 and 14.5 (the blocks), `edakit/blocks/*.json`, `block.py`, `circuit.py`
   (`QUANTITY`), `engines/quantities.py`, `release/gate.py` (`state_hash`), `config.py` (`[project] requirements`),
   `catalog/codes.toml` (DOCS.ref, the HINT codes), `tests/fixtures/led-bar`, `tests/reference.py`, `evals/`, the
-  prototype [translate.py and bell.circuit](prototypes/circuit-language/),
-  [maker-coverage.md](maker-coverage.md) (the owner's projects, FT-23, FT-24, the stability of the model),
-  [circuit-language.md](circuit-language.md) (the sketch, its review and decisions) and
-  [circuit-language-plan.md](circuit-language-plan.md).
+  prototype [translate.py and bell.circuit](../done/prototypes/circuit-language/),
+  [maker-coverage.md](../done/maker-coverage.md) (the owner's projects, FT-23, FT-24, the stability of the model),
+  [circuit-language.md](../done/circuit-language.md) (the sketch, its review and decisions) and
+  [circuit-language-plan.md](../done/circuit-language-plan.md).

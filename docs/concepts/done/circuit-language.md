@@ -2,7 +2,7 @@
 
 Closed on 2026-10-31: the sketch has done its work – decision 8 of design-as-text is taken – and two concepts carry
 it on: [circuit-language-plan.md](circuit-language-plan.md) builds its decisions (TOML with names, pins by name
-or role, the resolved graph.json), [circuit-dsl.md](circuit-dsl.md) takes up the deferred language.
+or role, the resolved graph.json), [circuit-dsl.md](../new/circuit-dsl.md) takes up the deferred language.
 
 Status 2026-10-31: sketch of step 4.3 of the [implementation plan](implementation-plan.md), for decision 8 of
 [design-as-text.md](design-as-text.md), written on 2026-10-29 against edakit at `75d5c32` and the bell at
@@ -552,7 +552,7 @@ with a nicer syntax, so it is a second format for the same data. It would be wor
    editors, a formatter, line-exact errors, one reader every tool uses and one writer for everything that writes the
    graph.
 
-Thought further on the owner's request in [circuit-dsl.md](circuit-dsl.md): whether a fitting language exists
+Thought further on the owner's request in [circuit-dsl.md](../new/circuit-dsl.md): whether a fitting language exists
 already, what one of edakit's own would have to be able to do, on which basis, and when.
 
 ## Decisions

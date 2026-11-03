@@ -105,23 +105,6 @@ After every change `edakit graph json --write`: the resolved `hardware/graph.jso
 numbers the words stand for – generated, committed with the TOML, never edited; the pre-commit hook checks it
 (`edakit graph json --check`). `edakit graph json 2>&1 | cat` shows the numbers without writing.
 
-Where `[project] graph` names `hardware/graph.circuit`, the graph is written in the circuit language
-(`${CLAUDE_PLUGIN_ROOT}/handbook/20-circuit-language.md`): the same parts and nets as statements, a block or a
-definition of the project as a usage, a repeated group as a loop, a value from a rule as a derivation. The resolved
-`graph.json` is generated from it in the same way; `edakit graph fmt` lays the source out.
-
-```text
-use led status (i = 4 mA) in = LED_STATUS
-  R1 = R3
-  D1 = D10
-for n in 0..7
-  part D{n+2} led KT-0805G lcsc C2297 value green "LED {n+1}"
-  net LED{n} 0..5.5 V U2.OUT{n} D{n+2}.cathode
-```
-
-A usage keeps the designators you give it; a derived value outside its window is DEF.derive – take another part
-inside the window, or accept it with the reason.
-
 Nets with worst-case voltage ranges `v`. A ground that is separate on purpose (an analog ground joined at one point)
 goes into the graph's `grounds` – every other ground pin belongs on the ground net (PATH.unfed). Decisions numbered (D-…) in
 the decision log and cited in `notes`. sim.json:

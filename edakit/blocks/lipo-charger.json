@@ -23,10 +23,10 @@
     "4": "VDD",
     "5": "PROG"
    },
+   "notes": "Option 2AC: 4.20 V ±0.75 %, preconditioning below 66.5 % of VREG, termination at 7.5 % of IREG, recharge below 96.5 % (DS20001984H p. 3, 26). STAT (pin 1) is left open: it drives high to VDD (5 V) when the charge completes – see the notes before wiring it.",
    "nc": [
     "1"
-   ],
-   "notes": "Option 2AC: 4.20 V ±0.75 %, preconditioning below 66.5 % of VREG, termination at 7.5 % of IREG, recharge below 96.5 % (DS20001984H p. 3, 26). STAT (pin 1) is left open: it drives high to VDD (5 V) when the charge completes – see the notes before wiring it."
+   ]
   },
   {
    "designator": "R1",
