@@ -22,6 +22,8 @@ $ edakit pcb plan
 Then it places the parts, routes with Freerouting, pours the ground, prints the labels and runs the design rule check.
 In EasyEDA one click is left for you: *Design → Import Changes*, once. Claude says when.
 
+![The walkthrough's board routed: the ground pour over the round board, the tracks from the cell's "+" to the button, the resistor and the LED](../../examples/coin-cell-led/docs/board_main_top.png)
+
 ## What you are asked
 
 What only you can say: the board's size and shape, its holes, where the parts go that a person touches, and how it
