@@ -1347,7 +1347,7 @@ why = "The first parts order (2026-11-02) went by hand: three lists merged by a 
 fix = "A line missing or short: upload the basket's line again, never change a line that was there before. Out of stock or marked: another part is a hardware change (skill hardware-change), then edakit order again. A line not read: read the cart again and keep its page text whole."
 severity = "error"
 sources = [
-  "The parts order (docs/concepts/new/parts-order.md, decided 2026-11-02): decision 3 – the skill fills LCSC's cart and stops before the checkout, lines already there only reported; decision 5 – the skill enters LCSC's warehouse at JLCPCB's checkout",
+  "The parts order (docs/concepts/done/parts-order.md, decided 2026-11-02): decision 3 – the skill fills LCSC's cart and stops before the checkout, lines already there only reported; decision 5 – the skill enters LCSC's warehouse at JLCPCB's checkout",
   "LCSC, 'Combine Your LCSC and JLCPCB Orders', https://www.lcsc.com/faqs/ordering-quotation/combine-lcsc-jlcpcb-orders (read 2026-11-02)",
 ]
 

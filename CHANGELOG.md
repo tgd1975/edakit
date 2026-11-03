@@ -8,6 +8,10 @@ written once, by `.github/merge.py`, from the fragments in [changes/](changes/RE
 update edakit@edakit`, then `/reload-plugins` or a new session; `edakit version` names the version that runs and what an
 update brings.
 
+## 1.1.10 – 2026-11-03
+
+- The parts-order concept is done and moved to docs/concepts/done/parts-order.md; the paths in edakit order, edakit cart, the LCSC profile, ORDER.basket's sources and the skill cart follow it.
+
 ## 1.1.9 – 2026-11-03
 
 - The handbook (16.1, 17.11) and step 9 no longer name *Design → Import Changes* as a click that always comes: since E-2 edakit writes the Channel ID itself, and the click is asked for only if EasyEDA's DRC still waits for the import.
@@ -30,7 +34,7 @@ update brings.
 ## 1.1.5 – 2026-11-03
 
 - The parts at LCSC with the skill cart (`/edakit:cart parts`): `edakit order` writes `basket.json`, the supplier profile `edakit/suppliers/lcsc.toml` (provisional), and `edakit order check` holds LCSC's cart as the skill read it back to the basket – the new code ORDER.basket; lines already in the cart are listed, never touched.
-- The combined shipment (`/edakit:cart combine`): a job at JLCPCB whose basket has LCSC lines carries LCSC's warehouse address and the conditions; `edakit order check` prints both carts' weights and the routes to compare, and after combining the cheapest of LCSC's methods that arrives by the new key `[cart] needed_by`. On the owner's choice the skill enters that address at JLCPCB's checkout – the one field of a checkout it sets (docs/concepts/new/parts-order.md, steps 2 and 3).
+- The combined shipment (`/edakit:cart combine`): a job at JLCPCB whose basket has LCSC lines carries LCSC's warehouse address and the conditions; `edakit order check` prints both carts' weights and the routes to compare, and after combining the cheapest of LCSC's methods that arrives by the new key `[cart] needed_by`. On the owner's choice the skill enters that address at JLCPCB's checkout – the one field of a checkout it sets (docs/concepts/done/parts-order.md, steps 2 and 3).
 
 ## 1.1.4 – 2026-11-03
 
@@ -223,7 +227,7 @@ update brings.
 
 ## 0.6.1 – 2026-11-02
 
-- `edakit order --with CONFIG` puts the carts of several projects into one set of files – one line per supplier and code, the pieces summed, the comment naming each project – for one parts order for several boards (docs/concepts/new/parts-order.md, decision 1).
+- `edakit order --with CONFIG` puts the carts of several projects into one set of files – one line per supplier and code, the pieces summed, the comment naming each project – for one parts order for several boards (docs/concepts/done/parts-order.md, decision 1).
 
 ## 0.6.0 – 2026-11-02
 

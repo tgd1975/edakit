@@ -14,7 +14,7 @@ Where the session does not find `edakit` on the PATH, it is `${CLAUDE_PLUGIN_ROO
 **Never** (the owner's decision of 2026-10-30): you do not press "Order", "Buy", "Checkout", "Pay", "Submit order", any
 button of the job's `never` list or any button that places or pays an order; you do not open the checkout; you do not
 enter or confirm an address, a payment method or a coupon; you do not change or delete what is already in the cart.
-The one exception (the owner's decision 5 of 2026-11-02, docs/concepts/new/parts-order.md): on the owner's choice to
+The one exception (the owner's decision 5 of 2026-11-02, docs/concepts/done/parts-order.md): on the owner's choice to
 combine, you enter LCSC's warehouse address from the job at JLCPCB's checkout and read it back – that address and
 nothing else, never the owner's or anyone else's, and no other field or button of the checkout (mode combine below).
 (AISLER's project page `/checkout` is its configuration, not the checkout – see AISLER below.) When the next step of a
