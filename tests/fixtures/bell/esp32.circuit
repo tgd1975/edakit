@@ -41,6 +41,8 @@ variant esp32 of ../smd/hardware/graph.circuit
       accept LIM.p "D-26 (owner, 2026-10-31): 20.7 mW at the forward-voltage minimum, 52 % of the datasheet's 40 mW –
         accepted, the brightness stays"
     part R{n} resistor "100 Ω 0805" lcsc C17408 value 100Ω
+      accept DEF.derive "D-14: all five series resistors 100 Ω – (3.3 V − 2.1 V) / (100 Ω + 30 Ω output + 10 Ω LED) ≈
+        8.6 mA; 7.3–11.4 mA over all corners in the simulation"
       notes "D-14: (3.3 V - 2.1 V) / (100 Ω + 30 Ω GPIO + 10 Ω LED) = 8.6 mA typ."
   for n in 8..9
     part R{n}

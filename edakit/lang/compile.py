@@ -225,10 +225,15 @@ def resolve(sources, root, parts_dirs):
         lib = library()
         for name in sorted(set(model.defs) & set(lib)):
             d = model.defs[name]
-            print(f"{d.file}:{d.line}: def {name}: the project's definition shadows edakit's block {name}",
-                  file=sys.stderr)
+            note = f"{d.file}:{d.line}: def {name}: the project's definition shadows edakit's block {name}"
+            if note not in _SAID:                    # once a run – a command compiles its source more than once
+                _SAID.add(note)
+                print(note, file=sys.stderr)
         model.defs = {**lib, **model.defs}
     return model
+
+
+_SAID = set()
 
 
 def _merge_attrs(base, new):

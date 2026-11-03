@@ -21,7 +21,7 @@ LIBRARY = Path(__file__).resolve().parents[1] / "edakit" / "lang" / "library" / 
 # names of the SysML v2 standard library the electrical library imports (ISQ, SI, ScalarValues)
 STANDARD = {"ScalarQuantityValue", "ElectricPotentialDifferenceValue", "ElectricCurrentValue", "ResistanceValue",
             "CapacitanceValue", "InductanceValue", "FrequencyValue", "LengthValue", "DurationValue", "Real",
-            "String", "Boolean", "Integer"}
+            "String", "Boolean", "Integer", "RequirementDerivation", "derivation", "original", "derive"}
 
 
 def reader():
@@ -122,7 +122,15 @@ net +5V 0..5.5 V
     assert "requirement 'R-3' : CircuitRequirement {" in text and ":>> 'binding' = Binding::must;" in text
     assert "require constraint { doc /* D.i within 2 mA .. 15 mA */ }" in text
     assert "satisfy 'R-3' by U1;" in text and "requirement 'N-1' : Need {" in text
-    assert "dependency 'N-1_R-3' from 'R-3' to 'N-1';" in text
+    assert "private import RequirementDerivation::*;" in text
+    assert "#derivation connection 'N-1_derivation' {\n        end #original ::> 'N-1';\n        end #derive ::> 'R-3';" \
+        in text
+    kt = kerml.text(build(cfg))
+    assert "dependency 'N-1_R-3' from 'R-3' to 'N-1';" in kt and "RequirementDerivation" not in kt
+    items = as_json.elements(build(cfg))
+    derivation = next(x for x in items if x.get("declaredName") == "N-1_derivation")
+    assert derivation["@type"] == "ConnectionUsage" and derivation["derived"] == ["R-3"]
+    assert as_json.problems(items) == []
 
 
 # --- JSON -----------------------------------------------------------------------------------------------------------
@@ -179,3 +187,33 @@ def test_the_export_of_a_definition_a_variant_and_requirements_reads(project, tm
     parse, other = analyze(tmp_path)
     assert parse == [] and other == []
     assert kerml.text(build(vcfg)).startswith("package 'bell-step' {")
+
+
+@pytest.mark.sysml
+@sysml_reader
+def test_the_export_of_requirements_with_a_derivation_reads(project, tmp_path):
+    """A need derived into a requirement, written as the RequirementDerivation library's #derivation connection,
+    and a satisfy – read by the standard reader with the rest."""
+    from test_lang_requirements import project_with
+    head = '''graph bell-step
+part U1 module A000005 lcsc A000005 "Arduino Nano"
+  alias led1 = D6 led2 = D5
+  satisfies R-3
+net GND 0 V U1.GND
+net +5V 0..5.5 V
+'''
+    cfg = project_with(project, head=head)
+    assert cli.main(["graph", "sysml", "--out", str(tmp_path), "--config", str(project.root / "edakit.toml")]) == 0
+    assert "#derivation connection" in next(p for p in tmp_path.glob("*.sysml") if p.name != "Electrical.sysml"
+                                            ).read_text()
+    parse, other = analyze(tmp_path)
+    assert parse == [] and other == []
+    assert cfg is not None
+    # the reader resolves neither an import nor a metadata's short name nor a `::>` end: the names the export uses
+    # are held to the standard library's own text where it is at hand
+    if os.environ.get("SYSML_STDLIB"):
+        lib = next(Path(os.environ["SYSML_STDLIB"]).rglob("RequirementDerivation.sysml")).read_text()
+        assert "standard library package RequirementDerivation" in lib
+        for short, full in (("derivation", "DerivationMetadata"), ("original", "OriginalRequirementMetadata"),
+                            ("derive", "DerivedRequirementMetadata")):
+            assert f"metadata def <{short}> {full}" in lib

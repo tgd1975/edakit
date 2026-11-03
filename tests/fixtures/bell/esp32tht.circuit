@@ -42,15 +42,20 @@ variant esp32tht of ../esp32/hardware/graph.circuit
       accept LIM.p -
   for n in 3..4
     part R{n} resistor "100 Ω 1/4 W metal film, THT" lcsc C57438 value 100Ω no-bom
+      accept DEF.derive "D-23: 100 Ω as on the variant ESP32 (D-14) – the yellow-green XL-504SYGD at full current"
       notes "D-23: 100 Ω as on the variant ESP32 (D-14) – the yellow-green XL-504SYGD at full current"
   part R1 resistor "330 Ω 1/4 W metal film, THT" lcsc C58608 value 330Ω no-bom
   part R2 resistor "330 Ω 1/4 W metal film, THT" lcsc C58608 value 330Ω no-bom
   part R5 resistor "330 Ω 1/4 W metal film, THT" lcsc C58608 value 330Ω no-bom
   for n in 1..2
     part R{n}
+      accept DEF.derive "D-23 (owner's decision): R1, R2 and R5 (red and yellow) are 330 Ω – 3.4–5.0 mA, towards the
+        yellow-green's brightness"
       notes "D-23: 330 Ω – red and yellow dimmed towards the yellow-green's brightness (owner's decision):
         XL-504SURD/UYD give 400–900 mcd at 20 mA, the XL-504SYGD 50–200 mcd"
   part R5
+    accept DEF.derive "D-23 (owner's decision): R1, R2 and R5 (red and yellow) are 330 Ω – 3.4–5.0 mA, towards the
+      yellow-green's brightness"
     notes "D-23: 330 Ω – red and yellow dimmed towards the yellow-green's brightness (owner's decision):
       XL-504SURD/UYD give 400–900 mcd at 20 mA, the XL-504SYGD 50–200 mcd"
   for n in 6..7

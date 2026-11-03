@@ -11,10 +11,11 @@ from .model import element_id
 
 SYSML = {"package": "Package", "partdef": "PartDefinition", "part": "PartUsage", "port": "PortUsage",
          "attr": "AttributeUsage", "conn": "ConnectionUsage", "meta": "MetadataUsage", "doc": "Documentation",
-         "req": "RequirementUsage", "satisfy": "SatisfyRequirementUsage", "dependency": "Dependency"}
+         "req": "RequirementUsage", "satisfy": "SatisfyRequirementUsage", "dependency": "Dependency",
+         "derivation": "ConnectionUsage"}
 KERML = {"package": "Package", "partdef": "Structure", "part": "Feature", "port": "Feature", "attr": "Feature",
          "conn": "Connector", "meta": "MetadataFeature", "doc": "Documentation", "req": "Feature",
-         "satisfy": "Feature", "dependency": "Dependency"}
+         "satisfy": "Feature", "dependency": "Dependency", "derivation": "Dependency"}
 METACLASSES = set(SYSML.values()) | set(KERML.values()) | {"OwningMembership", "FeatureTyping", "Redefinition",
                                                            "Subclassification", "FeatureValue", "LiteralString"}
 
@@ -41,6 +42,10 @@ def elements(export, view="sysml"):
             obj["values"] = dict(el.props)
         if el.kind == "conn":
             obj["ends"] = list(el.ends)
+        if el.kind == "derivation":
+            obj["original"], obj["derived"] = el.props["original"], list(el.props["derived"])
+            if view == "sysml":
+                obj["metadata"] = "RequirementDerivation::DerivationMetadata"
         out.append(obj)
         if owner is not None:
             mid = element_id(export.project, f"{view}:{qualified}::membership")

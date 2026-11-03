@@ -20,12 +20,20 @@ def render(el, indent=0, kw=KEYWORDS, kernel=False):
         return [] if kernel else [f"{pad}satisfy {name(el.name)} by {el.value};"]
     if el.kind == "dependency":
         return [f"{pad}dependency {name(el.name)} from {el.ends[1]} to {el.ends[0]};"]
+    if el.kind == "derivation":
+        if kernel:                                   # KerML has no RequirementDerivation: a dependency per pair
+            return [f"{pad}dependency {name(el.props['original'] + '_' + d)} from {name(d)} to {el.value};"
+                    for d in el.props["derived"]]
+        return [f"{pad}#derivation connection {name(el.name)} {{", f"{pad}    end #original ::> {el.value};",
+                *[f"{pad}    end #derive ::> {d};" for d in el.ends], f"{pad}}}"]
     if el.kind == "attr" and el.redefines:
         return [f"{pad}{':>> ' if not kernel else ':>> '}{name(el.name)} = {el.value};"]
     head = kw[el.kind]
     if el.kind == "package":
         lines = [f"{pad}package {name(el.name)} {{"]
         lines += [f"{pad}    private import {i};" for i in el.imports]
+        if not kernel and any(c.kind == "derivation" for c in el.children):
+            lines.append(f"{pad}    private import RequirementDerivation::*;")
         for c in el.children:
             lines += render(c, indent + 1, kw, kernel)
         return lines + [f"{pad}}}"]

@@ -71,11 +71,19 @@ def test_the_bell_s_sources_read_and_are_in_the_canonical_layout(name):
 
 
 def without_the_step_s_additions(graph):
-    """A graph without what language 11's `def led` adds to the bell's: the records of its derivation and the LEDs'
-    `value`, the colour the definition writes."""
+    """A graph without what language 11's `def led` adds to the bell's: the records of its derivation, the LEDs'
+    `value` – the colour the definition writes – and the accepts of DEF.derive that answer the records where the
+    bell chose another resistor (its D-11, D-14, D-23)."""
     g = {k: v for k, v in graph.items() if k != "derivations"}
-    g["components"] = [{k: v for k, v in c.items() if not (c["type"] == "led" and k == "value")}
-                       for c in graph["components"]]
+    comps = []
+    for c in graph["components"]:
+        c = {k: v for k, v in c.items() if not (c["type"] == "led" and k == "value")}
+        if "DEF.derive" in (c.get("accept") or {}):
+            c["accept"] = {k: v for k, v in c["accept"].items() if k != "DEF.derive"}
+            if not c["accept"]:
+                del c["accept"]
+        comps.append(c)
+    g["components"] = comps
     return g
 
 
@@ -94,6 +102,9 @@ def test_the_bell_s_sources_compile_to_its_graphs(tmp_path, name):
     got, _ = resolved_of(copy / where / "graph.circuit")
     assert canonical(without_the_step_s_additions(got)) == canonical(want)
     assert len(got["derivations"]) == 5 and "derivations" not in want
+    accepted = {c["designator"] for c in got["components"] if "DEF.derive" in (c.get("accept") or {})}
+    assert accepted == {"main": {"R3", "R4"}, "smd": {"R3", "R4"}, "tht": {"R3", "R4"},
+                        "esp32": {"R1", "R2", "R3", "R4", "R5"}, "esp32tht": {"R1", "R2", "R3", "R4", "R5"}}[name]
     assert {c["designator"]: c["value"] for c in got["components"] if c["type"] == "led"}.keys() == \
         {c["designator"] for c in want["components"] if c["type"] == "led"}
 

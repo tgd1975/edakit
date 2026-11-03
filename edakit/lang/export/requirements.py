@@ -1,5 +1,7 @@
 """The requirements in the export (T.23, language 10): needs and requirements as requirement usages of the library's
-definitions, `satisfy … by …` from the graph's satisfies, a need's derivation into a requirement as a dependency."""
+definitions, `satisfy … by …` from the graph's satisfies, a requirement's `from` as a derivation connection of SysML
+v2's RequirementDerivation library – one per original, its derived requirements as the other ends (decision 46) –, in
+KerML, which has not that library, as a dependency per pair."""
 
 from __future__ import annotations
 
@@ -39,9 +41,13 @@ def requirements(cfg, graph, usages, paths):
             for rid in obj.get("satisfies") or []:
                 if rid in ids:
                     out.append(El("satisfy", rid, value=paths.get(obj[key], name(obj[key])), props={"inside": True}))
+    derived = {}
     for e in entries:
         for ref in e.from_ if e.kind == "requirement" else []:
-            if ref in ids:
-                out.append(El("dependency", f"{ref}_{e.id}", ends=[name(ref), name(e.id)]))
+            if ref in ids and ref != e.id:
+                derived.setdefault(ref, []).append(e.id)
+    for ref, those in derived.items():
+        out.append(El("derivation", f"{ref}_derivation", value=name(ref), ends=[name(x) for x in those],
+                      props={"original": ref, "derived": those}))
     return out
 

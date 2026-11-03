@@ -9,4 +9,6 @@ repository.
 
 `tests/test_lang_golden.py` reads them and holds them to the canonical layout; where `BELL_ROOT` names a clone of the
 bell, it writes each beside its graph and compiles it – canonically equal to the bell's graph but for what the step
-adds: the five records of its derivation and the LEDs' `value`.
+adds: the five records of its derivation, the LEDs' `value`, and an `accept DEF.derive` on each resistor the bell
+chose otherwise than the step's 10 mA derive, with the bell's own reason (D-11, D-14, D-23). With those, `edakit
+check` and `edakit sim` of each configuration report what the bell's TOML graphs report (checked on 2026-11-03).

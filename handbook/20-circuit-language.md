@@ -268,6 +268,10 @@ accepts, locks, the layout and derivation records as metadata, the definitions o
 `Block`, their usages as part usages typed by them, a variant as a specialization of its base's circuit with what
 differs redefined, and the requirements as requirement usages with `satisfy`.
 
+A requirement's `from` is a `#derivation connection` of the standard's RequirementDerivation library, one per
+original with its derived requirements as the other ends; KerML, which has not that library, writes a `dependency`
+per pair.
+
 Quantities are written in base SI units, `0.01 [SI::A]`; a name that is no identifier or a keyword is quoted, `'+5V'`.
 
 `edakit/lang/library/Electrical.sysml` is the electrical library every export imports: pins, components by type,
@@ -279,7 +283,8 @@ The JSON beside each is an array of elements with a stable `@id` (UUID 5 of the 
 The library and the exports are read by a standard reader in a test of their own (`pytest -m sysml`, the optional
 dependency group `sysml` with Syster's `systree`), against the standard library of SysML v2 where `SYSML_STDLIB` names
 its folder `sysml.library`, an optional job of the CI that loads the release 2025-12; a graphical tool's import is no
-test of edakit's.
+test of edakit's. That reader resolves types, not imports, metadata names or the ends of a derivation – the test
+holds those names to the standard library's text.
 
 ## 20.11 Commands
 

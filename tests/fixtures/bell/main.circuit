@@ -44,9 +44,13 @@ def led (color = green, i = 10 mA) ports in gnd
 
 use led step1 (color = green) in = LED_G1 gnd = GND anode = LED_G1_A
   R = R4 "330 Ω 0805" lcsc C17630 value 330Ω "Series resistor LED5"
+  accept DEF.derive "330 Ω on every countdown LED, as on every board of the bell (D-11: the series resistors stay 330
+      Ω); R-3's 2–16 mA is verified by the simulation, not by the step's 10 mA"
   D = LED5 XL-504UGD lcsc C2895549 no-bom "5 mm LED, green, countdown step 1"
 use led step2 (color = green) in = LED_G2 gnd = GND anode = LED_G2_A
   R = R3 "330 Ω 0805" lcsc C17630 value 330Ω "Series resistor LED4"
+  accept DEF.derive "330 Ω on every countdown LED, as on every board of the bell (D-11: the series resistors stay 330
+      Ω); R-3's 2–16 mA is verified by the simulation, not by the step's 10 mA"
   D = LED4 XL-504UGD lcsc C2895549 no-bom "5 mm LED, green, countdown step 2"
 use led step3 (color = yellow) in = LED_Y1 gnd = GND anode = LED_Y1_A
   R = R2 "330 Ω 0805" lcsc C17630 value 330Ω "Series resistor LED3"

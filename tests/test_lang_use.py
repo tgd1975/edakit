@@ -94,9 +94,13 @@ def test_an_unbound_part_is_an_error(project):
 
 
 def test_a_project_definition_shadows_the_library_s(project, capsys):
-    g = compile_path(step(project))
+    from edakit.lang import compile as c
+    c._SAID.clear()
+    path = step(project)
+    g = compile_path(path)
     assert comp(g, "R4")["type"] == "resistor"
-    assert "shadows edakit's block led" in capsys.readouterr().err
+    compile_path(path)
+    assert capsys.readouterr().err.count("shadows edakit's block led") == 1   # said once, however often compiled
 
 
 def test_a_library_block_is_used_by_name(project):
