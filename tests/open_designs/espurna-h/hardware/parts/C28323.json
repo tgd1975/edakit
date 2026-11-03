@@ -1,0 +1,62 @@
+{
+ "lcsc": "C28323",
+ "mpn": "CL21B105KBFNNNE",
+ "manufacturer": "SAMSUNG(三星)",
+ "kind": "capacitor",
+ "package": "0805",
+ "footprint": "C0805",
+ "jlc_class": "Basic Part",
+ "datasheet": {
+  "url": "https://datasheet.lcsc.com/datasheet/pdf/02336ea48ea44ca18c72517dd3cb7b47.pdf?productCode=C28323",
+  "pinout_page": null,
+  "title": "Samsung Electro-Mechanics MLCC catalogue (Multilayer Ceramic Capacitors)",
+  "revision": "November 2015"
+ },
+ "pins": {
+  "1": {
+   "name": "1",
+   "type": "passive",
+   "role": "1"
+  },
+  "2": {
+   "name": "2",
+   "type": "passive",
+   "role": "2"
+  }
+ },
+ "values": {
+  "value_f": 1e-06,
+  "dielectric": "X7R",
+  "tolerance": 0.1
+ },
+ "limits": {
+  "v_max_v": 50,
+  "t_min_c": -55,
+  "t_max_c": 125
+ },
+ "spice": {},
+ "sources": [
+  "Samsung Electro-Mechanics MLCC catalogue, November 2015 (LCSC's copy, edakit part fetch C28323, sha256 96baebe4bd0c…, read 2026-10-31): p. 4 Part Numbering System – CL = MLCC, 21 = 0805 (2012), B = X7R, 105 = 10 × 10^5 pF = 1 µF, K = ±10 %, B = 50 V, F = thickness 1.25 mm, N = Ni/Cu/Ni barrier/Sn 100 %, N = normal, N = reserved, E = embossed tape 7\" reel",
+  "same catalogue p. 5 class II table: B = X7R, –55 … +125 °C, ±15 %",
+  "pin numbers and names, footprint C0805, jlc_class: EasyEDA library data of C28323 (edakit part import, 2026-10-31); JLCPCB catalogue 2026-10-31: Basic Part, 2 359 501 pcs; LCSC product data 2026-10-31: 187 820 pcs, RoHS"
+ ],
+ "compliance": {
+  "rohs": true,
+  "source": "Samsung MLCC catalogue November 2015, p. 2 ('all our MLCCs are produced in accordance with EU ROHS and REACH Directive'); LCSC product data C28323 (isEnvironment), read 2026-10-31"
+ },
+ "notes": "1 µF / 50 V X7R in 0805 (JLCPCB Basic): the EN delay capacitor of block esp32-wroom-32e (ESP32 module datasheet: 10 kΩ / 1 µF).",
+ "verified": {
+  "by": "Claude (datasheet check, library draft)",
+  "date": "2026-10-31",
+  "datasheet": "Samsung Electro-Mechanics MLCC catalogue, November 2015",
+  "datasheet_sha256": "96baebe4bd0ce363e87be28b5b003f511f1502e084a6fc4f02333ded56c808f6",
+  "checked": [
+   "part number CL21B105KBFNNNE decoded with the catalogue's part numbering system (p. 4): 0805, X7R, 1 µF, ±10 %, 50 V, 1.25 mm",
+   "X7R –55 … +125 °C, ±15 % (p. 5)"
+  ],
+  "open": [
+   "the catalogue is from 2015 and prints no single part number; a current Samsung product page (DC-bias curve) was not read",
+   "DC-bias loss at the working voltage not entered"
+  ]
+ }
+}

@@ -13,6 +13,11 @@ drop the schematic's numbers – In1 is In, InG3 is OutG, InG5 is InG, both swGn
 **Licence and attribution:** the repository's root holds one licence file, `LICENSE`, the MIT licence, "Copyright (c)
 2023 Keith Bloemer". The MIT licence asks that its notice travel with copies and substantial portions:
 
+**Why this design:** two drive circuits makers copy often, a Tube Screamer-style and a Rat-style stage, on one board:
+op-amp stages biased at half the supply, BJT and JFET followers, a 3PDT switch on the board that orders the effects,
+and footswitches wired by hand. It brings real op-amps where the reference circuit guitar has a test entry, and a
+reversed electrolytic (C19) that edakit finds.
+
 > MIT License – Copyright (c) 2023 Keith Bloemer. Permission is hereby granted, free of charge, to any person obtaining
 > a copy of this software and associated documentation files (the "Software"), to deal in the Software without
 > restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense,

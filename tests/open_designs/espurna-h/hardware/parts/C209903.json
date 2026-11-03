@@ -1,0 +1,84 @@
+{
+ "lcsc": "C209903",
+ "mpn": "HLK-PM01",
+ "manufacturer": "HI-LINK(海凌科)",
+ "kind": "module",
+ "package": "potted module 34 × 20 × 15 mm, 4 pins",
+ "footprint": "PWRM-TH_HLK-PM01",
+ "jlc_class": "Extended Part",
+ "datasheet": {
+  "url": "https://datasheet.lcsc.com/datasheet/pdf/946e31c396749ef42541894d4260feb2.pdf?productCode=C209903",
+  "pinout_page": 13
+ },
+ "needs": {
+  "decoupling": false
+ },
+ "pins": {
+  "1": {
+   "name": "AC",
+   "type": "power_in",
+   "role": "ac_l",
+   "v_max_v": 350,
+   "v_min_v": -350
+  },
+  "2": {
+   "name": "AC",
+   "type": "power_in",
+   "role": "ac_n",
+   "v_max_v": 350,
+   "v_min_v": -350
+  },
+  "3": {
+   "name": "-VO",
+   "type": "ground",
+   "role": "gnd"
+  },
+  "4": {
+   "name": "+VO",
+   "type": "power_output",
+   "role": "vout"
+  }
+ },
+ "values": {
+  "behavior": "none",
+  "vout_v": 5.0,
+  "efficiency": 0.73
+ },
+ "limits": {
+  "i_out_max_a": 0.6,
+  "t_min_c": -25,
+  "t_max_c": 60
+ },
+ "hints": [
+  "input (8.1): a 1 A / 250 VAC slow-blow fuse and a 10D561K varistor 'must be connected'; an X capacitor (0.1 µF / 275 VAC) and a common-mode choke for EMC certification",
+  "output (8.2): 100 … 220 µF electrolytic keep the ripple at 30 mV",
+  "rated 100 … 240 VAC, range 85 … 265 VAC or 120 … 350 VDC (5.1); isolation input to output 2500 VAC"
+ ],
+ "sources": [
+  "Shenzhen Hi-Link Electronic, 3W ultra small series power module PM03/PM01/PM09/PM12/PM15/PM24, version V2.5 (2019-10-12), LCSC's copy https://datasheet.lcsc.com/datasheet/pdf/946e31c396749ef42541894d4260feb2.pdf?productCode=C209903, read 2026-11-03",
+  "2. product model: HLK-PM01 3 W, 5 V, 600 mA (i_out_max_a); 4.: working temperature −25 … +60 °C",
+  "5.1 input: rated 100 … 240 VAC, range 85 … 265 VAC or 120 … 350 VDC (the AC pins' v_max_v and v_min_v: the DC range – the AC range is an rms value, which no field holds), max. input current ≤ 0.2 A, inrush ≤ 10 A; external fuse recommended 1 A / 250 VAC slow blow",
+  "5.3 output 5 V / 600 mA: 5.0 ± 0.1 V no-load, 5.0 ± 0.2 V full load, short-time max. ≥ 700 mA, efficiency ≥ 73 % at 115 and 230 VAC, ripple ≤ 100 mVp-p, over-current protection 110 … 150 %",
+  "8.1 input parts: fuse 1 A/250 VAC slow, varistor 10D561K, X capacitor 0.1 µF/275 VAC, common-mode choke – 'fuse and varistor are basic protective circuits (must be connected)'; 8.2 output: 100 … 220 µF electrolytic for 30 mV ripple",
+  "9.2: insulation voltage I/P–O/P 2500 VAC (3000 VAC in 3. features), > 100 MΩ at 500 VDC",
+  "needs decoupling false on the AC pins: a mains input takes an X capacitor across the line (8.1), not a capacitor to the output's ground",
+  "pins: EasyEDA symbol of C209903 (edakit part import): 1 AC, 2 AC, 3 −VO, 4 +VO; footprint pads 1 and 2 at the AC end, 3 and 4 at the output end – the ESPurna-H Eagle package's AC_L, AC_N, VO−, VO+ at the same places; the AC pins are interchangeable (roles ac_l, ac_n after the schematic)",
+  "behaviour none: the module is the board's 5 V source in the simulation (sim.json sources)"
+ ],
+ "verified": {
+  "by": "Claude (datasheet check, open-design transcription)",
+  "date": "2026-11-03",
+  "datasheet": "Hi-Link 3W ultra small series, V2.5 (2019-10-12)",
+  "datasheet_sha256": "297d7ad75904e582f96f43c21790021bd44c092759825bbe828a4a45cb6805b5",
+  "checked": [
+   "input range AC and DC",
+   "output 5 V ± 0.2 V, 600 mA",
+   "isolation",
+   "recommended input and output parts"
+  ],
+  "open": [
+   "the input range 85 … 265 VAC has no field: the DC range 120 … 350 VDC stands as the AC pins' limit, against which edakit holds the peak of the mains",
+   "no output capacitor value inside the module stated; 8.2 recommends 100 … 220 µF outside"
+  ]
+ }
+}

@@ -5,6 +5,16 @@ the design's) or known gap (edakit judges it wrong, not fixed yet, with the reas
 showed are fixed and listed there under [[fixed]] (tests/test_open_design_fixes.py holds them). The designs stay as
 published; a finding that appears or goes is a change in edakit to look at, not to wave through.
 
+  adafruit-microlipo-usb-c         Adafruit's Micro-Lipo Charger with USB Type C Jack (product 4410), Eagle schematic
+                                   "Adafruit USB C microlipo charger.sch" at commit d8ab4b0 of
+                                   https://github.com/adafruit/Adafruit-MicroLipo-PCB, CC BY-SA 3.0 – an MCP73831
+                                   charging a LiPo on a JST PH socket from USB-C, 100 mA by R_PROG and 555 mA with a
+                                   solder jumper, two status LEDs on STAT
+  atoomnetmarc-adlsc               atoomnetmarc's ADLSC, a WLED controller, KiCad schematic Kicad/ADLSC.kicad_sch
+                                   (V1.0) at commit 3aecf18 of https://github.com/atoomnetmarc/ADLSC, Apache 2.0 – an
+                                   ESP32-DevKitC (WROVER-E) in sockets, a 74AHCT125 shifting the LED data to 5 V, a
+                                   5 V input with a low-side reverse-polarity MOSFET, polyfuse, supervisor and TVS
+                                   diodes, two LED power outputs switched by P-MOSFETs and fused with 3 A glass fuses
   corne-cherry-left                foostan's Corne keyboard v4, left half (corne-cherry hotswap), KiCad schematic
                                    pcbs/common/left.kicad_sch at commit 63366fb of https://github.com/foostan/crkbd,
                                    CC BY 4.0 – an RP2040 board with USB-C, 23 keys each on its own GPIO (no matrix), a
@@ -15,6 +25,10 @@ published; a finding that appears or goes is a change in edakit to look at, not 
   esp32-devkitc-v4                Espressif ESP32-DevKitC V4, schematic Rev V4 (2017-12-06),
                                    https://dl.espressif.com/dl/schematics/esp32_devkitc_v4-sch.pdf – no licence stated;
                                    the circuit's facts transcribed: usb, radio and power in one board
+  espurna-h                        Xose Pérez's ESPurna-H v0.8, Eagle schematic espurna-h/v0.8/espurna-h.sch at commit
+                                   f433874 of https://github.com/xoseperez/espurna-board, CC BY-SA 4.0 – an ESP8266 wall
+                                   switch on mains: an HLK-PM01, a 10 A relay on a 2N7002 with its flyback diode, an
+                                   HLW8012 power monitor whose 0 Ω resistor ties GND to the line
   guitarml-classic-boost           GuitarML's Classic Boost v2 (LPB-1 style), KiCad schematic ClassicBoost_1590a/
                                    ClassicBoost_v2.kicad_sch at commit e2fa7e1 of
                                    https://github.com/GuitarML/GuitarPedalPCBs, MIT – one 2N5088 common-emitter stage,
@@ -26,6 +40,11 @@ published; a finding that appears or goes is a change in edakit to look at, not 
   sparkfun-logic-level-converter   SparkFun Logic Level Converter Bi-Directional, Rev V01 (2013-09-26), CC BY-SA 3.0,
                                    https://cdn.sparkfun.com/datasheets/BreakoutBoards/Logic_Level_Bidirectional.pdf –
                                    four BSS138 channels, both directions simulated
+  whbeers-fuzz-face                whbeers' Random Input, a Dallas Arbiter Fuzz Face re-created, KiCad schematic
+                                   hardware/random_input.kicad_sch at commit 723a89d of
+                                   https://github.com/whbeers/random_input, CC0 1.0 – two NPNs direct-coupled, their
+                                   collector resistors trimmers for the bias the schematic names (TP2 5.0 V), the
+                                   silicon 2N3904 for its unnamed germanium pair, fed at a connector from its IO board
 
 Each design's README names its source and licence, what was transcribed and the parts that stand in for unnamed ones.
 """
@@ -61,7 +80,7 @@ def test_there_are_open_designs():
     assert len(NAMES) >= 3
 
 
-CC = {"CC BY 4.0": "by/4.0", "CC BY-SA 3.0": "by-sa/3.0"}
+CC = {"CC BY 4.0": "by/4.0", "CC BY-SA 3.0": "by-sa/3.0", "CC BY-SA 4.0": "by-sa/4.0"}
 
 
 def licence(name):
@@ -73,8 +92,8 @@ def licence(name):
 
 @pytest.mark.parametrize("name", NAMES)
 def test_a_cc_licensed_design_links_its_licence(name):
-    """CC BY 4.0 (3(a)(1)(C)) and CC BY-SA 3.0 (4(a)) ask for the licence's text or its URI with the material: the
-    README of a design offered under one links it."""
+    """CC BY 4.0 (3(a)(1)(C)), CC BY-SA 3.0 (4(a)) and CC BY-SA 4.0 (3(a)(1)(C)) ask for the licence's text or its
+    URI with the material: the README of a design offered under one links it."""
     text = " ".join((DESIGNS / name / "README.md").read_text(encoding="utf-8").split())
     if licence(name) in CC:
         assert f"https://creativecommons.org/licenses/{CC[licence(name)]}/" in text, f"{name}: no licence URI"
@@ -107,6 +126,14 @@ def test_what_edakit_sim_finds_is_what_is_judged(name, tmp_path):
     out = simrun.run_all(Design.from_config(cfg), engines.load_sim(cfg))
     failed = {(r["id"], r["item"]) for r in out["checks"] if r["result"] in ("fail", "warn")}   # a warning reads warn
     assert failed == {(f["code"], f["place"]) for f in judged(name).get("sim", [])}
+
+
+@pytest.mark.parametrize("name", NAMES)
+def test_every_design_says_why_it_was_chosen(name):
+    """Admission rule 5 (handbook 19.7): the README has a paragraph that starts with **Why this design:** – what the
+    design brings that no reference circuit and no other design covers; handbook 19.5 and the catalog show it."""
+    from edakit.catalog import handbook
+    assert len(handbook.open_design(DESIGNS / name)["why"].split()) >= 12, f"{name}: no Why this design paragraph"
 
 
 @pytest.mark.parametrize("name", NAMES)

@@ -1,0 +1,54 @@
+{
+ "lcsc": "C1019595",
+ "mpn": "ESK225M050AC3AA",
+ "manufacturer": "KEMET",
+ "kind": "capacitor",
+ "package": "radial aluminium electrolytic, D5 × L11 mm, 2 mm lead spacing",
+ "datasheet": {
+  "url": "https://datasheet.lcsc.com/datasheet/pdf/912111109de1da044d091fe7b6fe8722.pdf?productCode=C1019529"
+ },
+ "pins": {
+  "1": {
+   "name": "+",
+   "type": "passive",
+   "role": "plus"
+  },
+  "2": {
+   "name": "-",
+   "type": "passive",
+   "role": "minus"
+  }
+ },
+ "values": {
+  "value_f": 2.2e-06,
+  "dielectric": "electrolytic",
+  "polarized": true,
+  "tolerance": 0.2
+ },
+ "limits": {
+  "v_max_v": 50,
+  "vr_max_v": 0,
+  "t_min_c": -40,
+  "t_max_c": 85
+ },
+ "sources": [
+  "KEMET ESK radial aluminum electrolytic capacitors, +85 °C, A4004_ESK (11/17/2020), LCSC's copy for C1019529 https://datasheet.lcsc.com/datasheet/pdf/912111109de1da044d091fe7b6fe8722.pdf?productCode=C1019529 (the same file LCSC serves for C1581191), read 2026-11-03",
+  "part number system (p. 1): ESK, capacitance code (two figures, the zeros) in pF – 225 = 2.2 µF, M = ±20 %, rated voltage 050 = 50 VDC, A standard, size code, AA bulk; performance characteristics: 6.3 – 100 VDC, ±20 % at 120 Hz, operating temperature −40 … +85 °C; the table of ratings: 50 V, 2.2 µF, 5 × 11 mm, ESK225M050AC3; size code C3: D 5.0 mm, L 11 mm, lead spacing 2.0 mm",
+  "vr_max_v 0: no reverse voltage is rated – 'Verify the correct polarization of the capacitor on the board' (installing); pin 1 the plus: the design's symbol Device:C_Polarized and footprint Capacitor_THT:CP_Radial_D4.0mm_P1.50mm, pad 1 the plus",
+  "JLCPCB catalogue 2026-10-31 (edakit part search): C1019595 ESK225M050AC3AA, Extended Part",
+  "stand-in: the schematic names the value (C2 2u2) and a 4 mm footprint, not a maker – the D5 mm ESK is the open designs' electrolytic (guitarml-ts-rat-combo, whose entry this is); its 2 mm leads in the board's 1.5 mm pads are a matter of the layout, outside these tests"
+ ],
+ "verified": {
+  "by": "Claude (datasheet check, open-design transcription)",
+  "date": "2026-11-03",
+  "datasheet": "KEMET ESK radial aluminum electrolytic capacitors, +85 °C, A4004_ESK (11/17/2020)",
+  "datasheet_sha256": "d1cc9186005605124cb53aa2110430fab4e9368dd3bb1ec8dc4422460b7aec2e",
+  "checked": [
+   "value, voltage and tolerance from the part number",
+   "the table of ratings and the dimensions of size code C3",
+   "performance characteristics",
+   "polarization"
+  ],
+  "open": []
+ }
+}

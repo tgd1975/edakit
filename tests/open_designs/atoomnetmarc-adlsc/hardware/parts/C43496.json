@@ -1,0 +1,67 @@
+{
+ "lcsc": "C43496",
+ "mpn": "MMBT2222LT1G",
+ "manufacturer": "onsemi(安森美)",
+ "kind": "npn",
+ "package": "SOT-23 (case 318, style 6)",
+ "footprint": "SOT-23-3_L2.9-W1.6-P1.90-LS2.8-BR",
+ "jlc_class": "Extended Part",
+ "datasheet": {
+  "url": "https://datasheet.lcsc.com/datasheet/pdf/31cda5e51b6f7e7d91f3d4d349b0313f.pdf?productCode=C43496",
+  "pinout_page": 1
+ },
+ "pins": {
+  "1": {
+   "name": "B",
+   "type": "passive",
+   "role": "base"
+  },
+  "2": {
+   "name": "E",
+   "type": "passive",
+   "role": "emitter"
+  },
+  "3": {
+   "name": "C",
+   "type": "passive",
+   "role": "collector"
+  }
+ },
+ "values": {
+  "hfe_min": 50,
+  "hfe_max": 300,
+  "vce_sat_v": 0.4
+ },
+ "limits": {
+  "ic_max_a": 0.6,
+  "vce_max_v": 30,
+  "veb_max_v": 5,
+  "p_max_w": 0.225,
+  "rth_ja_k_per_w": 556,
+  "tj_max_c": 150
+ },
+ "spice": {
+  "model": ".model MMBT2222 NPN(IS=14f BF=100 VAF=74 IKF=0.28 ISE=14f NE=1.3 BR=6 RB=10 RC=1 CJE=22p CJC=7.3p TF=0.41n TR=47n)"
+ },
+ "sources": [
+  "onsemi MMBT2222L, MMBT2222AL, SMMBT2222AL data sheet MMBT2222LT1/D, Rev. 11 (October 2016) – LCSC product data of C43496, https://datasheet.lcsc.com/datasheet/pdf/31cda5e51b6f7e7d91f3d4d349b0313f.pdf?productCode=C43496, read 2026-11-03 (edakit part fetch)",
+  "p. 1 maximum ratings (MMBT2222L): VCEO 30 V, VCBO 60 V, VEBO 5.0 V, IC 600 mA; PD 225 mW on FR-5, RθJA 556 °C/W; TJ −55 … +150 °C; SOT-23 case 318 style 6: 1 base, 2 emitter, 3 collector",
+  "p. 2 on characteristics (MMBT2222): hFE ≥ 35 / 50 / 75 at 0.1 / 1 / 10 mA, 100 … 300 at 150 mA (VCE 10 V); VCE(sat) ≤ 0.4 V at 150 mA / 15 mA",
+  "hfe_min 50: the minimum at IC = 1 mA, the current of ADLSC's gate driver; hfe_max 300: the maximum at 150 mA (the only maximum given)",
+  "pins: EasyEDA symbol of C43496 (edakit part import) = the data sheet's style 6",
+  "spice: assumption – a generic small-signal NPN, no manufacturer model read; BF = hFE min at 150 mA"
+ ],
+ "notes": "The schematic's 'MMBT2222': onsemi's MMBT2222LT1G (the plain MMBT2222, not the A version). It pulls the gates of Q2 and Q4 low from POWER_ON.",
+ "verified": {
+  "by": "Claude (datasheet check, open-design transcription)",
+  "date": "2026-11-03",
+  "datasheet": "onsemi MMBT2222L, MMBT2222AL, SMMBT2222AL data sheet MMBT2222LT1/D, Rev. 11 (October 2016)",
+  "checked": [
+   "p. 1 ratings and pin-out",
+   "p. 2 hFE, VCE(sat)"
+  ],
+  "open": [
+   "SPICE model is generic, not onsemi's"
+  ]
+ }
+}

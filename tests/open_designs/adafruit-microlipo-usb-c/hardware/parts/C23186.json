@@ -1,0 +1,60 @@
+{
+ "lcsc": "C23186",
+ "mpn": "0603WAF5101T5E",
+ "manufacturer": "UNI-ROYAL(厚声)",
+ "kind": "resistor",
+ "package": "0603",
+ "footprint": "R0603",
+ "jlc_class": "Basic Part",
+ "datasheet": {
+  "url": "https://datasheet.lcsc.com/datasheet/pdf/0a975aaa49b7c97f38a963127be4a823.pdf?productCode=C23186",
+  "pinout_page": null
+ },
+ "pins": {
+  "1": {
+   "name": "1",
+   "type": "passive",
+   "role": "1"
+  },
+  "2": {
+   "name": "2",
+   "type": "passive",
+   "role": "2"
+  }
+ },
+ "values": {
+  "value_ohm": 5100.0,
+  "tolerance": 0.01
+ },
+ "limits": {
+  "p_max_w": 0.1,
+  "v_max_v": 75,
+  "t_min_c": -55,
+  "t_max_c": 155
+ },
+ "spice": {},
+ "compliance": {
+  "rohs": true,
+  "source": "LCSC product data C23186 (isEnvironment), read 2026-11-03"
+ },
+ "sources": [
+  "UNI-ROYAL Thick Film Chip Resistors data sheet V.3 (Feb. 12, 2019, 9 pages), LCSC's copy https://datasheet.lcsc.com/datasheet/pdf/0a975aaa49b7c97f38a963127be4a823.pdf, read 2026-11-03 – one data sheet for the series 01005 … 2512",
+  "part number p. 2: 0603WAF5101T5E = 0603, WA = 1/10 W, F = ±1 %, 5101 = 5.1 kΩ, T = tape and reel, 5 = 5000 pcs, E = lead free",
+  "power p. 4 table 6: 0603 1/10 W at 70 °C, derated above (p. 5 figure 1); ratings p. 5 table 7: 0603 max. working voltage 75 V, max. overload voltage 150 V, operating temperature −55 … 155 °C",
+  "LCSC product data C23186 (2026-11-03): UNI-ROYAL 0603WAF5101T5E, 5.1 kΩ ±1 % 100 mW 0603, 75 V, 15 709 800 pcs; JLCPCB catalogue (edakit part search, 2026-11-03): Basic Part",
+  "pins 1, 2 and the footprint R0603: EasyEDA library data of C25804, https://easyeda.com/api/products/C25804/components?version=6.4.19.5, read 2026-11-03 (edakit part import) – the same series; the library refused C23186 that day (HTTP 403)"
+ ],
+ "verified": {
+  "by": "Claude (datasheet check, open-design transcription)",
+  "date": "2026-11-03",
+  "datasheet": "UNI-ROYAL Thick Film Chip Resistors data sheet V.3 (2019-02-12)",
+  "datasheet_sha256": "11cd644d5d8a34a6d12775afb80bf58d8fc11f0c3b700dbd0f7a59942ceaa5ef",
+  "checked": [
+   "the part number against the numbering system p. 2",
+   "0603: 1/10 W, 75 V, −55 … 155 °C"
+  ],
+  "open": [
+   "the schematic gives 5.1 kΩ in a 0603 footprint without part number or tolerance; this 1 % UNI-ROYAL part stands in – R5 and R6, the CC pull-downs (Rd)"
+  ]
+ }
+}

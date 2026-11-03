@@ -97,7 +97,8 @@ def wire(g, name, *pins, v=(0, 5.5), **extra):
 def resistor(p, key, ohm):
     """A resistor entry `key` of `ohm`, from the library's 10 kΩ (C17414) – for values the library lacks."""
     r = json.loads((LIBRARY / "C17414.json").read_text())
-    r.update(lcsc=key, mpn=f"0805 {ohm:g} Ω (reference circuit)")
+    r.update(lcsc=key, mpn=f"0805 {ohm:g} Ω (reference circuit)", verified={"by": "reference circuit"},
+             sources=["values for the reference circuit, not from a datasheet"])
     r["values"]["value_ohm"] = ohm
     p.save_part(key, r)
 
@@ -394,6 +395,28 @@ def keyboard(p):
 
 REFERENCES = {"motors": motors, "audio": audio, "guitar": guitar, "power": power, "cables": cables, "usb": usb,
               "keyboard": keyboard}
+
+# Why each circuit stands for its domain – handbook 19.4 and the catalog's pages show it (python -m
+# edakit.catalog.handbook --write, docs/catalog/build.py); tests/test_reference.py asks one of every circuit.
+WHY = {
+    "motors": "A small motor switched low-side by a transistor is the motor circuit makers build first. The domain "
+              "exists for what it needs: a flyback diode across the winding and a transistor that carries the "
+              "winding's current.",
+    "audio": "A PWM pin through a low-pass into a class-D amplifier is how a microcontroller board makes sound. It "
+             "holds the bridge-tied outputs, which must not touch ground, and an AC run that finds a filter corner "
+             "in the wrong place.",
+    "guitar": "Every pedal starts with a buffer at the instrument input. It holds the pickup's load, a reference "
+              "inside the op-amp's input range, a bypass that keeps the signal's level, and the corners of the "
+              "signal path in an AC run.",
+    "power": "Cells beside USB on one rail is a common supply of a maker board. It holds the cells' current and the "
+             "diode that keeps the two sources from feeding each other.",
+    "cables": "A button at the end of a lead is the simplest line that leaves the board. It holds the series "
+              "resistor that protects the pin from what the cable brings in.",
+    "usb": "A USB-C receptacle for data is on most new boards. It holds Rd on both CC pins and D+ and D- of both "
+           "rows – a board that misses one works only one way round.",
+    "keyboard": "A key matrix with a diode per key is the circuit of a keyboard. Its rules hold on every board, so it "
+                "stands for no domain but core; it holds the diode per key and its direction.",
+}
 
 
 # --- seeded faults: (what, the change, the codes it must raise – exactly) ----------------------------------------------

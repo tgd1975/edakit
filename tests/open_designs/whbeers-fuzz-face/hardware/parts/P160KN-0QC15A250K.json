@@ -1,0 +1,56 @@
+{
+ "mpn": "P160KN-0QC15A250K",
+ "manufacturer": "TT Electronics",
+ "kind": "potentiometer",
+ "package": "16 mm panel potentiometer, PC pins (P160KN)",
+ "datasheet": {
+  "url": "https://datasheet.lcsc.com/datasheet/pdf/01ead58744deb67a1c53d901897cbb62.pdf?productCode=C6249458",
+  "pinout_page": 3
+ },
+ "pins": {
+  "1": {
+   "name": "1",
+   "type": "passive",
+   "role": "end_a"
+  },
+  "2": {
+   "name": "2",
+   "type": "passive",
+   "role": "wiper"
+  },
+  "3": {
+   "name": "3",
+   "type": "passive",
+   "role": "end_b"
+  }
+ },
+ "values": {
+  "value_ohm": 250000.0,
+  "tolerance": 0.2
+ },
+ "limits": {
+  "p_max_w": 0.1,
+  "t_min_c": -20,
+  "t_max_c": 70
+ },
+ "sources": [
+  "TT Electronics (BI Technologies) P160 Series panel potentiometer, issue C (06/2021), LCSC's copy for C6249458 (P160KNP-0QC20A250K) https://datasheet.lcsc.com/datasheet/pdf/01ead58744deb67a1c53d901897cbb62.pdf?productCode=C6249458, read 2026-11-03 (its tables are images, read from the pages)",
+  "p. 1 ordering scheme: P160, KN = side adjust with PC pins, 0 = no detent, Q-type shaft, C = full-CCW position, shaft length 15, taper A (A = audio), the total resistance 250K; p. 2: resistance range 500 Ω … 1 MΩ – 250K is not among the standard values of p. 3, but TT sells it: the catalogue's P160KNP-0QC20A250K (C6249458, solder lugs, 20 mm shaft)",
+  "p. 2: ±20 % resistance tolerance, power rated 0.2 W (B taper) and 0.1 W (others), operating temperature −20 … +70 °C; p. 3 circuit diagram: CCW end, S (the wiper), CW end – pins 1, 2, 3 as the design's symbol Device:R_Potentiometer_US (2 the wiper)",
+  "stand-in: the schematic names the value and taper (POT3 A250K, 'Volume') and a board-mounted 16 mm footprint (random_input:Potentiometer_Single_3_Horizontal), not a maker – the P160 is the open designs' pot (guitarml-ts-rat-combo)"
+ ],
+ "verified": {
+  "by": "Claude (datasheet check, open-design transcription)",
+  "date": "2026-11-03",
+  "datasheet": "TT Electronics (BI Technologies) P160 Series panel potentiometer, issue C (06/2021)",
+  "datasheet_sha256": "def84d54fae8a991957414ca3a7927b61d0550386abcb65a1a67ad4367f0f164",
+  "checked": [
+   "ordering scheme, resistance range",
+   "electrical specifications"
+  ],
+  "open": [
+   "an order code built by the data sheet's scheme – no LCSC number for the PC-pin version in the catalogue",
+   "250K is no standard value of p. 3"
+  ]
+ }
+}

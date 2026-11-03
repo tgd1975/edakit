@@ -1,0 +1,227 @@
+# What edakit check and edakit sim find on the published ADLSC (atoomnetmarc's WLED controller, V1.0), and how each
+# finding is judged (the words as in esp32-devkitc-v4/findings.toml): real (a point of the design), lacks (a fact the
+# transcription or the datasheets lack), criterion (edakit's own yardstick, not the design's), known gap (edakit
+# judges it wrong, not fixed yet – with the reason). The loads: standby (the LED power off), wled_5a (WLED's current
+# limit of 5 A that the ADLSC README configures, shared by the two outputs) and fuses_3a (each output at its fuse's
+# 3 A). Several points come from one chain: the IRM-60-5's 5 V ± 2.5 %, the supply wires and Q1 in the ground return,
+# and the polyfuse F1 at its 1 Ω after a trip (R1max) in front of everything but the LED outputs.
+
+[[check]]
+code = "DOCS.file"
+place = "edakit.toml"
+judged = "criterion"
+why = "The transcription has no requirements file: what the published design must do stands in its own documents, not in edakit's form. edakit requires the file before a release (handbook 3.6); it is no point of the design."
+
+[[check]]
+code = "LIM.v"
+place = "A1.2"
+judged = "real"
+why = "The MAX809's RESET is push-pull to its own supply, +5V (VOH ≥ 0.8 VCC), and drives the DevKitC's EN through R5 (100 Ω) – a 3.3 V pin of the ESP32 (VIH up to VDD + 0.3 V). Above 3.6 V the pin's protection carries the difference into the 3.3 V rail; an open-drain supervisor or a divider would keep EN at 3.3 V."
+
+[[check]]
+code = "LIM.v"
+place = "D13"
+judged = "real"
+why = "The SMBJ5.0CA on +5V_LED2: its stand-off voltage VR is 5.0 V, the IRM-60-5 delivers up to 5.125 V (5 V ± 2.5 %) – above VR it may leak more than its datasheet's 1.6 mA; it breaks down at 6.4 V at the earliest, so it does not clamp."
+
+[[check]]
+code = "LIM.v"
+place = "D4"
+judged = "real"
+why = "The SMBJ5.0CA across the input, +5V_IN to 0V_IN: its stand-off voltage VR is 5.0 V, the IRM-60-5 delivers up to 5.125 V (5 V ± 2.5 %) – above VR it may leak more than its datasheet's 1.6 mA; it breaks down at 6.4 V at the earliest, so it does not clamp. edakit's extremes add 0V_IN's −0.2 V (Q1's drop in the ground return)."
+
+[[check]]
+code = "LIM.v"
+place = "D5"
+judged = "real"
+why = "The SMBJ5.0CA on +5V: its stand-off voltage VR is 5.0 V, the IRM-60-5 delivers up to 5.125 V (5 V ± 2.5 %) – above VR it may leak more than its datasheet's 1.6 mA; it breaks down at 6.4 V at the earliest, so it does not clamp."
+
+[[check]]
+code = "LIM.v"
+place = "D7"
+judged = "real"
+why = "The SMBJ5.0CA on +5V_LED1: its stand-off voltage VR is 5.0 V, the IRM-60-5 delivers up to 5.125 V (5 V ± 2.5 %) – above VR it may leak more than its datasheet's 1.6 mA; it breaks down at 6.4 V at the earliest, so it does not clamp."
+
+[[check]]
+code = "LVL.undefined"
+place = "Q3"
+judged = "real"
+why = "Q3's base hangs on R21 from GPIO4 alone: while the ESP32 is held in reset (by the MAX809 or the EN button), before WLED configures the pin, or with the DevKitC taken out of its sockets (the README flashes it unplugged), nothing defines it – the LED power then rests on leakage. A 10–100 kΩ from base to emitter would hold it off; the README's test (EN held: the outputs dark) shows it stays off in practice."
+
+[[check]]
+code = "PATH.reverse"
+place = "D1.2"
+judged = "known gap"
+why = "J1's return runs through Q1, the N-MOSFET in the ground return (drain on 0V_IN, source on GND, gate on +5V_IN): wired the wrong way round, its gate sits below its source and its body diode blocks, so the board's ground is cut off and nothing between +5V_IN and GND sees a reversed voltage – the README's own test: reversed, D1 turns red and the board draws about 10 mA. PATH.reverse knows the series diode and the high-side P-MOSFET as blocks (catalog/paths.toml [reverse]), not the low-side N-MOSFET: it walks from J1's pins as if GND were the return. The fix is a block of the catalog's, which this transcription does not change. D1 is the reverse indicator: reversed, it lights through R1 on purpose."
+
+[[check]]
+code = "PATH.reverse"
+place = "D3.1"
+judged = "known gap"
+why = "The low-side reverse protection again (Q1 in the ground return cuts a reversed supply off GND; PATH.reverse does not know it, see D1.2). D3 (F1's indicator) sits between +5V_IN and +5V, both on the plus side."
+
+[[check]]
+code = "PATH.reverse"
+place = "D4.1"
+judged = "known gap"
+why = "The low-side reverse protection again (Q1 in the ground return cuts a reversed supply off GND; PATH.reverse does not know it, see D1.2). D4 sits between J1's two pins and does see the reversed 5 V – harmless for the bidirectional SMBJ5.0CA (VBR ≥ 6.4 V both ways), but the parts schema has no field that says a TVS is bidirectional (values tvs only)."
+
+[[check]]
+code = "PATH.reverse"
+place = "D4.2"
+judged = "known gap"
+why = "The low-side reverse protection again (Q1 in the ground return cuts a reversed supply off GND; PATH.reverse does not know it, see D1.2). As D4.1: the bidirectional TVS across the input blocks the reversed 5 V, which edakit cannot know."
+
+[[check]]
+code = "PATH.reverse"
+place = "D5.1"
+judged = "known gap"
+why = "The low-side reverse protection again (Q1 in the ground return cuts a reversed supply off GND; PATH.reverse does not know it, see D1.2). D5 (+5V to GND) sees nothing reversed with GND cut off."
+
+[[check]]
+code = "PATH.reverse"
+place = "Q1.1"
+judged = "known gap"
+why = "The low-side reverse protection again (Q1 in the ground return cuts a reversed supply off GND; PATH.reverse does not know it, see D1.2). Q1's gate is the blocking device's own: reversed, VGS ≤ 0 holds it off."
+
+[[check]]
+code = "PATH.reverse"
+place = "Q1.2"
+judged = "known gap"
+why = "The low-side reverse protection again (Q1 in the ground return cuts a reversed supply off GND; PATH.reverse does not know it, see D1.2). Q1's drain on 0V_IN is the blocking side: its body diode is reverse biased."
+
+[[check]]
+code = "PATH.reverse"
+place = "Q2.1"
+judged = "known gap"
+why = "The low-side reverse protection again (Q1 in the ground return cuts a reversed supply off GND; PATH.reverse does not know it, see D1.2). Q2 and Q4 switch the LED outputs from +5V_IN: their sources on the plus side see nothing reversed."
+
+[[check]]
+code = "PATH.reverse"
+place = "Q2.2"
+judged = "known gap"
+why = "The low-side reverse protection again (Q1 in the ground return cuts a reversed supply off GND; PATH.reverse does not know it, see D1.2). As Q2.1: a source pin of the LED switch Q2 on the plus side."
+
+[[check]]
+code = "PATH.reverse"
+place = "Q2.3"
+judged = "known gap"
+why = "The low-side reverse protection again (Q1 in the ground return cuts a reversed supply off GND; PATH.reverse does not know it, see D1.2). As Q2.1: a source pin of the LED switch Q2 on the plus side."
+
+[[check]]
+code = "PATH.reverse"
+place = "Q4.1"
+judged = "known gap"
+why = "The low-side reverse protection again (Q1 in the ground return cuts a reversed supply off GND; PATH.reverse does not know it, see D1.2). As Q2.1: a source pin of the LED switch Q4 on the plus side."
+
+[[check]]
+code = "PATH.reverse"
+place = "Q4.2"
+judged = "known gap"
+why = "The low-side reverse protection again (Q1 in the ground return cuts a reversed supply off GND; PATH.reverse does not know it, see D1.2). As Q2.1: a source pin of the LED switch Q4 on the plus side."
+
+[[check]]
+code = "PATH.reverse"
+place = "Q4.3"
+judged = "known gap"
+why = "The low-side reverse protection again (Q1 in the ground return cuts a reversed supply off GND; PATH.reverse does not know it, see D1.2). As Q2.1: a source pin of the LED switch Q4 on the plus side."
+
+[[check]]
+code = "PATH.reverse"
+place = "R1.1"
+judged = "known gap"
+why = "The low-side reverse protection again (Q1 in the ground return cuts a reversed supply off GND; PATH.reverse does not know it, see D1.2). R1 feeds the reverse indicator D1 from +5V_IN."
+
+[[check]]
+code = "PATH.reverse"
+place = "R19.1"
+judged = "known gap"
+why = "The low-side reverse protection again (Q1 in the ground return cuts a reversed supply off GND; PATH.reverse does not know it, see D1.2). R19 is the gate pull-up of Q2 and Q4 from +5V_IN."
+
+[[check]]
+code = "PATH.reverse"
+place = "R2.1"
+judged = "known gap"
+why = "The low-side reverse protection again (Q1 in the ground return cuts a reversed supply off GND; PATH.reverse does not know it, see D1.2). R2 feeds the power LED D2 from +5V_IN."
+
+[[check]]
+code = "PATH.reverse"
+place = "R3.1"
+judged = "known gap"
+why = "The low-side reverse protection again (Q1 in the ground return cuts a reversed supply off GND; PATH.reverse does not know it, see D1.2). R3 feeds F1's indicator D3 from +5V_IN."
+
+[[check]]
+code = "PATH.reverse"
+place = "U1.3"
+judged = "known gap"
+why = "The low-side reverse protection again (Q1 in the ground return cuts a reversed supply off GND; PATH.reverse does not know it, see D1.2). The MAX809's VCC on +5V sees nothing reversed with GND cut off."
+
+[[check]]
+code = "PATH.reverse"
+place = "U2.14"
+judged = "known gap"
+why = "The low-side reverse protection again (Q1 in the ground return cuts a reversed supply off GND; PATH.reverse does not know it, see D1.2). The 74AHCT125's VCC on +5V sees nothing reversed with GND cut off."
+
+[[check]]
+code = "PATH.reverse"
+grade = "polarized"
+place = "C2.1"
+judged = "known gap"
+why = "The low-side reverse protection again (Q1 in the ground return cuts a reversed supply off GND; PATH.reverse does not know it, see D1.2). C2, 470 µF on +5V, is never reverse biased."
+
+[[sim]]
+code = "LIM.i"
+place = "F2"
+judged = "criterion"
+why = "WLED's 5 A over the two outputs puts 2.5 A through each 3 A glass fuse, 83 % of its rating, and the load fuses_3a the full 3 A – beyond edakit's 80 %. The 239 series carries 100 % for 4 hours minimum and is sized so on purpose (README: (10 A − 1 A) / 3); that the rating is the design's own limit is the README's choice."
+
+[[sim]]
+code = "LIM.i"
+place = "F3"
+judged = "criterion"
+why = "As F2: 2.5 A at WLED's limit and 3 A in fuses_3a through the 3 A fuse of the second output, beyond edakit's 80 % of its rating, which the 239 series carries for 4 hours minimum at 100 %."
+
+[[sim]]
+code = "LIM.i"
+place = "Q1"
+judged = "criterion"
+why = "With both outputs at their fuses' 3 A, Q1 in the ground return carries 6.4 A – inside the AOD442's 7 A (IDSM at 25 °C), beyond edakit's 80 % of it; 0.98 W put its junction at 84 °C (LIM.t passes). At WLED's 5 A it passes."
+
+[[sim]]
+code = "LIM.range"
+place = "A1"
+judged = "real"
+why = "The DevKitC's 5V pin gets 3.9–4.2 V: the polyfuse F1 at its 1 Ω after a trip (R1max), the SS34 and – with the LEDs lit – the supply wires and Q1 in the ground return. With the AMS1117's 1.3 V maximum dropout the WROVER-E would see less than its 3.0 V; vin_min_v 4.3 V is derived from both (entry C20437001). With F1 at its 0.15 Ω and a typical dropout it works – a worst case, not the typical board."
+
+[[sim]]
+code = "LIM.range"
+place = "U2"
+judged = "real"
+why = "+5V sags to 4.23–4.49 V with the LEDs lit: the supply wires and Q1 lift GND by 0.2–0.3 V, F1 at its R1max drops 0.36 V – the 74AHCT125 leaves its 4.5 V minimum. The same +5V reaches the MAX809's own threshold (4.27–4.49 V): in the worst case the supervisor resets the ESP32 as the LEDs come on. The polyfuse in front of the 5 V logic is the cause."
+
+[[sim]]
+code = "LIM.v"
+place = "D1"
+judged = "real"
+why = "The reverse-polarity LED D1 sits across the input the other way round in normal operation: 5.0–5.1 V reverse at the IRM-60-5's upper tolerance, against the LED's 5 V VR (NCD0805R1, which stands in for the schematic's 'Red')."
+
+[[sim]]
+code = "SIM.state"
+place = "D12"
+judged = "criterion"
+why = "D12 – LED output 2's indicator, 10 kΩ from +5V_LED2 – gets 0.2 mA, below edakit's 1 mA for an LED that is on. The 10 kΩ dim it on purpose: the README tests it as lit ('D2 green is on', 'D6 and D12 will get brighter')."
+
+[[sim]]
+code = "SIM.state"
+place = "D2"
+judged = "criterion"
+why = "D2 – the power LED, 10 kΩ from +5V_IN – gets 0.2 mA, below edakit's 1 mA for an LED that is on. The 10 kΩ dim it on purpose: the README tests it as lit ('D2 green is on', 'D6 and D12 will get brighter')."
+
+[[sim]]
+code = "SIM.state"
+place = "D6"
+judged = "criterion"
+why = "D6 – LED output 1's indicator, 10 kΩ from +5V_LED1 – gets 0.2 mA, below edakit's 1 mA for an LED that is on. The 10 kΩ dim it on purpose: the README tests it as lit ('D2 green is on', 'D6 and D12 will get brighter')."
+
+[[fixed]]
+what = "The gate of the reverse-polarity N-MOSFET in the ground return, tied straight to the net the supply comes in on (Q1 on +5V_IN), taken as floating (LVL.undefined on Q1)."

@@ -6,7 +6,8 @@ die potentiellen Anwender, dass das wirklich im besten Fall ein Auftrag und ein 
 sind"). Written against main at `ae2b400`. A prototype of page, parser and styles is in
 [prototypes/session-chat](prototypes/session-chat/README.md). Decided the same day in a decision round in Claude
 Code's form (the table at the end): decisions 1, 2, 3 and 5 as recommended; decision 4, the format, and what Claude
-set itself are open. Nothing built on the site: every step starts on the owner's word.
+set itself left to Claude by the owner the same day ("du wirst für beide eine gute Idee haben") – taken as
+recommended. Nothing built on the site: every step starts on the owner's word.
 
 ## Why
 
@@ -183,10 +184,10 @@ Taken by the owner on 2026-11-03 in a decision round in Claude Code's form, the 
 | 1 | Where | a page "A session" in Start, six lines of it on the start page, How it works' round as a fence | only on the start page; only the page; inside the steps pages | 2026-11-03: as recommended |
 | 2 | Which session | the walkthrough's board from the first sentence to the cart | the circuit only (steps 2–7); two chats, a short circuit and a long board | 2026-11-03: as recommended |
 | 3 | Where the lines come from | the example's record, shortened, held by a test; a live run checks it once (S.6) | a recorded session, cut; the record alone, no live run | 2026-11-03: as recommended |
-| 4 | The format | a `chat` fence, turned into HTML by `docs/pages.py`, plain text on GitHub | HTML bubbles in the Markdown; screenshots | open |
+| 4 | The format | a `chat` fence, turned into HTML by `docs/pages.py`, plain text on GitHub | HTML bubbles in the Markdown; screenshots | 2026-11-03: left to Claude by the owner; as recommended |
 | 5 | What is not chat | in the chat as "outside the chat", with the tally | left out for a shorter page; in a list under the chat | 2026-11-03: as recommended |
 
-Set by Claude, open for confirmation together with decision 4: the seven kinds of entry; the layout of section 4; the tally's wording; the page's
+Set by Claude and left to it by the owner on 2026-11-03, kept as it stands: the seven kinds of entry; the layout of section 4; the tally's wording; the page's
 name "A session" and its place after the start page; the budget of 1,000 words; no decision numbers in the chat.
 
 ## Sources
