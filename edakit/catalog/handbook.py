@@ -21,6 +21,7 @@ from __future__ import annotations
 
 import re
 import sys
+from html import escape
 from pathlib import Path
 
 from . import codes, old_map
@@ -177,13 +178,21 @@ def counted(counts):
     return ", ".join(f"{n} {j}" for j, n in counts.items() if n) or "none"
 
 
+def thumbnail(page, drawing, alt):
+    """A small picture of a drawing, linked to its catalog page: right of the entry on GitHub (align, width) and on the
+    site (docs/brand/edakit.css, .edakit-thumb) – the reader sees that a drawing is there before reading the line."""
+    return (f'<a href="../docs/catalog/{page}"><img class="edakit-thumb" src="../docs/catalog/circuits/{drawing}" '
+            f'alt="{escape(alt)}" width="140" align="right" loading="lazy"></a>')
+
+
 def references_section():
     """Each reference circuit: its domain, what it is, why, and its seeded faults with the codes each raises."""
     from .. import profile
     ref, out = reference(), []
     for name, build in ref.REFERENCES.items():
         domain = f"domain `{name}`" if name in profile.names() else "no domain – core, on every board"
-        out.append(f"**{name}** – {domain} · [drawing and faults](../docs/catalog/circuit-{name}.html)  ")
+        out.append(thumbnail(f"circuit-{name}.html", f"{name}.svg", f"The drawing of {name}")
+                   + f"**{name}** – {domain} · [drawing and faults](../docs/catalog/circuit-{name}.html)  ")
         out.append(" ".join((build.__doc__ or "").split()) + "  ")
         out.append(f"*Why:* {ref.WHY[name]}")
         out.append("")
@@ -198,7 +207,8 @@ def designs_section():
     out = []
     for d in open_designs():
         licence = d["licence"] or "no licence stated – only the circuit's facts transcribed"
-        out.append(f"**{d['title']}** (`{d['name']}`) – {licence} · "
+        out.append(thumbnail(f"open-{d['name']}.html", f"open-{d['name']}.svg", f"The drawing of {d['title']}")
+                   + f"**{d['title']}** (`{d['name']}`) – {licence} · "
                    f"[drawing and findings](../docs/catalog/open-{d['name']}.html)  ")
         out.append(f"*Why:* {d['why']}  ")
         out.append(f"Findings judged: {counted(d['counts'])}; false alarms fixed: {d['fixed']}.")

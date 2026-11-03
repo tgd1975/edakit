@@ -166,6 +166,7 @@ The fields are the same in both forms; the table writes them as the JSON does (`
 | net `instrument`, `load_min_ohm` | an instrument comes in on the net – `"pickup"` or `"piezo"` – and the least load it wants (`1e6` for 1 MΩ, from the instrument's data): REQ.value/instrument holds the resistors and the inputs' `z_in_ohm` on it in parallel to it; the net suggests the domain guitar |
 | net `signal` | `true`: the net is part of an analog signal path (audio, an effect, a measurement): in the simulation a switch, relay contact or pot whose sides are both on such nets – or on an `instrument` net – keeps them at one DC level, within 10 mV in every scenario (REQ.value/switch) |
 | net `isolated` | `true` on a net of a loop of its own – a MIDI-in loop, the far side of an optocoupler: its range `v` is that loop's, not against the board's ground; LIM.v holds a pin there to it only where its part has a ground pin on an isolated net too, and the simulation does not compare the net with its range (LIM.declared) |
+| net `ac` | `true` on a net that carries a sine around 0 V – the mains, its divider's taps: its `v` is the peaks (230 V + 10 %: `[-358, 358]`). AC nets move together, one source in phase: LIM.v holds a part or pin with an AC rating (`v_rms_max_v`, 4.1) there to the rms, peak / √2, in place of its DC rating, and a resistor or varistor between two AC nets to the difference of their like ends |
 | net `matrix` | `"row"` or `"col"` of a key matrix: every key reaches the other side through a diode, all diodes the same way (REQ.missing/matrix, REQ.forbidden/matrix) |
 | net `pwm_hz` | the PWM frequency of a net with `fn: "pwm"` – a number, or `[min, max]` for one that changes (a buzzer playing notes): two PWM nets on one slice need the same fixed frequency (REQ.function) |
 | net `clock_hz` | the clock a bus runs at, on its clock line – `fn: "spi.sck"` or an I2C SCL line: at most the highest clock of every device on it (limits `f_sck_max_hz`, `f_scl_max_hz`) and, on I2C, the speed its pull-ups allow with the bus capacitance known (LIM.range/clock); the firmware contract carries it (3.5, `bus_speed`) |
@@ -285,7 +286,7 @@ simulation's values in stage E as well (the simulation's checks, 5.3); the hints
 | [`STRUCT.identity`](../docs/catalog/struct.html#STRUCT.identity) | graph and entry name the same part | error; replaces P-6 |
 | [`STRUCT.prefix`](../docs/catalog/struct.html#STRUCT.prefix) | designator prefix fits the kind | warning; replaces P-6 |
 | [`LIM.v`](../docs/catalog/lim.html#LIM.v) | voltage within its limit | error, polarized: warning, inject: warning, powered: warning, order: warning; replaces G-3, G-8, E-2, E-5 |
-| [`LIM.hazardous`](../docs/catalog/lim.html#LIM.hazardous) | hazardous voltage recognised, not checked | error |
+| [`LIM.hazardous`](../docs/catalog/lim.html#LIM.hazardous) | hazardous voltage recognised, not checked | error, ground: error |
 | [`LIM.i`](../docs/catalog/lim.html#LIM.i) | current within its limit | error, margin: warning, cell: warning, supply_pin: warning, charge: warning, pin: warning, switching: warning, cc: warning, strip: warning, cable: warning; replaces G-17, E-2, E-3, E-5 |
 | [`LIM.p`](../docs/catalog/lim.html#LIM.p) | power within its limit | error; replaces E-2 |
 | [`LIM.t`](../docs/catalog/lim.html#LIM.t) | temperature within its limit | error; replaces E-2, E-3 |
@@ -363,10 +364,9 @@ The same list names what the simulation does not model over time (5.1): a charge
 with the hint that names the risk, and end the one line (`…; not simulated over time: U3 (charger), U4 (protection) –
 edakit check --coverage`). These gaps stay: decision 17 of rules-at-scale.md gives such behaviour no state model.
 
-The list also names every cable without `i_max_a` that carries current in the simulation (decision 22). A wire's
-rating comes from the wire's own datasheet, none from its gauge. What would pass unseen is a wire that heats while its
-voltage drop and its connectors pass – 12–24 V at amperes, short thin leads, a thin wire in a contact rated for a
-thicker one.
+The list also names every cable without `i_max_a` that carries current in the simulation (decision 22). A wire's rating
+comes from its own datasheet, none from its gauge. What would pass unseen is a wire that heats while its voltage drop
+and its connectors pass – 12–24 V at amperes, short thin leads, a thin wire in a contact rated for a thicker one.
 
 The line gives the cable's highest current over the scenarios, its wire and scenario, and the loss it causes in a metre
 of the wire, I² × R of the wire's copper – a number, no verdict, no threshold. An example: `LIM.i: cable W1 – no i_max_a

@@ -4,11 +4,11 @@
 # the reason). tests/test_open_designs.py holds the sets.
 #
 # The mains side is recognised, not checked (rules-at-scale.md, decision 7): LIM.hazardous names the seven nets above
-# the ES1 limit, and edakit measures neither spacing nor isolation. What edakit does not see at all: R42 (0 Ω) ties
-# GND to the line, as the HLW8012 requires – every net of the low-voltage side, the ESP-12F and the headers JP21 and
-# JP22 included, sits at mains potential against earth. edakit's ranges are against the board's own GND, so none of
-# them is hazardous to it; the ESPurna README warns never to connect the board's ground to a computer while it is on
-# mains. Neither does edakit see that the S10K250's 250 V rms rating is below 230 V + 10 % (no kind for a varistor).
+# the ES1 limit and – grade ground – GND tied to the line by R42 (0 Ω), as the HLW8012 requires: every net of the
+# low-voltage side, the ESP-12F and the headers JP21 and JP22 included, sits at mains potential against earth, while
+# edakit's ranges are against GND. edakit measures neither spacing nor isolation; the ESPurna README warns never to
+# connect the board's ground to a computer while it is on mains. The mains nets are AC nets (net ac): the terminals,
+# the module's input and the varistor are held to their AC ratings.
 # The low-voltage side is checked: the relay pulls in (4.65 V on the coil at the 2N7002's highest threshold, 3.75 V
 # needed) and releases, D3 sits across the coil, the AMS1117 holds 3.3 V at the ESP-12F's 0.5 A, the HLW8012's 5 V
 # pulses reach the ESP's inputs at 2.84 V or more through R45/R46 and R47/R48, SEL switches through Q4.
@@ -20,6 +20,13 @@ code = "DOCS.file"
 place = "edakit.toml"
 judged = "criterion"
 why = "The transcription has no requirements file: what the published design must do stands in its own documents, not in edakit's form. edakit requires the file before a release (handbook 3.6); it is no point of the design."
+
+[[check]]
+code = "LIM.hazardous"
+grade = "ground"
+place = "GND"
+judged = "real"
+why = "R42 (0 Ω) ties GND to the line behind the shunt R41, as the HLW8012 requires: the ESP-12F, the AMS1117 and the headers JP21 and JP22 – the programming port and the external button – sit at mains potential against earth. edakit holds every range against GND, so none of the low-voltage nets reads hazardous; the ESPurna README warns never to connect the board's ground to a computer while it is on mains. Recognised, not checked."
 
 [[check]]
 code = "LIM.hazardous"
@@ -65,57 +72,15 @@ why = "The divider's last tap before V2P, 72 V peak – still above ES1's 60 V. 
 
 [[check]]
 code = "LIM.v"
-place = "JP2"
-judged = "known gap"
-why = "The KF301-5.0 is rated 300 V AC rms (UL; its body is marked 300VAC); 230 V + 10 % is 253 V rms, within it. edakit knows no AC net: it holds the declared peak, 358 V, against the rating as if both were DC. The fix needs AC ratings and AC nets (an rms value beside the peak) – no small change; mains stays unchecked by decision 7."
-
-[[check]]
-code = "LIM.v"
-place = "JP42"
-judged = "known gap"
-why = "As JP2: 253 V rms at the line and load terminals against the KF301's 300 V rms rating fits; edakit compares the 358 V peak with the rms rating."
-
-[[check]]
-code = "LIM.v"
-place = "R51"
-judged = "known gap"
-why = "edakit holds a resistor to the highest voltage of its nets against GND (358 V at neutral), not to the voltage across it: the five 470 kΩ of the chain share the mains, 72 V peak (51 V rms) each, well inside the 0805's 150 V working voltage (DC or rms). A declared range cannot say that the chain's taps move together; the voltage across needs the simulation of an AC source or AC nets – no small change."
-
-[[check]]
-code = "LIM.v"
-place = "R52"
-judged = "known gap"
-why = "As R51: its tap V2P_D1 reaches 286 V against GND, the resistor itself sees a fifth of the mains, 72 V peak."
-
-[[check]]
-code = "LIM.v"
-place = "R53"
-judged = "known gap"
-why = "As R51: its tap V2P_D2 reaches 215 V against GND, the resistor itself 72 V peak. R54 and R55 (143 V and 72 V at their taps) pass by the same reading."
-
-[[check]]
-code = "LIM.v"
-place = "U$1.2"
-judged = "known gap"
-why = "The HLK-PM01's AC input is rated 85 … 265 V AC rms or 120 … 350 V DC; its parts entry can only state the DC range as the pin's limit. edakit holds neutral's ±358 V peak against ±350 V, while 253 V rms is within the module's AC range (375 V peak). AC ratings have no field – no small change."
+place = "V11"
+judged = "real"
+why = "The S10K250 across the module's input is rated 250 V AC (VRMS, TDK SIOV StandarD series) – its maximum continuous voltage; 230 V + 10 % (EN 50160) is 253 V rms, and edakit's extremes add the line's volt through the fuses: 254 V. A varistor run above its VRMS leaks more and ages; the 275 V types are the usual ones on 230 V mains, and the ESPurna README's own bill of materials names a 270 V varistor."
 
 [[check]]
 code = "LVL.undefined"
 place = "Q4"
 judged = "real"
 why = "Q4's gate hangs on GPIO5 alone, without a pull-down: until the firmware drives GPIO5, SEL is undefined and CF1 may give either quantity. Harmless – the firmware sets SEL before it reads CF1 – but the gate floats, unlike Q3's with R32."
-
-[[check]]
-code = "PATH.unfed"
-place = "U$1.1"
-judged = "known gap"
-why = "The module's AC input is fed from the mains terminals JP42 (line, through F1 and F2) and JP2 (neutral). edakit knows no mains supply: a connector feeds a net only with a vbus role, a battery or a simulation source (catalog/paths.toml [supply]), or marked reversible – which sends PATH.reverse through the whole mains side. A supply role for a mains terminal would close it."
-
-[[check]]
-code = "PATH.unfed"
-place = "U$1.2"
-judged = "known gap"
-why = "As U$1.1, on neutral: fed by the terminal JP2, which edakit cannot name as a mains supply."
 
 [[check]]
 code = "REQ.missing"
@@ -143,5 +108,13 @@ place = "Q4"
 judged = "known gap"
 why = "LIM.range/gate (CK-4) finds Q4 half on at VGS 3.3 V. It only pulls SEL low through R49 (0.5 mA): even the part at its highest threshold holds SEL below 1 mV. The rule does not weigh the current, so it warns where nothing burns – as on the SparkFun converter's BSS138."
 
+[[fixed]]
+what = "GND tied to the line by R42 unseen: edakit holds every voltage against the board's ground, so the low-voltage side looked safe. LIM.hazardous/ground names a ground joined to a mains terminal's line or neutral (TD-131)."
+[[fixed]]
+what = "The module's AC input taken as fed by nothing (PATH.unfed on U$1.1, U$1.2): a connector fed a net only with a vbus role, and marking the terminals reversible would have sent PATH.reverse across the mains side. A connector pin of role line or neutral is a supply input now – JP42.3 and JP2 say so (TD-130)."
+[[fixed]]
+what = "The S10K250 (V11) unchecked: edakit had no kind for a varistor, and the transcription entered it as kind ic with behaviour none. The kind varistor holds its VRMS (v_rms_max_v) on AC nets and its VDC (v_max_v) on DC ones – and finds it below 230 V + 10 % (TD-128)."
+[[fixed]]
+what = "The mains held as DC: the KF301 terminals' 300 V AC rating and the HLK-PM01's 85 … 265 V AC input against the 358 V peak, and each divider resistor to the highest voltage of its nets against GND (LIM.v on JP2, JP42, U$1.2, R51 to R53). The mains nets are marked ac now, the AC ratings are v_rms_max_v and hold the rms there, and a resistor between two AC nets sees the difference of their like ends – 72 V peak for each of the five (TD-129)."
 [[fixed]]
 what = "A need on a regulator's VOUT pin left open while its tab, the same terminal, carries the output: taken as not connected (REQ.missing on IC1.2) instead of judged on the output (REQ.value on IC1.4)."

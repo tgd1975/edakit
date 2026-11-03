@@ -53,7 +53,8 @@ Each result with date, instrument and conditions – they become `sources`.
 `hardware/parts/<name>.json`, the name short and stable – the component names it in `part`:
 
 - `mpn` = the name, `manufacturer` ("own" or who made it), `kind` (`module` for a board), and
-  `own`: `{"what": "pcb" | "bin" | "handmade", "notes": "where it comes from"}` – SYNC.source knows these three
+  `own`: `{"what": "pcb" | "bin" | "handmade", "notes": "where it comes from"}` – SYNC.source knows these three and
+  `copper`, the board's own copper (a solder jumper, a test pad), which needs no measurement and no sign-off notes
 - `pins`: `name`, `type`, `role`, `v_max_v`, `pull`/`pull_ohm` (handbook 4.1 – the types decide LIM.v, LVL and REQ)
 - `values`: behaviour `current` with `i_a`, the largest measured current – the simulation draws it from the supply
   pin

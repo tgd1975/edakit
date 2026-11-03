@@ -21,6 +21,8 @@
     edakit stock [--refresh]         what JLCPCB says about the assembled parts, as a dated snapshot (check PARTS.stock)
     edakit cost [--json F]           the order for `quantity` boards from BOM, board and the dated fee table
     edakit order [--out DIR]         the assembler's BOM, a cart per other supplier, the hand-assembly list (PARTS.supplier)
+    edakit inventory [QUERY ...]     your parts on hand (edakit.local.toml) against the hand-soldered parts; QUERY: rows;
+                                     template FILE: a new empty inventory as .md, .xlsx or .ods
     edakit order check               the supplier's cart as the skill cart read it back, against the basket (ORDER.basket)
     edakit cart fields|prepare|check|confirm|actual   the order at the maker: its form from [order], the job of the skill
                                      cart, ORDER.form to ORDER.review on what it brought back, the maker's confirmations
@@ -254,6 +256,13 @@ def build_parser(dsl=False):
     p.add_argument("--supplier", help="check: the supplier whose cart is checked (default: lcsc)")
     p.add_argument("--with", dest="with_", action="append", metavar="CONFIG",
                    help="another project's edakit.toml whose carts go into the same files (several times)")
+    _common(p)
+
+    p = sub.add_parser("inventory", help="your parts on hand, named in edakit.local.toml: the project's hand-soldered "
+                                         "parts and extras against them; QUERY: the rows holding every word; template "
+                                         "FILE: a new empty inventory (.md, .xlsx, .ods)")
+    p.add_argument("words", nargs="*", metavar="QUERY", help="words a row's ID, name or description holds – or "
+                                                             "template FILE")
     _common(p)
 
     p = sub.add_parser("cart", help="the order at the maker: the form's fields, the job of the skill cart, its check, "
@@ -528,6 +537,9 @@ def _main(argv=None):
     if args.command == "order":
         from . import order
         return order.main(cfg, args)
+    if args.command == "inventory":
+        from . import inventory
+        return inventory.main(cfg, args)
     if args.command == "cart":
         from . import cart
         return cart.main(cfg, args)

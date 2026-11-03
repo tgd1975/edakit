@@ -5,8 +5,9 @@ read.
 
 ## What you do
 
-Start each reviewer in a session of its own when Claude asks for it. The session that designed does not review. Each
-reviewer is an [agent](../glossary.md#agent) of the plugin and changes no file. Five checks are signed, by a reviewer or by you:
+Nothing to start: Claude starts each reviewer itself, in a context of its own. The session that designed does
+not review. Each reviewer is an [agent](../glossary.md#agent) of the plugin and changes no file. Five checks are
+signed, by a reviewer or by you:
 
 | Check | What | Who |
 | --- | --- | --- |

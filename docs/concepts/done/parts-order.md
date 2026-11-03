@@ -1,9 +1,11 @@
 # The parts order: LCSC's cart, several projects in one, shipped with the boards
 
-Status 2026-11-02: decided the same day in a decision round in Claude Code's form – decisions 1 to 3 as recommended,
-5 against the recommendation (the skill enters the warehouse address), 4 decided by Claude and confirmed. Each step
-starts on the owner's word: step 1 merged (#203); steps 2 and 3 built on the owner's word the same day, branch
-`parts-order-lcsc` – their live run waits for the next parts order.
+Status 2026-11-03: done – decided on 2026-11-02 in a decision round in Claude Code's form (decisions 1 to 3 as
+recommended, 5 against the recommendation – the skill enters the warehouse address –, 4 decided by Claude and
+confirmed) and built: step 1 merged (#203), steps 2 and 3 merged as edakit 1.1.5 (#265). The live run of the skill
+cart's mode `parts` ran on 2026-11-03 – four projects, 23 lines, nothing ordered – and recorded
+`edakit/suppliers/lcsc.toml` (#310); left is the live run of `combine` at the next JLCPCB order with LCSC lines –
+TODO.md TD-144.
 
 ## Why
 

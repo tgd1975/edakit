@@ -156,6 +156,10 @@ def problems(entry):
     if modes is not None and not (isinstance(modes, list) and modes and len(set(modes)) == len(modes)
                                   and all(isinstance(m, int) and not isinstance(m, bool) and 0 <= m <= 3 for m in modes)):
         out.append(f"values.spi_modes: a list of the SPI modes 0–3 (CPOL × 2 + CPHA) the part runs in, not {modes!r}")
+    tvs = (entry.get("values") or {}).get("tvs")
+    if tvs is not None and tvs not in (True, False, "bidirectional"):
+        out.append(f"values.tvs: true for a TVS diode, \"bidirectional\" for one that blocks both ways (the CA "
+                   f"suffix), not {tvs!r}")
     pos = (entry.get("values") or {}).get("positions")
     if pos is not None and not (isinstance(pos, int) and not isinstance(pos, bool) and pos >= 1):
         out.append(f"values.positions: the number of switches of the DIP switch, a whole number ≥ 1, not {pos!r}")

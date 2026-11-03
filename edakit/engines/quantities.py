@@ -9,10 +9,11 @@ simulation's are in sim.py. LIMITS (limits.py) joins the two.
 
 from __future__ import annotations
 
+import math
 from dataclasses import dataclass, field
 
 from ..catalog import table
-from ..circuit import ACTIVE_TYPES, hold_current, limits, polarized, series_nets, v_range, values
+from ..circuit import ACTIVE_TYPES, hold_current, is_number, limits, polarized, series_nets, v_range, values
 
 UNITS = {"V": "v", "A": "a", "W": "w", "°C": "c", "dBm": "dbm"}
 FACTOR = table("derating")["G"]["factor"]          # stage G: value × factor ≤ limit
@@ -20,6 +21,7 @@ SIM_EPS_V = 1e-6                 # stage E: a voltage within 1 µV of its limit 
 NEGATIVE_SUPPLY_ROLES = {"vee", "v_minus", "vneg"}   # a negative rail's supply pin: held to its own range, not to
                                                      # the floor of an active signal pin
 PIN_MIN_V = table("derating")["pin"]["v_min_v"]     # an active pin below this conducts through its protection
+RMS = 1 / math.sqrt(2)                               # an AC net's rms over its peak: a sine (net key ac)
 
 
 @dataclass
@@ -134,6 +136,13 @@ def pin_voltages(d):
                 glo, ghi = v_range(d.nets[g])
                 plo, phi = lo - glo, hi - ghi
                 how += f", against {g} ({glo:g}…{ghi:g} V), the part's own ground"
+            if net.get("ac") and is_number(info.get("v_rms_max_v")):    # an AC rating: the rms, not the DC range
+                rms = max(abs(plo), abs(phi)) * RMS
+                out.append(Quantity(ref, "v_rms", rms, entry=entry, pin=num, pin_type=info.get("type", ""),
+                                    how=f"{name} {rms:.0f} V rms at {pin}", on=(("net", name),),
+                                    say=lambda v, lim, f, name=name, pin=pin: f"{name} up to {v:.0f} V rms, but {pin} "
+                                                                              f"allows {lim:g} V rms"))
+                continue
             out.append(Quantity(ref, "v", phi, lo=plo, entry=entry, pin=num,
                                 pin_type=info.get("type", ""), how=how, on=(("net", name),),
                                 say=lambda v, lim, f, name=name, pin=pin, g=g: (
@@ -150,7 +159,7 @@ def pin_voltages(d):
 
 
 # kind -> [(quantity name, how to read it)]: the voltages a part's declared nets put on it
-ACROSS = {"capacitor": [("v", "across")], "diode": [("vr", "reverse")], "npn": [("vce", "collector-emitter")],
+ACROSS = {"capacitor": [("v", "across")], "varistor": [("v", "across")], "diode": [("vr", "reverse")], "npn": [("vce", "collector-emitter")],
           "pnp": [("vce", "collector-emitter")], "nmos": [("vds", "drain-source"), ("vgs", "gate-source")],
           "pmos": [("vds", "drain-source"), ("vgs", "gate-source")],
           "njfet": [("vds", "drain-source"), ("vdg", "drain-gate"), ("vgs", "gate-source")],
@@ -167,11 +176,19 @@ def coupling(d, *nets):
     return any((d.nets.get(n) or {}).get(k) for n in nets for k in ("signal", "instrument"))
 
 
+def ac(d, *nets):
+    """Whether one of `nets` is an AC net (net key ac): a sine around 0 V, its declared range its peaks. AC nets move
+    together – one source, in phase –, so a part between two of them sees the difference of their like ends."""
+    return any((d.nets.get(n) or {}).get("ac") for n in nets if n)
+
+
 def part_voltages(d):
-    """The voltages every part sees from the declared ranges of its nets: across a capacitor – a coupling capacitor,
-    both sides on nets marked signal or instrument, the larger difference of the ranges' like ends: its sides carry
-    the same signal –, reverse across a diode – a TVS (values tvs) against its working voltage without the derating
-    factor –, VCE, VDS and VGS, and on a passive part the highest voltage of any of its nets."""
+    """The voltages every part sees from the declared ranges of its nets: across a capacitor or a varistor – a
+    coupling capacitor, both sides on nets marked signal or instrument, or a part between two AC nets, the larger
+    difference of the ranges' like ends: its sides carry the same signal –, reverse across a diode – a TVS (values tvs) against its working voltage without the derating
+    factor, a bidirectional one in either direction –, VCE, VDS and VGS, and on a passive part the highest voltage of any of its nets –
+    across a resistor between two AC nets the difference of their like ends. A part on an AC net with an AC rating
+    (v_rms_max_v) is held to the rms of what it sees, a sine's peak / √2, and not to its DC rating."""
     out = []
 
     def rng(net):
@@ -193,13 +210,17 @@ def part_voltages(d):
         nets = [d.pin_net.get(f"{des}.{p}") for p in part["pins"]]
         for name, what in ACROSS.get(kind, []):
             if what == "across":
-                both = kind == "capacitor" and all(coupling(d, n) for n in nets[:2])
+                both = (kind == "capacitor" and all(coupling(d, n) for n in nets[:2])) or (
+                    len(set(nets[:2]) - {None}) == 2 and all(ac(d, n) for n in nets[:2]))
                 v = (along if both else across)(*nets[:2])
                 how = f"{des}: across its pins"
-                say = (lambda v, lim, f, des=des: f"{des}: up to {v:.1f} V, rated {lim:g} V (needs ×{f:g})")
+                say = (lambda v, lim, f, des=des: f"{des}: up to {v:.1f} V, rated {lim:g} V"
+                       + (f" (needs ×{f:g})" if f != 1 else ""))
             elif what == "reverse":
                 a, k = d.net_of(des, "anode"), d.net_of(des, "cathode")
                 v, how = rng(k)[1] - rng(a)[0], f"{des}: reverse from {k} to {a}"
+                if values(part).get("tvs") == "bidirectional" and rng(a)[1] - rng(k)[0] > v:   # blocks both ways
+                    v, how = rng(a)[1] - rng(k)[0], f"{des}: reverse from {a} to {k}"
                 if values(part).get("tvs"):    # a TVS: vr_max_v is its working voltage VRWM, no margin on top
                     out.append(Quantity(des, name, v, kind="tvs", entry=key, how=how, on=on,
                                         say=lambda v, lim, f, des=des: f"{des}: reverse up to {v:.1f} V, working "
@@ -229,10 +250,27 @@ def part_voltages(d):
                                 how=f"{des}: reverse from {minus} to {plus}", on=on,
                                 say=lambda v, lim, f, des=des: f"{des}: reverse up to {v:.1f} V, allowed {lim:g} V"))
         if kind in PASSIVE:
-            v = max((abs(x) for n in nets if n for x in rng(n)), default=0)
-            out.append(Quantity(des, "v", v, kind=kind, entry=key, how=f"{des}: its nets up to", on=on,
-                                say=lambda v, lim, f, des=des: f"{des}: nets up to {v:.1f} V, rated {lim:g} V"))
+            if kind in ("resistor", "potentiometer") and len(set(nets) - {None}) >= 2 and all(ac(d, n) for n in nets):
+                v = max(along(a, b) for a in nets for b in nets if a and b and a != b)     # a divider on the mains
+                out.append(Quantity(des, "v", v, kind=kind, entry=key, how=f"{des}: across its AC nets", on=on,
+                                    say=lambda v, lim, f, des=des: f"{des}: up to {v:.1f} V across it, rated {lim:g} V"))
+            else:
+                v = max((abs(x) for n in nets if n for x in rng(n)), default=0)
+                out.append(Quantity(des, "v", v, kind=kind, entry=key, how=f"{des}: its nets up to", on=on,
+                                    say=lambda v, lim, f, des=des: f"{des}: nets up to {v:.1f} V, rated {lim:g} V"))
+        if is_number(limits(part).get("v_rms_max_v")) and ac(d, *nets):
+            out = rms(out, des)
     return out
+
+
+def rms(out, des):
+    """The voltage quantities of `des` on an AC net, held to its AC rating: each "v" as "v_rms", the peak / √2."""
+    keep = [q for q in out if not (q.name == "v" and q.place == des and q.unit == "V" and not q.pin)]
+    for q in out:
+        if q.name == "v" and q.place == des and q.unit == "V" and not q.pin:
+            keep.append(Quantity(des, "v_rms", q.hi * RMS, kind=q.kind, entry=q.entry, how=q.how, on=q.on,
+                                 say=lambda v, lim, f, des=des: f"{des}: up to {v:.0f} V rms, rated {lim:g} V rms"))
+    return keep
 
 
 def fuse_currents(d, sim=None):

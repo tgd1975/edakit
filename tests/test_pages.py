@@ -3,6 +3,7 @@ is on it, the navigation is NAV – tabs by reader, at most eight entries a tab 
 link to a page of the site stays on the site, an image goes onto the site, a link to anything else goes to the file on
 GitHub."""
 
+import hashlib
 import importlib.util
 import json
 import posixpath
@@ -39,9 +40,12 @@ def test_every_description_is_a_page_of_the_site(tmp_path):
     reference = next(g["Reference"] for g in cfg["nav"] if "Reference" in g)
     assert cfg["docs_dir"] == "docs" and {"Rule catalog": "catalog/index.html"} in reference
     assert "edakit" in cfg["copyright"] and "issues/new/choose" in cfg["copyright"]   # the version, the feedback line
+    css = ROOT / "docs" / "brand" / "edakit.css"                # its hash in the URL: changed styles beat a cache
+    assert cfg["extra_css"] == ["brand/edakit.css?v=" + hashlib.sha256(css.read_bytes()).hexdigest()[:8]]
     features = cfg["theme"]["features"]
     assert "navigation.tabs" in features and "navigation.indexes" in features
-    assert cfg["nav"][0] == {"Start": [{"Start": "index.md"}, {"Quickstart": "start/quickstart.md"},
+    assert cfg["nav"][0] == {"Start": [{"Start": "index.md"}, {"A session": "start/session.md"},
+                                       {"Quickstart": "start/quickstart.md"},
                                        {"How it works": "start/how-it-works.md"},
                                        {"Projects": "start/projects/index.md"}, {"Glossary": "start/glossary.md"}]}
     # every page under its tab: the address's first part is the tab's
@@ -85,7 +89,8 @@ def test_a_source_carries_the_source_line_and_the_concepts_an_index(tmp_path):
     assert "A source" in (docs / "inside" / "skills" / "cart.md").read_text(encoding="utf-8")
     assert "A source" not in (docs / "handbook" / "08-release-gate.md").read_text(encoding="utf-8")
     index = (docs / "inside" / "concepts" / "index.md").read_text(encoding="utf-8")
-    assert "## Open" in index and "(new/parts-on-hand.md)" in index and "prototypes" not in index
+    open_one = sorted(p.name for p in (ROOT / "docs" / "concepts" / "new").glob("*.md"))[0]
+    assert "## Open" in index and f"(new/{open_one})" in index and "prototypes" not in index
     assert "## Decided and built" in index and "(done/documentation.md)" in index
     inside = (docs / "inside" / "index.md").read_text(encoding="utf-8")
     assert "(concepts/index.md)" in inside and "(skills/index.md)" in inside and "(claude.md)" in inside
@@ -151,3 +156,27 @@ def test_an_old_address_sends_the_reader_on(tmp_path):
         target = posixpath.normpath(posixpath.join(posixpath.dirname(old), new))
         assert (docs / target / "index.md").is_file() or (docs / (target + ".md")).is_file(), (old, new)
     assert not re.search(r"handbook/\d\d-", " ".join(moved))       # the handbook kept its addresses
+
+
+def test_a_link_in_html_goes_from_the_pages_address():
+    """MkDocs turns a Markdown link into one from the page's address and leaves HTML as it is: a link in a tag – the
+    drawings' thumbnails of handbook 19 – is written from the address (handbook/19-verification/) at once."""
+    mod = pages()
+    text = ('<a href="../docs/catalog/circuit-usb.html"><img src="../docs/catalog/circuits/usb.svg" width="140"></a>'
+            '[d](../docs/catalog/circuit-usb.html) <a href="14-design.md#144-x">x</a> <a href="https://x.org">y</a>')
+    out = mod.rewrite(text, "handbook/19-verification.md", "handbook/19-verification.md",
+                      {"handbook/14-design.md": "handbook/14-design.md"})
+    assert out == ('<a href="../../catalog/circuit-usb.html"><img src="../../catalog/circuits/usb.svg" width="140"></a>'
+                   '[d](../catalog/circuit-usb.html) <a href="../14-design/#144-x">x</a> <a href="https://x.org">y</a>')
+
+
+def test_every_thumbnail_shows_a_drawing_of_the_catalog():
+    """Each reference circuit and open design of handbook 19 has its thumbnail, and it shows a drawing the catalog
+    has (docs/catalog/build.py) and links to its page there."""
+    import re
+    from edakit.catalog import handbook
+    text = (ROOT / "handbook" / "19-verification.md").read_text(encoding="utf-8")
+    thumbs = re.findall(r'<a href="\.\./docs/catalog/([^"]+)"><img [^>]*src="\.\./docs/catalog/([^"]+)"', text)
+    assert len(thumbs) == len(handbook.reference().REFERENCES) + len(handbook.open_designs())
+    missing = [f for pair in thumbs for f in pair if not (ROOT / "docs" / "catalog" / f).is_file()]
+    assert missing == []

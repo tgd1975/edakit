@@ -604,7 +604,13 @@ the parcel's weight into `<out>/lcsc/cart.json`, the page text into `cart_page.t
 stops before the checkout. `edakit order check` holds that to `basket.json` (ORDER.basket): every line there, as many
 pieces or more – more is LCSC's rounding, named –, none short of stock or marked, no line that is neither the basket's
 nor there before, every value in the page text. Exit 0 passed, 2 a finding – nothing more goes into the cart, 1 a
-file missing. The profile is provisional until a parts order records its labels.
+file missing.
+
+The profile was recorded on 2026-11-03, in a live run with four projects and nothing ordered: the upload, "BOM
+Mapping" with its button "Create BOM", which saves the list in your account, "Add to Cart" and its dialog. LCSC
+rounded 18 of 23 lines up to its minimum and multiple – a basket of 5 pieces of a 50-piece resistor buys 50 – and
+gave the cart the same "Estimated Weight" of 1,500 g as the 26 lines of 2026-11-02: an estimate to read with care when
+it decides whether to combine.
 
 **The combined shipment.** LCSC ships a JLCPCB order with its own when the JLCPCB order goes to LCSC's warehouse in
 Hong Kong – an address entered at JLCPCB's checkout and unchangeable afterwards – and the LCSC checkout ticks it to
@@ -623,6 +629,40 @@ address at JLCPCB's checkout and reads it back – the one field of a checkout i
 button that orders or pays. After you paid, it checks that the order page shows the warehouse, ticks the JLCPCB order
 at LCSC's checkout and reads LCSC's recalculated methods into `shipping.json`; `edakit order check` lists them by price
 and names the cheapest that arrives by `[cart] needed_by` (10.1) – it stops before LCSC's order button.
+
+### Parts on hand: the inventory
+
+What you keep in the drawer can go into the order before anything is bought. Name your inventory in
+`edakit.local.toml` beside `edakit.toml` – a file of your checkout, in `.gitignore`, never in a repository (10.1) –,
+and `edakit order` takes from it first: of the pieces a cart line needs, need plus spares, as many as are on hand come
+from the drawer, and only the rest is ordered, rounded to `moq` and `step` as before. A line with nothing left to
+order is not written; its comment says what came from the drawer (`B2B-PH-K-S(LF)(SN): J1 (5 + 0, 3 on hand)`).
+
+`hand_assembly.md` gets a column "From" – `on hand`, `cart` or `on hand + cart` – and a list "Out of the drawer" with
+each inventory row, its place and the pieces to take. A basket (`--with`) sums its lines first and takes from the
+inventory once, so two projects never count the same pieces.
+
+The inventory is a table in a file you keep the way you like: `.md` (every pipe table), `.html` (every `<table>`),
+`.csv` (comma, semicolon or tab; UTF-8 or Windows-1252, as Excel writes it), `.xlsx` or `.ods` (every sheet). A
+table counts when its header row has the columns `ID` and `Quantity`; `LCSC`, `Name`, `Description` and `Link` are
+read where they are, every other column, table and sheet is left alone.
+
+A row is a part of the order when its LCSC
+number – its column, else the LCSC map by its ID – is the line's, or else its ID is the part's MPN, case and blanks
+ignored. Nothing else matches: no sibling, no assortment by value. A part in several rows or files is summed.
+
+edakit checks, it never books: it lowers no quantity, at the order or later. What leaves the drawer is decided at the
+bench, and keeping the table true is yours.
+
+Without `[inventory]` nothing changes, and CI never sees one. A named file
+that is not there, one without a matching table, or a quantity that is no whole number stops `edakit order` before it
+writes a cart – an order computed past a broken inventory would be the wrong one. The inventory never counts for an
+assembled part: the assembler places from its own stock.
+
+`edakit inventory` shows the project's hand-soldered parts and items against the inventory – needed, on hand, to
+order, and the rows that matched, so a wrong match shows at a glance; `edakit inventory WORDS` lists the rows holding
+every word. `edakit inventory template FILE` starts an empty one as `.md`, `.xlsx` or `.ods` and names it in
+`edakit.local.toml` (10.5).
 
 ### The order form as data
 

@@ -4,7 +4,7 @@ Open work that needs the owner's computer, a maker or the owner's word. The stat
 and plans the sections name; this list is what is left to do of them, in the order it can be done. No item is deleted.
 
 **Layout.** Every item, in every section, open or closed, is a line with a checkbox and an ID unique in this file,
-counted up and never reused – whoever adds an item takes the next free ID and counts it up here. Next free ID: TD-141.
+counted up and never reused – whoever adds an item takes the next free ID and counts it up here. Next free ID: TD-150.
 
 - Open: `- [ ] TD-<n> - **Title:** what and why.` – a step's own name after the dash (`- [ ] TD-31 - **D.4** …`).
 - Done: ticked, the commit that did it, the date at the end, moved to [Closed todos](#closed-todos), newest first –
@@ -31,56 +31,18 @@ to touch.
 
 - [ ] TD-108 - **A photo of the delivered tree:** one picture of the lit tree in its hill into pytree's `docs/img/` –
       it replaces the render on `docs/projects/pytree.md`. *(edakit-ce)*
-- [ ] TD-135 - **The layers picture of coin-cell-led:** `pictures/board_main_layers.png` of the gate run with stage F
-      (`<reports>/<run>/pictures/`, or the Gerber ZIP of its `fab/main/`) into `examples/coin-cell-led/docs/` – the
-      board as made shows no copper under the mask; for TD-136. *(quirky-bell)*
-- [ ] TD-137 - **A screenshot of JLCPCB's assembly preview of coin-cell-led:** at the next `/edakit:cart`, once BOM and
-      CPL are uploaded, into `examples/coin-cell-led/docs/jlcpcb_assembly_main_top.png` – only your account shows it;
-      for TD-138. *(quirky-bell)*
 
-## The steps ([docs/steps/](docs/steps/README.md))
+## The parts order ([docs/concepts/done/parts-order.md](docs/concepts/done/parts-order.md))
 
-- [ ] TD-136 - **Step 9 shows the routed board:** the tracks and the ground pour, `board_main_layers.png` of TD-135
-      under the paragraph on placing and routing in `docs/steps/09-lay-out-the-board.md`. *(quirky-bell)*
-- [ ] TD-138 - **Step 10 ends with the assembled board:** JLCPCB's preview of TD-137 at M-2 in
-      `docs/steps/10-order-the-board.md`, as the last picture of the steps. *(quirky-bell)*
+- [ ] TD-144 - **Live run of `combine`:** the skill cart's mode `combine` at the next JLCPCB order whose basket has
+      LCSC lines – the warehouse address at JLCPCB's checkout, after the payment the tick at LCSC's checkout and its
+      methods in `shipping.json`; what it finds into `lcsc.toml` and handbook 8.4. *(edakit-5e)*
 
-## The parts order ([docs/concepts/new/parts-order.md](docs/concepts/new/parts-order.md))
+## Parts on hand ([docs/concepts/done/parts-on-hand.md](docs/concepts/done/parts-on-hand.md))
 
-- [ ] TD-111 - **Live run at the next parts order:** the skill cart's modes `parts` and `combine` at LCSC and JLCPCB,
-      nothing ordered or paid by the skill – it records the BOM tool's labels into `edakit/suppliers/lcsc.toml`, sets
-      `recorded`, and what it finds goes into handbook 8.4; #265 is on main (1.1.5). *(edakit-4f)*
-
-## How edakit is tested ([docs/concepts/done/verification-and-validation.md](docs/concepts/done/verification-and-validation.md))
-
-The known gaps the four new designs showed, each closed only by catalog or domain data (add-rule or add-feature, on the
-owner's word); each design's `findings.toml` has the findings and their reasons.
-
-- [ ] TD-124 - **A connector passes no reversed source:** `edakit/catalog/paths.toml [reverse]` lets a connector pass
-      from every pin to every pin, so PATH.reverse reaches parts behind a jumper header – `connector` from `passes` to
-      `tolerates` (adafruit-microlipo-usb-c: U1.4, LED1.2, R6.2, R5.2). *(ccr-de7c0e28)*
-- [ ] TD-125 - **A low-side reverse-polarity MOSFET as a block:** PATH.reverse knows the series diode and the high-side
-      P-MOSFET, not an N-MOSFET in the ground return – a block in `paths.toml`, and only parts between the source's own
-      nets reported (atoomnetmarc-adlsc: 20 findings). *(ccr-de7c0e28)*
-- [ ] TD-126 - **A trimmer is not a panel pot:** REQ.value/switch takes the DC across a bias trimmer for a pot turned
-      while playing – a field of the kind potentiometer in `kinds.toml` that marks a trimmer, skipped by the rule
-      (whbeers-fuzz-face: TRIM2). *(ccr-de7c0e28)*
-- [ ] TD-127 - **Board copper is nothing to buy:** a solder jumper or a test pad gets PARTS.verified, PARTS.supplier
-      and PARTS.fact/reach – a way to say "copper, nothing to buy" (adafruit-microlipo-usb-c: SJ1; the pads of the
-      pedals and the Fuzz Face, judged criterion). *(ccr-de7c0e28)*
-- [ ] TD-128 - **A varistor kind:** its rms and DC ratings, held against the line's voltage – the ESPurna-H's S10K250
-      (250 V rms, below 230 V + 10 %) stands in as kind `ic` and nothing checks it. *(ccr-de7c0e28)*
-- [ ] TD-129 - **AC nets and AC ratings:** terminals and modules rated in V rms are held against the peak, and a
-      divider's taps cannot say they move together (espurna-h: JP2, JP42, U$1.2, R51 to R53). *(ccr-de7c0e28)*
-- [ ] TD-130 - **A mains terminal as a supply input:** a role in `paths.toml [supply]`, so that PATH.unfed sees the
-      module fed (espurna-h: U$1.1, U$1.2; `reversible` sends PATH.reverse across the mains side). *(ccr-de7c0e28)*
-- [ ] TD-131 - **A ground tied to mains:** edakit holds every voltage against the board's own ground, so a low-voltage
-      side tied to the line looks safe – the graph says so, or a check finds the bridged isolation barrier
-      (espurna-h: R42 ties GND to the line); handbook 19.9 names the gap. *(ccr-de7c0e28)*
-- [ ] TD-132 - **A bidirectional TVS:** the parts schema has `tvs: true` only, so a bidirectional TVS across the input
-      is judged as one direction (atoomnetmarc-adlsc: D4). *(ccr-de7c0e28)*
-- [ ] TD-133 - **A charger's status output in the simulation:** the charger model does not drive STAT, so its LEDs
-      are neither lit nor dark as expected (adafruit-microlipo-usb-c: SIM.state LED1, LED2). *(ccr-de7c0e28)*
+- [ ] TD-147 - **Step 3, the live run:** the next parts order with your inventory named in `edakit.local.toml` – the
+      carts shortened by what is on hand, `hand_assembly.md` naming what to take; what the run finds goes into handbook
+      8.4. Waits for an inventory file of yours (`edakit inventory template FILE`). *(edakit-87)*
 
 ## What edakit needs from EasyEDA Pro and easyeda-mcp-pro ([upstream/README.md](upstream/README.md))
 
@@ -100,6 +62,50 @@ Nothing to do until there is an answer or a release; whichever session learns of
 
 ## Closed todos
 
+- [x] TD-149 - **OK for #332 (the LESD5D5.0CT1G is a bidirectional TVS):** given; merged as edakit 1.1.16 (#332).
+      *(edakit-c6)* [2026-11-03]
+- [x] TD-145 - **Is the LESD5D5.0CT1G bidirectional?** Yes – symbol p. 1 and I–V curve p. 2; `values.tvs
+      "bidirectional"` in both entries, the DevKitC's findings unchanged (LIM.v on D6 only, no PATH.reverse); #332, its
+      OK is TD-149. *(edakit-38)* [2026-11-03]
+- [x] TD-148 - **OK for #326 (step 10, parts you solder yourself):** given; merged (#326, no version). *(edakit-87)* [2026-11-03]
+- [x] TD-143 - **The 23 lines of the live run in LCSC's cart:** settled by the owner in LCSC's cart. *(edakit-5e)*
+      [2026-11-03]
+- [x] TD-146 - **OK for #321 (parts on hand):** given; merged as edakit 1.1.14 (#321). *(edakit-87)* [2026-11-03]
+- [x] TD-142 - **OK for #310:** given; merged as edakit 1.1.13 (#310). *(edakit-5e)* [2026-11-03]
+- [x] TD-133 - **A charger's status output in the simulation:** the charger model drives STAT – the Micro-Lipo's LEDs as
+      on the board (#309, edakit 1.1.12). *(ccr-de7c0e28)* [2026-11-03]
+- [x] TD-132 - **A bidirectional TVS:** `values.tvs: "bidirectional"` – ADLSC's D4 gone (#309, edakit 1.1.12).
+      *(ccr-de7c0e28)* [2026-11-03]
+- [x] TD-131 - **A ground tied to mains:** LIM.hazardous/ground names it – the ESPurna-H's R42 found, judged real;
+      handbook 19.9 names what stays unseen (#309, edakit 1.1.12). *(ccr-de7c0e28)* [2026-11-03]
+- [x] TD-130 - **A mains terminal as a supply input:** connector roles `line`, `neutral` in `[supply] inputs` –
+      PATH.unfed on the HLK-PM01 gone (#309, edakit 1.1.12). *(ccr-de7c0e28)* [2026-11-03]
+- [x] TD-129 - **AC nets and AC ratings:** net `ac` and `v_rms_max_v` – the ESPurna-H's six LIM.v known gaps gone (#309,
+      edakit 1.1.12). *(ccr-de7c0e28)* [2026-11-03]
+- [x] TD-128 - **A varistor kind:** kind `varistor` (VRMS, VDC) – the ESPurna-H's S10K250 now found below 230 V + 10 %,
+      judged real (#309, edakit 1.1.12). *(ccr-de7c0e28)* [2026-11-03]
+- [x] TD-127 - **Board copper is nothing to buy:** `own.what: "copper"` – no supplier, compliance fact or EasyEDA device
+      asked; 33 findings of SJ1 and the pads gone (#309, edakit 1.1.12). *(ccr-de7c0e28)* [2026-11-03]
+- [x] TD-126 - **A trimmer is not a panel pot:** `values.adjust: "trimmer"` leaves it out of REQ.value/switch – the Fuzz
+      Face's TRIM2 gone (#309, edakit 1.1.12). *(ccr-de7c0e28)* [2026-11-03]
+- [x] TD-125 - **A low-side reverse-polarity MOSFET as a block:** `[reverse] cuts` – an N-MOSFET in the ground return
+      takes a reversed source off ground; ADLSC's 18 known gaps gone (#309, edakit 1.1.12). *(ccr-de7c0e28)*
+      [2026-11-03]
+- [x] TD-124 - **A connector passes no reversed source:** a connector tolerates a reversed source in `paths.toml
+      [reverse]` – the Micro-Lipo's four known gaps gone (#309, edakit 1.1.12). *(ccr-de7c0e28)* [2026-11-03]
+- [x] TD-111 - **Live run at the next parts order:** mode `parts` ran on 2026-11-03 – four projects, 23 lines into
+      LCSC's cart, nothing ordered; the profile recorded and the weight's "1,500g" read (#310); `combine` split off as
+      TD-144. *(edakit-5e)* [2026-11-03]
+- [x] TD-141 - **OK for #305:** given; merged as edakit 1.1.10 (#305). *(edakit-5e)* [2026-11-03]
+- [x] TD-138 - **Step 10 ends with the assembled board:** JLCPCB's preview of TD-137 at M-2 in
+      `docs/steps/10-order-the-board.md` (#300). *(edakit-f9)* [2026-11-03]
+- [x] TD-137 - **A screenshot of JLCPCB's assembly preview of coin-cell-led:** Gerber, BOM and CPL of the gate run of
+      2026-11-01 uploaded in the owner's Chrome up to Component Placements, nothing into the cart; into
+      `examples/coin-cell-led/docs/jlcpcb_assembly_main_top.png` (#300). *(edakit-f9)* [2026-11-03]
+- [x] TD-136 - **Step 9 shows the routed board:** `board_main_layers.png` under the paragraph on placing and routing in
+      `docs/steps/09-lay-out-the-board.md` (#300). *(edakit-f9)* [2026-11-03]
+- [x] TD-135 - **The layers picture of coin-cell-led:** drawn by the gate run of 2026-11-01 with stage F, copied into
+      `examples/coin-cell-led/docs/` – no owner step needed (#300). *(edakit-f9)* [2026-11-03]
 - [x] TD-122 - **The bell in the language, in its own repository:** dropped on the owner's word – the DSL is a
       beta on its own branch (decision 48), the bell need not move to it now. *(friendly-mccarthy)* [2026-11-03]
 - [x] TD-139 - **OK for #291:** given; C70374 and C22355741 signed, merged as edakit 1.1.7 (#291). *(edakit-56)*
@@ -162,7 +168,7 @@ taken from the history of this file; an item rewritten on its way is listed once
       10 –, shown in handbook 17.11 and 18 after the silkscreen (#246, edakit 1.0.10). [2026-11-02]
 - [x] TD-99 - **Decide on parts on hand (PartsLedger):** decided in a decision round – movements 1 and 2, edakit only
       reads the bin; `[project] bin`; need plus spares; siblings shown, kits as data; profiles partsledger, csv, xlsx;
-      the name open while it is a concept (`docs/concepts/new/parts-on-hand.md`, "Decisions"). [2026-11-02]
+      the name open while it is a concept (`docs/concepts/done/parts-on-hand.md`, "Decisions"). [2026-11-02]
 - [x] TD-83 - **The findings of the chapters' reviews:** fixed or decided (#248, edakit 1.0.8) – the handbook follows
       the code, the sources name the sections they cite, the catalog names pytree and the bell, 14.2's engines table
       generated, 8.4 "you order and pay"; what the reviews left stays left. *(edakit-b7)* [2026-11-02]

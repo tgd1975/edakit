@@ -7,6 +7,19 @@ After this step your boards are ordered, paid, delivered and tested.
 Ask for the [release](../glossary.md#release). Claude runs every check again, now on the files that go to the
 manufacturer. Only a run that ends with `RELEASED` may go out.
 
+### Parts you solder yourself
+
+The manufacturer places what it stocks and you let it assemble. The rest you solder yourself: `edakit order` lists it
+in `hand_assembly.md` and puts it into an LCSC cart.
+
+Parts in a drawer? List them in a table, your [inventory](../glossary.md#inventory). `edakit order` takes from it
+first and orders only the rest; `hand_assembly.md` says what to take out. edakit never changes the table. How to set
+it up: the handbook below, section "Parts on hand".
+
+Here only the cell holder BT1 is soldered by hand, from the cart.
+
+### The manufacturer's form
+
 Then `/edakit:cart` fills the manufacturer's form in your Chrome, with Claude in Chrome. Every field comes from your
 project:
 
@@ -30,6 +43,14 @@ Once: the country you ship to and the shipping method.
 - Ordering and paying. Nothing in edakit orders or pays.
 - M-2: the parts' orientation in the manufacturer's preview, before you pay.
 - M-4: when the boards arrive, you test each one against the list the last run wrote.
+
+For M-2 JLCPCB shows the board with its parts as they will be placed, here the walkthrough's:
+
+![JLCPCB's placement preview of the walkthrough's board: D1, R1 and SW1 placed, the cell holder's pads bare for soldering by hand](../../examples/coin-cell-led/docs/jlcpcb_assembly_main_top.png)
+
+BT1 comes in the LCSC cart. You solder its two tabs yourself, then the board is done:
+
+![The walkthrough's finished board in EasyEDA's 3D view: the cell holder BT1 soldered, below it the button SW1, the LED D1 and the resistor R1](../../examples/coin-cell-led/docs/board_main_3d.png)
 
 ## What you have
 

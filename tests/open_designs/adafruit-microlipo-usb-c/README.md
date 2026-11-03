@@ -77,4 +77,6 @@ cell full. Each parts entry names its datasheet, what was read in it and what is
 **What edakit finds** – and how each finding is judged – is in `findings.toml`, held by `tests/test_open_designs.py`.
 The design showed one false alarm of edakit and one charge current edakit did not see, both fixed and held by
 `tests/test_open_design_fixes.py`: the status LEDs behind their resistors taken for a floating net, and R4 behind the
-solder jumper, which neither LIM.i/charge nor the charger model counted.
+solder jumper, which neither LIM.i/charge nor the charger model counted. Three known gaps are closed and held there
+too: JP4 and the receptacle handing a reversed cell on from pin to pin (TD-124), SJ1 asked for a supplier as if it
+were a part (TD-127, `own.what` `copper`), and STAT, which the charger model did not drive (TD-133).
