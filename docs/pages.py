@@ -30,6 +30,7 @@ ROOT = Path(__file__).resolve().parents[1]
 REPO = "https://github.com/tgd1975/edakit"
 SITE = "https://tgd1975.github.io/edakit/"
 LINK = re.compile(r"(!?\[[^\]]*\]\()([^)\s]+)(\))")
+ATTR = re.compile(r'(<(?:a|img)\s[^>]*?\b(?:href|src)=")([^"]+)(")')     # a link in an HTML tag
 
 
 def front_matter(text):
@@ -323,11 +324,16 @@ def version():
 
 def rewrite(text, src, site, mapped, media=None):
     """The page's relative links: to a page of the site its path there, an image to its copy under files/ (its path
-    goes into the set media, for assemble to copy), to anything else the file on GitHub."""
+    goes into the set media, for assemble to copy), to anything else the file on GitHub. A Markdown link is written
+    from the page's file – MkDocs turns it into one from the page's address –, a link in an HTML tag (href, src, as the
+    drawings' thumbnails of handbook 19 and a ```chat fence's HTML have) from the page's address itself: MkDocs leaves
+    HTML as it is."""
     here = (ROOT / src).parent
+    address = url_of(site) + "index.html"       # a file in the page's directory URL, for _relpath
 
-    def move(target, image):
-        """(site path, anchor) of a target the site carries, (URL, anchor) of a file on GitHub, None to leave it."""
+    def where(target, image):
+        """(kind, target, anchor) of a relative link – kind page (a page's site path), file (a file on the site) or
+        url (on GitHub) –, None for a link that stays as it is."""
         if re.match(r"[a-z]+:|#|/", target) or "${" in target:
             return None
         path, _, anchor = target.partition("#")
@@ -337,44 +343,42 @@ def rewrite(text, src, site, mapped, media=None):
         except ValueError:
             return None
         if rel in mapped or rel + "/README.md" in mapped:       # a page, or a folder whose README is one
-            return mapped.get(rel) or mapped[rel + "/README.md"], anchor
+            return "page", mapped.get(rel) or mapped[rel + "/README.md"], anchor
         if rel.startswith("docs/brand/") and rel != "docs/brand/README.md":
             # the logo files and the theme's stylesheet are on the site
-            return rel[len("docs/"):], ""
+            return "file", rel[len("docs/"):], ""
         if rel == "docs/catalog" or (rel.startswith("docs/catalog/") and not rel.endswith(".py")):
             # the catalog's pages and drawings are on the site; their generator is not
-            return ("catalog/" + rel[len("docs/catalog/"):] if rel != "docs/catalog" else "catalog/"), anchor
+            return "file", "catalog/" + rel[len("docs/catalog/"):] if rel != "docs/catalog" else "catalog/", anchor
         if image and media is not None and resolved.is_file():
             media.add(rel)
-            return "files/" + rel, ""
+            return "file", "files/" + rel, ""
         kind = "tree" if resolved.is_dir() else "blob"
-        return f"{REPO}/{kind}/main/{rel}", anchor
+        return "url", f"{REPO}/{kind}/main/{rel}", anchor
 
-    def one(m):
-        new = move(m.group(2), m.group(1).startswith("!"))
-        if new is None:
+    def markdown(m):
+        w = where(m.group(2), m.group(1).startswith("!"))
+        if w is None:
             return m.group(0)
-        path, anchor = new
-        path = path if path.startswith(REPO) else _relpath(path, site)
-        return f"{m.group(1)}{path}{'#' + anchor if anchor else ''}{m.group(3)}"
+        kind, target, anchor = w
+        new = target if kind == "url" else _relpath(target, site)
+        return f"{m.group(1)}{new}{'#' + anchor if anchor else ''}{m.group(3)}"
 
-    def href(target, image=False):
-        """A link of the chat's HTML, relative to the page's own URL: MkDocs rewrites no link in raw HTML."""
-        new = move(target, image)
-        if new is None:
-            return target
-        path, anchor = new
-        if not path.startswith(REPO):
-            url = url_of(path) if path.endswith(".md") else path
-            path = posixpath.relpath(url or ".", url_of(site).rstrip("/") or ".") + ("/" if url.endswith("/") or not url else "")
-        return path + ("#" + anchor if anchor else "")
+    def html(m):
+        w = where(m.group(2), m.group(1).endswith('src="'))
+        if w is None:
+            return m.group(0)
+        kind, target, anchor = w
+        new = target if kind == "url" else _relpath(url_of(target) if kind == "page" else target, address)
+        return f"{m.group(1)}{new}{'#' + anchor if anchor else ''}{m.group(3)}"
 
+    # a chat fence becomes its HTML, its links written from the page's file like those of any HTML tag
     steps = {int(p.name[:2]): posixpath.relpath(p.as_posix(), here.as_posix())
              for p in (ROOT / "docs" / "steps").glob("[0-9][0-9]-*.md")}
-    text = CHAT_FENCE.sub(lambda m: chat_html(chat_parse(m.group(1)), href, steps), text)
+    text = CHAT_FENCE.sub(lambda m: chat_html(chat_parse(m.group(1)), steps=steps), text)
     # links inside code blocks stay as they are
     parts = re.split(r"(```.*?```)", text, flags=re.S)
-    return "".join(p if p.startswith("```") else LINK.sub(one, p) for p in parts)
+    return "".join(p if p.startswith("```") else ATTR.sub(html, LINK.sub(markdown, p)) for p in parts)
 
 
 # A session as a chat (docs/concepts/done/session-chat.md): a ```chat fence, a plain transcript on GitHub, turned into
@@ -461,7 +465,7 @@ def cli_commands():
     return sorted(set(re.findall(r'add_parser\(\s*"([\w-]+)"', text)))
 
 
-def chat_text(text, href, commands):
+def chat_text(text, commands):
     """A chat line as HTML: [text](url) a link, the slash commands, edakit's commands and the file names in mono."""
     def mono(s):
         s = html.escape(s, quote=False)
@@ -469,24 +473,24 @@ def chat_text(text, href, commands):
                       r"|\b[\w./-]+\.(?:toml|json|md)\b)", r"<code>\1</code>", s)
     out, last = [], 0
     for m in re.finditer(r"\[([^\]]+)\]\(([^)\s]+)\)", text):
-        out += [mono(text[last:m.start()]), f'<a href="{html.escape(href(m.group(2)))}">{mono(m.group(1))}</a>']
+        out += [mono(text[last:m.start()]), f'<a href="{html.escape(m.group(2))}">{mono(m.group(1))}</a>']
         last = m.end()
     return "".join(out) + mono(text[last:])
 
 
-def chat_html(entries, href=lambda target, image=False: target, steps=None):
-    """The chat as one block of HTML for Markdown – no blank line inside, a class for each kind of entry; steps
-    {number: the link to its steps page}."""
+def chat_html(entries, steps=None):
+    """The chat as one block of HTML for Markdown – no blank line inside, a class for each kind of entry, its links as
+    the page's source has them (rewrite turns them into the site's); steps {number: the link to its steps page}."""
     commands, steps = cli_commands(), steps or {}
 
     def t(s):
-        return chat_text(s, href, commands)
+        return chat_text(s, commands)
     parts = ['<div class="chat">']
     for n, (kind, value) in enumerate(entries):
         if kind == "step":
             number, name = value.split()[0], html.escape(value)
             link = steps.get(int(number)) if number.isdigit() else None
-            parts.append(f'<div class="chat-step"><a href="{html.escape(href(link))}">{name}</a></div>' if link
+            parts.append(f'<div class="chat-step"><a href="{html.escape(link)}">{name}</a></div>' if link
                          else f'<div class="chat-step"><span>{name}</span></div>')
         elif kind in ("you", "claude"):
             parts.append(f'<div class="chat-msg chat-{kind}"><span class="chat-who">'
@@ -500,7 +504,7 @@ def chat_html(entries, href=lambda target, image=False: target, steps=None):
                          + "".join(f'<p class="chat-note">† {t(v)}</p>' for v in notes) + "</div>")
         elif kind == "img":
             path, _, alt = (s.strip() for s in value.partition("|"))
-            parts.append(f'<figure class="chat-img"><img src="{html.escape(href(path, True))}" '
+            parts.append(f'<figure class="chat-img"><img src="{html.escape(path)}" '
                          f'alt="{html.escape(alt)}"><figcaption>{html.escape(alt)}</figcaption></figure>')
         elif kind == "form":
             rows = []

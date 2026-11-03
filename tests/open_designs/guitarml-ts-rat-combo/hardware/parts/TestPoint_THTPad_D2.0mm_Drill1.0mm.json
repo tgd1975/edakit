@@ -3,7 +3,7 @@
  "kind": "connector",
  "package": "plated through-hole pad Ø2.0 mm, drill 1.0 mm, on the board",
  "own": {
-  "what": "handmade",
+  "what": "copper",
   "notes": "a plated pad of the board for a wire (KiCad footprint TestPoint:TestPoint_THTPad_D2.0mm_Drill1.0mm, symbol Connector_Generic:Conn_01x01): copper, no part to buy"
  },
  "pins": {

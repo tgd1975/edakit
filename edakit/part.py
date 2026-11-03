@@ -80,7 +80,8 @@ from . import circuit, config
 from .config import MIL_PER_MM
 from .design import Design, load_parts, natural_key
 
-WHAT = ("pcb", "bin", "handmade")   # own.what: a board of an edakit project, a part from the bin, made by hand
+WHAT = ("pcb", "bin", "handmade", "copper")   # own.what: a board of an edakit project, a part from the bin, made by
+                                              # hand, the board's own copper (a solder jumper, a test pad)
 SIGNALS = ("output", "bidirectional", "current_sink", "input", "analog")   # strongest first
 
 # EasyEDA's public component data (EasyEDA Standard format), the endpoint easyeda2kicad reads; undocumented, no key

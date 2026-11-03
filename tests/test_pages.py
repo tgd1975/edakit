@@ -151,3 +151,27 @@ def test_an_old_address_sends_the_reader_on(tmp_path):
         target = posixpath.normpath(posixpath.join(posixpath.dirname(old), new))
         assert (docs / target / "index.md").is_file() or (docs / (target + ".md")).is_file(), (old, new)
     assert not re.search(r"handbook/\d\d-", " ".join(moved))       # the handbook kept its addresses
+
+
+def test_a_link_in_html_goes_from_the_pages_address():
+    """MkDocs turns a Markdown link into one from the page's address and leaves HTML as it is: a link in a tag – the
+    drawings' thumbnails of handbook 19 – is written from the address (handbook/19-verification/) at once."""
+    mod = pages()
+    text = ('<a href="../docs/catalog/circuit-usb.html"><img src="../docs/catalog/circuits/usb.svg" width="140"></a>'
+            '[d](../docs/catalog/circuit-usb.html) <a href="14-design.md#144-x">x</a> <a href="https://x.org">y</a>')
+    out = mod.rewrite(text, "handbook/19-verification.md", "handbook/19-verification.md",
+                      {"handbook/14-design.md": "handbook/14-design.md"})
+    assert out == ('<a href="../../catalog/circuit-usb.html"><img src="../../catalog/circuits/usb.svg" width="140"></a>'
+                   '[d](../catalog/circuit-usb.html) <a href="../14-design/#144-x">x</a> <a href="https://x.org">y</a>')
+
+
+def test_every_thumbnail_shows_a_drawing_of_the_catalog():
+    """Each reference circuit and open design of handbook 19 has its thumbnail, and it shows a drawing the catalog
+    has (docs/catalog/build.py) and links to its page there."""
+    import re
+    from edakit.catalog import handbook
+    text = (ROOT / "handbook" / "19-verification.md").read_text(encoding="utf-8")
+    thumbs = re.findall(r'<a href="\.\./docs/catalog/([^"]+)"><img [^>]*src="\.\./docs/catalog/([^"]+)"', text)
+    assert len(thumbs) == len(handbook.reference().REFERENCES) + len(handbook.open_designs())
+    missing = [f for pair in thumbs for f in pair if not (ROOT / "docs" / "catalog" / f).is_file()]
+    assert missing == []

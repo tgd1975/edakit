@@ -972,8 +972,8 @@ def pd_shunts(s):
 
 
 def signal_path_contacts(s):
-    """{designator: [{net: pin}, …]} of the switches, buttons, relays and pots whose contacts have both sides in a
-    signal path (nets with signal or instrument) – one group per contact set (a DPDT relay's two sets apart, a 3PDT
+    """{designator: [{net: pin}, …]} of the switches, buttons, relays and pots – trimmers left out – whose contacts
+    have both sides in a signal path (nets with signal or instrument) – one group per contact set (a DPDT relay's two sets apart, a 3PDT
     switch's three poles)."""
     if getattr(s, "_signal_contacts", None) is not None:
         return s._signal_contacts
@@ -982,8 +982,8 @@ def signal_path_contacts(s):
     for des in sorted(s.n.comps) if len(signal) >= 2 else ():
         part = s.n.part(des) or {}
         kind = part.get("kind")
-        if kind not in CONTACT_KINDS:
-            continue
+        if kind not in CONTACT_KINDS or (part.get("values") or {}).get("adjust") == "trimmer":
+            continue                  # a trimmer is set once at the bench, not turned while the signal runs
         if kind == "relay":           # each contact set apart: a DPDT's two sets sit in two signal paths
             groups = [sorted(n for nums in roles.values() for n in nums) for roles in relay_sets(part).values()]
         elif kind == "switch" and len(switch_sets(part)) > 1:     # each pole apart: a 3PDT's poles, three paths

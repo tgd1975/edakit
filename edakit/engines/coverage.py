@@ -66,9 +66,9 @@ def _termination(p):
 
 # per behaviour: what the simulation leaves out over time – a function of the entry's values -> the text
 OVER_TIME = {
-    "charger": lambda p: (f"not simulated: the end of the charge cycle{_termination(p)}, the recharge, the status "
-                          "outputs – the model charges while the cell is below its float voltage "
-                          "(HINT.charge_termination, HINT.power_path)"),
+    "charger": lambda p: (f"not simulated: the end of the charge cycle{_termination(p)}, the recharge – the model "
+                          "charges while the cell is below its float voltage, and its status output follows the "
+                          "current, not the cycle (HINT.charge_termination, HINT.power_path)"),
     "protection": lambda p: ("not simulated: the release voltages and the delays – the model is a cell coming from the "
                              "normal range, switched at the thresholds without delay (HINT.protection_timing)"),
     "pd_sink": lambda p: ("not simulated: the USB PD negotiation, PG and the CC lines – VBUS is the voltage a "

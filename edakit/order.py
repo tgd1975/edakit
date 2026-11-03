@@ -26,12 +26,12 @@ Pieces per cart line: ceil(per set x quantity x (1 + [project] spare_pct / 100))
 into the same files: one line per supplier and code, the pieces summed, the comment naming each project with its
 pieces, part and designators ("pytree: 20 XL-504SURD: D18 D22 (10 + 10) | christmas-bell (tht): 5 …"); each other
 project's hand-assembly list is written beside as hand_assembly_<project>.md. One order for several projects
-(docs/concepts/new/parts-order.md, decision 1).
+(docs/concepts/done/parts-order.md, decision 1).
 
   PARTS.supplier  a part bought separately (bom: false) has an LCSC number – not a C99… EasyEDA library number – or `order` in its
        parts entry (warning)
 
-The supplier's cart (docs/concepts/new/parts-order.md, decisions 3 and 5): a supplier with a profile –
+The supplier's cart (docs/concepts/done/parts-order.md, decisions 3 and 5): a supplier with a profile –
 edakit/suppliers/<supplier>.toml, LCSC – is filled by the skill cart from cart_<supplier>.csv, every line read back into
 <out>/<supplier>/cart.json with the page text cart_page.txt beside it, and the skill stops before the checkout.
 `edakit order check` holds that cart to basket.json (ORDER.basket) and writes <out>/<supplier>/check.md:
@@ -69,8 +69,8 @@ OTHER_HEAD = ["Code", "Quantity", "Item", "Designators"]
 
 
 SUPPLIERS = Path(__file__).with_name("suppliers")
-SUPPLIER_KEYS = ("name", "recorded", "start", "currency", "formats", "max_lines", "columns", "upload", "cart", "never",
-                 "rounds", "combine")
+SUPPLIER_KEYS = ("name", "recorded", "start", "currency", "formats", "max_lines", "columns", "upload", "mapping", "cart",
+                 "cart_dialog", "never", "rounds", "weight", "combine")
 COMBINE_TEXT = ("maker", "page", "read")      # [combine]: besides these, conditions, express_above_g and the address
 CODE, TITLE = "ORDER.basket", "the supplier's cart = the basket"
 BASKET, CART_JSON, CART_PAGE, SHIPPING, SHIPPING_PAGE, CHECK = (
@@ -293,8 +293,9 @@ def check(design, rep, cfg=None):
 # --- edakit order check ----------------------------------------------------------------------------------------------
 
 def digits(text):
-    """The page text with thousands separators gone, for finding a quantity as read ("1,000" is 1000)."""
-    return re.sub(r"(?<=\d)[,\u202f\u00a0'](?=\d{3}\b)", "", text)
+    """The page text with thousands separators gone, for finding a quantity as read ("1,000" is 1000, LCSC's
+    "1,500g" is 1500g)."""
+    return re.sub(r"(?<=\d)[,\u202f\u00a0'](?=\d{3}(?!\d))", "", text)
 
 
 def on_page(page, value):

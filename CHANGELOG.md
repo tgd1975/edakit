@@ -8,6 +8,24 @@ written once, by `.github/merge.py`, from the fragments in [changes/](changes/RE
 update edakit@edakit`, then `/reload-plugins` or a new session; `edakit version` names the version that runs and what an
 update brings.
 
+## 1.1.13 – 2026-11-03
+
+- `edakit order check` finds a number written with its unit right after it, as LCSC's cart writes the weight ("1,500g"); before, ORDER.basket reported the weight as not in the page text. The LCSC profile is recorded (2026-11-03) with the BOM tool's steps "Create BOM" and the dialog of "Add to Cart" (keys `mapping`, `cart_dialog`), "Submit BOM" and "Secure Checkout" among the buttons never pressed; the skill cart's mode parts follows them.
+
+## 1.1.12 – 2026-11-03
+
+- The known gaps of the open designs closed (TD-124 to TD-133): a connector no longer hands a reversed source on from pin to pin (PATH.reverse); a low-side N-MOSFET in the ground return cuts a reversed source off ground (`[reverse] cuts` in catalog/paths.toml); `values.tvs: "bidirectional"` for a TVS that blocks both ways.
+- Mains: net `ac` (a sine, its range the peaks) and the AC rating `v_rms_max_v` of a part or pin – LIM.v holds the rms there, and a resistor between two AC nets the difference of their like ends; kind `varistor` (VRMS, VDC); a connector pin of role `line` or `neutral` is a supply input (PATH.unfed); LIM.hazardous/ground names a board ground tied to a mains terminal.
+- `values.adjust: "trimmer"` leaves a potentiometer set at the bench out of REQ.value/switch; `own.what: "copper"` – a solder jumper, a test pad – asks no supplier, no compliance fact and no EasyEDA device; the charger model drives its status output (role `stat`).
+
+## 1.1.11 – 2026-11-03
+
+- Handbook 19.4 and 19.5 show a thumbnail of each reference circuit's and open design's drawing beside its entry, linked to its catalog page; the site's link rewriting (`docs/pages.py`) now also handles links in HTML tags.
+
+## 1.1.10 – 2026-11-03
+
+- The parts-order concept is done and moved to docs/concepts/done/parts-order.md; the paths in edakit order, edakit cart, the LCSC profile, ORDER.basket's sources and the skill cart follow it.
+
 ## 1.1.9 – 2026-11-03
 
 - The handbook (16.1, 17.11) and step 9 no longer name *Design → Import Changes* as a click that always comes: since E-2 edakit writes the Channel ID itself, and the click is asked for only if EasyEDA's DRC still waits for the import.
@@ -30,7 +48,7 @@ update brings.
 ## 1.1.5 – 2026-11-03
 
 - The parts at LCSC with the skill cart (`/edakit:cart parts`): `edakit order` writes `basket.json`, the supplier profile `edakit/suppliers/lcsc.toml` (provisional), and `edakit order check` holds LCSC's cart as the skill read it back to the basket – the new code ORDER.basket; lines already in the cart are listed, never touched.
-- The combined shipment (`/edakit:cart combine`): a job at JLCPCB whose basket has LCSC lines carries LCSC's warehouse address and the conditions; `edakit order check` prints both carts' weights and the routes to compare, and after combining the cheapest of LCSC's methods that arrives by the new key `[cart] needed_by`. On the owner's choice the skill enters that address at JLCPCB's checkout – the one field of a checkout it sets (docs/concepts/new/parts-order.md, steps 2 and 3).
+- The combined shipment (`/edakit:cart combine`): a job at JLCPCB whose basket has LCSC lines carries LCSC's warehouse address and the conditions; `edakit order check` prints both carts' weights and the routes to compare, and after combining the cheapest of LCSC's methods that arrives by the new key `[cart] needed_by`. On the owner's choice the skill enters that address at JLCPCB's checkout – the one field of a checkout it sets (docs/concepts/done/parts-order.md, steps 2 and 3).
 
 ## 1.1.4 – 2026-11-03
 
@@ -223,7 +241,7 @@ update brings.
 
 ## 0.6.1 – 2026-11-02
 
-- `edakit order --with CONFIG` puts the carts of several projects into one set of files – one line per supplier and code, the pieces summed, the comment naming each project – for one parts order for several boards (docs/concepts/new/parts-order.md, decision 1).
+- `edakit order --with CONFIG` puts the carts of several projects into one set of files – one line per supplier and code, the pieces summed, the comment naming each project – for one parts order for several boards (docs/concepts/done/parts-order.md, decision 1).
 
 ## 0.6.0 – 2026-11-02
 

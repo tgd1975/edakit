@@ -30,7 +30,7 @@ Examples: [the Christmas bell's parts](https://github.com/tgd1975/automatic_chri
 |---|---|
 | `lcsc`, `mpn`, `manufacturer` | identification. `lcsc` equals the file name, `mpn` is what a component names in `part` – STRUCT.identity compares them, with the `kind` and the value parameters. With a maker that matches by MPN (`bom.match = "mpn"` in its profile: PCBWay, Eurocircuits, AISLER; `[cart]`), `mpn` and `manufacturer` are required for every assembled part (PARTS.fact/mpn) and go into `bom_<board>_mpn.csv`, for AISLER into the components of the ODB++ (kicad-cli, 16.5) |
 | `order` | where a part bought separately is ordered, supplier → order code: `{"rs": "223-0562", "farnell": "…"}`. A value may be `{code, moq, step}` with the supplier's minimum and pack size, `{"lcsc": {"moq": 20, "step": 20}}` (the LCSC code defaults to `lcsc`). The first supplier is the default of `edakit order`. PARTS.supplier warns about a `bom: false` part with neither an LCSC number nor `order` – a `C99…` library number counts as none, LCSC does not sell it |
-| `kind` | `resistor`, `capacitor`, `crystal`, `inductor`, `fuse`, `diode`, `led`, `led_rgb`, `npn`, `pnp`, `pmos`, `nmos`, `njfet`, `pjfet`, `switch`, `dip_switch`, `button`, `potentiometer`, `battery_holder`, `buzzer`, `relay`, `connector`, `ic`, `module`, `motor`, `solenoid`, `speaker`, `heater`, `optocoupler`, `esd_array`, `led_strip` |
+| `kind` | `resistor`, `capacitor`, `crystal`, `inductor`, `fuse`, `diode`, `led`, `led_rgb`, `npn`, `pnp`, `pmos`, `nmos`, `njfet`, `pjfet`, `switch`, `dip_switch`, `button`, `potentiometer`, `battery_holder`, `buzzer`, `relay`, `connector`, `ic`, `module`, `motor`, `solenoid`, `speaker`, `heater`, `optocoupler`, `esd_array`, `led_strip`, `varistor` |
 | `package`, `footprint` | the footprint name must equal the EasyEDA footprint (SYNC.footprint compares it with the PCB) |
 | `footprint_data` | optional: the footprint as data – origin, pads, outline and print in mm –, from which `edakit part build` builds the project's copy and to which SYNC.footprint holds it; an own footprint as text (4.5) |
 | `jlc_class` | Basic / Extended Part; PARTS.stock warns when JLCPCB's catalogue lists another class |
@@ -53,7 +53,7 @@ Examples: [the Christmas bell's parts](https://github.com/tgd1975/automatic_chri
 | `sources` | where every value comes from; "assumption …" marks what must be checked with extra care – also a value taken from a sibling part or the series. The gate protocol lists every source with the word "assumption" (8.2) |
 | `compliance` | for the regulatory review (M-6, chapter 15): `rohs` (true, false or the exemption), `reach` (the supplier's SVHC statement, or `"none above 0.1 %"` with its source: a board given away or sold names it for every part, else PARTS.fact/reach – information for a gift, a warning for a sale), `radio` for a part that transmits – `bands_mhz` (`[[from, to], …]` in MHz: the bands it can transmit in, as datasheet or certificate state them), `max_dbm` (the conducted power at the RF port, as datasheets state it – not the radiated power), `antenna_dbi` (the gain of the antenna it transmits through in the product, from the module's datasheet or certificate), `eirp_dbm` (optional: the e.i.r.p. where a certificate states it), `doc` (URL of the EU declaration of conformity); its e.i.r.p. is `eirp_dbm`, else `max_dbm` + `antenna_dbi`, and LIM.eirp holds it to the limit of the band (3.3) –, or `"none"` for a part that does not transmit: a part of graph type `module` or `microcontroller` states one of the two, else PARTS.fact reports it (information, for a board that is sold a warning), and every part the BOM lists (`bom` not false) states `rohs`, else PARTS.fact/rohs, graded the same; `source` (page and date). This is support for the review, not legal advice: nothing in it is legally guaranteed, and it makes no claim to be correct (chapter 15) |
 | `verified` | `null` or the sign-off: `by`, `date`, `datasheet` (revision), `checked` (list), `open` (list: a text, or `{"text": "…", "when": "order"}` – `when` names the phase whose manual check answers it: `order` the assembly preview M-2, `acceptance` the delivered board M-4), optional `datasheet_sha256` (the file signed against, as `edakit part fetch` recorded it), optional `second_check` (the independent M-1 review). The gate protocol lists the open points (8.2) |
-| `own` | a part nobody sells (4.5): `what` – `pcb` (a board of an edakit project), `bin` (from your stock, no longer to be had), `handmade`; for `pcb` its source: `project`, `connectors`, `graph_version`, `state_sha256` (the board's circuit hash), and in the copy `path`, `commit`, `repo`, `released` – SYNC.source compares them |
+| `own` | a part nobody sells (4.5): `what` – `pcb` (a board of an edakit project), `bin` (from your stock, no longer to be had), `handmade`, `copper` (the board's own copper – a solder jumper, a test pad, a pad for a wire: no supplier, no compliance facts, no LCSC part or EasyEDA device asked; its pads are the layout's); for `pcb` its source: `project`, `connectors`, `graph_version`, `state_sha256` (the board's circuit hash), and in the copy `path`, `commit`, `repo`, `released` – SYNC.source compares them |
 
 ### Pin keys
 
@@ -134,7 +134,8 @@ Pin roles (`role`) tell the code what a pin does, independent of its name:
 | optocoupler | `anode`, `cathode`, `collector`, `emitter` (`vf_v`, `vf_at_a` of the LED; `ctr_min_ratio`: the transistor passes at least that share of the LED current); a PhotoMOS output `load_a`, `load_b` with `behavior: "photomos"`, `r_on_ohm`, `if_on_a` (the LED current that guarantees on – the datasheet's maximum operate current), `if_off_a` (guaranteed off – its minimum turn-off current), `i_leak_a`, and `limits` `v_load_max_v`, `i_load_max_a` (5.1) |
 | esd_array | `io1` … `io8` (each protected line; two pins of one line share the role), `vbus` (the steering rail), `gnd` – `limits.vrwm_max_v` (the rail's stand-off: LIM.v holds the rail to it without margin), `values` `vbr_min_v`, `vf_v`, `vf_at_a`, `c_io_f`; HINT.esd counts the lines on its io pins as guarded |
 | led_strip | `vdd`, `gnd`, `din` at the start, `vdd_end`, `gnd_end`, `dout` at the far end (`cin`, `cout`: a clocked strip's clock) – the pin numbers are the entry's own; the strip's length is the component's (3.1) |
-| connector | free (`pin1`, …); `vbus`/`gnd` for a supply input; `cc1`, `cc2` on a USB-C receptacle (REQ.missing:cc; a module or breakout without these roles: `values.usb_c`) |
+| varistor | the pin numbers `1`, `2` (`v_rms_max_v`, `v_max_v`: its VRMS and VDC, held without derating – on an AC net the first, 3.1; designator prefix `RV`) |
+| connector | free (`pin1`, …); `vbus`/`gnd` for a supply input; `line`, `neutral` for a mains input (a terminal: PATH.unfed takes the module behind it as fed); `cc1`, `cc2` on a USB-C receptacle (REQ.missing:cc; a module or breakout without these roles: `values.usb_c`) |
 | ic, module | as the behaviour model needs them: `vin`, `vout`, `gnd`, `vsys`, `3v3`, `gpio`, `rext`, `out`, `oe_n`, `vdd`; `sda`, `scl` for I2C pins (REQ.missing); on shift registers and LED drivers `sdi`, `sdo` (serial data in and out) and the outputs numbered `out0` … `outN` where their order matters – the simulation reads them as `out`, the firmware contract numbers its channels by them (3.5) |
 
 ### Limits and values
@@ -149,12 +150,13 @@ What `edakit part lint` holds an entry to and the engines read, per kind – gen
 |---|---|---|
 | every kind | `p_max_w`, `rth_ja_k_per_w`, `tj_max_c`, `t_max_c`, `t_min_c` | – |
 | `resistor` | `v_max_v` | `value_ohm`, `r_max_ohm`, `tolerance` |
-| `potentiometer` | `v_max_v` | `value_ohm`, `tolerance` |
+| `potentiometer` | `v_max_v` | `value_ohm`, `tolerance`, `adjust` |
 | `capacitor` | `v_max_v`, `vr_max_v`, `i_ripple_a` | `value_f`, `dielectric`, `polarized`, `tolerance`, `dc_bias`, `esr_ohm` |
 | `crystal` | – | `f_hz`, `c_load_f` |
 | `inductor` | `i_max_a`, `i_sat_a` | `value_h`, `dcr_ohm` |
 | `fuse` | `v_max_v`, `i_max_a`, `i_hold_a`, `i_trip_a` | `r_min_ohm`, `r_max_ohm`, `i_hold_vs_temp` |
 | `diode` | `vr_max_v`, `if_max_a`, `ifsm_max_a` | `vf_v`, `vf_at_a`, `ir_a`, `ir_at_v` |
+| `varistor` | `v_rms_max_v`, `v_max_v` | `v_varistor_v`, `v_clamp_v` |
 | `led` | `vr_max_v`, `if_max_a` | `color`, `vf_typ_v`, `vf_min_v`, `vf_max_v`, `vf_at_a`, `rs_ohm`, `vf_vs_if` |
 | `led_rgb` | `vr_max_v`, `if_max_a` | `vf_typ_v`, `vf_min_v`, `vf_max_v`, `vf_at_a`, `rs_ohm`, `vf_vs_if` |
 | `npn` | `vce_max_v`, `veb_max_v`, `ic_max_a` | `hfe_min`, `hfe_max`, `vce_sat_v`, `icbo_a` |
@@ -169,7 +171,7 @@ What `edakit part lint` holds an entry to and the engines read, per kind – gen
 | `battery_holder` | `i_max_a`, `v_max_v` | `r_contact_ohm` |
 | `buzzer` | `v_max_v`, `i_max_a` | `coil_ohm` |
 | `relay` | `v_coil_max_v`, `i_max_a`, `v_max_v`, `i_contact_max_a`, `i_switch_max_a` | `coil_ohm`, `v_operate_v`, `v_release_v`, `r_contact_ohm`, `min_load_a` |
-| `connector` | `v_max_v`, `i_max_a`, `i_contact_max_a` | `pitch_mm`, `r_contact_ohm`, `r_source_ohm`, `usb_c` |
+| `connector` | `v_max_v`, `i_max_a`, `i_contact_max_a`, `v_rms_max_v` | `pitch_mm`, `r_contact_ohm`, `r_source_ohm`, `usb_c` |
 | `ic` | `vdd_max_v`, `vdd_op_min_v`, `vdd_op_max_v`, `vin_min_v`, `vin_max_v`, `vout_max_v`, `i_out_max_a`, `vin_rel_max_v`, `i_supply_pin_max_a`, `f_max_hz`, `r_sense_min_ohm`, `f_sck_max_hz`, `f_scl_max_hz`, `gpio_i_max_a`, `gpio_i_total_max_a` | `behavior`, `vout_v`, `dropout_v`, `iq_a`, `efficiency`, `idd_max_a`, `iout_gain`, `iout_accuracy`, `vout_knee_v`, `vrext_v`, `vih_v`, `vil_v`, `vih_ratio`, `vil_ratio`, `first_bit_to`, `vout_swing_v`, `vicm_v`, `r_out_ohm`, `comparator`, `gain_min_ratio`, `f_clock_hz`, `vref_v`, `i_load_min_a`, `prog_v`, `icc_a`, `i_a`, `i_core_a`, `i_core_min_a`, `gpio_r_out_ohm`, `regulator`, `vdd_shunt_v`, `i_shunt_max_a`, `pd_request_v`, `r_on_ohm`, `vgs_th_v`, `r_on_high_ohm`, `r_on_low_ohm`, `v_headroom_v`, `uvlo_v`, `v_pre_v`, `i_pre_ratio`, `i_term_ratio`, `v_ovp_v`, `v_ovp_release_v`, `v_uvp_v`, `v_uvp_release_v`, `v_ocp_v`, `v_scp_v`, `vsense_v`, `duty_max_ratio`, `ripple_ratio` |
 | `module` | `vdd_op_min_v`, `vdd_op_max_v`, `vin_min_v`, `vin_max_v`, `vsys_min_v`, `vsys_max_v`, `i_out_max_a`, `gpio_v_max_v`, `gpio_i_max_a`, `gpio_i_total_max_a`, `f_max_hz`, `f_sck_max_hz`, `f_scl_max_hz` | `behavior`, `regulator`, `v_io_v`, `vout_v`, `dropout_v`, `efficiency`, `i_core_a`, `i_core_min_a`, `gpio_r_out_ohm`, `iq_a`, `vih_v`, `vil_v`, `vih_ratio`, `vil_ratio`, `usb_c`, `f_clock_hz` |
 | `motor` | `v_max_v`, `i_max_a` | `coil_ohm` |
@@ -180,7 +182,7 @@ What `edakit part lint` holds an entry to and the engines read, per kind – gen
 | `esd_array` | `vrwm_max_v` | `vbr_min_v`, `vf_v`, `vf_at_a`, `c_io_f` |
 | `led_strip` | `vdd_op_min_v`, `vdd_op_max_v` | `pixels_per_m`, `i_pixel_a`, `i_idle_a`, `r_vdd_ohm_per_m`, `r_gnd_ohm_per_m` |
 
-Per pin: `v_max_v`, `v_op_min_v`, `v_op_max_v`, `vih_v`, `vil_v`, `vih_ratio`, `vil_ratio`, `pull_ohm`, `v_min_v`, `v_rel_max_v`, `v_max_powered_v`, `i_max_a`, `i_inject_max_a`, `r_load_min_ohm`, `c_load_max_f`, `pull_v`, `c_in_f`; and `name`, `type`, `role`, `strap`, `pull`, `hint`, `functions`, `out_edge`, `t_pd_ns`, `needs`, `drive`, `float_ok`, `adc`, `z_in_ohm`, `short_proof`, `clamp`, `windows`, `biased`, `ref`, `rel_ref`, `state`, `print`. Every name ends in its unit: `_v` V, `_a` A, `_w` W, `_ohm` Ω, `_f` F, `_h` H, `_c` °C, `_hz` Hz, `_dbm` dBm, `_dbi` dBi, `_mm` mm, `_n` N, `_s` s, `_ns` ns, `_k_per_w` K/W, `_ratio` 1, `_ohm_per_m` Ω/m, `_per_m` 1/m. Words: `behavior` ldo, buck, boost, buck_boost, mcu, cc_sink, opamp, logic, current, bridge, charger, protection, pd_sink, pass_gate, photomos, matrix_driver, cc_led_driver, none; `regulator` ldo, buck, boost, buck_boost, none; `color` red, green, blue, yellow, orange, white, warm_white, amber, uv, ir, rgb; `dielectric` C0G, NP0, X5R, X7R, X7S, X6S, Y5V, electrolytic, polymer, tantalum, film.
+Per pin: `v_max_v`, `v_op_min_v`, `v_op_max_v`, `vih_v`, `vil_v`, `vih_ratio`, `vil_ratio`, `pull_ohm`, `v_min_v`, `v_rel_max_v`, `v_max_powered_v`, `i_max_a`, `i_inject_max_a`, `r_load_min_ohm`, `c_load_max_f`, `pull_v`, `c_in_f`, `v_rms_max_v`; and `name`, `type`, `role`, `strap`, `pull`, `hint`, `functions`, `out_edge`, `t_pd_ns`, `needs`, `drive`, `float_ok`, `adc`, `z_in_ohm`, `short_proof`, `clamp`, `windows`, `biased`, `ref`, `rel_ref`, `state`, `print`. Every name ends in its unit: `_v` V, `_a` A, `_w` W, `_ohm` Ω, `_f` F, `_h` H, `_c` °C, `_hz` Hz, `_dbm` dBm, `_dbi` dBi, `_mm` mm, `_n` N, `_s` s, `_ns` ns, `_k_per_w` K/W, `_ratio` 1, `_ohm_per_m` Ω/m, `_per_m` 1/m. Words: `behavior` ldo, buck, boost, buck_boost, mcu, cc_sink, opamp, logic, current, bridge, charger, protection, pd_sink, pass_gate, photomos, matrix_driver, cc_led_driver, none; `regulator` ldo, buck, boost, buck_boost, none; `color` red, green, blue, yellow, orange, white, warm_white, amber, uv, ir, rgb; `dielectric` C0G, NP0, X5R, X7R, X7S, X6S, Y5V, electrolytic, polymer, tantalum, film; `adjust` panel, trimmer.
 <!-- edakit:end -->
 
 A limit named `<quantity>_max_<unit>` or `<quantity>_min_<unit>` is held to the quantity of that name at the part
@@ -258,6 +260,16 @@ entry's, the entry's before the default of the pin type. The sections below give
 - a polarized capacitor (an electrolytic, a tantalum): `values.polarized: true` and the pin roles `plus` and `minus`;
   `vr_max_v` the reverse voltage the series allows – LIM.v holds it in the declared ranges and the simulation, and
   PATH.reverse reports one a reversed source reaches (both grade `polarized`, warnings).
+- an AC rating – a mains terminal's 300 V AC, a mains module's input range 85 … 265 V AC, a varistor's VRMS:
+  `v_rms_max_v` in V rms, of the entry (`connector`, `varistor`) or of a pin. On an AC net (3.1, net `ac`) LIM.v
+  holds the rms of what the part sees to it, and not its DC rating (`v_max_v`, a pin's `v_min_v`); elsewhere the DC
+  rating holds. A rating the datasheet gives only for AC goes there, not into `v_max_v`.
+- a potentiometer set once at the bench and not turned while the board runs – a bias trimmer, a multiturn 3296:
+  `values.adjust: "trimmer"` (`"panel"`, the default, a pot on the front panel). REQ.value/switch holds a panel pot in
+  a signal path to one DC level on both sides – the scratch of a control turned while playing –, a trimmer not.
+- a TVS diode: `values.tvs: true`, its working voltage (VRWM) as `vr_max_v` – LIM.v holds the reverse voltage to it
+  without the derating factor; a bidirectional one (the CA suffix) `values.tvs: "bidirectional"`: LIM.v holds it either
+  way, and PATH.reverse takes it as a part that tolerates a reversed source.
 - a class-2 ceramic (X5R, X7R …): `values.dc_bias`, the share of its capacitance left at a DC across it as
   `[[V, ratio], …]` – the maker's curve for this part, volts from 0 to the rated voltage (KEMET's 4.7 µF 6.3 V 0603
   X5R, C5126849: `[[0, 1.0], [1, 0.97], [2, 0.89], [3, 0.72], [4, 0.54], [5, 0.43], [6.2, 0.35]]`). Makers give it as

@@ -26,7 +26,8 @@
  },
  "values": {
   "value_ohm": 100000.0,
-  "tolerance": 0.1
+  "tolerance": 0.1,
+  "adjust": "trimmer"
  },
  "limits": {
   "v_max_v": 300,
@@ -40,7 +41,8 @@
   "electrical characteristics: standard resistance range 10 Ω to 2 MΩ, tolerance ±10 % std., effective travel 25 turns nom.; environmental characteristics: power rating (300 volts max.) 0.5 W at 70 °C, 0 W at 125 °C, temperature range −55 … +125 °C; p_max_w 0.5 is the rating at 70 °C",
   "pins: product dimensions 3296W – pins 1, 2, 3 in a row, 2 the wiper; the circuit drawing: 1 CCW, 2 WIPER, 3 CW – as the design's symbol Device:R_Potentiometer_Trim_US (2 the wiper) and its footprint Potentiometer_THT:Potentiometer_Bourns_3296W_Vertical",
   "JLCPCB catalogue 2026-11-03 (edakit part search): C48084 3296W-1-104LF, BOURNS, Extended Part",
-  "stand-in: the schematic names the value (TRIM1 100K) and the footprint, not the order code; its note asks for multiturn trimpots"
+  "stand-in: the schematic names the value (TRIM1 100K) and the footprint, not the order code; its note asks for multiturn trimpots",
+  "Bourns 3296 series: a 3/8\" square multiturn trimming potentiometer, adjusted with a screwdriver – values adjust trimmer"
  ],
  "verified": {
   "by": "Claude (datasheet check, open-design transcription)",

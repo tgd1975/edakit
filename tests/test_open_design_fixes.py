@@ -18,8 +18,12 @@ current – was counted neither by LIM.i/charge nor by the charger model. The Fu
 resistor to a supply that comes in at a connector, which no pin types, was taken as floating. The WLED controller
 (ADLSC) added one: the gate of the reverse-polarity N-MOSFET in the ground return, tied straight to the net the supply
 comes in on, was taken as floating – the same rails now serve both. The ESPurna-H added one: a need on a regulator's
-VOUT pin left open was taken as not connected, though its tab – the same terminal – carries the output. Parts here are
-test entries, not datasheets."""
+VOUT pin left open was taken as not connected, though its tab – the same terminal – carries the output. The known gaps
+the four newest designs showed are closed too (TD-124 to TD-133): a connector handing a reversed source on from pin to
+pin, a low-side reverse-polarity N-MOSFET unknown to PATH.reverse, a bidirectional TVS judged one way, AC nets held as
+DC and a divider's taps against ground, no varistor kind, no mains terminal as a supply, a ground tied to the line
+unseen, a trimmer held to a panel pot's rule, board copper asked for a supplier, and a charger's status output left
+floating. Parts here are test entries, not datasheets."""
 
 import json
 import shutil
@@ -787,3 +791,297 @@ def test_a_need_on_a_pin_left_open_is_judged_where_its_terminal_is_connected():
     assert [(f.code, f.text) for f in pin_needs(tab_regulator(["4"], 2.2e-5))] == [sense]
     assert sorted((f.code, f.text) for f in pin_needs(tab_regulator(["2", "4"]))) == [
         sense, ("REQ.value", "U1.2: needs a capacitor of at least 22 µF to GND – C1 on OUT: 10 µF")]
+
+
+# --- the known gaps of the open designs (TD-124 to TD-133) -------------------------------------------------------------
+CELL = {"lcsc": "C9000516", "mpn": "test cell holder", "kind": "battery_holder", "verified": {"by": "test"},
+        "pins": {"1": {"name": "+", "type": "passive", "role": "plus"},
+                 "2": {"name": "-", "type": "passive", "role": "minus"}}}
+LOGIC = {"lcsc": "C9000517", "mpn": "test logic", "kind": "ic", "verified": {"by": "test"},
+         "pins": {"1": {"name": "VDD", "type": "power_in"}, "2": {"name": "GND", "type": "ground"}},
+         "needs": {"decoupling": False}}
+
+
+def reversed_at(graph_nets, comps, parts):
+    """PATH.reverse's places on a design of `comps` with `graph_nets` {name: pins}."""
+    from edakit.engines.paths import reverse
+    graph = {"name": "t", "version": "1", "ground": "GND", "components": comps,
+             "nets": [{"name": n, "pins": p, "v": [0, 5.5]} for n, p in graph_nets.items()]}
+    d = Design.from_data(graph, parts)
+    return sorted(f.place for f in reverse(d, d))
+
+
+def test_a_connector_hands_a_reversed_source_on_to_none_of_its_other_pins():
+    """The Micro-Lipo's JP4: the cell's VBAT on one pad, 5V on another – edakit let a connector pass a reversed source
+    from every pin to every pin, so the charger's VDD (U1.4), the red LED on 5V and the CC resistors behind the
+    USB-C receptacle were reached. A connector's contacts are separate: it takes a reversed voltage on the pin it sits
+    on and hands nothing on. A part straight on the cell's net is still reached."""
+    comps = [{"designator": "BT1", "type": "battery_holder", "lcsc": "C9000516", "pins": {"1": "+", "2": "-"}},
+             {"designator": "J1", "type": "connector", "lcsc": "C9000515", "pins": {"1": "1", "2": "2"}},
+             {"designator": "U1", "type": "ic", "lcsc": "C9000517", "pins": {"1": "VDD", "2": "GND"}}]
+    parts = {"C9000515": TERMINAL, "C9000516": CELL, "C9000517": LOGIC}
+    assert reversed_at({"VBAT": ["BT1.1", "J1.1"], "5V": ["J1.2", "U1.1"], "GND": ["BT1.2", "U1.2"]},
+                       comps, parts) == []                                 # before: ["U1.1"]
+    assert reversed_at({"VBAT": ["BT1.1", "J1.1", "U1.1"], "5V": ["J1.2"], "GND": ["BT1.2", "U1.2"]},
+                       comps, parts) == ["U1.1"]
+
+
+def ground_return(gate="VIN", leak=False):
+    """ADLSC's input in brief: the terminal J1 (reversible) brings VIN on pin 2 and its return VRTN on pin 1; Q1 in
+    the ground return – drain on VRTN, source on GND, gate on `gate` –; U1's supply from VIN to GND, U2's straight
+    across VIN and VRTN. `gate` "VG": through R1 from VIN; "CTRL": a net nothing on the plus side holds. `leak`: R2
+    from VRTN to GND beside Q1."""
+    res = {"lcsc": "C9000510", "mpn": "test resistor", "kind": "resistor",
+           "pins": {"1": {"name": "1", "type": "passive"}, "2": {"name": "2", "type": "passive"}},
+           "values": {"value_ohm": 10000}}
+    j1 = {"designator": "J1", "type": "connector", "lcsc": "C9000515", "pins": {"1": "1", "2": "2"},
+          "source": "reversible"}
+    comps = [j1, {"designator": "Q1", "type": "transistor", "lcsc": "C9000514", "pins": {"1": "G", "2": "D", "3": "S"}},
+             {"designator": "U1", "type": "ic", "lcsc": "C9000517", "pins": {"1": "VDD", "2": "GND"}},
+             {"designator": "U2", "type": "ic", "lcsc": "C9000517", "pins": {"1": "VDD", "2": "GND"}}]
+    nets = {"VIN": ["J1.2", "U1.1", "U2.1"], "VRTN": ["J1.1", "Q1.2", "U2.2"], "GND": ["Q1.3", "U1.2"]}
+    nets.setdefault(gate, []).append("Q1.1")
+    if gate == "VG":
+        comps.append({"designator": "R1", "type": "resistor", "lcsc": "C9000510", "pins": {"1": "1", "2": "2"}})
+        nets["VIN"].append("R1.1")
+        nets["VG"].append("R1.2")
+    if leak:
+        comps.append({"designator": "R2", "type": "resistor", "lcsc": "C9000510", "pins": {"1": "1", "2": "2"}})
+        nets["VRTN"].append("R2.1")
+        nets["GND"].append("R2.2")
+    return nets, comps, {"C9000510": res, "C9000514": NMOS, "C9000515": TERMINAL, "C9000517": LOGIC}
+
+
+def test_a_low_side_mosfet_cuts_a_reversed_source_off_ground():
+    """ADLSC's Q1 (AOD442) in the ground return: reversed, its gate sits below its source and its body diode blocks –
+    the board's ground floats, and only what sits across the terminal's own two nets sees the reversed 5 V. Before:
+    PATH.reverse knew the series diode and the high-side P-MOSFET only, and walked from J1's pins as if GND were the
+    return – 20 findings on the ADLSC, Q1's own pins among them. Now U2, straight across VIN and VRTN, is still found;
+    U1 behind the cut and Q1 are not. A gate through a resistor from the plus side cuts as well; a gate the plus side
+    does not hold, or a resistor beside Q1 from the return to ground, does not."""
+    assert reversed_at(*ground_return()) == ["U2.1", "U2.2"]          # before: Q1.1, Q1.2, U1.1, U2.1, U2.2
+    assert reversed_at(*ground_return("VG")) == ["U2.1", "U2.2"]
+    assert reversed_at(*ground_return("CTRL")) == ["Q1.2", "U1.1", "U2.1", "U2.2"]
+    assert reversed_at(*ground_return(leak=True)) == ["Q1.1", "Q1.2", "R2.1", "U1.1", "U2.1", "U2.2"]
+
+
+def tvs_across(tvs):
+    """ground_return() with the TVS D4 (`tvs` its values.tvs) straight across VIN and VRTN – cathode on VIN – in place
+    of U2."""
+    nets, comps, parts = ground_return()
+    comps[-1] = {"designator": "D4", "type": "diode", "lcsc": "C9000501", "pins": {"1": "K", "2": "A"}}
+    nets = {n: [{"U2.1": "D4.1", "U2.2": "D4.2"}.get(r, r) for r in pins] for n, pins in nets.items()}
+    return nets, comps, {**parts, "C9000501": {**TVS, "values": {"tvs": tvs}}}
+
+
+def test_a_bidirectional_tvs_takes_a_reversed_source():
+    """ADLSC's D4, an SMBJ5.0CA across the terminal: bidirectional, it blocks up to its breakdown either way. The
+    parts schema had values tvs true only, so a reversed 5 V across it was judged as across a one-way diode – PATH.reverse
+    on both pins. values tvs "bidirectional" is tolerated, and LIM.v holds it to its working voltage either way; a
+    one-way TVS is still found, and the schema takes nothing but true and "bidirectional"."""
+    from edakit.engines.quantities import part_voltages
+    assert reversed_at(*tvs_across("bidirectional")) == []                  # before: D4.1, D4.2
+    assert reversed_at(*tvs_across(True)) == ["D4.1", "D4.2"]
+    graph = {"name": "t", "version": "1", "ground": "GND",
+             "components": [{"designator": "D4", "type": "diode", "lcsc": "C9000501", "pins": {"1": "K", "2": "A"}}],
+             "nets": [{"name": "LINE", "pins": ["D4.1"], "v": [-6, 3]}, {"name": "GND", "pins": ["D4.2"], "v": [0, 0]}]}
+    volts = {t: [q.hi for q in part_voltages(Design.from_data(graph, {"C9000501": {**TVS, "values": {"tvs": t}}}))
+                 if q.place == "D4"] for t in (True, "bidirectional")}
+    assert volts == {True: [3], "bidirectional": [6]}                       # before: 3 V both
+    assert schema.problems({**TVS, "values": {"tvs": "both"}}) == [
+        "values.tvs: true for a TVS diode, \"bidirectional\" for one that blocks both ways (the CA suffix), not 'both'"]
+
+
+# --- the ESPurna-H (espurna-h): the mains side --------------------------------------------------------------------------
+def mains_side(ac=True, terminal_rms=300, module=True):
+    """The ESPurna-H's mains side in brief: the terminal J1 (rated `terminal_rms` V AC, no DC rating) on NEUTRAL, 230 V
+    + 10 % against the line at GND – 358 V peak –, a divider R1 (470 kΩ, rated 200 V) – R2 (1 kΩ) from NEUTRAL through
+    TAP (179 V peak) to GND, and the module U1's AC input (85 … 265 V AC, 120 … 350 V DC) on NEUTRAL. `ac`: NEUTRAL and
+    TAP are marked AC nets."""
+    res = {"lcsc": "C9000510", "mpn": "test resistor", "kind": "resistor",
+           "pins": {"1": {"name": "1", "type": "passive"}, "2": {"name": "2", "type": "passive"}},
+           "values": {"value_ohm": 470000}, "limits": {"v_max_v": 200}}
+    terminal = {**TERMINAL, "limits": {"v_rms_max_v": terminal_rms}}
+    mod = {"lcsc": "C9000518", "mpn": "test AC module", "kind": "module", "verified": {"by": "test"},
+           "pins": {"1": {"name": "AC", "type": "power_in", "role": "ac_n", "v_max_v": 350, "v_min_v": -350,
+                          "v_rms_max_v": 265},
+                    "2": {"name": "AC", "type": "power_in", "role": "ac_l", "v_max_v": 350, "v_min_v": -350,
+                          "v_rms_max_v": 265}},
+           "values": {"behavior": "none"}}
+    comps = [{"designator": "J1", "type": "connector", "lcsc": "C9000515", "pins": {"1": "1", "2": "2"}},
+             {"designator": "R1", "type": "resistor", "lcsc": "C9000510", "pins": {"1": "1", "2": "2"}},
+             {"designator": "R2", "type": "resistor", "lcsc": "C9000510", "pins": {"1": "1", "2": "2"}}]
+    nets = {"NEUTRAL": (["J1.1", "R1.1"], 358), "TAP": (["R1.2", "R2.1"], 179), "GND": (["J1.2", "R2.2"], 0)}
+    if module:
+        comps.append({"designator": "U1", "type": "module", "lcsc": "C9000518", "pins": {"1": "AC", "2": "AC"}})
+        nets["NEUTRAL"][0].append("U1.1")
+        nets["GND"][0].append("U1.2")
+    graph = {"name": "t", "version": "1", "ground": "GND", "components": comps,
+             "nets": [{"name": n, "pins": p, "v": [-v, v], **({"ac": True} if ac and v else {})}
+                      for n, (p, v) in nets.items()]}
+    return Design.from_data(graph, {"C9000510": res, "C9000515": terminal, "C9000518": mod})
+
+
+def lim_v(d):
+    from edakit.engines.limits import judge_all
+    from edakit.engines.quantities import part_voltages, pin_voltages
+    return sorted((f.place, f.text) for f in judge_all(d, pin_voltages(d) + part_voltages(d)))
+
+
+def test_an_ac_net_is_held_by_its_rms_and_a_divider_s_taps_move_together():
+    """The ESPurna-H's mains side: the KF301 terminals rated 300 V AC, the HLK-PM01's input 85 … 265 V AC, the
+    5 × 470 kΩ divider to the HLW8012. edakit knew no AC net: it held the 358 V peak against the terminals' 300 V and
+    the module's 350 V DC, and each divider resistor to the highest voltage of its nets against GND (LIM.v on JP2, JP42,
+    U$1.2, R51 to R53). A net marked ac is a sine – its range the peaks –, an AC rating (v_rms_max_v) holds its rms in
+    place of the DC limits, and a resistor between two AC nets sees the difference of their like ends. A terminal
+    rated 250 V AC is still found at 253 V rms; unmarked, the divider resistor is held as before."""
+    assert lim_v(mains_side()) == []                                    # before: R1, U1.1 (2×)
+    assert lim_v(mains_side(terminal_rms=250)) == [("J1", "J1: up to 253 V rms, rated 250 V rms")]
+    assert lim_v(mains_side(ac=False, module=False)) == [("R1", "R1: nets up to 358.0 V, rated 200 V")]
+
+
+def test_a_varistor_is_held_to_its_ac_rating_on_the_mains():
+    """The ESPurna-H's S10K250 (V11) across the module's input: 250 V AC, 320 V DC (TDK SIOV). edakit had no kind for a
+    varistor – the transcription took kind ic, and nothing checked it. Kind varistor holds its VRMS on AC nets – 253 V
+    rms of 230 V + 10 % is above 250 V –, its VDC elsewhere, both without derating; a 275 V type passes."""
+    sv = {"lcsc": "C9000519", "mpn": "test varistor", "kind": "varistor", "verified": {"by": "test"},
+          "pins": {"1": {"name": "1", "type": "passive", "role": "1"}, "2": {"name": "2", "type": "passive", "role": "2"}},
+          "values": {"v_varistor_v": 390}, "limits": {"v_rms_max_v": 250, "v_max_v": 320}}
+
+    def across(ac=True, rms=250, v=358):
+        graph = {"name": "t", "version": "1", "ground": "GND",
+                 "components": [{"designator": "RV1", "type": "varistor", "lcsc": "C9000519", "pins": {"1": "1", "2": "2"}}],
+                 "nets": [{"name": "MAINS", "pins": ["RV1.1"], "v": [-v, v], **({"ac": True} if ac else {})},
+                          {"name": "GND", "pins": ["RV1.2"], "v": [0, 0]}]}
+        return lim_v(Design.from_data(graph, {"C9000519": {**sv, "limits": {"v_rms_max_v": rms, "v_max_v": 320}}}))
+    assert across() == [("RV1", "RV1: up to 253 V rms, rated 250 V rms")]
+    assert across(rms=275) == []
+    assert across(ac=False) == [("RV1", "RV1: up to 358.0 V, rated 320 V")]
+    assert across(ac=False, v=300) == []
+    assert schema.problems(sv) == []
+
+
+def test_a_mains_terminal_feeds_the_module_behind_it():
+    """The ESPurna-H's HLK-PM01: its AC input fed from the terminals JP42 (line, through two fuses) and JP2 (neutral).
+    A connector fed a net only with a vbus pin, so PATH.unfed found both AC pins; marking the terminals reversible
+    would have sent PATH.reverse across the mains side. A connector pin of role line or neutral is a supply input;
+    without the roles both pins are still found."""
+    from edakit.engines.paths import supply
+    mod = {"lcsc": "C9000518", "mpn": "test AC module", "kind": "module", "verified": {"by": "test"},
+           "pins": {"1": {"name": "AC", "type": "power_in", "role": "ac_l"},
+                    "2": {"name": "AC", "type": "power_in", "role": "ac_n"},
+                    "3": {"name": "-VO", "type": "ground", "role": "gnd"}},
+           "values": {"behavior": "none"}}
+    fuse = {"lcsc": "C9000520", "mpn": "test fuse", "kind": "fuse",
+            "pins": {"1": {"name": "1", "type": "passive"}, "2": {"name": "2", "type": "passive"}}}
+
+    def unfed(roles):
+        terminal = {**TERMINAL, "pins": {n: {**p, "role": r} for (n, p), r in zip(TERMINAL["pins"].items(), roles)}}
+        comps = [{"designator": "J1", "type": "connector", "lcsc": "C9000515", "pins": {"1": "1", "2": "2"}},
+                 {"designator": "F1", "type": "fuse", "lcsc": "C9000520", "pins": {"1": "1", "2": "2"}},
+                 {"designator": "U1", "type": "module", "lcsc": "C9000518", "pins": {"1": "AC", "2": "AC", "3": "-VO"}}]
+        nets = {"LINE_I": ["J1.1", "F1.1"], "LINE_P": ["F1.2", "U1.1"], "NEUTRAL": ["J1.2", "U1.2"], "GND": ["U1.3"]}
+        graph = {"name": "t", "version": "1", "ground": "GND", "components": comps,
+                 "nets": [{"name": n, "pins": p, "v": [-358, 358]} for n, p in nets.items()]}
+        d = Design.from_data(graph, {"C9000515": terminal, "C9000518": mod, "C9000520": fuse})
+        return sorted(f.place for f in supply(d) if f.code == "PATH.unfed")
+    assert unfed(["line", "neutral"]) == []                          # before: U1.1, U1.2
+    assert unfed(["pin1", "pin2"]) == ["U1.1", "U1.2"]
+
+
+def test_a_ground_tied_to_the_line_is_hazardous():
+    """The ESPurna-H's R42 (0 Ω) ties GND to the line behind the shunt, as the HLW8012 requires: every net of the board
+    sits at mains potential against earth. edakit holds every range against GND, so nothing on the low-voltage side
+    read hazardous – the gap was named in handbook 19.9 only. LIM.hazardous/ground names it once mains comes in at a
+    terminal's line or neutral pin; a ground tied through 10 kΩ, or a terminal without those roles, is not."""
+    from edakit.engines.limits import mains_ground
+    res = {"lcsc": "C9000510", "mpn": "test resistor", "kind": "resistor",
+           "pins": {"1": {"name": "1", "type": "passive"}, "2": {"name": "2", "type": "passive"}}}
+
+    def tied(ohm, roles=("line", "neutral")):
+        terminal = {**TERMINAL, "pins": {n: {**p, "role": r} for (n, p), r in zip(TERMINAL["pins"].items(), roles)}}
+        comps = [{"designator": "J1", "type": "connector", "lcsc": "C9000515", "pins": {"1": "1", "2": "2"}},
+                 {"designator": "R42", "type": "resistor", "lcsc": "C9000510", "pins": {"1": "1", "2": "2"}}]
+        nets = {"LINE": ["J1.1", "R42.2"], "NEUTRAL": ["J1.2"], "GND": ["R42.1"]}
+        graph = {"name": "t", "version": "1", "ground": "GND", "components": comps,
+                 "nets": [{"name": n, "pins": p, "v": [-1, 1]} for n, p in nets.items()]}
+        d = Design.from_data(graph, {"C9000515": terminal, "C9000510": {**res, "values": {"value_ohm": ohm}}})
+        return [(f.grade, f.place, f.text) for f in mains_ground(d)]
+    assert tied(0) == [("ground", "GND", "GND: tied to the mains – J1.1 (line) on LINE through R42: every net of the "
+                        "board sits at mains potential against earth, while edakit holds every voltage against GND – "
+                        "the low-voltage side shows nothing hazardous, and edakit checks no isolation")]   # before: none
+    assert tied(10000) == []
+    assert tied(0, ("pin1", "pin2")) == []
+
+
+@pytest.mark.skipif(not shutil.which("ngspice"), reason="ngspice not installed")
+def test_a_trimmer_is_not_held_to_a_panel_pot_s_rule(tmp_path):
+    """The Fuzz Face's TRIM2, Q2's collector resistor (a Bourns 3296W, 50 kΩ): 3.2–4.9 V across it by design, between
+    the collector and the output tap, both in the signal path. REQ.value/switch held it to one DC level like a pot
+    turned while playing – edakit could not tell a trimmer from a panel pot. values adjust "trimmer" leaves it out; the
+    fuzz pot POT2 is still found, and without the value TRIM2 is again."""
+    from edakit import config
+    from edakit.sim import run as simrun
+    from test_open_designs import copy
+
+    def switch(name, adjust):
+        cfg = copy("whbeers-fuzz-face", tmp_path / name)
+        if adjust is None:
+            f = tmp_path / name / "whbeers-fuzz-face" / "hardware" / "parts" / "C83686.json"
+            e = json.loads(f.read_text(encoding="utf-8"))
+            del e["values"]["adjust"]
+            f.write_text(json.dumps(e, indent=1), encoding="utf-8")
+            cfg = config.load(tmp_path / name / "whbeers-fuzz-face" / "edakit.toml")
+        out = simrun.run_all(Design.from_config(cfg), engines.load_sim(cfg))
+        return sorted({r["item"] for r in out["checks"] if r["id"] == "REQ.value" and r["result"] != "pass"})
+    assert switch("a", "trimmer") == ["POT2"]                        # before: POT2, TRIM2
+    assert switch("b", None) == ["POT2", "TRIM2"]
+
+
+def test_board_copper_is_nothing_to_buy(project):
+    """The Micro-Lipo's SJ1 – two pads bridged with solder – and the pedals' and the Fuzz Face's plated pads for wires
+    and probes: edakit asked each for an LCSC part or an EasyEDA device (PARTS.verified/device), SJ1 – a switch outside
+    the BOM – for a supplier (PARTS.supplier) and, on a board that is sold, a REACH statement (PARTS.fact/reach).
+    own.what "copper" says the board's own copper: none of the three is asked of it; a handmade part still is."""
+    from helpers import check
+    pad = {"mpn": "SOLDERJUMPER", "kind": "switch", "verified": {"by": "test"},
+           "pins": {"1": {"name": "1", "type": "passive", "role": "throw_a"},
+                    "2": {"name": "2", "type": "passive", "role": "common"}}}
+
+    def found(what):
+        project.save_part("SOLDERJUMPER", {**pad, "own": {"what": what, "notes": "two pads, bridged with solder"}})
+        g = project.graph()
+        g["graph"]["components"] = [c for c in g["graph"]["components"] if c["designator"] != "SJ1"]
+        g["graph"]["components"].append({"designator": "SJ1", "type": "switch", "part": "SOLDERJUMPER", "bom": False,
+                                         "pins": {"1": "1", "2": "2"}, "nc": ["1", "2"]})
+        g["graph"]["purpose"] = {"use": "sale", "market": "EU"}
+        project.save_graph(g)
+        cfg = project.config()
+        d = Design.from_config(cfg)
+        return sorted({(f.code, f.grade) for f in check(d, cfg).findings
+                       if f.code.startswith("PARTS.") and ("SJ1" in f.text or f.place in ("SJ1", "SOLDERJUMPER"))})
+    assert found("copper") == []          # before: PARTS.fact/reach, PARTS.verified/device (PARTS.supplier: an own part)
+    assert found("handmade") == [("PARTS.fact", "reach"), ("PARTS.verified", "device")]
+
+
+@pytest.mark.skipif(not shutil.which("ngspice"), reason="ngspice not installed")
+def test_the_charger_model_drives_its_status_output(tmp_path):
+    """The Micro-Lipo's MCP73831 lights the red LED1 (5V – LED1 – R1 – STAT) while it charges and the green LED2
+    (STAT – R2 – LED2 – GND) once the charge is complete. The charger model left STAT floating: both LEDs carried the
+    chain's current, neither lit nor dark as expected (SIM.state on LED1, LED2). Now STAT is low while the current is
+    above termination and high below it; without the stat role the chain is back."""
+    from edakit import config
+    from edakit.sim import run as simrun
+    from test_open_designs import copy
+
+    def states(name, role="stat"):
+        cfg = copy("adafruit-microlipo-usb-c", tmp_path / name)
+        f = tmp_path / name / "adafruit-microlipo-usb-c" / "hardware" / "parts" / "C424093.json"
+        e = json.loads(f.read_text(encoding="utf-8"))
+        e["pins"]["1"]["role"] = role
+        f.write_text(json.dumps(e, indent=1), encoding="utf-8")
+        cfg = config.load(tmp_path / name / "adafruit-microlipo-usb-c" / "edakit.toml")
+        out = simrun.run_all(Design.from_config(cfg), engines.load_sim(cfg))
+        return {(r["item"], r["result"]) for r in out["checks"] if r["id"] == "SIM.state"}
+    assert states("a") == {("LED1", "pass"), ("LED2", "pass")}                    # before: both failed
+    assert ("LED1", "fail") in states("b", "status")

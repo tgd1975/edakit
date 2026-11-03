@@ -16,6 +16,12 @@
   --md-typeset-a-color: #5cc4c0;
 }
 .md-header__button.md-logo img { height: 1.6rem; width: auto; }
+/* The drawings' thumbnails of handbook 19 (thumbnail in edakit/catalog/handbook.py): in a box right of their entry,
+   each entry below the thumbnail before it. */
+.md-typeset img.edakit-thumb { float: right; width: auto; height: auto; max-width: 9rem; max-height: 11rem;
+  margin: 0 0 .8rem 1rem; border: 1px solid var(--md-default-fg-color--lightest); background: #fff; }
+.md-typeset p:has(> a > img.edakit-thumb) { clear: both; }
+@media screen and (max-width: 30em) { .md-typeset img.edakit-thumb { max-width: 6rem; max-height: 8rem; } }
 
 /* A session as a chat (docs/pages.py, chat_html): the tokens of docs/brand/tokens.json, light and dark. */
 :root, [data-md-color-scheme="default"] {

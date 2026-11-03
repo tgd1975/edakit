@@ -73,7 +73,7 @@ def judge_all(design, quantities):
 def run(ctx):
     found = judge_all(ctx.design, pin_voltages(ctx.design) + part_voltages(ctx.design))
     found += judge_all(ctx.joined, fuse_currents(ctx.joined, ctx.sim))
-    return (found + hazardous(ctx.design) + supply_order(ctx.design) + charge_currents(ctx.design, ctx.sim)
+    return (found + hazardous(ctx.design) + mains_ground(ctx.design) + supply_order(ctx.design) + charge_currents(ctx.design, ctx.sim)
             + radio_power(ctx.design) + radio_bands(ctx.design) + bus_clocks(ctx.design))
 
 
@@ -215,6 +215,52 @@ def hazardous(d):
                     "catalog/tables/iec62368.toml", on=(("net", name),), data={"value": peak, "limit": limit,
                                                                                  "unit": "V"})
             for name, peak in sorted(hazardous_nets(d).items(), key=lambda x: natural_key(x[0]))]
+
+
+MAINS_ROLES = ("line", "neutral")                    # a mains terminal's pins (catalog/paths.toml [supply] inputs)
+TIES = ("fuse", "switch", "button", "inductor", "diode")    # parts that join two nets for this purpose, besides
+                                                            # resistors up to [supply] resistor_max_ohm
+
+
+def mains_ground(d):
+    """LIM.hazardous/ground: the board's ground joined to a mains terminal's line or neutral – straight, through a
+    0 Ω bridge, a fuse, a switch, a button, an inductor, a diode or a resistor up to 100 Ω. Then every net of the board
+    sits at mains potential against earth, while edakit holds every voltage against that ground: the low-voltage side
+    looks safe and is not (the ESPurna-H's R42, as the HLW8012 requires). Recognised, not checked (decision 7)."""
+    from ..circuit import resistor_value
+    from .paths import data
+    if d.ground not in d.nets:
+        return []                    # a ground the graph does not have: STRUCT.ref
+    r_max = data()["supply"]["resistor_max_ohm"]
+    links = {}
+    for des in d.comps:
+        part = d.part(des) or {}
+        value = resistor_value(d, des)
+        if part.get("kind") in TIES or (value is not None and value <= r_max):
+            nets = sorted({d.pin_net.get(f"{des}.{p}") for p in part.get("pins") or {}} - {None})
+            for a in nets:
+                for b in nets:
+                    if a != b:
+                        links.setdefault(a, []).append((b, des))
+    via, todo = {d.ground: []}, [d.ground]
+    while todo:
+        net = todo.pop(0)
+        for nxt, des in links.get(net, []):
+            if nxt not in via:
+                via[nxt] = via[net] + [des]
+                todo.append(nxt)
+    for net in sorted(via, key=lambda n: (len(via[n]), natural_key(n))):
+        for ref in sorted(d.nets[net]["pins"], key=natural_key):
+            info = d.pin_info(ref)
+            des = ref.split(".", 1)[0]
+            if (d.part(des) or {}).get("kind") == "connector" and info.get("role") in MAINS_ROLES:
+                through = f" through {', '.join(via[net])}" if via[net] else ""
+                return [Finding("LIM.hazardous", "G", d.ground, f"{d.ground}: tied to the mains – {ref} "
+                                f"({info['role']}) on {net}{through}: every net of the board sits at mains potential "
+                                f"against earth, while edakit holds every voltage against {d.ground} – the low-voltage "
+                                "side shows nothing hazardous, and edakit checks no isolation", "catalog/codes.toml",
+                                grade="ground", on=(("net", d.ground),))]
+    return []
 
 
 # --- radio ------------------------------------------------------------------------------------------------------------
