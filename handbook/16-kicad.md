@@ -22,7 +22,7 @@ project:
 | --- | --- | --- |
 | Take it when | you work in EasyEDA already, or want the tool chain edakit's projects were built on | you want open files, no bridge and no click, or a chain without a noncommercial licence |
 | The EDA project | you create it once; edakit drives it through the bridge | edakit writes it; kicad-cli reads it |
-| By hand | create the project, one *Import Changes* ([upstream](../upstream/README.md) lists each click) | nothing |
+| By hand | create the project; *Import Changes* only if the DRC still waits for it ([upstream](../upstream/README.md) lists each click) | nothing |
 | Parallel sessions | one at a time per machine: the claim (11.2) | no limit: each board has its own files |
 | Footprints | EasyEDA's library, which JLCPCB's assembly works from | the same LCSC data, cached by edakit (16.3) |
 | Licence | EasyEDA Pro proprietary, easyeda-mcp-pro MIT (since 1.7.0) | KiCad GPL-3.0 |
