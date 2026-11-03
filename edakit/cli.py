@@ -377,7 +377,16 @@ def main(argv=None):
 
 
 def _main(argv=None):
-    args = build_parser().parse_args(argv)
+    parser = build_parser()
+    args, rest = parser.parse_known_args(argv)
+    if rest and args.command == "graph" and not any(a.startswith("-") for a in rest):
+        # `graph fmt --check A B`: before Python 3.13 argparse fills the positionals before the option and leaves the
+        # files after it over – they are the files the action names
+        if args.name is None:
+            args.name, rest = rest[0], rest[1:]
+        args.files = [*args.files, *rest]
+    elif rest:
+        parser.error(f"unrecognized arguments: {' '.join(rest)}")
     sys.stdout.reconfigure(line_buffering=True)  # progress shows up at once, also when piped
     if args.command == "lock":
         from . import lock
