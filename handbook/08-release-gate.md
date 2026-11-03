@@ -604,7 +604,13 @@ the parcel's weight into `<out>/lcsc/cart.json`, the page text into `cart_page.t
 stops before the checkout. `edakit order check` holds that to `basket.json` (ORDER.basket): every line there, as many
 pieces or more – more is LCSC's rounding, named –, none short of stock or marked, no line that is neither the basket's
 nor there before, every value in the page text. Exit 0 passed, 2 a finding – nothing more goes into the cart, 1 a
-file missing. The profile is provisional until a parts order records its labels.
+file missing.
+
+The profile was recorded on 2026-11-03, in a live run with four projects and nothing ordered: the upload, "BOM
+Mapping" with its button "Create BOM", which saves the list in your account, "Add to Cart" and its dialog. LCSC
+rounded 18 of 23 lines up to its minimum and multiple – a basket of 5 pieces of a 50-piece resistor buys 50 – and
+gave the cart the same "Estimated Weight" of 1,500 g as the 26 lines of 2026-11-02: an estimate to read with care when
+it decides whether to combine.
 
 **The combined shipment.** LCSC ships a JLCPCB order with its own when the JLCPCB order goes to LCSC's warehouse in
 Hong Kong – an address entered at JLCPCB's checkout and unchangeable afterwards – and the LCSC checkout ticks it to

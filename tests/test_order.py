@@ -257,11 +257,30 @@ def lcsc_cart(project, change=None, page_change=None, weight=None):
 def test_the_lcsc_profile():
     from edakit import order as o
     p = o.supplier("lcsc")
-    assert p["recorded"] is False and p["start"] == "https://www.lcsc.com/bom" and "Checkout" in p["never"]
+    assert p["recorded"] == "2026-11-03" and p["start"] == "https://www.lcsc.com/bom" and "Checkout" in p["never"]
     assert p["columns"] == o.LCSC_HEAD
+    assert (p["upload"], p["mapping"], p["cart"], p["cart_dialog"]) == ("Upload BOM File", "Create BOM", "Add to Cart",
+                                                                        "Add")
+    assert "Submit BOM" in p["never"]
     addr = o.address(p["combine"])
     assert p["combine"]["maker"] == "jlcpcb" and addr["Postal Code"] == "999077" and addr["City"] == "KWAI CHUNG"
     assert "page" not in addr and o.supplier("berrybase") is None
+
+
+@pytest.mark.parametrize("page, value", [
+    ("Estimated Weight: 1,500g", "1500"),      # LCSC's cart, live run of 2026-11-03: the unit right after the number
+    ("580,850 In-Stock", "580850"),            # its BOM tool
+    ("Qty 1,000 pcs", "1000"),
+    ("$1,234.50", "1234.5"),
+])
+def test_a_number_with_thousands_separators_is_on_the_page(page, value):
+    from edakit import order as o
+    assert o.on_page(page, value)
+
+
+def test_a_number_inside_another_is_not_on_the_page():
+    from edakit import order as o
+    assert not o.on_page("Estimated Weight: 1,500g", "500") and not o.on_page("C2895500", "500")
 
 
 def test_the_basket_file(project, monkeypatch):

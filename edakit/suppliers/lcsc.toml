@@ -3,22 +3,28 @@
 # it, reads every line back into <out>/lcsc/cart.json and stops before the checkout; `edakit order check` holds the
 # cart to basket.json (ORDER.basket).
 #
-# Provisional: the BOM tool's address, its formats and its sections were read on 2026-11-02 from
-# https://www.lcsc.com/bom (the page is drawn by JavaScript – no button label was in its text); "Add to Cart" and the
-# rounding come from the first parts order of 2026-11-02 (pytree, docs/bestellung/2026-10-25_usb_baum: "BOM Tool" →
-# Upload, LCSC rounded 100 Ω 10 → 50). The next parts order records the labels and sets `recorded`.
+# Recorded on 2026-11-03 by the live run of the skill cart's mode parts (TODO.md TD-111: four projects, 23 lines,
+# nothing ordered): BOM tool → "Upload BOM File" → the page "BOM Mapping" maps the three columns by itself (Comment
+# becomes "Description"; "Quantity Multiple" 1, "Priority matching" Lead Time left as they are) → "Create BOM" saves
+# the list in the account and matches it ("n done / n total" while it runs – the counts "Discontinued(…)" are not
+# final until it is gone) → "Add to Cart" at the list's foot opens a dialog ("Include: Entire List", "Add to: <the
+# current cart>") → "Add". The cart has the quantities in input fields only: the list's text carries them, so
+# cart_page.txt keeps the list's line area and the cart's.
 
 name = "LCSC"
-recorded = false                          # provisional: the next parts order records it
+recorded = "2026-11-03"
 start = "https://www.lcsc.com/bom"
 currency = "USD"
 formats = ["csv", "xls", "xlsx"]          # "Support .xls, .xlsx and .csv files under 4MB" – up to 800 lines
 max_lines = 800
 columns = ["LCSC Part Number", "Quantity", "Comment"]   # cart_lcsc.csv, as `edakit order` writes it
 upload = "Upload BOM File"
+mapping = "Create BOM"                    # the foot of "BOM Mapping": saves and matches the list, orders nothing
 cart = "Add to Cart"
-never = ["Checkout", "Pay", "Pay Now", "Submit Order", "Place Order", "Buy Now"]
-rounds = "the BOM tool rounds each line up to LCSC's minimum and multiple on the upload (2026-11-02: 100 Ω 10 → 50) – a quantity above the basket's is LCSC's rounding, one below it a finding"
+cart_dialog = "Add"                       # the dialog's button – into the cart the dialog names "(current)"
+never = ["Checkout", "Secure Checkout", "Pay", "Pay Now", "Submit Order", "Place Order", "Buy Now", "Submit BOM"]
+rounds = "the BOM tool rounds each line up to LCSC's minimum and multiple on the upload (2026-11-02: 100 Ω 10 → 50; 2026-11-03: 18 of 23 lines, e.g. 5.1 kΩ 10 → 50) – a quantity above the basket's is LCSC's rounding, one below it a finding"
+weight = "the cart's \"Estimated Weight\" under the shipping method: 1,500g for 26 lines on 2026-11-02 and for 23 on 2026-11-03 – apparently a flat estimate, not the parts' weight"
 
 # The combined shipment (decision 5): a paid JLCPCB order goes to LCSC's warehouse in Hong Kong and ships with the
 # LCSC order in one parcel. The skill enters this address at JLCPCB's checkout and reads it back – the one field of a
