@@ -105,7 +105,7 @@ The plan is the layout of a hand-wired board; its checks belong where the layout
   each bridge and bare wire the neighbouring pads of other nets that must not; supply to ground before the first
   power-up.
 - **The order:** the board, wire and sockets as items off the board (`[[extra]]`, handbook 8.4), so `edakit order`
-  puts them into the cart – and, once it is built, the parts on hand (`docs/concepts/new/parts-on-hand.md`) take what
+  puts them into the cart – and, once it is built, the parts on hand (`docs/concepts/done/parts-on-hand.md`) take what
   lies in the drawer off it.
 
 The drawings are SVG, as `edakit schematic draw` writes them, and read in the light and the dark theme of the site.

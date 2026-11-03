@@ -28,6 +28,12 @@ pieces, part and designators ("pytree: 20 XL-504SURD: D18 D22 (10 + 10) | christ
 project's hand-assembly list is written beside as hand_assembly_<project>.md. One order for several projects
 (docs/concepts/done/parts-order.md, decision 1).
 
+With an inventory named in edakit.local.toml (edakit/inventory.py) every line takes from what is on hand first: of the
+n pieces it needs – need plus spares – min(on hand, n) come from the drawer and the rest is ordered, rounded to moq and
+step; a rest of 0 writes no cart line, the comment says "5 on hand", hand_assembly.md gets a column From and the list
+of what to take out of the drawer. A basket takes from the inventory once, after its lines are summed. The inventory
+is never written (docs/concepts/done/parts-on-hand.md).
+
   PARTS.supplier  a part bought separately (bom: false) has an LCSC number – not a C99… EasyEDA library number – or `order` in its
        parts entry (warning)
 
@@ -59,7 +65,7 @@ import sys
 from collections import defaultdict
 from pathlib import Path
 
-from . import config
+from . import config, inventory
 from .design import Design, natural_key
 from .stock import refs_text
 
@@ -120,6 +126,14 @@ def pieces(per_set, quantity, spare_pct=0.0, spare=0, moq=1, step=1):
     return math.ceil(n / step) * step
 
 
+def round_up(n, moq=1, step=1):
+    """n pieces at least moq, a multiple of step; 0 stays 0."""
+    if n <= 0:
+        return 0
+    step = int(step or 1)
+    return math.ceil(max(n, int(moq or 1)) / step) * step
+
+
 def assembled(c):
     return bool(c.get("lcsc")) and c.get("bom") is not False
 
@@ -160,7 +174,8 @@ def carts(cfg, design):
         key = (sup, offer["code"] or entry.get("mpn") or c.get("part") or des)
         g = groups.setdefault(key, {"supplier": sup, "code": offer["code"] or "", "moq": offer["moq"],
                                     "step": offer["step"], "item": entry.get("mpn") or c.get("part") or "",
-                                    "designators": [], "spare": 0})
+                                    "designators": [], "spare": 0, "mpn": entry.get("mpn") or c.get("part") or "",
+                                    "lcsc": next((x for x in (c.get("lcsc"), entry.get("lcsc")) if orderable(x)), "")})
         g["designators"].append(des)
         spare = c.get("spare", 0)
         if isinstance(spare, bool) or not isinstance(spare, int) or spare < 0:
@@ -171,12 +186,15 @@ def carts(cfg, design):
         need = len(g["designators"]) * cfg.quantity
         g["qty"] = pieces(len(g["designators"]), cfg.quantity, cfg.spare_pct, g["spare"], g["moq"], g["step"])
         g["need"] = need
+        g["want"] = pieces(len(g["designators"]), cfg.quantity, cfg.spare_pct, g["spare"])
         out[g["supplier"]].append(g)
     for e in cfg.extras:
         qty = extra_pieces(cfg, e)
         out[e["supplier"]].append({"supplier": e["supplier"], "code": e.get("code", ""), "item": e["item"],
                                    "designators": [], "qty": qty, "need": math.ceil(e["per_set"] * cfg.quantity - 1e-9),
-                                   "per_set": e["per_set"]})
+                                   "per_set": e["per_set"], "moq": e.get("moq", 1), "step": e.get("step", 1),
+                                   "want": pieces(e["per_set"], cfg.quantity, cfg.spare_pct, e.get("spare", 0)),
+                                   "mpn": e["item"], "lcsc": e.get("code", "") if e["supplier"] == "lcsc" else ""})
     return dict(sorted(out.items())), lost
 
 
@@ -192,8 +210,50 @@ def label(cfg, others=()):
 
 
 def note(g):
-    """The comment of a cart line: part, designators, need + spare."""
-    return f"{g['item']}: {' '.join(g['designators']) or 'per set'} ({g['need']} + {g['qty'] - g['need']})"
+    """The comment of a cart line: part, designators, need + spare – and what is on hand, where the inventory gave."""
+    h = g.get("on_hand", 0)
+    tail = f", {h} on hand" if h else ""
+    return f"{g['item']}: {' '.join(g['designators']) or 'per set'} ({g['need']} + {g['qty'] - g['need'] + h}{tail})"
+
+
+def comment(g):
+    """The comment of a cart line in the file: in a basket each project's part, then what the inventory gave."""
+    if not g.get("parts"):
+        return note(g)
+    text = " | ".join(f"{name}: {x['qty']} {note(x)}" for name, x in g["parts"])
+    return text + (f" | {g['on_hand']} on hand" if g.get("on_hand") else "")
+
+
+def take(found, stock):
+    """Every line takes from the inventory first: min(on hand, need + spares), the rest ordered and rounded to moq and
+    step; a line with nothing left to order goes. {supplier: [line]} with on_hand and took ([(row, pieces)])."""
+    out, every = {}, []
+    for sup, lines in found.items():
+        for g in lines:
+            got = stock.take(g.get("lcsc"), g.get("mpn"), g["want"])
+            g["on_hand"], g["took"] = sum(k for _, k in got), got
+            if g["on_hand"]:
+                g["qty"] = round_up(g["want"] - g["on_hand"], g.get("moq", 1), g.get("step", 1))
+            every.append(g)
+            if g["qty"]:
+                out.setdefault(sup, []).append(g)
+    return out, every
+
+
+def drawer(lines, name=None):
+    """{designator or ("extra", item): "on hand" | "on hand + cart" | "cart"} of one project's parts in the lines."""
+    out = {}
+    for line in lines:
+        h, q = line.get("on_hand", 0), line["qty"]
+        status = "on hand + cart" if h and q else "on hand" if h else "cart"
+        for who, g in line.get("parts") or [(None, line)]:
+            if who != name:
+                continue
+            for d in g["designators"]:
+                out[d] = status
+            if not g["designators"]:
+                out[("extra", g["item"])] = status
+    return out
 
 
 def basket(projects):
@@ -205,9 +265,11 @@ def basket(projects):
             for g in lines:
                 key = (sup, g["code"] or g["item"])
                 m = merged.setdefault(key, {"supplier": sup, "code": g["code"], "item": g["item"], "designators": [],
-                                            "qty": 0, "need": 0, "parts": []})
+                                            "qty": 0, "need": 0, "want": 0, "parts": [], "moq": g.get("moq", 1),
+                                            "step": g.get("step", 1), "mpn": g.get("mpn", ""), "lcsc": g.get("lcsc", "")})
                 m["qty"] += g["qty"]
                 m["need"] += g["need"]
+                m["want"] += g.get("want", g["qty"])
                 m["designators"] += [f"{name}:{d}" for d in g["designators"]]
                 m["parts"].append((name, g))
     out = defaultdict(list)
@@ -222,9 +284,7 @@ def write_cart(path, supplier, lines):
         if supplier == "lcsc":
             w.writerow(LCSC_HEAD)
             for g in lines:
-                text = (" | ".join(f"{name}: {x['qty']} {note(x)}" for name, x in g["parts"]) if g.get("parts")
-                        else note(g))
-                w.writerow([g["code"], g["qty"], text])
+                w.writerow([g["code"], g["qty"], comment(g)])
         else:
             w.writerow(OTHER_HEAD)
             for g in lines:
@@ -237,8 +297,8 @@ def write_basket(out, cfg, others, found):
     data = {"made": dt.datetime.now().astimezone().isoformat(timespec="seconds"),
             "projects": [{"label": label(c, cfgs), "config": str(c.path), "quantity": c.quantity} for c in cfgs],
             "suppliers": {sup: [{"code": g["code"], "qty": g["qty"], "need": g["need"], "item": g["item"],
-                                 "comment": (" | ".join(f"{n}: {x['qty']} {note(x)}" for n, x in g["parts"])
-                                             if g.get("parts") else note(g))} for g in lines]
+                                 **({"on_hand": g["on_hand"]} if g.get("on_hand") else {}),
+                                 "comment": comment(g)} for g in lines]
                           for sup, lines in found.items()}}
     (out / BASKET).write_text(json.dumps(data, indent=1, ensure_ascii=False) + "\n", encoding="utf-8")
 
@@ -246,10 +306,13 @@ def write_basket(out, cfg, others, found):
 HEADING = {"bought": " – bought, nobody assembles it", "hand-wired": " – hand-wired, no PCB"}
 
 
-def hand_assembly(cfg, design, lost):
+def hand_assembly(cfg, design, lost, frm=None, took=None):
+    """The hand-assembly list; with an inventory frm says per part where it comes from ({designator or ("extra",
+    item): text}) and took lists what to take out of the drawer ([(line, row, pieces, place)])."""
     L = [f"# Hand assembly – {cfg.project}, {cfg.quantity} sets\n",
          "Fitted by hand on every board after the assembled boards have arrived; the parts come from the carts in this "
-         "folder.\n"]
+         "folder" + (" and from your inventory (From)" if frm is not None else "") + ".\n"]
+    col = frm is not None
     hand = set(bought_by_hand(design))
     for b in cfg.boards.values():
         mine = sorted((d for d in hand if design.comps[d].get("board") == b.name), key=natural_key)
@@ -257,18 +320,28 @@ def hand_assembly(cfg, design, lost):
         if not mine:
             L.append("Nothing by hand.\n")
             continue
-        L += ["| Designator | Part | Side | Supplier |", "|---|---|---|---|"]
+        L += ["| Designator | Part | Side | Supplier |" + (" From |" if col else ""), "|---|---|---|---|" + ("---|" if col else "")]
         for d in mine:
             c, entry = design.comps[d], design.part(d) or {}
             part = entry.get("mpn") or c.get("part") or c.get("value") or ""
             if c.get("lcsc"):
                 part += f" ({c['lcsc']})"
             side = b.place[d].side if d in b.place else "–"
-            L.append(f"| {d} | {part} | {side} | {'–' if d in lost else source(design, d)[0]} |")
+            L.append(f"| {d} | {part} | {side} | {'–' if d in lost else source(design, d)[0]} |"
+                     + (f" {frm.get(d, '–')} |" if col else ""))
         L.append("")
     if cfg.extras:
-        L += ["## Per set, off the board\n", "| Item | Pieces | Supplier |", "|---|---|---|"]
-        L += [f"| {e['item']} | {e['per_set']:g} | {e['supplier']} |" for e in cfg.extras]
+        L += ["## Per set, off the board\n", "| Item | Pieces | Supplier |" + (" From |" if col else ""),
+              "|---|---|---|" + ("---|" if col else "")]
+        L += [f"| {e['item']} | {e['per_set']:g} | {e['supplier']} |"
+              + (f" {frm.get(('extra', e['item']), '–')} |" if col else "") for e in cfg.extras]
+        L.append("")
+    if took:
+        L += ["## Out of the drawer\n", "Take these before the soldering starts – edakit has not lowered the inventory, "
+              "that stays yours.\n", "| Part | LCSC | Pieces | Inventory row | For |", "|---|---|---|---|---|"]
+        for line, row, k, place in took:
+            L.append(f"| {line['item'] or line['code']} | {line.get('lcsc') or '–'} | {k} | {row.text()} – {place} | "
+                     f"{' '.join(line['designators']) or 'per set'} |")
         L.append("")
     return "\n".join(L)
 
@@ -506,6 +579,14 @@ def main(cfg, args):
     from .release import fab
     design = Design.from_config(cfg)
     out = Path(args.out) if args.out else cfg.artifacts / "order"
+    try:
+        inv, stock = inventory.load(cfg)
+    except (inventory.InventoryError, OSError) as e:
+        print(f"edakit order: {e}", file=sys.stderr)
+        print("edakit order stops: no cart is written past an inventory it cannot read.", file=sys.stderr)
+        return 1
+    if stock is not None:
+        inventory.note_tracked(cfg)
     out.mkdir(parents=True, exist_ok=True)
     try:
         found, lost = carts(cfg, design)
@@ -523,6 +604,9 @@ def main(cfg, args):
         except OrderError as e:
             print(f"edakit order: {e}", file=sys.stderr)
             return 1
+    every = [g for lines in found.values() for g in lines]
+    if stock is not None:
+        found, every = take(found, stock)
     for old in out.glob("cart_*.csv"):     # a supplier no line names any more leaves no cart behind
         old.unlink()
     for b in cfg.boards.values():
@@ -538,10 +622,22 @@ def main(cfg, args):
         write_cart(out / name, sup, lines)
         print(f"{name}: {len(lines)} line{'s' if len(lines) != 1 else ''}, "
               + ", ".join(f"{g['code'] or g['item']} x {g['qty']}" for g in lines))
-    (out / "hand_assembly.md").write_text(hand_assembly(cfg, design, lost), encoding="utf-8")
+    cfgs = [cfg] + [o for o, _ in others]
+    frm = took = None
+    if stock is not None:
+        frm = drawer(every, label(cfg, cfgs) if others else None)
+        took = [(g, r, k, r.place(cfg.path.parent)) for g in every for r, k in g.get("took", [])]
+    (out / "hand_assembly.md").write_text(hand_assembly(cfg, design, lost, frm, took), encoding="utf-8")
+    if took:
+        print(f"inventory: {sum(k for _, _, k, _ in took)} pieces on {len({id(g) for g, *_ in took})} "
+              f"line{'s' if len({id(g) for g, *_ in took}) != 1 else ''} from the drawer – "
+              + ", ".join(inventory.dated(inv, cfg.path.parent)))
+    elif stock is not None:
+        print("inventory: nothing on hand for these lines – " + ", ".join(inventory.dated(inv, cfg.path.parent)))
     for o, d in others:
-        name = re.sub(r"[^A-Za-z0-9_-]+", "_", label(o, [cfg] + [x for x, _ in others])).strip("_")
-        (out / f"hand_assembly_{name}.md").write_text(hand_assembly(o, d, carts(o, d)[1]), encoding="utf-8")
+        name = re.sub(r"[^A-Za-z0-9_-]+", "_", label(o, cfgs)).strip("_")
+        ofrm = drawer(every, label(o, cfgs)) if stock is not None else None
+        (out / f"hand_assembly_{name}.md").write_text(hand_assembly(o, d, carts(o, d)[1], ofrm), encoding="utf-8")
         n = len(bought_by_hand(d))
         print(f"hand_assembly_{name}.md: {n} part{'s' if n != 1 else ''} by hand – {o.path}")
         for x in carts(o, d)[1]:

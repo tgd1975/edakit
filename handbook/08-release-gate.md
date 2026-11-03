@@ -630,6 +630,40 @@ button that orders or pays. After you paid, it checks that the order page shows 
 at LCSC's checkout and reads LCSC's recalculated methods into `shipping.json`; `edakit order check` lists them by price
 and names the cheapest that arrives by `[cart] needed_by` (10.1) – it stops before LCSC's order button.
 
+### Parts on hand: the inventory
+
+What you keep in the drawer can go into the order before anything is bought. Name your inventory in
+`edakit.local.toml` beside `edakit.toml` – a file of your checkout, in `.gitignore`, never in a repository (10.1) –,
+and `edakit order` takes from it first: of the pieces a cart line needs, need plus spares, as many as are on hand come
+from the drawer, and only the rest is ordered, rounded to `moq` and `step` as before. A line with nothing left to
+order is not written; its comment says what came from the drawer (`B2B-PH-K-S(LF)(SN): J1 (5 + 0, 3 on hand)`).
+
+`hand_assembly.md` gets a column "From" – `on hand`, `cart` or `on hand + cart` – and a list "Out of the drawer" with
+each inventory row, its place and the pieces to take. A basket (`--with`) sums its lines first and takes from the
+inventory once, so two projects never count the same pieces.
+
+The inventory is a table in a file you keep the way you like: `.md` (every pipe table), `.html` (every `<table>`),
+`.csv` (comma, semicolon or tab; UTF-8 or Windows-1252, as Excel writes it), `.xlsx` or `.ods` (every sheet). A
+table counts when its header row has the columns `ID` and `Quantity`; `LCSC`, `Name`, `Description` and `Link` are
+read where they are, every other column, table and sheet is left alone.
+
+A row is a part of the order when its LCSC
+number – its column, else the LCSC map by its ID – is the line's, or else its ID is the part's MPN, case and blanks
+ignored. Nothing else matches: no sibling, no assortment by value. A part in several rows or files is summed.
+
+edakit checks, it never books: it lowers no quantity, at the order or later. What leaves the drawer is decided at the
+bench, and keeping the table true is yours.
+
+Without `[inventory]` nothing changes, and CI never sees one. A named file
+that is not there, one without a matching table, or a quantity that is no whole number stops `edakit order` before it
+writes a cart – an order computed past a broken inventory would be the wrong one. The inventory never counts for an
+assembled part: the assembler places from its own stock.
+
+`edakit inventory` shows the project's hand-soldered parts and items against the inventory – needed, on hand, to
+order, and the rows that matched, so a wrong match shows at a glance; `edakit inventory WORDS` lists the rows holding
+every word. `edakit inventory template FILE` starts an empty one as `.md`, `.xlsx` or `.ods` and names it in
+`edakit.local.toml` (10.5).
+
 ### The order form as data
 
 Every question a maker's form asks has an answer in the project – a key of `[order]` with edakit's default (10.2) – and
