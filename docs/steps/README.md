@@ -23,5 +23,6 @@ Steps 8 to 10 make a board from it.
 
 Three texts, three uses. The steps say what you do. The [walkthrough](../../handbook/17-walkthrough.md) shows every
 step once, on a real board. The [handbook](../../handbook/README.md) has everything, for Claude and for looking
-things up. New here? The [quickstart](../quickstart.md) shows the checks in fifteen minutes, before you install
-anything.
+things up. The [quickstart](../quickstart.md) shows the checks in fifteen minutes, before you install
+anything. All ten steps as one chat:
+[a session](../session.md).

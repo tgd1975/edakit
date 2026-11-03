@@ -57,12 +57,13 @@ Every step loops back when it fails:
 Where a decision is due, Claude asks in Claude Code's question form, the recommended alternative first and the
 consequence of each. From the walkthrough's third decision, shortened:
 
-```text
-Claude:  3. PATH.reverse on LED_SW – a CR2032 put in upside down reaches R1 and D1. Protect against it?
-         a) No protection (recommended): D1 blocks, the simulation shows 3.2 V against its rated 5 V.
-         b) A Schottky diode in series: costs about 0.3 V – the margin a used cell needs for 1 mA.
-You:     a
-Claude:  D-3 written to docs/decisions.md; PATH.reverse accepted on LED_SW with that reason.
+```chat
+form: The third decision
+  ? PATH.reverse on LED_SW: a CR2032 put in upside down reaches R1 and D1. Protect against it?
+  - No protection (recommended): D1 blocks, the simulation shows 3.2 V against its rated 5 V.
+  - A Schottky diode in series: costs about 0.3 V, the margin a used cell needs for 1 mA.
+  > No protection
+claude: D-3 written to docs/decisions.md; PATH.reverse accepted on LED_SW with that reason.
 ```
 
 The answer goes into the project's decision log with its reason and date. The place where it applies names its number.

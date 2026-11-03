@@ -19,7 +19,7 @@ ROOT = Path(__file__).resolve().parents[1]
 GLOSSARY = ROOT / "docs" / "glossary.md"
 PROJECTS = tuple(p.relative_to(ROOT).as_posix() for p in sorted((ROOT / "docs" / "projects").glob("*.md")))
 STEPS = tuple(p.relative_to(ROOT).as_posix() for p in sorted((ROOT / "docs" / "steps").glob("*.md")))
-ENTRY = ("README.md", "docs/glossary.md", "docs/quickstart.md", "docs/how-it-works.md") + PROJECTS + STEPS   # entry
+ENTRY = ("README.md", "docs/session.md", "docs/glossary.md", "docs/quickstart.md", "docs/how-it-works.md") + PROJECTS + STEPS   # entry
 HISTORY = ("handbook/13-lessons-learned.md",)       # the history of edakit: its dates are its content
 DATED = ("handbook/15-regulatory.md",               # the state of the law the regulatory review relies on
          "examples/coin-cell-led/docs/decisions.md",  # a decision log: each decision with its day
@@ -123,11 +123,11 @@ def long_sentences(page, text):
 
 def long_sections(page, text):
     lines = text.splitlines()
-    in_code, starts = False, [0]
-    for i, ln in enumerate(lines):                  # a "#" in a code block is no heading
+    in_code, starts = "", [0]
+    for i, ln in enumerate(lines):                  # a "#" in a code block is no heading; a chat's step divider is one
         if re.match(r" *(```|~~~)", ln):
-            in_code = not in_code
-        elif not in_code and re.match(r"#{1,6} ", ln):
+            in_code = "" if in_code else (ln.strip()[3:] or "code")
+        elif (not in_code and re.match(r"#{1,6} ", ln)) or (in_code == "chat" and ln.startswith("--- ")):
             starts.append(i)
     starts.append(len(lines))
     quoted = tuple(f"## {n} " for n in QUOTED)    # the working agreements keep their form, as they keep their words
@@ -355,6 +355,7 @@ def test_the_rules_find_what_they_count():
     assert long_paragraphs("x", " ".join(["word"] * 121)) != []
     assert long_paragraphs("x", "- " + " ".join(["word"] * 100) + "\n- " + " ".join(["word"] * 100)) == []
     assert long_sections("x", "# A\n```\n" + "# not a heading\n" * 90 + "```\n") != []
+    assert long_sections("x", "# A\n```chat\n" + ("--- 1 A step\n" + "you: x\n" * 40) * 3 + "```\n") == []
     assert bare_references("x", "The gate stops. (8.2) And see 7.4.") == ["line 1: (8.2)", "line 1: see 7.4"]
     assert bare_references("x", "the sign-off file (8.2), 0.2 mm, steps 2.1 to 2.3") == []
     assert words_from_inside("x", "Ask the user. `the user` and \"the user\" are quoted.") == ["line 1: the user"]
