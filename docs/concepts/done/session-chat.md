@@ -299,9 +299,10 @@ step 3, the red LED is the owner's answer, and step 5 has two findings, no third
   extension", and its footnote links all three, with Import Changes (E-2, #46) as gone. The tally stays 6 things.
 - **No decision numbers, no dates in the chat.** The footnote says Import Changes is "gone already", without its day:
   an entry page has no history (`docs/style.md`).
-- **A link is relative to the page's own URL.** MkDocs rewrites no link in raw HTML, so `docs/pages.py` writes the
-  chat's links – steps pages, pictures under `files/` – relative to the page's directory URL; the strict build does not
-  see them, `tests/test_session_page.py` does.
+- **The chat's links are the page's own.** MkDocs rewrites no link in raw HTML; `docs/pages.py` turns every link of an
+  HTML tag into one from the page's address since the drawings' thumbnails of handbook 19, and the chat's HTML – steps
+  pages, pictures under `files/` – goes through the same step. The strict build does not see these links,
+  `tests/test_session_page.py` does.
 - **The start page's excerpt** has six entries – the first sentence, Claude's line before the form, the PATH.reverse
   question as a form, the size question, "Round, please.", the cart – and the tally as a sentence under it, held by the
   test to the count of the whole session, with the link to it.

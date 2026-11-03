@@ -468,7 +468,7 @@ def cli_commands():
 def chat_text(text, commands):
     """A chat line as HTML: [text](url) a link, the slash commands, edakit's commands and the file names in mono."""
     def mono(s):
-        s = html.escape(s, quote=False)
+        s = re.sub(r"(\d) (?=(?:mA|µA|mm|V|USD)\b)", "\\1\u00a0", html.escape(s, quote=False))   # 2.5 V on one line
         return re.sub(rf"(/edakit:[\w-]+|\bedakit (?:{'|'.join(commands)})\b[\w -]*?(?= ·|[:.,;]|$)"
                       r"|\b[\w./-]+\.(?:toml|json|md)\b)", r"<code>\1</code>", s)
     out, last = [], 0
