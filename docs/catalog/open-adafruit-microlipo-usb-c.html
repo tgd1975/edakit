@@ -1,0 +1,528 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Adafruit Micro-Lipo Charger with USB Type C Jack – edakit rule catalog</title><link rel="icon" type="image/svg+xml" href="../brand/edakit-favicon.svg"><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;600&display=swap"><style>
+:root {
+  /* a reference, read by section: a sidebar of contents, entries in one column, drawings full width */
+  --bg: #f4f6f6; --surface: #ffffff; --ink: #1d2626; --muted: #5d6b6b; --line: #d5dddd; --accent: #0e6c6a;
+  --err: #b42318; --warn: #a15c07; --pend: #6941c6; --note: #475467; --ok: #087443;
+  --display: "IBM Plex Sans", "Helvetica Neue", Arial, sans-serif; --body: "IBM Plex Sans", "Helvetica Neue", Arial, sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #111717; --surface: #182020; --ink: #e3eaea; --muted: #97a6a6; --line: #2c3838; --accent: #5cc4c0;
+  --err: #f97066; --warn: #fdb022; --pend: #b692f6; --note: #98a2b3; --ok: #47cd89; color-scheme: dark; } }
+:root[data-theme="dark"] {
+  --bg: #111717; --surface: #182020; --ink: #e3eaea; --muted: #97a6a6; --line: #2c3838; --accent: #5cc4c0;
+  --err: #f97066; --warn: #fdb022; --pend: #b692f6; --note: #98a2b3; --ok: #47cd89; color-scheme: dark; }
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--ink); font: 15px/1.55 var(--body); }
+a { color: var(--accent); }
+code { font-family: var(--mono); font-size: 0.9em; }
+.layout { display: grid; grid-template-columns: 15rem minmax(0, 1fr); gap: 2rem; max-width: 84rem; margin: 0 auto;
+  padding: 1.5rem 1.25rem 4rem; }
+nav { position: sticky; top: 1rem; align-self: start; max-height: calc(100vh - 2rem); overflow: auto; font-size: 0.9rem; }
+nav ol { list-style: none; padding: 0; margin: 0; display: grid; gap: 0.2rem; }
+nav ol ol { padding-left: 0.9rem; margin: 0.2rem 0 0.4rem; }
+nav a { text-decoration: none; color: var(--ink); }
+nav a:hover, nav a:focus-visible { color: var(--accent); }
+nav a[aria-current="page"] { color: var(--accent); font-weight: 600; }
+nav .label { color: var(--muted); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.04em; }
+nav ol.engines { display: flex; flex-wrap: wrap; gap: 0.2rem 0.7rem; }
+nav ol.engines > li:has(ol.sub) { flex-basis: 100%; }
+header.top h1 { font: 600 2rem/1.15 var(--display); margin: 0 0 0.4rem; text-wrap: balance; }
+header.top p { color: var(--muted); max-width: 70ch; margin: 0; }
+header.top p.brand { margin-bottom: 0.6rem; }
+p.lead { font-size: 1.05rem; }
+:target { scroll-margin-top: 1rem; }
+tr:target td, tr:target th { background: color-mix(in srgb, var(--surface) 80%, var(--accent)); }
+article:target { outline: 2px solid var(--accent); outline-offset: 2px; }
+ul.inline { list-style: none; padding: 0; display: flex; flex-wrap: wrap; gap: 0.3rem 1rem; max-width: none; }
+table.codes tr.sec th { background: transparent; border-bottom: 1px solid var(--ink); padding-top: 0.9rem; font-weight: 400; }
+table.codes td:first-child { white-space: nowrap; }
+.card h3 a { text-decoration: none; }
+h2 { font: 600 1.45rem/1.2 var(--display); margin: 2.6rem 0 0.8rem; padding-top: 0.6rem; border-top: 2px solid var(--ink);
+  text-wrap: balance; }
+h3 { font: 600 1.1rem/1.3 var(--display); margin: 1.6rem 0 0.6rem; }
+h4 { font: 600 1rem/1.3 var(--display); margin: 0; }
+p, li, dd { max-width: 75ch; }
+.muted, .meta { color: var(--muted); }
+.brand a { display: inline-flex; align-items: center; gap: 0.5rem; }
+.brand img { display: block; }
+.meta { font-size: 0.85rem; margin: 0.4rem 0 0; }
+.tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(9.5rem, 1fr)); gap: 0.75rem; margin: 1rem 0; }
+.tile { background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 0.8rem; display: grid; }
+.tile .big { font: 600 1.8rem/1 var(--display); font-variant-numeric: tabular-nums; }
+.tile .of { color: var(--muted); font-size: 0.85rem; }
+.tile .lbl { font-weight: 600; margin-top: 0.3rem; }
+.tile .sub { color: var(--muted); font-size: 0.8rem; }
+.scroll { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; background: var(--surface); font-size: 0.9rem; }
+th, td { text-align: left; vertical-align: top; padding: 0.45rem 0.6rem; border-bottom: 1px solid var(--line); }
+th { font-weight: 600; background: color-mix(in srgb, var(--surface) 85%, var(--accent)); }
+td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+.chips { display: flex; flex-wrap: wrap; gap: 0.3rem; }
+.chip { display: inline-block; font-size: 0.75rem; line-height: 1.5; padding: 0 0.45rem; border-radius: 999px;
+  border: 1px solid currentColor; white-space: nowrap; }
+.chip.error { color: var(--err); } .chip.warning { color: var(--warn); } .chip.pending { color: var(--pend); }
+.chip.note { color: var(--note); } .chip.built { color: var(--ok); } .chip.partial { color: var(--warn); }
+.chip.open { color: var(--muted); } .chip.out { color: var(--muted); text-decoration: line-through; }
+.engine > h3 { border-bottom: 1px solid var(--line); padding-bottom: 0.3rem; }
+article.code { background: var(--surface); border: 1px solid var(--line); border-left: 3px solid var(--accent);
+  border-radius: 4px; padding: 0.8rem 1rem; margin: 0.7rem 0; }
+article.code header { display: flex; flex-wrap: wrap; gap: 0.5rem 1rem; align-items: baseline; justify-content: space-between; }
+article.code .rule { margin: 0.5rem 0; }
+article.code dl, .card dl { display: grid; grid-template-columns: 7.5rem minmax(0, 1fr); gap: 0.3rem 0.8rem; margin: 0.4rem 0 0; }
+dt { font-weight: 600; color: var(--muted); font-size: 0.85rem; }
+dd { margin: 0; }
+ul.details { margin: 0.3rem 0; padding-left: 1.2rem; font-size: 0.9rem; }
+ol.sources, ul.sources { margin: 0; padding-left: 1.2rem; font-size: 0.85rem; }
+.filter { display: flex; gap: 0.6rem; align-items: center; flex-wrap: wrap; }
+.filter input { font: inherit; padding: 0.35rem 0.6rem; border: 1px solid var(--line); border-radius: 4px;
+  background: var(--surface); color: var(--ink); min-width: 16rem; }
+.filter input:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.ecards { display: grid; grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr)); gap: .75rem; margin: .5rem 0 1.5rem; }
+.ecard { display: flex; flex-direction: column; gap: .35rem; padding: .8rem .9rem; border: 1px solid var(--line);
+  border-radius: 8px; background: var(--surface); color: var(--ink); text-decoration: none; }
+.ecard:hover, .ecard:focus-visible { border-color: var(--accent); }
+.ehead { display: flex; align-items: baseline; gap: .4rem; font-weight: 600; }
+.ehead code { font-size: 1.05rem; color: var(--accent); }
+.ecount { margin-left: auto; font-size: 1.3rem; font-weight: 700; }
+.edecides { font-size: .92rem; }
+.esev { font-size: .8rem; color: var(--muted); }
+details.group { border-top: 1px solid var(--line); padding: .4rem 0; }
+details.group > summary { cursor: pointer; padding: .3rem 0; font-weight: 600; }
+details.group table { margin-top: .4rem; }
+.cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(22rem, 1fr)); gap: 1rem; }
+.card, .table-card, article.circuit { background: var(--surface); border: 1px solid var(--line); border-radius: 6px;
+  padding: 0.9rem 1rem; }
+.card h3, .table-card h3, article.circuit h3 { margin-top: 0; }
+.table-card { margin: 0.8rem 0; }
+ul.review { padding-left: 1.2rem; font-size: 0.88rem; }
+article.circuit { margin: 1rem 0; }
+.drawing { overflow-x: auto; background: #ffffff; border: 1px solid var(--line); border-radius: 4px; margin: 0.6rem 0; }
+.drawing svg { display: block; width: 100%; min-width: 46rem; height: auto; }
+table.faults { margin-top: 0.4rem; }
+table.kv { width: auto; min-width: 24rem; }
+table.kv tr.sec th { background: transparent; border-bottom: 1px solid var(--ink); padding-top: 0.9rem; }
+table.kv .src { font-weight: 400; color: var(--muted); font-size: 0.85rem; margin-left: 0.5rem; }
+table.kv td.val { font-variant-numeric: tabular-nums; }
+table.cand td:first-child { white-space: nowrap; }
+td, dd, li { overflow-wrap: anywhere; }
+footer { color: var(--muted); font-size: 0.85rem; margin-top: 3rem; }
+@media (max-width: 52rem) {
+  .layout { grid-template-columns: minmax(0, 1fr); gap: 1rem; padding: 1rem 1rem 3rem; }
+  nav { position: static; max-height: none; }
+  nav > ol { display: flex; flex-wrap: wrap; gap: 0.3rem 0.9rem; }
+  nav ol ol.sub { display: none; }
+  article.code dl, .card dl { grid-template-columns: minmax(0, 1fr); }
+  .cards { grid-template-columns: minmax(0, 1fr); }
+  table.kv { min-width: 0; }
+}
+@media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto !important; } }
+</style></head><body><div class="layout"><nav aria-label="Rule catalog"><ol><li><a href="index.html" title="Overview">Overview</a></li><li><span class="label">Engines</span><ol class="engines"><li><a href="struct.html" title="STRUCT">STRUCT</a></li><li><a href="sync.html" title="SYNC">SYNC</a></li><li><a href="lim.html" title="LIM – limits">LIM</a></li><li><a href="lvl.html" title="LVL – levels">LVL</a></li><li><a href="req.html" title="REQ – requires">REQ</a></li><li><a href="path.html" title="PATH – paths">PATH</a></li><li><a href="sim.html" title="SIM">SIM</a></li><li><a href="geo.html" title="GEO">GEO</a></li><li><a href="files.html" title="FILES">FILES</a></li><li><a href="parts.html" title="PARTS">PARTS</a></li><li><a href="order.html" title="ORDER">ORDER</a></li><li><a href="docs.html" title="DOCS">DOCS</a></li><li><a href="hint.html" title="HINT">HINT</a></li></ol></li><li><a href="domains.html" title="Domains">Domains</a></li><li><a href="tables.html" title="Tables">Tables</a></li><li><a href="schema.html" title="Parts schema">Parts schema</a></li><li><a href="circuits.html" title="Reference circuits">Reference circuits</a></li><li><a href="open-designs.html" title="Open designs">Open designs</a><ol class="sub"><li><a href="open-adafruit-microlipo-usb-c.html" aria-current="page">Adafruit Micro-Lipo Charger with USB Type C Jack</a></li><li><a href="open-atoomnetmarc-adlsc.html">ADLSC, Atoomnet&#x27;s Digital Led String Controller</a></li><li><a href="open-corne-cherry-left.html">Corne keyboard v4, left half</a></li><li><a href="open-corne-cherry-v3-left.html">Corne Cherry keyboard v3, left half</a></li><li><a href="open-esp32-devkitc-v4.html">ESP32-DevKitC V4</a></li><li><a href="open-espurna-h.html">ESPurna-H</a></li><li><a href="open-guitarml-classic-boost.html">GuitarML Classic Boost v2</a></li><li><a href="open-guitarml-ts-rat-combo.html">GuitarML Tubescreamer/Rat combo</a></li><li><a href="open-sparkfun-logic-level-converter.html">SparkFun Logic Level Converter</a></li><li><a href="open-whbeers-fuzz-face.html">Random Input (whbeers)</a></li></ol></li><li><a href="candidates.html" title="maker-coverage candidates">maker-coverage candidates</a></li><li><a href="before.html" title="Check IDs of before">Check IDs of before</a></li></ol></nav><main><header class="top"><p class="meta brand"><a href="../"><picture><source media="(prefers-color-scheme: dark)" srcset="../brand/edakit-mark-dark.svg"><img src="../brand/edakit-mark.svg" width="28" height="28" alt=""></picture>edakit documentation</a></p><h1>Adafruit Micro-Lipo Charger with USB Type C Jack</h1></header><article class="circuit" id="open-adafruit-microlipo-usb-c"><p><em>Why:</em> the first charger among edakit&#x27;s test circuits – no reference circuit has one (<code>power</code> is three AA cells beside USB), and no other open design charges a cell. It puts a linear Li-ion charger with its behaviour model on a published board: the current R_PROG programs, held against the MCP73831&#x27;s 500 mA and the cell&#x27;s 1C (LIM.i/charge, LIM.backfeed into the cell), the charger&#x27;s heat at a low cell (LIM.t), a second charge current set by a solder jumper, a LiPo pack whose JST plug can come reversed (PATH.reverse on a battery holder), two status LEDs on a tri-state output – the domain power with a real charger, and HINT.lithium and HINT.charge_termination on a part makers use. Makers build and copy it everywhere: the MCP73831 with a PROG resistor, two LEDs and a JST PH socket is the charger of most hobby LiPo projects – Adafruit&#x27;s Micro-Lipo boards, the same circuit on Feathers and countless clones –, so a false alarm here would meet many.</p><p class="meta">Adafruit Industries (Limor Fried/Ladyada; the schematic&#x27;s AUTHOR attribute K. Townsend), <em>Adafruit-MicroLipo-PCB</em>, <a href="https://github.com/adafruit/Adafruit-MicroLipo-PCB">https://github.com/adafruit/Adafruit-MicroLipo-PCB</a> at commit d8ab4b0 (d8ab4b0f00c69a9f337a8d697bd15e0b9bae2e25, 2022-11-10), the Eagle schematic <code>Adafruit USB C microlipo charger.sch</code> (Eagle 9.5.0 XML, last changed in commit b06c550 of 2019-11-05) – the board Adafruit sells as product 4410, &quot;Adafruit Micro-Lipo Charger for LiPoly Batt with USB Type C Jack&quot; (<a href="https://www.adafruit.com/product/4410">https://www.adafruit.com/product/4410</a>) –, read on 2026-11-03 from a read-only clone. The netlist was resolved from the schematic&#x27;s XML (parts, nets, each device&#x27;s pin-to-pad connects) by a script outside this repository and checked against the board file <code>Adafruit USB C microlipo charger.brd</code> of the same commit: all 44 pads of the 15 connected parts are on the same signals there. The product page was read the same day for what the schematic does not say (the jumper&#x27;s purpose, the cells it is meant for). · <a href="circuits/open-adafruit-microlipo-usb-c.svg">SVG</a></p><div class="drawing"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1108 962" font-family="DejaVu Sans, Arial, Helvetica, sans-serif" stroke-linecap="round" stroke-linejoin="round">
+<rect width="1108" height="962" fill="#ffffff"/>
+<polyline points="10,952 1098,952 1098,10 10,10 10,952" fill="none" stroke="#888888" stroke-width="1.5"/>
+<polyline points="708,952 1098,952 1098,832 708,832 708,952" fill="none" stroke="#888888" stroke-width="1.5"/>
+<text x="720" y="854" dy="0.35em" font-size="16" text-anchor="start" fill="#000000" font-weight="bold" xml:space="preserve">Micro-Lipo USB-C</text>
+<text x="720" y="878" dy="0.35em" font-size="8" text-anchor="start" fill="#000000" xml:space="preserve">adafruit-microlipo-usb-c · board main</text>
+<text x="720" y="896" dy="0.35em" font-size="8" text-anchor="start" fill="#000000" xml:space="preserve">graph v1.0 (2026-11-03) · 281 x 244 mm</text>
+<text x="720" y="914" dy="0.35em" font-size="7" text-anchor="start" fill="#000000" xml:space="preserve">drawn by edakit schematic draw – change the graph, not this drawing</text>
+<polyline points="42.12,202.5 397,202.5 397,40 42.12,40 42.12,202.5" fill="none" stroke="#888888" stroke-width="1" stroke-dasharray="6 4"/>
+<polyline points="461.2,383.5 837,383.5 837,40 461.2,40 461.2,383.5" fill="none" stroke="#888888" stroke-width="1" stroke-dasharray="6 4"/>
+<polyline points="39.56,791.5 667,791.5 667,440 39.56,440 39.56,791.5" fill="none" stroke="#888888" stroke-width="1" stroke-dasharray="6 4"/>
+<polyline points="728.64,633.5 1067,633.5 1067,440 728.64,440 728.64,633.5" fill="none" stroke="#888888" stroke-width="1" stroke-dasharray="6 4"/>
+<text x="52.12" y="62" dy="0" font-size="16" text-anchor="start" fill="#000000" font-weight="bold" xml:space="preserve">CN2 S2B-PH-SM4-TB(LF)(SN)</text>
+<text x="52.12" y="76.4" dy="0" font-size="8" text-anchor="start" fill="#000000" xml:space="preserve">JST_2PIN in the schematic: pin 1 GND, pin 2 VBAT; the package&#x27;s two</text>
+<text x="52.12" y="84.4" dy="0" font-size="8" text-anchor="start" fill="#000000" xml:space="preserve">solder tabs NC1, NC2 are on no net. Typed battery_holder so that a</text>
+<text x="52.12" y="92.4" dy="0" font-size="8" text-anchor="start" fill="#000000" xml:space="preserve">cell state of sim.json sits on it.</text>
+<text x="471.2" y="62" dy="0" font-size="16" text-anchor="start" fill="#000000" font-weight="bold" xml:space="preserve">X2 TYPE-C-31-M-13C</text>
+<text x="471.2" y="76.4" dy="0" font-size="8" text-anchor="start" fill="#000000" xml:space="preserve">USB_C in the schematic (CUI CUSB31-CFM2AX-01-X, pads A1B12, B1A12,</text>
+<text x="471.2" y="84.4" dy="0" font-size="8" text-anchor="start" fill="#000000" xml:space="preserve">A4B9, B4A9 paired): SBU1 and SBU2 open; the shell&#x27;s four legs M1–M4</text>
+<text x="471.2" y="92.4" dy="0" font-size="8" text-anchor="start" fill="#000000" xml:space="preserve">have no pin in the symbol and no net on the board – open as published.</text>
+<text x="49.56" y="462" dy="0" font-size="16" text-anchor="start" fill="#000000" font-weight="bold" xml:space="preserve">U1 Li-ion/LiPo charger 4.2 V</text>
+<text x="49.56" y="476.4" dy="0" font-size="8" text-anchor="start" fill="#000000" xml:space="preserve">IREG = 1000 V / RPROG: R3 10 kΩ alone 100 mA, R3 with R4 through SJ1</text>
+<text x="49.56" y="484.4" dy="0" font-size="8" text-anchor="start" fill="#000000" xml:space="preserve">1.80 kΩ – 555 mA (DS20001984H 5.1.2).</text>
+<text x="738.64" y="462" dy="0" font-size="16" text-anchor="start" fill="#000000" font-weight="bold" xml:space="preserve">JP4 PZ254V-11-05P</text>
+<text x="738.64" y="476.4" dy="0" font-size="8" text-anchor="start" fill="#000000" xml:space="preserve">HEADER-1X5 in the schematic, a row of 70-mil pads (0.1&quot; breakout</text>
+<text x="738.64" y="484.4" dy="0" font-size="8" text-anchor="start" fill="#000000" xml:space="preserve">pads); a 1 × 5 header stands in, not fitted.</text>
+<polyline points="557,340 567,340" fill="none" stroke="#16801a" stroke-width="1.2"/>
+<polyline points="567,340 567,350" fill="none" stroke="#16801a" stroke-width="1.2"/>
+<polyline points="567,350 657,350" fill="none" stroke="#16801a" stroke-width="1.2"/>
+<polyline points="557,330 577,330" fill="none" stroke="#16801a" stroke-width="1.2"/>
+<polyline points="577,330 577,340" fill="none" stroke="#16801a" stroke-width="1.2"/>
+<polyline points="577,340 657,340" fill="none" stroke="#16801a" stroke-width="1.2"/>
+<polyline points="557,310 587,310" fill="none" stroke="#16801a" stroke-width="1.2"/>
+<polyline points="587,310 587,330" fill="none" stroke="#16801a" stroke-width="1.2"/>
+<polyline points="587,330 657,330" fill="none" stroke="#16801a" stroke-width="1.2"/>
+<polyline points="657,330 687,330" fill="none" stroke="#16801a" stroke-width="1.2"/>
+<polyline points="557,300 597,300" fill="none" stroke="#16801a" stroke-width="1.2"/>
+<polyline points="597,300 597,320" fill="none" stroke="#16801a" stroke-width="1.2"/>
+<polyline points="597,320 657,320" fill="none" stroke="#16801a" stroke-width="1.2"/>
+<polyline points="657,320 687,320" fill="none" stroke="#16801a" stroke-width="1.2"/>
+<polyline points="557,290 657,290" fill="none" stroke="#16801a" stroke-width="1.2"/>
+<polyline points="657,290 667,290" fill="none" stroke="#16801a" stroke-width="1.2"/>
+<polyline points="667,290 687,290" fill="none" stroke="#16801a" stroke-width="1.2"/>
+<polyline points="557,280 647,280" fill="none" stroke="#16801a" stroke-width="1.2"/>
+<polyline points="647,280 647,260" fill="none" stroke="#16801a" stroke-width="1.2"/>
+<polyline points="647,260 657,260" fill="none" stroke="#16801a" stroke-width="1.2"/>
+<polyline points="557,270 637,270" fill="none" stroke="#16801a" stroke-width="1.2"/>
+<polyline points="637,270 637,250" fill="none" stroke="#16801a" stroke-width="1.2"/>
+<polyline points="637,250 657,250" fill="none" stroke="#16801a" stroke-width="1.2"/>
+<polyline points="557,260 627,260" fill="none" stroke="#16801a" stroke-width="1.2"/>
+<polyline points="627,260 627,240" fill="none" stroke="#16801a" stroke-width="1.2"/>
+<polyline points="627,240 657,240" fill="none" stroke="#16801a" stroke-width="1.2"/>
+<polyline points="557,250 617,250" fill="none" stroke="#16801a" stroke-width="1.2"/>
+<polyline points="617,250 617,230" fill="none" stroke="#16801a" stroke-width="1.2"/>
+<polyline points="617,230 657,230" fill="none" stroke="#16801a" stroke-width="1.2"/>
+<polyline points="557,230 607,230" fill="none" stroke="#16801a" stroke-width="1.2"/>
+<polyline points="607,230 607,220" fill="none" stroke="#16801a" stroke-width="1.2"/>
+<polyline points="607,220 657,220" fill="none" stroke="#16801a" stroke-width="1.2"/>
+<polyline points="657,220 687,220" fill="none" stroke="#16801a" stroke-width="1.2"/>
+<polyline points="557,220 597,220" fill="none" stroke="#16801a" stroke-width="1.2"/>
+<polyline points="597,220 597,210" fill="none" stroke="#16801a" stroke-width="1.2"/>
+<polyline points="597,210 657,210" fill="none" stroke="#16801a" stroke-width="1.2"/>
+<polyline points="657,210 687,210" fill="none" stroke="#16801a" stroke-width="1.2"/>
+<polyline points="557,210 587,210" fill="none" stroke="#16801a" stroke-width="1.2"/>
+<polyline points="587,210 587,180" fill="none" stroke="#16801a" stroke-width="1.2"/>
+<polyline points="587,180 657,180" fill="none" stroke="#16801a" stroke-width="1.2"/>
+<polyline points="657,180 667,180" fill="none" stroke="#16801a" stroke-width="1.2"/>
+<polyline points="667,180 687,180" fill="none" stroke="#16801a" stroke-width="1.2"/>
+<polyline points="557,200 577,200" fill="none" stroke="#16801a" stroke-width="1.2"/>
+<polyline points="577,200 577,150" fill="none" stroke="#16801a" stroke-width="1.2"/>
+<polyline points="577,150 657,150" fill="none" stroke="#16801a" stroke-width="1.2"/>
+<polyline points="557,190 567,190" fill="none" stroke="#16801a" stroke-width="1.2"/>
+<polyline points="567,190 567,140" fill="none" stroke="#16801a" stroke-width="1.2"/>
+<polyline points="567,140 657,140" fill="none" stroke="#16801a" stroke-width="1.2"/>
+<polyline points="267,650 257,650" fill="none" stroke="#16801a" stroke-width="1.2"/>
+<polyline points="257,650 257,620" fill="none" stroke="#16801a" stroke-width="1.2"/>
+<polyline points="257,620 237,620" fill="none" stroke="#16801a" stroke-width="1.2"/>
+<polyline points="237,620 227,620" fill="none" stroke="#16801a" stroke-width="1.2"/>
+<polyline points="227,620 207,620" fill="none" stroke="#16801a" stroke-width="1.2"/>
+<polyline points="167,620 157,620" fill="none" stroke="#16801a" stroke-width="1.2"/>
+<polyline points="157,620 117,620" fill="none" stroke="#16801a" stroke-width="1.2"/>
+<polyline points="227,550 207,550" fill="none" stroke="#16801a" stroke-width="1.2"/>
+<polyline points="167,550 157,550" fill="none" stroke="#16801a" stroke-width="1.2"/>
+<polyline points="157,550 117,550" fill="none" stroke="#16801a" stroke-width="1.2"/>
+<polyline points="227,550 227,620" fill="none" stroke="#16801a" stroke-width="1.2"/>
+<polyline points="267,660 247,660" fill="none" stroke="#16801a" stroke-width="1.2"/>
+<polyline points="247,660 247,650" fill="none" stroke="#16801a" stroke-width="1.2"/>
+<polyline points="247,650 237,650" fill="none" stroke="#16801a" stroke-width="1.2"/>
+<polyline points="267,670 257,670" fill="none" stroke="#16801a" stroke-width="1.2"/>
+<polyline points="257,670 257,730" fill="none" stroke="#16801a" stroke-width="1.2"/>
+<polyline points="257,730 237,730" fill="none" stroke="#16801a" stroke-width="1.2"/>
+<polyline points="237,730 227,730" fill="none" stroke="#16801a" stroke-width="1.2"/>
+<polyline points="227,730 207,730" fill="none" stroke="#16801a" stroke-width="1.2"/>
+<polyline points="227,680 207,680" fill="none" stroke="#16801a" stroke-width="1.2"/>
+<polyline points="227,680 227,730" fill="none" stroke="#16801a" stroke-width="1.2"/>
+<polyline points="367,660 377,660" fill="none" stroke="#16801a" stroke-width="1.2"/>
+<polyline points="377,660 377,700" fill="none" stroke="#16801a" stroke-width="1.2"/>
+<polyline points="377,700 387,700" fill="none" stroke="#16801a" stroke-width="1.2"/>
+<polyline points="387,700 397,700" fill="none" stroke="#16801a" stroke-width="1.2"/>
+<polyline points="397,700 417,700" fill="none" stroke="#16801a" stroke-width="1.2"/>
+<polyline points="397,750 417,750" fill="none" stroke="#16801a" stroke-width="1.2"/>
+<polyline points="397,750 397,700" fill="none" stroke="#16801a" stroke-width="1.2"/>
+<polyline points="367,650 377,650" fill="none" stroke="#16801a" stroke-width="1.2"/>
+<polyline points="377,650 377,610" fill="none" stroke="#16801a" stroke-width="1.2"/>
+<polyline points="377,610 387,610" fill="none" stroke="#16801a" stroke-width="1.2"/>
+<polyline points="387,610 397,610" fill="none" stroke="#16801a" stroke-width="1.2"/>
+<polyline points="397,610 417,610" fill="none" stroke="#16801a" stroke-width="1.2"/>
+<polyline points="397,670 417,670" fill="none" stroke="#16801a" stroke-width="1.2"/>
+<polyline points="557,670 567,670" fill="none" stroke="#16801a" stroke-width="1.2"/>
+<polyline points="567,670 587,670" fill="none" stroke="#16801a" stroke-width="1.2"/>
+<polyline points="397,670 397,610" fill="none" stroke="#16801a" stroke-width="1.2"/>
+<polyline points="817,570 847,570" fill="none" stroke="#16801a" stroke-width="1.2"/>
+<polyline points="817,560 847,560" fill="none" stroke="#16801a" stroke-width="1.2"/>
+<circle cx="397" cy="700" r="2.2" fill="#16801a" stroke="#16801a" stroke-width="1.2"/>
+<circle cx="227" cy="620" r="2.2" fill="#16801a" stroke="#16801a" stroke-width="1.2"/>
+<circle cx="227" cy="730" r="2.2" fill="#16801a" stroke="#16801a" stroke-width="1.2"/>
+<circle cx="397" cy="610" r="2.2" fill="#16801a" stroke="#16801a" stroke-width="1.2"/>
+<text x="687" y="325.5" dy="0.35em" font-size="6" text-anchor="end" fill="#1f3a9f" xml:space="preserve">D-</text>
+<text x="687" y="215.5" dy="0.35em" font-size="6" text-anchor="end" fill="#1f3a9f" xml:space="preserve">D-</text>
+<text x="847" y="555.5" dy="0.35em" font-size="6" text-anchor="end" fill="#1f3a9f" xml:space="preserve">D-</text>
+<text x="687" y="315.5" dy="0.35em" font-size="6" text-anchor="end" fill="#1f3a9f" xml:space="preserve">D+</text>
+<text x="687" y="205.5" dy="0.35em" font-size="6" text-anchor="end" fill="#1f3a9f" xml:space="preserve">D+</text>
+<text x="847" y="565.5" dy="0.35em" font-size="6" text-anchor="end" fill="#1f3a9f" xml:space="preserve">D+</text>
+<text x="622" y="285.5" dy="0.35em" font-size="6" text-anchor="middle" fill="#1f3a9f" xml:space="preserve">CC2</text>
+<text x="637" y="175.5" dy="0.35em" font-size="6" text-anchor="middle" fill="#1f3a9f" xml:space="preserve">CC1</text>
+<text x="232" y="615.5" dy="0.35em" font-size="6" text-anchor="middle" fill="#1f3a9f" xml:space="preserve">STAT</text>
+<text x="142" y="615.5" dy="0.35em" font-size="6" text-anchor="middle" fill="#1f3a9f" xml:space="preserve">LED_RED</text>
+<text x="142" y="545.5" dy="0.35em" font-size="6" text-anchor="middle" fill="#1f3a9f" xml:space="preserve">LED_GREEN</text>
+<text x="397" y="605.5" dy="0.35em" font-size="6" text-anchor="middle" fill="#1f3a9f" xml:space="preserve">PROG</text>
+<text x="572" y="665.5" dy="0.35em" font-size="6" text-anchor="middle" fill="#1f3a9f" xml:space="preserve">PROG_500</text>
+<polyline points="127,160 133,160" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="133,164 133,156" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="135,162.5 135,157.5" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="137,161 137,159" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="87,160 81,160" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="81,156 81,164" fill="none" stroke="#8b1a1a" stroke-width="1.8"/>
+<text x="78" y="160" dy="0.35em" font-size="6" text-anchor="end" fill="#1f3a9f" xml:space="preserve">VBAT</text>
+<polyline points="657,350 663,350" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="663,354 663,346" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="665,352.5 665,347.5" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="667,351 667,349" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="657,340 663,340" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="663,344 663,336" fill="none" stroke="#8b1a1a" stroke-width="1.8"/>
+<text x="666" y="340" dy="0.35em" font-size="6" text-anchor="start" fill="#1f3a9f" xml:space="preserve">5V</text>
+<polyline points="727,290 733,290" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="733,294 733,286" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="735,292.5 735,287.5" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="737,291 737,289" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="657,260 663,260" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="663,264 663,256" fill="none" stroke="#8b1a1a" stroke-width="1.8"/>
+<text x="666" y="260" dy="0.35em" font-size="6" text-anchor="start" fill="#1f3a9f" xml:space="preserve">5V</text>
+<polyline points="657,250 663,250" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="663,254 663,246" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="665,252.5 665,247.5" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="667,251 667,249" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="657,240 663,240" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="663,244 663,236" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="665,242.5 665,237.5" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="667,241 667,239" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="657,230 663,230" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="663,234 663,226" fill="none" stroke="#8b1a1a" stroke-width="1.8"/>
+<text x="666" y="230" dy="0.35em" font-size="6" text-anchor="start" fill="#1f3a9f" xml:space="preserve">5V</text>
+<polyline points="727,180 733,180" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="733,184 733,176" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="735,182.5 735,177.5" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="737,181 737,179" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="657,150 663,150" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="663,154 663,146" fill="none" stroke="#8b1a1a" stroke-width="1.8"/>
+<text x="666" y="150" dy="0.35em" font-size="6" text-anchor="start" fill="#1f3a9f" xml:space="preserve">5V</text>
+<polyline points="657,140 663,140" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="663,144 663,136" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="665,142.5 665,137.5" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="667,141 667,139" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="77,620 71,620" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="71,616 71,624" fill="none" stroke="#8b1a1a" stroke-width="1.8"/>
+<text x="68" y="620" dy="0.35em" font-size="6" text-anchor="end" fill="#1f3a9f" xml:space="preserve">5V</text>
+<polyline points="77,550 71,550" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="71,546 71,554" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="69,547.5 69,552.5" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="67,549 67,551" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="237,650 231,650" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="231,646 231,654" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="229,647.5 229,652.5" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="227,649 227,651" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="207,730 201,730" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="201,726 201,734" fill="none" stroke="#8b1a1a" stroke-width="1.8"/>
+<text x="198" y="730" dy="0.35em" font-size="6" text-anchor="end" fill="#1f3a9f" xml:space="preserve">VBAT</text>
+<polyline points="167,680 161,680" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="161,676 161,684" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="159,677.5 159,682.5" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="157,679 157,681" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="417,700 423,700" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="423,704 423,696" fill="none" stroke="#8b1a1a" stroke-width="1.8"/>
+<text x="426" y="700" dy="0.35em" font-size="6" text-anchor="start" fill="#1f3a9f" xml:space="preserve">5V</text>
+<polyline points="457,750 463,750" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="463,754 463,746" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="465,752.5 465,747.5" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="467,751 467,749" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="457,610 463,610" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="463,614 463,606" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="465,612.5 465,607.5" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="467,611 467,609" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="627,670 633,670" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="633,674 633,666" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="635,672.5 635,667.5" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="637,671 637,669" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="817,590 823,590" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="823,594 823,586" fill="none" stroke="#8b1a1a" stroke-width="1.8"/>
+<text x="826" y="590" dy="0.35em" font-size="6" text-anchor="start" fill="#1f3a9f" xml:space="preserve">VBAT</text>
+<polyline points="817,580 823,580" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="823,584 823,576" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="825,582.5 825,577.5" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="827,581 827,579" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="817,550 823,550" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="823,554 823,546" fill="none" stroke="#8b1a1a" stroke-width="1.8"/>
+<text x="826" y="550" dy="0.35em" font-size="6" text-anchor="start" fill="#1f3a9f" xml:space="preserve">5V</text>
+<polyline points="87,160 97,160" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="127,160 117,160" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="97,160 105,160" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="109,160 117,160" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="105,168 105,152" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="109,164 109,156" fill="none" stroke="#8b1a1a" stroke-width="2.4"/>
+<text x="100" y="152" dy="0.35em" font-size="7" text-anchor="middle" fill="#000000" xml:space="preserve">+</text>
+<text x="107" y="145" dy="0.35em" font-size="7" text-anchor="middle" fill="#000000" xml:space="preserve">CN2</text>
+<polyline points="557,190 547,190" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="557,200 547,200" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="557,210 547,210" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="557,220 547,220" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="557,230 547,230" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="557,240 547,240" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="557,250 547,250" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="557,260 547,260" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="557,270 547,270" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="557,280 547,280" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="557,290 547,290" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="557,300 547,300" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="557,310 547,310" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="557,320 547,320" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="557,330 547,330" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="557,340 547,340" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polygon points="507,350 547,350 547,180 507,180" fill="#ffffff" stroke="#8b1a1a" stroke-width="1.2"/>
+<text x="544.5" y="190" dy="0.35em" font-size="6" text-anchor="end" fill="#000000" xml:space="preserve">GND</text>
+<text x="548.5" y="187" dy="0.35em" font-size="5" text-anchor="start" fill="#555555" xml:space="preserve">A1</text>
+<text x="544.5" y="200" dy="0.35em" font-size="6" text-anchor="end" fill="#000000" xml:space="preserve">VBUS</text>
+<text x="548.5" y="197" dy="0.35em" font-size="5" text-anchor="start" fill="#555555" xml:space="preserve">A4</text>
+<text x="544.5" y="210" dy="0.35em" font-size="6" text-anchor="end" fill="#000000" xml:space="preserve">CC1</text>
+<text x="548.5" y="207" dy="0.35em" font-size="5" text-anchor="start" fill="#555555" xml:space="preserve">A5</text>
+<text x="544.5" y="220" dy="0.35em" font-size="6" text-anchor="end" fill="#000000" xml:space="preserve">D+</text>
+<text x="548.5" y="217" dy="0.35em" font-size="5" text-anchor="start" fill="#555555" xml:space="preserve">A6</text>
+<text x="544.5" y="230" dy="0.35em" font-size="6" text-anchor="end" fill="#000000" xml:space="preserve">D-</text>
+<text x="548.5" y="227" dy="0.35em" font-size="5" text-anchor="start" fill="#555555" xml:space="preserve">A7</text>
+<text x="544.5" y="240" dy="0.35em" font-size="6" text-anchor="end" fill="#000000" xml:space="preserve">SBU1</text>
+<text x="548.5" y="237" dy="0.35em" font-size="5" text-anchor="start" fill="#555555" xml:space="preserve">A8</text>
+<text x="544.5" y="250" dy="0.35em" font-size="6" text-anchor="end" fill="#000000" xml:space="preserve">VBUS</text>
+<text x="548.5" y="247" dy="0.35em" font-size="5" text-anchor="start" fill="#555555" xml:space="preserve">A9</text>
+<text x="544.5" y="260" dy="0.35em" font-size="6" text-anchor="end" fill="#000000" xml:space="preserve">GND</text>
+<text x="548.5" y="257" dy="0.35em" font-size="5" text-anchor="start" fill="#555555" xml:space="preserve">A12</text>
+<text x="544.5" y="270" dy="0.35em" font-size="6" text-anchor="end" fill="#000000" xml:space="preserve">GND</text>
+<text x="548.5" y="267" dy="0.35em" font-size="5" text-anchor="start" fill="#555555" xml:space="preserve">B1</text>
+<text x="544.5" y="280" dy="0.35em" font-size="6" text-anchor="end" fill="#000000" xml:space="preserve">VBUS</text>
+<text x="548.5" y="277" dy="0.35em" font-size="5" text-anchor="start" fill="#555555" xml:space="preserve">B4</text>
+<text x="544.5" y="290" dy="0.35em" font-size="6" text-anchor="end" fill="#000000" xml:space="preserve">CC2</text>
+<text x="548.5" y="287" dy="0.35em" font-size="5" text-anchor="start" fill="#555555" xml:space="preserve">B5</text>
+<text x="544.5" y="300" dy="0.35em" font-size="6" text-anchor="end" fill="#000000" xml:space="preserve">D+</text>
+<text x="548.5" y="297" dy="0.35em" font-size="5" text-anchor="start" fill="#555555" xml:space="preserve">B6</text>
+<text x="544.5" y="310" dy="0.35em" font-size="6" text-anchor="end" fill="#000000" xml:space="preserve">D-</text>
+<text x="548.5" y="307" dy="0.35em" font-size="5" text-anchor="start" fill="#555555" xml:space="preserve">B7</text>
+<text x="544.5" y="320" dy="0.35em" font-size="6" text-anchor="end" fill="#000000" xml:space="preserve">SBU2</text>
+<text x="548.5" y="317" dy="0.35em" font-size="5" text-anchor="start" fill="#555555" xml:space="preserve">B8</text>
+<text x="544.5" y="330" dy="0.35em" font-size="6" text-anchor="end" fill="#000000" xml:space="preserve">VBUS</text>
+<text x="548.5" y="327" dy="0.35em" font-size="5" text-anchor="start" fill="#555555" xml:space="preserve">B9</text>
+<text x="544.5" y="340" dy="0.35em" font-size="6" text-anchor="end" fill="#000000" xml:space="preserve">GND</text>
+<text x="548.5" y="337" dy="0.35em" font-size="5" text-anchor="start" fill="#555555" xml:space="preserve">B12</text>
+<text x="547" y="174" dy="0.35em" font-size="7" text-anchor="end" fill="#000000" xml:space="preserve">X2</text>
+<text x="547" y="356" dy="0.35em" font-size="6" text-anchor="end" fill="#000000" xml:space="preserve">TYPE-C-31-M-13C</text>
+<polyline points="554,243 560,237" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="554,237 560,243" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="554,323 560,317" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="554,317 560,323" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="727,290 717,290" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="687,290 697,290" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polygon points="717,286 697,286 697,294 717,294" fill="#ffffff" stroke="#8b1a1a" stroke-width="1.2"/>
+<text x="707" y="279" dy="0.35em" font-size="7" text-anchor="middle" fill="#000000" xml:space="preserve">R5</text>
+<text x="707" y="301" dy="0.35em" font-size="6" text-anchor="middle" fill="#000000" xml:space="preserve">5.1k</text>
+<polyline points="727,180 717,180" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="687,180 697,180" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polygon points="717,176 697,176 697,184 717,184" fill="#ffffff" stroke="#8b1a1a" stroke-width="1.2"/>
+<text x="707" y="169" dy="0.35em" font-size="7" text-anchor="middle" fill="#000000" xml:space="preserve">R6</text>
+<text x="707" y="191" dy="0.35em" font-size="6" text-anchor="middle" fill="#000000" xml:space="preserve">5.1k</text>
+<polyline points="267,650 277,650" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="267,660 277,660" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="267,670 277,670" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="367,650 357,650" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="367,660 357,660" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polygon points="277,680 357,680 357,640 277,640" fill="#ffffff" stroke="#8b1a1a" stroke-width="1.2"/>
+<text x="279.5" y="650" dy="0.35em" font-size="6" text-anchor="start" fill="#000000" xml:space="preserve">STAT</text>
+<text x="275.5" y="647" dy="0.35em" font-size="5" text-anchor="end" fill="#555555" xml:space="preserve">1</text>
+<text x="279.5" y="660" dy="0.35em" font-size="6" text-anchor="start" fill="#000000" xml:space="preserve">VSS</text>
+<text x="275.5" y="657" dy="0.35em" font-size="5" text-anchor="end" fill="#555555" xml:space="preserve">2</text>
+<text x="279.5" y="670" dy="0.35em" font-size="6" text-anchor="start" fill="#000000" xml:space="preserve">VBAT</text>
+<text x="275.5" y="667" dy="0.35em" font-size="5" text-anchor="end" fill="#555555" xml:space="preserve">3</text>
+<text x="354.5" y="650" dy="0.35em" font-size="6" text-anchor="end" fill="#000000" xml:space="preserve">PROG</text>
+<text x="358.5" y="647" dy="0.35em" font-size="5" text-anchor="start" fill="#555555" xml:space="preserve">5</text>
+<text x="354.5" y="660" dy="0.35em" font-size="6" text-anchor="end" fill="#000000" xml:space="preserve">VDD</text>
+<text x="358.5" y="657" dy="0.35em" font-size="5" text-anchor="start" fill="#555555" xml:space="preserve">4</text>
+<text x="277" y="634" dy="0.35em" font-size="7" text-anchor="start" fill="#000000" xml:space="preserve">U1</text>
+<text x="277" y="686" dy="0.35em" font-size="6" text-anchor="start" fill="#000000" xml:space="preserve">MCP73831T-2ACI/OT</text>
+<polyline points="167,620 177,620" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="207,620 197,620" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polygon points="177,624 197,624 197,616 177,616" fill="#ffffff" stroke="#8b1a1a" stroke-width="1.2"/>
+<text x="187" y="609" dy="0.35em" font-size="7" text-anchor="middle" fill="#000000" xml:space="preserve">R1</text>
+<text x="187" y="631" dy="0.35em" font-size="6" text-anchor="middle" fill="#000000" xml:space="preserve">470</text>
+<polyline points="77,620 87,620" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="117,620 107,620" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="87,620 92,620" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="102,620 107,620" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polygon points="92,626 92,614 102,620" fill="#ffffff" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="102,626 102,614" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="95,613 99,609" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polygon points="100,608 98.94,610.47 97.53,609.06" fill="#8b1a1a" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="100,613 104,609" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polygon points="105,608 103.94,610.47 102.53,609.06" fill="#8b1a1a" stroke="#8b1a1a" stroke-width="1.2"/>
+<text x="97" y="601" dy="0.35em" font-size="7" text-anchor="middle" fill="#000000" xml:space="preserve">LED1</text>
+<text x="97" y="633" dy="0.35em" font-size="6" text-anchor="middle" fill="#000000" xml:space="preserve">NCD0805R1</text>
+<polyline points="167,550 177,550" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="207,550 197,550" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polygon points="177,554 197,554 197,546 177,546" fill="#ffffff" stroke="#8b1a1a" stroke-width="1.2"/>
+<text x="187" y="539" dy="0.35em" font-size="7" text-anchor="middle" fill="#000000" xml:space="preserve">R2</text>
+<text x="187" y="561" dy="0.35em" font-size="6" text-anchor="middle" fill="#000000" xml:space="preserve">470</text>
+<polyline points="117,550 107,550" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="77,550 87,550" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="107,550 102,550" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="92,550 87,550" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polygon points="102,544 102,556 92,550" fill="#ffffff" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="92,544 92,556" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="99,557 95,561" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polygon points="94,562 95.06,559.53 96.47,560.94" fill="#8b1a1a" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="94,557 90,561" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polygon points="89,562 90.06,559.53 91.47,560.94" fill="#8b1a1a" stroke="#8b1a1a" stroke-width="1.2"/>
+<text x="97" y="537" dy="0.35em" font-size="7" text-anchor="middle" fill="#000000" xml:space="preserve">LED2</text>
+<text x="97" y="569" dy="0.35em" font-size="6" text-anchor="middle" fill="#000000" xml:space="preserve">KT-0805G</text>
+<polyline points="207,680 197,680" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="167,680 177,680" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="197,680 189.5,680" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="184.5,680 177,680" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="189.5,673 189.5,687" fill="none" stroke="#8b1a1a" stroke-width="2.4"/>
+<polyline points="184.5,673 184.5,687" fill="none" stroke="#8b1a1a" stroke-width="2.4"/>
+<text x="187" y="666" dy="0.35em" font-size="7" text-anchor="middle" fill="#000000" xml:space="preserve">C2</text>
+<text x="187" y="694" dy="0.35em" font-size="6" text-anchor="middle" fill="#000000" xml:space="preserve">10uF</text>
+<polyline points="417,750 427,750" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="457,750 447,750" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="427,750 434.5,750" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="439.5,750 447,750" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="434.5,757 434.5,743" fill="none" stroke="#8b1a1a" stroke-width="2.4"/>
+<polyline points="439.5,757 439.5,743" fill="none" stroke="#8b1a1a" stroke-width="2.4"/>
+<text x="437" y="736" dy="0.35em" font-size="7" text-anchor="middle" fill="#000000" xml:space="preserve">C1</text>
+<text x="437" y="764" dy="0.35em" font-size="6" text-anchor="middle" fill="#000000" xml:space="preserve">10uF</text>
+<polyline points="417,610 427,610" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="457,610 447,610" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polygon points="427,614 447,614 447,606 427,606" fill="#ffffff" stroke="#8b1a1a" stroke-width="1.2"/>
+<text x="437" y="599" dy="0.35em" font-size="7" text-anchor="middle" fill="#000000" xml:space="preserve">R3</text>
+<text x="437" y="621" dy="0.35em" font-size="6" text-anchor="middle" fill="#000000" xml:space="preserve">10k</text>
+<polyline points="557,670 547,670" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="417,670 427,670" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polygon points="547,660 427,660 427,680 547,680" fill="#ffffff" stroke="#8b1a1a" stroke-width="1.2"/>
+<text x="548.5" y="673" dy="0.35em" font-size="5" text-anchor="start" fill="#555555" xml:space="preserve">1</text>
+<text x="425.5" y="673" dy="0.35em" font-size="5" text-anchor="end" fill="#555555" xml:space="preserve">2</text>
+<text x="547" y="654" dy="0.35em" font-size="7" text-anchor="end" fill="#000000" xml:space="preserve">SJ1</text>
+<text x="547" y="686" dy="0.35em" font-size="6" text-anchor="end" fill="#000000" xml:space="preserve">SOLDERJUMPER_ARROW_NOPASTE</text>
+<polyline points="587,670 597,670" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="627,670 617,670" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polygon points="597,674 617,674 617,666 597,666" fill="#ffffff" stroke="#8b1a1a" stroke-width="1.2"/>
+<text x="607" y="659" dy="0.35em" font-size="7" text-anchor="middle" fill="#000000" xml:space="preserve">R4</text>
+<text x="607" y="681" dy="0.35em" font-size="6" text-anchor="middle" fill="#000000" xml:space="preserve">2.2k</text>
+<polyline points="817,550 807,550" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="817,560 807,560" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="817,570 807,570" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="817,580 807,580" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="817,590 807,590" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polygon points="787,600 807,600 807,540 787,540" fill="#ffffff" stroke="#8b1a1a" stroke-width="1.2"/>
+<text x="808.5" y="547" dy="0.35em" font-size="5" text-anchor="start" fill="#555555" xml:space="preserve">1</text>
+<text x="808.5" y="557" dy="0.35em" font-size="5" text-anchor="start" fill="#555555" xml:space="preserve">2</text>
+<text x="808.5" y="567" dy="0.35em" font-size="5" text-anchor="start" fill="#555555" xml:space="preserve">3</text>
+<text x="808.5" y="577" dy="0.35em" font-size="5" text-anchor="start" fill="#555555" xml:space="preserve">4</text>
+<text x="808.5" y="587" dy="0.35em" font-size="5" text-anchor="start" fill="#555555" xml:space="preserve">5</text>
+<text x="807" y="534" dy="0.35em" font-size="7" text-anchor="end" fill="#000000" xml:space="preserve">JP4</text>
+<text x="807" y="606" dy="0.35em" font-size="6" text-anchor="end" fill="#000000" xml:space="preserve">PZ254V-11-05P</text>
+</svg>
+</div><div class="scroll"><table class="faults"><thead><tr><th>Stage</th><th>Code</th><th>Where</th><th>Judged</th><th>Why</th></tr></thead><tbody><tr><td>check</td><td><a href="docs.html#DOCS.file"><code>DOCS.file</code></a></td><td>edakit.toml</td><td><span class="chip pending">criterion</span></td><td>The transcription has no requirements file: what the published design must do stands in its own documents, not in edakit&#x27;s form. edakit requires the file before a release (handbook 3.6); it is no point of the design.</td></tr><tr><td>check</td><td><a href="lim.html#LIM.i"><code>LIM.i</code></a>/charge</td><td>U1</td><td><span class="chip warning">real</span></td><td>With SJ1 closed, R3 (10 kΩ) and R4 (2.2 kΩ) in parallel are 1.80 kΩ: 1000 V / 1.80 kΩ = 555 mA, above the MCP73831&#x27;s 500 mA and below its PROG window of 2 … 67 kΩ (DS20001984H p. 4) – and above 1C of the 500 mAh cell the product page names for this mode. 2.5 kΩ, as the micro-USB Micro-Lipo of the same repository has, would give 500 mA; the schematic&#x27;s own table says 2.0K = 500mA.</td></tr><tr><td>check</td><td><a href="path.html#PATH.reverse"><code>PATH.reverse</code></a></td><td>U1.3</td><td><span class="chip warning">real</span></td><td>A pack whose JST plug is wired the other way round puts −4.2 V straight on the charger&#x27;s VBAT (and C2): nothing on the board blocks it. Adafruit says so itself – &#x27;For use with Adafruit LiPoly/LiIon batteries only! Other batteries may have different voltage, chemistry, polarity or pinout&#x27; – and the plug&#x27;s polarity differs between makers.</td></tr><tr><td>check</td><td><a href="path.html#PATH.reverse"><code>PATH.reverse</code></a></td><td>U1.4</td><td><span class="chip open">known gap</span></td><td>Reached only through the connectors: the reversed cell&#x27;s VBAT is pad 5 of JP4, and catalog/paths.toml lets a connector pass a reversed source from every pin to every pin – on to 5V (JP4 pad 1), and through the receptacle X2 to CC1 and CC2. A header&#x27;s or a receptacle&#x27;s pins are separate contacts; the charger&#x27;s VDD sees no reversed voltage. The fix is the catalog&#x27;s data (a connector among the parts that tolerate a reversed source, not among those that pass it on), which this transcription does not change.</td></tr><tr><td>check</td><td><a href="path.html#PATH.reverse"><code>PATH.reverse</code></a></td><td>LED1.2</td><td><span class="chip open">known gap</span></td><td>As U1.4: the red LED&#x27;s anode is on 5V, which the reversed cell reaches only through JP4&#x27;s other pads in edakit&#x27;s model – a connector passing every pin to every pin (catalog/paths.toml).</td></tr><tr><td>check</td><td><a href="path.html#PATH.reverse"><code>PATH.reverse</code></a></td><td>R6.2</td><td><span class="chip open">known gap</span></td><td>As U1.4: CC1 is reached from VBAT through JP4 and then through X2&#x27;s other contacts – a connector passing every pin to every pin (catalog/paths.toml); a resistor takes a reversed voltage without harm anyway.</td></tr><tr><td>check</td><td><a href="path.html#PATH.reverse"><code>PATH.reverse</code></a></td><td>R5.2</td><td><span class="chip open">known gap</span></td><td>As R6.2, on CC2: reached through JP4 and X2 only in edakit&#x27;s model of a connector (catalog/paths.toml).</td></tr><tr><td>check</td><td><a href="parts.html#PARTS.supplier"><code>PARTS.supplier</code></a></td><td>SJ1</td><td><span class="chip open">known gap</span></td><td>SJ1 is two pads of the board&#x27;s copper, bridged with solder – nothing is bought. edakit reads a part outside the BOM (bom false) without an LCSC number as one bought separately and has no way to say &#x27;copper, no part&#x27;.</td></tr><tr><td>check</td><td><a href="parts.html#PARTS.verified"><code>PARTS.verified</code></a>/device</td><td>SJ1</td><td><span class="chip note">lacks</span></td><td>The transcription names no EasyEDA library device for the jumper&#x27;s two pads (easyeda_device) – a project that orders the board would.</td></tr><tr><td>check</td><td><a href="parts.html#PARTS.fact"><code>PARTS.fact</code></a>/reach</td><td>C15850</td><td><span class="chip note">lacks</span></td><td>A board that is sold names the SVHCs above 0.1 % (REACH Art. 33); the transcription took no supplier REACH statement for this part.</td></tr><tr><td>check</td><td><a href="parts.html#PARTS.fact"><code>PARTS.fact</code></a>/reach</td><td>C2297</td><td><span class="chip note">lacks</span></td><td>A board that is sold names the SVHCs above 0.1 % (REACH Art. 33); the transcription took no supplier REACH statement for this part.</td></tr><tr><td>check</td><td><a href="parts.html#PARTS.fact"><code>PARTS.fact</code></a>/reach</td><td>C23179</td><td><span class="chip note">lacks</span></td><td>A board that is sold names the SVHCs above 0.1 % (REACH Art. 33); the transcription took no supplier REACH statement for this part.</td></tr><tr><td>check</td><td><a href="parts.html#PARTS.fact"><code>PARTS.fact</code></a>/reach</td><td>C23186</td><td><span class="chip note">lacks</span></td><td>A board that is sold names the SVHCs above 0.1 % (REACH Art. 33); the transcription took no supplier REACH statement for this part.</td></tr><tr><td>check</td><td><a href="parts.html#PARTS.fact"><code>PARTS.fact</code></a>/reach</td><td>C25804</td><td><span class="chip note">lacks</span></td><td>A board that is sold names the SVHCs above 0.1 % (REACH Art. 33); the transcription took no supplier REACH statement for this part.</td></tr><tr><td>check</td><td><a href="parts.html#PARTS.fact"><code>PARTS.fact</code></a>/reach</td><td>C2848620</td><td><span class="chip note">lacks</span></td><td>A board that is sold names the SVHCs above 0.1 % (REACH Art. 33); the transcription took no supplier REACH statement for this part.</td></tr><tr><td>check</td><td><a href="parts.html#PARTS.fact"><code>PARTS.fact</code></a>/reach</td><td>C295747</td><td><span class="chip note">lacks</span></td><td>A board that is sold names the SVHCs above 0.1 % (REACH Art. 33); the transcription took no supplier REACH statement for this part.</td></tr><tr><td>check</td><td><a href="parts.html#PARTS.fact"><code>PARTS.fact</code></a>/reach</td><td>C4190</td><td><span class="chip note">lacks</span></td><td>A board that is sold names the SVHCs above 0.1 % (REACH Art. 33); the transcription took no supplier REACH statement for this part.</td></tr><tr><td>check</td><td><a href="parts.html#PARTS.fact"><code>PARTS.fact</code></a>/reach</td><td>C424093</td><td><span class="chip note">lacks</span></td><td>A board that is sold names the SVHCs above 0.1 % (REACH Art. 33); the transcription took no supplier REACH statement for this part.</td></tr><tr><td>check</td><td><a href="parts.html#PARTS.fact"><code>PARTS.fact</code></a>/reach</td><td>C492404</td><td><span class="chip note">lacks</span></td><td>A board that is sold names the SVHCs above 0.1 % (REACH Art. 33); the transcription took no supplier REACH statement for this part.</td></tr><tr><td>check</td><td><a href="parts.html#PARTS.fact"><code>PARTS.fact</code></a>/reach</td><td>C84256</td><td><span class="chip note">lacks</span></td><td>A board that is sold names the SVHCs above 0.1 % (REACH Art. 33); the transcription took no supplier REACH statement for this part.</td></tr><tr><td>check</td><td><a href="parts.html#PARTS.fact"><code>PARTS.fact</code></a>/reach</td><td>SOLDERJUMPER_ARROW_NOPASTE</td><td><span class="chip open">known gap</span></td><td>SJ1 is the board&#x27;s copper and the assembler&#x27;s solder, no part with a supplier: edakit asks a supplier&#x27;s REACH statement of it, as of every parts entry – as PARTS.supplier on SJ1, it has no way to say &#x27;copper, no part&#x27;.</td></tr><tr><td>sim</td><td><a href="lim.html#LIM.i"><code>LIM.i</code></a></td><td>U1</td><td><span class="chip warning">real</span></td><td>The 500 mA mode charges with 555 mA in the model, above the MCP73831&#x27;s 500 mA (LIM.i/charge, a warning) – the static finding seen in the operating point.</td></tr><tr><td>sim</td><td><a href="lim.html#LIM.backfeed"><code>LIM.backfeed</code></a></td><td>CN2</td><td><span class="chip warning">real</span></td><td>555 mA into Adafruit&#x27;s 500 mAh cell: above its quick-charge maximum of 1C (PKCELL 503035 specification, 500 mA), the cell the product page names as the smallest for this mode.</td></tr><tr><td>sim</td><td><a href="lim.html#LIM.i"><code>LIM.i</code></a></td><td>X2</td><td><span class="chip warning">real</span></td><td>In the 500 mA mode the board draws 556–558 mA; with 5.1 kΩ Rd it asks a USB-C source for Default USB Power, 500 mA from a USB 2.0 port. Default power from a USB 3.x port (900 mA) carries it.</td></tr><tr><td>sim</td><td><a href="lim.html#LIM.t"><code>LIM.t</code></a></td><td>U1</td><td><span class="chip warning">real</span></td><td>In the 500 mA mode the SOT-23-5 dissipates 0.57 W from a cell at 3.7 V and 1.1 W from one at 3.0 V: 157–278 °C at 230 K/W. The MCP73831 then regulates its temperature and cuts the current (DS20001984H 6.1.1.3: 1.54 W worst case) – the 500 mA the jumper promises are not reached from a low cell; edakit&#x27;s model has no thermal regulation and shows the dissipation.</td></tr><tr><td>sim</td><td><a href="sim.html#SIM.state"><code>SIM.state</code></a></td><td>LED1</td><td><span class="chip open">known gap</span></td><td>The charger model does not drive STAT (the status outputs are among what the simulation leaves out, decision 17 of rules-at-scale.md: edakit check --coverage lists them): STAT floats in the model, and the two LEDs carry the current of the chain 5V – LED1 – R1 – R2 – LED2 – GND, 2 µA to 1.6 mA by the corner – the red LED too dim while charging, too bright with the cell full. On the board STAT is low while charging and lights it with about 6 mA through 470 Ω.</td></tr><tr><td>sim</td><td><a href="sim.html#SIM.state"><code>SIM.state</code></a></td><td>LED2</td><td><span class="chip open">known gap</span></td><td>As LED1: with STAT not driven by the model, the green LED carries the chain&#x27;s current while the cell charges (up to 1.6 mA, expected dark) and too little with the cell full (0.7 mA, expected on) – on the board STAT high lights it with a few mA through 470 Ω.</td></tr></tbody></table></div><p class="meta">edakit's false alarms on this design, fixed</p><ul><li>A charger&#x27;s status LEDs, each behind its series resistor on the tri-state STAT, taken for a floating net (LVL.undefined/open_drain on STAT) – an LED cathode straight on an output counted as its load, one behind a resistor did not.</li><li>R4 behind the solder jumper SJ1 – the 500 mA mode – counted by neither LIM.i/charge nor the simulation&#x27;s charger model, which read only resistors straight from PROG to ground: the check now holds the position that programs the most, the model the contacts a load closes.</li></ul></article><footer>Written by <code>docs/catalog/build.py</code>; <code>tests/test_catalog_page.py</code> holds it to the catalog.</footer></main></div><script>
+const q = document.getElementById('q');
+if (q) q.addEventListener('input', () => {
+  const s = q.value.trim().toLowerCase();
+  document.querySelectorAll('[data-text]').forEach(a => { a.hidden = s && !a.dataset.text.includes(s); });
+  document.querySelectorAll('.group').forEach(g => {
+    g.hidden = s && !g.querySelector('[data-text]:not([hidden])');
+    if (g.tagName === 'DETAILS') g.open = !!s && !g.hidden;
+  });
+});
+function openTarget() {
+  const id = decodeURIComponent(location.hash.slice(1));
+  const el = id && document.getElementById(id);
+  const d = el && el.closest('details');
+  if (d) { d.open = true; el.scrollIntoView(); }
+}
+window.addEventListener('hashchange', openTarget);
+openTarget();
+</script></body></html>

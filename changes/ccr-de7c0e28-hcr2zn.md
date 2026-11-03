@@ -1,2 +1,6 @@
 patch
 - Handbook chapter 19, "Verification and validation: how edakit is tested": what a clean check proves and what it does not, the test layers, the reference circuits and the open designs – each with why it is there –, how a finding on them is judged, and what a new reference circuit or open design must bring. Its lists are generated (`python -m edakit.catalog.handbook --write`, kinds `references`, `designs`, `tally`); the catalog's pages show the same why.
+- Four more open designs: a WLED controller (atoomnetmarc's ADLSC), a Fuzz Face (whbeers' Random Input), a mains relay board with an HLK-PM01 (ESPurna-H) and a LiPo charger (Adafruit's USB-C Micro-Lipo) – every finding judged.
+- LIM.i/charge and the simulation's charger count a PROG resistor behind a switch or solder jumper: LIM.i/charge in the position that programs the most, the simulation in the position the load closes.
+- LVL.undefined: a tri-state output whose net holds only LEDs behind their series resistors is their load, not a floating net (a charger's STAT); a base or gate held to the net the supply comes in on – a sim.json source's plus, a reversible source's pins – is defined although no pin types that net a supply.
+- REQ.missing/REQ.value: a need on a pin left open is judged at a connected pin of the same name, the same terminal inside the part (a regulator's VOUT on its tab).

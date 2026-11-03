@@ -177,7 +177,8 @@ def references_section():
 
 
 def designs_section():
-    """Each open design: its licence, why, its findings counted by judgement, the false alarms fixed, its known gaps."""
+    """Each open design: its licence, why, its findings counted by judgement, the false alarms fixed, its known gaps by
+    code and place – their reasons are on the design's catalog page and in its findings.toml."""
     out = []
     for d in open_designs():
         licence = d["licence"] or "no licence stated – only the circuit's facts transcribed"
@@ -185,10 +186,14 @@ def designs_section():
                    f"[drawing and findings](../docs/catalog/open-{d['name']}.html)  ")
         out.append(f"*Why:* {d['why']}  ")
         out.append(f"Findings judged: {counted(d['counts'])}; false alarms fixed: {d['fixed']}.")
+        gaps = {}
+        for _, code, place, _ in d["gaps"]:
+            gaps.setdefault(code, []).append(place)
+        if gaps:
+            out[-1] += "  "
+            out.append("Known gaps – each with its reason on the design's page: "
+                       + "; ".join(f"`{code}` at {', '.join(places)}" for code, places in gaps.items()) + ".")
         out.append("")
-        out += [f"- Known gap: `{code}` at {place} ({stage}) – {why}" for stage, code, place, why in d["gaps"]]
-        if d["gaps"]:
-            out.append("")
     return "\n".join(out)
 
 
