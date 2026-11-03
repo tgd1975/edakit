@@ -9,15 +9,14 @@ manufacturer. Only a run that ends with `RELEASED` may go out.
 
 ### Parts you solder yourself
 
-The manufacturer places only what it has in stock and what you let it assemble. Everything else you solder yourself.
-`edakit order` lists those parts in `hand_assembly.md` and puts them into a cart at LCSC.
+The manufacturer places what it stocks and you let it assemble. The rest you solder yourself: `edakit order` lists it
+in `hand_assembly.md` and puts it into an LCSC cart.
 
-Do you keep parts in a drawer? Then keep a table of them, your [inventory](../glossary.md#inventory). `edakit order`
-takes from it first and orders only the rest. `hand_assembly.md` then says what to take out of the drawer. edakit
-never changes your table. How to set it up:
-[handbook 8.4](../../handbook/08-release-gate.md#parts-on-hand-the-inventory).
+Parts in a drawer? List them in a table, your [inventory](../glossary.md#inventory). `edakit order` takes from it
+first and orders only the rest; `hand_assembly.md` says what to take out. edakit never changes the table. How to set
+it up: the handbook below, section "Parts on hand".
 
-Here only the cell holder BT1 is soldered by hand, so the walkthrough takes nothing from a drawer.
+Here only the cell holder BT1 is soldered by hand, from the cart.
 
 ### The manufacturer's form
 
