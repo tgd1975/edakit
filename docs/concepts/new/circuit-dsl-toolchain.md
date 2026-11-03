@@ -812,6 +812,19 @@ Written by the session that builds the plan: number, date, decision, reason. Sta
    requests only –: its first run found `graph fmt --check FILE` failing on Python 3.12, where argparse leaves the
    files after an option over; fixed, the second run green, the job sysml with the standard library among it.
    Reason: what the plan's protocol asks before the owner's OK, run where it can be.
+46. 2026-11-03, T.23, in place of 39's dependency: with the standard library at hand (decision 42), a requirement's
+   `from` is written as the RequirementDerivation library's `#derivation connection` – one per original, its
+   derived requirements as `#derive` ends –, the form of the release's own examples (VehicleRequirementDerivation);
+   KerML, which has not that library, keeps a `dependency` per pair, and the JSON a ConnectionUsage with the
+   metadata named. Syster resolves types but neither imports nor metadata names nor `::>` ends, so the conformance
+   test holds `<derivation>`, `<original>` and `<derive>` to the standard library's text. Subject and require stay
+   documentation, as 39 says. Reason: the plan's form, possible now.
+47. 2026-11-03, T.17: `edakit check` and `edakit sim` of the bell's five configurations from the modeled sources
+   report what its TOML graphs report – sim the same comparisons, check the same findings – once each resistor
+   the bell chose otherwise than the LED step's `i = 10 mA` derive carries `accept DEF.derive` with the bell's own
+   reason: R3 and R4 of main (330 Ω, D-11; tht inherits them, smd gives D-11's figures), all five of esp32 (100 Ω,
+   D-14's formula with the output's 30 Ω the rule does not model), all five of esp32tht (D-23). Reason: an
+   accepted derivation is how the language records a value chosen on purpose; every reason is the bell's text.
 
 ## Not in this plan
 
