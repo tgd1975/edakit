@@ -4,7 +4,7 @@ Open work that needs the owner's computer, a maker or the owner's word. The stat
 and plans the sections name; this list is what is left to do of them, in the order it can be done. No item is deleted.
 
 **Layout.** Every item, in every section, open or closed, is a line with a checkbox and an ID unique in this file,
-counted up and never reused – whoever adds an item takes the next free ID and counts it up here. Next free ID: TD-135.
+counted up and never reused – whoever adds an item takes the next free ID and counts it up here. Next free ID: TD-139.
 
 - Open: `- [ ] TD-<n> - **Title:** what and why.` – a step's own name after the dash (`- [ ] TD-31 - **D.4** …`).
 - Done: ticked, the commit that did it, the date at the end, moved to [Closed todos](#closed-todos), newest first –
@@ -41,6 +41,19 @@ to touch.
       `notes/verification-and-validation-concept-for-071535` (superseded by #274), `notes/td-103-closed-236-the-second-
       run-in-the-124730` (no pull request; TD-103 closed on main another way), `claude/exciting-einstein-l7ito9` and
       `claude/pensive-cray-kuzv7n` (both contained in main): `git push origin --delete <branch>`. *(ccr-de7c0e28)*
+- [ ] TD-135 - **The layers picture of coin-cell-led:** `pictures/board_main_layers.png` of the gate run with stage F
+      (`<reports>/<run>/pictures/`, or the Gerber ZIP of its `fab/main/`) into `examples/coin-cell-led/docs/` – the
+      board as made shows no copper under the mask; for TD-136. *(quirky-bell)*
+- [ ] TD-137 - **A screenshot of JLCPCB's assembly preview of coin-cell-led:** at the next `/edakit:cart`, once BOM and
+      CPL are uploaded, into `examples/coin-cell-led/docs/jlcpcb_assembly_main_top.png` – only your account shows it;
+      for TD-138. *(quirky-bell)*
+
+## The steps ([docs/steps/](docs/steps/README.md))
+
+- [ ] TD-136 - **Step 9 shows the routed board:** the tracks and the ground pour, `board_main_layers.png` of TD-135
+      under the paragraph on placing and routing in `docs/steps/09-lay-out-the-board.md`. *(quirky-bell)*
+- [ ] TD-138 - **Step 10 ends with the assembled board:** JLCPCB's preview of TD-137 at M-2 in
+      `docs/steps/10-order-the-board.md`, as the last picture of the steps. *(quirky-bell)*
 
 ## The parts order ([docs/concepts/new/parts-order.md](docs/concepts/new/parts-order.md))
 
