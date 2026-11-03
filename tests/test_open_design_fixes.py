@@ -12,7 +12,9 @@ starved of its minimum load, and a row could not be released while another is sc
 five: a switch of three poles could not be described (roles, simulation, REQ.value/switch), a base biased by
 resistors to ground or a divider node was taken as floating, a coupling capacitor's voltage was taken from extreme to
 extreme of its nets' ranges, a second wire of one net between two boards stopped the simulation, and contacts on nets
-that run through cables were never judged by REQ.value/switch. Parts here are test entries, not datasheets."""
+that run through cables were never judged by REQ.value/switch. The Adafruit Micro-Lipo added two: a charger's status
+LEDs behind their resistors were taken for a floating net, and a PROG resistor behind a solder jumper – a second charge
+current – was counted neither by LIM.i/charge nor by the charger model. Parts here are test entries, not datasheets."""
 
 import json
 import shutil
@@ -530,3 +532,107 @@ def test_a_contact_on_a_net_that_crosses_a_cable_is_still_in_the_signal_path():
         rows = [c for c in simulate(p)["checks"] if c["item"] == "SW20" and c["check"].startswith("DC across")]
         assert rows and {c["result"] for c in rows} == {"warn"}             # before: no rows – never judged
         assert "REMOTE 3.3 V" in rows[0]["check"] and "SIG_R 0 V" in rows[0]["check"]
+
+
+# --- the Adafruit Micro-Lipo (adafruit-microlipo-usb-c): status LEDs, a PROG resistor behind a solder jumper -------
+def status_leds(project):
+    """U100, the library's MCP73831 (C424093), charges BT100 through R100 (10 kΩ on PROG); its STAT – a tri-state
+    output – lights D101 from +5V through R101 while it charges (low) and D102 to GND through R102 once the charge is
+    complete (high): the Micro-Lipo's two LEDs."""
+    from reference import add, wire
+    from test_charger import HOLDER
+    for key in ("C424093", "C17414", "C2297"):
+        project.use_library_part(key)
+    project.save_part(HOLDER["lcsc"], HOLDER)
+    g = project.graph()
+    add(g, "U100", "ic", "C424093", {"1": "STAT", "2": "VSS", "3": "VBAT", "4": "VDD", "5": "PROG"})
+    for des in ("R100", "R101", "R102"):
+        add(g, des, "resistor", "C17414", {"1": "1", "2": "2"})
+    add(g, "D101", "led", "C2297", {"1": "A", "2": "K"})
+    add(g, "D102", "led", "C2297", {"1": "A", "2": "K"})
+    add(g, "BT100", "battery_holder", HOLDER["lcsc"], {"1": "+", "2": "-"}, bom=False)
+    wire(g, "+5V", "U100.4", "D101.1")
+    wire(g, "GND", "U100.2", "R100.2", "BT100.2", "D102.2")
+    wire(g, "CHG_PROG", "U100.5", "R100.1", v=(0, 1.1))
+    wire(g, "VBAT", "U100.3", "BT100.1", v=(0, 4.2))
+    wire(g, "STAT", "U100.1", "R101.2", "R102.1")
+    wire(g, "LED_R", "R101.1", "D101.2")
+    wire(g, "LED_G", "R102.2", "D102.1")
+    project.save_graph(g)
+
+
+def test_leds_behind_their_resistors_are_the_status_outputs_load(project):
+    """The MCP73831's STAT lets go in shutdown and without a cell; on it sit only the two LEDs, each behind its
+    series resistor – the output's load, nothing reads the net. Before: LVL.undefined/open_drain, 'released, it
+    floats' (an LED cathode straight on the output counted as its load, one behind a resistor did not). An MCU pin
+    that reads STAT keeps the finding: released, it floats under that pin."""
+    status_leds(project)
+    assert not [t for t in findings(project, "LVL.undefined") if t.startswith("STAT")]     # before: found
+    g = project.graph()
+    project.free_pins(g, "U1.10")                       # the MCU's GP7 reads STAT as well
+    project.net(g, "STAT")["pins"].append("U1.10")
+    project.save_graph(g)
+    assert [t for t in findings(project, "LVL.undefined") if t.startswith("STAT")] == [
+        "STAT: driven only by outputs that let go (U100.1) and nothing holds it – released, it floats"]
+
+
+JUMPER = {"lcsc": "C9000514", "mpn": "test solder jumper", "kind": "switch", "verified": {"by": "test"},
+          "pins": {"1": {"name": "1", "type": "passive", "role": "throw_a"},
+                   "2": {"name": "2", "type": "passive", "role": "common"}}}
+SELECTOR = {"lcsc": "C9000515", "mpn": "test slide switch SPDT", "kind": "switch", "verified": {"by": "test"},
+            "pins": {"1": {"name": "1", "type": "passive", "role": "throw_a"},
+                     "2": {"name": "2", "type": "passive", "role": "common"},
+                     "3": {"name": "3", "type": "passive", "role": "throw_b"}}}
+
+
+def behind_a_switch(tmp_path, r_behind, selector=False):
+    """test_charger's U100 (1000 V / R_PROG, 500 mA at most) with R100 10 kΩ from PROG to GND – and SW100 on PROG:
+    a solder jumper to R101 (`r_behind`) to GND, the Micro-Lipo's 500 mA mode; with `selector` a slide switch whose
+    common is PROG, R100 on its throw a and R101 on its throw b instead (the Micro-Lipo v2's 100/500 mA switch).
+    -> LIM.i/charge as [(place, severity)]."""
+    from reference import Project, add, resistor, wire
+    from test_charger import charge, charger
+    p = Project.copy_of_example(tmp_path)
+    charger(p, 10000)
+    resistor(p, "C9100103", r_behind)
+    part = SELECTOR if selector else JUMPER
+    p.save_part(part["lcsc"], part)
+    g = p.graph()
+    add(g, "SW100", "switch", part["lcsc"], {n: i["name"] for n, i in part["pins"].items()}, bom=False)
+    add(g, "R101", "resistor", "C9100103", {"1": "1", "2": "2"})
+    wire(g, "GND", "R101.2")
+    wire(g, "CHG_PROG", "SW100.2")
+    if selector:
+        p.net(g, "CHG_PROG")["pins"].remove("R100.1")
+        wire(g, "PROG_A", "SW100.1", "R100.1", v=(0, 1.1))
+        wire(g, "PROG_B", "SW100.3", "R101.1", v=(0, 1.1))
+    else:
+        wire(g, "PROG_B", "SW100.1", "R101.1", v=(0, 1.1))
+    p.save_graph(g)
+    return [(pl, s) for pl, s, _ in charge(p)]
+
+
+def test_a_prog_resistor_behind_a_solder_jumper_counts_closed(tmp_path):
+    """The Micro-Lipo programs 100 mA with R3 (10 kΩ) and puts R4 (2.2 kΩ) in parallel through the solder jumper SJ1:
+    1.80 kΩ, 555 mA – above the MCP73831's 500 mA. LIM.i/charge holds the most a switch on PROG can program. Before:
+    only resistors straight from PROG to ground counted – 100 mA, nothing found. 22 kΩ behind the jumper programs
+    145 mA and stays quiet; a slide switch that selects 10 kΩ or 2 kΩ programs 500 mA at most, never both at once."""
+    assert behind_a_switch(tmp_path / "a", 2200) == [("U100", "warning")]               # before: []
+    assert behind_a_switch(tmp_path / "b", 22000) == []
+    assert behind_a_switch(tmp_path / "c", 2000, selector=True) == []                   # not 10k ∥ 2k: 600 mA
+
+
+@pytest.mark.skipif(not shutil.which("ngspice"), reason="ngspice not installed")
+def test_the_charger_model_reads_the_prog_resistor_its_jumper_closes(tmp_path):
+    """The simulation's charger reads R_PROG through the contacts a load closes: the Micro-Lipo's SJ1 open (as
+    delivered) charges with 100 mA, SJ1 closed with R3 ∥ R4 – 555 mA. Before: 100 mA in both loads."""
+    from edakit.sim import run as simrun
+    from test_open_designs import copy
+    cfg = copy("adafruit-microlipo-usb-c", tmp_path)
+    out = simrun.run_all(Design.from_config(cfg), engines.load_sim(cfg))
+    amps = {}
+    for r in out["checks"]:
+        if r["item"] == "U1" and r["check"].startswith("charge current") and r["scenario"].endswith("/vf-min"):
+            amps.setdefault(r["scenario"].split("/")[1], []).append(float(r["actual"].split()[0]))
+    assert amps["100mA"] == pytest.approx([1000 / 10e3] * 3, rel=0.01)
+    assert amps["500mA"] == pytest.approx([1000 / (10e3 * 2.2e3 / 12.2e3)] * 3, rel=0.01)   # before: 0.1 A
