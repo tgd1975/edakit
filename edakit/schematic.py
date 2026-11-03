@@ -572,11 +572,16 @@ def copy(cfg, args):
         found = by_name(source)
         if len(found) != 1:
             raise MCPError(f"schematic '{source}' {'not found' if not found else 'exists several times'}")
-        drawn = eda.title_block(api(mcp, "DMT_Schematic.getSchematicInfo", found[0]["uuid"]) or {})[1].get("Version")
+        try:
+            info = api(mcp, "DMT_Schematic.getSchematicInfo", found[0]["uuid"]) or {}
+            want = eda.schematic_parts(mcp, found[0]["uuid"])
+        except MCPError as e:     # #337: a template just generated in a new EasyEDA Pro 3.2.209 project
+            raise MCPError(f"EasyEDA cannot read the template '{source}' ({e}) – nothing copied. Build the board "
+                           "schematic without a copy: `edakit schematic layout --save` (handbook 6)") from e
+        drawn = eda.title_block(info)[1].get("Version")
         if drawn and drawn.startswith("graph v") and drawn != f"graph v{version}":
             print(f"  ! '{source}' was drawn from {drawn}, the graph is v{version} – the copy is of that older state; "
                   "`edakit schematic create` first")
-        want = eda.schematic_parts(mcp, found[0]["uuid"])
         for sch in by_name(target):
             if sch.get("parentBoardName"):
                 raise MCPError(f"'{target}' belongs to board {sch['parentBoardName']} – not overwritten. Use "

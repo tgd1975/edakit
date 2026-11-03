@@ -427,6 +427,30 @@ def test_a_template_of_an_older_graph_is_named_before_it_is_copied(cfg, monkeypa
     assert "! 'generated_main' was drawn from graph v0.9, the graph is v1.0" in capsys.readouterr().out
 
 
+class FakeUnreadable(FakeDocs):
+    """#337: on desk-led, a new EasyEDA Pro 3.2.209 project, getSchematicInfo of the template just generated threw
+    "TypeError: Cannot read properties of undefined (reading 'Symbol')" in schematic copy, after its name had been
+    read – the name lookup swallows the error, the reads of the template's title block and parts did not."""
+
+    def call(self, tool, timeout=130, **args):
+        if args.get("path") == "DMT_Schematic.getSchematicInfo" and self.names_read:
+            return {"ok": False, "error": "TypeError: Cannot read properties of undefined (reading 'Symbol')"}
+        if args.get("path") == "DMT_Schematic.getSchematicInfo":
+            self.names_read = True
+        return super().call(tool, timeout, **args)
+
+    names_read = False
+
+
+def test_a_template_easyeda_cannot_read_names_the_way_without_a_copy(cfg, monkeypatch, capsys):
+    mcp = FakeUnreadable()
+    assert run_copy(cfg, monkeypatch, mcp) == 1
+    assert mcp.deleted == [] and mcp.renames == [] and "s-copy" not in mcp.sch
+    err = capsys.readouterr().err
+    assert "EasyEDA cannot read the template 'generated_main'" in err
+    assert "reading 'Symbol'" in err and "`edakit schematic layout --save`" in err
+
+
 def test_a_template_the_page_rename_renamed_is_named_back(cfg, capsys):
     """LT-10: the first schematic create in a new project left the template named "LED bar template" – the title of
     its page – and a panel named generated_main. The name is read again after the title block and put back; a panel

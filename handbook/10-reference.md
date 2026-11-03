@@ -1138,7 +1138,7 @@ Generate, check, copy or lay out a schematic in EasyEDA – or draw it without.
 `edakit schematic copy [--source] [--target] [--save]` – EasyEDA: ✓
 
 - **Reads:** schematic
-- **Writes:** copy
+- **Writes:** copy; a source EasyEDA cannot read: nothing, exit 1 naming `schematic layout --save` (6.3)
 
 `edakit schematic layout [--dry-run] [--reread] [--force] [--save]` – EasyEDA: ✓ / –
 
