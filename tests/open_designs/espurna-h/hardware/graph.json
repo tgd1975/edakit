@@ -72,7 +72,7 @@
    },
    {
     "designator": "V11",
-    "type": "ic",
+    "type": "varistor",
     "label": "varistor S10K250 across the module's input",
     "part": "B72210S0251K101",
     "lcsc": "C210499",

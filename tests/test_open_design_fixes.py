@@ -934,3 +934,24 @@ def test_an_ac_net_is_held_by_its_rms_and_a_divider_s_taps_move_together():
     assert lim_v(mains_side()) == []                                    # before: R1, U1.1 (2×)
     assert lim_v(mains_side(terminal_rms=250)) == [("J1", "J1: up to 253 V rms, rated 250 V rms")]
     assert lim_v(mains_side(ac=False, module=False)) == [("R1", "R1: nets up to 358.0 V, rated 200 V")]
+
+
+def test_a_varistor_is_held_to_its_ac_rating_on_the_mains():
+    """The ESPurna-H's S10K250 (V11) across the module's input: 250 V AC, 320 V DC (TDK SIOV). edakit had no kind for a
+    varistor – the transcription took kind ic, and nothing checked it. Kind varistor holds its VRMS on AC nets – 253 V
+    rms of 230 V + 10 % is above 250 V –, its VDC elsewhere, both without derating; a 275 V type passes."""
+    sv = {"lcsc": "C9000519", "mpn": "test varistor", "kind": "varistor", "verified": {"by": "test"},
+          "pins": {"1": {"name": "1", "type": "passive", "role": "1"}, "2": {"name": "2", "type": "passive", "role": "2"}},
+          "values": {"v_varistor_v": 390}, "limits": {"v_rms_max_v": 250, "v_max_v": 320}}
+
+    def across(ac=True, rms=250, v=358):
+        graph = {"name": "t", "version": "1", "ground": "GND",
+                 "components": [{"designator": "RV1", "type": "varistor", "lcsc": "C9000519", "pins": {"1": "1", "2": "2"}}],
+                 "nets": [{"name": "MAINS", "pins": ["RV1.1"], "v": [-v, v], **({"ac": True} if ac else {})},
+                          {"name": "GND", "pins": ["RV1.2"], "v": [0, 0]}]}
+        return lim_v(Design.from_data(graph, {"C9000519": {**sv, "limits": {"v_rms_max_v": rms, "v_max_v": 320}}}))
+    assert across() == [("RV1", "RV1: up to 253 V rms, rated 250 V rms")]
+    assert across(rms=275) == []
+    assert across(ac=False) == [("RV1", "RV1: up to 358.0 V, rated 320 V")]
+    assert across(ac=False, v=300) == []
+    assert schema.problems(sv) == []

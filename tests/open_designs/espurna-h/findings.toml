@@ -8,7 +8,7 @@
 # GND to the line, as the HLW8012 requires – every net of the low-voltage side, the ESP-12F and the headers JP21 and
 # JP22 included, sits at mains potential against earth. edakit's ranges are against the board's own GND, so none of
 # them is hazardous to it; the ESPurna README warns never to connect the board's ground to a computer while it is on
-# mains. Neither does edakit see that the S10K250's 250 V rms rating is below 230 V + 10 % (no kind for a varistor).
+# mains.
 # The low-voltage side is checked: the relay pulls in (4.65 V on the coil at the 2N7002's highest threshold, 3.75 V
 # needed) and releases, D3 sits across the coil, the AMS1117 holds 3.3 V at the ESP-12F's 0.5 A, the HLW8012's 5 V
 # pulses reach the ESP's inputs at 2.84 V or more through R45/R46 and R47/R48, SEL switches through Q4.
@@ -64,6 +64,12 @@ judged = "real"
 why = "The divider's last tap before V2P, 72 V peak – still above ES1's 60 V. Only V2P itself (0.15 V across R50's 1 kΩ) is below it."
 
 [[check]]
+code = "LIM.v"
+place = "V11"
+judged = "real"
+why = "The S10K250 across the module's input is rated 250 V AC (VRMS, TDK SIOV StandarD series) – its maximum continuous voltage; 230 V + 10 % (EN 50160) is 253 V rms, and edakit's extremes add the line's volt through the fuses: 254 V. A varistor run above its VRMS leaks more and ages; the 275 V types are the usual ones on 230 V mains, and the ESPurna README's own bill of materials names a 270 V varistor."
+
+[[check]]
 code = "LVL.undefined"
 place = "Q4"
 judged = "real"
@@ -107,6 +113,8 @@ place = "Q4"
 judged = "known gap"
 why = "LIM.range/gate (CK-4) finds Q4 half on at VGS 3.3 V. It only pulls SEL low through R49 (0.5 mA): even the part at its highest threshold holds SEL below 1 mV. The rule does not weigh the current, so it warns where nothing burns – as on the SparkFun converter's BSS138."
 
+[[fixed]]
+what = "The S10K250 (V11) unchecked: edakit had no kind for a varistor, and the transcription entered it as kind ic with behaviour none. The kind varistor holds its VRMS (v_rms_max_v) on AC nets and its VDC (v_max_v) on DC ones – and finds it below 230 V + 10 % (TD-128)."
 [[fixed]]
 what = "The mains held as DC: the KF301 terminals' 300 V AC rating and the HLK-PM01's 85 … 265 V AC input against the 358 V peak, and each divider resistor to the highest voltage of its nets against GND (LIM.v on JP2, JP42, U$1.2, R51 to R53). The mains nets are marked ac now, the AC ratings are v_rms_max_v and hold the rms there, and a resistor between two AC nets sees the difference of their like ends – 72 V peak for each of the five (TD-129)."
 [[fixed]]

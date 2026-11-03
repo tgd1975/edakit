@@ -214,7 +214,8 @@ def part_voltages(d):
                     len(set(nets[:2]) - {None}) == 2 and all(ac(d, n) for n in nets[:2]))
                 v = (along if both else across)(*nets[:2])
                 how = f"{des}: across its pins"
-                say = (lambda v, lim, f, des=des: f"{des}: up to {v:.1f} V, rated {lim:g} V (needs ×{f:g})")
+                say = (lambda v, lim, f, des=des: f"{des}: up to {v:.1f} V, rated {lim:g} V"
+                       + (f" (needs ×{f:g})" if f != 1 else ""))
             elif what == "reverse":
                 a, k = d.net_of(des, "anode"), d.net_of(des, "cathode")
                 v, how = rng(k)[1] - rng(a)[0], f"{des}: reverse from {k} to {a}"
