@@ -130,10 +130,9 @@ def command_section(name):
 
 
 def commands():
-    """The subcommands of the command line, in the parser's order – those the parser lists: a beta's (lsp) is not."""
+    """The subcommands of the command line, in the parser's order – edakit's without the DSL (build_parser)."""
     from ..cli import build_parser
-    sub = build_parser()._subparsers._group_actions[0]
-    return [c for c in sub.choices if c in sub.metavar]
+    return list(build_parser()._subparsers._group_actions[0].choices)
 
 
 # --- chapter 19: the reference circuits and the open designs of the tests ---------------------------------------------

@@ -110,6 +110,31 @@ def test_the_help_shows_nothing_of_the_dsl(capsys):
     assert "--set" not in block and "--part" not in block
 
 
+
+@pytest.mark.parametrize("argv, said", [
+    (["bogus"], "argument command: invalid choice: 'bogus' (choose from 'version', "),
+    (["graph", "bogus"], "argument action: invalid choice: 'bogus' (choose from 'show', 'json', 'convert')\n"),
+    (["graph", "convert", "--to", "x"], "unrecognized arguments: --to"),
+    (["graph", "show", "U1", "extra"], "unrecognized arguments: extra"),
+    (["block", "add", "led", "--sets", "i=4mA"], "unrecognized arguments: --sets i=4mA"),
+])
+def test_an_error_of_the_command_line_is_main_s(capsys, argv, said):
+    """A command line that names nothing of the DSL is parsed as on main: its error says nothing of the DSL, and no
+    command takes more arguments than it declares."""
+    with pytest.raises(SystemExit) as e:
+        cli.main(argv)
+    err = capsys.readouterr().err
+    assert e.value.code == 2 and said in err, err
+    assert not re.search(r"\blsp\b|fmt|derive|sysml|kerml|circuit", err), err
+
+
+def test_the_dsl_s_words_open_the_dsl_s_parser():
+    assert not any(cli.dsl_words(a) for a in (["graph", "show", "U1"], ["order", "--out", "x"],
+                                               ["export", "--out=x"], ["graph", "convert", "--to", "x"], []))
+    assert all(cli.dsl_words(a) for a in (["lsp"], ["graph", "fmt"], ["graph", "convert", "--to", "circuit"],
+                                           ["graph", "convert", "--to=toml"], ["graph", "json", "--map", "m"],
+                                           ["block", "add", "led", "--set", "i=4mA"]))
+
 def test_the_language_server_answers_one_line_without_the_switch(tmp_path):
     from edakit.lang import server
     f = tmp_path / "x.circuit"
