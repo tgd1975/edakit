@@ -8,6 +8,10 @@ written once, by `.github/merge.py`, from the fragments in [changes/](changes/RE
 update edakit@edakit`, then `/reload-plugins` or a new session; `edakit version` names the version that runs and what an
 update brings.
 
+## 1.1.10 – 2026-11-03
+
+- The parts-order concept is done and moved to docs/concepts/done/parts-order.md; the paths in edakit order, edakit cart, the LCSC profile, ORDER.basket's sources and the skill cart follow it.
+
 ## 1.1.9 – 2026-11-03
 
 - The handbook (16.1, 17.11) and step 9 no longer name *Design → Import Changes* as a click that always comes: since E-2 edakit writes the Channel ID itself, and the click is asked for only if EasyEDA's DRC still waits for the import.
