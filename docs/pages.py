@@ -28,6 +28,7 @@ ROOT = Path(__file__).resolve().parents[1]
 REPO = "https://github.com/tgd1975/edakit"
 SITE = "https://tgd1975.github.io/edakit/"
 LINK = re.compile(r"(!?\[[^\]]*\]\()([^)\s]+)(\))")
+ATTR = re.compile(r'(<(?:a|img)\s[^>]*?\b(?:href|src)=")([^"]+)(")')     # a link in an HTML tag
 
 
 def front_matter(text):
@@ -320,38 +321,56 @@ def version():
 
 def rewrite(text, src, site, mapped, media=None):
     """The page's relative links: to a page of the site its path there, an image to its copy under files/ (its path
-    goes into the set media, for assemble to copy), to anything else the file on GitHub."""
+    goes into the set media, for assemble to copy), to anything else the file on GitHub. A Markdown link is written
+    from the page's file – MkDocs turns it into one from the page's address –, a link in an HTML tag (href, src, as the
+    drawings' thumbnails of handbook 19 have) from the page's address itself: MkDocs leaves HTML as it is."""
     here = (ROOT / src).parent
+    address = url_of(site) + "index.html"       # a file in the page's directory URL, for _relpath
 
-    def one(m):
-        target = m.group(2)
+    def where(target, image):
+        """(kind, target, anchor) of a relative link – kind page (a page's site path), file (a file on the site) or
+        url (on GitHub) –, None for a link that stays as it is."""
         if re.match(r"[a-z]+:|#|/", target) or "${" in target:
-            return m.group(0)
+            return None
         path, _, anchor = target.partition("#")
         resolved = (here / path).resolve()
         try:
             rel = resolved.relative_to(ROOT).as_posix()
         except ValueError:
-            return m.group(0)
+            return None
         if rel in mapped or rel + "/README.md" in mapped:       # a page, or a folder whose README is one
-            new = _relpath(mapped.get(rel) or mapped[rel + "/README.md"], site)
-            return f"{m.group(1)}{new}{'#' + anchor if anchor else ''}{m.group(3)}"
+            return "page", mapped.get(rel) or mapped[rel + "/README.md"], anchor
         if rel.startswith("docs/brand/") and rel != "docs/brand/README.md":
             # the logo files and the theme's stylesheet are on the site
-            return f"{m.group(1)}{_relpath(rel[len('docs/'):], site)}{m.group(3)}"
+            return "file", rel[len("docs/"):], ""
         if rel == "docs/catalog" or (rel.startswith("docs/catalog/") and not rel.endswith(".py")):
             # the catalog's pages and drawings are on the site; their generator is not
-            new = _relpath("catalog/" + rel[len("docs/catalog/"):] if rel != "docs/catalog" else "catalog/", site)
-            return f"{m.group(1)}{new}{'#' + anchor if anchor else ''}{m.group(3)}"
-        if m.group(1).startswith("!") and media is not None and resolved.is_file():
+            return "file", "catalog/" + rel[len("docs/catalog/"):] if rel != "docs/catalog" else "catalog/", anchor
+        if image and media is not None and resolved.is_file():
             media.add(rel)
-            return f"{m.group(1)}{_relpath('files/' + rel, site)}{m.group(3)}"
+            return "file", "files/" + rel, ""
         kind = "tree" if resolved.is_dir() else "blob"
-        return f"{m.group(1)}{REPO}/{kind}/main/{rel}{'#' + anchor if anchor else ''}{m.group(3)}"
+        return "url", f"{REPO}/{kind}/main/{rel}", anchor
+
+    def markdown(m):
+        w = where(m.group(2), m.group(1).startswith("!"))
+        if w is None:
+            return m.group(0)
+        kind, target, anchor = w
+        new = target if kind == "url" else _relpath(target, site)
+        return f"{m.group(1)}{new}{'#' + anchor if anchor else ''}{m.group(3)}"
+
+    def html(m):
+        w = where(m.group(2), m.group(1).endswith('src="'))
+        if w is None:
+            return m.group(0)
+        kind, target, anchor = w
+        new = target if kind == "url" else _relpath(url_of(target) if kind == "page" else target, address)
+        return f"{m.group(1)}{new}{'#' + anchor if anchor else ''}{m.group(3)}"
 
     # links inside code blocks stay as they are
     parts = re.split(r"(```.*?```)", text, flags=re.S)
-    return "".join(p if p.startswith("```") else LINK.sub(one, p) for p in parts)
+    return "".join(p if p.startswith("```") else ATTR.sub(html, LINK.sub(markdown, p)) for p in parts)
 
 
 def _relpath(target, start):

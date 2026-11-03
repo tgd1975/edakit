@@ -19,14 +19,16 @@
    "type": "power_in",
    "role": "ac_l",
    "v_max_v": 350,
-   "v_min_v": -350
+   "v_min_v": -350,
+   "v_rms_max_v": 265
   },
   "2": {
    "name": "AC",
    "type": "power_in",
    "role": "ac_n",
    "v_max_v": 350,
-   "v_min_v": -350
+   "v_min_v": -350,
+   "v_rms_max_v": 265
   },
   "3": {
    "name": "-VO",
@@ -57,7 +59,7 @@
  "sources": [
   "Shenzhen Hi-Link Electronic, 3W ultra small series power module PM03/PM01/PM09/PM12/PM15/PM24, version V2.5 (2019-10-12), LCSC's copy https://datasheet.lcsc.com/datasheet/pdf/946e31c396749ef42541894d4260feb2.pdf?productCode=C209903, read 2026-11-03",
   "2. product model: HLK-PM01 3 W, 5 V, 600 mA (i_out_max_a); 4.: working temperature −25 … +60 °C",
-  "5.1 input: rated 100 … 240 VAC, range 85 … 265 VAC or 120 … 350 VDC (the AC pins' v_max_v and v_min_v: the DC range – the AC range is an rms value, which no field holds), max. input current ≤ 0.2 A, inrush ≤ 10 A; external fuse recommended 1 A / 250 VAC slow blow",
+  "5.1 input: rated 100 … 240 VAC, range 85 … 265 VAC or 120 … 350 VDC (the AC pins' v_rms_max_v 265, the AC range – held on the AC net –; v_max_v and v_min_v the DC range), max. input current ≤ 0.2 A, inrush ≤ 10 A; external fuse recommended 1 A / 250 VAC slow blow",
   "5.3 output 5 V / 600 mA: 5.0 ± 0.1 V no-load, 5.0 ± 0.2 V full load, short-time max. ≥ 700 mA, efficiency ≥ 73 % at 115 and 230 VAC, ripple ≤ 100 mVp-p, over-current protection 110 … 150 %",
   "8.1 input parts: fuse 1 A/250 VAC slow, varistor 10D561K, X capacitor 0.1 µF/275 VAC, common-mode choke – 'fuse and varistor are basic protective circuits (must be connected)'; 8.2 output: 100 … 220 µF electrolytic for 30 mV ripple",
   "9.2: insulation voltage I/P–O/P 2500 VAC (3000 VAC in 3. features), > 100 MΩ at 500 VDC",
@@ -77,7 +79,6 @@
    "recommended input and output parts"
   ],
   "open": [
-   "the input range 85 … 265 VAC has no field: the DC range 120 … 350 VDC stands as the AC pins' limit, against which edakit holds the peak of the mains",
    "no output capacitor value inside the module stated; 8.2 recommends 100 … 220 µF outside"
   ]
  }

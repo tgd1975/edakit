@@ -2,7 +2,7 @@
  "lcsc": "C210499",
  "mpn": "B72210S0251K101",
  "manufacturer": "TDK",
- "kind": "ic",
+ "kind": "varistor",
  "package": "leaded disc varistor, 10 mm, lead spacing 7.5 mm (SIOV-S10K250)",
  "jlc_class": "Extended Part",
  "datasheet": {
@@ -12,25 +12,29 @@
  "pins": {
   "1": {
    "name": "1",
-   "type": "passive"
+   "type": "passive",
+   "role": "1"
   },
   "2": {
    "name": "2",
-   "type": "passive"
+   "type": "passive",
+   "role": "2"
   }
  },
  "values": {
-  "behavior": "none"
+  "v_varistor_v": 390,
+  "v_clamp_v": 650
  },
  "limits": {
+  "v_rms_max_v": 250,
+  "v_max_v": 320,
   "t_min_c": -40,
   "t_max_c": 105
  },
  "sources": [
   "EPCOS/TDK SIOV metal oxide varistors, leaded varistors, StandarD series B722*, March 2018, LCSC's copy https://datasheet.lcsc.com/datasheet/pdf/08ce19f6880280c2a7b33c4a2f720d70.pdf?productCode=C210499, read 2026-11-03",
   "maximum ratings (TA = 105 °C), B72210S0251K101 = SIOV-S10K250: VRMS 250 V, VDC 320 V, imax 2500 A (8/20 µs, once), Wmax 38 J, Pmax 0.4 W",
-  "characteristics (TA = 25 °C): varistor voltage 390 V ±10 % at 1 mA, clamping voltage 650 V at 25 A, Ctyp 245 pF; operating temperature −40 … +105 °C",
-  "kind ic with behaviour none: edakit's parts schema has no kind for a varistor (catalog/kinds.toml) – the part is in the graph, nothing models or checks it, as the domain mains says of the mains input"
+  "characteristics (TA = 25 °C): varistor voltage 390 V ±10 % at 1 mA, clamping voltage 650 V at 25 A, Ctyp 245 pF; operating temperature −40 … +105 °C"
  ],
  "verified": {
   "by": "Claude (datasheet check, open-design transcription)",
@@ -41,7 +45,6 @@
    "S10K250 ratings and characteristics"
   ],
   "open": [
-   "no varistor kind: VRMS 250 V and VDC 320 V are in no field edakit checks – 230 V + 10 % (253 V) is above the 250 V rms rating",
    "the README's bill of materials says 'Varistor 270V', the schematic S10K250 – the schematic's taken"
   ]
  }

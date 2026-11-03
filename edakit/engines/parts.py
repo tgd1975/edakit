@@ -2,7 +2,8 @@
 part for the graph's purpose.use, and of every part the BOM lists (domains, [facts]), and of the right form where a
 fact has one (concept rules-at-scale.md, sections 4 and 5). A missing fact is PARTS.fact with the fact's last name as
 its grade (PARTS.fact/radio): its severity is the profile's. [facts] bom names the facts of every part the BOM lists
-(bom not false) – compliance.rohs (PARTS.fact/rohs).
+(bom not false) – compliance.rohs (PARTS.fact/rohs). The board's own copper (own.what copper: a solder jumper, a test
+pad) is bought from nobody: no compliance fact is asked of it.
 """
 
 from __future__ import annotations
@@ -44,6 +45,8 @@ def run(ctx):
         need += [f for f in (prof.facts["purpose"].get(prof.purpose, []) if prof else []) if f not in need]
         if prof and any(d.comps[x].get("bom") is not False for x in dess):
             need += [f for f in prof.facts["bom"] if f not in need]
+        if (entry.get("own") or {}).get("what") == "copper":     # the board's copper: no supplier to state anything
+            need = [f for f in need if not f.startswith("compliance.")]
         on = tuple(("component", x) for x in dess)
         for fact in need:
             if get(entry, fact) in (None, "", [], {}):

@@ -23,43 +23,6 @@ place = "U1.3"
 judged = "real"
 why = "A pack whose JST plug is wired the other way round puts −4.2 V straight on the charger's VBAT (and C2): nothing on the board blocks it. Adafruit says so itself – 'For use with Adafruit LiPoly/LiIon batteries only! Other batteries may have different voltage, chemistry, polarity or pinout' – and the plug's polarity differs between makers."
 
-[[check]]
-code = "PATH.reverse"
-place = "U1.4"
-judged = "known gap"
-why = "Reached only through the connectors: the reversed cell's VBAT is pad 5 of JP4, and catalog/paths.toml lets a connector pass a reversed source from every pin to every pin – on to 5V (JP4 pad 1), and through the receptacle X2 to CC1 and CC2. A header's or a receptacle's pins are separate contacts; the charger's VDD sees no reversed voltage. The fix is the catalog's data (a connector among the parts that tolerate a reversed source, not among those that pass it on), which this transcription does not change."
-
-[[check]]
-code = "PATH.reverse"
-place = "LED1.2"
-judged = "known gap"
-why = "As U1.4: the red LED's anode is on 5V, which the reversed cell reaches only through JP4's other pads in edakit's model – a connector passing every pin to every pin (catalog/paths.toml)."
-
-[[check]]
-code = "PATH.reverse"
-place = "R6.2"
-judged = "known gap"
-why = "As U1.4: CC1 is reached from VBAT through JP4 and then through X2's other contacts – a connector passing every pin to every pin (catalog/paths.toml); a resistor takes a reversed voltage without harm anyway."
-
-[[check]]
-code = "PATH.reverse"
-place = "R5.2"
-judged = "known gap"
-why = "As R6.2, on CC2: reached through JP4 and X2 only in edakit's model of a connector (catalog/paths.toml)."
-
-[[check]]
-code = "PARTS.supplier"
-place = "SJ1"
-judged = "known gap"
-why = "SJ1 is two pads of the board's copper, bridged with solder – nothing is bought. edakit reads a part outside the BOM (bom false) without an LCSC number as one bought separately and has no way to say 'copper, no part'."
-
-[[check]]
-code = "PARTS.verified"
-grade = "device"
-place = "SJ1"
-judged = "lacks"
-why = "The transcription names no EasyEDA library device for the jumper's two pads (easyeda_device) – a project that orders the board would."
-
 [[sim]]
 code = "LIM.i"
 place = "U1"
@@ -84,22 +47,16 @@ place = "U1"
 judged = "real"
 why = "In the 500 mA mode the SOT-23-5 dissipates 0.57 W from a cell at 3.7 V and 1.1 W from one at 3.0 V: 157–278 °C at 230 K/W. The MCP73831 then regulates its temperature and cuts the current (DS20001984H 6.1.1.3: 1.54 W worst case) – the 500 mA the jumper promises are not reached from a low cell; edakit's model has no thermal regulation and shows the dissipation."
 
-[[sim]]
-code = "SIM.state"
-place = "LED1"
-judged = "known gap"
-why = "The charger model does not drive STAT (the status outputs are among what the simulation leaves out, decision 17 of rules-at-scale.md: edakit check --coverage lists them): STAT floats in the model, and the two LEDs carry the current of the chain 5V – LED1 – R1 – R2 – LED2 – GND, 2 µA to 1.6 mA by the corner – the red LED too dim while charging, too bright with the cell full. On the board STAT is low while charging and lights it with about 6 mA through 470 Ω."
-
-[[sim]]
-code = "SIM.state"
-place = "LED2"
-judged = "known gap"
-why = "As LED1: with STAT not driven by the model, the green LED carries the chain's current while the cell charges (up to 1.6 mA, expected dark) and too little with the cell full (0.7 mA, expected on) – on the board STAT high lights it with a few mA through 470 Ω."
-
+[[fixed]]
+what = "STAT not driven by the charger model: it floated, and the two LEDs carried the chain 5V – LED1 – R1 – R2 – LED2 – GND, the red one too dim while charging and the green one lit (SIM.state on LED1, LED2). The model now holds STAT low while it charges and high once the current falls below i_term_ratio of the set current: 4.3–7.5 mA through LED1 while charging, 4.2 mA through LED2 with the cell full (TD-133)."
+[[fixed]]
+what = "SJ1, two pads of the board's copper bridged with solder, asked for a supplier, a REACH statement and an EasyEDA device (PARTS.supplier, PARTS.fact/reach, PARTS.verified/device): the parts entry says own.what \"copper\" now – nothing bought, nothing to state (TD-127)."
 [[fixed]]
 what = "A charger's status LEDs, each behind its series resistor on the tri-state STAT, taken for a floating net (LVL.undefined/open_drain on STAT) – an LED cathode straight on an output counted as its load, one behind a resistor did not."
 [[fixed]]
 what = "R4 behind the solder jumper SJ1 – the 500 mA mode – counted by neither LIM.i/charge nor the simulation's charger model, which read only resistors straight from PROG to ground: the check now holds the position that programs the most, the model the contacts a load closes."
+[[fixed]]
+what = "A reversed cell carried by JP4 from its VBAT pad to 5V, and by the USB-C receptacle on to CC1 and CC2 – catalog/paths.toml let a connector pass a reversed source from every pin to every pin (PATH.reverse on U1.4, LED1.2, R5.2, R6.2): a connector now takes it on the contact it sits on and hands nothing on (TD-124)."
 
 # PARTS.fact/reach (#95): the design is sold, and the transcription took no supplier REACH statements.
 
@@ -180,9 +137,3 @@ place = "C84256"
 judged = "lacks"
 why = "A board that is sold names the SVHCs above 0.1 % (REACH Art. 33); the transcription took no supplier REACH statement for this part."
 
-[[check]]
-code = "PARTS.fact"
-grade = "reach"
-place = "SOLDERJUMPER_ARROW_NOPASTE"
-judged = "known gap"
-why = "SJ1 is the board's copper and the assembler's solder, no part with a supplier: edakit asks a supplier's REACH statement of it, as of every parts entry – as PARTS.supplier on SJ1, it has no way to say 'copper, no part'."

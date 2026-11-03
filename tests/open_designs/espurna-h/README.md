@@ -58,7 +58,11 @@ sell: Walter's TG113 (C435442, 113 °C, 15 A 250 V AC) stands in; its "500mA 250
 plus at the supply – the schematic's symbol has no polarity. The resistors are UNI-ROYAL 0805W8F/1206W4F parts of
 the values given, the shunt Vishay's WSL25121L000FEA18, the ceramics YAGEO and Samsung 0805 parts (the 100 nF and
 1 µF of edakit's library), the screw terminals Kefa's KF301-5.0, the headers XFCN's PZ254V-11-05P, the button XKB's
-TS-1187A of the library. edakit has no kind for a varistor: V11 is entered as kind ic with behaviour none – in the
-graph, checked by nothing. Each parts entry names its datasheet, what was read in it and what is open (`verified`).
+TS-1187A of the library. The mains nets are AC nets (net `ac`), the terminals, the module's input and the varistor V11
+(kind varistor) rated in V AC (`v_rms_max_v`). Each parts entry names its datasheet, what was read in it and what is open (`verified`).
 
 **What edakit finds** – and how each finding is judged – is in `findings.toml`, held by `tests/test_open_designs.py`.
+The design showed one false alarm of edakit, fixed and held by `tests/test_open_design_fixes.py` – a need on the
+regulator's VOUT pin left open while its tab carries the output –, and the mains side edakit could not read: AC
+ratings held against the peak as DC, the divider's taps judged against GND, no varistor kind, no mains supply input,
+and GND tied to the line unseen (TD-128 to TD-131), each closed and held there too.

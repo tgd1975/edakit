@@ -8,17 +8,27 @@ tag = "r"
 
 [reverse]                                    # PATH.reverse
 sources = ["battery_holder"]                 # kinds that may be inserted reversed; also a component "source": "reversible"
-passes = ["fuse", "switch", "button", "connector"]     # hand a reversed source on unchanged
-tolerates = ["battery_holder", "capacitor"]  # take a reversed voltage without harm
+passes = ["fuse", "switch", "button"]   # hand a reversed source on unchanged
+tolerates = ["battery_holder", "capacitor", "connector"]   # take a reversed voltage without harm; a connector's
+                                             # pins are separate contacts: it hands nothing on from one to another
+tolerates_tvs = ["bidirectional"]            # a TVS of values tvs "bidirectional" blocks a reversed voltage up to its
+                                             # working voltage as it blocks the right one – LIM.v holds both ways
 blocks = [
   { kind = "diode", role = "anode", outside = ["cathode"] },          # the cathode on the protected side
   { kind = "diode", role = "cathode", outside = ["anode"], rail = "negative" },   # a negative rail: the anode on the
                                                                       # protected side – reversed, + reaches the cathode
   { kind = "pmos", role = "drain", outside = ["source", "gate"] },    # body diode blocks, VGS <= 0
 ]
+cuts = [                                     # take a reversed source's return off ground: the board's ground floats,
+                                             # only the parts between the source's own nets see the reversed voltage
+  { kind = "nmos", role = "drain", ground = "source", gate = "gate" },   # a low-side N-MOSFET: drain on the return,
+                                             # source on ground, gate from the plus side (straight or through a
+                                             # resistor) – reversed, VGS <= 0 and its body diode blocks
+]
 
 [supply]                                     # PATH.unfed: what a supply reaches
-inputs = { battery_holder = "plus", connector = "vbus" }   # pin roles where a supply comes in (role prefix)
+inputs = { battery_holder = "plus", connector = ["vbus", "line", "neutral"] }   # pin roles where a supply comes in
+                                           # (a holder's: role prefix); line and neutral: a mains terminal
 passes = ["fuse", "switch", "button", "connector", "inductor"]       # every pin to every pin
 passes_roles = { nmos = ["drain", "source"], pmos = ["drain", "source"], led_strip = ["vdd", "vdd_end"] }
                                                            # an LED strip: its +V rail from end to end (chained strips)

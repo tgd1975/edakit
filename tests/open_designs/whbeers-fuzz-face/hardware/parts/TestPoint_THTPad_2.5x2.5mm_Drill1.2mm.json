@@ -3,7 +3,7 @@
  "kind": "connector",
  "package": "plated through-hole square pad 2.5 × 2.5 mm, drill 1.2 mm, on the board",
  "own": {
-  "what": "handmade",
+  "what": "copper",
   "notes": "a plated pad of the board for a probe (KiCad footprint TestPoint:TestPoint_THTPad_2.5x2.5mm_Drill1.2mm, symbol Connector:TestPoint): copper, no part to buy"
  },
  "pins": {
