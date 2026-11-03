@@ -157,6 +157,15 @@ def test_the_language_server_answers_one_line_without_the_switch(tmp_path):
     assert beta.dsl_of(f) is False and beta.dsl_of(ROOT / "edakit" / "blocks" / "led.circuit") is True
 
 
+
+def test_the_switch_of_a_file_that_cannot_be_read_is_off(tmp_path):
+    (tmp_path / "edakit.toml").write_bytes(b"\xff\xfe[beta]\ndsl = true\n")
+    f = tmp_path / "x.circuit"
+    f.write_text("part R1 resistor X\n")
+    assert beta.dsl_of(f) is False
+    from edakit.lang import server
+    assert "[beta] dsl = true" in server.diagnostics(f, f.read_text())[0]["message"]
+
 def test_the_session_start_names_the_dsl_only_where_it_is_on(project):
     from edakit import agreements
     toml = project.root / "edakit.toml"
@@ -191,6 +200,7 @@ def test_the_dsl_is_a_tab_of_its_own_and_the_rest_says_nothing_of_it():
         "docs/dsl/sysml.md", "docs/dsl/editor.md"]
     assert not any("circuit" in src or "dsl" in src for src, _ in nav["Handbook"])
     assert all('!!! warning "A beta"' in (ROOT / src).read_text(encoding="utf-8") for src, _ in nav["Explorative DSL"])
+    assert not any("claude/" in (ROOT / src).read_text(encoding="utf-8") for src, _ in nav["Explorative DSL"])
     silent = ["README.md", *(f"handbook/{p.name}" for p in (ROOT / "handbook").glob("*.md")),
               *(p.relative_to(ROOT).as_posix() for p in (ROOT / "skills").glob("*/SKILL.md")),
               *(p.relative_to(ROOT).as_posix() for p in (ROOT / "agents").glob("*.md"))]

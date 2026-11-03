@@ -17,7 +17,7 @@ LIBRARY = Path(__file__).resolve().parent / "blocks"      # edakit's own block s
 
 def dsl_of(path):
     """True where the edakit.toml found upward from path sets [beta] dsl = true, and for a source of edakit's own
-    block library; False without an edakit.toml, without the key, or in a file that does not parse."""
+    block library; False without an edakit.toml, without the key, or in a file that cannot be read or does not parse."""
     path = Path(path).resolve()
     if LIBRARY in (path, *path.parents):
         return True
@@ -26,7 +26,7 @@ def dsl_of(path):
         if toml.is_file():
             try:
                 return tomllib.loads(toml.read_text(encoding="utf-8")).get("beta", {}).get("dsl") is True
-            except (tomllib.TOMLDecodeError, AttributeError):
+            except (tomllib.TOMLDecodeError, AttributeError, UnicodeDecodeError, OSError):
                 return False
     return False
 

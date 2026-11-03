@@ -1,8 +1,8 @@
 # Variants and requirements
 
 !!! warning "A beta"
-    The explorative DSL is not part of the released edakit: it lives on the branch `claude/friendly-mccarthy-n4kt6y`
-    and works only in a project that switches it on. Its form may still change from one commit to the next.
+    The explorative DSL is a beta: it works only in a project that switches it on with `[beta] dsl = true` in
+    edakit.toml, and its form may still change from one version to the next.
 
 A variant is a project of its own whose source names its base, the main file or another variant:
 

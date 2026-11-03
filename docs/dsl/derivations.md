@@ -1,8 +1,8 @@
 # Derivations
 
 !!! warning "A beta"
-    The explorative DSL is not part of the released edakit: it lives on the branch `claude/friendly-mccarthy-n4kt6y`
-    and works only in a project that switches it on. Its form may still change from one commit to the next.
+    The explorative DSL is a beta: it works only in a project that switches it on with `[beta] dsl = true` in
+    edakit.toml, and its form may still change from one version to the next.
 
 A derivation is a rule of edakit's that derives a part's value from the parameters, the ranges of the nets it is
 bound to and the entries of the parts: the series resistor of an LED from its current, a divider from its output
