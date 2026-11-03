@@ -4,7 +4,7 @@ Open work that needs the owner's computer, a maker or the owner's word. The stat
 and plans the sections name; this list is what is left to do of them, in the order it can be done. No item is deleted.
 
 **Layout.** Every item, in every section, open or closed, is a line with a checkbox and an ID unique in this file,
-counted up and never reused – whoever adds an item takes the next free ID and counts it up here. Next free ID: TD-122.
+counted up and never reused – whoever adds an item takes the next free ID and counts it up here. Next free ID: TD-123.
 
 - Open: `- [ ] TD-<n> - **Title:** what and why.` – a step's own name after the dash (`- [ ] TD-31 - **D.4** …`).
 - Done: ticked, the commit that did it, the date at the end, moved to [Closed todos](#closed-todos), newest first –
@@ -45,15 +45,10 @@ to touch.
 
 ## The circuit language ([docs/concepts/new/circuit-dsl-toolchain.md](docs/concepts/new/circuit-dsl-toolchain.md))
 
-- [ ] TD-114 - **The three evals of the language:** `evals/add-led-circuit`, `evals/repeat-leds` and
-      `evals/variant-smd` run once in a cloud session (FT-24, trigger 5) – written with T.19, not run; after TD-113.
-      *(friendly-mccarthy)*
-- [ ] TD-115 - **The bell in the language:** its sources converted in the bell's repository and the test of T.17 run
-      with `BELL_ROOT` – the bell's repository was not in the session's scope; the esp32 variant has no text in
-      circuit-dsl.md yet. *(friendly-mccarthy)*
-- [ ] TD-116 - **The job sysml on main:** its first run after TD-113 reads with the standard library 2025-12 that
-      systree loads – the job is optional, so its result is looked at, not waited for (decision 42).
-      *(friendly-mccarthy)*
+- [ ] TD-122 - **The bell in the language, in its own repository:** its five graphs as `.circuit` – `edakit graph
+      convert --to circuit` keeps the sign-offs (rehashed); the modeled sources of `tests/fixtures/bell/` add the
+      LED step's records and the LEDs' `value`, a new circuit hash and new sign-offs – the bell's choice, after
+      TD-113 (decision 43). *(friendly-mccarthy)*
 
 ## How edakit is tested ([docs/concepts/new/verification-and-validation.md](docs/concepts/new/verification-and-validation.md))
 
@@ -92,6 +87,15 @@ Nothing to do until there is an answer or a release; whichever session learns of
 
 ## Closed todos
 
+- [x] TD-116 - **The job sysml:** run on the branch by `workflow_dispatch` – 4 passed, read with the standard
+      library 2025-12 that systree loads (decision 45); main runs it with every merge. *(friendly-mccarthy)*
+      [2026-11-03]
+- [x] TD-115 - **The bell in the language, the test:** T.17's test run with `BELL_ROOT` against the bell's `cfb0ab0` –
+      all five configurations canonically equal but for the LED step's additions, esp32 and esp32tht written
+      (decision 43, `28b5c1c`); its own conversion is TD-122. *(friendly-mccarthy)* [2026-11-03]
+- [x] TD-114 - **The three evals of the language:** run once each with Sonnet 5.5 – 1.00 each, after two graders'
+      regexes were made JavaScript (`9d1289e`); the table in `evals/README.md` (decision 45). *(friendly-mccarthy)*
+      [2026-11-03]
 - [x] TD-112 - **OK for #267:** given; merged as edakit 1.1.2 (#267) – the newcomer's gaps closed;
       documentation-newcomer.md moved to `done/`. *(edakit-df)* [2026-11-02]
 - [x] TD-105 - **E-18 (a pin on a second net while another schematic of the project is open):** checked live on
