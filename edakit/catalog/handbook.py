@@ -9,8 +9,8 @@ the catalog), codes (the same with the rule and its details), engines (each engi
 kinds (the parts schema), replaced (the map of before) or command (ARGS: a subcommand – its synopsis and help line from the command line's own parser). Without
 --write the command lists the sections that differ from the catalog; tests/test_catalog.py holds the handbook to it.
 
-Chapter 19 takes three more kinds from the tests' own data, not the catalog (concept
-docs/concepts/new/verification-and-validation.md): references (each reference circuit of tests/reference.py with its
+Chapter 19 takes three more kinds from the tests' own data, not the catalog (the concept
+verification-and-validation.md): references (each reference circuit of tests/reference.py with its
 domain, its description, why it stands for its domain and its seeded faults), designs (each open design of
 tests/open_designs/ with its licence, why it was chosen, its findings counted by judgement and its known gaps) and
 tally (the counts of both).
