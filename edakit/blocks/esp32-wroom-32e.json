@@ -123,8 +123,8 @@
     "12",
     "15"
    ],
-   "config": "3v3",
-   "notes": "3.3 V operation: V3 joined to VCC; no crystal (built-in clock); unused MODEM inputs and R232 may float (datasheet note under the pin table)."
+   "notes": "3.3 V operation: V3 joined to VCC; no crystal (built-in clock); unused MODEM inputs and R232 may float (datasheet note under the pin table).",
+   "config": "3v3"
   },
   {
    "designator": "R1",

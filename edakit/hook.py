@@ -1,7 +1,7 @@
 """`edakit hook`: the project's pre-commit hook (handbook 2.7). edakit owns one block of it – `install` writes and
 renews that block and sets core.hooksPath, the project's own steps around it stay –, `check` says what is missing for
 the session start, and `run`, which the block calls, runs the steps of every configuration whose files are staged:
-`edakit check`, `edakit sim`, with a TOML or a .circuit graph `edakit graph json --check`, with [firmware] `edakit firmware --check`,
+`edakit check`, `edakit sim`, with a TOML graph `edakit graph json --check`, with [firmware] `edakit firmware --check`,
 with [docs] `edakit docs`. A failing step blocks the commit; never bypass it with --no-verify.
 
 The block finds edakit itself: $EDAKIT, else `edakit` on the PATH (inside Claude Code), else the plugin installation in
@@ -172,7 +172,7 @@ def install(root):
 # --- run ----------------------------------------------------------------------------------------------------------
 
 def configs(root):
-    """[{path, dir, inputs, generated_graph, firmware, docs}] of the repository's edakit.toml files, paths relative."""
+    """[{path, dir, inputs, toml_graph, firmware, docs}] of the repository's edakit.toml files, paths relative."""
     from .config import ConfigError, load
     root = Path(root)
     listed = _git(root, "ls-files", "--cached", "--others", "--exclude-standard", "*edakit.toml", "edakit.toml")
@@ -184,7 +184,7 @@ def configs(root):
             cfg = load(root / name)
         except ConfigError:                            # edakit check names what is wrong – it runs all the same
             d = str(Path(name).parent)
-            out.append({"path": name, "dir": "" if d == "." else d, "inputs": [], "generated_graph": False,
+            out.append({"path": name, "dir": "" if d == "." else d, "inputs": [], "toml_graph": False,
                         "firmware": False, "docs": False})
             continue
         inputs = [cfg.graph, cfg.parts, cfg.sim_config, *cfg.requirements, *cfg.docs]
@@ -195,8 +195,7 @@ def configs(root):
             if p.is_relative_to(root):
                 rel.append(str(p.relative_to(root)))
         d = str(Path(name).parent)
-        out.append({"path": name, "dir": "" if d == "." else d, "inputs": rel,
-                    "generated_graph": cfg.graph.suffix in (".toml", ".circuit"),
+        out.append({"path": name, "dir": "" if d == "." else d, "inputs": rel, "toml_graph": cfg.graph.suffix == ".toml",
                     "firmware": cfg.firmware is not None, "docs": bool(cfg.docs)})
     return out
 
@@ -205,16 +204,8 @@ def _pin_tables(graph):
     """The files of doc_pin_table in a graph – under locks, or checks in the older form; {file: …} or a path."""
     import tomllib
     try:
-        if graph.suffix == ".circuit":                 # compiled, as every reader of the graph reads it
-            from .config import ConfigError
-            from .design import load_graph
-            try:
-                data = load_graph(graph)
-            except ConfigError:
-                return []
-        else:
-            text = graph.read_text(encoding="utf-8")
-            data = tomllib.loads(text) if graph.suffix == ".toml" else json.loads(text)
+        text = graph.read_text(encoding="utf-8")
+        data = tomllib.loads(text) if graph.suffix == ".toml" else json.loads(text)
     except (OSError, ValueError):
         return []
     data = data.get("graph", data) if isinstance(data, dict) else {}    # as design.py reads it
@@ -242,7 +233,7 @@ def plan(staged, cfgs):
         if not any(_touches(p, c) for p in staged):
             continue
         steps = [["check"], ["sim"]]
-        if c["generated_graph"]:
+        if c["toml_graph"]:
             steps.append(["graph", "json", "--check"])
         if c["firmware"]:
             steps.append(["firmware", "--check"])

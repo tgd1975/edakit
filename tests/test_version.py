@@ -241,10 +241,7 @@ def test_test_and_kicad_run_unless_the_lane_says_otherwise():
     """Skipped on a notes-only pull request – and run when the job lane failed or did not run (push, dispatch)."""
     text = (ROOT / ".github" / "workflows" / "tests.yml").read_text()
     guard = "    needs: lane\n    if: ${{ !cancelled() && needs.lane.outputs.only != 'true' }}\n"
-    for job in ("test", "kicad"):                  # the optional jobs of the circuit language carry it as well
-        assert f"\n  {job}:\n" + ("    # " if job == "kicad" else "") in text
-        assert guard in text[text.index(f"\n  {job}:\n"):][:900], job
-    assert "python3 .github/versions.py lane HEAD^1 HEAD" in text
+    assert text.count(guard) == 2 and "python3 .github/versions.py lane HEAD^1 HEAD" in text
 
 
 def test_the_notes_of_a_version_are_its_section(tmp_path, capsys, monkeypatch):

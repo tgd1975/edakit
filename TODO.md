@@ -4,7 +4,7 @@ Open work that needs the owner's computer, a maker or the owner's word. The stat
 and plans the sections name; this list is what is left to do of them, in the order it can be done. No item is deleted.
 
 **Layout.** Every item, in every section, open or closed, is a line with a checkbox and an ID unique in this file,
-counted up and never reused – whoever adds an item takes the next free ID and counts it up here. Next free ID: TD-139.
+counted up and never reused – whoever adds an item takes the next free ID and counts it up here. Next free ID: TD-140.
 
 - Open: `- [ ] TD-<n> - **Title:** what and why.` – a step's own name after the dash (`- [ ] TD-31 - **D.4** …`).
 - Done: ticked, the commit that did it, the date at the end, moved to [Closed todos](#closed-todos), newest first –
@@ -43,6 +43,8 @@ to touch.
       CPL are uploaded, into `examples/coin-cell-led/docs/jlcpcb_assembly_main_top.png` – only your account shows it;
       for TD-138. *(quirky-bell)*
 
+- [ ] TD-139 - **OK for #291:** C70374 (9 V snap) and C22355741 (slide switch) signed in the parts library on your
+      word – merged with `python3 .github/merge.py 291` on your OK. *(edakit-56)*
 ## The steps ([docs/steps/](docs/steps/README.md))
 
 - [ ] TD-136 - **Step 9 shows the routed board:** the tracks and the ground pour, `board_main_layers.png` of TD-135
@@ -56,7 +58,7 @@ to touch.
       nothing ordered or paid by the skill – it records the BOM tool's labels into `edakit/suppliers/lcsc.toml`, sets
       `recorded`, and what it finds goes into handbook 8.4; #265 is on main (1.1.5). *(edakit-4f)*
 
-## The circuit language ([docs/concepts/done/circuit-dsl-toolchain.md](docs/concepts/done/circuit-dsl-toolchain.md))
+## The circuit language ([docs/concepts/new/circuit-dsl-toolchain.md](docs/concepts/new/circuit-dsl-toolchain.md))
 
 - [ ] TD-122 - **The bell in the language, in its own repository:** its five graphs as `.circuit` – `edakit graph
       convert --to circuit` keeps the sign-offs (rehashed); the modeled sources of `tests/fixtures/bell/` add the
