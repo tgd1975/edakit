@@ -1,4 +1,0 @@
-patch
-- The known gaps of the open designs closed (TD-124 to TD-133): a connector no longer hands a reversed source on from pin to pin (PATH.reverse); a low-side N-MOSFET in the ground return cuts a reversed source off ground (`[reverse] cuts` in catalog/paths.toml); `values.tvs: "bidirectional"` for a TVS that blocks both ways.
-- Mains: net `ac` (a sine, its range the peaks) and the AC rating `v_rms_max_v` of a part or pin – LIM.v holds the rms there, and a resistor between two AC nets the difference of their like ends; kind `varistor` (VRMS, VDC); a connector pin of role `line` or `neutral` is a supply input (PATH.unfed); LIM.hazardous/ground names a board ground tied to a mains terminal.
-- `values.adjust: "trimmer"` leaves a potentiometer set at the bench out of REQ.value/switch; `own.what: "copper"` – a solder jumper, a test pad – asks no supplier, no compliance fact and no EasyEDA device; the charger model drives its status output (role `stat`).
