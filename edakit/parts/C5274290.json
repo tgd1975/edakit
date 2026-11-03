@@ -24,7 +24,7 @@
   }
  },
  "values": {
-  "tvs": true,
+  "tvs": "bidirectional",
   "ir_a": 1e-06,
   "ir_at_v": 5.0
  },
@@ -58,10 +58,11 @@
   "checked": [
    "bidirectional symbol, SOD-523 (p. 1)",
    "VRWM 5.0 V, IR 1 µA, VBR 5.6–7.8 V, VC 11.6 V at 5 A, CJ 15 pF (p. 2)",
-   "TJ 150 °C, −40 … +125 °C, 174 W / 9.4 A 8/20 µs (p. 1)"
+   "TJ 150 °C, −40 … +125 °C, 174 W / 9.4 A 8/20 µs (p. 1)",
+   "bidirectional: symbol p. 1 two junctions back to back, the I–V curve p. 2 symmetric – VRWM, VBR and VC on both sides (values.tvs \"bidirectional\", 2026-11-03)"
   ],
   "open": [
-   "bidirectional: one SPICE junction cannot model it – right while pin 1 stays above pin 2 (a line from 0 V to VCC with pin 2 on ground), wrong for negative line voltages, where the model conducts at about 0.6 V and the part blocks up to VBR",
+   "bidirectional (values.tvs \"bidirectional\": LIM.v and PATH.reverse take both directions): one SPICE junction cannot model it – right while pin 1 stays above pin 2 (a line from 0 V to VCC with pin 2 on ground), wrong for negative line voltages, where the model conducts at about 0.6 V and the part blocks up to VBR",
    "the schema has no field for the clamping voltage and the surge rating (VC, IPP)",
    "no thermal resistance in the data sheet"
   ]
