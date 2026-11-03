@@ -5,7 +5,10 @@ lost in the documentation. Proposal: a chapter of its own in the handbook with t
 included, and their description – why exactly these, what must be true to add another one, …". Written against main
 at `dc561ef`; every number below counted there. Decided by the owner the same day in a decision round (decisions 1 to
 4 as recommended, Claude's own decisions confirmed – "Decisions" at the end). VV.5 done the same day: TD-118 to
-TD-121 in `TODO.md`. Nothing else built: VV.1 to VV.4, one branch, start on the owner's word (TD-117).
+TD-121 in `TODO.md`. Built the same day on the owner's word ("Mach alle diese todos") on the branch
+`ccr-de7c0e28-hcr2zn`: VV.1 to VV.4 – handbook chapter 19 – and the four open designs TD-118 to TD-121; it goes onto
+main on the owner's OK (TD-123), then this concept moves to `done/`. The known gaps the new designs showed are TD-124 to
+TD-133.
 
 ## Why
 
