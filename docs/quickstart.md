@@ -59,7 +59,7 @@ reason under the finding.
 
 ```text
 $ edakit explain PATH.reverse
-PATH.reverse (reverse polarity blocked): What a reversed source (a battery holder, a source marked reversible) reaches through fuses, switches and push buttons is only capacitors without polarity, holders, connectors – their contacts are separate, a connector hands nothing on from one pin to another –, the anode of a blocking diode – on a negative rail (the protected net declared at or below 0 V) its cathode – or the drain of a PMOS whose source and gate are outside; an N-MOSFET in the ground return – drain on the source's return, source on ground, gate from the plus side – cuts the board's ground off, and then only the parts between the source's own nets count; a polarized capacitor it reaches is reverse biased (grade polarized).
+PATH.reverse (reverse polarity blocked): What a reversed source (a battery holder, a source marked reversible) reaches through fuses, switches and push buttons is only capacitors without polarity, holders, connectors – their contacts are separate, a connector hands nothing on from one pin to another –, a bidirectional TVS, the anode of a blocking diode – on a negative rail (the protected net declared at or below 0 V) its cathode – or the drain of a PMOS whose source and gate are outside; an N-MOSFET in the ground return – drain on the source's return, source on ground, gate from the plus side – cuts the board's ground off, and then only the parts between the source's own nets count; a polarized capacitor it reaches is reverse biased (grade polarized).
     why: A battery inserted the wrong way drives the supply negative; every IC on that rail conducts through its substrate diodes and dies within milliseconds.
 …
 ```

@@ -150,12 +150,13 @@ What `edakit part lint` holds an entry to and the engines read, per kind – gen
 |---|---|---|
 | every kind | `p_max_w`, `rth_ja_k_per_w`, `tj_max_c`, `t_max_c`, `t_min_c` | – |
 | `resistor` | `v_max_v` | `value_ohm`, `r_max_ohm`, `tolerance` |
-| `potentiometer` | `v_max_v` | `value_ohm`, `tolerance` |
+| `potentiometer` | `v_max_v` | `value_ohm`, `tolerance`, `adjust` |
 | `capacitor` | `v_max_v`, `vr_max_v`, `i_ripple_a` | `value_f`, `dielectric`, `polarized`, `tolerance`, `dc_bias`, `esr_ohm` |
 | `crystal` | – | `f_hz`, `c_load_f` |
 | `inductor` | `i_max_a`, `i_sat_a` | `value_h`, `dcr_ohm` |
 | `fuse` | `v_max_v`, `i_max_a`, `i_hold_a`, `i_trip_a` | `r_min_ohm`, `r_max_ohm`, `i_hold_vs_temp` |
 | `diode` | `vr_max_v`, `if_max_a`, `ifsm_max_a` | `vf_v`, `vf_at_a`, `ir_a`, `ir_at_v` |
+| `varistor` | `v_rms_max_v`, `v_max_v` | `v_varistor_v`, `v_clamp_v` |
 | `led` | `vr_max_v`, `if_max_a` | `color`, `vf_typ_v`, `vf_min_v`, `vf_max_v`, `vf_at_a`, `rs_ohm`, `vf_vs_if` |
 | `led_rgb` | `vr_max_v`, `if_max_a` | `vf_typ_v`, `vf_min_v`, `vf_max_v`, `vf_at_a`, `rs_ohm`, `vf_vs_if` |
 | `npn` | `vce_max_v`, `veb_max_v`, `ic_max_a` | `hfe_min`, `hfe_max`, `vce_sat_v`, `icbo_a` |
@@ -170,7 +171,7 @@ What `edakit part lint` holds an entry to and the engines read, per kind – gen
 | `battery_holder` | `i_max_a`, `v_max_v` | `r_contact_ohm` |
 | `buzzer` | `v_max_v`, `i_max_a` | `coil_ohm` |
 | `relay` | `v_coil_max_v`, `i_max_a`, `v_max_v`, `i_contact_max_a`, `i_switch_max_a` | `coil_ohm`, `v_operate_v`, `v_release_v`, `r_contact_ohm`, `min_load_a` |
-| `connector` | `v_max_v`, `i_max_a`, `i_contact_max_a` | `pitch_mm`, `r_contact_ohm`, `r_source_ohm`, `usb_c` |
+| `connector` | `v_max_v`, `i_max_a`, `i_contact_max_a`, `v_rms_max_v` | `pitch_mm`, `r_contact_ohm`, `r_source_ohm`, `usb_c` |
 | `ic` | `vdd_max_v`, `vdd_op_min_v`, `vdd_op_max_v`, `vin_min_v`, `vin_max_v`, `vout_max_v`, `i_out_max_a`, `vin_rel_max_v`, `i_supply_pin_max_a`, `f_max_hz`, `r_sense_min_ohm`, `f_sck_max_hz`, `f_scl_max_hz`, `gpio_i_max_a`, `gpio_i_total_max_a` | `behavior`, `vout_v`, `dropout_v`, `iq_a`, `efficiency`, `idd_max_a`, `iout_gain`, `iout_accuracy`, `vout_knee_v`, `vrext_v`, `vih_v`, `vil_v`, `vih_ratio`, `vil_ratio`, `first_bit_to`, `vout_swing_v`, `vicm_v`, `r_out_ohm`, `comparator`, `gain_min_ratio`, `f_clock_hz`, `vref_v`, `i_load_min_a`, `prog_v`, `icc_a`, `i_a`, `i_core_a`, `i_core_min_a`, `gpio_r_out_ohm`, `regulator`, `vdd_shunt_v`, `i_shunt_max_a`, `pd_request_v`, `r_on_ohm`, `vgs_th_v`, `r_on_high_ohm`, `r_on_low_ohm`, `v_headroom_v`, `uvlo_v`, `v_pre_v`, `i_pre_ratio`, `i_term_ratio`, `v_ovp_v`, `v_ovp_release_v`, `v_uvp_v`, `v_uvp_release_v`, `v_ocp_v`, `v_scp_v`, `vsense_v`, `duty_max_ratio`, `ripple_ratio` |
 | `module` | `vdd_op_min_v`, `vdd_op_max_v`, `vin_min_v`, `vin_max_v`, `vsys_min_v`, `vsys_max_v`, `i_out_max_a`, `gpio_v_max_v`, `gpio_i_max_a`, `gpio_i_total_max_a`, `f_max_hz`, `f_sck_max_hz`, `f_scl_max_hz` | `behavior`, `regulator`, `v_io_v`, `vout_v`, `dropout_v`, `efficiency`, `i_core_a`, `i_core_min_a`, `gpio_r_out_ohm`, `iq_a`, `vih_v`, `vil_v`, `vih_ratio`, `vil_ratio`, `usb_c`, `f_clock_hz` |
 | `motor` | `v_max_v`, `i_max_a` | `coil_ohm` |
@@ -181,7 +182,7 @@ What `edakit part lint` holds an entry to and the engines read, per kind – gen
 | `esd_array` | `vrwm_max_v` | `vbr_min_v`, `vf_v`, `vf_at_a`, `c_io_f` |
 | `led_strip` | `vdd_op_min_v`, `vdd_op_max_v` | `pixels_per_m`, `i_pixel_a`, `i_idle_a`, `r_vdd_ohm_per_m`, `r_gnd_ohm_per_m` |
 
-Per pin: `v_max_v`, `v_op_min_v`, `v_op_max_v`, `vih_v`, `vil_v`, `vih_ratio`, `vil_ratio`, `pull_ohm`, `v_min_v`, `v_rel_max_v`, `v_max_powered_v`, `i_max_a`, `i_inject_max_a`, `r_load_min_ohm`, `c_load_max_f`, `pull_v`, `c_in_f`; and `name`, `type`, `role`, `strap`, `pull`, `hint`, `functions`, `out_edge`, `t_pd_ns`, `needs`, `drive`, `float_ok`, `adc`, `z_in_ohm`, `short_proof`, `clamp`, `windows`, `biased`, `ref`, `rel_ref`, `state`, `print`. Every name ends in its unit: `_v` V, `_a` A, `_w` W, `_ohm` Ω, `_f` F, `_h` H, `_c` °C, `_hz` Hz, `_dbm` dBm, `_dbi` dBi, `_mm` mm, `_n` N, `_s` s, `_ns` ns, `_k_per_w` K/W, `_ratio` 1, `_ohm_per_m` Ω/m, `_per_m` 1/m. Words: `behavior` ldo, buck, boost, buck_boost, mcu, cc_sink, opamp, logic, current, bridge, charger, protection, pd_sink, pass_gate, photomos, matrix_driver, cc_led_driver, none; `regulator` ldo, buck, boost, buck_boost, none; `color` red, green, blue, yellow, orange, white, warm_white, amber, uv, ir, rgb; `dielectric` C0G, NP0, X5R, X7R, X7S, X6S, Y5V, electrolytic, polymer, tantalum, film.
+Per pin: `v_max_v`, `v_op_min_v`, `v_op_max_v`, `vih_v`, `vil_v`, `vih_ratio`, `vil_ratio`, `pull_ohm`, `v_min_v`, `v_rel_max_v`, `v_max_powered_v`, `i_max_a`, `i_inject_max_a`, `r_load_min_ohm`, `c_load_max_f`, `pull_v`, `c_in_f`, `v_rms_max_v`; and `name`, `type`, `role`, `strap`, `pull`, `hint`, `functions`, `out_edge`, `t_pd_ns`, `needs`, `drive`, `float_ok`, `adc`, `z_in_ohm`, `short_proof`, `clamp`, `windows`, `biased`, `ref`, `rel_ref`, `state`, `print`. Every name ends in its unit: `_v` V, `_a` A, `_w` W, `_ohm` Ω, `_f` F, `_h` H, `_c` °C, `_hz` Hz, `_dbm` dBm, `_dbi` dBi, `_mm` mm, `_n` N, `_s` s, `_ns` ns, `_k_per_w` K/W, `_ratio` 1, `_ohm_per_m` Ω/m, `_per_m` 1/m. Words: `behavior` ldo, buck, boost, buck_boost, mcu, cc_sink, opamp, logic, current, bridge, charger, protection, pd_sink, pass_gate, photomos, matrix_driver, cc_led_driver, none; `regulator` ldo, buck, boost, buck_boost, none; `color` red, green, blue, yellow, orange, white, warm_white, amber, uv, ir, rgb; `dielectric` C0G, NP0, X5R, X7R, X7S, X6S, Y5V, electrolytic, polymer, tantalum, film; `adjust` panel, trimmer.
 <!-- edakit:end -->
 
 A limit named `<quantity>_max_<unit>` or `<quantity>_min_<unit>` is held to the quantity of that name at the part

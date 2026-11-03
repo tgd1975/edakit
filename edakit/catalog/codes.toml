@@ -233,7 +233,7 @@ sources = [
   "the datasheet of each part: ratings in its parts entry (MCU: gpio_i_max_a, gpio_i_total_max_a; rth_ja_k_per_w, tj_max_c)",
   "edakit handbook 5.2 (transient runs) and 5.3",
   "ngspice User's Manual, independent sources: PWL(T1 V1 T2 V2 …) holds V1 before T1; .tran starts from the DC operating point unless uic is given",
-  "Open design espurna-h (handbook 19.5, 2026-11-03): the KF301 terminals rated 300 V AC, the HLK-PM01's input 85 … 265 V AC and the 5 × 470 kΩ divider were held to the 358 V peak of the mains as if both were DC",
+  "Open design espurna-h (2026-11-03, handbook 19.5): the KF301 terminals rated 300 V AC, the HLK-PM01's input 85 … 265 V AC and the 5 × 470 kΩ divider were held to the 358 V peak of the mains as if both were DC",
 ]
 
 [codes."LIM.hazardous"]
@@ -246,7 +246,7 @@ grades = { ground = "error" }
 sources = [
   "W. Zhang, T. LaBella: Demystifying clearance and creepage distance for high-voltage end equipment, TI Power Supply Design Seminar SLUP421: '60 V – ES1 limit', '120 V – ES2 limit' (IEC 62368-1) – https://www.ti.com/lit/pdf/SLUP421",
   "rules-at-scale.md, decision 7 (2026-10-31): mains and hazardous voltage recognised, not checked; maker-coverage CK-22",
-  "Open design espurna-h (handbook 19.5, 2026-11-03): R42 (0 Ω) ties GND to the line, as the HLW8012 requires – the ESP-12F and the headers sit at mains potential against earth, and every range against GND looked safe",
+  "Open design espurna-h (2026-11-03, handbook 19.5): R42 (0 Ω) ties GND to the line, as the HLW8012 requires – the ESP-12F and the headers sit at mains potential against earth, and every range against GND looked safe",
 ]
 
 [codes."LIM.i"]
@@ -562,9 +562,9 @@ details = [
 replaces = ["G-10"]
 sources = [
   "TI SLVA139, Reverse Current/Battery Protection Circuits (2003) – https://www.ti.com/lit/an/slva139/slva139.pdf",
-  "Open design atoomnetmarc-adlsc (handbook 19.5, 2026-11-03): the bidirectional SMBJ5.0CA (D4) across the terminal, which the parts schema could not call bidirectional",
-  "Open design atoomnetmarc-adlsc (handbook 19.5, 2026-11-03): the reverse-polarity N-MOSFET in the ground return (Q1, AOD442) – the README's own test: reversed, the board draws about 10 mA –, 18 false findings while PATH.reverse did not know it",
-  "Open design adafruit-microlipo-usb-c (handbook 19.5, 2026-11-03): a connector passing every pin to every pin carried the reversed cell from JP4's VBAT pad to 5V and through the USB-C receptacle to CC1 and CC2",
+  "Open design atoomnetmarc-adlsc (2026-11-03, handbook 19.5): the bidirectional SMBJ5.0CA (D4) across the terminal, which the parts schema could not call bidirectional",
+  "Open design atoomnetmarc-adlsc (2026-11-03, handbook 19.5): the reverse-polarity N-MOSFET in the ground return (Q1, AOD442) – the README's own test: reversed, the board draws about 10 mA –, 18 false findings while PATH.reverse did not know it",
+  "Open design adafruit-microlipo-usb-c (2026-11-03, handbook 19.5): a connector passing every pin to every pin carried the reversed cell from JP4's VBAT pad to 5V and through the USB-C receptacle to CC1 and CC2",
 ]
 
 [codes."PATH.unfed"]

@@ -18,8 +18,12 @@ current – was counted neither by LIM.i/charge nor by the charger model. The Fu
 resistor to a supply that comes in at a connector, which no pin types, was taken as floating. The WLED controller
 (ADLSC) added one: the gate of the reverse-polarity N-MOSFET in the ground return, tied straight to the net the supply
 comes in on, was taken as floating – the same rails now serve both. The ESPurna-H added one: a need on a regulator's
-VOUT pin left open was taken as not connected, though its tab – the same terminal – carries the output. Parts here are
-test entries, not datasheets."""
+VOUT pin left open was taken as not connected, though its tab – the same terminal – carries the output. The known gaps
+the four newest designs showed are closed too (TD-124 to TD-133): a connector handing a reversed source on from pin to
+pin, a low-side reverse-polarity N-MOSFET unknown to PATH.reverse, a bidirectional TVS judged one way, AC nets held as
+DC and a divider's taps against ground, no varistor kind, no mains terminal as a supply, a ground tied to the line
+unseen, a trimmer held to a panel pot's rule, board copper asked for a supplier, and a charger's status output left
+floating. Parts here are test entries, not datasheets."""
 
 import json
 import shutil
