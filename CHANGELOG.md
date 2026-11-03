@@ -8,6 +8,10 @@ written once, by `.github/merge.py`, from the fragments in [changes/](changes/RE
 update edakit@edakit`, then `/reload-plugins` or a new session; `edakit version` names the version that runs and what an
 update brings.
 
+## 1.1.11 – 2026-11-03
+
+- Handbook 19.4 and 19.5 show a thumbnail of each reference circuit's and open design's drawing beside its entry, linked to its catalog page; the site's link rewriting (`docs/pages.py`) now also handles links in HTML tags.
+
 ## 1.1.10 – 2026-11-03
 
 - The parts-order concept is done and moved to docs/concepts/done/parts-order.md; the paths in edakit order, edakit cart, the LCSC profile, ORDER.basket's sources and the skill cart follow it.
