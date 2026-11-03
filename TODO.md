@@ -4,7 +4,7 @@ Open work that needs the owner's computer, a maker or the owner's word. The stat
 and plans the sections name; this list is what is left to do of them, in the order it can be done. No item is deleted.
 
 **Layout.** Every item, in every section, open or closed, is a line with a checkbox and an ID unique in this file,
-counted up and never reused – whoever adds an item takes the next free ID and counts it up here. Next free ID: TD-117.
+counted up and never reused – whoever adds an item takes the next free ID and counts it up here. Next free ID: TD-122.
 
 - Open: `- [ ] TD-<n> - **Title:** what and why.` – a step's own name after the dash (`- [ ] TD-31 - **D.4** …`).
 - Done: ticked, the commit that did it, the date at the end, moved to [Closed todos](#closed-todos), newest first –
@@ -54,6 +54,23 @@ to touch.
 - [ ] TD-116 - **The job sysml on main:** its first run after TD-113 reads with the standard library 2025-12 that
       systree loads – the job is optional, so its result is looked at, not waited for (decision 42).
       *(friendly-mccarthy)*
+
+## How edakit is tested ([docs/concepts/new/verification-and-validation.md](docs/concepts/new/verification-and-validation.md))
+
+- [ ] TD-117 - **VV.1–VV.4 Handbook chapter 19:** the "why" of every reference circuit and open design into its
+      source, the generator of 19.4, 19.5 and the counts of 19.9, the chapter with its links and glossary entries, the
+      countable admission rules as tests – one branch, a patch, on the owner's word. *(ccr-de7c0e28)*
+- [ ] TD-118 - **A WLED controller as an open design:** a published ESP32 LED-strip controller transcribed into
+      `tests/open_designs/`, every finding judged – through the admission rules of 19.7 (FT-21); after TD-117.
+      *(ccr-de7c0e28)*
+- [ ] TD-119 - **A Fuzz Face as an open design:** a published germanium or silicon Fuzz Face, its bias across the
+      transistors' spread (FT-17) – no germanium datasheet could be read so far (maker-coverage.md, GTP 1); after
+      TD-117. *(ccr-de7c0e28)*
+- [ ] TD-120 - **A relay board with an HLK-PM01 as an open design:** mains stays unchecked (rules-at-scale.md,
+      decision 7), so it holds LIM.hazardous's recognition and the low-voltage side only; after TD-117.
+      *(ccr-de7c0e28)*
+- [ ] TD-121 - **A LiPo charger as an open design:** a published single-cell charger board, its charger hints and the
+      cell's limits judged against real datasheets; after TD-117. *(ccr-de7c0e28)*
 
 ## What edakit needs from EasyEDA Pro and easyeda-mcp-pro ([upstream/README.md](upstream/README.md))
 
