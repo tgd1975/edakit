@@ -8,6 +8,17 @@ written once, by `.github/merge.py`, from the fragments in [changes/](changes/RE
 update edakit@edakit`, then `/reload-plugins` or a new session; `edakit version` names the version that runs and what an
 update brings.
 
+## 1.1.7 – 2026-11-03
+
+- The parts library: the 9 V battery snap C70374 and the slide switch SS-12D00-G3 (C22355741) signed by the owner – a
+  copy taken with `edakit part add` no longer counts as a draft (PARTS.library).
+
+## 1.1.6 – 2026-11-03
+
+- The circuit language of 1.1.3 is withdrawn from main on the owner's word: it continues as a beta, the
+  explorative DSL, outside the released plugin. A project's graph is JSON or TOML as before 1.1.3; no project had
+  moved to a `.circuit` graph.
+
 ## 1.1.5 – 2026-11-03
 
 - The parts at LCSC with the skill cart (`/edakit:cart parts`): `edakit order` writes `basket.json`, the supplier profile `edakit/suppliers/lcsc.toml` (provisional), and `edakit order check` holds LCSC's cart as the skill read it back to the basket – the new code ORDER.basket; lines already in the cart are listed, never touched.

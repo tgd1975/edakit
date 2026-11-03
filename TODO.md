@@ -4,7 +4,7 @@ Open work that needs the owner's computer, a maker or the owner's word. The stat
 and plans the sections name; this list is what is left to do of them, in the order it can be done. No item is deleted.
 
 **Layout.** Every item, in every section, open or closed, is a line with a checkbox and an ID unique in this file,
-counted up and never reused – whoever adds an item takes the next free ID and counts it up here. Next free ID: TD-139.
+counted up and never reused – whoever adds an item takes the next free ID and counts it up here. Next free ID: TD-141.
 
 - Open: `- [ ] TD-<n> - **Title:** what and why.` – a step's own name after the dash (`- [ ] TD-31 - **D.4** …`).
 - Done: ticked, the commit that did it, the date at the end, moved to [Closed todos](#closed-todos), newest first –
@@ -31,11 +31,6 @@ to touch.
 
 - [ ] TD-108 - **A photo of the delivered tree:** one picture of the lit tree in its hill into pytree's `docs/img/` –
       it replaces the render on `docs/projects/pytree.md`. *(edakit-ce)*
-- [ ] TD-134 - **Delete the branches a cloud session cannot delete:** its proxy refuses deleting a ref (`git push
-      --delete` and REST, 403); GitHub deletes the branch of a merged pull request itself, so only these are left –
-      `notes/verification-and-validation-concept-for-071535` (superseded by #274), `notes/td-103-closed-236-the-second-
-      run-in-the-124730` (no pull request; TD-103 closed on main another way), `claude/exciting-einstein-l7ito9` and
-      `claude/pensive-cray-kuzv7n` (both contained in main): `git push origin --delete <branch>`. *(ccr-de7c0e28)*
 - [ ] TD-135 - **The layers picture of coin-cell-led:** `pictures/board_main_layers.png` of the gate run with stage F
       (`<reports>/<run>/pictures/`, or the Gerber ZIP of its `fab/main/`) into `examples/coin-cell-led/docs/` – the
       board as made shows no copper under the mask; for TD-136. *(quirky-bell)*
@@ -43,6 +38,8 @@ to touch.
       CPL are uploaded, into `examples/coin-cell-led/docs/jlcpcb_assembly_main_top.png` – only your account shows it;
       for TD-138. *(quirky-bell)*
 
+- [ ] TD-139 - **OK for #291:** C70374 (9 V snap) and C22355741 (slide switch) signed in the parts library on your
+      word – merged with `python3 .github/merge.py 291` on your OK. *(edakit-56)*
 ## The steps ([docs/steps/](docs/steps/README.md))
 
 - [ ] TD-136 - **Step 9 shows the routed board:** the tracks and the ground pour, `board_main_layers.png` of TD-135
@@ -56,7 +53,7 @@ to touch.
       nothing ordered or paid by the skill – it records the BOM tool's labels into `edakit/suppliers/lcsc.toml`, sets
       `recorded`, and what it finds goes into handbook 8.4; #265 is on main (1.1.5). *(edakit-4f)*
 
-## The circuit language ([docs/concepts/done/circuit-dsl-toolchain.md](docs/concepts/done/circuit-dsl-toolchain.md))
+## The circuit language ([docs/concepts/new/circuit-dsl-toolchain.md](docs/concepts/new/circuit-dsl-toolchain.md))
 
 - [ ] TD-122 - **The bell in the language, in its own repository:** its five graphs as `.circuit` – `edakit graph
       convert --to circuit` keeps the sign-offs (rehashed); the modeled sources of `tests/fixtures/bell/` add the
@@ -100,11 +97,6 @@ owner's word); each design's `findings.toml` has the findings and their reasons.
 E-1 to E-17 on EasyEDA Pro and M-1 to M-10 on easyeda-mcp-pro, checked live on EasyEDA Pro 3.2.209 and posted on
 2026-11-01; what each asks and where it stands is in upstream/README.md – the items here say only what is left to do.
 
-- [ ] TD-109 - **M-11 (easyeda-mcp-pro's net reading takes a net flag of another open schematic):** post the issue
-      and the pull request from the fork's `fix/net-read-one-page` (`149dbe3`, local) on the owner's "posten?" – drafts in
-      `upstream/issue-10-net-read-one-page.md` and `pr-10-…`; until a release takes it, `schematic check` keeps closing
-      the other schematics. *(edakit-7b)*
-
 ### Waiting for upstream
 
 Nothing to do until there is an answer or a release; whichever session learns of one takes it.
@@ -112,9 +104,18 @@ Nothing to do until there is an answer or a release; whichever session learns of
 - [ ] TD-36 - **EasyEDA, #45 to #52 and our comments to #36 and #38:** answer questions; when a release fixes one,
       check it live, take it up and say so in upstream/README.md. EasyEDA's first answer is often "update to the latest
       version".
+- [ ] TD-140 - **M-11, easyeda-mcp-pro #864 and #865:** answer questions; when a release takes the fix, raise the
+      pin, check it live on pytree's `tree` with `layout_tree` open, and drop the closing of the other schematics in
+      `schematic check` and stage S. *(edakit-7b)*
 
 ## Closed todos
 
+- [x] TD-109 - **M-11 (easyeda-mcp-pro's net reading takes a net flag of another open schematic):** posted on the
+      owner's word as #864 and #865, from the fork's `fix/net-read-one-page` rebased onto 1.8.1's main (#294); the
+      wait for the release is TD-140. [2026-11-03]
+- [x] TD-134 - **Delete the branches a cloud session cannot delete:** deleted by the owner – the four branches
+      checked first: both `claude/…` contained in main, both `notes/…` landed on main another way. *(ccr-de7c0e28,
+      edakit-4f)* [2026-11-03]
 - [x] TD-110 - **OK for #265:** given; merged as edakit 1.1.5 (#265) – the parts at LCSC (`edakit order check`,
       ORDER.basket) and the combined shipment; the live run is TD-111. *(edakit-4f)* [2026-11-03]
 - [x] TD-123 - **OK for chapter 19 and the four open designs:** given; merged as edakit 1.1.4 (#281, `f42bde3`) with

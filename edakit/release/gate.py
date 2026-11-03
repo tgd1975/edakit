@@ -165,8 +165,8 @@ def content(path, ignore=(), graph=False):
     """What the hash takes of a file: its bytes; with ignore, a JSON file as canonical JSON (sorted keys, no
     whitespace) without those keys. A file that is no valid JSON stays bytes. graph: the file is the project's graph –
     a TOML graph is read as data in any case and taken as canonical JSON, arranged, without the keys of ignore, so that
-    a comment, a blank line and a table or pin moved count for nothing; one that does not load stays bytes. A .circuit
-    graph the same way, its compiled data (lang/compile.py). A JSON graph as any JSON file."""
+    a comment, a blank line and a table or pin moved count for nothing; one that does not load stays bytes. A JSON
+    graph as any JSON file."""
     path = Path(path)
     if not path.exists():
         return b"<missing>"
@@ -175,13 +175,6 @@ def content(path, ignore=(), graph=False):
         try:
             data = arranged(graph_of_toml(raw.decode("utf-8"), path))
         except (ConfigError, UnicodeDecodeError):
-            return raw
-    elif graph and path.suffix == ".circuit":          # the circuit language: its compiled data, as a TOML graph's
-        from ..lang.compile import compile_path
-        from ..lang.reader import CompileError
-        try:
-            data = arranged(compile_path(path))
-        except (CompileError, ConfigError):
             return raw
     elif not ignore:
         return raw
@@ -207,28 +200,8 @@ def file_hash(root, files, ignore=(), documented=(), extra=(), graph=None):
     return h.hexdigest()
 
 
-def entry_files(cfg):
-    """The parts entries in the circuit hash: every entry of the folder; with [project] parts a list of folders (a
-    variant), the entries the graph uses, each from the folder it is found in first (language 8)."""
-    dirs = list(getattr(cfg, "parts_dirs", None) or [cfg.parts])
-    if len(dirs) == 1:
-        return sorted(cfg.parts.glob("*.json"))
-    from ..design import Design
-    try:
-        design = Design.from_config(cfg)
-        keys = sorted({k for des in design.comps if (k := design.entry_key(des))})
-    except Exception:                                  # a graph that does not load: every entry of every folder
-        keys = sorted({p.stem for d in dirs for p in Path(d).glob("*.json")})
-    out = []
-    for key in keys:
-        found = next((Path(d) / f"{key}.json" for d in dirs if (Path(d) / f"{key}.json").exists()), None)
-        if found is not None:
-            out.append(found)
-    return out
-
-
 def state_files(cfg):
-    files = [cfg.graph, cfg.sim_config, *entry_files(cfg)]
+    files = [cfg.graph, cfg.sim_config, *sorted(cfg.parts.glob("*.json"))]
     if cfg.sim_plugin:
         files.append(cfg.sim_plugin)
     files += [cfg.resolve(f) for f in cfg.release.get("state_files", [])]
@@ -241,7 +214,7 @@ def state_hash(cfg, ignore=None):
     bytes – the reviews read the requirements whole. A TOML graph counts with its data, a JSON graph with its bytes
     or, with hash_ignore, as canonical JSON (content)."""
     ignore = cfg.release.get("hash_ignore", []) if ignore is None else ignore
-    return file_hash(cfg.root, state_files(cfg), ignore, [cfg.graph, *entry_files(cfg)], graph=cfg.graph)
+    return file_hash(cfg.root, state_files(cfg), ignore, [cfg.graph, *cfg.parts.glob("*.json")], graph=cfg.graph)
 
 
 def electrical_hash(cfg):

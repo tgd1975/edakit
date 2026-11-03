@@ -71,10 +71,3 @@ def project(tmp_path):
             return next(c for c in g["graph"]["components"] if c["designator"] == des)
     return P()
 
-
-
-@pytest.fixture
-def project_circuit(tmp_path):
-    """led-bar in the circuit language (tests/fixtures/led-bar-circuit beside the example's other files)."""
-    import reference
-    return reference.copy_of_circuit(tmp_path / "led-bar-circuit")

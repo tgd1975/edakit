@@ -105,7 +105,7 @@ Three changes would alter how a project works; smaller ones are not listed.
   browser, with the same checks. You still order and pay. What each maker offers: handbook 8.4, "Future work".
 - **The circuit in a language of its own.** A notation of edakit's own instead of the TOML graph, compiled to the graph
   the checks read. Blocks take parameters, and a second board is a few lines on top of the first. What it would be:
-  [circuit-dsl](concepts/done/circuit-dsl.md).
+  [circuit-dsl](concepts/new/circuit-dsl.md).
 - **Claude independence.** Today the plugin runs in Claude Code. Made portable, it would run in GitHub Copilot, Qwen
   Code, Mistral Vibe and OpenCode too, or with a model on your own machine where the evals show it works. What it
   takes: [claude-independence](concepts/new/claude-independence.md).

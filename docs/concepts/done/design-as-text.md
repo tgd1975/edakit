@@ -243,7 +243,7 @@ pin map from the parts entry, the hash rule, `edakit graph json` –; the langua
 format cannot, which its section "Review 2026-10-31" spells out. Decided the same day: TOML with names as the form,
 `hardware/graph.toml`, with the resolved `graph.json` generated beside it (its decisions 1–7); what both forms share
 has a plan of its own, [circuit-language-plan.md](circuit-language-plan.md); the language itself is thought further in
-[circuit-dsl.md](circuit-dsl.md): what it would have to be, on which basis, when, and with what toolchain.
+[circuit-dsl.md](../new/circuit-dsl.md): what it would have to be, on which basis, when, and with what toolchain.
 
 ## Order
 
