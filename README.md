@@ -48,6 +48,22 @@ or KiCad, and the manufacturing files. They take the order up to the cart at JLC
 Each maker's quote comes with its price, the parts it has in stock and its lead time, checked by edakit. You order, pay
 and hold the boards.
 
+```chat
+you: A board for my desk: a coin cell, a push button and an LED. Press the button and the LED lights.
+claude: I'll set the project up first. One form, the recommended answer first.
+form: A finding to decide
+  ? PATH.reverse: a CR2032 put in upside down reaches R1 and D1. Protect against it?
+  - No protection (recommended): D1 blocks, 3.2 V against its rated 5 V.
+  - A Schottky diode in series: it costs 0.3 V, the margin a used cell needs.
+  > No protection
+claude: The board's size and shape? And what must stay where a person touches or looks?
+you: Round, please.
+ran: /edakit:cart: every field set and read back, the quote checked against the estimate. Stopped at the cart.
+```
+
+Your part in the whole session: 8 messages typed, 15 answers in 5 forms, 6 things done outside the chat.
+[The whole session](https://tgd1975.github.io/edakit/start/session/), from the first sentence to the cart.
+
 The [walkthrough](https://tgd1975.github.io/edakit/handbook/17-walkthrough/) shows it on a small board: 14 steps, six of
 them yours, seven decisions. Every step is checked by [rules](https://tgd1975.github.io/edakit/catalog/) and reviewers,
 but that is no guarantee. The regulatory review is support, not legal advice.

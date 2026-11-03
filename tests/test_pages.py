@@ -41,7 +41,8 @@ def test_every_description_is_a_page_of_the_site(tmp_path):
     assert "edakit" in cfg["copyright"] and "issues/new/choose" in cfg["copyright"]   # the version, the feedback line
     features = cfg["theme"]["features"]
     assert "navigation.tabs" in features and "navigation.indexes" in features
-    assert cfg["nav"][0] == {"Start": [{"Start": "index.md"}, {"Quickstart": "start/quickstart.md"},
+    assert cfg["nav"][0] == {"Start": [{"Start": "index.md"}, {"A session": "start/session.md"},
+                                       {"Quickstart": "start/quickstart.md"},
                                        {"How it works": "start/how-it-works.md"},
                                        {"Projects": "start/projects/index.md"}, {"Glossary": "start/glossary.md"}]}
     # every page under its tab: the address's first part is the tab's

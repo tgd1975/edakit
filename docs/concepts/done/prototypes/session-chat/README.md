@@ -1,7 +1,7 @@
 # Prototype: a session as a chat
 
-The sketch of [session-chat.md](../../session-chat.md), not on the site's navigation and not built into
-`docs/pages.py`.
+The sketch of [session-chat.md](../../session-chat.md), kept as the record: what was built is `docs/session.md`,
+`chat_parse` and `chat_html` in `docs/pages.py`, and the chat's styles in `docs/brand/edakit.css`.
 
 - `session.md` – the page as it would stand in `docs/`: an intro of two paragraphs and one ```` ```chat ```` fence, the
   walkthrough's board from the first sentence to the cart. On GitHub the fence reads as a plain transcript.

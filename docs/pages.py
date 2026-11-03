@@ -17,6 +17,8 @@ where they are; a link to a file the site does not carry goes to the file on Git
 
 from __future__ import annotations
 
+import html
+import itertools
 import json
 import posixpath
 import re
@@ -55,6 +57,7 @@ def title_of(text, fallback):
 NAV = [
     ("Start", [
         ("README.md", "Start"),
+        ("docs/session.md", "A session"),
         ("docs/quickstart.md", "Quickstart"),
         ("docs/how-it-works.md", "How it works"),
         ("docs/projects/README.md", "Projects"),
@@ -323,35 +326,197 @@ def rewrite(text, src, site, mapped, media=None):
     goes into the set media, for assemble to copy), to anything else the file on GitHub."""
     here = (ROOT / src).parent
 
-    def one(m):
-        target = m.group(2)
+    def move(target, image):
+        """(site path, anchor) of a target the site carries, (URL, anchor) of a file on GitHub, None to leave it."""
         if re.match(r"[a-z]+:|#|/", target) or "${" in target:
-            return m.group(0)
+            return None
         path, _, anchor = target.partition("#")
         resolved = (here / path).resolve()
         try:
             rel = resolved.relative_to(ROOT).as_posix()
         except ValueError:
-            return m.group(0)
+            return None
         if rel in mapped or rel + "/README.md" in mapped:       # a page, or a folder whose README is one
-            new = _relpath(mapped.get(rel) or mapped[rel + "/README.md"], site)
-            return f"{m.group(1)}{new}{'#' + anchor if anchor else ''}{m.group(3)}"
+            return mapped.get(rel) or mapped[rel + "/README.md"], anchor
         if rel.startswith("docs/brand/") and rel != "docs/brand/README.md":
             # the logo files and the theme's stylesheet are on the site
-            return f"{m.group(1)}{_relpath(rel[len('docs/'):], site)}{m.group(3)}"
+            return rel[len("docs/"):], ""
         if rel == "docs/catalog" or (rel.startswith("docs/catalog/") and not rel.endswith(".py")):
             # the catalog's pages and drawings are on the site; their generator is not
-            new = _relpath("catalog/" + rel[len("docs/catalog/"):] if rel != "docs/catalog" else "catalog/", site)
-            return f"{m.group(1)}{new}{'#' + anchor if anchor else ''}{m.group(3)}"
-        if m.group(1).startswith("!") and media is not None and resolved.is_file():
+            return ("catalog/" + rel[len("docs/catalog/"):] if rel != "docs/catalog" else "catalog/"), anchor
+        if image and media is not None and resolved.is_file():
             media.add(rel)
-            return f"{m.group(1)}{_relpath('files/' + rel, site)}{m.group(3)}"
+            return "files/" + rel, ""
         kind = "tree" if resolved.is_dir() else "blob"
-        return f"{m.group(1)}{REPO}/{kind}/main/{rel}{'#' + anchor if anchor else ''}{m.group(3)}"
+        return f"{REPO}/{kind}/main/{rel}", anchor
 
+    def one(m):
+        new = move(m.group(2), m.group(1).startswith("!"))
+        if new is None:
+            return m.group(0)
+        path, anchor = new
+        path = path if path.startswith(REPO) else _relpath(path, site)
+        return f"{m.group(1)}{path}{'#' + anchor if anchor else ''}{m.group(3)}"
+
+    def href(target, image=False):
+        """A link of the chat's HTML, relative to the page's own URL: MkDocs rewrites no link in raw HTML."""
+        new = move(target, image)
+        if new is None:
+            return target
+        path, anchor = new
+        if not path.startswith(REPO):
+            url = url_of(path) if path.endswith(".md") else path
+            path = posixpath.relpath(url or ".", url_of(site).rstrip("/") or ".") + ("/" if url.endswith("/") or not url else "")
+        return path + ("#" + anchor if anchor else "")
+
+    steps = {int(p.name[:2]): posixpath.relpath(p.as_posix(), here.as_posix())
+             for p in (ROOT / "docs" / "steps").glob("[0-9][0-9]-*.md")}
+    text = CHAT_FENCE.sub(lambda m: chat_html(chat_parse(m.group(1)), href, steps), text)
     # links inside code blocks stay as they are
     parts = re.split(r"(```.*?```)", text, flags=re.S)
     return "".join(p if p.startswith("```") else LINK.sub(one, p) for p in parts)
+
+
+# A session as a chat (docs/concepts/done/session-chat.md): a ```chat fence, a plain transcript on GitHub, turned into
+# HTML on assembly – one class a kind of entry, the styles in docs/brand/edakit.css, the format in docs/style.md. One
+# entry a line, an indented line continuing the one above:
+#
+#     --- <n> <step>         a step of the steps pages, as a divider linked to its page
+#     you: <text>            what the person types
+#     claude: <text>         what Claude says
+#     ran: <text>            what Claude ran – a quiet line, no bubble
+#     do: <text>             what the person does outside the chat: an install, a click, a new session, paying
+#       † <text>             under a do: its footnote, [text](url) a link
+#     img: <path> | <alt>    a picture Claude shows
+#     form: <title>          Claude Code's question form, then per question:
+#       ? <question>
+#       - <option>           the recommended one first
+#       > <answer>           what the person picked or typed
+#
+# Under a whole session – one that starts with step 1 – the tally of the person's part, counted from the entries.
+CHAT_FENCE = re.compile(r"^```chat\n(.*?)^```[ \t]*$", re.M | re.S)
+CHAT_KINDS = ("you", "claude", "ran", "do", "img", "form")
+
+
+def chat_parse(text):
+    """[(kind, value)] of a chat fence – value a string, a form {"title", "questions": [{"q", "options", "answer"}]};
+    a footnote is ("note", text) right after its do."""
+    entries = []
+    for line in text.splitlines():
+        if not line.strip():
+            continue
+        body = line.strip()
+        if line.startswith((" ", "\t")):
+            if not entries:
+                raise ValueError(f"chat: an indented line before any entry: {line!r}")
+            kind, value = entries[-1]
+            if kind == "form":
+                mark, rest = body[:2], body[2:]
+                if mark == "? ":
+                    value["questions"].append({"q": rest, "options": [], "answer": ""})
+                elif not value["questions"]:
+                    raise ValueError(f"chat: a form's line before its first question: {line!r}")
+                elif mark == "- ":
+                    value["questions"][-1]["options"].append(rest)
+                elif mark == "> ":
+                    value["questions"][-1]["answer"] = rest
+                else:                                # the question, its last option or its answer continued
+                    q = value["questions"][-1]
+                    if q["answer"]:
+                        q["answer"] += " " + body
+                    elif q["options"]:
+                        q["options"][-1] += " " + body
+                    else:
+                        q["q"] += " " + body
+            elif body.startswith("† ") and kind in ("do", "note"):
+                entries.append(("note", body[2:]))
+            else:
+                entries[-1] = (kind, f"{value} {body}")
+            continue
+        if line.startswith("--- "):
+            entries.append(("step", body[4:].strip()))
+            continue
+        kind, sep, rest = line.partition(": ")
+        if not sep or kind not in CHAT_KINDS:
+            raise ValueError(f"chat: not an entry: {line!r}")
+        entries.append((kind, {"title": rest.strip(), "questions": []} if kind == "form" else rest.strip()))
+    return entries
+
+
+def chat_tally(entries):
+    """The person's part: messages typed, answers given in forms, forms, things done outside the chat."""
+    forms = [v for k, v in entries if k == "form"]
+    return {"typed": sum(k == "you" for k, _ in entries), "answers": sum(len(f["questions"]) for f in forms),
+            "forms": len(forms), "outside": sum(k == "do" for k, _ in entries)}
+
+
+def chat_whole(entries):
+    """A whole session, the one that gets the tally: it starts with step 1."""
+    return bool(entries) and entries[0][0] == "step" and entries[0][1].split()[0] == "1"
+
+
+def cli_commands():
+    """edakit's commands, read from edakit/cli.py: a chat sets them in mono, and no other words after "edakit"."""
+    text = (ROOT / "edakit" / "cli.py").read_text(encoding="utf-8")
+    return sorted(set(re.findall(r'add_parser\(\s*"([\w-]+)"', text)))
+
+
+def chat_text(text, href, commands):
+    """A chat line as HTML: [text](url) a link, the slash commands, edakit's commands and the file names in mono."""
+    def mono(s):
+        s = html.escape(s, quote=False)
+        return re.sub(rf"(/edakit:[\w-]+|\bedakit (?:{'|'.join(commands)})\b[\w -]*?(?= ·|[:.,;]|$)"
+                      r"|\b[\w./-]+\.(?:toml|json|md)\b)", r"<code>\1</code>", s)
+    out, last = [], 0
+    for m in re.finditer(r"\[([^\]]+)\]\(([^)\s]+)\)", text):
+        out += [mono(text[last:m.start()]), f'<a href="{html.escape(href(m.group(2)))}">{mono(m.group(1))}</a>']
+        last = m.end()
+    return "".join(out) + mono(text[last:])
+
+
+def chat_html(entries, href=lambda target, image=False: target, steps=None):
+    """The chat as one block of HTML for Markdown – no blank line inside, a class for each kind of entry; steps
+    {number: the link to its steps page}."""
+    commands, steps = cli_commands(), steps or {}
+
+    def t(s):
+        return chat_text(s, href, commands)
+    parts = ['<div class="chat">']
+    for n, (kind, value) in enumerate(entries):
+        if kind == "step":
+            number, name = value.split()[0], html.escape(value)
+            link = steps.get(int(number)) if number.isdigit() else None
+            parts.append(f'<div class="chat-step"><a href="{html.escape(href(link))}">{name}</a></div>' if link
+                         else f'<div class="chat-step"><span>{name}</span></div>')
+        elif kind in ("you", "claude"):
+            parts.append(f'<div class="chat-msg chat-{kind}"><span class="chat-who">'
+                         f'{"You" if kind == "you" else "Claude"}</span><p>{t(value)}</p></div>')
+        elif kind == "ran":
+            parts.append(f'<div class="chat-ran"><span>ran</span> {t(value)}</div>')
+        elif kind == "do":
+            notes = [v for _, v in itertools.takewhile(lambda e: e[0] == "note", entries[n + 1:])]
+            parts.append('<div class="chat-do"><span class="chat-do-label">You, outside the chat</span>'
+                         f'<p>{t(value)}{" †" if notes else ""}</p>'
+                         + "".join(f'<p class="chat-note">† {t(v)}</p>' for v in notes) + "</div>")
+        elif kind == "img":
+            path, _, alt = (s.strip() for s in value.partition("|"))
+            parts.append(f'<figure class="chat-img"><img src="{html.escape(href(path, True))}" '
+                         f'alt="{html.escape(alt)}"><figcaption>{html.escape(alt)}</figcaption></figure>')
+        elif kind == "form":
+            rows = []
+            for q in value["questions"]:
+                opts = "".join(('<li class="chat-rec">' if i == 0 else "<li>") + f"{t(o)}</li>"
+                               for i, o in enumerate(q["options"]))
+                rows.append(f'<div class="chat-q{"" if opts else " chat-q-row"}"><p>{t(q["q"])}</p>'
+                            + (f"<ol>{opts}</ol>" if opts else "") + f'<p class="chat-a">{t(q["answer"])}</p></div>')
+            count = len(value["questions"])
+            parts.append(f'<div class="chat-form"><div class="chat-form-title">{html.escape(value["title"])}'
+                         f'<span>{count} question{"" if count == 1 else "s"}</span></div>{"".join(rows)}</div>')
+    if chat_whole(entries):
+        c = chat_tally(entries)
+        parts.append(f'<div class="chat-tally"><b>Your part:</b> {c["typed"]} messages typed, {c["answers"]} answers '
+                     f'in {c["forms"]} forms, {c["outside"]} things done outside the chat.</div>')
+    return "\n".join(parts + ["</div>"])
 
 
 def _relpath(target, start):

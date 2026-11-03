@@ -1,13 +1,16 @@
 # A session as a chat: what a person types, what Claude asks
 
-Status 2026-11-03: concept, asked for by the owner the same day ("beim Herzeigen der GitHub Pages ist mir aufgefallen,
-dass die Beschreibung sehr technisch ist … was fehlt ist ein typischer Chatablauf … auch so gelayoutet … dann sehen
-die potentiellen Anwender, dass das wirklich im besten Fall ein Auftrag und ein paar Fragen sind, die zu beantworten
-sind"). Written against main at `ae2b400`. A prototype of page, parser and styles is in
-[prototypes/session-chat](prototypes/session-chat/README.md). Decided the same day in a decision round in Claude
-Code's form (the table at the end): decisions 1, 2, 3 and 5 as recommended; decision 4, the format, and what Claude
-set itself left to Claude by the owner the same day ("du wirst für beide eine gute Idee haben") – taken as
-recommended. Nothing built on the site: every step starts on the owner's word.
+Status 2026-11-03: decided and built, asked for by the owner the same day ("beim Herzeigen der GitHub Pages ist mir
+aufgefallen, dass die Beschreibung sehr technisch ist … was fehlt ist ein typischer Chatablauf … auch so gelayoutet …
+dann sehen die potentiellen Anwender, dass das wirklich im besten Fall ein Auftrag und ein paar Fragen sind, die zu
+beantworten sind"). Written against main at `ae2b400`. A prototype of page, parser and styles is in
+[prototypes/session-chat](prototypes/session-chat/README.md). Decided the same day in a decision round in Claude Code's
+form (the table at the end): decisions 1, 2, 3 and 5 as recommended; decision 4, the format, and what Claude set itself
+left to Claude by the owner the same day ("du wirst für beide eine gute Idee haben") – taken as recommended. Built
+2026-11-03 on the owner's word ("setze das konzept session-chat.md um"), S.1 to S.5 in one branch: `docs/session.md`,
+the fence in `docs/pages.py` (`chat_parse`, `chat_html`), the styles in `docs/brand/edakit.css`,
+`tests/test_session_page.py`, the excerpt on the start page; the format in `docs/style.md`, "A chat". Left: the live run
+S.6, in `TODO.md`. What the build changed against the draft is under "As built".
 
 ## Why
 
@@ -261,12 +264,32 @@ Taken by the owner on 2026-11-03 in a decision round in Claude Code's form, the 
 Set by Claude and left to it by the owner on 2026-11-03, kept as it stands: the seven kinds of entry; the layout of section 4; the tally's wording; the page's
 name "A session" and its place after the start page; the budget of 1,000 words; no decision numbers in the chat.
 
+## As built
+
+- **Three clicks in the footnote, not one.** `upstream/README.md` names three clicks in EasyEDA a session meets today:
+  E-1 creating the project (#45), E-4 importing the bridge extension at the install and each update (#47), and E-17
+  opening the project tree once after a start (#52). The line of step 9 says "Install EasyEDA Pro and import its bridge
+  extension", and its footnote links all three, with Import Changes (E-2, #46) as gone. The tally stays 6 things.
+- **No decision numbers, no dates in the chat.** The footnote says Import Changes is "gone already", without its day:
+  an entry page has no history (`docs/style.md`).
+- **A link is relative to the page's own URL.** MkDocs rewrites no link in raw HTML, so `docs/pages.py` writes the
+  chat's links – steps pages, pictures under `files/` – relative to the page's directory URL; the strict build does not
+  see them, `tests/test_session_page.py` does.
+- **The start page's excerpt** has six entries – the first sentence, Claude's line before the form, the PATH.reverse
+  question as a form, the size question, "Round, please.", the cart – and the tally as a sentence under it, held by the
+  test to the count of the whole session, with the link to it.
+- **On a phone** a one-row question puts its answer below it; a long answer ran past the edge at 390 px.
+- **The style test** counts a chat's step divider as a subheading, and the page joins the entry pages there.
+- **No fragment.** `docs/`, `tests/` and `README.md` are all in `NO_VERSION` of `.github/versions.py`, `docs/pages.py`
+  with them: the branch is merged without a version, not as a `patch`.
+
 ## A finding on the way
 
 `docs/steps/09-lay-out-the-board.md` still says "In EasyEDA one click is left for you: *Design → Import Changes*,
 once". By `upstream/README.md`, E-2, that click is gone since 2026-11-01 (TD-37): edakit writes the Channel ID the
 import set, and the click is needed only if the DRC still reports the item. A finding for the documentation, for the
-owner – not changed here.
+owner – not changed here. Settled before the build: main's step 9 says since then that you click nothing there unless
+the check still waits for the import.
 
 ## Sources
 
@@ -277,5 +300,5 @@ owner – not changed here.
   pictures.
 - The counts: `$ edakit` at the start of a line and `You:`/`Claude:` in the entry pages, by `grep`; the tally by the
   prototype's `chat.py`.
-- [documentation-newcomer.md](../done/documentation-newcomer.md) – the steps, the tabs, the entry's budgets;
-  [outreach.md](outreach.md) – where edakit is shown.
+- [documentation-newcomer.md](documentation-newcomer.md) – the steps, the tabs, the entry's budgets;
+  [outreach.md](../new/outreach.md) – where edakit is shown.
