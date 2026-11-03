@@ -28,8 +28,8 @@ COMPONENT = {"type": "word", "part": "word", "lcsc": "word", "value": "word", "b
              "nc": "list", "accept": "table", "notes": "string"}
 
 NET = {"v": "range", "fn": "word", "fn_bus": "word", "bus": "word", "pwm_hz": "number_or_range", "clock_hz": "number",
-       "signal": "boolean", "isolated": "boolean", "instrument": "word", "load_min_ohm": "number", "matrix": "word",
-       "satisfies": "list", "decision": "list", "accept": "table", "notes": "string", "pins": "list"}
+       "signal": "boolean", "isolated": "boolean", "ac": "boolean", "instrument": "word", "load_min_ohm": "number",
+       "matrix": "word", "satisfies": "list", "decision": "list", "accept": "table", "notes": "string", "pins": "list"}
 
 CABLE = {k: ("word" if k in ("name", "from", "to") else "table" if k == "pins"
              else "string" if k in ("notes", "about") else "number") for k in sorted(CABLE_KEYS)}

@@ -76,7 +76,7 @@
   },
   "attribute": {
    "name": "variable.parameter.circuit",
-   "match": "(?<![^\\s(,])(easyeda_device|r_ohm_per_wire|load_min_ohm|c_pf_per_m|instrument|l_nh_per_m|off_board|clock_hz|function|isolated|length_m|supplier|i_max_a|config|fn_bus|matrix|pwm_hz|signal|states|board|spare|strip|value|at_m|lcsc|name|type|awg|bus|mm2|fn|to|v)(?=[\\s),=]|$)"
+   "match": "(?<![^\\s(,])(easyeda_device|r_ohm_per_wire|load_min_ohm|c_pf_per_m|instrument|l_nh_per_m|off_board|clock_hz|function|isolated|length_m|supplier|i_max_a|config|fn_bus|matrix|pwm_hz|signal|states|board|spare|strip|value|at_m|lcsc|name|type|awg|bus|mm2|ac|fn|to|v)(?=[\\s),=]|$)"
   },
   "locked": {
    "name": "storage.modifier.circuit",
