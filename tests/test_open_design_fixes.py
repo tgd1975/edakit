@@ -955,3 +955,31 @@ def test_a_varistor_is_held_to_its_ac_rating_on_the_mains():
     assert across(ac=False) == [("RV1", "RV1: up to 358.0 V, rated 320 V")]
     assert across(ac=False, v=300) == []
     assert schema.problems(sv) == []
+
+
+def test_a_mains_terminal_feeds_the_module_behind_it():
+    """The ESPurna-H's HLK-PM01: its AC input fed from the terminals JP42 (line, through two fuses) and JP2 (neutral).
+    A connector fed a net only with a vbus pin, so PATH.unfed found both AC pins; marking the terminals reversible
+    would have sent PATH.reverse across the mains side. A connector pin of role line or neutral is a supply input;
+    without the roles both pins are still found."""
+    from edakit.engines.paths import supply
+    mod = {"lcsc": "C9000518", "mpn": "test AC module", "kind": "module", "verified": {"by": "test"},
+           "pins": {"1": {"name": "AC", "type": "power_in", "role": "ac_l"},
+                    "2": {"name": "AC", "type": "power_in", "role": "ac_n"},
+                    "3": {"name": "-VO", "type": "ground", "role": "gnd"}},
+           "values": {"behavior": "none"}}
+    fuse = {"lcsc": "C9000520", "mpn": "test fuse", "kind": "fuse",
+            "pins": {"1": {"name": "1", "type": "passive"}, "2": {"name": "2", "type": "passive"}}}
+
+    def unfed(roles):
+        terminal = {**TERMINAL, "pins": {n: {**p, "role": r} for (n, p), r in zip(TERMINAL["pins"].items(), roles)}}
+        comps = [{"designator": "J1", "type": "connector", "lcsc": "C9000515", "pins": {"1": "1", "2": "2"}},
+                 {"designator": "F1", "type": "fuse", "lcsc": "C9000520", "pins": {"1": "1", "2": "2"}},
+                 {"designator": "U1", "type": "module", "lcsc": "C9000518", "pins": {"1": "AC", "2": "AC", "3": "-VO"}}]
+        nets = {"LINE_I": ["J1.1", "F1.1"], "LINE_P": ["F1.2", "U1.1"], "NEUTRAL": ["J1.2", "U1.2"], "GND": ["U1.3"]}
+        graph = {"name": "t", "version": "1", "ground": "GND", "components": comps,
+                 "nets": [{"name": n, "pins": p, "v": [-358, 358]} for n, p in nets.items()]}
+        d = Design.from_data(graph, {"C9000515": terminal, "C9000518": mod, "C9000520": fuse})
+        return sorted(f.place for f in supply(d) if f.code == "PATH.unfed")
+    assert unfed(["line", "neutral"]) == []                          # before: U1.1, U1.2
+    assert unfed(["pin1", "pin2"]) == ["U1.1", "U1.2"]

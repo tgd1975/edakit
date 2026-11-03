@@ -76,18 +76,6 @@ judged = "real"
 why = "Q4's gate hangs on GPIO5 alone, without a pull-down: until the firmware drives GPIO5, SEL is undefined and CF1 may give either quantity. Harmless – the firmware sets SEL before it reads CF1 – but the gate floats, unlike Q3's with R32."
 
 [[check]]
-code = "PATH.unfed"
-place = "U$1.1"
-judged = "known gap"
-why = "The module's AC input is fed from the mains terminals JP42 (line, through F1 and F2) and JP2 (neutral). edakit knows no mains supply: a connector feeds a net only with a vbus role, a battery or a simulation source (catalog/paths.toml [supply]), or marked reversible – which sends PATH.reverse through the whole mains side. A supply role for a mains terminal would close it."
-
-[[check]]
-code = "PATH.unfed"
-place = "U$1.2"
-judged = "known gap"
-why = "As U$1.1, on neutral: fed by the terminal JP2, which edakit cannot name as a mains supply."
-
-[[check]]
 code = "REQ.missing"
 grade = "leave"
 place = "GPIO4"
@@ -113,6 +101,8 @@ place = "Q4"
 judged = "known gap"
 why = "LIM.range/gate (CK-4) finds Q4 half on at VGS 3.3 V. It only pulls SEL low through R49 (0.5 mA): even the part at its highest threshold holds SEL below 1 mV. The rule does not weigh the current, so it warns where nothing burns – as on the SparkFun converter's BSS138."
 
+[[fixed]]
+what = "The module's AC input taken as fed by nothing (PATH.unfed on U$1.1, U$1.2): a connector fed a net only with a vbus role, and marking the terminals reversible would have sent PATH.reverse across the mains side. A connector pin of role line or neutral is a supply input now – JP42.3 and JP2 say so (TD-130)."
 [[fixed]]
 what = "The S10K250 (V11) unchecked: edakit had no kind for a varistor, and the transcription entered it as kind ic with behaviour none. The kind varistor holds its VRMS (v_rms_max_v) on AC nets and its VDC (v_max_v) on DC ones – and finds it below 230 V + 10 % (TD-128)."
 [[fixed]]

@@ -137,8 +137,8 @@ def cut(d, src, groups, t):
 
 
 def inputs(d, sim=None):
-    """Nets a supply feeds: power outputs, the input roles of [supply] inputs, every pin of a reversible source, the
-    plus of a simulation source."""
+    """Nets a supply feeds: power outputs, the input roles of [supply] inputs – a connector's vbus, or the line and
+    neutral of a mains terminal –, every pin of a reversible source, the plus of a simulation source."""
     t = data()["supply"]["inputs"]
     out = {n for n, net in d.nets.items() if any(d.pin_info(r).get("type") == "power_output" for r in net["pins"])}
     marked = set(reversible(d))
@@ -146,10 +146,11 @@ def inputs(d, sim=None):
         part = d.part(des) or {}
         roles = {num: str(p.get("role") or "") for num, p in (part.get("pins") or {}).items()}
         k = part.get("kind")
+        wanted = [t[k]] if isinstance(t.get(k), str) else t.get(k) or []
         if k == "battery_holder":
             take = [n for n, r in roles.items() if r.startswith(t[k])] or list(roles)
-        elif k in t and t[k] in roles.values():
-            take = [n for n, r in roles.items() if r == t[k]]
+        elif set(wanted) & set(roles.values()):
+            take = [n for n, r in roles.items() if r in wanted]
         elif des in marked:
             take = list(roles)
         else:

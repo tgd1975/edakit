@@ -135,7 +135,7 @@ Pin roles (`role`) tell the code what a pin does, independent of its name:
 | esd_array | `io1` … `io8` (each protected line; two pins of one line share the role), `vbus` (the steering rail), `gnd` – `limits.vrwm_max_v` (the rail's stand-off: LIM.v holds the rail to it without margin), `values` `vbr_min_v`, `vf_v`, `vf_at_a`, `c_io_f`; HINT.esd counts the lines on its io pins as guarded |
 | led_strip | `vdd`, `gnd`, `din` at the start, `vdd_end`, `gnd_end`, `dout` at the far end (`cin`, `cout`: a clocked strip's clock) – the pin numbers are the entry's own; the strip's length is the component's (3.1) |
 | varistor | the pin numbers `1`, `2` (`v_rms_max_v`, `v_max_v`: its VRMS and VDC, held without derating – on an AC net the first, 3.1; designator prefix `RV`) |
-| connector | free (`pin1`, …); `vbus`/`gnd` for a supply input; `cc1`, `cc2` on a USB-C receptacle (REQ.missing:cc; a module or breakout without these roles: `values.usb_c`) |
+| connector | free (`pin1`, …); `vbus`/`gnd` for a supply input; `line`, `neutral` for a mains input (a terminal: PATH.unfed takes the module behind it as fed); `cc1`, `cc2` on a USB-C receptacle (REQ.missing:cc; a module or breakout without these roles: `values.usb_c`) |
 | ic, module | as the behaviour model needs them: `vin`, `vout`, `gnd`, `vsys`, `3v3`, `gpio`, `rext`, `out`, `oe_n`, `vdd`; `sda`, `scl` for I2C pins (REQ.missing); on shift registers and LED drivers `sdi`, `sdo` (serial data in and out) and the outputs numbered `out0` … `outN` where their order matters – the simulation reads them as `out`, the firmware contract numbers its channels by them (3.5) |
 
 ### Limits and values

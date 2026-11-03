@@ -14,12 +14,12 @@
   "1": {
    "name": "1",
    "type": "passive",
-   "role": "1"
+   "role": "neutral"
   },
   "2": {
    "name": "2",
    "type": "passive",
-   "role": "2"
+   "role": "neutral"
   }
  },
  "values": {
@@ -35,7 +35,8 @@
   "Cixi Kefa KF301-5.0 drawing (rev. A, 2021-03-13, one page, scanned), LCSC's copy https://datasheet.lcsc.com/datasheet/pdf/dbe48a1bef5e997cc12dba31bc0ac67e.pdf?productCode=C474881, read 2026-11-03 as an image",
   "UL/cUL technical data: use group B 300 V, 16 A; wire AWG 22–14; IEC technical data: 250 V (overvoltage category III, pollution degree 3) … 500 V (II, 2), 17 A, impulse withstand 4 kV; withstanding voltage 1600 V / 1 min; the body is marked '300VAC 16A' – v_rms_max_v 300 (an AC rms rating; no DC rating given), i_contact_max_a 16",
   "other data: pitch 5.0 mm, 2 … 24 poles, operating temperature −30 … +120 °C",
-  "pins: EasyEDA symbol of C474881 (edakit part import 2026-11-03): 1 … 2 at 5 mm pitch"
+  "pins: EasyEDA symbol of C474881 (edakit part import 2026-11-03): 1 … 2 at 5 mm pitch",
+  "roles: neutral – the ESPurna-H brings the mains neutral in and out on both pins (JP2, NEUTRAL)"
  ],
  "verified": {
   "by": "Claude (datasheet check, open-design transcription)",

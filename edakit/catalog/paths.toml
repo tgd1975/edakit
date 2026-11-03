@@ -27,7 +27,8 @@ cuts = [                                     # take a reversed source's return o
 ]
 
 [supply]                                     # PATH.unfed: what a supply reaches
-inputs = { battery_holder = "plus", connector = "vbus" }   # pin roles where a supply comes in (role prefix)
+inputs = { battery_holder = "plus", connector = ["vbus", "line", "neutral"] }   # pin roles where a supply comes in
+                                           # (a holder's: role prefix); line and neutral: a mains terminal
 passes = ["fuse", "switch", "button", "connector", "inductor"]       # every pin to every pin
 passes_roles = { nmos = ["drain", "source"], pmos = ["drain", "source"], led_strip = ["vdd", "vdd_end"] }
                                                            # an LED strip: its +V rail from end to end (chained strips)
