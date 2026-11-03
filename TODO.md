@@ -34,7 +34,7 @@ to touch.
 - [ ] TD-141 - **OK for #305:** https://github.com/tgd1975/edakit/pull/305 – parts-order.md moves to done/, the
       paths follow; a patch, tests green. *(parts-order-done)*
 
-## The parts order ([docs/concepts/new/parts-order.md](docs/concepts/new/parts-order.md))
+## The parts order ([docs/concepts/done/parts-order.md](docs/concepts/done/parts-order.md))
 
 - [ ] TD-111 - **Live run at the next parts order:** the skill cart's modes `parts` and `combine` at LCSC and JLCPCB,
       nothing ordered or paid by the skill – it records the BOM tool's labels into `edakit/suppliers/lcsc.toml`, sets

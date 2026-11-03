@@ -1,4 +1,4 @@
-# LCSC – the supplier's profile for the parts cart of the skill cart (handbook 8.4, docs/concepts/new/parts-order.md
+# LCSC – the supplier's profile for the parts cart of the skill cart (handbook 8.4, docs/concepts/done/parts-order.md
 # decisions 3 and 5). Data, no code: `edakit order` writes cart_lcsc.csv in the BOM tool's columns, the skill uploads
 # it, reads every line back into <out>/lcsc/cart.json and stops before the checkout; `edakit order check` holds the
 # cart to basket.json (ORDER.basket).

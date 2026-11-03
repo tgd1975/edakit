@@ -184,7 +184,7 @@ def estimate_of(cfg, board, m):
 
 
 def combine_of(cfg, design, m):
-    """The combined shipment for the job (docs/concepts/new/parts-order.md, decision 5): when a supplier's profile
+    """The combined shipment for the job (docs/concepts/done/parts-order.md, decision 5): when a supplier's profile
     combines with this maker and the project's basket has lines of that supplier – LCSC's warehouse address, the
     conditions, the weight above which only express is left; None otherwise."""
     from . import order
