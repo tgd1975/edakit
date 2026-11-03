@@ -1,11 +1,12 @@
 # Parts on hand: the maker's inventory, and only the rest ordered
 
-Status 2026-11-03: concept, rewritten on the owner's word the same day – "wir beginnen KISS": one document with a
-table of fixed columns, in whatever format the maker keeps it, named in `edakit.local.toml`, read and never written –
-and decided in a decision round (decisions 9 to 19). The first version of 2026-11-02 (PartsLedger as the source, a
-match by sibling and kit, the way back to PartsLedger, the survey of other tools) is in this file's history; its
-decisions are at the end, marked where the rewrite replaces them. Nothing built: every step starts on the owner's
-word.
+Status 2026-11-03: decided and built – steps 1 and 2 in edakit (`edakit/inventory.py`, `edakit order`, `edakit
+inventory`, handbook 8.4 and 10.1); left is step 3, the live run against the owner's inventory, in `TODO.md`. Rewritten
+on the owner's word the same day – "wir beginnen KISS": one document with a table of fixed columns, in whatever format
+the maker keeps it, named in `edakit.local.toml`, read and never written – and decided in a decision round (decisions 9
+to 19). The first version of 2026-11-02 (PartsLedger as the source, a match by sibling and kit, the way back to
+PartsLedger, the survey of other tools) is in this file's history; its decisions are at the end, marked where the
+rewrite replaces them.
 
 ## Why
 
@@ -110,9 +111,10 @@ it at the drawer.
 
 - **`edakit order`** – for every cart line that needs `n` pieces (need plus spares, as today) with `h` on hand: `min(h,
   n)` come from the inventory and the rest is ordered, rounded to `moq` and `step` as before; a rest of 0 writes no
-  cart line. The line's comment says so: `C1 (5 + 0, 5 on hand)`. `hand_assembly.md` gets a column "From" per part –
-  `on hand: 5`, `cart: 5`, or both – and at its end the list of what to take out of the drawer before soldering. A
-  basket across projects (`--with`) sums the lines first and applies the inventory of the project it runs in once.
+  cart line. The line's comment says so: `C1 (5 + 0, 3 on hand)`. `hand_assembly.md` gets a column "From" per part –
+  `on hand`, `cart` or `on hand + cart` – and at its end the list "Out of the drawer": each inventory row, its place
+  and the pieces to take before soldering. A basket across projects (`--with`) sums the lines first and applies the
+  inventory of the project it runs in once.
 - **`edakit inventory`** – for the current project every hand-soldered part and extra against the inventory: needed,
   on hand, short; the inventory's paths and their file dates first. `edakit inventory QUERY` lists the rows
   whose ID, name or description match – for the maker and for the agent.
@@ -149,13 +151,13 @@ is the maker's own: keeping the table true.
 
 ## Order of work
 
-Each step on the owner's word.
+Each step on the owner's word; 1 and 2 built on 2026-11-03.
 
-1. **Reading and the order**: `edakit.local.toml`, a reader `edakit/inventory.py` for the five formats and the LCSC map,
-   the match, the errors, `edakit order` and `hand_assembly.md`, `edakit inventory`; a fixture per format, tests for
-   each match rule and each error; handbook 8.4, 10.1, the glossary ("Inventory", "On hand"); a fragment `patch` – no
-   project must act.
-2. **The template**: `edakit inventory template` for `.md`, `.xlsx`, `.ods`.
+1. **Reading and the order** (built): `edakit.local.toml`, a reader `edakit/inventory.py` for the five formats and
+   the LCSC map, the match, the errors, `edakit order` and `hand_assembly.md`, `edakit inventory`; a fixture per
+   format, tests for each match rule and each error; handbook 8.4, 10.1, the glossary ("Inventory", "On hand"); a
+   fragment `patch` – no project must act.
+2. **The template** (built): `edakit inventory template` for `.md`, `.xlsx`, `.ods`.
 3. **A live run**: the next parts order against the owner's inventory – the carts shortened, `hand_assembly.md` naming
    what to take; what the run finds goes into handbook 8.4.
 
