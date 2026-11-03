@@ -31,8 +31,6 @@ to touch.
 
 - [ ] TD-108 - **A photo of the delivered tree:** one picture of the lit tree in its hill into pytree's `docs/img/` –
       it replaces the render on `docs/projects/pytree.md`. *(edakit-ce)*
-- [ ] TD-143 - **The 23 lines of the live run in LCSC's cart:** keep them for the next parts order or remove them – the
-      skill never deletes a line. *(edakit-5e)*
 - [ ] TD-148 - **OK for #326 (step 10, parts you solder yourself):** https://github.com/tgd1975/edakit/pull/326 – the
       inventory as an option on the steps page; merged by `python3 .github/merge.py 326` on your word. *(edakit-87)*
 
@@ -72,6 +70,8 @@ Nothing to do until there is an answer or a release; whichever session learns of
 
 ## Closed todos
 
+- [x] TD-143 - **The 23 lines of the live run in LCSC's cart:** settled by the owner in LCSC's cart. *(edakit-5e)*
+      [2026-11-03]
 - [x] TD-146 - **OK for #321 (parts on hand):** given; merged as edakit 1.1.14 (#321). *(edakit-87)* [2026-11-03]
 - [x] TD-142 - **OK for #310:** given; merged as edakit 1.1.13 (#310). *(edakit-5e)* [2026-11-03]
 - [x] TD-133 - **A charger's status output in the simulation:** the charger model drives STAT – the Micro-Lipo's LEDs as
