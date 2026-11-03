@@ -265,7 +265,8 @@ def check_signoff(d, rep):
     for des, c in d.comps.items():
         if c.get("verify"):
             rep.pending.append(("PARTS.verified", f"{des}: open note 'verify': {c['verify']}"))
-        if not c.get("lcsc") and not c.get("easyeda_device"):
+        copper = ((d.part(des) or {}).get("own") or {}).get("what") == "copper"    # the board's own: nothing to pick
+        if not c.get("lcsc") and not c.get("easyeda_device") and not copper:
             msg = f"{des}: neither an LCSC part nor an EasyEDA device"
             acc = c.get("accept") or {}
             rep.add("warning", "PARTS.verified", msg, acc.get("PARTS.verified/device") or acc.get("PARTS.verified", ""),

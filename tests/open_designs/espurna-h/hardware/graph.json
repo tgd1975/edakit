@@ -72,7 +72,7 @@
    },
    {
     "designator": "V11",
-    "type": "ic",
+    "type": "varistor",
     "label": "varistor S10K250 across the module's input",
     "part": "B72210S0251K101",
     "lcsc": "C210499",
@@ -1089,6 +1089,7 @@
      -0.16,
      0.16
     ],
+    "ac": true,
     "notes": "the mains peak (358 V) through 2.351 MΩ, 1 kΩ of it below"
    },
    {
@@ -1101,6 +1102,7 @@
      -71.8,
      71.8
     ],
+    "ac": true,
     "notes": "N$16 in the schematic"
    },
    {
@@ -1113,6 +1115,7 @@
      -143.3,
      143.3
     ],
+    "ac": true,
     "notes": "N$15 in the schematic"
    },
    {
@@ -1125,6 +1128,7 @@
      -214.9,
      214.9
     ],
+    "ac": true,
     "notes": "N$8 in the schematic"
    },
    {
@@ -1137,6 +1141,7 @@
      -286.5,
      286.5
     ],
+    "ac": true,
     "notes": "N$6 in the schematic"
    },
    {
@@ -1152,6 +1157,7 @@
      -358,
      358
     ],
+    "ac": true,
     "notes": "mains: 230 V + 10 % (EN 50160), 358 V peak, against GND – which R42 ties to the line"
    },
    {
@@ -1164,6 +1170,7 @@
      -358,
      358
     ],
+    "ac": true,
     "notes": "the load's line while the relay is on (LINE_L, at GND); while it is off the load pulls it to neutral"
    },
    {
@@ -1176,6 +1183,7 @@
      -358,
      358
     ],
+    "ac": true,
     "notes": "as NO, the other way round"
    },
    {

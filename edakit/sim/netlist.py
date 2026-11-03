@@ -57,7 +57,8 @@ ICs and modules are replaced by behaviour models, chosen by values.behavior in t
             each output a high side 1/r_on_high_ohm to vm and a low side 1/r_on_low_ohm to its return, measured
   charger   linear Li-ion charger (TP4056, MCP73831): roles vin, bat, prog; constant current prog_v / R_PROG
             (i_pre_ratio of it below v_pre_v), constant voltage vout_v, limited by r_on_ohm and v_headroom_v, off below
-            uvlo_v or without a PROG resistor; the current measured
+            uvlo_v or without a PROG resistor; the current measured; STAT (role stat) low through r_out_ohm while it
+            charges, high to vin below i_term_ratio of the set current
   protection  one-cell protection IC (DW01A): roles vdd, gnd, od, oc, vm; OD high above v_uvp_v and below v_ocp_v at
             VM, OC high below v_ovp_v (else at VM), behind r_out_ohm
   cc_led_driver  constant-current step-down LED driver (PT4115, AL8860): roles vin, sense, sw, gnd, dim; R_S from vin
@@ -1085,7 +1086,9 @@ class Netlist:
         falls to 0 as the cell reaches it, held by a stiffness of CHARGER_CV_OHM. The pass element limits the current
         to (V(vin) − V(bat) − v_headroom_v) / r_on_ohm; below uvlo_v at vin, and without a PROG resistor, it does not
         charge. iq_a from vin. Termination (i_term_ratio) is a state of the charge cycle, not of an operating point:
-        the model charges while the cell is below the float voltage."""
+        the model charges while the cell is below the float voltage. The status output (role stat, tri-state) is low
+        through r_out_ohm while the charge current is above i_term_ratio of the set current, high to vin once it is
+        below – the charge complete –, released below uvlo_v and without a PROG resistor."""
         from ..circuit import prog_resistors
         p, tag = values(part), des.lower()
         vin, bat, gnd = self.rn(des, "vin"), self.rn(des, "bat"), self._gnd_of(des)
@@ -1107,6 +1110,12 @@ class Netlist:
         i_expr = f"{on}*{smooth(max, smooth(min, smooth(min, cc, cv, 1e-3), drop, 1e-3), '0', 1e-4)}"
         self.add(f"B_{des}_CH {vin} x_{tag}_bat I = {i_expr}")
         self.add(f"V_{des}_AM x_{tag}_bat {bat} 0")
+        stat = self.rn(des, "stat")
+        if stat is not None and i_set > 0:     # STAT: low while it charges, high once the current is below termination
+            i_term, width = p.get("i_term_ratio", CHARGER_TERM_RATIO) * i_set, 0.02 * i_set
+            chg = f"0.5*(1+tanh((({i_expr})-{i_term:.6g})/{width:.6g}))"
+            self.add(f"B_{des}_ST {gnd} {stat} I = {on}*({chg}*V({gnd})+(1-{chg})*V({vin})-V({stat}))"
+                     f"/{p.get('r_out_ohm', 50):g}")
         if p.get("iq_a"):
             self.current_load(f"{des}_IQ", vin, gnd, p["iq_a"])
         self.meta.setdefault("chargers", {})[des] = {"vin": vin, "bat": bat, "gnd": gnd, "i_set": i_set,
@@ -1223,6 +1232,8 @@ FAULT_SHORT_OHM = 0.01      # a short of a generated fault scenario
 PD_SHUNT_OHM = 0.1          # the dynamic resistance of a PD sink's VDD shunt in the model: within 3 mV at 30 mA
 PASS_GATE_KNEE_V = 0.1      # a pass gate turns on over this much below its reference
 CHARGER_CV_OHM = 0.01       # how stiffly the charger model holds the float voltage – a model constant, no datasheet value
+CHARGER_TERM_RATIO = 0.1    # STAT's termination current over the set current where the entry gives no i_term_ratio –
+                            # a model constant: the TP4056's C/10 (its datasheet), the MCP73831's options 5 … 20 %
 BOOST_ON_OHM = 1e-3         # a switch_boost's output source while enabled – a model constant, no datasheet value
 
 

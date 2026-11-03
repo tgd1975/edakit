@@ -62,7 +62,7 @@ repository alone.
 <!-- edakit:generated tally -->
 - Reference circuits: 7, with 15 seeded faults that raise 8 codes: `LIM.i`, `LIM.p`, `LIM.range`, `PATH.reverse`, `REQ.forbidden`, `REQ.missing`, `REQ.value`, `SIM.response`.
 - Domains without a reference circuit: `mains`, `radio`.
-- Open designs: 10, with 244 findings judged – 79 real, 73 lacks, 53 criterion, 39 known gap; 24 false alarms fixed.
+- Open designs: 10, with 178 findings judged – 81 real, 72 lacks, 23 criterion, 2 known gap; 37 false alarms fixed.
 <!-- edakit:end -->
 
 ## 19.3 The example led-bar
@@ -176,13 +176,11 @@ The designs, from their READMEs and `findings.toml`:
 <!-- edakit:generated designs -->
 <a href="../docs/catalog/open-adafruit-microlipo-usb-c.html"><img class="edakit-thumb" src="../docs/catalog/circuits/open-adafruit-microlipo-usb-c.svg" alt="The drawing of Adafruit Micro-Lipo Charger with USB Type C Jack" width="140" align="right" loading="lazy"></a>**Adafruit Micro-Lipo Charger with USB Type C Jack** (`adafruit-microlipo-usb-c`) – CC BY-SA 3.0 · [drawing and findings](../docs/catalog/open-adafruit-microlipo-usb-c.html)  
 *Why:* the first charger among edakit's test circuits – no reference circuit has one (`power` is three AA cells beside USB), and no other open design charges a cell. It puts a linear Li-ion charger with its behaviour model on a published board: the current R_PROG programs, held against the MCP73831's 500 mA and the cell's 1C (LIM.i/charge, LIM.backfeed into the cell), the charger's heat at a low cell (LIM.t), a second charge current set by a solder jumper, a LiPo pack whose JST plug can come reversed (PATH.reverse on a battery holder), two status LEDs on a tri-state output – the domain power with a real charger, and HINT.lithium and HINT.charge_termination on a part makers use. Makers build and copy it everywhere: the MCP73831 with a PROG resistor, two LEDs and a JST PH socket is the charger of most hobby LiPo projects – Adafruit's Micro-Lipo boards, the same circuit on Feathers and countless clones –, so a false alarm here would meet many.  
-Findings judged: 6 real, 12 lacks, 1 criterion, 8 known gap; false alarms fixed: 2.  
-Known gaps – each with its reason on the design's page: `PATH.reverse` at U1.4, LED1.2, R6.2, R5.2; `PARTS.supplier` at SJ1; `PARTS.fact` at SOLDERJUMPER_ARROW_NOPASTE; `SIM.state` at LED1, LED2.
+Findings judged: 6 real, 11 lacks, 1 criterion; false alarms fixed: 5.
 
 <a href="../docs/catalog/open-atoomnetmarc-adlsc.html"><img class="edakit-thumb" src="../docs/catalog/circuits/open-atoomnetmarc-adlsc.svg" alt="The drawing of ADLSC, Atoomnet&#x27;s Digital Led String Controller" width="140" align="right" loading="lazy"></a>**ADLSC, Atoomnet's Digital Led String Controller** (`atoomnetmarc-adlsc`) – Apache 2.0 · [drawing and findings](../docs/catalog/open-atoomnetmarc-adlsc.html)  
 *Why:* the WLED controller – the board makers build to drive addressable LED strips from an ESP32 at several amperes: a 5 V supply of 10 A, the ESP32's 3.3 V data shifted to 5 V by a 74AHCT125 with 100 Ω in series, the strips' power switched by the firmware and fused per output. No reference circuit has an LED-strip output, and of the open designs the Corne feeds its SK6812s one diode below 5 V to make 3.3 V data reach them and the SparkFun converter shifts levels with BSS138s; ADLSC brings the TTL-input buffer, a reverse-polarity N-MOSFET in the ground return, a voltage supervisor on the ESP32's EN, P-MOSFET high-side switches driven from a GPIO through an NPN, glass fuses with blown-fuse LEDs, a polyfuse, TVS diodes on every 5 V rail, and an ESP32 development board plugged in behind a Schottky diode – real parts with their datasheets, in a class of board that WLED's users copy, where a false alarm would meet many.  
-Findings judged: 9 real, 7 criterion, 20 known gap; false alarms fixed: 1.  
-Known gaps – each with its reason on the design's page: `PATH.reverse` at D1.2, D3.1, D4.1, D4.2, D5.1, Q1.1, Q1.2, Q2.1, Q2.2, Q2.3, Q4.1, Q4.2, Q4.3, R1.1, R19.1, R2.1, R3.1, U1.3, U2.14, C2.1.
+Findings judged: 9 real, 7 criterion; false alarms fixed: 3.
 
 <a href="../docs/catalog/open-corne-cherry-left.html"><img class="edakit-thumb" src="../docs/catalog/circuits/open-corne-cherry-left.svg" alt="The drawing of Corne keyboard v4, left half" width="140" align="right" loading="lazy"></a>**Corne keyboard v4, left half** (`corne-cherry-left`) – CC BY 4.0 · [drawing and findings](../docs/catalog/open-corne-cherry-left.html)  
 *Why:* a split keyboard many makers build. Its v4 left half brings what no reference circuit has: an RP2040 with its crystal and USB-C port, 23 keys each on a GPIO of its own, and a chain of 23 SK6812MINI-E that runs one diode below 5 V while its data comes from a 3.3 V pin. It is the one LED chain on a board among the designs, and with the v3 it shows the same keyboard without and with a matrix.  
@@ -198,16 +196,16 @@ Findings judged: 12 real, 36 lacks, 2 criterion; false alarms fixed: 6.
 
 <a href="../docs/catalog/open-espurna-h.html"><img class="edakit-thumb" src="../docs/catalog/circuits/open-espurna-h.svg" alt="The drawing of ESPurna-H" width="140" align="right" loading="lazy"></a>**ESPurna-H** (`espurna-h`) – CC BY-SA 4.0 · [drawing and findings](../docs/catalog/open-espurna-h.html)  
 *Why:* the only board here with mains on it – an HLK-PM01 behind a thermal fuse, a 500 mA fuse and a varistor, a 10 A relay that switches the load, and an HLW8012 power monitor on a 1 mΩ shunt and a 5 × 470 kΩ divider from neutral, whose 0 Ω resistor ties the low-voltage ground to the line. No reference circuit (`tests/reference.py` has none with mains or a relay) and no other open design brings LIM.hazardous and the domain mains onto a real board, nor a relay coil driven from a 3.3 V GPIO with its flyback diode; around them sit the low-voltage checks edakit does make – the 2N7002's gate drive, the regulator, the ESP8266's levels and boot pins. An HLK-PM01, an ESP module and a relay is the common recipe of a homemade mains smart switch, and ESPurna is a widely used open firmware for such switches, so a false alarm here would meet many.  
-Findings judged: 11 real, 1 criterion, 9 known gap; false alarms fixed: 1.  
-Known gaps – each with its reason on the design's page: `LIM.v` at JP2, JP42, R51, R52, R53, U$1.2; `PATH.unfed` at U$1.1, U$1.2; `LIM.range` at Q4.
+Findings judged: 13 real, 1 criterion, 1 known gap; false alarms fixed: 5.  
+Known gaps – each with its reason on the design's page: `LIM.range` at Q4.
 
 <a href="../docs/catalog/open-guitarml-classic-boost.html"><img class="edakit-thumb" src="../docs/catalog/circuits/open-guitarml-classic-boost.svg" alt="The drawing of GuitarML Classic Boost v2" width="140" align="right" loading="lazy"></a>**GuitarML Classic Boost v2** (`guitarml-classic-boost`) – MIT · [drawing and findings](../docs/catalog/open-guitarml-classic-boost.html)  
 *Why:* a one-transistor boost, the stage many builders start with. Beside it the combo's transistors are followers – their bias hardly depends on the gain. The boost is the one stage whose operating point the transistor's spread moves: a common-emitter stage, its base held by a divider, its gain set by the collector and emitter resistors – the case of FT-17's corners and of a gain an AC run can show. It also has no IC at all: nothing types its supply and ground, which showed a false alarm, fixed since (findings.toml, [[fixed]]).  
-Findings judged: 1 lacks, 10 criterion; false alarms fixed: 1.
+Findings judged: 1 lacks, 2 criterion; false alarms fixed: 2.
 
 <a href="../docs/catalog/open-guitarml-ts-rat-combo.html"><img class="edakit-thumb" src="../docs/catalog/circuits/open-guitarml-ts-rat-combo.svg" alt="The drawing of GuitarML Tubescreamer/Rat combo" width="140" align="right" loading="lazy"></a>**GuitarML Tubescreamer/Rat combo** (`guitarml-ts-rat-combo`) – MIT · [drawing and findings](../docs/catalog/open-guitarml-ts-rat-combo.html)  
 *Why:* two drive circuits makers copy often, a Tube Screamer-style and a Rat-style stage, on one board: op-amp stages biased at half the supply, BJT and JFET followers, a 3PDT switch on the board that orders the effects, and footswitches wired by hand. It brings real op-amps where the reference circuit guitar has a test entry, and a reversed electrolytic (C19) that edakit finds.  
-Findings judged: 2 real, 6 lacks, 21 criterion; false alarms fixed: 5.
+Findings judged: 2 real, 6 lacks, 3 criterion; false alarms fixed: 6.
 
 <a href="../docs/catalog/open-sparkfun-logic-level-converter.html"><img class="edakit-thumb" src="../docs/catalog/circuits/open-sparkfun-logic-level-converter.svg" alt="The drawing of SparkFun Logic Level Converter" width="140" align="right" loading="lazy"></a>**SparkFun Logic Level Converter** (`sparkfun-logic-level-converter`) – CC BY-SA 3.0 · [drawing and findings](../docs/catalog/open-sparkfun-logic-level-converter.html)  
 *Why:* the BSS138 level shifter sits on many maker boards that join 3.3 V and 5 V parts. It brings a circuit whose function is a level in both directions – each channel simulated, driven from either side –, which no reference circuit has, with real MOSFETs from their datasheet.  
@@ -216,8 +214,7 @@ Known gaps – each with its reason on the design's page: `LIM.range` at Q1.
 
 <a href="../docs/catalog/open-whbeers-fuzz-face.html"><img class="edakit-thumb" src="../docs/catalog/circuits/open-whbeers-fuzz-face.svg" alt="The drawing of Random Input (whbeers)" width="140" align="right" loading="lazy"></a>**Random Input (whbeers)** (`whbeers-fuzz-face`) – CC0 1.0 · [drawing and findings](../docs/catalog/open-whbeers-fuzz-face.html)  
 *Why:* the Fuzz Face is the two-transistor circuit whose bias makers fight with: Q1's collector drives Q2's base directly and Q2's emitter feeds back to Q1's base through 100 kΩ, so the operating point rests on both transistors' gain and leakage – and they pull it in opposite directions, the case of the spread's corners per part (FT-17, handbook 5.2). No reference circuit has a direct-coupled pair, and the open designs' stages are a divider-held common emitter (the Classic Boost) and followers (the combo). This one names its bias targets on the schematic – TP2, Q2's collector, at 5.0 V, TP1 at 500–700 mV – and replaces the collector resistors with trimmers to reach them, so the simulation can hold the bias to the design's own window, show how far the spread moves it at one setting, and show the trimmers' range covering it. It is also a board without an IC, fed through a connector from another board, and its fuzz control carries DC. Makers build the Fuzz Face as one of the first fuzzes: a dozen parts, a sound tied to the transistors, and the reputation for picky bias.  
-Findings judged: 2 real, 3 lacks, 5 criterion, 1 known gap; false alarms fixed: 1.  
-Known gaps – each with its reason on the design's page: `REQ.value` at TRIM2.
+Findings judged: 2 real, 3 lacks, 1 criterion; false alarms fixed: 3.
 <!-- edakit:end -->
 
 ## 19.6 How a finding is judged
@@ -302,8 +299,11 @@ The cases, how to run them and the baseline: [evals](../evals/README.md).
 
 - **Two domains without a reference circuit.** radio and mains (19.4); for mains, spacing and isolation are not
   checked at all.
-- **A low-voltage side tied to the line.** edakit holds every voltage against the board's own ground. Where that
-  ground is tied to mains, as on the ESPurna-H, the low-voltage side looks safe although it is not.
+- **A low-voltage side tied to the line, beyond a terminal.** edakit holds every voltage against the board's own
+  ground. LIM.hazardous/ground names that ground tied to a mains terminal's `line` or `neutral` pin – straight, through
+  a 0 Ω bridge, a fuse, a switch, a diode or a small resistor, as on the ESPurna-H –; mains brought in otherwise (a
+  module's pins, a terminal without those roles) or tied through anything larger stays unseen, and the low-voltage
+  side looks safe although it is not.
 - **The known gaps.** Each listed with its design and reason (19.5).
 - **What no code catches.** `edakit mutate` names the mistakes on led-bar no code reports (from a finding to a rule,
   14.4).

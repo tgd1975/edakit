@@ -15,7 +15,7 @@
    "name": "K",
    "type": "passive",
    "role": "cathode",
-   "hint": "bidirectional TVS (the CA suffix): either pin may go to the line – the entry calls pin 1 cathode for the simulation's model"
+   "hint": "bidirectional TVS (the CA suffix, values tvs bidirectional): either pin may go to the line – the entry calls pin 1 cathode for the simulation's model"
   },
   "2": {
    "name": "A",
@@ -24,7 +24,7 @@
   }
  },
  "values": {
-  "tvs": true,
+  "tvs": "bidirectional",
   "ir_a": 0.0016,
   "ir_at_v": 5.0
  },

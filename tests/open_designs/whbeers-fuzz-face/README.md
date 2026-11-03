@@ -76,7 +76,7 @@ datasheet, what was read in it and what is open (`verified`).
 
 **What edakit finds** – and how each finding is judged – is in `findings.toml`, held by `tests/test_open_designs.py`.
 Real: the bias leaves its window when the pair changes and the trimmers stay (the trimmers are the design's answer),
-and the fuzz control carries Q2's emitter current. The silicon stand-in cannot reach TP1's germanium window (lacks);
-the trimmer TRIM2 is held to a panel pot's rule (known gap). The design showed one false alarm – Q2's base, held by
-TRIM1 from a supply that comes in at a connector, taken as floating –, fixed and held by
-`tests/test_open_design_fixes.py`.
+and the fuzz control carries Q2's emitter current. The silicon stand-in cannot reach TP1's germanium window (lacks).
+The design showed two false alarms, fixed and held by `tests/test_open_design_fixes.py`: Q2's base, held by TRIM1
+from a supply that comes in at a connector, taken as floating, and the trimmer TRIM2 held to a panel pot's rule
+(TD-126) – the trimmers' entries say `adjust: "trimmer"`.
