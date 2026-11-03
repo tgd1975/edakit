@@ -147,6 +147,7 @@ MIT – see [LICENSE](LICENSE) –, except for third-party material the tests us
 | `tests/open_designs/guitarml-classic-boost/`, `guitarml-ts-rat-combo/` | Keith Bloemer (GuitarML), *GuitarPedalPCBs* | MIT, notice in the README |
 | `tests/open_designs/corne-cherry-v3-left/` | foostan, *Corne Cherry* v3 | MIT, notice in the README |
 | `tests/open_designs/corne-cherry-left/` | foostan, *Corne keyboard* v4 | [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/) |
+| `tests/open_designs/espurna-h/` | Xose Pérez (tinkerman.cat), *ESPurna-H* v0.8 | [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/) (the repository says 3.0, the schematic 4.0) |
 | `tests/open_designs/sparkfun-logic-level-converter/` | SparkFun Electronics, *Logic Level Converter* | [CC BY-SA 3.0](https://creativecommons.org/licenses/by-sa/3.0/) |
 | `tests/open_designs/adafruit-microlipo-usb-c/` | Limor Fried/Ladyada for Adafruit Industries, *Adafruit Micro-Lipo Charger with USB Type C Jack* | [CC BY-SA 3.0](https://creativecommons.org/licenses/by-sa/3.0/), the text Adafruit asks for in the README |
 | `tests/open_designs/atoomnetmarc-adlsc/` | atoomnetmarc, *ADLSC* (a WLED controller) | [Apache 2.0](https://www.apache.org/licenses/LICENSE-2.0), the licence's text in the folder's LICENSE |

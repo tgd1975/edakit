@@ -25,6 +25,10 @@ published; a finding that appears or goes is a change in edakit to look at, not 
   esp32-devkitc-v4                Espressif ESP32-DevKitC V4, schematic Rev V4 (2017-12-06),
                                    https://dl.espressif.com/dl/schematics/esp32_devkitc_v4-sch.pdf – no licence stated;
                                    the circuit's facts transcribed: usb, radio and power in one board
+  espurna-h                        Xose Pérez's ESPurna-H v0.8, Eagle schematic espurna-h/v0.8/espurna-h.sch at commit
+                                   f433874 of https://github.com/xoseperez/espurna-board, CC BY-SA 4.0 – an ESP8266 wall
+                                   switch on mains: an HLK-PM01, a 10 A relay on a 2N7002 with its flyback diode, an
+                                   HLW8012 power monitor whose 0 Ω resistor ties GND to the line
   guitarml-classic-boost           GuitarML's Classic Boost v2 (LPB-1 style), KiCad schematic ClassicBoost_1590a/
                                    ClassicBoost_v2.kicad_sch at commit e2fa7e1 of
                                    https://github.com/GuitarML/GuitarPedalPCBs, MIT – one 2N5088 common-emitter stage,
@@ -76,7 +80,7 @@ def test_there_are_open_designs():
     assert len(NAMES) >= 3
 
 
-CC = {"CC BY 4.0": "by/4.0", "CC BY-SA 3.0": "by-sa/3.0"}
+CC = {"CC BY 4.0": "by/4.0", "CC BY-SA 3.0": "by-sa/3.0", "CC BY-SA 4.0": "by-sa/4.0"}
 
 
 def licence(name):
@@ -88,8 +92,8 @@ def licence(name):
 
 @pytest.mark.parametrize("name", NAMES)
 def test_a_cc_licensed_design_links_its_licence(name):
-    """CC BY 4.0 (3(a)(1)(C)) and CC BY-SA 3.0 (4(a)) ask for the licence's text or its URI with the material: the
-    README of a design offered under one links it."""
+    """CC BY 4.0 (3(a)(1)(C)), CC BY-SA 3.0 (4(a)) and CC BY-SA 4.0 (3(a)(1)(C)) ask for the licence's text or its
+    URI with the material: the README of a design offered under one links it."""
     text = " ".join((DESIGNS / name / "README.md").read_text(encoding="utf-8").split())
     if licence(name) in CC:
         assert f"https://creativecommons.org/licenses/{CC[licence(name)]}/" in text, f"{name}: no licence URI"

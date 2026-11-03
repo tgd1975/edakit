@@ -1,0 +1,240 @@
+{
+ "lcsc": "C82891",
+ "mpn": "ESP-12F(ESP8266MOD)",
+ "manufacturer": "Ai-Thinker(安信可)",
+ "kind": "module",
+ "package": "SMD-22 module 24 × 16 × 3 mm",
+ "footprint": "WIFIM-SMD_ESP-12F-ESP8266MOD",
+ "jlc_class": "Extended Part",
+ "datasheet": {
+  "url": "https://datasheet.lcsc.com/datasheet/pdf/bb52afb9b0bdd84eff3377bbb6814e0f.pdf?productCode=C82891",
+  "pinout_page": 6
+ },
+ "pins": {
+  "1": {
+   "name": "RST",
+   "type": "input",
+   "v_max_v": 3.6,
+   "vil_ratio": 0.25,
+   "vih_ratio": 0.75,
+   "hint": "reset, active low"
+  },
+  "2": {
+   "name": "ADC",
+   "type": "analog",
+   "v_max_v": 1.0,
+   "functions": [
+    "adc0"
+   ],
+   "adc": {
+    "range_v": [
+     0.0,
+     1.0
+    ]
+   },
+   "hint": "TOUT: input range 0 … 1 V (table 2.2)"
+  },
+  "3": {
+   "name": "EN",
+   "type": "input",
+   "v_max_v": 3.6,
+   "vil_ratio": 0.25,
+   "vih_ratio": 0.75,
+   "hint": "chip enable, active high"
+  },
+  "4": {
+   "name": "GPIO16",
+   "type": "bidirectional",
+   "role": "gpio",
+   "functions": [],
+   "hint": "joined to RST to wake from deep sleep",
+   "v_max_v": 3.6
+  },
+  "5": {
+   "name": "GPIO14",
+   "type": "bidirectional",
+   "role": "gpio",
+   "functions": [
+    "spi1.sck"
+   ],
+   "v_max_v": 3.6
+  },
+  "6": {
+   "name": "GPIO12",
+   "type": "bidirectional",
+   "role": "gpio",
+   "functions": [
+    "spi1.rx"
+   ],
+   "v_max_v": 3.6
+  },
+  "7": {
+   "name": "GPIO13",
+   "type": "bidirectional",
+   "role": "gpio",
+   "functions": [
+    "spi1.tx"
+   ],
+   "v_max_v": 3.6
+  },
+  "8": {
+   "name": "VCC",
+   "type": "power_in",
+   "role": "vdd",
+   "v_max_v": 3.6,
+   "v_op_min_v": 3.0,
+   "v_op_max_v": 3.6
+  },
+  "9": {
+   "name": "GND",
+   "type": "ground"
+  },
+  "10": {
+   "name": "GPIO15",
+   "type": "bidirectional",
+   "role": "gpio",
+   "functions": [
+    "spi1.cs"
+   ],
+   "strap": "low",
+   "v_max_v": 3.6
+  },
+  "11": {
+   "name": "GPIO2",
+   "type": "bidirectional",
+   "role": "gpio",
+   "functions": [
+    "uart1.tx"
+   ],
+   "strap": "high",
+   "v_max_v": 3.6
+  },
+  "12": {
+   "name": "GPIO0",
+   "type": "bidirectional",
+   "role": "gpio",
+   "functions": [],
+   "strap": "high",
+   "hint": "low at reset: download mode (table 2.3)",
+   "v_max_v": 3.6
+  },
+  "13": {
+   "name": "GPIO4",
+   "type": "bidirectional",
+   "role": "gpio",
+   "functions": [],
+   "v_max_v": 3.6
+  },
+  "14": {
+   "name": "GPIO5",
+   "type": "bidirectional",
+   "role": "gpio",
+   "functions": [],
+   "v_max_v": 3.6
+  },
+  "15": {
+   "name": "RXD0",
+   "type": "bidirectional",
+   "role": "gpio",
+   "functions": [
+    "uart0.rx"
+   ],
+   "v_max_v": 3.6
+  },
+  "16": {
+   "name": "TXD0",
+   "type": "bidirectional",
+   "role": "gpio",
+   "functions": [
+    "uart0.tx"
+   ],
+   "v_max_v": 3.6
+  },
+  "17": {
+   "name": "CS0",
+   "type": "bidirectional",
+   "hint": "the module's SPI flash (bottom pad)"
+  },
+  "18": {
+   "name": "MISO",
+   "type": "bidirectional",
+   "hint": "the module's SPI flash (bottom pad)"
+  },
+  "19": {
+   "name": "GPIO9",
+   "type": "bidirectional",
+   "hint": "the module's SPI flash (bottom pad)"
+  },
+  "20": {
+   "name": "GPIO10",
+   "type": "bidirectional",
+   "hint": "the module's SPI flash (bottom pad)"
+  },
+  "21": {
+   "name": "MOSI",
+   "type": "bidirectional",
+   "hint": "the module's SPI flash (bottom pad)"
+  },
+  "22": {
+   "name": "SCLK",
+   "type": "bidirectional",
+   "hint": "the module's SPI flash (bottom pad)"
+  }
+ },
+ "values": {
+  "behavior": "mcu",
+  "v_io_v": 3.3,
+  "i_core_a": 0.5,
+  "vih_ratio": 0.75,
+  "vil_ratio": 0.25
+ },
+ "limits": {
+  "vdd_op_min_v": 3.0,
+  "vdd_op_max_v": 3.6,
+  "gpio_v_max_v": 3.6,
+  "gpio_i_max_a": 0.012,
+  "t_min_c": -20,
+  "t_max_c": 85
+ },
+ "hints": [
+  "I2C and PWM are software on the ESP8266: a net with fn i2c or pwm finds no hardware function here"
+ ],
+ "compliance": {
+  "radio": {
+   "bands_mhz": [
+    [
+     2412,
+     2484
+    ]
+   ],
+   "max_dbm": 21.5,
+   "source": "ESP-12F product specification V1 (2018), table 1.1: frequency range 2412 ~ 2484 MHz, PCB antenna; Wi-Fi radio: PA output power in 11b mode 19.5 / 20.5 / 21.5 dBm (min / typ / max)"
+  }
+ },
+ "sources": [
+  "Ai-Thinker ESP-12F WiFi module V1 product specification (2018, 15 pages), LCSC's copy https://datasheet.lcsc.com/datasheet/pdf/bb52afb9b0bdd84eff3377bbb6814e0f.pdf?productCode=C82891, read 2026-11-03",
+  "table 1.1: SMD22, 24 × 16 × 3 mm, 2412 … 2484 MHz, PCB antenna; power supply 3.0 … 3.6 V, typ. 3.3 V, 'current > 500 mA' – i_core_a 0.5 A, the current the supply must deliver, taken as the module's upper bound (as esp32-devkitc-v4's module); continuous transmission ~71 mA average, peak 500 mA; operating −20 … 85 °C",
+  "table 2.2 pins: 1 RST (active low), 2 ADC (0 … 1 V), 3 EN (active high), 4 IO16, 5 IO14 (HSPI_CLK), 6 IO12 (HSPI_MISO), 7 IO13 (HSPI_MOSI), 8 VCC 3.0 … 3.6 V, 9 GND, 10 IO15 (MTDO, HSPICS), 11 IO2 (UART1_TXD), 12 IO0, 13 IO4, 14 IO5, 15 RXD (GPIO3), 16 TXD (GPIO1) = the EasyEDA symbol of C82891 (edakit part import), whose 17 … 22 are the six flash pads underneath (CS0, MISO, GPIO9, GPIO10, MOSI, SCLK)",
+  "table 2.3 boot mode: run – EN high, RST high, GPIO15 low, GPIO0 high, GPIO2 high, TXD0 high; download – GPIO0 low (strap)",
+  "3. electrical characteristics: VDD 2.7 / 3.3 / 3.6 V, VIL ≤ 0.25 VIO, VIH ≥ 0.75 VIO (≤ 3.6 V), VOL ≤ 0.1 VIO, VOH ≥ 0.8 VIO, IMAX 12 mA (gpio_i_max_a)",
+  "Wi-Fi radio: input frequency 2400 … 2483.5 MHz, PA output 11b 19.5 / 20.5 / 21.5 dBm; power consumption: TX 11b 170 mA typ (50 % duty), modem sleep 20 mA, deep sleep 20 µA"
+ ],
+ "verified": {
+  "by": "Claude (datasheet check, open-design transcription)",
+  "date": "2026-11-03",
+  "datasheet": "Ai-Thinker ESP-12F V1 product specification (2018)",
+  "datasheet_sha256": "c6159c24ed91d4b8d62215c337df8eedc2045296b099f4f724f281cd62fc221e",
+  "checked": [
+   "pinout against the symbol",
+   "supply range",
+   "logic levels and IMAX",
+   "boot-mode table",
+   "radio band and power"
+  ],
+  "open": [
+   "'some of the pins inside the module have been pulled up or down, please refer to the schematic' (table 2.3 notes) – the module's schematic was not read: no pulls entered",
+   "the PCB antenna's gain is not stated – LIM.eirp cannot compute the e.i.r.p.",
+   "the ESP8266EX's own datasheet was not read; the module sheet's values are used"
+  ]
+ }
+}

@@ -1,0 +1,68 @@
+{
+ "lcsc": "C1969735",
+ "mpn": "TMCP1A106MTRF",
+ "manufacturer": "VISHAY(威世)",
+ "kind": "capacitor",
+ "package": "0805 (case P, EIA 2012-12)",
+ "footprint": "CAP-SMD_L2.0-W1.3-FD",
+ "jlc_class": "Extended Part",
+ "datasheet": {
+  "url": "https://datasheet.lcsc.com/datasheet/pdf/8c679b35f6f9cfb79acecc04d8fa2cd9.pdf?productCode=C1969735",
+  "pinout_page": 1
+ },
+ "pins": {
+  "1": {
+   "name": "1",
+   "type": "passive",
+   "role": "plus"
+  },
+  "2": {
+   "name": "2",
+   "type": "passive",
+   "role": "minus"
+  }
+ },
+ "values": {
+  "value_f": 1e-05,
+  "dielectric": "tantalum",
+  "polarized": true,
+  "tolerance": 0.2,
+  "esr_ohm": [
+   null,
+   null,
+   5.9
+  ]
+ },
+ "limits": {
+  "v_max_v": 10,
+  "vr_max_v": 1,
+  "i_ripple_a": 0.104,
+  "t_min_c": -55,
+  "t_max_c": 125
+ },
+ "spice": {},
+ "sources": [
+  "Vishay Polytech TMCP, Solid Tantalum Surface Mount Chip Capacitors, Molded Case, 0805 Size, document 40179, revision 04-Aug-2020, LCSC's copy https://datasheet.lcsc.com/datasheet/pdf/8c679b35f6f9cfb79acecc04d8fa2cd9.pdf?productCode=C1969735, read 2026-11-03",
+  "ordering information: TMC P 1A 106 M TR F = case P (0805, 2012-12), 10 V at +85 °C, 10 µF, ±20 %, 7\" reel, lead-free",
+  "standard ratings, 10 VDC: TMCP1A106(1)TRF max. DCL 10 µA, DF 20 %, ESR 5.9 Ω at 100 kHz (esr_ohm max), ripple 0.104 A at 100 kHz; operating −55 … +125 °C, voltage derating above +85 °C",
+  "recommended voltage derating below +85 °C: a 10 V part at 5.0 V operating voltage",
+  "guide to application 4: reverse voltage at 25 °C at most 10 % of the rated voltage or 1 V, whichever is smaller (vr_max_v 1)",
+  "pins: the EasyEDA symbol of C1969735 names them 1 and 2; its footprint marks pad 1 with the band – taken as the anode ('anode indication belt mark', dimensions p. 1): 1 plus, 2 minus"
+ ],
+ "verified": {
+  "by": "Claude (datasheet check, open-design transcription)",
+  "date": "2026-11-03",
+  "datasheet": "Vishay TMCP, document 40179 (2020-08-04)",
+  "datasheet_sha256": "5d8a1894a261640d178d9a89cbe2d78aef722d3a3e685f396deea95b1f43c25b",
+  "checked": [
+   "part number: case, voltage, capacitance, tolerance",
+   "ESR, ripple, DCL of TMCP1A106",
+   "reverse voltage, voltage derating"
+  ],
+  "open": [
+   "the README's bill of materials names '10uF 0805 tantalum' without a part number; this one stands in",
+   "the schematic's symbol (C-EU) has no polarity: plus at the supply assumed, as a builder solders it",
+   "pad 1 as the anode from the footprint's band, not from a symbol drawing"
+  ]
+ }
+}
