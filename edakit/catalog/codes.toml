@@ -547,17 +547,18 @@ sources = [
 
 [codes."PATH.reverse"]
 title = "reverse polarity blocked"
-rule = "What a reversed source (a battery holder, a source marked reversible) reaches through fuses, switches, push buttons and connectors is only capacitors without polarity, holders, the anode of a blocking diode – on a negative rail (the protected net declared at or below 0 V) its cathode – or the drain of a PMOS whose source and gate are outside; a polarized capacitor it reaches is reverse biased (grade polarized)."
+rule = "What a reversed source (a battery holder, a source marked reversible) reaches through fuses, switches and push buttons is only capacitors without polarity, holders, connectors – their contacts are separate, a connector hands nothing on from one pin to another –, the anode of a blocking diode – on a negative rail (the protected net declared at or below 0 V) its cathode – or the drain of a PMOS whose source and gate are outside; a polarized capacitor it reaches is reverse biased (grade polarized)."
 why = "A battery inserted the wrong way drives the supply negative; every IC on that rail conducts through its substrate diodes and dies within milliseconds."
 fix = "A Schottky diode in series, or a PMOS in the supply path with its gate to ground (block reverse-pmos)."
 severity = "error"
 grades = { polarized = "warning" }
 details = [
-  "reverse polarity from the topology: what a reversed source (battery holders, `\"source\": \"reversible\"` on the component) reaches through fuses, switches, push buttons and connectors may only be a capacitor, the anode of a diode whose cathode is outside, or the drain of a PMOS whose source and gate are outside – finds e.g.: the protection diode bypassed, an IC directly on the battery",
+  "reverse polarity from the topology: what a reversed source (battery holders, `\"source\": \"reversible\"` on the component) reaches through fuses, switches and push buttons may only be a capacitor, a holder, a connector – it passes nothing on from one contact to another –, the anode of a diode whose cathode is outside, or the drain of a PMOS whose source and gate are outside – finds e.g.: the protection diode bypassed, an IC directly on the battery",
 ]
 replaces = ["G-10"]
 sources = [
   "TI SLVA139, Reverse Current/Battery Protection Circuits (2003) – https://www.ti.com/lit/an/slva139/slva139.pdf",
+  "Open design adafruit-microlipo-usb-c (handbook 19.5, 2026-11-03): a connector passing every pin to every pin carried the reversed cell from JP4's VBAT pad to 5V and through the USB-C receptacle to CC1 and CC2",
 ]
 
 [codes."PATH.unfed"]

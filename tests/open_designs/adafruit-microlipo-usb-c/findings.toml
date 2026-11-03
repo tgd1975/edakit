@@ -24,30 +24,6 @@ judged = "real"
 why = "A pack whose JST plug is wired the other way round puts −4.2 V straight on the charger's VBAT (and C2): nothing on the board blocks it. Adafruit says so itself – 'For use with Adafruit LiPoly/LiIon batteries only! Other batteries may have different voltage, chemistry, polarity or pinout' – and the plug's polarity differs between makers."
 
 [[check]]
-code = "PATH.reverse"
-place = "U1.4"
-judged = "known gap"
-why = "Reached only through the connectors: the reversed cell's VBAT is pad 5 of JP4, and catalog/paths.toml lets a connector pass a reversed source from every pin to every pin – on to 5V (JP4 pad 1), and through the receptacle X2 to CC1 and CC2. A header's or a receptacle's pins are separate contacts; the charger's VDD sees no reversed voltage. The fix is the catalog's data (a connector among the parts that tolerate a reversed source, not among those that pass it on), which this transcription does not change."
-
-[[check]]
-code = "PATH.reverse"
-place = "LED1.2"
-judged = "known gap"
-why = "As U1.4: the red LED's anode is on 5V, which the reversed cell reaches only through JP4's other pads in edakit's model – a connector passing every pin to every pin (catalog/paths.toml)."
-
-[[check]]
-code = "PATH.reverse"
-place = "R6.2"
-judged = "known gap"
-why = "As U1.4: CC1 is reached from VBAT through JP4 and then through X2's other contacts – a connector passing every pin to every pin (catalog/paths.toml); a resistor takes a reversed voltage without harm anyway."
-
-[[check]]
-code = "PATH.reverse"
-place = "R5.2"
-judged = "known gap"
-why = "As R6.2, on CC2: reached through JP4 and X2 only in edakit's model of a connector (catalog/paths.toml)."
-
-[[check]]
 code = "PARTS.supplier"
 place = "SJ1"
 judged = "known gap"
@@ -100,6 +76,8 @@ why = "As LED1: with STAT not driven by the model, the green LED carries the cha
 what = "A charger's status LEDs, each behind its series resistor on the tri-state STAT, taken for a floating net (LVL.undefined/open_drain on STAT) – an LED cathode straight on an output counted as its load, one behind a resistor did not."
 [[fixed]]
 what = "R4 behind the solder jumper SJ1 – the 500 mA mode – counted by neither LIM.i/charge nor the simulation's charger model, which read only resistors straight from PROG to ground: the check now holds the position that programs the most, the model the contacts a load closes."
+[[fixed]]
+what = "A reversed cell carried by JP4 from its VBAT pad to 5V, and by the USB-C receptacle on to CC1 and CC2 – catalog/paths.toml let a connector pass a reversed source from every pin to every pin (PATH.reverse on U1.4, LED1.2, R5.2, R6.2): a connector now takes it on the contact it sits on and hands nothing on (TD-124)."
 
 # PARTS.fact/reach (#95): the design is sold, and the transcription took no supplier REACH statements.
 

@@ -787,3 +787,36 @@ def test_a_need_on_a_pin_left_open_is_judged_where_its_terminal_is_connected():
     assert [(f.code, f.text) for f in pin_needs(tab_regulator(["4"], 2.2e-5))] == [sense]
     assert sorted((f.code, f.text) for f in pin_needs(tab_regulator(["2", "4"]))) == [
         sense, ("REQ.value", "U1.2: needs a capacitor of at least 22 µF to GND – C1 on OUT: 10 µF")]
+
+
+# --- the known gaps of the open designs (TD-124 to TD-133) -------------------------------------------------------------
+CELL = {"lcsc": "C9000516", "mpn": "test cell holder", "kind": "battery_holder", "verified": {"by": "test"},
+        "pins": {"1": {"name": "+", "type": "passive", "role": "plus"},
+                 "2": {"name": "-", "type": "passive", "role": "minus"}}}
+LOGIC = {"lcsc": "C9000517", "mpn": "test logic", "kind": "ic", "verified": {"by": "test"},
+         "pins": {"1": {"name": "VDD", "type": "power_in"}, "2": {"name": "GND", "type": "ground"}},
+         "needs": {"decoupling": False}}
+
+
+def reversed_at(graph_nets, comps, parts):
+    """PATH.reverse's places on a design of `comps` with `graph_nets` {name: pins}."""
+    from edakit.engines.paths import reverse
+    graph = {"name": "t", "version": "1", "ground": "GND", "components": comps,
+             "nets": [{"name": n, "pins": p, "v": [0, 5.5]} for n, p in graph_nets.items()]}
+    d = Design.from_data(graph, parts)
+    return sorted(f.place for f in reverse(d, d))
+
+
+def test_a_connector_hands_a_reversed_source_on_to_none_of_its_other_pins():
+    """The Micro-Lipo's JP4: the cell's VBAT on one pad, 5V on another – edakit let a connector pass a reversed source
+    from every pin to every pin, so the charger's VDD (U1.4), the red LED on 5V and the CC resistors behind the
+    USB-C receptacle were reached. A connector's contacts are separate: it takes a reversed voltage on the pin it sits
+    on and hands nothing on. A part straight on the cell's net is still reached."""
+    comps = [{"designator": "BT1", "type": "battery_holder", "lcsc": "C9000516", "pins": {"1": "+", "2": "-"}},
+             {"designator": "J1", "type": "connector", "lcsc": "C9000515", "pins": {"1": "1", "2": "2"}},
+             {"designator": "U1", "type": "ic", "lcsc": "C9000517", "pins": {"1": "VDD", "2": "GND"}}]
+    parts = {"C9000515": TERMINAL, "C9000516": CELL, "C9000517": LOGIC}
+    assert reversed_at({"VBAT": ["BT1.1", "J1.1"], "5V": ["J1.2", "U1.1"], "GND": ["BT1.2", "U1.2"]},
+                       comps, parts) == []                                 # before: ["U1.1"]
+    assert reversed_at({"VBAT": ["BT1.1", "J1.1", "U1.1"], "5V": ["J1.2"], "GND": ["BT1.2", "U1.2"]},
+                       comps, parts) == ["U1.1"]
