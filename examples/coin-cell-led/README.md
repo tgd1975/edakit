@@ -21,6 +21,7 @@ soldered by hand (D-4). Released on 2026-10-31.
 | [hardware/signoff.json](hardware/signoff.json) | the manual checks: M-1, M-6 and M-5 signed by the review agents; M-2 (before paying) and M-4 (the delivered boards) open |
 | [docs/decisions.md](docs/decisions.md) | D-1 to D-7 |
 | [docs/schematic.svg](docs/schematic.svg), [docs/pcb_plan_main.png](docs/pcb_plan_main.png), [docs/silk_main_top.png](docs/silk_main_top.png) | drawn by `edakit schematic draw`, `edakit pcb plan` and `edakit silk apply` |
+| [docs/board_main_top.png](docs/board_main_top.png), [docs/board_main_layers.png](docs/board_main_layers.png) | drawn by the gate run of 2026-11-01 from its Gerber files: the board as made, and all layers from above |
 
 Offline, from this folder:
 
