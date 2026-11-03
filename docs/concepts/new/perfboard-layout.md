@@ -2,8 +2,8 @@
 
 Status 2026-11-03: concept from an idea of the owner the same day ("nach dem Schema gibt es ja auch die prototypische
 Umsetzung auf den Europlatinen … da braucht man auch eine Anordnung der Elemente und wo die Kabel laufen sollten …
-das wäre doch auch eine Möglichkeit, das generieren zu lassen"). Nothing decided, nothing built; the open decisions
-are at the end.
+das wäre doch auch eine Möglichkeit, das generieren zu lassen"), decided in a decision round the same day (decisions
+1 to 5 the owner's, 6 to 10 Claude's and confirmed, at the end). Nothing built: every step starts on the owner's word.
 
 ## Why
 
@@ -26,12 +26,15 @@ look of the schematic. This is the build plan of a board – for a perfboard wha
 One model covers every kind: a grid of holes at a pitch, and groups of holes the copper already joins. A cut splits a
 group, a wire or a solder bridge joins two holes.
 
-| Kind | Groups joined by copper | Typical use |
-| --- | --- | --- |
-| Lochraster (pad per hole) | none | every connection a wire or a solder bridge |
-| Streifenraster (stripboard) | each row a strip | nets along the strips, cuts between them, links across |
-| Lochstreifen (3-hole strips and the like) | short runs of n holes | between the two above |
-| Breadboard pattern (5-hole columns, two rails per side) | columns and rails | a breadboard build moved onto solder |
+| Kind | Groups joined by copper | Typical use | Built first (decision 2) |
+| --- | --- | --- | --- |
+| Lochraster (a pad per hole) | none | every connection a wire or a solder bridge | yes |
+| Lochstreifen (a pad over three holes) | runs of three holes | a part's lead and two wires share a pad | yes |
+| Streifenraster (stripboard) | each row a strip | nets along the strips, cuts between them, links across | when a project asks |
+| Breadboard pattern (5-hole columns, two rails per side) | columns and rails | a breadboard build moved onto solder | when a project asks |
+
+The two the owner has come first, "keine Wissenschaft daraus machen": the model stays general, so another kind later
+is a file of data, no new code.
 
 Each kind is a file of data beside the makers' profiles, `edakit/perfboards/<kind>.toml`: pitch (2.54 mm), hole
 diameter, the pattern of its groups, single- or double-sided, the usual sizes (Europlatine 160 × 100 mm, half
@@ -46,27 +49,30 @@ from the pitch, so the drawing, the mechanical model and the body checks work in
 
 ```toml
 [perfboard]
-kind = "stripboard"          # edakit/perfboards/stripboard.toml
-holes = [30, 20]             # the piece used: 30 columns (A to AD) × 20 rows; strips along the rows
+kind = "pad-per-hole"        # edakit/perfboards/pad-per-hole.toml – or "3-hole-strips"
+holes = [30, 20]             # the piece used: 30 columns (A to AD) × 20 rows
 mounting = ["A1", "AD1", "A20", "AD20"]
 
 [place]                      # the hole of pin 1, the rotation; axial parts their lead span in holes
-U1 = { at = "H8", rot = 0 }              # DIP-8 across rows 8 to 11: the strips under it are cut in column J
+U1 = { at = "H8", rot = 0 }              # DIP-8 in a socket
 R1 = { at = "D4", rot = 90, span = 4 }   # 0207 lying flat: 10.16 mm
 C1 = { at = "M6", rot = 0 }
 J1 = { at = "A10", rot = 270 }
-
-[strips]
-cuts = ["J8", "J9", "J10", "J11", "P4"]  # cut at the hole, with the spot-face cutter
 
 [[wire]]
 net = "VCC"
 path = ["D2", "D9"]          # straight between holes; more points for a bent run
 side = "top"                 # top: insulated wire; bottom: bare wire or a solder bridge
+
+[[wire]]
+net = "GND"
+path = ["H11", "H12"]
+side = "bottom"
+kind = "bridge"              # a solder bridge between two neighbouring pads
 ```
 
-On a Lochraster board a solder bridge between two neighbouring holes is a wire of length one on the bottom
-(`kind = "bridge"`). Wire colours follow the net (supply red, ground black) unless the plan names one.
+A kind with strips that are cut gets `cuts = [...]` in a section `[strips]` – not on the two kinds built first. Wire
+colours follow the net (supply red, ground black) unless the plan names one.
 
 ## What edakit checks
 
@@ -77,61 +83,83 @@ The plan is the layout of a hand-wired board; its checks belong where the layout
   two nets shorted, a pin in no hole, two pins in one hole. The core of it – this is what goes wrong by hand.
 - **The grid.** Every pad of a placed part lands on a hole, from the pads of its parts entry or the library cache. A
   part whose pins are off the 2.54 mm grid (a slide switch with terminals 2.0 mm apart, a terminal block at 3.5 mm) is
-  a finding, within a tolerance that leads can be bent to as a value of the kind's data; an SMD part is a finding with
-  its way out – a through-hole part, or an adapter board as a bought board.
+  an error beyond a tolerance that leads can be bent to, a value of the kind's data. An SMD part is an error: a
+  perfboard takes through-hole parts only (decision 3).
 - **Bodies.** Body boxes (footprint outline, `body.box`) do not overlap; an axial part's span is at least its body
   plus the bend of its leads; nothing sits on a mounting hole.
 - **Wires.** Bare wires and bridges on the bottom do not cross and touch no foreign pad; insulated wires on top may
   cross; each wire has its length.
-- **Current.** A strip or a wire carries its net's current – from the simulation where it has one, against the
-  strip's rating from the kind's data and the wire's gauge.
+- **Current.** A wire, a bridge or a strip carries its net's current – from the simulation where it has one, against
+  the wire's gauge and the copper's rating from the kind's data.
 - **The hand-over.** `fixed`, `edge` and `near` hold as on a PCB: a connector at the edge, the decoupling capacitor
   within `near_mm` of its IC.
 
 ## What edakit draws and writes
 
 - **Top view:** parts with their designators and polarity, wires in their colours, hole names at the edges.
-- **Bottom view, mirrored** and labelled "seen from below": strips, cuts, bridges, bare wires – the mirror is drawn by
-  edakit, never by the maker.
+- **Bottom view, mirrored** and labelled "seen from below": pads, bridges, bare wires (strips and cuts on a kind that
+  has them) – the mirror is drawn by edakit, never by the maker.
 - **Build list:** the order of soldering from low to high – bridges and links, resistors, diodes, sockets,
   capacitors, connectors, modules –, each with its holes and its polarity.
-- **Test list for the multimeter:** per net the pairs of holes that must beep across each cut, wire and bridge; at
-  each cut the two neighbouring strips that must not; supply to ground before the first power-up.
+- **Test list for the multimeter:** per net the pairs of holes that must beep across each wire and bridge; next to
+  each bridge and bare wire the neighbouring pads of other nets that must not; supply to ground before the first
+  power-up.
 - **The order:** the board, wire and sockets as items off the board (`[[extra]]`, handbook 8.4), so `edakit order`
   puts them into the cart – and, once it is built, the parts on hand (`docs/concepts/new/parts-on-hand.md`) take what
   lies in the drawer off it.
 
 The drawings are SVG, as `edakit schematic draw` writes them, and read in the light and the dark theme of the site.
 
-## Who generates the plan
 
-| Way | How | For | Against |
-| --- | --- | --- | --- |
-| **A. Claude writes, edakit checks** | Claude writes `[perfboard]`, `[place]`, cuts and wires as text, edakit checks and draws, Claude fixes the findings until none is left – as with the PCB placement plan | small to build: data, parser, check, drawing; nothing outside the repository; the check makes a wrong plan visible, not the model's grid sense | a model places on a grid poorly by itself – several rounds on a board of 20 parts, tokens each time |
-| **B. edakit generates** | `edakit perfboard place` and `route`: on stripboard nets onto strips, parts so that a net's pins share a strip, cuts between, links for the rest; on Lochraster a maze router on the bottom grid, insulated wires as the fallback; fixed parts from the hand-over stay | a good plan at the first go, the same result every run | the larger piece of work; a search with its own tuning |
-| **C. VeroRoute** | edakit writes a KiCad netlist (handbook 16), the maker lays out in [VeroRoute](https://appstream.ubuntu.com/noble/universe/metainfo/veroroute.html) – stripboard, perfboard, netlist import from KiCad, auto-routing and a connectivity check | exists, open source | the plan lives in a GUI program and its file – against the yardstick unless edakit reads that file back |
+## Who writes the plan
 
-Recommended: A first – the check and the drawing are needed in every way, and with them a plan Claude writes is safe
-–, then B piece by piece where the rounds of A cost too much (a `place --rest` for the parts without a hole first).
-C only to compare the quality of A and B on the same circuit.
+Claude, as for a PCB (decision 1): the same round, only that the board is a perfboard and a person solders it. Claude
+takes the hand-over, writes `[perfboard]`, `[place]` and the wires as text, edakit checks and draws, Claude fixes the
+findings until none is left and shows the drawings. The check makes a wrong plan visible, not the model's grid sense.
 
-## Circuits designed for assembly
+Two other ways were weighed and are not taken now:
 
-A board designed for JLCPCB's assembly is SMD: blinker-555 has everything in 0805, SOIC-8 and SOT-23 but the battery
-holder and the switch, and the switch's terminals are 2.0 mm apart. Its perfboard build is the same circuit with other
-parts – through-hole resistors, a DIP-8 555, a 5 mm LED. edakit has the place for it: a variant, a project of its own
-in a folder below the main project that reads the main project's files and its own (handbook 3, 10.4). Its graph swaps
-the parts entries; its simulation, its checks and its requirements stay those of the circuit.
-
-## Open decisions
-
-| # | Question | Alternatives (recommendation first) |
+| Way | How | Why not now |
 | --- | --- | --- |
-| 1 | Who generates the plan? | A, then B piece by piece · B straight away · C (VeroRoute) |
-| 2 | Which kinds first? | stripboard and Lochraster · stripboard only · all four of the table |
-| 3 | A circuit designed in SMD on a perfboard? | a variant with through-hole parts · a second board in the same graph · not supported, a finding only |
-| 4 | Where in the gate? | stage L of a hand-wired board: its plan in the layout hash, the pcb-reviewer's M-5 on it · outside the gate, a drawing only |
-| 5 | The first circuit to try it on? | a through-hole variant of blinker-555, as an example the tests hold · a real project of the owner |
+| edakit generates | `edakit perfboard place` and `route`: parts so that a net's pins come close, a maze router on the bottom grid, insulated wires as the fallback; fixed parts from the hand-over stay | the larger piece of work, a search with its own tuning; it comes piece by piece only where the rounds of Claude cost too much (decision 6) |
+| [VeroRoute](https://appstream.ubuntu.com/noble/universe/metainfo/veroroute.html) | edakit writes a KiCad netlist (handbook 16), the maker lays out in VeroRoute – stripboard, perfboard, netlist import from KiCad, auto-routing, a connectivity check | the plan would live in a GUI program and its file, against the yardstick |
 
-By the yardstick: nothing of the plan stays only in EasyEDA or in someone's head – the board file holds it, edakit
-draws and checks it; with C the plan would live in VeroRoute's file.
+## Through-hole only
+
+A perfboard takes through-hole parts (decision 3). A circuit designed in SMD for assembly – blinker-555 and
+coin-cell-led are, but for blinker-555's battery holder and switch – is built on a perfboard as a variant: a project
+of its own in a folder below the main project, reading its files and its own (handbook 3, 10.4), with a board
+`wired = true`, through-hole parts entries and the plan. Its simulation, checks and requirements stay those of the
+circuit. The bell has such variants already (`variants/tht`, `variants/esp32tht` of automatic_christmas_bell), as PCBs.
+
+## Steps
+
+| Step | What | Done when |
+| --- | --- | --- |
+| LR.1 (the kinds) | `edakit/perfboards/pad-per-hole.toml` and `3-hole-strips.toml`: pitch, hole, groups, sizes, copper rating with source | both read, a test per kind |
+| LR.2 (plan and nets) | `[perfboard]`, `[place]` in holes, `[[wire]]` read from the board file of a board `wired = true`; the nets the plan makes against the graph's | open, short, pin without hole, two pins in a hole each a test |
+| LR.3 (the other checks) | grid and bend tolerance, SMD, bodies and spans, bare wires, current, the hand-over's `fixed`, `edge`, `near` | a negative test each |
+| LR.4 (drawings and lists) | top view, mirrored bottom view, build list, test list for the multimeter, the board and the wire as `[[extra]]` | SVGs read in both themes |
+| LR.5 (stage L) | the plan in the layout hash of a hand-wired board, stage L runs LR.2 and LR.3, the agent pcb-reviewer's M-5 on it (decision 4) | the gate of a variant passes and fails as it should |
+| LR.6 (the round) | the skill pcb-round with the perfboard round, the handbook's section (7 or 4.5) | handbook and skill name the same keys |
+| LR.7 (the examples) | a perfboard variant of coin-cell-led and of blinker-555, each with a plan the tests hold | both pass the gate |
+| LR.8 (the bell) | a perfboard variant of the bell from its THT parts, in the bell's repository by its session | the bell soldered on a perfboard from the plan |
+
+## Decisions
+
+The owner's answers of 2026-11-03 in a decision round, decisions 6 to 10 Claude's, confirmed by the owner the same day.
+
+| # | Decision | Reason | Alternatives |
+| --- | --- | --- | --- |
+| 1 | Claude writes the plan, edakit checks and draws it – the round of a PCB | "das ist genauso wie PCB und Bestückung, nur dass es halt nicht PCB ist und maschinelle Bestückung" | edakit generates the plan; VeroRoute |
+| 2 | First the two kinds the owner has: a pad per hole, and a pad over three holes; others as data when a project asks | "ich hab die mit den Einzelkupferflächen und die mit den drei Löcher überdeckenden Kupferflächen – ich würd da keine Wissenschaft daraus machen" | stripboard first; all four kinds |
+| 3 | Through-hole only: an SMD part on a perfboard is an error, no adapter boards | "keine SMD … das sind offensichtlich ausschließlich THT" | an SMD part as a finding with an adapter board as its way out |
+| 4 | The plan is stage L of a hand-wired board: in the layout hash, checked by the gate, M-5 by the pcb-reviewer | "warum nicht … wir wollen ja, dass unsere Pläne gut sind" | a drawing outside the gate |
+| 5 | Tried on both examples and on the bell | "wir haben zwei Beispielschaltungen und die Glocke ist immer ein dankbarer Kandidat" | one circuit only |
+| 6 | No generator of edakit's own for now; help like a `place --rest` only once the bell's rounds show too many iterations | decision 1; the check is needed in every way, the generator only if the rounds cost too much | the generator in the first build |
+| 7 | The skill pcb-round carries the perfboard round, the agent pcb-reviewer reviews it – no new skill, no new agent | decision 1: the same role, the PCB designer of handbook 14.1 | a skill perfboard-round of its own |
+| 8 | The examples get a variant each, `examples/coin-cell-led/variants/perfboard/` and `examples/blinker-555/variants/perfboard/`, their through-hole parts chosen with the skill part-search in LR.7 – blinker-555's switch with 2.54 mm terminals | decision 5; the tests hold a variant like the example | plans only in the tests' fixtures |
+| 9 | The bell's perfboard build is a variant in automatic_christmas_bell, built by that repository's session after LR.7 | the bell's files are its repository's | a copy of the bell in edakit's tests |
+| 10 | Holes named by column letter and row number, A1 at the top left seen from the top; the kinds `pad-per-hole` and `3-hole-strips` | as many Euro boards print them at their edges | coordinates in mm; numbers for both axes |
+
+By the yardstick: nothing of the plan stays in someone's head – the board file holds it, edakit checks and draws it.
