@@ -69,8 +69,8 @@ OTHER_HEAD = ["Code", "Quantity", "Item", "Designators"]
 
 
 SUPPLIERS = Path(__file__).with_name("suppliers")
-SUPPLIER_KEYS = ("name", "recorded", "start", "currency", "formats", "max_lines", "columns", "upload", "cart", "never",
-                 "rounds", "combine")
+SUPPLIER_KEYS = ("name", "recorded", "start", "currency", "formats", "max_lines", "columns", "upload", "mapping", "cart",
+                 "cart_dialog", "never", "rounds", "weight", "combine")
 COMBINE_TEXT = ("maker", "page", "read")      # [combine]: besides these, conditions, express_above_g and the address
 CODE, TITLE = "ORDER.basket", "the supplier's cart = the basket"
 BASKET, CART_JSON, CART_PAGE, SHIPPING, SHIPPING_PAGE, CHECK = (
@@ -293,8 +293,9 @@ def check(design, rep, cfg=None):
 # --- edakit order check ----------------------------------------------------------------------------------------------
 
 def digits(text):
-    """The page text with thousands separators gone, for finding a quantity as read ("1,000" is 1000)."""
-    return re.sub(r"(?<=\d)[,\u202f\u00a0'](?=\d{3}\b)", "", text)
+    """The page text with thousands separators gone, for finding a quantity as read ("1,000" is 1000, LCSC's
+    "1,500g" is 1500g)."""
+    return re.sub(r"(?<=\d)[,\u202f\u00a0'](?=\d{3}(?!\d))", "", text)
 
 
 def on_page(page, value):

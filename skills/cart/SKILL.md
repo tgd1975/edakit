@@ -159,15 +159,19 @@ data, a CAPTCHA or login stops you, nothing is ordered or paid.
    nothing else of the projects.
 2. **The cart first.** Open LCSC's cart in a new tab and read every line there – code and quantity – into `before` of
    `cart.json`. Those lines are the owner's: never changed, deleted or ordered by you.
-3. **Upload.** Open the profile's `start` (the BOM tool), its `upload` with `cart_lcsc.csv` from the basket's folder;
-   map the columns to the file's header (`columns`) where the tool asks. A provisional profile (`recorded` false): a
-   label you do not find exactly stops you with its name.
-4. **Read back.** Every line the tool shows: code, quantity after LCSC's rounding, stock, unit price, and any mark
-   (discontinued, replaced, another part proposed) as the page writes it. A part the tool proposes instead is reported,
-   never chosen.
-5. **Into the cart.** Press the profile's `cart` – that one; at a provisional profile only after the owner confirmed
-   the label in the chat. Read the cart again: every line, the weight, the currency. Write `<out>/lcsc/cart.json`
-   and the page text of the tool and the cart into `<out>/lcsc/cart_page.txt`:
+3. **Upload.** Open the profile's `start` (the BOM tool), its `upload` with `cart_lcsc.csv` from the basket's folder.
+   On "BOM Mapping" check that the columns are mapped to the file's header (`columns`; LCSC names Comment
+   "Description") and leave its other settings, then press the profile's `mapping` – it saves the list in the account
+   and matches it. A label you do not find exactly stops you with its name.
+4. **Read back.** Wait until the list has matched every line ("n done / n total" gone; the counts at the top are not
+   final before). Every line the list shows: code, quantity after LCSC's rounding, stock, unit price, and any mark
+   (discontinued, replaced, another part proposed) as the page writes it; scroll to its foot, its last rows are drawn
+   late. A part the tool proposes instead is reported, never chosen.
+5. **Into the cart.** Press the profile's `cart` at the list's foot, and in its dialog – the entire list into the cart
+   it names "(current)" – the profile's `cart_dialog`; nothing else there. Read the cart again: every line, the
+   weight ("Estimated Weight"), the currency – its quantities are input fields, so the list's text carries them. Write
+   `<out>/lcsc/cart.json`, and the line areas of the list and the cart into `<out>/lcsc/cart_page.txt` – never the
+   cart's "Ship To" block, which holds the owner's address:
 
    ```json
    {"supplier": "lcsc", "read": "2026-11-02T10:00:00+01:00", "currency": "USD", "weight_g": 1500,
