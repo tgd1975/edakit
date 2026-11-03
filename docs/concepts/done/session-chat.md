@@ -9,8 +9,8 @@ form (the table at the end): decisions 1, 2, 3 and 5 as recommended; decision 4,
 left to Claude by the owner the same day ("du wirst für beide eine gute Idee haben") – taken as recommended. Built
 2026-11-03 on the owner's word ("setze das konzept session-chat.md um"), S.1 to S.5 in one branch: `docs/session.md`,
 the fence in `docs/pages.py` (`chat_parse`, `chat_html`), the styles in `docs/brand/edakit.css`,
-`tests/test_session_page.py`, the excerpt on the start page; the format in `docs/style.md`, "A chat". Left: the live run
-S.6, in `TODO.md`. What the build changed against the draft is under "As built".
+`tests/test_session_page.py`, the excerpt on the start page; the format in `docs/style.md`, "A chat". The live run S.6 the same
+day, in a session of the owner's; what it changed is under "The live run", what the build changed under "As built".
 
 ## Why
 
@@ -263,6 +263,33 @@ Taken by the owner on 2026-11-03 in a decision round in Claude Code's form, the 
 
 Set by Claude and left to it by the owner on 2026-11-03, kept as it stands: the seven kinds of entry; the layout of section 4; the tally's wording; the page's
 name "A session" and its place after the start page; the budget of 1,000 words; no decision numbers in the chat.
+
+## The live run (S.6)
+
+On 2026-11-03 the owner typed the chat's first sentence into a session of the plugin 1.1.0 (main was at 1.1.13; the
+skills new-project and requirements differ by eight lines) and answered its forms up to the decisions. The session ran
+in the Christmas bell's repository and set up a new one beside it, `desk-led`, which the owner takes on to the cart and
+publishes. Held against the chat, up to step 5:
+
+| Step | The chat as drafted | The live run |
+| --- | --- | --- |
+| 2 Setup | one form, 8 questions | three forms, 12 questions – the repository's place (asked because the session ran in another project), the tool chain, the maker, who solders, sets and finish, purpose, budget, the drawing, the requirements, the size, the names, documents and scripts |
+| 3 Requirements | "from 1 mA?", "down to 2.5 V?", accept | how the LED lights (only while held), which cell, which colour, which button; then the drafts accepted in a form |
+| 4–5 Findings | the owner decides PATH.reverse and LIM.i | Claude accepted both itself, with their reasons in D-3, and reported it – against agreement 4 of handbook 11.4 ("accepting a warning" is the user's); the skill circuit-design says "accept only with a reason that holds" |
+| 8 Reviews | "Start each reviewer in a new session" | Claude started both agents itself, in contexts of their own; nothing for the owner |
+| 9 Layout | the EasyEDA project before the layout | the same, asked as the project's first todo while the reviews ran |
+
+Decided by the owner the same day in a decision round in Claude Code's form, each as recommended:
+
+| # | Question | Decision |
+| --- | --- | --- |
+| 6 | Step 2 in the chat | 2026-11-03: as live – three forms, the first with its options, the others with their questions and answers; the repository's place left out, a session in an empty repository does not ask it |
+| 7 | Step 3 in the chat | 2026-11-03: the live run's questions; 1 mA and 2.5 V are Claude's draft of R-1, accepted by the owner |
+| 8 | Claude accepting findings itself | 2026-11-03: the skill is fixed on a branch of its own – circuit-design brings every accept of a warning or an error into the decision round; the chat keeps step 5 |
+| 9 | What Claude set itself | 2026-11-03: confirmed – step 8 loses its line outside the chat, `docs/steps/08-have-it-reviewed.md` says Claude starts the reviewers; steps 6 and 9 stay as the record has them |
+
+The tally is now 6 messages typed, 21 answers in 8 forms, 5 things done outside the chat. With the colour asked in
+step 3, the red LED is the owner's answer, and step 5 has two findings, no third question to confirm Claude's choice.
 
 ## As built
 

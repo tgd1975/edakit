@@ -50,7 +50,7 @@ and hold the boards.
 
 ```chat
 you: A board for my desk: a coin cell, a push button and an LED. Press the button and the LED lights.
-claude: I'll set the project up first. One form, the recommended answer first.
+claude: A new project: first the setup, in three forms.
 form: A finding to decide
   ? PATH.reverse: a CR2032 put in upside down reaches R1 and D1. Protect against it?
   - No protection (recommended): D1 blocks, 3.2 V against its rated 5 V.
@@ -61,7 +61,7 @@ you: Round, please.
 ran: /edakit:cart: every field set and read back, the quote checked against the estimate. Stopped at the cart.
 ```
 
-Your part in the whole session: 8 messages typed, 15 answers in 5 forms, 6 things done outside the chat.
+Your part in the whole session: 6 messages typed, 21 answers in 8 forms, 5 things done outside the chat.
 [The whole session](https://tgd1975.github.io/edakit/start/session/), from the first sentence to the cart.
 
 The [walkthrough](https://tgd1975.github.io/edakit/handbook/17-walkthrough/) shows it on a small board: 14 steps, six of

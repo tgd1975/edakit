@@ -24,7 +24,6 @@ FENCED = ("README.md", "docs/session.md", "docs/how-it-works.md")
 # and the requirements E-… of upstream/README.md whose click it is. A new do: line needs its row here.
 DO = {
     "Once: add the plugin": ("01-install.md", "add the plugin", ()),
-    "Start each reviewer in a new session": ("08-have-it-reviewed.md", "Start each reviewer in a session of its own", ()),
     "Install EasyEDA Pro and import its bridge extension": ("09-lay-out-the-board.md", "File → New → Project",
                                                            ("E-1", "E-4", "E-17")),
     "Start a new session and type /edakit:pcb-round": ("09-lay-out-the-board.md", "start a new session", ()),
