@@ -48,8 +48,8 @@ board, the schematic or the checks (the earlier one-file form) is refused with a
 | `distributors` | `["lcsc"]` | where the agent part-selector searches, in this order: `lcsc`, `rs`, `farnell`, `mouser`, `digikey`, `reichelt` (4.2) |
 | `lock` | `auto` | EasyEDA claim between Claude sessions: `auto` (when `CLAUDE_CODE_SESSION_ID` is set) or `off` |
 | `agreements` | `true` | the working agreements (11.4), one line each, in the context of every Claude Code session in the project – below |
-| `graph` | `hardware/graph.json` | the hardware graph (3.1): a `.json` file, a `.toml` file with the same keys – below –, or a `.circuit` file of the circuit language (chapter 19) |
-| `parts` | `hardware/parts` | parts database, one JSON per part (LCSC number or manufacturer part number); a list of folders for a variant of the circuit language – its own first, then its base's (`["hardware/parts", "../../hardware/parts"]`, chapter 19): an entry is taken from the first that has it, and the circuit hash takes the entries the graph uses |
+| `graph` | `hardware/graph.json` | the hardware graph (3.1): a `.json` file, a `.toml` file with the same keys – below –, or a `.circuit` file of the circuit language (chapter 20) |
+| `parts` | `hardware/parts` | parts database, one JSON per part (LCSC number or manufacturer part number); a list of folders for a variant of the circuit language – its own first, then its base's (`["hardware/parts", "../../hardware/parts"]`, chapter 20): an entry is taken from the first that has it, and the circuit hash takes the entries the graph uses |
 | `sim` | `hardware/sim.json` | simulation config (chapter 5) |
 | `sim_plugin` | – | optional Python file with `MODELS` and `checks` (5.1) |
 | `schematic` | `hardware/schematic.toml` | the schematic file (10.3) |
@@ -534,7 +534,7 @@ status = "accepted"
 A part or a net of the graph names what it answers with `satisfies` (`["R-3"]`), and a decision with `decision`
 (`["D-8"]`): DOCS.ref holds `satisfies` to the requirements of the files and – with `[release] publish.decisions` – a
 `decision` to the headings `## D-…` of the decision log; `edakit req` lists a requirement's parts and nets. The same
-file may be written in the notation of the circuit language, `hardware/requirements.circuit` (chapter 19), read to
+file may be written in the notation of the circuit language, `hardware/requirements.circuit` (chapter 20), read to
 the same entries and hashed byte for byte as well.
 
 `verify`, one kind per entry:
@@ -737,7 +737,7 @@ The language server of the circuit language over stdio (the extra lsp: pygls).
 
 `edakit lsp` – EasyEDA: no
 
-- The language server of the circuit language over stdio, for an editor (chapter 19). **Reads:** the editor's text,
+- The language server of the circuit language over stdio, for an editor (chapter 20). **Reads:** the editor's text,
   the project's edakit.toml and parts entries. **Writes:** – . Needs the extra `lsp` (pygls); without it exit 1 and
   what to install.
 
@@ -1379,7 +1379,7 @@ edakit.toml                 the table of contents: project, boards, where the fi
 hardware/requirements.toml  what the circuit must do: needs and requirements, if [project] requirements names it
 hardware/graph.toml         the hardware graph (only source of parts and connections), ground net, check settings;
                             hardware/graph.json in a project that has not converted
-hardware/graph.circuit      the graph in the circuit language, where [project] graph names it (chapter 19)
+hardware/graph.circuit      the graph in the circuit language, where [project] graph names it (chapter 20)
 hardware/graph.json         beside a TOML or .circuit graph: the resolved graph, generated (edakit graph json --write),
                             never edited
 hardware/parts/*.json       parts database; an own footprint as data in its entry (footprint_data, 4.5)

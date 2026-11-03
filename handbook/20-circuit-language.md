@@ -1,4 +1,4 @@
-# 19 The circuit language
+# 20 The circuit language
 
 For you if a circuit repeats itself, comes in variants, or has values that follow from a rule – an LED's series
 resistor, a divider, a pull-up. After this chapter you can write a project's graph as `.circuit` source, compile and
@@ -6,7 +6,7 @@ check it, format it, move a JSON or TOML project to it, and derive a block's val
 [circuit-dsl-language.md](../docs/concepts/new/circuit-dsl-language.md); this chapter grows with the steps of
 [circuit-dsl-toolchain.md](../docs/concepts/new/circuit-dsl-toolchain.md).
 
-## 19.1 One graph, three forms
+## 20.1 One graph, three forms
 
 A project writes its circuit in one of three forms, named by `[project] graph` in edakit.toml: the JSON graph, the
 TOML graph (3.1), or the language – `hardware/graph.circuit`. The compiler turns the language into the resolved graph
@@ -29,7 +29,7 @@ advice (chapter 15).
 
 Encoding UTF-8, lines ending in LF, no tabs; `edakit graph fmt` writes lines of at most 118 characters.
 
-## 19.2 Words, strings and quantities
+## 20.2 Words, strings and quantities
 
 A statement starts at the first column with a keyword; lines indented deeper belong to it. `def`, `for` and
 `variant` own their indented lines as a body, one level deeper; every other statement takes them as continuation
@@ -52,7 +52,7 @@ Units: `V A W Ω F H Hz °C s m %`, with `ohm`, `ohms` and `R` for Ω; multiplie
 unit is expected takes that unit; a lone `m` is the metre, `mA` milli. A bare number at one end of a range takes the
 other end's unit but not its multiplier, so `2..15 mA` is refused – write `2 mA..15 mA`.
 
-## 19.3 The statements of a graph
+## 20.3 The statements of a graph
 
 ```text
 graph led-bar version 1.0 date 2026-10-25
@@ -92,7 +92,7 @@ for true, a key unknown to the attribute table an error that names the nearest o
 where it differs from its entry's; `alias led1 = PD6` gives a module's pins the project's names, replaced before the
 words are read.
 
-## 19.4 Definitions and the block library
+## 20.4 Definitions and the block library
 
 A definition is a block written in the language: its parameters with defaults, its ports with their descriptions,
 its parts, nets and derivations, the codes it was checked against, its optional parts and ports, its notes.
@@ -116,7 +116,7 @@ are written so, in `edakit/blocks/<name>.circuit`, and the JSON `block add` read
 edakit.lang.blocks --write`, held to the sources by a test. A definition's errors are compile errors: a port that is
 none of its nets, a part or net twice, a derivation whose target it does not have.
 
-## 19.5 Derivations
+## 20.5 Derivations
 
 A derivation is a rule of edakit's that derives a part's value from the parameters, the ranges of the nets it is
 bound to and the entries of the parts: the series resistor of an LED from its current, a divider from its output
@@ -160,7 +160,7 @@ The rules, generated from their table (`edakit/lang/rules.py`), each choosing fr
 | `rc` | `f_c` (the corner frequency), `c` (optional), `r` (optional) | value: R = 1 / (2π f_c C), C = 1 / (2π f_c R) | E24 for a resistor, E6 for a capacitor; one step |
 <!-- edakit:end -->
 
-## 19.6 Usages, loops and parameters
+## 20.6 Usages, loops and parameters
 
 A usage puts a definition – the project's own, or a block of edakit's library by its name – into the graph:
 
@@ -189,7 +189,7 @@ is expected: a net's range, a usage's parameter. `alias led1 = PD6` gives a modu
 `include hardware/defs.circuit` reads another file into the same namespace, in its place and once; a designator,
 net, parameter, definition or instance declared twice names both places.
 
-## 19.7 Variants and requirements
+## 20.7 Variants and requirements
 
 A variant is a project of its own whose source names its base, the main file or another variant:
 
@@ -212,6 +212,11 @@ Its resolved graph is complete, and its circuit hash takes the entries it uses, 
 only where it reaches its circuit. `edakit hook` runs every variant whose files or the main project's `hardware/` a
 commit touches.
 
+The language replaces the graph only. What else a project has stays the variant's own, beside its source: its
+`edakit.toml`, the board files its `[boards]` name, `schematic.toml`, `sim.json`, the firmware – copied from the base
+to start with – and a sign-off file of its own: the base's sign-offs were given for another circuit and do not carry
+over.
+
 Requirements may be written in the notation, in a file of `[project] requirements` – never in the graph's source:
 
 ```text
@@ -226,7 +231,7 @@ requirement R-3 from N-1 must "Every countdown LED carries 2 to 15 mA while its 
 and kept as text – `verify` names what tests it. A part or net answers with `satisfies R-3` and cites a decision with
 `decision D-8`; DOCS.ref resolves all of them (10.4).
 
-## 19.8 What the compiler does
+## 20.8 What the compiler does
 
 `edakit graph json` reads the source and writes the resolved graph; every phase collects all its errors before it
 stops, each as `PATH:LINE: TEXT`. The phases: read the statements; check the names across the project – a
@@ -238,7 +243,7 @@ a broken TOML graph does, with file and line.
 The compiler reads no simulation config, no board file and no sign-off; it writes no parts entry – a part without
 one whose pins are named by word is an error that names `edakit part add KEY` – and allocates no designator.
 
-## 19.9 The resolved graph and the hash
+## 20.9 The resolved graph and the hash
 
 The resolved graph is the JSON graph of 3.1 in every key, plus `derivations` where the source has derivations. The
 circuit hash takes the compiled data as the TOML form takes a TOML graph's – arranged, `[release] hash_ignore`
@@ -249,7 +254,7 @@ does. `graph_sha256` names the source's bytes. The generated `graph.json` is in 
 to; `edakit hook` runs it before each commit (2.7). `edakit check` reports the same as SYNC.graph, an error of stage
 G, for a TOML graph as for a language one; a generated file not written yet is the hook's to report.
 
-## 19.10 SysML v2 and KerML
+## 20.10 SysML v2 and KerML
 
 ```bash
 edakit graph sysml [--out DIR]     # <artifacts>/sysml/: <project>.sysml, <project>.json, Electrical.sysml
@@ -276,7 +281,7 @@ dependency group `sysml` with Syster's `systree`), against the standard library 
 its folder `sysml.library`, an optional job of the CI that loads the release 2025-12; a graphical tool's import is no
 test of edakit's.
 
-## 19.11 Commands
+## 20.11 Commands
 
 | Command | What it does |
 | --- | --- |
@@ -284,13 +289,13 @@ test of edakit's.
 | `edakit graph fmt [--check] [FILE …]` | the canonical layout, comments kept; `--check` exits 2 at the first line that would change |
 | `edakit graph convert --to circuit [--dry-run]` | a JSON or TOML project moved to `hardware/graph.circuit`: flat statements, read back before anything is written, `[project] graph` and `edakit` set, the circuit sign-offs carried over |
 | `edakit graph derive [--write]` | every derivation record evaluated again |
-| `edakit block add NAME … --set P=V [--part DES=KEY]` | a block's derivations run (19.5) |
-| `edakit graph sysml\|kerml [--out DIR]` | the project as SysML v2 or KerML (19.10) |
+| `edakit block add NAME … --set P=V [--part DES=KEY]` | a block's derivations run (20.5) |
+| `edakit graph sysml\|kerml [--out DIR]` | the project as SysML v2 or KerML (20.10) |
 
 A converted project needs the edakit that reads the language: `[project] edakit` names it, and an older plugin says
 so at the session start (STRUCT.edakit).
 
-## 19.12 The editor
+## 20.12 The editor
 
 `edakit lsp` is the language server, over stdio, for a person in an editor – a model edits through the command line
 and `graph show` and needs none of it. It answers the reader's and the compiler's errors as they are typed, the

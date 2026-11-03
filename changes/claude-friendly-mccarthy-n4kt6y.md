@@ -20,9 +20,9 @@ patch
   derives a block's values and writes the record into the graph's `derivations`, `--part DES=KEY` takes an
   entry inside the window; `edakit graph derive [--write]`; `edakit graph show` lists a part's records. New
   engine DEF: DEF.derive, a warning when a part's value lies outside its record's window or the record's inputs
-  changed since (grade inputs). Handbook chapter 19 begins.
+  changed since (grade inputs). Handbook chapter 20 begins.
 - T.9: a TextMate grammar for `.circuit` files and VS Code's language configuration (`editors/vscode/`).
-- T.10: handbook chapter 19, the circuit language: its forms, words and quantities, statements, definitions,
+- T.10: handbook chapter 20, the circuit language: its forms, words and quantities, statements, definitions,
   derivations, the compiler, the hash and the commands; 3.1, 2.7 and 10 name the `.circuit` form.
 - T.11: `use DEF INSTANCE (PARAM = VALUE) PORT = NET … PART = DES …` – a definition of the project's or of
   edakit's block library expanded into parts and nets, its derivations evaluated into the graph's records.
@@ -40,7 +40,7 @@ patch
 - `edakit graph fmt` writes a `set` whose JSON does not fit the line one member to a line, compact where a member
   fits, the closing brackets at the end of the last line; the block library's sources are laid out so.
 - T.18: the skills circuit-design, hardware-change and new-project and the agent project-surveyor know the
-  circuit language; handbook 19 describes usages, loops, parameters, variants and requirements in the notation.
+  circuit language; handbook 20 describes usages, loops, parameters, variants and requirements in the notation.
 - T.20–T.23: `edakit graph sysml` and `edakit graph kerml` export a project as SysML v2 and KerML, textual and
   as JSON, with the electrical library `edakit/lang/library/Electrical.sysml`; the requirements with it. The
   optional dependency group `sysml` (systree) and the CI job sysml read them with a standard reader.

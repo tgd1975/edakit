@@ -1,4 +1,4 @@
-"""The language's own actions of `edakit graph`: fmt, derive, sysml and kerml (handbook 19).
+"""The language's own actions of `edakit graph`: fmt, derive, sysml and kerml (handbook 20).
 
     edakit graph fmt [--check] [FILE …]   the canonical layout of the project's source files, or of the files named;
                                           --check writes nothing and exits 2 naming the first file and line that

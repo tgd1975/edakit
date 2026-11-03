@@ -220,7 +220,7 @@ shared name, `U1.GND`, where all its pins stand in the net), pin maps left out w
 over several lines, the convention `pin_reference` rewritten (3.2). It sets `[project] graph` in edakit.toml, its
 comment kept, and writes the resolved `hardware/graph.json` in place of the source.
 
-`--to circuit` moves a project to the circuit language instead (chapter 19). A graph with null, a name twice or a
+`--to circuit` moves a project to the circuit language instead (chapter 20). A graph with null, a name twice or a
 pin that names none is refused with what to fix in the JSON; `edakit check` names them too. Nothing is written unless the TOML reads back to the same
 graph. Its only comments are the two lines at the top: the reasons stay in `notes`, comments come by hand.
 

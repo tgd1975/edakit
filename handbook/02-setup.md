@@ -43,7 +43,7 @@ server with 115 tools plus a controlled generic call into the extension API. eda
    files. `edakit cart actual --from` a PDF invoice needs pdftotext.
 
 For a graph written in the circuit language, an editor can show its errors and findings as they are typed: the
-language server `edakit lsp` and the VS Code extension of `editors/vscode/` (chapter 19).
+language server `edakit lsp` and the VS Code extension of `editors/vscode/` (chapter 20).
 
 ## 2.3 Claude Code: the plugin
 

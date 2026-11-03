@@ -106,7 +106,7 @@ numbers the words stand for – generated, committed with the TOML, never edited
 (`edakit graph json --check`). `edakit graph json 2>&1 | cat` shows the numbers without writing.
 
 Where `[project] graph` names `hardware/graph.circuit`, the graph is written in the circuit language
-(`${CLAUDE_PLUGIN_ROOT}/handbook/19-circuit-language.md`): the same parts and nets as statements, a block or a
+(`${CLAUDE_PLUGIN_ROOT}/handbook/20-circuit-language.md`): the same parts and nets as statements, a block or a
 definition of the project as a usage, a repeated group as a loop, a value from a rule as a derivation. The resolved
 `graph.json` is generated from it in the same way; `edakit graph fmt` lays the source out.
 

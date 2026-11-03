@@ -493,7 +493,7 @@ generated from it: `python -m edakit.lang.blocks` lists a JSON that differs from
 again, and a test holds every JSON to its source. The JSON keeps the form above and gains two keys: `params`, the
 block's parameters with their defaults (`{"i": {"default": "10 mA"}}`), and `derivations`, the rules its values are
 derived by – `led`, `i2c-pullups` and `battery-sense` have them. `add --set i=4mA` runs them, `--part R1=KEY` takes
-another entry where the block's value lies outside what the rule derives (19.5).
+another entry where the block's value lies outside what the rule derives (20.5).
 
 ## 14.6 Where the ideas came from
 

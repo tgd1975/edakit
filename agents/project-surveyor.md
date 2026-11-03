@@ -31,7 +31,7 @@ documents that hold requirements, nothing more.
   style, 6.6 quoted values), `10-reference.md` 10.3 (the schematic file). edakit's
   skills and agents, the counterparts of the project's own: `${CLAUDE_PLUGIN_ROOT}/skills/*/SKILL.md`,
   `${CLAUDE_PLUGIN_ROOT}/agents/*.md`.
-- **A graph in the circuit language** (`hardware/graph.circuit`, handbook 19): read the source for the intent – its
+- **A graph in the circuit language** (`hardware/graph.circuit`, handbook 20): read the source for the intent – its
   usages, loops and variants – and the resolved `hardware/graph.json` beside it for the exact pins; propose changes to
   the source, never to the generated file.
 - **Prefer what the project already does** (working agreement 22): a file stays where it lies and edakit.toml names
