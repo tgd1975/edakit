@@ -15,6 +15,7 @@ from functools import lru_cache
 from ..catalog import HERE
 from ..circuit import resistor_like, resistors_to, supply_nets
 from ..findings import Finding
+from .paths import inputs
 
 
 @lru_cache(maxsize=1)
@@ -49,8 +50,8 @@ def must_not_float(info):
 
 def run(ctx):
     d = ctx.joined
-    return (undefined_inputs(d) + control_pins(d) + contention(d) + straps(d) + open_inputs(d) + released_nets(d)
-            + analog_nodes(d))
+    return (undefined_inputs(d) + control_pins(d, ctx.sim) + contention(d) + straps(d) + open_inputs(d)
+            + released_nets(d) + analog_nodes(d))
 
 
 def held_nets(d):
@@ -95,12 +96,14 @@ def undefined_inputs(d):
     return out
 
 
-def control_pins(d):
+def control_pins(d, sim=None):
     """LVL.undefined: a transistor whose control pin (base, gate) has no resistor to the roles of [control] – its
-    emitter, its source – or to a rail: a net a pin defines at reset (a push-pull output, a supply), ground, or a net
-    resistors hold to them (held_nets: a bias divider's middle – the base of an analog stage biased by resistors)."""
+    emitter, its source – or to a rail: a net a pin defines at reset (a push-pull output, a supply), a net the board's
+    supply comes in on (paths.inputs: a reversible source's pins, the plus of a simulation source – the gate of a
+    reverse-polarity MOSFET in the ground return sits there), ground, or a net resistors hold to them (held_nets: a
+    bias divider's middle – the base of an analog stage biased by resistors)."""
     rails = {name for name, net in d.nets.items() if any(defines(d.pin_info(r).get("type")) for r in net["pins"])}
-    held = rails | supply_nets(d) | {d.ground} | held_nets(d)
+    held = rails | supply_nets(d) | inputs(d, sim) | {d.ground} | held_nets(d)
     out = []
     for role, c in data()["control"].items():
         for des in d.comps_of_kind(*c["kinds"]):

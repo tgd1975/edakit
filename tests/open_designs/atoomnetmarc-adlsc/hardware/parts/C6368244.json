@@ -1,0 +1,57 @@
+{
+ "lcsc": "C6368244",
+ "mpn": "1824810000",
+ "manufacturer": "WEIDMULLER",
+ "kind": "connector",
+ "package": "PCB terminal LSF-SMT 5.08/2/90, push-in, 2 poles, 5.08 mm, reflow (THR, 2 solder pins per pole)",
+ "datasheet": {
+  "url": "https://datasheet.lcsc.com/datasheet/pdf/14c658d1b7d7adfe4e9a8a39ba79d1f1.pdf?productCode=C6368244",
+  "pinout_page": null
+ },
+ "pins": {
+  "1": {
+   "name": "1",
+   "type": "passive",
+   "role": "pin1"
+  },
+  "2": {
+   "name": "2",
+   "type": "passive",
+   "role": "pin2"
+  }
+ },
+ "values": {
+  "pitch_mm": 5.08
+ },
+ "limits": {
+  "i_contact_max_a": 15,
+  "v_max_v": 320
+ },
+ "spice": {},
+ "hints": [
+  "conductors 0.13 … 1.5 mm² (AWG 24 … 16), stripping length 8 mm (p. 2)",
+  "UL 1059 and CSA ratings: 10 A, 300 V (p. 3) – lower than the IEC rating"
+ ],
+ "sources": [
+  "Weidmüller product catalogue sheet 1824810000, LSF-SMT 5.08/2/90 3.5 SW (4 pages, undated) – LCSC product data of C6368244, https://datasheet.lcsc.com/datasheet/pdf/14c658d1b7d7adfe4e9a8a39ba79d1f1.pdf?productCode=C6368244, read 2026-11-03 (edakit part fetch)",
+  "p. 1: order no. 1824810000, LSF-SMT5.08/2/90 3.5 SW, push in, reflow solder connection, pitch 5.08 mm, 2 poles, 90°, solder pin length 3.5 mm, fitting hole 1.1 mm, 2 solder pins per pole",
+  "p. 2 DIN IEC rating data: rated current 17.5 A (Tu 20 °C), 17.5 / 15 A at Tu 40 °C (min. / max. no. of pins); rated voltage 500 V (II/2), 320 V (III/2), 250 V (III/3)",
+  "p. 3 UL 1059 and CSA: 10 A, 300 V, AWG 24 … 16",
+  "i_contact_max_a 15: the IEC rating at 40 °C with every pin loaded; v_max_v 320: overvoltage class III, pollution severity 2",
+  "pins 1, 2: the poles in the order of the schematic's symbol (Screw_Terminal_01x02) – C6368244 has no EasyEDA symbol (edakit part import: not in the library)",
+  "LCSC/JLCPCB catalogue 2026-11-03: WEIDMULLER 1824810000, Extended"
+ ],
+ "notes": "The schematic's 'Weidmueller 1824810000 or 1760520000': the first of the two. J1 is the 5 V input, J3 and J6 the two LED power outputs, J4 the two data lines.",
+ "verified": {
+  "by": "Claude (datasheet check, open-design transcription)",
+  "date": "2026-11-03",
+  "datasheet": "Weidmüller product catalogue sheet 1824810000, LSF-SMT 5.08/2/90 3.5 SW (4 pages, undated)",
+  "checked": [
+   "pp. 1–3: poles, pitch, ratings"
+  ],
+  "open": [
+   "no EasyEDA symbol or footprint for C6368244: pin numbers follow the KiCad symbol of the schematic",
+   "contact resistance: not given"
+  ]
+ }
+}

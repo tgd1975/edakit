@@ -1,0 +1,1060 @@
+{
+ "lcsc": "C20437001",
+ "mpn": "ESP32-DEVKITC-VE",
+ "manufacturer": "ESPRESSIF(乐鑫)",
+ "kind": "module",
+ "package": "plug-in development board, 2 × 19 header pins at 2.54 mm (J2, J3), micro-USB",
+ "footprint": "BULETM-SMD_ESP32-DEVKITC",
+ "jlc_class": "Extended Part",
+ "datasheet": {
+  "url": "https://datasheet.lcsc.com/datasheet/pdf/dc33f4253b78a0ac5625f7849073d2d3.pdf?productCode=C20437001",
+  "pinout_page": 5,
+  "title": "ESP32 esp-dev-kits Documentation, Release master (2025-11-24), chapter 1.1 ESP32-DevKitC V4",
+  "chip": "https://documentation.espressif.com/esp32-wrover-e_esp32-wrover-ie_datasheet_en.pdf"
+ },
+ "pins": {
+  "1": {
+   "name": "3V3",
+   "type": "power_output",
+   "role": "3v3",
+   "v_max_v": 3.6,
+   "hint": "output of the board's AMS1117-3.3 (U2 of the DevKitC V4 schematic) that feeds the module; the header's 3V3 pin – as a supply input it is one of the three mutually exclusive ways to power the board (ESP32 esp-dev-kits Documentation, Release master (Espressif, 2025-11-24), 1.1 ESP32-DevKitC V4, 1.1.4)"
+  },
+  "2": {
+   "name": "EN",
+   "type": "input",
+   "v_max_v": 3.6,
+   "pull": "up",
+   "pull_ohm": 10000,
+   "hint": "CHIP_PU of the module, reset when low (VIL_nRST ≤ 0.6 V, release at ≥ 0.75 × VDD, ESP32-WROVER-E & ESP32-WROVER-IE Datasheet v2.4 table 15); on the board 10 kΩ to 3V3 (R11) and 100 nF (C9), the EN button with 100 nF (C14) – DevKitC V4 schematic; a 3.3 V pin: VIH up to VDD + 0.3 V"
+  },
+  "3": {
+   "name": "VP",
+   "type": "input",
+   "role": "gpio",
+   "v_max_v": 3.6,
+   "adc": {
+    "range_v": [
+     0.15,
+     2.45
+    ]
+   },
+   "functions": [
+    "spi2.rx",
+    "spi3.rx",
+    "uart0.rx",
+    "uart1.rx",
+    "uart2.rx",
+    "i2s0.sd",
+    "i2s1.sd",
+    "can0.rx",
+    "adc1"
+   ],
+   "hint": "GPIO36: input only – no output driver, no internal pull-up or pull-down (ESP32 Series Datasheet v5.3, table 6-1 note 2)"
+  },
+  "4": {
+   "name": "VN",
+   "type": "input",
+   "role": "gpio",
+   "v_max_v": 3.6,
+   "adc": {
+    "range_v": [
+     0.15,
+     2.45
+    ]
+   },
+   "functions": [
+    "spi2.rx",
+    "spi3.rx",
+    "uart0.rx",
+    "uart1.rx",
+    "uart2.rx",
+    "i2s0.sd",
+    "i2s1.sd",
+    "can0.rx",
+    "adc1"
+   ],
+   "hint": "GPIO39: input only – no output driver, no internal pull-up or pull-down (ESP32 Series Datasheet v5.3, table 6-1 note 2)"
+  },
+  "5": {
+   "name": "IO34",
+   "type": "input",
+   "role": "gpio",
+   "v_max_v": 3.6,
+   "adc": {
+    "range_v": [
+     0.15,
+     2.45
+    ]
+   },
+   "functions": [
+    "spi2.rx",
+    "spi3.rx",
+    "uart0.rx",
+    "uart1.rx",
+    "uart2.rx",
+    "i2s0.sd",
+    "i2s1.sd",
+    "can0.rx",
+    "adc1"
+   ],
+   "hint": "GPIO34: input only – no output driver, no internal pull-up or pull-down (ESP32 Series Datasheet v5.3, table 6-1 note 2)"
+  },
+  "6": {
+   "name": "IO35",
+   "type": "input",
+   "role": "gpio",
+   "v_max_v": 3.6,
+   "adc": {
+    "range_v": [
+     0.15,
+     2.45
+    ]
+   },
+   "functions": [
+    "spi2.rx",
+    "spi3.rx",
+    "uart0.rx",
+    "uart1.rx",
+    "uart2.rx",
+    "i2s0.sd",
+    "i2s1.sd",
+    "can0.rx",
+    "adc1"
+   ],
+   "hint": "GPIO35: input only – no output driver, no internal pull-up or pull-down (ESP32 Series Datasheet v5.3, table 6-1 note 2)"
+  },
+  "7": {
+   "name": "IO32",
+   "type": "bidirectional",
+   "role": "gpio",
+   "v_max_v": 3.6,
+   "adc": {
+    "range_v": [
+     0.15,
+     2.45
+    ]
+   },
+   "functions": [
+    "spi2.sck",
+    "spi2.tx",
+    "spi2.rx",
+    "spi2.cs",
+    "spi3.sck",
+    "spi3.tx",
+    "spi3.rx",
+    "spi3.cs",
+    "uart0.tx",
+    "uart0.rx",
+    "uart1.tx",
+    "uart1.rx",
+    "uart2.tx",
+    "uart2.rx",
+    "i2c0.sda",
+    "i2c0.scl",
+    "i2c1.sda",
+    "i2c1.scl",
+    "i2s0.bclk",
+    "i2s0.ws",
+    "i2s0.sd",
+    "i2s1.bclk",
+    "i2s1.ws",
+    "i2s1.sd",
+    "can0.tx",
+    "can0.rx",
+    "adc1"
+   ]
+  },
+  "8": {
+   "name": "IO33",
+   "type": "bidirectional",
+   "role": "gpio",
+   "v_max_v": 3.6,
+   "adc": {
+    "range_v": [
+     0.15,
+     2.45
+    ]
+   },
+   "functions": [
+    "spi2.sck",
+    "spi2.tx",
+    "spi2.rx",
+    "spi2.cs",
+    "spi3.sck",
+    "spi3.tx",
+    "spi3.rx",
+    "spi3.cs",
+    "uart0.tx",
+    "uart0.rx",
+    "uart1.tx",
+    "uart1.rx",
+    "uart2.tx",
+    "uart2.rx",
+    "i2c0.sda",
+    "i2c0.scl",
+    "i2c1.sda",
+    "i2c1.scl",
+    "i2s0.bclk",
+    "i2s0.ws",
+    "i2s0.sd",
+    "i2s1.bclk",
+    "i2s1.ws",
+    "i2s1.sd",
+    "can0.tx",
+    "can0.rx",
+    "adc1"
+   ]
+  },
+  "9": {
+   "name": "IO25",
+   "type": "bidirectional",
+   "role": "gpio",
+   "v_max_v": 3.6,
+   "adc": {
+    "range_v": [
+     0.15,
+     2.45
+    ]
+   },
+   "functions": [
+    "spi2.sck",
+    "spi2.tx",
+    "spi2.rx",
+    "spi2.cs",
+    "spi3.sck",
+    "spi3.tx",
+    "spi3.rx",
+    "spi3.cs",
+    "uart0.tx",
+    "uart0.rx",
+    "uart1.tx",
+    "uart1.rx",
+    "uart2.tx",
+    "uart2.rx",
+    "i2c0.sda",
+    "i2c0.scl",
+    "i2c1.sda",
+    "i2c1.scl",
+    "i2s0.bclk",
+    "i2s0.ws",
+    "i2s0.sd",
+    "i2s1.bclk",
+    "i2s1.ws",
+    "i2s1.sd",
+    "can0.tx",
+    "can0.rx",
+    "adc2"
+   ],
+   "hint": "ADC2: shared with Wi-Fi (ESP-IDF v6.1 ADC oneshot driver, Hardware Limitations) – an analog read competes with the Wi-Fi driver"
+  },
+  "10": {
+   "name": "IO26",
+   "type": "bidirectional",
+   "role": "gpio",
+   "v_max_v": 3.6,
+   "adc": {
+    "range_v": [
+     0.15,
+     2.45
+    ]
+   },
+   "functions": [
+    "spi2.sck",
+    "spi2.tx",
+    "spi2.rx",
+    "spi2.cs",
+    "spi3.sck",
+    "spi3.tx",
+    "spi3.rx",
+    "spi3.cs",
+    "uart0.tx",
+    "uart0.rx",
+    "uart1.tx",
+    "uart1.rx",
+    "uart2.tx",
+    "uart2.rx",
+    "i2c0.sda",
+    "i2c0.scl",
+    "i2c1.sda",
+    "i2c1.scl",
+    "i2s0.bclk",
+    "i2s0.ws",
+    "i2s0.sd",
+    "i2s1.bclk",
+    "i2s1.ws",
+    "i2s1.sd",
+    "can0.tx",
+    "can0.rx",
+    "adc2"
+   ],
+   "hint": "ADC2: shared with Wi-Fi (ESP-IDF v6.1 ADC oneshot driver, Hardware Limitations) – an analog read competes with the Wi-Fi driver"
+  },
+  "11": {
+   "name": "IO27",
+   "type": "bidirectional",
+   "role": "gpio",
+   "v_max_v": 3.6,
+   "adc": {
+    "range_v": [
+     0.15,
+     2.45
+    ]
+   },
+   "functions": [
+    "spi2.sck",
+    "spi2.tx",
+    "spi2.rx",
+    "spi2.cs",
+    "spi3.sck",
+    "spi3.tx",
+    "spi3.rx",
+    "spi3.cs",
+    "uart0.tx",
+    "uart0.rx",
+    "uart1.tx",
+    "uart1.rx",
+    "uart2.tx",
+    "uart2.rx",
+    "i2c0.sda",
+    "i2c0.scl",
+    "i2c1.sda",
+    "i2c1.scl",
+    "i2s0.bclk",
+    "i2s0.ws",
+    "i2s0.sd",
+    "i2s1.bclk",
+    "i2s1.ws",
+    "i2s1.sd",
+    "can0.tx",
+    "can0.rx",
+    "adc2"
+   ],
+   "hint": "ADC2: shared with Wi-Fi (ESP-IDF v6.1 ADC oneshot driver, Hardware Limitations) – an analog read competes with the Wi-Fi driver"
+  },
+  "12": {
+   "name": "IO14",
+   "type": "bidirectional",
+   "role": "gpio",
+   "v_max_v": 3.6,
+   "adc": {
+    "range_v": [
+     0.15,
+     2.45
+    ]
+   },
+   "functions": [
+    "spi2.sck",
+    "spi2.tx",
+    "spi2.rx",
+    "spi2.cs",
+    "spi3.sck",
+    "spi3.tx",
+    "spi3.rx",
+    "spi3.cs",
+    "uart0.tx",
+    "uart0.rx",
+    "uart1.tx",
+    "uart1.rx",
+    "uart2.tx",
+    "uart2.rx",
+    "i2c0.sda",
+    "i2c0.scl",
+    "i2c1.sda",
+    "i2c1.scl",
+    "i2s0.bclk",
+    "i2s0.ws",
+    "i2s0.sd",
+    "i2s1.bclk",
+    "i2s1.ws",
+    "i2s1.sd",
+    "can0.tx",
+    "can0.rx",
+    "adc2"
+   ],
+   "hint": "ADC2: shared with Wi-Fi (ESP-IDF v6.1 ADC oneshot driver, Hardware Limitations) – an analog read competes with the Wi-Fi driver"
+  },
+  "13": {
+   "name": "IO12",
+   "type": "bidirectional",
+   "role": "gpio",
+   "v_max_v": 3.6,
+   "adc": {
+    "range_v": [
+     0.15,
+     2.45
+    ]
+   },
+   "functions": [
+    "spi2.sck",
+    "spi2.tx",
+    "spi2.rx",
+    "spi2.cs",
+    "spi3.sck",
+    "spi3.tx",
+    "spi3.rx",
+    "spi3.cs",
+    "uart0.tx",
+    "uart0.rx",
+    "uart1.tx",
+    "uart1.rx",
+    "uart2.tx",
+    "uart2.rx",
+    "i2c0.sda",
+    "i2c0.scl",
+    "i2c1.sda",
+    "i2c1.scl",
+    "i2s0.bclk",
+    "i2s0.ws",
+    "i2s0.sd",
+    "i2s1.bclk",
+    "i2s1.ws",
+    "i2s1.sd",
+    "can0.tx",
+    "can0.rx",
+    "adc2"
+   ],
+   "strap": "low",
+   "pull": "down",
+   "pull_ohm": 45000,
+   "hint": "strapping pin MTDI: high at reset sets VDD_SDIO to 1.8 V; datasheet figure 9: 'IO12 should be kept low when the module is powered on' (datasheet 4.2, table 4); ADC2: shared with Wi-Fi (ESP-IDF v6.1 ADC oneshot driver, Hardware Limitations) – an analog read competes with the Wi-Fi driver"
+  },
+  "14": {
+   "name": "GND",
+   "type": "ground"
+  },
+  "15": {
+   "name": "IO13",
+   "type": "bidirectional",
+   "role": "gpio",
+   "v_max_v": 3.6,
+   "adc": {
+    "range_v": [
+     0.15,
+     2.45
+    ]
+   },
+   "functions": [
+    "spi2.sck",
+    "spi2.tx",
+    "spi2.rx",
+    "spi2.cs",
+    "spi3.sck",
+    "spi3.tx",
+    "spi3.rx",
+    "spi3.cs",
+    "uart0.tx",
+    "uart0.rx",
+    "uart1.tx",
+    "uart1.rx",
+    "uart2.tx",
+    "uart2.rx",
+    "i2c0.sda",
+    "i2c0.scl",
+    "i2c1.sda",
+    "i2c1.scl",
+    "i2s0.bclk",
+    "i2s0.ws",
+    "i2s0.sd",
+    "i2s1.bclk",
+    "i2s1.ws",
+    "i2s1.sd",
+    "can0.tx",
+    "can0.rx",
+    "adc2"
+   ],
+   "hint": "ADC2: shared with Wi-Fi (ESP-IDF v6.1 ADC oneshot driver, Hardware Limitations) – an analog read competes with the Wi-Fi driver"
+  },
+  "16": {
+   "name": "D2",
+   "type": "no_connect",
+   "hint": "GPIO9: the flash pins, not led out of the ESP32-WROVER-E (ESP32-WROVER-E & ESP32-WROVER-IE Datasheet v2.4 table 3, pins 17–22, note 2) – the header pin carries nothing here"
+  },
+  "17": {
+   "name": "D3",
+   "type": "no_connect",
+   "hint": "GPIO10: the flash pins, not led out of the ESP32-WROVER-E (ESP32-WROVER-E & ESP32-WROVER-IE Datasheet v2.4 table 3, pins 17–22, note 2) – the header pin carries nothing here"
+  },
+  "18": {
+   "name": "CMD",
+   "type": "no_connect",
+   "hint": "GPIO11: the flash pins, not led out of the ESP32-WROVER-E (ESP32-WROVER-E & ESP32-WROVER-IE Datasheet v2.4 table 3, pins 17–22, note 2) – the header pin carries nothing here"
+  },
+  "19": {
+   "name": "5V",
+   "type": "power_in",
+   "role": "vin",
+   "hint": "EXT_5V of the DevKitC V4 schematic: the input of the board's AMS1117-3.3, fed from the micro-USB VBUS through the board's Schottky diode (BAT760) – power the board through one and only one of micro-USB, 5V or 3V3 (ESP32 esp-dev-kits Documentation, Release master (Espressif, 2025-11-24), 1.1 ESP32-DevKitC V4, 1.1.4, warning)"
+  },
+  "20": {
+   "name": "GND",
+   "type": "ground"
+  },
+  "21": {
+   "name": "IO23",
+   "type": "bidirectional",
+   "role": "gpio",
+   "v_max_v": 3.6,
+   "functions": [
+    "spi2.sck",
+    "spi2.tx",
+    "spi2.rx",
+    "spi2.cs",
+    "spi3.sck",
+    "spi3.tx",
+    "spi3.rx",
+    "spi3.cs",
+    "uart0.tx",
+    "uart0.rx",
+    "uart1.tx",
+    "uart1.rx",
+    "uart2.tx",
+    "uart2.rx",
+    "i2c0.sda",
+    "i2c0.scl",
+    "i2c1.sda",
+    "i2c1.scl",
+    "i2s0.bclk",
+    "i2s0.ws",
+    "i2s0.sd",
+    "i2s1.bclk",
+    "i2s1.ws",
+    "i2s1.sd",
+    "can0.tx",
+    "can0.rx"
+   ]
+  },
+  "22": {
+   "name": "IO22",
+   "type": "bidirectional",
+   "role": "gpio",
+   "v_max_v": 3.6,
+   "functions": [
+    "spi2.sck",
+    "spi2.tx",
+    "spi2.rx",
+    "spi2.cs",
+    "spi3.sck",
+    "spi3.tx",
+    "spi3.rx",
+    "spi3.cs",
+    "uart0.tx",
+    "uart0.rx",
+    "uart1.tx",
+    "uart1.rx",
+    "uart2.tx",
+    "uart2.rx",
+    "i2c0.sda",
+    "i2c0.scl",
+    "i2c1.sda",
+    "i2c1.scl",
+    "i2s0.bclk",
+    "i2s0.ws",
+    "i2s0.sd",
+    "i2s1.bclk",
+    "i2s1.ws",
+    "i2s1.sd",
+    "can0.tx",
+    "can0.rx"
+   ]
+  },
+  "23": {
+   "name": "TX",
+   "type": "bidirectional",
+   "role": "gpio",
+   "v_max_v": 3.6,
+   "functions": [
+    "spi2.sck",
+    "spi2.tx",
+    "spi2.rx",
+    "spi2.cs",
+    "spi3.sck",
+    "spi3.tx",
+    "spi3.rx",
+    "spi3.cs",
+    "uart0.tx",
+    "uart0.rx",
+    "uart1.tx",
+    "uart1.rx",
+    "uart2.tx",
+    "uart2.rx",
+    "i2c0.sda",
+    "i2c0.scl",
+    "i2c1.sda",
+    "i2c1.scl",
+    "i2s0.bclk",
+    "i2s0.ws",
+    "i2s0.sd",
+    "i2s1.bclk",
+    "i2s1.ws",
+    "i2s1.sd",
+    "can0.tx",
+    "can0.rx"
+   ],
+   "hint": "U0TXD: UART0 downloads firmware and prints the log (datasheet 9 Peripheral Schematics)",
+   "pull": "up"
+  },
+  "24": {
+   "name": "RX",
+   "type": "bidirectional",
+   "role": "gpio",
+   "v_max_v": 3.6,
+   "functions": [
+    "spi2.sck",
+    "spi2.tx",
+    "spi2.rx",
+    "spi2.cs",
+    "spi3.sck",
+    "spi3.tx",
+    "spi3.rx",
+    "spi3.cs",
+    "uart0.tx",
+    "uart0.rx",
+    "uart1.tx",
+    "uart1.rx",
+    "uart2.tx",
+    "uart2.rx",
+    "i2c0.sda",
+    "i2c0.scl",
+    "i2c1.sda",
+    "i2c1.scl",
+    "i2s0.bclk",
+    "i2s0.ws",
+    "i2s0.sd",
+    "i2s1.bclk",
+    "i2s1.ws",
+    "i2s1.sd",
+    "can0.tx",
+    "can0.rx"
+   ],
+   "hint": "U0RXD: UART0 downloads firmware and prints the log (datasheet 9 Peripheral Schematics)",
+   "pull": "up"
+  },
+  "25": {
+   "name": "IO21",
+   "type": "bidirectional",
+   "role": "gpio",
+   "v_max_v": 3.6,
+   "functions": [
+    "spi2.sck",
+    "spi2.tx",
+    "spi2.rx",
+    "spi2.cs",
+    "spi3.sck",
+    "spi3.tx",
+    "spi3.rx",
+    "spi3.cs",
+    "uart0.tx",
+    "uart0.rx",
+    "uart1.tx",
+    "uart1.rx",
+    "uart2.tx",
+    "uart2.rx",
+    "i2c0.sda",
+    "i2c0.scl",
+    "i2c1.sda",
+    "i2c1.scl",
+    "i2s0.bclk",
+    "i2s0.ws",
+    "i2s0.sd",
+    "i2s1.bclk",
+    "i2s1.ws",
+    "i2s1.sd",
+    "can0.tx",
+    "can0.rx"
+   ]
+  },
+  "26": {
+   "name": "GND",
+   "type": "ground"
+  },
+  "27": {
+   "name": "IO19",
+   "type": "bidirectional",
+   "role": "gpio",
+   "v_max_v": 3.6,
+   "functions": [
+    "spi2.sck",
+    "spi2.tx",
+    "spi2.rx",
+    "spi2.cs",
+    "spi3.sck",
+    "spi3.tx",
+    "spi3.rx",
+    "spi3.cs",
+    "uart0.tx",
+    "uart0.rx",
+    "uart1.tx",
+    "uart1.rx",
+    "uart2.tx",
+    "uart2.rx",
+    "i2c0.sda",
+    "i2c0.scl",
+    "i2c1.sda",
+    "i2c1.scl",
+    "i2s0.bclk",
+    "i2s0.ws",
+    "i2s0.sd",
+    "i2s1.bclk",
+    "i2s1.ws",
+    "i2s1.sd",
+    "can0.tx",
+    "can0.rx"
+   ]
+  },
+  "28": {
+   "name": "IO18",
+   "type": "bidirectional",
+   "role": "gpio",
+   "v_max_v": 3.6,
+   "functions": [
+    "spi2.sck",
+    "spi2.tx",
+    "spi2.rx",
+    "spi2.cs",
+    "spi3.sck",
+    "spi3.tx",
+    "spi3.rx",
+    "spi3.cs",
+    "uart0.tx",
+    "uart0.rx",
+    "uart1.tx",
+    "uart1.rx",
+    "uart2.tx",
+    "uart2.rx",
+    "i2c0.sda",
+    "i2c0.scl",
+    "i2c1.sda",
+    "i2c1.scl",
+    "i2s0.bclk",
+    "i2s0.ws",
+    "i2s0.sd",
+    "i2s1.bclk",
+    "i2s1.ws",
+    "i2s1.sd",
+    "can0.tx",
+    "can0.rx"
+   ]
+  },
+  "29": {
+   "name": "IO5",
+   "type": "bidirectional",
+   "role": "gpio",
+   "v_max_v": 3.6,
+   "functions": [
+    "spi2.sck",
+    "spi2.tx",
+    "spi2.rx",
+    "spi2.cs",
+    "spi3.sck",
+    "spi3.tx",
+    "spi3.rx",
+    "spi3.cs",
+    "uart0.tx",
+    "uart0.rx",
+    "uart1.tx",
+    "uart1.rx",
+    "uart2.tx",
+    "uart2.rx",
+    "i2c0.sda",
+    "i2c0.scl",
+    "i2c1.sda",
+    "i2c1.scl",
+    "i2s0.bclk",
+    "i2s0.ws",
+    "i2s0.sd",
+    "i2s1.bclk",
+    "i2s1.ws",
+    "i2s1.sd",
+    "can0.tx",
+    "can0.rx"
+   ],
+   "pull": "up",
+   "pull_ohm": 45000,
+   "hint": "strapping pin GPIO5: with MTDO it sets the SDIO slave timing; weak pull-up at reset (datasheet table 4, 8)"
+  },
+  "30": {
+   "name": "IO17",
+   "type": "no_connect",
+   "hint": "GPIO17: NC on the ESP32-WROVER-E, the module's PSRAM uses it (ESP32-WROVER-E & ESP32-WROVER-IE Datasheet v2.4 table 3, pins 27–28; ESP32 esp-dev-kits Documentation, Release master (Espressif, 2025-11-24), 1.1 ESP32-DevKitC V4, J3 note 3) – the header pin carries nothing here"
+  },
+  "31": {
+   "name": "IO16",
+   "type": "no_connect",
+   "hint": "GPIO16: NC on the ESP32-WROVER-E, the module's PSRAM uses it (ESP32-WROVER-E & ESP32-WROVER-IE Datasheet v2.4 table 3, pins 27–28; ESP32 esp-dev-kits Documentation, Release master (Espressif, 2025-11-24), 1.1 ESP32-DevKitC V4, J3 note 3) – the header pin carries nothing here"
+  },
+  "32": {
+   "name": "IO4",
+   "type": "bidirectional",
+   "role": "gpio",
+   "v_max_v": 3.6,
+   "adc": {
+    "range_v": [
+     0.15,
+     2.45
+    ]
+   },
+   "functions": [
+    "spi2.sck",
+    "spi2.tx",
+    "spi2.rx",
+    "spi2.cs",
+    "spi3.sck",
+    "spi3.tx",
+    "spi3.rx",
+    "spi3.cs",
+    "uart0.tx",
+    "uart0.rx",
+    "uart1.tx",
+    "uart1.rx",
+    "uart2.tx",
+    "uart2.rx",
+    "i2c0.sda",
+    "i2c0.scl",
+    "i2c1.sda",
+    "i2c1.scl",
+    "i2s0.bclk",
+    "i2s0.ws",
+    "i2s0.sd",
+    "i2s1.bclk",
+    "i2s1.ws",
+    "i2s1.sd",
+    "can0.tx",
+    "can0.rx",
+    "adc2"
+   ],
+   "hint": "ADC2: shared with Wi-Fi (ESP-IDF v6.1 ADC oneshot driver, Hardware Limitations) – an analog read competes with the Wi-Fi driver"
+  },
+  "33": {
+   "name": "IO0",
+   "type": "bidirectional",
+   "role": "gpio",
+   "v_max_v": 3.6,
+   "adc": {
+    "range_v": [
+     0.15,
+     2.45
+    ]
+   },
+   "functions": [
+    "spi2.sck",
+    "spi2.tx",
+    "spi2.rx",
+    "spi2.cs",
+    "spi3.sck",
+    "spi3.tx",
+    "spi3.rx",
+    "spi3.cs",
+    "uart0.tx",
+    "uart0.rx",
+    "uart1.tx",
+    "uart1.rx",
+    "uart2.tx",
+    "uart2.rx",
+    "i2c0.sda",
+    "i2c0.scl",
+    "i2c1.sda",
+    "i2c1.scl",
+    "i2s0.bclk",
+    "i2s0.ws",
+    "i2s0.sd",
+    "i2s1.bclk",
+    "i2s1.ws",
+    "i2s1.sd",
+    "can0.tx",
+    "can0.rx",
+    "adc2"
+   ],
+   "strap": "high",
+   "pull": "up",
+   "pull_ohm": 45000,
+   "hint": "strapping pin GPIO0: high at reset = SPI boot, low (with GPIO2 low) = download boot; weak pull-up at reset (datasheet table 4, 6); ADC2: shared with Wi-Fi (ESP-IDF v6.1 ADC oneshot driver, Hardware Limitations) – an analog read competes with the Wi-Fi driver"
+  },
+  "34": {
+   "name": "IO2",
+   "type": "bidirectional",
+   "role": "gpio",
+   "v_max_v": 3.6,
+   "adc": {
+    "range_v": [
+     0.15,
+     2.45
+    ]
+   },
+   "functions": [
+    "spi2.sck",
+    "spi2.tx",
+    "spi2.rx",
+    "spi2.cs",
+    "spi3.sck",
+    "spi3.tx",
+    "spi3.rx",
+    "spi3.cs",
+    "uart0.tx",
+    "uart0.rx",
+    "uart1.tx",
+    "uart1.rx",
+    "uart2.tx",
+    "uart2.rx",
+    "i2c0.sda",
+    "i2c0.scl",
+    "i2c1.sda",
+    "i2c1.scl",
+    "i2s0.bclk",
+    "i2s0.ws",
+    "i2s0.sd",
+    "i2s1.bclk",
+    "i2s1.ws",
+    "i2s1.sd",
+    "can0.tx",
+    "can0.rx",
+    "adc2"
+   ],
+   "pull": "down",
+   "pull_ohm": 45000,
+   "hint": "strapping pin GPIO2: any level for SPI boot, must be low for download boot; weak pull-down at reset (datasheet table 4, 6); ADC2: shared with Wi-Fi (ESP-IDF v6.1 ADC oneshot driver, Hardware Limitations) – an analog read competes with the Wi-Fi driver"
+  },
+  "35": {
+   "name": "IO15",
+   "type": "bidirectional",
+   "role": "gpio",
+   "v_max_v": 3.6,
+   "adc": {
+    "range_v": [
+     0.15,
+     2.45
+    ]
+   },
+   "functions": [
+    "spi2.sck",
+    "spi2.tx",
+    "spi2.rx",
+    "spi2.cs",
+    "spi3.sck",
+    "spi3.tx",
+    "spi3.rx",
+    "spi3.cs",
+    "uart0.tx",
+    "uart0.rx",
+    "uart1.tx",
+    "uart1.rx",
+    "uart2.tx",
+    "uart2.rx",
+    "i2c0.sda",
+    "i2c0.scl",
+    "i2c1.sda",
+    "i2c1.scl",
+    "i2s0.bclk",
+    "i2s0.ws",
+    "i2s0.sd",
+    "i2s1.bclk",
+    "i2s1.ws",
+    "i2s1.sd",
+    "can0.tx",
+    "can0.rx",
+    "adc2"
+   ],
+   "pull": "up",
+   "pull_ohm": 45000,
+   "hint": "strapping pin MTDO: low at reset disables the U0TXD boot messages, with GPIO5 it sets the SDIO slave timing; weak pull-up at reset (datasheet table 4, 7, 8); ADC2: shared with Wi-Fi (ESP-IDF v6.1 ADC oneshot driver, Hardware Limitations) – an analog read competes with the Wi-Fi driver"
+  },
+  "36": {
+   "name": "D1",
+   "type": "no_connect",
+   "hint": "GPIO8: the flash pins, not led out of the ESP32-WROVER-E (ESP32-WROVER-E & ESP32-WROVER-IE Datasheet v2.4 table 3, pins 17–22, note 2) – the header pin carries nothing here"
+  },
+  "37": {
+   "name": "D0",
+   "type": "no_connect",
+   "hint": "GPIO7: the flash pins, not led out of the ESP32-WROVER-E (ESP32-WROVER-E & ESP32-WROVER-IE Datasheet v2.4 table 3, pins 17–22, note 2) – the header pin carries nothing here"
+  },
+  "38": {
+   "name": "CLK",
+   "type": "no_connect",
+   "hint": "GPIO6: the flash pins, not led out of the ESP32-WROVER-E (ESP32-WROVER-E & ESP32-WROVER-IE Datasheet v2.4 table 3, pins 17–22, note 2) – the header pin carries nothing here"
+  }
+ },
+ "values": {
+  "behavior": "mcu",
+  "regulator": "ldo",
+  "vout_v": 3.3,
+  "dropout_v": 1.3,
+  "v_io_v": 3.3,
+  "vih_ratio": 0.75,
+  "vil_ratio": 0.25,
+  "i_core_a": 0.35
+ },
+ "limits": {
+  "vin_min_v": 4.3,
+  "gpio_v_max_v": 3.6,
+  "gpio_i_max_a": 0.028,
+  "gpio_i_total_max_a": 1.2,
+  "t_min_c": -40,
+  "t_max_c": 85
+ },
+ "hints": [
+  "WROVER-E: the supply of the module must deliver at least 0.5 A (datasheet table 14, IVDD); Wi-Fi TX peaks at 350 mA (table 16, 802.11b at 19.5 dBm)",
+  "GPIO16 and GPIO17 belong to the WROVER-E's PSRAM and GPIO6–GPIO11 to its flash: the header pins IO16, IO17, D0–D3, CMD and CLK carry nothing usable",
+  "power the board through one and only one of micro-USB, 5V and 3V3 (DevKitC V4, 1.1.4): a 5 V supply at the 5V pin and a USB cable at the same time feed each other unless a diode blocks the way"
+ ],
+ "spice": {},
+ "compliance": {
+  "radio": {
+   "bands_mhz": [
+    [
+     2412,
+     2484
+    ],
+    [
+     2402,
+     2480
+    ]
+   ],
+   "max_dbm": 19.5,
+   "source": "ESP32-WROVER-E & ESP32-WROVER-IE Datasheet v2.4: table 19 (Wi-Fi centre frequencies 2412–2484 MHz), table 20 (802.11b TX power 19.5 dBm typ), table 25 (Bluetooth LE 2402–2480 MHz, −12 … +9 dBm)"
+  }
+ },
+ "matrix": [
+  "uart",
+  "i2c",
+  "i2s",
+  "pwm",
+  "can"
+ ],
+ "needs": {
+  "decoupling": false
+ },
+ "sources": [
+  "pin numbers and names, footprint, mpn, jlc_class: EasyEDA library data of C20437001 (edakit part import, 2026-11-03) – J2 pins 1–19 as 1–19, J3 pins 1–19 as 20–38",
+  "ESP32 esp-dev-kits Documentation, Release master (Espressif, 2025-11-24), 1.1 ESP32-DevKitC V4 – LCSC product data of C20437001, https://datasheet.lcsc.com/datasheet/pdf/dc33f4253b78a0ac5625f7849073d2d3.pdf?productCode=C20437001, read 2026-11-03: the versions of the board (ESP32-WROVER-E among the modules), 1.1.4 power supply options (micro-USB, 5V and GND, 3V3 and GND – mutually exclusive), 1.1.5 header block J2 and J3 (names and functions), note 3 (GPIO16 and GPIO17 reserved on the boards with ESP32-WROVER modules)",
+  "ESP32-WROVER-E & ESP32-WROVER-IE Datasheet v2.4 (Espressif, https://documentation.espressif.com/esp32-wrover-e_esp32-wrover-ie_datasheet_en.pdf, read 2026-11-03): table 3 pin definitions (pins 17–22 and 27–28 NC), 4.2 MTDI selects VDD_SDIO, table 13 VDD33 abs. max 3.6 V, table 14 VDD33 3.0–3.6 V, IVDD ≥ 0.5 A, −40 … 85 °C, table 15 DC characteristics (VIH ≥ 0.75 × VDD up to VDD + 0.3 V, VIL ≤ 0.25 × VDD, VOH ≥ 0.8 × VDD, IOL 28 mA typ, RPU/RPD 45 kΩ, VIL_nRST ≤ 0.6 V), table 16 (TX 802.11b 350 mA peak), tables 19, 20, 25 (radio)",
+  "the board's own circuit – AMS1117-3.3 from EXT_5V (the 5V pin) to VDD33 (the 3V3 pin), the BAT760 from VBUS to EXT_5V, EN with 10 kΩ / 100 nF and the EN button's 100 nF: ESP32-DevKitC V4 schematic Rev V4 (2017-12-06), https://dl.espressif.com/dl/schematics/esp32_devkitc_v4-sch.pdf, as transcribed in tests/open_designs/esp32-devkitc-v4",
+  "dropout_v 1.3: the AMS1117-3.3's maximum dropout at 0.8 A (its datasheet p. 3, as the library entry C6186) – the board's regulator",
+  "vin_min_v 4.3: the module's least VDD33 of 3.0 V (WROVER-E table 14) plus the AMS1117's 1.3 V dropout – assumption: the DevKitC documentation names the 5V pin's supply '5 V' and gives no range",
+  "i_core_a 0.35: the WROVER-E's 802.11b TX peak (table 16) as the upper bound – the board's power LED (about 1.5 mA through 2 kΩ) and the CP2102N (powered from 3V3) are not added",
+  "the GPIO pins (types, functions, strapping pins, pulls, ADC ranges, hints) are the ESP32's as the library entry C701341 (ESP32-WROOM-32E, the same ESP32 chip) gives them, renamed to the header's names (VP, VN, TX, RX); the WROVER-E's pin table (ESP32-WROVER-E & ESP32-WROVER-IE Datasheet v2.4 table 3) lists the same functions for these GPIOs",
+  "decoupling default switched off for this entry (needs.decoupling false): the board carries its own capacitors – 22 µF on EXT_5V (the 5V pin) and 22 µF on VDD33 (the 3V3 pin), C1 and C3 of the DevKitC V4 schematic, as transcribed in tests/open_designs/esp32-devkitc-v4",
+  "gpio_i_max_a 0.028, gpio_i_total_max_a 1.2, pin and gpio_v_max_v 3.6: as C701341 (IOL typ at maximum drive, the ESP32 Series Datasheet's cumulative IO current, VDD + 0.3 V)"
+ ],
+ "notes": "Espressif's development board with the ESP32-WROVER-E (8 MB flash, 8 MB PSRAM), plugged into the ADLSC carrier with 2 × 19 sockets. Its own regulator, USB bridge and buttons are on the board: the carrier sees the header pins only.",
+ "verified": {
+  "by": "Claude (datasheet check, open-design transcription)",
+  "date": "2026-11-03",
+  "datasheet": "ESP32 esp-dev-kits Documentation, Release master (Espressif, 2025-11-24), 1.1 ESP32-DevKitC V4; ESP32-WROVER-E & ESP32-WROVER-IE Datasheet v2.4",
+  "checked": [
+   "header J2/J3 names and order (1.1.5) against the EasyEDA symbol of C20437001: J2 = 1–19, J3 = 20–38",
+   "power options 1.1.4: micro-USB, 5V/GND, 3V3/GND, one and only one",
+   "WROVER-E table 3: GPIO6–11 not led out (pins 17–22 NC), pins 27/28 NC (PSRAM)",
+   "WROVER-E tables 13–16: VDD33 3.0–3.6 V, IVDD ≥ 0.5 A, VIH 0.75 × VDD, VIL 0.25 × VDD, TX peak 350 mA",
+   "radio: 2412–2484 MHz, 19.5 dBm typ (802.11b); Bluetooth LE 2402–2480 MHz"
+  ],
+  "open": [
+   "the DevKitC V4 schematic was not read again for this entry: the board's regulator, EN circuit and Schottky are taken from the transcription in tests/open_designs/esp32-devkitc-v4",
+   "antenna_dbi of the WROVER-E's PCB antenna: not in the datasheet (2.33 dBi is the WROVER-IE's external antenna) – LIM.eirp cannot be computed",
+   "max_dbm is a typical value: the datasheet gives no maximum TX power",
+   "vin_min_v is derived (3.0 V + 1.3 V dropout), not stated by Espressif",
+   "the DevKitC's operating temperature: not given (the WROVER-E alone: −40 … 85 °C)",
+   "REACH and RoHS of the board: not read"
+  ]
+ }
+}

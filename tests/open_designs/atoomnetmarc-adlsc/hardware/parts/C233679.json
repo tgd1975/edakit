@@ -1,0 +1,77 @@
+{
+ "lcsc": "C233679",
+ "mpn": "MAX809MTRG",
+ "manufacturer": "onsemi(安森美)",
+ "kind": "ic",
+ "package": "SOT-23 (TO-236, case 318)",
+ "footprint": "SOT-23-3_L2.9-W1.3-P1.90-LS2.4-BR",
+ "jlc_class": "Extended Part",
+ "datasheet": {
+  "url": "https://datasheet.lcsc.com/datasheet/pdf/97e1ce06744f3e988c8a05a94a63dcc3.pdf?productCode=C233679",
+  "pinout_page": 1
+ },
+ "pins": {
+  "1": {
+   "name": "GND",
+   "type": "ground",
+   "role": "gnd"
+  },
+  "2": {
+   "name": "RESET#",
+   "type": "output",
+   "state": "high",
+   "v_rel_max_v": 0.3,
+   "v_min_v": -0.3,
+   "i_max_a": 0.02,
+   "hint": "active-low reset, push-pull (CMOS): low while VCC is below VTH and for the reset timeout (140–460 ms) after it rises above; high VOH ≥ 0.8 × VCC – it drives up to its own supply (pin description p. 3, electrical characteristics p. 5, ordering table 'Push-Pull RESET')"
+  },
+  "3": {
+   "name": "VCC",
+   "type": "power_in",
+   "role": "vcc",
+   "v_max_v": 6.0
+  }
+ },
+ "values": {
+  "behavior": "logic",
+  "icc_a": 0.0018
+ },
+ "limits": {
+  "vdd_max_v": 6.0,
+  "vdd_op_min_v": 1.2,
+  "vdd_op_max_v": 5.5,
+  "tj_max_c": 125,
+  "rth_ja_k_per_w": 301,
+  "t_min_c": -40,
+  "t_max_c": 105
+ },
+ "hints": [
+  "MAX809M: reset threshold VTH 4.38 V typ, 4.31–4.45 V at 25 °C, 4.27–4.49 V at −40 … 85 °C (p. 4) – a 5 V rail that dips to 4.5 V is close to it",
+  "the RESET output is push-pull to VCC: on a 3.3 V reset input of a part fed from another rail it drives above that part's supply"
+ ],
+ "spice": {},
+ "sources": [
+  "onsemi MAX809 Series, MAX810 Series data sheet MAX809S/D, Rev. 28 (November 2017) – LCSC product data of C233679, https://datasheet.lcsc.com/datasheet/pdf/97e1ce06744f3e988c8a05a94a63dcc3.pdf?productCode=C233679, read 2026-11-03 (edakit part fetch)",
+  "pins: p. 1 pin configuration SOT-23 – 1 GND, 2 RESET (MAX809, active low), 3 VCC; pin description p. 3",
+  "absolute maximum ratings p. 3: VCC −0.3 … 6.0 V, RESET output (CMOS) −0.3 … VCC + 0.3 V, input current VCC 20 mA, output current RESET 20 mA, RθJA 301 °C/W (SOT-23), operating junction −40 … +125 °C",
+  "electrical characteristics pp. 4–5: VCC range 1.2 … 5.5 V (−40 … 105 °C); ICC 0.8 typ / 1.8 mA max at 5.5 V (−40 … 85 °C); MAX8xxMTR VTH 4.38 V (4.31–4.45 V at 25 °C, 4.27–4.49 V at −40 … 85 °C); MAX809 VOH ≥ 0.8 VCC, VOL ≤ 0.3 V; reset timeout 140–460 ms (ordering information: MAX809MTRG 4.38 V, 140–460 ms, marking SPV)",
+  "icc_a 1.8 mA: ICC max at VCC 5.5 V",
+  "state high: the output above VTH – the operating state; the model does not follow VTH",
+  "mpn, manufacturer, footprint, jlc_class, pin numbers and names: EasyEDA library data of C233679 (edakit part import, 2026-11-03)"
+ ],
+ "notes": "Voltage supervisor: holds the ESP32's EN low while +5V is below 4.38 V. The schematic's value is 'MAX809M' (its symbol is KiCad's TPS3839DBZ); onsemi's MAX809MTRG stands in.",
+ "verified": {
+  "by": "Claude (datasheet check, open-design transcription)",
+  "date": "2026-11-03",
+  "datasheet": "onsemi MAX809 Series, MAX810 Series data sheet MAX809S/D, Rev. 28 (November 2017)",
+  "checked": [
+   "SOT-23 pinout p. 1: 1 GND, 2 RESET, 3 VCC = EasyEDA symbol",
+   "absolute maximum and electrical characteristics as in sources",
+   "MAX809: active-low push-pull output (CMOS, VOH ≥ 0.8 VCC)"
+  ],
+  "open": [
+   "the behaviour model 'logic' holds RESET high in every scenario; the threshold is not modelled",
+   "r_out_ohm: the data sheet gives VOH only at 500 µA – the model's default 50 Ω"
+  ]
+ }
+}

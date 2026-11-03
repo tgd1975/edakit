@@ -1,0 +1,66 @@
+{
+ "lcsc": "C83323",
+ "mpn": "SMBJ5.0CA",
+ "manufacturer": "Littelfuse(美国力特)",
+ "kind": "diode",
+ "package": "SMB (DO-214AA)",
+ "footprint": "SMB_L4.6-W3.6-LS5.3-BI",
+ "jlc_class": "Extended Part",
+ "datasheet": {
+  "url": "https://datasheet.lcsc.com/datasheet/pdf/4ab84a227fae39f9eac85241b8264ead.pdf?productCode=C83323",
+  "pinout_page": 1
+ },
+ "pins": {
+  "1": {
+   "name": "K",
+   "type": "passive",
+   "role": "cathode",
+   "hint": "bidirectional TVS (the CA suffix): either pin may go to the line – the entry calls pin 1 cathode for the simulation's model"
+  },
+  "2": {
+   "name": "A",
+   "type": "passive",
+   "role": "anode"
+  }
+ },
+ "values": {
+  "tvs": true,
+  "ir_a": 0.0016,
+  "ir_at_v": 5.0
+ },
+ "limits": {
+  "vr_max_v": 5.0,
+  "tj_max_c": 150,
+  "rth_ja_k_per_w": 100,
+  "t_min_c": -65,
+  "t_max_c": 150
+ },
+ "spice": {
+  "model": ".model SMBJ5V0CA D(IS=1e-12 N=1 BV=6.4 IBV=10m CJO=1n)",
+  "source": "breakdown at the minimum VBR (6.40 V at IT 10 mA, p. 2); the forward branch is a generic silicon junction and CJO a guess (assumption) – the real part is bidirectional and blocks up to VBR in both directions"
+ },
+ "hints": [
+  "SMBJ5.0CA: VR 5.0 V, VBR 6.40–7.00 V at 10 mA, VC 9.2 V at IPP 65.3 A (10/1000 µs), IR ≤ 800 µA at VR – doubled for a bidirectional part of VR ≤ 10 V (p. 2 and its note)",
+  "600 W peak pulse power at 10/1000 µs (p. 1)"
+ ],
+ "sources": [
+  "Littelfuse TVS Diodes SMBJ series data sheet, revised JC.07/04/25 v4 – LCSC product data of C83323, https://datasheet.lcsc.com/datasheet/pdf/4ab84a227fae39f9eac85241b8264ead.pdf?productCode=C83323, read 2026-11-03 (edakit part fetch)",
+  "p. 1 maximum ratings: PPPM 600 W (10/1000 µs), TJ −65 … 150 °C, RθJL 20 °C/W, RθJA 100 °C/W (typical)",
+  "p. 2 electrical characteristics: SMBJ5.0CA (bi, marking AE) VR 5.0 V, VBR 6.40 / 7.00 V at IT 10 mA, VC 9.2 V at IPP 65.3 A, IR 800 µA at VR; note: 'For bidirectional type having VR of 10 volts and less, the IR limit is double' – ir_a 1.6 mA",
+  "vr_max_v 5.0: the stand-off voltage VR (the working voltage edakit holds a TVS to)",
+  "pins 1 K, 2 A: EasyEDA symbol of C83323 (edakit part import); a bidirectional part has no polarity"
+ ],
+ "notes": "600 W bidirectional TVS: on ADLSC's input, its +5V rail and both LED outputs.",
+ "verified": {
+  "by": "Claude (datasheet check, open-design transcription)",
+  "date": "2026-11-03",
+  "datasheet": "Littelfuse TVS Diodes SMBJ series data sheet, revised JC.07/04/25 v4",
+  "checked": [
+   "p. 1 ratings",
+   "p. 2 row SMBJ5.0A / SMBJ5.0CA and the note on bidirectional IR"
+  ],
+  "open": [
+   "the model's forward branch is a single junction: the part is bidirectional"
+  ]
+ }
+}
