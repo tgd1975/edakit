@@ -12,6 +12,10 @@ licence. Changes: the circuit's facts – parts, values, connections – are tra
 drawing; the parts stated below stand in; the parts entries are written from the parts' datasheets. This is a reading
 of the schematic's title block, not legal advice.
 
+**Why this design:** the BSS138 level shifter sits on many maker boards that join 3.3 V and 5 V parts. It brings a
+circuit whose function is a level in both directions – each channel simulated, driven from either side –, which no
+reference circuit has, with real MOSFETs from their datasheet.
+
 **Transcribed:** four identical channels – Q1 to Q4 (BSS138) with the gate on LV, the source on LVn pulled up to LV and
 the drain on HVn pulled up to HV, each through 10 kΩ (R1 to R7, R10) – and the headers JP1 (LV1, LV2, LV, GND, LV3,
 LV4) and JP2 (HV1, HV2, HV, GND, HV3, HV4), pins as numbered in the schematic.

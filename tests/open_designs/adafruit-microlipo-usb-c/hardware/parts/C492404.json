@@ -1,0 +1,73 @@
+{
+ "lcsc": "C492404",
+ "mpn": "PZ254V-11-05P",
+ "manufacturer": "XFCN(兴飞)",
+ "kind": "connector",
+ "package": "1 × 5, 2.54 mm, THT",
+ "footprint": "HDR-TH_5P-P2.54-V-M",
+ "jlc_class": "Extended Part",
+ "datasheet": {
+  "url": "https://datasheet.lcsc.com/datasheet/pdf/3b85a1cdf6ed945f2e278f00c1e42442.pdf?productCode=C492404",
+  "pinout_page": 1
+ },
+ "pins": {
+  "1": {
+   "name": "1",
+   "type": "passive",
+   "role": "1"
+  },
+  "2": {
+   "name": "2",
+   "type": "passive",
+   "role": "2"
+  },
+  "3": {
+   "name": "3",
+   "type": "passive",
+   "role": "3"
+  },
+  "4": {
+   "name": "4",
+   "type": "passive",
+   "role": "4"
+  },
+  "5": {
+   "name": "5",
+   "type": "passive",
+   "role": "5"
+  }
+ },
+ "values": {
+  "pitch_mm": 2.54,
+  "r_contact_ohm": 0.02
+ },
+ "limits": {
+  "i_max_a": 3.0,
+  "t_min_c": -40,
+  "t_max_c": 105
+ },
+ "spice": {},
+ "compliance": {
+  "rohs": true,
+  "source": "the drawing's RoHS mark; LCSC product data C492404 (isEnvironment), read 2026-11-03"
+ },
+ "sources": [
+  "XFCN 2.54 mm Pin Header Connectors PZ254V-11-XX, drawing rev. A1 (2024-05-24), LCSC's copy https://datasheet.lcsc.com/datasheet/pdf/3b85a1cdf6ed945f2e278f00c1e42442.pdf?productCode=C492404, read 2026-11-03: specifications 1 current rating 3 A, 2 temperature −40 … +105 °C, 5 contact resistance 20 mΩ max; 05 positions: A 10.16 mm, B 12.70 mm",
+  "LCSC product data C492404 (2026-11-03): XFCN PZ254V-11-05P, 1 × 5P 2.54 mm through hole, 3 A, 250 V, 47 100 pcs; JLCPCB catalogue (edakit part search, 2026-11-03): Extended Part, 54 621 pcs",
+  "pins 1 … 5, footprint HDR-TH_5P-P2.54-V-M: EasyEDA library data of C492404, https://easyeda.com/api/products/C492404/components?version=6.4.19.5, read 2026-11-03 (edakit part import)"
+ ],
+ "verified": {
+  "by": "Claude (datasheet check, open-design transcription)",
+  "date": "2026-11-03",
+  "datasheet": "XFCN PZ254V-11-XX drawing rev. A1 (2024-05-24)",
+  "datasheet_sha256": "d4cb67e0fd15267bd26f8e782f79b44bc2c8e05fd2ac63c5a88712860c9aacd0",
+  "checked": [
+   "current 3 A",
+   "contact resistance 20 mΩ max",
+   "temperature −40 … 105 °C"
+  ],
+  "open": [
+   "the schematic's JP4 is a row of five 70-mil pads (HEADER-1X5, package 1X05_ROUND_70) without a part: this 1 × 5 header of the same pitch stands in, not fitted (bom false) – Adafruit ships the board with bare pads"
+  ]
+ }
+}

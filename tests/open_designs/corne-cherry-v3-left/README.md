@@ -13,6 +13,10 @@ nets there. The parts follow the build guide `corne-cherry/doc/v3/buildguide_en.
 "Copyright (c) 2019 foostan" (the CC BY 4.0 file of the current tree came later). The MIT licence asks that its notice
 travel with copies and substantial portions:
 
+**Why this design:** the same keyboard as a real key matrix: 21 keys in a 4 × 6 matrix with a diode per key on a Pro
+Micro, where the reference circuit keyboard has 2 × 2. edakit's matrix rules and the simulated scan run on it – the
+scan reads through the diodes and ghosts without them.
+
 > MIT License – Copyright (c) 2019 foostan. Permission is hereby granted, free of charge, to any person obtaining a
 > copy of this software and associated documentation files (the "Software"), to deal in the Software without
 > restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense,

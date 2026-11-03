@@ -1,0 +1,17 @@
+# Adafruit Micro-Lipo Charger with USB Type C Jack (Adafruit-MicroLipo-PCB at d8ab4b0, CC BY-SA 3.0), transcribed from
+# its published Eagle schematic for edakit's tests (maker-coverage FT-21, TODO TD-121). Source, licence and what was
+# transcribed: README.md. Not a project to order: no layout, no EasyEDA documents.
+
+[project]
+name = "adafruit-microlipo-usb-c"
+company = "Adafruit design (CC BY-SA 3.0), transcribed for edakit"
+quantity = 5
+graph = "hardware/graph.json"
+parts = "hardware/parts"
+sim = "hardware/sim.json"
+artifacts = "build/edakit"
+reports = "build/release"
+domains = ["power", "usb"]
+
+[boards.main]
+title = "Micro-Lipo USB-C"

@@ -84,6 +84,6 @@ def test_merge_numbers_again_only_a_version_whose_main_moved():
 
 
 def test_the_scripts_merge_plainly():
-    assert merge.MERGE == ("--merge",)
+    assert merge.MERGE == "merge"
     for script in ("merge.py", "notes.py"):
         assert "--admin" not in (ROOT / ".github" / script).read_text()

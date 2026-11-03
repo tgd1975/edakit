@@ -28,10 +28,11 @@ nets got names (BASE, COL, …); the parts wired to the pads by hand are added a
 schematic does not name stand in as stated below; the parts entries are written from datasheets. This is a reading
 of the repository's files, not legal advice.
 
-**Why both pedals:** the combo's transistors are followers – their bias hardly depends on the gain. The boost is the
-one stage whose operating point the transistor's spread moves: a common-emitter stage, its base held by a divider,
-its gain set by the collector and emitter resistors – the case of FT-17's corners and of a gain an AC run can show. It
-also has no IC at all: nothing types its supply and ground, which is what showed the first false alarm below.
+**Why this design:** a one-transistor boost, the stage many builders start with. Beside it the combo's transistors are
+followers – their bias hardly depends on the gain. The boost is the one stage whose operating point the transistor's
+spread moves: a common-emitter stage, its base held by a divider, its gain set by the collector and emitter resistors
+– the case of FT-17's corners and of a gain an AC run can show. It also has no IC at all: nothing types its supply and
+ground, which showed a false alarm, fixed since (findings.toml, [[fixed]]).
 
 **Transcribed:** the board as drawn – the 9 V pad through the 1N5817 D1 to VCC (the pad SW); the input pad In through
 C1 (100 nF) to the base of Q2, a 2N5088 (the schematic's value; its symbol is the 2N3904's, 1 E, 2 B, 3 C), with R1

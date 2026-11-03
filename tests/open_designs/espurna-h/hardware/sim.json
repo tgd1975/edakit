@@ -1,0 +1,72 @@
+{
+ "about": "The low-voltage side: the HLK-PM01 as the 5 V source (mains is not simulated – its nets sit at 0 V), the ESP-12F at its supply requirement, the relay off and on. Values with 'note' are assumptions.",
+ "ambient_c": 25,
+ "sources": {
+  "U$1": {
+   "plus": "4",
+   "minus": "3",
+   "r_ohm": 0.1,
+   "i_max_a": 0.6,
+   "note": "the HLK-PM01's output: 5.0 ± 0.2 V at full load, 600 mA rated (its datasheet, 5.3); 0.1 Ω source resistance assumed"
+  }
+ },
+ "supplies": {
+  "pm01-min": {
+   "U$1": 4.8
+  },
+  "pm01-max": {
+   "U$1": 5.2
+  }
+ },
+ "loads": {
+  "off": {
+   "about": "relay off (GPIO12 low), SEL high: CF1 gives the voltage (GPIO5 low)",
+   "gpio": {
+    "GPIO12": 0,
+    "GPIO5": 0
+   },
+   "leds_on": []
+  },
+  "on": {
+   "about": "relay on (GPIO12 high), SEL low: CF1 gives the current (GPIO5 high)",
+   "gpio": {
+    "GPIO12": 1,
+    "GPIO5": 1
+   },
+   "relays_on": [
+    "RLY1"
+   ],
+   "leds_on": []
+  }
+ },
+ "corners": [
+  "min",
+  "max"
+ ],
+ "spread": [
+  "min",
+  "max"
+ ],
+ "mcu": {
+  "IC2": {
+   "outputs": [
+    "GPIO12",
+    "GPIO5"
+   ],
+   "inputs": [
+    "GPIO13",
+    "GPIO14",
+    "GPIO4"
+   ],
+   "pullups": []
+  }
+ },
+ "report": [
+  "5V",
+  "3V3",
+  "RLY_COIL",
+  "SEL",
+  "GPIO13",
+  "GPIO14"
+ ]
+}

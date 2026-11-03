@@ -1,0 +1,16 @@
+# ADLSC, Atoomnet's Digital Led String Controller (atoomnetmarc/ADLSC), a WLED controller transcribed from its
+# published KiCad schematic for edakit's tests (maker-coverage FT-21). Source, licence and what was transcribed:
+# README.md. Not a project to order: no layout, no EasyEDA documents.
+
+[project]
+name = "atoomnetmarc-adlsc"
+company = "atoomnetmarc design (Apache 2.0), transcribed for edakit"
+quantity = 5
+graph = "hardware/graph.json"
+parts = "hardware/parts"
+sim = "hardware/sim.json"
+artifacts = "build/edakit"
+reports = "build/release"
+
+[boards.main]
+title = "ADLSC WLED controller"
