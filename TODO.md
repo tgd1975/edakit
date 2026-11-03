@@ -4,7 +4,7 @@ Open work that needs the owner's computer, a maker or the owner's word. The stat
 and plans the sections name; this list is what is left to do of them, in the order it can be done. No item is deleted.
 
 **Layout.** Every item, in every section, open or closed, is a line with a checkbox and an ID unique in this file,
-counted up and never reused – whoever adds an item takes the next free ID and counts it up here. Next free ID: TD-145.
+counted up and never reused – whoever adds an item takes the next free ID and counts it up here. Next free ID: TD-146.
 
 - Open: `- [ ] TD-<n> - **Title:** what and why.` – a step's own name after the dash (`- [ ] TD-31 - **D.4** …`).
 - Done: ticked, the commit that did it, the date at the end, moved to [Closed todos](#closed-todos), newest first –
@@ -41,6 +41,12 @@ to touch.
 - [ ] TD-144 - **Live run of `combine`:** the skill cart's mode `combine` at the next JLCPCB order whose basket has
       LCSC lines – the warehouse address at JLCPCB's checkout, after the payment the tick at LCSC's checkout and its
       methods in `shipping.json`; what it finds into `lcsc.toml` and handbook 8.4. *(edakit-5e)*
+
+## The parts library ([edakit/parts/](edakit/parts/))
+
+- [ ] TD-145 - **Is the LESD5D5.0CT1G bidirectional?** Read its datasheet: if it blocks both ways, `values.tvs:
+      "bidirectional"` (TD-132) in `edakit/parts/C5274290.json` and the DevKitC's copy
+      (`tests/open_designs/esp32-devkitc-v4`), and check what LIM.v and PATH.reverse then find there. *(edakit-38)*
 
 ## What edakit needs from EasyEDA Pro and easyeda-mcp-pro ([upstream/README.md](upstream/README.md))
 
