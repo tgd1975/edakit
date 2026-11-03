@@ -31,8 +31,6 @@ to touch.
 
 - [ ] TD-108 - **A photo of the delivered tree:** one picture of the lit tree in its hill into pytree's `docs/img/` –
       it replaces the render on `docs/projects/pytree.md`. *(edakit-ce)*
-- [ ] TD-110 - **OK for #265:** the parts at LCSC and the combined shipment (parts-order.md, steps 2 and 3) – merged
-      with `python3 .github/merge.py 265` on your word. *(edakit-4f)*
 - [ ] TD-134 - **Delete the branches a cloud session cannot delete:** its proxy refuses deleting a ref (`git push
       --delete` and REST, 403); GitHub deletes the branch of a merged pull request itself, so only these are left –
       `notes/verification-and-validation-concept-for-071535` (superseded by #274), `notes/td-103-closed-236-the-second-
@@ -56,7 +54,7 @@ to touch.
 
 - [ ] TD-111 - **Live run at the next parts order:** the skill cart's modes `parts` and `combine` at LCSC and JLCPCB,
       nothing ordered or paid by the skill – it records the BOM tool's labels into `edakit/suppliers/lcsc.toml`, sets
-      `recorded`, and what it finds goes into handbook 8.4; after #265. *(edakit-4f)*
+      `recorded`, and what it finds goes into handbook 8.4; #265 is on main (1.1.5). *(edakit-4f)*
 
 ## The circuit language ([docs/concepts/done/circuit-dsl-toolchain.md](docs/concepts/done/circuit-dsl-toolchain.md))
 
@@ -117,6 +115,8 @@ Nothing to do until there is an answer or a release; whichever session learns of
 
 ## Closed todos
 
+- [x] TD-110 - **OK for #265:** given; merged as edakit 1.1.5 (#265) – the parts at LCSC (`edakit order check`,
+      ORDER.basket) and the combined shipment; the live run is TD-111. *(edakit-4f)* [2026-11-03]
 - [x] TD-123 - **OK for chapter 19 and the four open designs:** given; merged as edakit 1.1.4 (#281, `f42bde3`) with
       merge.py and notes.py through REST; the concept moved to `done/`. *(ccr-de7c0e28)* [2026-11-03]
 - [x] TD-117 - **VV.1–VV.4 Handbook chapter 19:** `handbook/19-verification.md`, its lists generated from the tests'
