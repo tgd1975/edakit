@@ -629,8 +629,8 @@ Where the code forces a choice the documents do not name, these hold; each use i
 
 ## Decisions of the session
 
-Written by the session that builds the plan: number, date, decision, reason. Stage 1 built on the branch
-`claude/friendly-mccarthy-n4kt6y` (T.1 to T.10); the closing question goes to the owner with the closing report.
+Written by the session that builds the plan: number, date, decision, reason. Stages 1 to 4 built on the branch
+`claude/friendly-mccarthy-n4kt6y` (T.1 to T.27); the closing question goes to the owner with the closing report.
 
 1. 2026-11-02, T.1: a plain number where a unit is expected takes that unit (`v 0..5.5` reads as volts), and a lone
    `m` after a number is the metre – `mA`, `mm`, `ms` stay milli. A bare number at one end of a range takes the other
@@ -714,6 +714,76 @@ Written by the session that builds the plan: number, date, decision, reason. Sta
    page with the style guide's sentence budget –, so stage 1 adds nothing to it; the language gets its line there
    with stage 2, when a project can use it beyond flat statements (T.18). Reason: the plan named sections of an older
    README.
+25. 2026-11-02, T.11: `{as}` in a definition's label, notes or accept reason becomes the usage's instance name, as
+   `block add` writes it; language 5.6 says nothing of it. Reason: the library's definitions carry `{as}`, and a
+   usage of one must give what `block add` gives.
+26. 2026-11-02, T.11: a definition's attribute or range that names one of its parameters (`value color`, a net's `v`
+   written as a parameter) takes the usage's value, a quantity as its canonical text where a text is expected – the
+   expansion's part of the parameters; the project's `param` statements follow with T.13. Reason: language 11's step
+   writes `part D led value color`.
+27. 2026-11-02, T.14: in a variant, `part DES …` with a designator a usage of the base binds redefines that binding –
+   as `use INST PART = DES …` would; language 5.9 names only the usage's form. Reason: the designator is the one name
+   a reader of the graph knows the part by.
+28. 2026-11-02, T.14: `bom yes` takes the key away – the default – where it redefines; written in a main file it
+   writes `bom: true` as given. Reason: language 5.2 calls it "back to the default, for a variant".
+29. 2026-11-02, T.14: a path in a file – an include, a variant's base – is relative to the edakit.toml of the project
+   the file belongs to, so that the base's includes resolve as they do when the base compiles alone; errors name a
+   base's file relative to the variant (`../../hardware/graph.circuit:12`). Reason: language 2 says "relative to
+   edakit.toml"; with variants there are several.
+30. 2026-11-02, T.14: with `[project] parts` a list, `Config.parts` is the first folder – where `edakit part import`,
+   `block add` and the library copy entries to – and `Config.parts_dirs` the list; the Design, the compiler, `part
+   lint` and the hash read the list. Reason: the plan's "copies go into cfg.parts, unchanged".
+31. 2026-11-02, T.15: DOCS.ref on a part's `satisfies` or `decision` is an error of the graph (no requirement entry to
+   hang a draft on); on a requirement's `subject` or `require` it follows the entry's status as every DOCS.ref does –
+   a draft's is a draft finding. Handbook 3.6 stays as it is – its chapter is at the style guide's 500 lines –; 10.4
+   and chapter 19 carry the new keys. Reason: the plan named 3.6 and 10.4; the line budget leaves one.
+32. 2026-11-02, T.16: a derivation of the project's own definition runs at every usage (language 5.8), one of edakit's
+   block library only at a usage that sets a parameter its arguments read – item 7 of language 12 for `block add`,
+   held for `use` of a block as well. Reason: language 5.8 and item 7 read together; a usage of a library block that
+   sets nothing gives today's graph, as `block add` without `--set` does.
+33. 2026-11-02, T.17: the bell's sources are the main file and the smd and tht variants of circuit-dsl.md, their
+   ellipses written out with the texts the concept shortens and the step's resistors and LEDs after the pattern of
+   steps 1 and 2; the esp32 variant is not written – the concept gives no text of it. The test against the bell's
+   graphs runs only with BELL_ROOT; this session has no access to the bell's repository, so it is reported skipped.
+   Reason: no source text is invented beyond what the concept states.
+34. 2026-11-02, T.18: docs/steps/04 stays as it is: a steps page has exactly two links in its "Read on" – the
+   walkthrough and one chapter – and no handbook link in its text (tests/test_steps_pages.py); its chapter, 14, leads
+   to 19 through 14.5. Reason: the steps' shape is a rule of the documentation the plan's step did not know.
+35. 2026-11-02, T.18: the walkthroughs 17 and 18 get no sentence on the language – their graphs are JSON and TOML as
+   they always were, and chapter 19 is linked from 3.1, 14.5 and the README. Reason: a sentence that says a
+   walkthrough does not use something tells its reader nothing they need there.
+36. 2026-11-02, T.20: the library of language 9 is corrected to the standard reader (systree 0.4.4a0, syster-cli
+   0.4.3a0): `private`, `derived`, `binding` and `verify` are keywords of SysML v2 and stand as quoted names; `Other`
+   gains `attribute 'type'` for the mapping of language 10. The SysML v2 standard library could not be fetched in the
+   session (its download from GitHub was refused by the network), so the test reads without it and counts an
+   undefined name of the standard library (ISQ, SI, ScalarValues) as no error; with `SYSML_STDLIB` naming the library
+   it reads with it and every error counts. The pilot implementation's reader stays out: its installers could not be
+   read from the session. Reason: the plan's default "a standard reader's objection wins"; the reasons it cannot be
+   run fully here recorded.
+37. 2026-11-02, T.21: the exports are one element tree (`edakit/lang/export/model.py`) rendered three times – SysML v2
+   text, KerML text, JSON. A pin's port is named by the entry's name where it names that pin alone, else
+   `NAME_NUMBER` (the Pico's eight GND pins); a net of one pin is a connection without ends, its pin as doc; a
+   definition's parts get ports for the pin words its nets use; a variant is written flat beside its base's package,
+   the base written before it in the same file. Reason: port names must be unique in a part, and a connection needs
+   two ends.
+38. 2026-11-02, T.22: the JSON of clause 10.4 is held by a structural check of edakit's – every `@id` once, every
+   reference resolving, every `@type` a metaclass the writer knows –; `systree.import_file` is not used, since it
+   reads XMI, KPAR and JSON-LD and the export is none of them. Library types are named by qualified name, not
+   referenced by id, as the library is not in the array. Reason: the plan's fallback.
+39. 2026-11-02, T.23: a requirement's subject and require are written as documentation – `require constraint { doc /*
+   … */ }` in SysML, doc in KerML –; a subject typed by a usage's definition needs the definition's export the
+   requirement cannot name, and the condition stays text (language 12, item 13). A need's derivation into a
+   requirement is a `dependency`, not the Requirement Derivation library's metadata, which is in the standard library
+   the session could not read. Reason: what the reader accepts without the standard library.
+40. 2026-11-02, T.25: the extra `lsp` asks for `pygls>=2.0`, where the plan named `>=1.3`: the server is written
+   against pygls 2.1.1's API (`pygls.lsp.server.LanguageServer`, `text_document_publish_diagnostics`), read from the
+   installed package; 1.x has another module layout. The diagnostics run the graph engines (`engines.run`) on the
+   compiled text, not the checks beyond the graph, so that they answer as the text is typed; a finding is shown only
+   where the source map places it in the open file. Reason: what was verified; speed in the editor.
+41. 2026-11-02, T.26: the extension's dependencies are pinned (vscode-languageclient 9.0.1, typescript 5.5.4,
+   @types/vscode 1.90.0), `package-lock.json` committed, `node_modules/` and `out/` ignored; the CI job uses the
+   runner's Node instead of `actions/setup-node`, whose pinned commit the session could not read. It is not
+   published, as the plan says. Reason: reproducible builds without an action edakit does not pin yet.
 
 ## Not in this plan
 
