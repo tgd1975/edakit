@@ -126,11 +126,16 @@ its `verify` belongs to the requirements file.
 ## 6. Check loop (seconds)
 
 ```bash
-edakit check 2>&1 | cat     # 0 errors: fix the cause; accept only with a reason that holds
+edakit check 2>&1 | cat     # 0 errors: fix the cause, or ask the user to accept it with its reason
 edakit domains 2>&1 | cat   # the domains on and suggested; a new part may need one more
 edakit sim 2>&1 | cat       # every scenario passes
 edakit schematic draw 2>&1 | cat   # the circuit as a drawing (SVG) for the user to look at – no EDA program needed
 ```
+
+An error or a warning the circuit keeps – the cause not fixed, a reason proposed instead – is the user's to accept
+(working agreement 4, handbook 11.4): it goes into the one decision round with its consequence, the reason you propose
+and the alternatives, the recommendation first, and its line in the graph's `[accept]` is written only after the answer,
+with the decision's number. A report that says "accepted" without that answer is a decision taken for the user.
 
 A hint that is taken care of gets a line in the graph's `[accept]`: `"HINT.bulk" = "C1 1000 µF next to J1"`. The pins
 the firmware relies on go into the graph's `[locks.pins]` (`"U1.GP2" = "LED_CLK"`; or, where the firmware follows the
