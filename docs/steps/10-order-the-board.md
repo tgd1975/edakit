@@ -35,7 +35,7 @@ For M-2 JLCPCB shows the board with its parts as they will be placed, here the w
 
 ![JLCPCB's placement preview of the walkthrough's board: D1, R1 and SW1 placed, the cell holder's pads bare for soldering by hand](../../examples/coin-cell-led/docs/jlcpcb_assembly_main_top.png)
 
-The cell holder BT1 comes from LCSC – `edakit order` puts it into the cart – and you solder its two tabs yourself. Then the board is done:
+The cell holder BT1 comes from LCSC, and `edakit order` puts it into the cart. You solder its two tabs yourself, then the board is done:
 
 ![The walkthrough's finished board in EasyEDA's 3D view: the cell holder BT1 soldered, below it the button SW1, the LED D1 and the resistor R1](../../examples/coin-cell-led/docs/board_main_3d.png)
 
