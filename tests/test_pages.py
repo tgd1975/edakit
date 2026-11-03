@@ -3,6 +3,7 @@ is on it, the navigation is NAV – tabs by reader, at most eight entries a tab 
 link to a page of the site stays on the site, an image goes onto the site, a link to anything else goes to the file on
 GitHub."""
 
+import hashlib
 import importlib.util
 import json
 import posixpath
@@ -39,6 +40,8 @@ def test_every_description_is_a_page_of_the_site(tmp_path):
     reference = next(g["Reference"] for g in cfg["nav"] if "Reference" in g)
     assert cfg["docs_dir"] == "docs" and {"Rule catalog": "catalog/index.html"} in reference
     assert "edakit" in cfg["copyright"] and "issues/new/choose" in cfg["copyright"]   # the version, the feedback line
+    css = ROOT / "docs" / "brand" / "edakit.css"                # its hash in the URL: changed styles beat a cache
+    assert cfg["extra_css"] == ["brand/edakit.css?v=" + hashlib.sha256(css.read_bytes()).hexdigest()[:8]]
     features = cfg["theme"]["features"]
     assert "navigation.tabs" in features and "navigation.indexes" in features
     assert cfg["nav"][0] == {"Start": [{"Start": "index.md"}, {"A session": "start/session.md"},
