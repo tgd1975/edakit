@@ -258,6 +258,10 @@ entry's, the entry's before the default of the pin type. The sections below give
 - a polarized capacitor (an electrolytic, a tantalum): `values.polarized: true` and the pin roles `plus` and `minus`;
   `vr_max_v` the reverse voltage the series allows – LIM.v holds it in the declared ranges and the simulation, and
   PATH.reverse reports one a reversed source reaches (both grade `polarized`, warnings).
+- an AC rating – a mains terminal's 300 V AC, a mains module's input range 85 … 265 V AC, a varistor's VRMS:
+  `v_rms_max_v` in V rms, of the entry (`connector`, `varistor`) or of a pin. On an AC net (3.1, net `ac`) LIM.v
+  holds the rms of what the part sees to it, and not its DC rating (`v_max_v`, a pin's `v_min_v`); elsewhere the DC
+  rating holds. A rating the datasheet gives only for AC goes there, not into `v_max_v`.
 - a TVS diode: `values.tvs: true`, its working voltage (VRWM) as `vr_max_v` – LIM.v holds the reverse voltage to it
   without the derating factor; a bidirectional one (the CA suffix) `values.tvs: "bidirectional"`: LIM.v holds it either
   way, and PATH.reverse takes it as a part that tolerates a reversed source.

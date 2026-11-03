@@ -886,3 +886,51 @@ def test_a_bidirectional_tvs_takes_a_reversed_source():
     assert volts == {True: [3], "bidirectional": [6]}                       # before: 3 V both
     assert schema.problems({**TVS, "values": {"tvs": "both"}}) == [
         "values.tvs: true for a TVS diode, \"bidirectional\" for one that blocks both ways (the CA suffix), not 'both'"]
+
+
+# --- the ESPurna-H (espurna-h): the mains side --------------------------------------------------------------------------
+def mains_side(ac=True, terminal_rms=300, module=True):
+    """The ESPurna-H's mains side in brief: the terminal J1 (rated `terminal_rms` V AC, no DC rating) on NEUTRAL, 230 V
+    + 10 % against the line at GND – 358 V peak –, a divider R1 (470 kΩ, rated 200 V) – R2 (1 kΩ) from NEUTRAL through
+    TAP (179 V peak) to GND, and the module U1's AC input (85 … 265 V AC, 120 … 350 V DC) on NEUTRAL. `ac`: NEUTRAL and
+    TAP are marked AC nets."""
+    res = {"lcsc": "C9000510", "mpn": "test resistor", "kind": "resistor",
+           "pins": {"1": {"name": "1", "type": "passive"}, "2": {"name": "2", "type": "passive"}},
+           "values": {"value_ohm": 470000}, "limits": {"v_max_v": 200}}
+    terminal = {**TERMINAL, "limits": {"v_rms_max_v": terminal_rms}}
+    mod = {"lcsc": "C9000518", "mpn": "test AC module", "kind": "module", "verified": {"by": "test"},
+           "pins": {"1": {"name": "AC", "type": "power_in", "role": "ac_n", "v_max_v": 350, "v_min_v": -350,
+                          "v_rms_max_v": 265},
+                    "2": {"name": "AC", "type": "power_in", "role": "ac_l", "v_max_v": 350, "v_min_v": -350,
+                          "v_rms_max_v": 265}},
+           "values": {"behavior": "none"}}
+    comps = [{"designator": "J1", "type": "connector", "lcsc": "C9000515", "pins": {"1": "1", "2": "2"}},
+             {"designator": "R1", "type": "resistor", "lcsc": "C9000510", "pins": {"1": "1", "2": "2"}},
+             {"designator": "R2", "type": "resistor", "lcsc": "C9000510", "pins": {"1": "1", "2": "2"}}]
+    nets = {"NEUTRAL": (["J1.1", "R1.1"], 358), "TAP": (["R1.2", "R2.1"], 179), "GND": (["J1.2", "R2.2"], 0)}
+    if module:
+        comps.append({"designator": "U1", "type": "module", "lcsc": "C9000518", "pins": {"1": "AC", "2": "AC"}})
+        nets["NEUTRAL"][0].append("U1.1")
+        nets["GND"][0].append("U1.2")
+    graph = {"name": "t", "version": "1", "ground": "GND", "components": comps,
+             "nets": [{"name": n, "pins": p, "v": [-v, v], **({"ac": True} if ac and v else {})}
+                      for n, (p, v) in nets.items()]}
+    return Design.from_data(graph, {"C9000510": res, "C9000515": terminal, "C9000518": mod})
+
+
+def lim_v(d):
+    from edakit.engines.limits import judge_all
+    from edakit.engines.quantities import part_voltages, pin_voltages
+    return sorted((f.place, f.text) for f in judge_all(d, pin_voltages(d) + part_voltages(d)))
+
+
+def test_an_ac_net_is_held_by_its_rms_and_a_divider_s_taps_move_together():
+    """The ESPurna-H's mains side: the KF301 terminals rated 300 V AC, the HLK-PM01's input 85 … 265 V AC, the
+    5 × 470 kΩ divider to the HLW8012. edakit knew no AC net: it held the 358 V peak against the terminals' 300 V and
+    the module's 350 V DC, and each divider resistor to the highest voltage of its nets against GND (LIM.v on JP2, JP42,
+    U$1.2, R51 to R53). A net marked ac is a sine – its range the peaks –, an AC rating (v_rms_max_v) holds its rms in
+    place of the DC limits, and a resistor between two AC nets sees the difference of their like ends. A terminal
+    rated 250 V AC is still found at 253 V rms; unmarked, the divider resistor is held as before."""
+    assert lim_v(mains_side()) == []                                    # before: R1, U1.1 (2×)
+    assert lim_v(mains_side(terminal_rms=250)) == [("J1", "J1: up to 253 V rms, rated 250 V rms")]
+    assert lim_v(mains_side(ac=False, module=False)) == [("R1", "R1: nets up to 358.0 V, rated 200 V")]

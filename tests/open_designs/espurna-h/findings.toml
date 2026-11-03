@@ -64,42 +64,6 @@ judged = "real"
 why = "The divider's last tap before V2P, 72 V peak – still above ES1's 60 V. Only V2P itself (0.15 V across R50's 1 kΩ) is below it."
 
 [[check]]
-code = "LIM.v"
-place = "JP2"
-judged = "known gap"
-why = "The KF301-5.0 is rated 300 V AC rms (UL; its body is marked 300VAC); 230 V + 10 % is 253 V rms, within it. edakit knows no AC net: it holds the declared peak, 358 V, against the rating as if both were DC. The fix needs AC ratings and AC nets (an rms value beside the peak) – no small change; mains stays unchecked by decision 7."
-
-[[check]]
-code = "LIM.v"
-place = "JP42"
-judged = "known gap"
-why = "As JP2: 253 V rms at the line and load terminals against the KF301's 300 V rms rating fits; edakit compares the 358 V peak with the rms rating."
-
-[[check]]
-code = "LIM.v"
-place = "R51"
-judged = "known gap"
-why = "edakit holds a resistor to the highest voltage of its nets against GND (358 V at neutral), not to the voltage across it: the five 470 kΩ of the chain share the mains, 72 V peak (51 V rms) each, well inside the 0805's 150 V working voltage (DC or rms). A declared range cannot say that the chain's taps move together; the voltage across needs the simulation of an AC source or AC nets – no small change."
-
-[[check]]
-code = "LIM.v"
-place = "R52"
-judged = "known gap"
-why = "As R51: its tap V2P_D1 reaches 286 V against GND, the resistor itself sees a fifth of the mains, 72 V peak."
-
-[[check]]
-code = "LIM.v"
-place = "R53"
-judged = "known gap"
-why = "As R51: its tap V2P_D2 reaches 215 V against GND, the resistor itself 72 V peak. R54 and R55 (143 V and 72 V at their taps) pass by the same reading."
-
-[[check]]
-code = "LIM.v"
-place = "U$1.2"
-judged = "known gap"
-why = "The HLK-PM01's AC input is rated 85 … 265 V AC rms or 120 … 350 V DC; its parts entry can only state the DC range as the pin's limit. edakit holds neutral's ±358 V peak against ±350 V, while 253 V rms is within the module's AC range (375 V peak). AC ratings have no field – no small change."
-
-[[check]]
 code = "LVL.undefined"
 place = "Q4"
 judged = "real"
@@ -143,5 +107,7 @@ place = "Q4"
 judged = "known gap"
 why = "LIM.range/gate (CK-4) finds Q4 half on at VGS 3.3 V. It only pulls SEL low through R49 (0.5 mA): even the part at its highest threshold holds SEL below 1 mV. The rule does not weigh the current, so it warns where nothing burns – as on the SparkFun converter's BSS138."
 
+[[fixed]]
+what = "The mains held as DC: the KF301 terminals' 300 V AC rating and the HLK-PM01's 85 … 265 V AC input against the 358 V peak, and each divider resistor to the highest voltage of its nets against GND (LIM.v on JP2, JP42, U$1.2, R51 to R53). The mains nets are marked ac now, the AC ratings are v_rms_max_v and hold the rms there, and a resistor between two AC nets sees the difference of their like ends – 72 V peak for each of the five (TD-129)."
 [[fixed]]
 what = "A need on a regulator's VOUT pin left open while its tab, the same terminal, carries the output: taken as not connected (REQ.missing on IC1.2) instead of judged on the output (REQ.value on IC1.4)."
