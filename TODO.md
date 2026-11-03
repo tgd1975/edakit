@@ -46,7 +46,7 @@ to touch.
       nothing ordered or paid by the skill – it records the BOM tool's labels into `edakit/suppliers/lcsc.toml`, sets
       `recorded`, and what it finds goes into handbook 8.4; after #265. *(edakit-4f)*
 
-## The circuit language ([docs/concepts/new/circuit-dsl-toolchain.md](docs/concepts/new/circuit-dsl-toolchain.md))
+## The circuit language ([docs/concepts/done/circuit-dsl-toolchain.md](docs/concepts/done/circuit-dsl-toolchain.md))
 
 - [ ] TD-122 - **The bell in the language, in its own repository:** its five graphs as `.circuit` – `edakit graph
       convert --to circuit` keeps the sign-offs (rehashed); the modeled sources of `tests/fixtures/bell/` add the

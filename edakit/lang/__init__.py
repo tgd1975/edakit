@@ -3,7 +3,7 @@
 The language composes – definitions with parameters, usages, loops over integer ranges, named derivation rules and
 variants as differences – and decides nothing an engine decides. Its compiler turns the source into the resolved
 graph, today's JSON graph plus the key `derivations`, which every reader of the graph sees unchanged
-(docs/concepts/new/circuit-dsl-language.md; the build: circuit-dsl-toolchain.md).
+(docs/concepts/done/circuit-dsl-language.md; the build: circuit-dsl-toolchain.md).
 
     units.py     quantities with units, ranges and tolerances (language 4)
     series.py    the E-series of IEC 60063 (catalog/tables/series.toml)

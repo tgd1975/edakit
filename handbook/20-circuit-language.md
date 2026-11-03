@@ -3,8 +3,8 @@
 For you if a circuit repeats itself, comes in variants, or has values that follow from a rule – an LED's series
 resistor, a divider, a pull-up. After this chapter you can write a project's graph as `.circuit` source, compile and
 check it, format it, move a JSON or TOML project to it, and derive a block's values. The notation in full is
-[circuit-dsl-language.md](../docs/concepts/new/circuit-dsl-language.md); this chapter grows with the steps of
-[circuit-dsl-toolchain.md](../docs/concepts/new/circuit-dsl-toolchain.md).
+[circuit-dsl-language.md](../docs/concepts/done/circuit-dsl-language.md); this chapter grows with the steps of
+[circuit-dsl-toolchain.md](../docs/concepts/done/circuit-dsl-toolchain.md).
 
 ## 20.1 One graph, three forms
 

@@ -830,8 +830,8 @@ details = [
 ]
 replaces = []
 sources = [
-  "docs/concepts/new/circuit-dsl-language.md, section 7",
-  "docs/concepts/new/circuit-dsl-toolchain.md, T.8",
+  "docs/concepts/done/circuit-dsl-language.md, section 7",
+  "docs/concepts/done/circuit-dsl-toolchain.md, T.8",
 ]
 
 [codes."SYNC.graph"]
@@ -843,7 +843,7 @@ severity = "error"
 replaces = []
 sources = [
   "edakit handbook 3.1, The JSON generated beside a TOML graph",
-  "docs/concepts/new/circuit-dsl-language.md, section 8 and item 16",
+  "docs/concepts/done/circuit-dsl-language.md, section 8 and item 16",
 ]
 
 [codes."SYNC.agents"]
