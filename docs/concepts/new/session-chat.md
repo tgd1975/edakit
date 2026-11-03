@@ -26,7 +26,7 @@ what ran in between.
 
 **The yardstick.** The chat is text in the repository, the page's source, held by a test to the example's files.
 Nothing of it exists only in EasyEDA or in someone's head. It also makes visible what is not yet chat – the install,
-two clicks in EasyEDA, the new sessions, paying – instead of hiding it.
+the click in EasyEDA, the new sessions, paying – instead of hiding it.
 
 ## The proposal
 
@@ -48,10 +48,15 @@ two clicks in EasyEDA, the new sessions, paying – instead of hiding it.
   `docs/decisions.md`, its graph, requirements and outputs – and from the walkthrough. Claude's lines are shortened;
   the page says so once, in its intro, and links the walkthrough for the full story.
 - **Honest about the rest.** What a person does outside the chat stands in the chat, set apart ("You, outside the
-  chat"): the install, creating the EasyEDA project by hand, *Import Changes*, a new session for the layout, starting
+  chat"): the install, creating the EasyEDA project by hand, a new session for the layout, starting
   the reviewers, checking the preview, ordering and paying, testing the boards. Each such line is also a requirement
   E-… in `upstream/README.md` or a step of the steps pages; when one goes away, its line goes.
-- **The tally** under the chat: "Your part: 8 messages typed, 15 answers in 5 forms, 7 things done outside the chat."
+- **A click in EasyEDA gets a footnote** (the owner, 2026-11-03): that KiCad does without it, and that it is reported
+  to EasyEDA so it goes – the issue linked, the same as in the requirement E-… of `upstream/README.md`. Today that is
+  one click, *File → New → Project* (E-1, [easyeda-api-sdk#45](https://github.com/easyeda/easyeda-api-sdk/issues/45));
+  its footnote also says that the second, *Design → Import Changes*, is gone since 2026-11-01 (E-2,
+  [#46](https://github.com/easyeda/easyeda-api-sdk/issues/46), TD-37), so it has no line of its own any more.
+- **The tally** under the chat: "Your part: 8 messages typed, 15 answers in 5 forms, 6 things done outside the chat."
   Counted from the entries when the site is assembled, never typed by hand. That is the owner's point in one line – a
   task and a few questions – and its limits beside it.
 - **Not legal advice.** The reviewers' entry says once that the regulatory review is support, not legal advice
@@ -77,7 +82,8 @@ claude: Written to docs/decisions.md, each with its reason and date.
 
 Seven kinds of entry: `---` a step divider, `you:`, `claude:`, `ran:` (what Claude ran, a quiet line), `do:` (outside
 the chat), `img:` (a picture Claude shows), `form:` with `?` question, `-` option (the recommended first) and `>`
-answer. An indented line continues the entry above.
+answer. Under a `do:`, an indented line starting with `†` is its footnote, with links as `[text](url)`. An indented
+line continues the entry above.
 
 `docs/pages.py` turns each `chat` fence into HTML while it assembles the pages (it rewrites links there already), and
 appends the tally. No MkDocs plugin and no Python function in `mkdocs.yml`: the build stays the two commands of
@@ -92,7 +98,8 @@ In the brand's tokens (`docs/brand/tokens.json`), in `docs/brand/edakit.css`, fo
 - **The form** – a card like Claude Code's question form: title and count, each question with its options, the
   recommended one first and darker, the answer right-aligned in teal. A question without options is one row.
 - **Ran** – a small grey line with a left rule, commands in mono; no bubble, so the eye skips it.
-- **Outside the chat** – a dashed box in copper across the width: it must stand out, not hide.
+- **Outside the chat** – a dashed box in copper across the width: it must stand out, not hide. Its footnote stands
+  inside the box under a dashed line, small and grey, the issues linked; the line it belongs to ends in †.
 - **A step** – a divider with the step's name, linked to its steps page.
 - **Pictures** – a card on Claude's side, at most 24 rem wide.
 
@@ -103,7 +110,8 @@ and 9).
 #### A concrete example
 
 Steps 8 and 9 of the session, shortened – every kind of entry once: a step divider, Claude, you, a form with options
-and a one-row question, a line of what ran, two things outside the chat, a picture. The source, as it stands in the
+and a one-row question, a line of what ran, two things outside the chat – the second, the click in EasyEDA, with its
+footnote –, a picture. The source, as it stands in the
 page's Markdown ([prototypes/session-chat/example.md](prototypes/session-chat/example.md)):
 
 ```text
@@ -120,11 +128,15 @@ form: Two notes need you, the rest Claude fixed
   > yes
 
 --- 9 Lay out the board
+do: Install EasyEDA Pro. Create the project by hand: File → New → Project, "coin-cell-led".
+  † Not with KiCad: there edakit writes the project itself. EasyEDA's interface cannot create one yet; we reported
+  it to EasyEDA ([issue #45](https://github.com/easyeda/easyeda-api-sdk/issues/45)), and the click goes once it is
+  fixed. The other click, Design → Import Changes, is gone since 2026-11-01: we reported it too
+  ([issue #46](https://github.com/easyeda/easyeda-api-sdk/issues/46)), and edakit now writes what the import set.
 claude: The board's size and shape? And what must stay where a person touches or looks?
 you: Round, please.
 claude: Ø 44 mm. The cell nearly in the middle, 10 mm above it to lever it out. Button, LED and resistor below.
 img: ../../examples/coin-cell-led/docs/pcb_plan_main.png | The placement plan
-do: In EasyEDA: Design → Import Changes, once, when Claude says so.
 ```
 
 What the site shows, rendered by the prototype's `chat.py` with `chat.css` – on a desktop at 720 px in the light
@@ -147,6 +159,8 @@ The HTML `docs/pages.py` writes for it, in part – one class a kind of entry, n
     <ol><li class="chat-rec">Adults at a desk, … (recommended).</li><li>Children: …</li></ol>
     <p class="chat-a">Adults at a desk</p></div>
   <div class="chat-q chat-q-row"><p>R-2, dark while nobody presses, …</p><p class="chat-a">yes</p></div></div>
+<div class="chat-do"><span class="chat-do-label">You, outside the chat</span><p>Install EasyEDA Pro. … †</p>
+  <p class="chat-note">† Not with KiCad: … (<a href="https://github.com/easyeda/easyeda-api-sdk/issues/45">issue #45</a>) …</p></div>
 <div class="chat-msg chat-you"><span class="chat-who">You</span><p>Round, please.</p></div>
 <figure class="chat-img"><img src="…/pcb_plan_main.png" alt="The placement plan"><figcaption>The placement plan</figcaption></figure>
 </div>
@@ -164,6 +178,8 @@ An excerpt like this one gets no tally; the tally stands only under a whole sess
 - every number with a unit in a Claude, form or ran line appears in the example's files or in chapter 17 (1.22 mA,
   10.7 mA, 52.60 USD, Ø 44 mm …);
 - every `do:` line is matched by a requirement E-… of `upstream/README.md` or by a "What you do" of a steps page;
+  a `do:` with a click in EasyEDA has a footnote, and its issue is the one its E-… row names – a row whose click is
+  gone ("none") fails the test while its line still stands;
 - the page within the entry register of `tests/test_style.py`.
 
 ## The chat, as drafted
@@ -180,7 +196,7 @@ The full draft is [prototypes/session-chat/session.md](prototypes/session-chat/s
 | 6 Parts and cost | – | one form: who places BT1 | – |
 | 7 Drawing | "a board" | stop here or a board? | – |
 | 8 Reviews | – | one form: who uses it, R-2's number | start the reviewers |
-| 9 Layout | "Round, please." | size and shape? | install EasyEDA, create the project, a new session, *Import Changes* |
+| 9 Layout | "Round, please." | size and shape? | install EasyEDA, create the project (with its footnote), a new session |
 | 10 Order | "Release it and put it into the cart." | one form: shipping | check the preview, order and pay; test the boards |
 
 ## Steps
@@ -244,6 +260,13 @@ Taken by the owner on 2026-11-03 in a decision round in Claude Code's form, the 
 
 Set by Claude and left to it by the owner on 2026-11-03, kept as it stands: the seven kinds of entry; the layout of section 4; the tally's wording; the page's
 name "A session" and its place after the start page; the budget of 1,000 words; no decision numbers in the chat.
+
+## A finding on the way
+
+`docs/steps/09-lay-out-the-board.md` still says "In EasyEDA one click is left for you: *Design → Import Changes*,
+once". By `upstream/README.md`, E-2, that click is gone since 2026-11-01 (TD-37): edakit writes the Channel ID the
+import set, and the click is needed only if the DRC still reports the item. A finding for the documentation, for the
+owner – not changed here.
 
 ## Sources
 

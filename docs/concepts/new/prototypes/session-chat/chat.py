@@ -9,6 +9,7 @@ The format, one entry a line, an indented line continuing the one above:
     claude: <text>         what Claude says
     ran: <text>            what Claude ran – a quiet line, no bubble
     do: <text>             what the person does outside the chat: an install, a click, a new session, paying
+      † <text>             under a do: its footnote – for a click in EasyEDA: KiCad needs none, and the issue upstream
     img: <path> | <alt>    a picture Claude shows
     form: <title>          Claude Code's question form, then per question:
       ? <question>
@@ -47,6 +48,8 @@ def parse(text):
                     value["questions"][-1]["options"].append(rest)
                 else:
                     value["questions"][-1]["answer"] = rest
+            elif body.startswith("† ") and kind in ("do", "note"):
+                entries.append(("note", body[2:]))
             elif kind != "form":
                 entries[-1] = (kind, f"{value} {body}")
             continue
@@ -68,16 +71,31 @@ def tally(entries):
     return {"typed": you, "forms": len(forms), "answers": answers, "outside": do}
 
 
+LINK = re.compile(r"\[([^\]]+)\]\(([^)\s]+)\)")
+
+
 def code(text):
-    """`/edakit:…`, `edakit …` and paths set in mono, the rest escaped."""
+    """`/edakit:…`, `edakit …` and paths set in mono, [text](url) a link, the rest escaped."""
+    out, last = [], 0
+    for m in LINK.finditer(text):
+        out.append(mono(text[last:m.start()]))
+        out.append(f'<a href="{html.escape(m.group(2))}">{mono(m.group(1))}</a>')
+        last = m.end()
+    return "".join(out) + mono(text[last:])
+
+
+def mono(text):
+    """The commands – on the site the list of edakit's own –, the slash commands and the paths in mono."""
     out = html.escape(text)
-    return re.sub(r"(/edakit:[\w-]+|edakit [a-z][\w -]*?(?= ·|:|$|\.)|[\w./-]+\.(?:toml|json|md))",
+    return re.sub(r"(/edakit:[\w-]+|edakit (?:block|part|check|sim|stock|cost|order|schematic|gate|req|graph|explain|cart|pcb|route|release)\b[\w -]*?(?= ·|:|$|\.)|[\w./-]+\.(?:toml|json|md))",
                   r"<code>\1</code>", out)
 
 
 def render(entries):
     parts = ['<div class="chat">']
-    for kind, value in entries:
+    for n, (kind, value) in enumerate(entries):
+        if kind == "note":
+            continue                     # written inside the do above it
         if kind == "step":
             parts.append(f'<div class="chat-step"><span>{html.escape(value)}</span></div>')
         elif kind in ("you", "claude"):
@@ -87,8 +105,14 @@ def render(entries):
         elif kind == "ran":
             parts.append(f'<div class="chat-ran"><span>ran</span> {code(value)}</div>')
         elif kind == "do":
+            notes = []
+            for k, v in entries[n + 1:]:
+                if k != "note":
+                    break
+                notes.append(f'<p class="chat-note">† {code(v)}</p>')
+            mark = " †" if notes else ""
             parts.append(f'<div class="chat-do"><span class="chat-do-label">You, outside the chat</span>'
-                         f'<p>{code(value)}</p></div>')
+                         f'<p>{code(value)}{mark}</p>{"".join(notes)}</div>')
         elif kind == "img":
             path, _, alt = (s.strip() for s in value.partition("|"))
             parts.append(f'<figure class="chat-img"><img src="{html.escape(path)}" alt="{html.escape(alt)}">'

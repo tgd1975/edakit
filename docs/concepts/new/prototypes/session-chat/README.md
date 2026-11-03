@@ -13,4 +13,5 @@ The sketch of [session-chat.md](../../session-chat.md), not on the site's naviga
 - `out/session.html` – the rendered page; `out/session-light.png` its top at 900 px, light, up to step 6;
   `out/session-dark-phone.png` steps 8 and 9 at 390 px, dark.
 
-Its tally, counted by `chat.py`: 8 messages typed, 15 answers in 5 forms, 7 things done outside the chat.
+Its tally, counted by `chat.py`: 8 messages typed, 15 answers in 5 forms, 6 things done outside the chat. The click in EasyEDA carries a
+footnote (`†`): KiCad needs none, and the issues reported to EasyEDA.

@@ -40,6 +40,9 @@ main > p { color: var(--chat-ink); margin: 0 0 .8rem; }
 
 .chat-do { align-self: stretch; padding: .5rem .8rem; border: 1px dashed var(--chat-copper); border-radius: .5rem;
            background: color-mix(in srgb, var(--chat-copper) 7%, transparent); }
+.chat-note { margin-top: .4rem !important; padding-top: .35rem; border-top: 1px dashed var(--chat-copper);
+             font-size: .78rem; color: var(--chat-muted); }
+.chat-note a { color: var(--chat-accent); }
 .chat-do-label { display: block; font-size: .7rem; font-weight: 600; color: var(--chat-copper);
                  text-transform: uppercase; letter-spacing: .04em; }
 
@@ -76,9 +79,9 @@ main > p { color: var(--chat-ink); margin: 0 0 .8rem; }
 <div class="chat-ran"><span>ran</span> electrical-reviewer: 5 notes · regulatory-reviewer: 4 notes, none blocking</div>
 <div class="chat-form"><div class="chat-form-title">Two notes need you, the rest Claude fixed<span>2 questions</span></div><div class="chat-q"><p>Who uses the board? The cell comes out by hand, and a swallowed coin cell burns.</p><ol><li class="chat-rec">Adults at a desk, out of reach of small children (recommended).</li><li>Children: then a holder that needs a tool.</li></ol><p class="chat-a">Adults at a desk</p></div><div class="chat-q chat-q-row"><p>R-2, dark while nobody presses, has no number. At most 1 µA from the cell?</p><p class="chat-a">yes</p></div></div>
 <div class="chat-step"><span>9 Lay out the board</span></div>
+<div class="chat-do"><span class="chat-do-label">You, outside the chat</span><p>Install EasyEDA Pro. Create the project by hand: File → New → Project, &quot;coin-cell-led&quot;. †</p><p class="chat-note">† Not with KiCad: there edakit writes the project itself. EasyEDA&#x27;s interface cannot create one yet; we reported it to EasyEDA (<a href="https://github.com/easyeda/easyeda-api-sdk/issues/45">issue #45</a>), and the click goes once it is fixed. The other click, Design → Import Changes, is gone since 2026-11-01: we reported it too (<a href="https://github.com/easyeda/easyeda-api-sdk/issues/46">issue #46</a>), and edakit now writes what the import set.</p></div>
 <div class="chat-msg chat-claude"><span class="chat-who">Claude</span><p>The board&#x27;s size and shape? And what must stay where a person touches or looks?</p></div>
 <div class="chat-msg chat-you"><span class="chat-who">You</span><p>Round, please.</p></div>
 <div class="chat-msg chat-claude"><span class="chat-who">Claude</span><p>Ø 44 mm. The cell nearly in the middle, 10 mm above it to lever it out. Button, LED and resistor below.</p></div>
 <figure class="chat-img"><img src="../../../../../../examples/coin-cell-led/docs/pcb_plan_main.png" alt="The placement plan"><figcaption>The placement plan</figcaption></figure>
-<div class="chat-do"><span class="chat-do-label">You, outside the chat</span><p>In EasyEDA: Design → Import Changes, once, when Claude says so.</p></div>
 </div></main></body></html>
