@@ -183,6 +183,12 @@ Knowledge that needs judgement, such as whether a button needs a hardware deboun
 notes. They never block.
 Handbook: [14.3 Hints](../handbook/14-design.md#143-hints).
 
+### Inventory
+
+Your own parts on hand, as a table in a file of yours. edakit order takes from it before it buys. edakit reads it
+and never writes it. It is named in `edakit.local.toml`, never in a repository.
+Handbook: [8.4 Ordering at the manufacturer (up to the cart; you order and pay)](../handbook/08-release-gate.md#84-ordering-at-the-manufacturer-up-to-the-cart-you-order-and-pay).
+
 ### Job
 
 What `edakit cart prepare` writes for one order: the release's upload files with their SHA-256, every field of the
@@ -218,6 +224,11 @@ Handbook: [2.1 What talks to what](../handbook/02-setup.md#21-what-talks-to-what
 
 What someone wants, in their own words, numbered `N-…` in the requirements file.
 Handbook: [3.6 Requirements](../handbook/03-hardware-graph.md#36-requirements).
+
+### On hand
+
+What your inventory holds. Stock is the assembler's, on hand is yours.
+Handbook: [8.4 Ordering at the manufacturer (up to the cart; you order and pay)](../handbook/08-release-gate.md#84-ordering-at-the-manufacturer-up-to-the-cart-you-order-and-pay).
 
 ### Open design
 

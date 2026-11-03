@@ -844,6 +844,14 @@ Written by the session that builds the plan: number, date, decision, reason. Sta
    and the agent are main's word for word; the DSL's text – chapter 20 and its lines in chapters 2, 3, 8, 10 and 14 –
    is `docs/dsl/`, six pages, the site's tab "Explorative DSL" between Reference and Inside edakit. A project with the
    switch gets one line at the session start. Reason: the owner's "the original variant the default, without a word".
+50. 2026-11-03, the seal of the beta after its review (circuit-dsl-beta-review.md, B.1 to B.6, on the branch
+   `claude/gracious-fermat-vsbycc`, `1dd3e31` to `460a3e4`, on 49's tip `5ee220f`), confirmed by the owner: DEF
+   runs only with the switch as SYNC.graph does; a command line that names nothing of the DSL is parsed by main's
+   parser word for word – its errors included –, the DSL's parser opens only for `lsp`, a DSL action of `graph` or
+   one of its options after `graph` or `block`; `graph json`'s messages name `.circuit` only with the switch; the
+   beta notice of `docs/dsl/` names the switch and no branch; the session start reads the switch as edakit.toml's
+   check does; the link of `evals/README.md` into the tab stays. Reason: the owner's "without a word" of 48,
+   held to the error texts and the engines as well.
 
 ## Not in this plan
 

@@ -298,6 +298,28 @@ scope of the sign-off file.
 
 A key no agent has is an error of edakit.toml; what an entry signs and where it reviews is checked by `edakit check`.
 
+### edakit.local.toml
+
+What only your checkout knows, beside `edakit.toml`: today your inventory (8.4). It is in `.gitignore` – `edakit
+inventory template` puts it there – and `edakit order` notes when git tracks it after all. Without the file, or
+without `[inventory]`, nothing changes.
+
+```toml
+[inventory]
+files = ["~/Parts/inventory.xlsx", "~/Parts/inventory_*.md"]   # one path or a list of paths and globs
+lcsc_map = "~/Parts/lcsc.csv"   # optional: a table with ID and LCSC, for an inventory without an LCSC column
+
+[inventory.columns]             # optional: your own column names
+id = "Teil"
+quantity = "Anzahl"
+```
+
+| Key | Meaning |
+| --- | --- |
+| `files` | the inventory: `.md`, `.html`, `.csv`, `.xlsx` or `.ods`; relative to the project or from `~`; a glob takes every file it matches. A file that is not there, a glob that matches nothing, a file without a table with `ID` and `Quantity`: `edakit order` stops |
+| `lcsc_map` | a table with the columns `ID` and `LCSC` in any of those formats: the LCSC number of a row by its ID, the inventory left as it is; an ID mapped to two numbers stops |
+| `columns` | the names of `id`, `quantity`, `lcsc`, `name`, `description` and `link` in your files, compared without case; default `ID`, `Quantity`, `LCSC`, `Name`, `Description`, `Link` |
+
 ## 10.2 The board file
 
 `hardware/boards/<name>.toml`: what the PCB designer decides (14.1). The layout hash covers it, the SVGs its
@@ -905,10 +927,26 @@ Assembler's BOM, one cart per other supplier, hand-assembly list for all sets; c
 `edakit order [--out DIR] [--with CONFIG …]` – EasyEDA: no
 
 - **Reads:** graph, parts (`order`), board files (side), `[[extra]]`, `spare_pct`; with `--with` the same of each
-  other project's edakit.toml
+  other project's edakit.toml; the inventory of `edakit.local.toml` (8.4)
 - **Writes:** `<artifacts>/order/` or DIR: `bom_<board>.csv` (the SYNC.bom BOM; none for a bought or hand-wired board),
   `cart_<supplier>.csv`, `hand_assembly.md`; with `--with` the carts of all projects in the same files and
   `hand_assembly_<project>.md` for each other project
+
+### edakit inventory
+
+<!-- edakit:generated command inventory -->
+`edakit inventory [QUERY ...]`
+
+Your parts on hand, named in edakit.local.toml: the project's hand-soldered parts and extras against them; QUERY: the rows holding every word; template FILE: a new empty inventory (.md, .xlsx, .ods).
+<!-- edakit:end -->
+
+`edakit inventory [WORDS …]`, `edakit inventory template FILE` – EasyEDA: no
+
+- **Reads:** `edakit.local.toml` and the inventory it names (10.1); graph, parts, `[[extra]]`, `spare_pct` as
+  `edakit order`
+- **Writes:** nothing – `template` a new `.md`, `.xlsx` or `.ods` with the header row, `files` in
+  `edakit.local.toml` when it names none, and both in `.gitignore`
+- **Exit:** 0; 1 without an inventory, with one edakit cannot read, or a query no row holds
 
 ### edakit cart
 
@@ -1355,6 +1393,7 @@ Check the tool chain.
 
 ```text
 edakit.toml                 the table of contents: project, boards, where the files are
+edakit.local.toml           this checkout's settings – the inventory (10.1); in .gitignore, never committed
 hardware/requirements.toml  what the circuit must do: needs and requirements, if [project] requirements names it
 hardware/graph.toml         the hardware graph (only source of parts and connections), ground net, check settings;
                             hardware/graph.json in a project that has not converted
