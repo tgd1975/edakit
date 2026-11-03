@@ -977,6 +977,11 @@ holds wherever edakit runs the entry – `edakit run`, a step that runs an input
 export (8.1); the protocol shows `cmd` as written. A script you run by hand – a check of phase order or acceptance, or
 any script outside edakit – gets the python of your shell.
 
+**An `easyeda` script that writes `pcb:<b>`** connects and opens the board's PCB before it touches it, in the order
+edakit's own commands keep: `mcp = eda.connect(cfg)`, `eda.open_pcb(mcp, board.pcb)`, then `eda.ensure_pcb_focus(mcp)`
+before each write, `eda.activate_pcb` and `eda.save_pcb` as needed. Called before `open_pcb`, those three stop with "no
+PCB opened in this session – open the board's PCB first: `open_pcb(mcp, board.pcb)`" before asking EasyEDA anything.
+
 **`[[release.stages]]` stay exactly as they are:** their `cmd` runs as written, `python` the one of the PATH, since
 existing projects rely on it – a stage that wants edakit's Python becomes a `[scripts]` entry of kind `check`.
 `[[release.stages]]` (8.1) take part as checks of phase export before S.

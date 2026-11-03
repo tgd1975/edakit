@@ -552,7 +552,7 @@ def test_the_probe_throwing_counts_as_an_inactive_pcb_tab(monkeypatch):
     monkeypatch.setattr(eda, "api", api)
     monkeypatch.setattr(eda, "open_pcb", lambda mcp, name: switched.append("open_pcb"))
     monkeypatch.setattr(eda.time, "sleep", lambda s: None)
-    monkeypatch.setitem(eda.PCB, "name", "main")
+    monkeypatch.setattr(eda, "PCB", {"name": "main", "uuid": "pcb-1"})
     eda.activate_pcb(None)
     assert switched == ["DMT_EditorControl.openDocument", "open_pcb"]
 
@@ -684,3 +684,19 @@ def test_create_save_reads_the_template_again_from_its_save(cfg, capsys):
     assert schematic.check_reopened(mcp, "generated_main", comps, nets) == 0
     assert "opened again from the save: matches the graph" in capsys.readouterr().out
     assert "t-lay1" not in [tab["tabId"] for tab in mcp.tabs]
+
+
+# --- a project script that focuses the PCB before opening it (#339) ----------------------------------------------------
+
+@pytest.mark.parametrize("call", [eda.ensure_pcb_focus, eda.activate_pcb, eda.save_pcb])
+def test_focusing_the_pcb_before_open_pcb_says_to_open_it_first(monkeypatch, call):
+    """An easyeda script that calls ensure_pcb_focus (or what relies on it) before open_pcb in the session: the module
+    has no PCB yet – a message naming open_pcb, not KeyError: 'uuid'. The bridge is never asked."""
+    monkeypatch.setattr(eda, "PCB", {})
+    asked = []
+    monkeypatch.setattr(eda, "api", lambda mcp, path, *a, **kw: asked.append(path))
+    monkeypatch.setattr(eda, "pcb_answers", lambda mcp: False)
+    monkeypatch.setattr(eda.time, "sleep", lambda s: None)
+    with pytest.raises(SystemExit) as e:
+        call(None)
+    assert "open_pcb(mcp, board.pcb)" in str(e.value) and asked == []
