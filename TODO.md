@@ -31,8 +31,6 @@ to touch.
 
 - [ ] TD-108 - **A photo of the delivered tree:** one picture of the lit tree in its hill into pytree's `docs/img/` –
       it replaces the render on `docs/projects/pytree.md`. *(edakit-ce)*
-- [ ] TD-149 - **OK for #332 (the LESD5D5.0CT1G is a bidirectional TVS):** https://github.com/tgd1975/edakit/pull/332 –
-      merged by `python3 .github/merge.py 332` on your word. *(edakit-c6)*
 
 ## The parts order ([docs/concepts/done/parts-order.md](docs/concepts/done/parts-order.md))
 
@@ -64,6 +62,8 @@ Nothing to do until there is an answer or a release; whichever session learns of
 
 ## Closed todos
 
+- [x] TD-149 - **OK for #332 (the LESD5D5.0CT1G is a bidirectional TVS):** given; merged as edakit 1.1.16 (#332).
+      *(edakit-c6)* [2026-11-03]
 - [x] TD-145 - **Is the LESD5D5.0CT1G bidirectional?** Yes – symbol p. 1 and I–V curve p. 2; `values.tvs
       "bidirectional"` in both entries, the DevKitC's findings unchanged (LIM.v on D6 only, no PATH.reverse); #332, its
       OK is TD-149. *(edakit-38)* [2026-11-03]
