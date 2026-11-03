@@ -40,6 +40,9 @@ main > p { color: var(--chat-ink); margin: 0 0 .8rem; }
 
 .chat-do { align-self: stretch; padding: .5rem .8rem; border: 1px dashed var(--chat-copper); border-radius: .5rem;
            background: color-mix(in srgb, var(--chat-copper) 7%, transparent); }
+.chat-note { margin-top: .4rem !important; padding-top: .35rem; border-top: 1px dashed var(--chat-copper);
+             font-size: .78rem; color: var(--chat-muted); }
+.chat-note a { color: var(--chat-accent); }
 .chat-do-label { display: block; font-size: .7rem; font-weight: 600; color: var(--chat-copper);
                  text-transform: uppercase; letter-spacing: .04em; }
 
