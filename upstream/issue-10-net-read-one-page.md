@@ -1,6 +1,6 @@
-# Issue – draft (M-11)
+# Issue #864 – as posted (M-11)
 
-Not posted – waits for the owner's word, with the pull request ([pr-10-net-read-one-page.md](pr-10-net-read-one-page.md)).
+Posted on 2026-11-03 (https://github.com/oaslananka/easyeda-mcp-pro/issues/864) on the owner's word, with the pull request #865 ([pr-10-net-read-one-page.md](pr-10-net-read-one-page.md)).
 Checked before, on 2026-11-02 and again on 2026-11-03: easyeda-mcp-pro 1.8.1 the newest release, `listNetsApi`
 unchanged in it and on `upstream/main` (`5f845f0`); no issue there covers it (searched "coordinate fallback net", "other schematic open net", "getAll
 allSchematicPages", "net detail wrong pin"). Found live on pytree's `tree` the same day (E-18 before: taken for
