@@ -4,7 +4,7 @@ Open work that needs the owner's computer, a maker or the owner's word. The stat
 and plans the sections name; this list is what is left to do of them, in the order it can be done. No item is deleted.
 
 **Layout.** Every item, in every section, open or closed, is a line with a checkbox and an ID unique in this file,
-counted up and never reused – whoever adds an item takes the next free ID and counts it up here. Next free ID: TD-123.
+counted up and never reused – whoever adds an item takes the next free ID and counts it up here. Next free ID: TD-134.
 
 - Open: `- [ ] TD-<n> - **Title:** what and why.` – a step's own name after the dash (`- [ ] TD-31 - **D.4** …`).
 - Done: ticked, the commit that did it, the date at the end, moved to [Closed todos](#closed-todos), newest first –
@@ -36,6 +36,9 @@ to touch.
 - [ ] TD-113 - **OK for the circuit language:** the branch `claude/friendly-mccarthy-n4kt6y` (T.1–T.27 of
       circuit-dsl-toolchain.md, a patch) – opened as a pull request and merged with `python3 .github/merge.py <n>` on
       your word. *(friendly-mccarthy)*
+- [ ] TD-123 - **OK for chapter 19 and the four open designs:** the branch `ccr-de7c0e28-hcr2zn` (TD-117 to TD-121, a
+      patch; 3402 tests green) – opened as a pull request and merged with `python3 .github/merge.py <n>` on your word;
+      then TD-117 to TD-121 are ticked and the concept moves to `done/`. *(ccr-de7c0e28)*
 
 ## The parts order ([docs/concepts/new/parts-order.md](docs/concepts/new/parts-order.md))
 
@@ -47,8 +50,9 @@ to touch.
 
 - [ ] TD-122 - **The bell in the language, in its own repository:** its five graphs as `.circuit` – `edakit graph
       convert --to circuit` keeps the sign-offs (rehashed); the modeled sources of `tests/fixtures/bell/` add the
-      LED step's records and the LEDs' `value`, a new circuit hash and new sign-offs – the bell's choice, after
-      TD-113 (decision 43). *(friendly-mccarthy)*
+      LED step's records, the LEDs' `value` and eleven `accept DEF.derive` with the bell's reasons – check and sim
+      as today, a new circuit hash and new sign-offs –, the bell's choice, after TD-113 (decisions 43, 47).
+      *(friendly-mccarthy)*
 
 ## How edakit is tested ([docs/concepts/new/verification-and-validation.md](docs/concepts/new/verification-and-validation.md))
 
@@ -66,6 +70,35 @@ to touch.
       *(ccr-de7c0e28)*
 - [ ] TD-121 - **A LiPo charger as an open design:** a published single-cell charger board, its charger hints and the
       cell's limits judged against real datasheets; after TD-117. *(ccr-de7c0e28)*
+
+The known gaps the four new designs showed, each closed only by catalog or domain data (add-rule or add-feature, on the
+owner's word); each design's `findings.toml` has the findings and their reasons. All after TD-123.
+
+- [ ] TD-124 - **A connector passes no reversed source:** `edakit/catalog/paths.toml [reverse]` lets a connector pass
+      from every pin to every pin, so PATH.reverse reaches parts behind a jumper header – `connector` from `passes` to
+      `tolerates` (adafruit-microlipo-usb-c: U1.4, LED1.2, R6.2, R5.2). *(ccr-de7c0e28)*
+- [ ] TD-125 - **A low-side reverse-polarity MOSFET as a block:** PATH.reverse knows the series diode and the high-side
+      P-MOSFET, not an N-MOSFET in the ground return – a block in `paths.toml`, and only parts between the source's own
+      nets reported (atoomnetmarc-adlsc: 20 findings). *(ccr-de7c0e28)*
+- [ ] TD-126 - **A trimmer is not a panel pot:** REQ.value/switch takes the DC across a bias trimmer for a pot turned
+      while playing – a field of the kind potentiometer in `kinds.toml` that marks a trimmer, skipped by the rule
+      (whbeers-fuzz-face: TRIM2). *(ccr-de7c0e28)*
+- [ ] TD-127 - **Board copper is nothing to buy:** a solder jumper or a test pad gets PARTS.verified, PARTS.supplier
+      and PARTS.fact/reach – a way to say "copper, nothing to buy" (adafruit-microlipo-usb-c: SJ1; the pads of the
+      pedals and the Fuzz Face, judged criterion). *(ccr-de7c0e28)*
+- [ ] TD-128 - **A varistor kind:** its rms and DC ratings, held against the line's voltage – the ESPurna-H's S10K250
+      (250 V rms, below 230 V + 10 %) stands in as kind `ic` and nothing checks it. *(ccr-de7c0e28)*
+- [ ] TD-129 - **AC nets and AC ratings:** terminals and modules rated in V rms are held against the peak, and a
+      divider's taps cannot say they move together (espurna-h: JP2, JP42, U$1.2, R51 to R53). *(ccr-de7c0e28)*
+- [ ] TD-130 - **A mains terminal as a supply input:** a role in `paths.toml [supply]`, so that PATH.unfed sees the
+      module fed (espurna-h: U$1.1, U$1.2; `reversible` sends PATH.reverse across the mains side). *(ccr-de7c0e28)*
+- [ ] TD-131 - **A ground tied to mains:** edakit holds every voltage against the board's own ground, so a low-voltage
+      side tied to the line looks safe – the graph says so, or a check finds the bridged isolation barrier
+      (espurna-h: R42 ties GND to the line); handbook 19.9 names the gap. *(ccr-de7c0e28)*
+- [ ] TD-132 - **A bidirectional TVS:** the parts schema has `tvs: true` only, so a bidirectional TVS across the input
+      is judged as one direction (atoomnetmarc-adlsc: D4). *(ccr-de7c0e28)*
+- [ ] TD-133 - **A charger's status output in the simulation:** the charger model does not drive STAT, so its LEDs
+      are neither lit nor dark as expected (adafruit-microlipo-usb-c: SIM.state LED1, LED2). *(ccr-de7c0e28)*
 
 ## What edakit needs from EasyEDA Pro and easyeda-mcp-pro ([upstream/README.md](upstream/README.md))
 
