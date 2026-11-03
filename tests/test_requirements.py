@@ -218,7 +218,7 @@ def test_every_binding_reads(tmp_path, binding):
     (NEED + 'binding = "must"\n', "N-1: unknown key 'binding' (known: id, text, who, source, status, reason)"),
     (NEED + 'verify = [{ rows = "LIM.i *" }]\n', "N-1: unknown key 'verify'"),
     (REQUIREMENT + 'who = "the user"\n', "R-1: unknown key 'who' (known: id, text, source, from, binding, verify, "
-                                         "status, reason)"),
+                                         "status, reason, subject, require)"),
     (REQUIREMENT + "source = 3\n", "R-1: source must be a text"),
     (REQUIREMENT + 'form = ["N-1"]\n', "R-1: unknown key 'form'"),
     # IDs: N-<n> for a need, R-<n> for a requirement

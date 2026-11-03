@@ -467,7 +467,7 @@ net in fragments. What both forms share has a plan of its own:
 [circuit-language-plan.md](circuit-language-plan.md), built on 2026-10-31 up to L.8 – pins by name or role,
 the graph as `hardware/graph.toml`, its hash, `edakit graph json|convert`, `block add` on TOML, the documentation –;
 L.9, the bell converting, done in the bell on 2026-11-01 (on its main, edakit bc44fa7). The language itself is thought further in
-[circuit-dsl.md](../new/circuit-dsl.md) – what it would have to be, on which basis, when, and what toolchain it needs.
+[circuit-dsl.md](circuit-dsl.md) – what it would have to be, on which basis, when, and what toolchain it needs.
 
 **4.4 The tree moves.** When the reference project moves to edakit after its order (EK-1 of its concept): the
 takeover of its positions (2.1), seven of its eight scripts – `review` only reads the release (decision 8) – with

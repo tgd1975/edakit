@@ -1,8 +1,9 @@
 # A language of its own for the circuit: what it would have to be, on which basis, and when
 
-Status 2026-11-02: decided – built on one branch, all four stages ("When it brings value"). 2026-10-31:
+Status 2026-11-03: built – all four stages on one branch, merged as #279 ("When it brings value"); the decisions
+of the plan confirmed by the owner; left: the bell's own conversion (TD-122). 2026-11-02: decided. 2026-10-31:
 concept, asked for by the owner after the review of
-[circuit-language.md](../done/circuit-language.md) deferred the language of that sketch. It answers four
+[circuit-language.md](circuit-language.md) deferred the language of that sketch. It answers four
 questions: whether a fitting language exists already, what a language of edakit's own would have to be able to
 do to be worth building, on which basis – SysML v2, KerML, an existing circuit language, or something else –,
 and when it would bring value. It takes a position on each, with the alternative it sets aside where that
@@ -667,7 +668,7 @@ that `hardware/requirements.toml` holds today – `[[need]]` N- in someone's wor
 testable sentence with `from` (needs, decisions, a standard, a sign-off), `binding` must, should or may, `verify` as
 rows of the gate protocol, a sign-off M-, a project script or an acceptance step, and a status draft, accepted or
 dropped; DOCS.ref, DOCS.need, DOCS.evidence and DOCS.draft check it, the gate evaluates the evidence, the circuit
-hash takes the file byte for byte ([requirements.md](../done/requirements.md); the file covers the circuit only, its
+hash takes the file byte for byte ([requirements.md](requirements.md); the file covers the circuit only, its
 decision 3). SysML v2 has the model for exactly this, in its Systems Library and one domain library:
 
 | edakit today | SysML v2 |
@@ -733,7 +734,7 @@ toolchain" below.
 
 Not before, and not without, these:
 
-1.  **The TOML form is built** ([circuit-language-plan.md](../done/circuit-language-plan.md), L.1 to L.9; L.1 to
+1.  **The TOML form is built** ([circuit-language-plan.md](circuit-language-plan.md), L.1 to L.9; L.1 to
    L.8 built on 2026-10-31, L.9 the bell's): pins by name or role, the resolved `graph.json` beside the form,
    `--check` in the hook. The language compiles to the same artifact; without it, it has no target.
 2. **Blocks want parameters.** Measured in the projects: three or more blocks whose values a project changes – the
@@ -926,7 +927,7 @@ A](https://github.com/Systems-Modeling/SysML-v2-Release/blob/master/sysml/src/ex
 - edakit at `bd227e3`: handbook 3, 4 and 14.5 (the blocks), `edakit/blocks/*.json`, `block.py`, `circuit.py`
   (`QUANTITY`), `engines/quantities.py`, `release/gate.py` (`state_hash`), `config.py` (`[project] requirements`),
   `catalog/codes.toml` (DOCS.ref, the HINT codes), `tests/fixtures/led-bar`, `tests/reference.py`, `evals/`, the
-  prototype [translate.py and bell.circuit](../done/prototypes/circuit-language/),
-  [maker-coverage.md](../done/maker-coverage.md) (the owner's projects, FT-23, FT-24, the stability of the model),
-  [circuit-language.md](../done/circuit-language.md) (the sketch, its review and decisions) and
-  [circuit-language-plan.md](../done/circuit-language-plan.md).
+  prototype [translate.py and bell.circuit](prototypes/circuit-language/),
+  [maker-coverage.md](maker-coverage.md) (the owner's projects, FT-23, FT-24, the stability of the model),
+  [circuit-language.md](circuit-language.md) (the sketch, its review and decisions) and
+  [circuit-language-plan.md](circuit-language-plan.md).

@@ -7,6 +7,14 @@
   "scl": "the SCL net",
   "vcc": "the bus supply (the lower one when the devices run from different supplies)"
  },
+ "params": {
+  "t_rise": {
+   "default": "1 us"
+  },
+  "c_bus": {
+   "default": "400 pF"
+  }
+ },
  "components": [
   {
    "designator": "R1",
@@ -56,6 +64,30 @@
     "R1.1",
     "R2.1"
    ]
+  }
+ ],
+ "derivations": [
+  {
+   "targets": [
+    "R1.value"
+   ],
+   "rule": "pullup",
+   "args": {
+    "v": "vcc",
+    "t_rise": "t_rise",
+    "c_bus": "c_bus"
+   }
+  },
+  {
+   "targets": [
+    "R2.value"
+   ],
+   "rule": "pullup",
+   "args": {
+    "v": "vcc",
+    "t_rise": "t_rise",
+    "c_bus": "c_bus"
+   }
   }
  ],
  "covers": [

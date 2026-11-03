@@ -1,0 +1,89 @@
+def relay-bypass
+  title "Relay true bypass with a photo-MOS mute"
+  about "True bypass with a DPDT signal relay (HFD4/5, gold-plated contacts): coil off is bypass – in to out directly,
+      the effect's input on ground; coil on routes in to fx_in and fx_out to out. An S8050 drives the coil from a
+      logic signal, an SS14 takes its switch-off spike. A PhotoMOS (AQY212GS, 0.7 Ω) shorts the output to ground while
+      the contacts move, so the switching does not click. Pull-downs hold every contact at 0 V DC. Maker-coverage
+      BL-18."
+  port in "the input jack (the instrument)"
+  port out "the output jack"
+  port fx_in "to the effect's input (DC-free)"
+  port fx_out "from the effect's output (DC-free)"
+  port ctl "the relay drive from the MCU: high = effect on"
+  port mute "the mute from the MCU: high = output shorted to ground"
+  port vplus "the coil's supply: a 5 V rail"
+  port gnd "ground"
+  part K1 relay HFD4/5-SR lcsc C64399 "{as}: bypass relay DPDT, 5 V coil, gold contacts"
+    notes "Set 1 (common 3): out to in (NC 2, bypass) or to fx_out (NO 4). Set 2 (common 6): fx_in to in (NO 5) or to
+      ground (NC 7)."
+  part Q1 transistor "S8050 J3Y(RANGE:200-350)" lcsc C2146 "{as}: coil driver"
+  part R1 resistor 0805W8F1001T5E lcsc C17513 value 1k "{as}: base resistor 1 k"
+  part R2 resistor 0805W8F1002T5E lcsc C17414 value 10k "{as}: base-emitter 10 k (off without firmware)"
+  part D1 diode SS14 lcsc C2480 "{as}: flyback diode across the coil"
+  part OK1 optocoupler AQY212GSX lcsc C415471 "{as}: mute PhotoMOS across out"
+  part R3 resistor 0805W8F3300T5E lcsc C17630 value 330 "{as}: mute LED series 330 Ω"
+  part R4 resistor 0805W8F2204T5E lcsc C26113 value 2.2M "{as}: in pull-down 2.2 M"
+  part R5 resistor 0805W8F2204T5E lcsc C26113 value 2.2M "{as}: fx_in pull-down 2.2 M"
+  part R6 resistor 0805W8F1003T5E lcsc C149504 value 100k "{as}: fx_out pull-down 100 k (anti-pop)"
+  net in -1.5..1.5 V K1.nc K1.no_2 R4.1 instrument pickup load_min_ohm 1000000
+    notes "The input jack: R4 2.2 MΩ in bypass, with R5 1.1 MΩ while the effect is on – plus what out or fx_in carry."
+  net out -1.5..1.5 V K1.common OK1.load_a signal
+  net fx_out -1.5..1.5 V K1.no R6.1 signal
+  net fx_in -1.5..1.5 V K1.common_2 R5.1 signal
+  net vplus K1.coil_plus D1.cathode
+  net coil @vplus K1.coil_minus Q1.collector D1.anode
+  net ctl R1.1
+  net base 0..900 mV Q1.base R1.2 R2.1
+  net mute R3.1
+  net led @mute R3.2 OK1.anode
+  net gnd K1.nc_2 Q1.emitter R2.2 OK1.cathode OK1.load_b R4.2 R5.2 R6.2
+  covers REQ.value/switch REQ.missing LVL.undefined LIM.range LIM.i REQ.value/instrument
+  notes "Coil off = bypass: without power, or before the firmware runs (R2 holds Q1 off), the signal passes from in to
+      out. A latching relay would keep its last state when power is lost (maker-coverage GTP 31). Set 2 grounds the
+      effect's input while bypassed."
+  notes "K1 HFD4/5: AgNi + Au plated contacts for signal levels (maker-coverage GTI 31); coil 178 Ω, 28 mA at 5 V,
+      pick-up 3.75 V max, release 0.5 V min. vplus is a 5 V rail – the regulator that feeds the MCU counts the coil
+      (GTI 30). The coil endures 10 V only for a short time: on a 9 V rail directly the HFD4/9 (579 Ω, 6.75 V pick-up)
+      instead."
+  notes "Q1 S8050 with R1 1 kΩ and R2 10 kΩ: about 2.5 mA base current from a 3.3 V pin for 28 mA of coil current –
+      saturated (hFE ≥ 200). D1 SS14 across the coil, cathode at vplus, takes the switch-off spike (REQ.missing); it
+      makes the release slower than the 3 ms of the data sheet."
+  notes "OK1 AQY212GS across out: Ron 0.7 Ω max at IF 5 mA. R3 330 Ω gives (3.3 V − 1.14 V) / 330 Ω = 6.5 mA from a
+      3.3 V pin, 11.5 mA from 5 V – inside the 5–30 mA it recommends; the MCU pin must allow it (Pico 2: 12 mA)."
+  notes "Mute window in the firmware: mute on; after ≥ 5 ms (OK1's turn-on at 5 mA, max) switch the relay; after ≥ 3
+      ms (K1's operate or release, max – longer with D1) plus the contacts' bounce, mute off (OK1 turns off within 0.5
+      ms). mstratman/relay-bypass mutes 35 ms in all (maker-coverage BL-18)."
+  notes "R4, R5 2.2 MΩ and R6 100 kΩ: every contact at 0 V DC in every state, so switching does not click
+      (REQ.value/switch). R6 discharges the effect's output capacitor. The guitar sees R4 (2.2 MΩ) in bypass and R4 ∥
+      R5 (1.1 MΩ) with the effect on – each time in parallel with the amplifier or the effect's input. The effect's
+      input and output must be DC-free (coupling capacitors, as in block instrument-buffer)."
+  notes "OK1's output capacitance (up to about 220 pF at 0 V, typical) loads out in bypass like a short cable."
+  notes "K1's minimum applicable load, 10 mV 10 µA, is a reference value; a guitar into 1 MΩ carries about 1 µA –
+      Hongfa's (825) version is for tiny loads."
+  notes "The simulation switches both contact sets of K1 (roles common_2, no_2, nc_2) and models OK1's PhotoMOS output
+      as a resistance both ways (behaviour photomos: 0.7 Ω at most while its LED carries 3 mA or more) – an AC run
+      from in to out follows the relay in both states. R4 and R5 give set 2's nets their level in the simulation as on
+      the board."
+  notes "sim.json: ctl and mute under the MCU's outputs; a load with ctl high and \"relays_on\": [<K>], a load with
+      mute high – REQ.value/switch holds every contact on signal nets at one DC level in each."
+  set test {
+      "connect": {"ctl": "SIG", "mute": "SIG2", "vplus": "+5V"},
+      "about": "in, out, fx_in and fx_out become T_IN, T_OUT, T_FX_IN and T_FX_OUT – the effect is left out; the relay is K1, the PhotoMOS OK1",
+      "sim": {
+        "mcu": {
+          "U1": {
+            "outputs": ["LED_SDI", "LED_CLK", "LED_LE", "LED_OE", "SIG", "SIG2"],
+            "pullups": ["BTN"],
+            "pullup_ohm": 50000}},
+        "loads": {
+          "engaged": {
+            "about": "effect on: relay pulled in",
+            "gpio": {"LED_OE": 1, "SIG": 1},
+            "relays_on": ["K1"],
+            "leds_on": []},
+          "muted": {"about": "bypass, output muted", "gpio": {"LED_OE": 1, "SIG2": 1}, "leds_on": []},
+          "engaged_muted": {
+            "about": "effect on, output muted",
+            "gpio": {"LED_OE": 1, "SIG": 1, "SIG2": 1},
+            "relays_on": ["K1"],
+            "leds_on": []}}}}

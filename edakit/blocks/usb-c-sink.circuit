@@ -1,0 +1,26 @@
+def usb-c-sink
+  title "USB-C power input (5 V sink, no data)"
+  about "USB-C receptacle for power only, with its own 5.1 kΩ on CC1 and on CC2 so that USB-C chargers switch VBUS on
+      (REQ.missing:cc), and a 1.5 A polyfuse in VBUS. As built in the reference project."
+  port vbus "the fused 5 V rail"
+  port gnd "ground"
+  part J1 connector "SHOU HAN TYPE-C 6P" lcsc C456012 "{as}: USB-C power input"
+    accept LIM.v "The drawing's '5 V max.' is the USB rated voltage; USB-C vSafe5V allows 4.75–5.5 V and every USB-C
+      receptacle works there. Insulation tested with 100 V AC (drawing 1006-FGBXXX)."
+    notes "Power only: VBUS, GND and CC; the shell (EH) on GND."
+  part R1 resistor 0805W8F5101T5E lcsc C27834 value 5.1k "{as}: CC1 pull-down 5.1 k"
+  part R2 resistor 0805W8F5101T5E lcsc C27834 value 5.1k "{as}: CC2 pull-down 5.1 k"
+  part F1 fuse SMD1206P150TFT lcsc C495353 value 1.5A "{as}: polyfuse 1.5 A in VBUS"
+  net vbus_in 0..5.5 V J1.vbus F1.1
+    notes "VBUS at the receptacle, in front of the fuse."
+  net cc1 0..5.5 V J1.cc1 R1.1
+  net cc2 0..5.5 V J1.cc2 R2.1
+  net vbus 0..5.5 V F1.2
+  net gnd J1.gnd J1.shell R1.2 R2.2
+  covers REQ.missing:cc REQ.value:cc REQ.forbidden:cc
+  notes "Without a USB-PD controller the source supplies 5 V only; the Rp a charger shows on CC tells whether it
+      allows 0.5, 1.5 or 3 A – this block does not read it."
+  notes "sim.json: the receptacle under sources (plus \"A9\", minus \"A12\")."
+  notes "A bulk capacitor behind the fuse (hint HINT.bulk)."
+  notes "LIM.i warns: F1 trips at 3 A, the receptacle carries 2.5 A – accept it in the sign-off (a short trips the
+      fuse fast) or take a fuse with a lower trip current."

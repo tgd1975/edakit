@@ -79,6 +79,7 @@ and `SYNC.agents` in G; the rest in L. Their codes, generated from the catalog:
 | [`SYNC.odb`](../docs/catalog/sync.html#SYNC.odb) | ODB++ = the released files | error, other_maker: warning, unlisted: note; replaces F-7 |
 | [`SYNC.source`](../docs/catalog/sync.html#SYNC.source) | own part = its source | error, margin: warning, stale: pending, unchecked: note; replaces P-3 |
 | [`SYNC.scripts`](../docs/catalog/sync.html#SYNC.scripts) | project scripts current | error, margin: warning, unchecked: note |
+| [`SYNC.graph`](../docs/catalog/sync.html#SYNC.graph) | the resolved graph current | error |
 | [`SYNC.agents`](../docs/catalog/sync.html#SYNC.agents) | project agents complete | error |
 | [`GEO.copper`](../docs/catalog/geo.html#GEO.copper) | copper from the Gerber files | error, margin: warning; replaces L-2 |
 | [`GEO.drc`](../docs/catalog/geo.html#GEO.drc) | DRC | error, margin: warning; replaces L-3 |
@@ -232,6 +233,11 @@ is hashed where it lies, so nothing lapses before the move; `edakit check`, `pcb
 6) give the `mv` command. The move changes the layout hash once – the path, not the content: sign-offs with scope
 `layout` are signed again, nothing is rehashed. The circuit and the fab hash stay, so M-1, M-6 and M-5 with its default
 scope `fab` keep counting.
+
+A graph in the circuit language (chapter 20) counts with its compiled data, as a TOML graph with its data: a comment
+or a statement moved changes nothing. A variant whose `[project] parts` is a list of folders counts the entries its
+graph uses, each from the folder it is found in, so that a change of its base reaches its hash only where it reaches
+its circuit; a project with one folder counts every entry of it, as before.
 
 ### What the circuit hash leaves out
 
