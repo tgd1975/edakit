@@ -4,7 +4,7 @@ Open work that needs the owner's computer, a maker or the owner's word. The stat
 and plans the sections name; this list is what is left to do of them, in the order it can be done. No item is deleted.
 
 **Layout.** Every item, in every section, open or closed, is a line with a checkbox and an ID unique in this file,
-counted up and never reused – whoever adds an item takes the next free ID and counts it up here. Next free ID: TD-148.
+counted up and never reused – whoever adds an item takes the next free ID and counts it up here. Next free ID: TD-149.
 
 - Open: `- [ ] TD-<n> - **Title:** what and why.` – a step's own name after the dash (`- [ ] TD-31 - **D.4** …`).
 - Done: ticked, the commit that did it, the date at the end, moved to [Closed todos](#closed-todos), newest first –
@@ -33,6 +33,8 @@ to touch.
       it replaces the render on `docs/projects/pytree.md`. *(edakit-ce)*
 - [ ] TD-143 - **The 23 lines of the live run in LCSC's cart:** keep them for the next parts order or remove them – the
       skill never deletes a line. *(edakit-5e)*
+- [ ] TD-148 - **OK for #326 (step 10, parts you solder yourself):** https://github.com/tgd1975/edakit/pull/326 – the
+      inventory as an option on the steps page; merged by `python3 .github/merge.py 326` on your word. *(edakit-87)*
 
 ## The parts order ([docs/concepts/done/parts-order.md](docs/concepts/done/parts-order.md))
 
