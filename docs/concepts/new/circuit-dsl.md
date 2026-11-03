@@ -1,33 +1,31 @@
 # A language of its own for the circuit: what it would have to be, on which basis, and when
 
-Status 2026-11-03: built – all four stages, merged as edakit 1.1.3 (#279) and withdrawn from main in 1.1.4 on the owner's word – a beta, the explorative DSL, on the branch
-`claude/friendly-mccarthy-n4kt6y`, switched on per project in edakit.toml (circuit-dsl-toolchain.md, decision 48).
-2026-11-02: decided ("When it brings value"). 2026-10-31:
-concept, asked for by the owner after the review of
-[circuit-language.md](../done/circuit-language.md) deferred the language of that sketch. It answers four
-questions: whether a fitting language exists already, what a language of edakit's own would have to be able to
-do to be worth building, on which basis – SysML v2, KerML, an existing circuit language, or something else –,
-and when it would bring value. It takes a position on each, with the alternative it sets aside where that
-matters; what remains the owner's is whether and when to build it, in "When it brings value". The sources say
-what was read and from where. Reviewed the same day against main at `bd227e3` and corrected: the examples in
-today's form of the graph (`accept`, `locks`), the numbers of the bell and led-bar re-measured, what exists
-already named as existing, the questions the review found open – where assertions run, what `block add --set`
-writes, the names of internal nets, four projects and one hook – answered where they belong, and the list of
-decisions that closed the concept folded into the text on the owner's word. On the owner's questions the same
-day: a project's source over several files with one namespace (item 9), the requirements on SysML v2's model as
-well ("The basis"), and a language server with a VS Code extension as stage 4; on the owner's word after the
-review's second reading, the waiting period of trigger 4 taken out, the SysML v2 tools on GitHub – the pilot's
-installers, Eclipse SysON, Sensmetry's Syside, Syster's `systree` – named in "What exists", "The basis" and
-stage 3, and derived values by named rules of edakit's in place of assertions evaluated from the graph:
-`asserts` dropped, `derivations` as the one key the language adds, DEF over the records only (item 4, the
-owner's ack of the review's recommendation). SysON taken out of the acceptance test on the owner's word the same
-day: the conformance test with a standard reader is the export's check, a graphical import is the user's tool.
-The detail concepts of the same day: [circuit-dsl-language.md](circuit-dsl-language.md) – the notation, its
-meaning and its definition on SysML v2 and KerML, statement by statement – and
-[circuit-dsl-toolchain.md](circuit-dsl-toolchain.md) – the implementation plan of the toolchain, written for one
-session that builds all four stages without a question. Against the yardstick: a language changes nothing about
-what is text – its source and its resolved graph are text in the repository –; what it changes is where
-repetition, parameters and variants are written once instead of many times.
+Status 2026-11-03: built – all four stages, merged as edakit 1.1.3 (#279) and withdrawn from main by #287 on the
+owner's word – a beta, the explorative DSL, on the branch `claude/friendly-mccarthy-n4kt6y`, switched on per project
+in edakit.toml (circuit-dsl-toolchain.md, decision 48). 2026-11-02: decided ("When it brings value"). 2026-10-31:
+concept, asked for by the owner after the review of [circuit-language.md](../done/circuit-language.md) deferred the
+language of that sketch. It answers four questions: whether a fitting language exists already, what a language of
+edakit's own would have to be able to do to be worth building, on which basis – SysML v2, KerML, an existing circuit
+language, or something else –, and when it would bring value. It takes a position on each, with the alternative it
+sets aside where that matters; what remains the owner's is whether and when to build it, in "When it brings value".
+The sources say what was read and from where. Reviewed the same day against main at `bd227e3` and corrected: the
+examples in today's form of the graph (`accept`, `locks`), the numbers of the bell and led-bar re-measured, what
+exists already named as existing, the questions the review found open – where assertions run, what `block add --set`
+writes, the names of internal nets, four projects and one hook – answered where they belong, and the list of decisions
+that closed the concept folded into the text on the owner's word. On the owner's questions the same day: a project's
+source over several files with one namespace (item 9), the requirements on SysML v2's model as well ("The basis"), and
+a language server with a VS Code extension as stage 4; on the owner's word after the review's second reading, the
+waiting period of trigger 4 taken out, the SysML v2 tools on GitHub – the pilot's installers, Eclipse SysON,
+Sensmetry's Syside, Syster's `systree` – named in "What exists", "The basis" and stage 3, and derived values by named
+rules of edakit's in place of assertions evaluated from the graph: `asserts` dropped, `derivations` as the one key the
+language adds, DEF over the records only (item 4, the owner's ack of the review's recommendation). SysON taken out of
+the acceptance test on the owner's word the same day: the conformance test with a standard reader is the export's
+check, a graphical import is the user's tool. The detail concepts of the same day:
+[circuit-dsl-language.md](circuit-dsl-language.md) – the notation, its meaning and its definition on SysML v2 and
+KerML, statement by statement – and [circuit-dsl-toolchain.md](circuit-dsl-toolchain.md) – the implementation plan of
+the toolchain, written for one session that builds all four stages without a question. Against the yardstick: a
+language changes nothing about what is text – its source and its resolved graph are text in the repository –; what it
+changes is where repetition, parameters and variants are written once instead of many times.
 
 ## The short answer
 

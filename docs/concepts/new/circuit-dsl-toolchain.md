@@ -1,22 +1,23 @@
 # Implementation plan: the circuit language toolchain
 
 Status 2026-11-03: T.1 to T.27 built, the decisions 1 to 47 confirmed by the owner, merged as 1.1.3 (#279) and
-withdrawn from main in 1.1.4 on the owner's word – a beta, the explorative DSL, on the branch
-`claude/friendly-mccarthy-n4kt6y`, switched on per project in edakit.toml (circuit-dsl-toolchain.md, decision 48). 2026-10-31: plan for [circuit-dsl.md](circuit-dsl.md) and its detail concept
-[circuit-dsl-language.md](circuit-dsl-language.md), asked for by the owner the same day; nothing of the language
-built yet. It is written for one session that builds all four stages – the reader, the compiler, the quantities
-and derivation rules, the engine DEF, the formatter, the converter, the block library as definitions, the editor
-grammar; the project constructs, `block add` on the language, the fixtures, evals and skills; the SysML v2 and
-KerML exports with the electrical library; the language server and the VS Code extension – without a question
-answered in between. What the language is, statement by statement, is the detail concept's; this plan says which
-module, which function, which command, which test and which handbook section each step adds, and in which order.
-The ground rules of [implementation-plan.md](../done/implementation-plan.md) hold – one step, one commit, add-feature's
-order, no key no change, hashes named, the bell told –; the TOML form of
-[circuit-language-plan.md](../done/circuit-language-plan.md) is built and settled (L.1 to L.8 on 2026-10-31,
-merged in `2f4628a`): the Design resolves pin words, `edakit graph json` writes the resolved graph beside a TOML
-source and `--check` finds its drift, `edakit graph convert` moves a project, `block add` writes TOML through a
-line editor, the hook line and the handbook are there; the language builds on these, and every step names what
-it reuses. Sizes as in the plans: S a day, M a few days, L a week or more, in a human's measure.
+withdrawn from main by #287 on the owner's word – a beta, the explorative DSL, on the branch
+`claude/friendly-mccarthy-n4kt6y`, switched on per project in edakit.toml (circuit-dsl-toolchain.md, decision 48).
+2026-10-31: plan for [circuit-dsl.md](circuit-dsl.md) and its detail concept
+[circuit-dsl-language.md](circuit-dsl-language.md), asked for by the owner the same day; nothing of the language built
+yet. It is written for one session that builds all four stages – the reader, the compiler, the quantities and
+derivation rules, the engine DEF, the formatter, the converter, the block library as definitions, the editor grammar;
+the project constructs, `block add` on the language, the fixtures, evals and skills; the SysML v2 and KerML exports
+with the electrical library; the language server and the VS Code extension – without a question answered in between.
+What the language is, statement by statement, is the detail concept's; this plan says which module, which function,
+which command, which test and which handbook section each step adds, and in which order. The ground rules of
+[implementation-plan.md](../done/implementation-plan.md) hold – one step, one commit, add-feature's order, no key no
+change, hashes named, the bell told –; the TOML form of [circuit-language-plan.md](../done/circuit-language-plan.md)
+is built and settled (L.1 to L.8 on 2026-10-31, merged in `2f4628a`): the Design resolves pin words, `edakit graph
+json` writes the resolved graph beside a TOML source and `--check` finds its drift, `edakit graph convert` moves a
+project, `block add` writes TOML through a line editor, the hook line and the handbook are there; the language builds
+on these, and every step names what it reuses. Sizes as in the plans: S a day, M a few days, L a week or more, in a
+human's measure.
 
 Checked on 2026-11-02 against main at `63dac84` (edakit 1.1.0), on the owner's go the same day to build all four
 stages on one branch: the code the plan reuses is where it names it – `edakit/circuit.py`, `edakit/block.py`,
@@ -827,7 +828,7 @@ Written by the session that builds the plan: number, date, decision, reason. Sta
    reason: R3 and R4 of main (330 Ω, D-11; tht inherits them, smd gives D-11's figures), all five of esp32 (100 Ω,
    D-14's formula with the output's 30 Ω the rule does not model), all five of esp32tht (D-23). Reason: an
    accepted derivation is how the language records a value chosen on purpose; every reason is the bell's text.
-48. 2026-11-03, the owner's decision after the merge: the DSL is a beta. Main goes back to before #279 (1.1.4, a
+48. 2026-11-03, the owner's decision after the merge: the DSL is a beta. Main goes back to before #279 (#287, a
    revert; 1.1.3 stays in the changelog); the DSL lives on the branch `claude/friendly-mccarthy-n4kt6y`, where the
    original form – the JSON or TOML graph – stays the default without a word about the DSL, and every facet of the
    DSL works only in a project whose edakit.toml switches it on; on the site it gets a top-level section of its own,
