@@ -8,6 +8,11 @@ written once, by `.github/merge.py`, from the fragments in [changes/](changes/RE
 update edakit@edakit`, then `/reload-plugins` or a new session; `edakit version` names the version that runs and what an
 update brings.
 
+## 1.1.7 – 2026-11-03
+
+- The parts library: the 9 V battery snap C70374 and the slide switch SS-12D00-G3 (C22355741) signed by the owner – a
+  copy taken with `edakit part add` no longer counts as a draft (PARTS.library).
+
 ## 1.1.6 – 2026-11-03
 
 - The circuit language of 1.1.3 is withdrawn from main on the owner's word: it continues as a beta, the
