@@ -31,6 +31,10 @@ Once: the country you ship to and the shipping method.
 - M-2: the parts' orientation in the manufacturer's preview, before you pay.
 - M-4: when the boards arrive, you test each one against the list the last run wrote.
 
+For M-2 JLCPCB shows the board with its parts as they will be placed, here the walkthrough's:
+
+![JLCPCB's placement preview of the walkthrough's board: D1, R1 and SW1 placed, the cell holder's pads bare for soldering by hand](../../examples/coin-cell-led/docs/jlcpcb_assembly_main_top.png)
+
 ## What you have
 
 Boards in your hand, and a record of the order in `hardware/orders/`. Once paid, `edakit cart actual` puts the real
