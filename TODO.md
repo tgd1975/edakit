@@ -38,8 +38,6 @@ to touch.
       CPL are uploaded, into `examples/coin-cell-led/docs/jlcpcb_assembly_main_top.png` – only your account shows it;
       for TD-138. *(quirky-bell)*
 
-- [ ] TD-139 - **OK for #291:** C70374 (9 V snap) and C22355741 (slide switch) signed in the parts library on your
-      word – merged with `python3 .github/merge.py 291` on your OK. *(edakit-56)*
 ## The steps ([docs/steps/](docs/steps/README.md))
 
 - [ ] TD-136 - **Step 9 shows the routed board:** the tracks and the ground pour, `board_main_layers.png` of TD-135
@@ -110,6 +108,8 @@ Nothing to do until there is an answer or a release; whichever session learns of
 
 ## Closed todos
 
+- [x] TD-139 - **OK for #291:** given; C70374 and C22355741 signed, merged as edakit 1.1.7 (#291). *(edakit-56)*
+      [2026-11-03]
 - [x] TD-109 - **M-11 (easyeda-mcp-pro's net reading takes a net flag of another open schematic):** posted on the
       owner's word as #864 and #865, from the fork's `fix/net-read-one-page` rebased onto 1.8.1's main (#294); the
       wait for the release is TD-140. [2026-11-03]
