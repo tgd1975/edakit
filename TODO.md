@@ -33,9 +33,6 @@ to touch.
       it replaces the render on `docs/projects/pytree.md`. *(edakit-ce)*
 - [ ] TD-110 - **OK for #265:** the parts at LCSC and the combined shipment (parts-order.md, steps 2 and 3) – merged
       with `python3 .github/merge.py 265` on your word. *(edakit-4f)*
-- [ ] TD-113 - **OK for the circuit language:** the branch `claude/friendly-mccarthy-n4kt6y` (T.1–T.27 of
-      circuit-dsl-toolchain.md, a patch) – opened as a pull request and merged with `python3 .github/merge.py <n>` on
-      your word. *(friendly-mccarthy)*
 - [ ] TD-123 - **OK for chapter 19 and the four open designs:** the branch `ccr-de7c0e28-hcr2zn` (TD-117 to TD-121, a
       patch; 3402 tests green) – opened as a pull request and merged with `python3 .github/merge.py <n>` on your word;
       then TD-117 to TD-121 are ticked and the concept moves to `done/`. *(ccr-de7c0e28)*
@@ -125,6 +122,8 @@ Nothing to do until there is an answer or a release; whichever session learns of
 
 ## Closed todos
 
+- [x] TD-113 - **OK for the circuit language:** given; merged as edakit 1.1.3 (#279) – T.1 to T.27, the decisions 1
+      to 48 confirmed; circuit-dsl.md, its language and its plan moved to `done/`. *(friendly-mccarthy)* [2026-11-03]
 - [x] TD-116 - **The job sysml:** run on the branch by `workflow_dispatch` – 4 passed, read with the standard
       library 2025-12 that systree loads (decision 45); main runs it with every merge. *(friendly-mccarthy)*
       [2026-11-03]
