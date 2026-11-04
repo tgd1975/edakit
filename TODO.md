@@ -4,7 +4,7 @@ Open work that needs the owner's computer, a maker or the owner's word. The stat
 and plans the sections name; this list is what is left to do of them, in the order it can be done. No item is deleted.
 
 **Layout.** Every item, in every section, open or closed, is a line with a checkbox and an ID unique in this file,
-counted up and never reused – whoever adds an item takes the next free ID and counts it up here. Next free ID: TD-150.
+counted up and never reused – whoever adds an item takes the next free ID and counts it up here. Next free ID: TD-152.
 
 - Open: `- [ ] TD-<n> - **Title:** what and why.` – a step's own name after the dash (`- [ ] TD-31 - **D.4** …`).
 - Done: ticked, the commit that did it, the date at the end, moved to [Closed todos](#closed-todos), newest first –
@@ -43,6 +43,18 @@ to touch.
 - [ ] TD-147 - **Step 3, the live run:** the next parts order with your inventory named in `edakit.local.toml` – the
       carts shortened by what is on hand, `hand_assembly.md` naming what to take; what the run finds goes into handbook
       8.4. Waits for an inventory file of yours (`edakit inventory template FILE`). *(edakit-87)*
+
+## The explorative DSL ([docs/concepts/new/circuit-dsl-toolchain.md](docs/concepts/new/circuit-dsl-toolchain.md))
+
+- [ ] TD-150 - **Designators that start with a digit:** `edakit graph convert --to circuit` refuses the two GuitarML
+      open designs (`tests/open_designs/guitarml-*`), whose designator `9v1` the language reads as no name ("unknown
+      key '9v1.Pin_1'"). The language needs a form for such a designator, and the converter writes it; a test converts
+      both designs. Only with `[beta] dsl = true` (decision 51). *(gracious-fermat)*
+- [ ] TD-151 - **Empty entries in a converted graph:** `graph convert --to circuit` refuses the other eight open designs,
+      since `nc: []`, `layout: {}` and `locks: {}` do not read back and the converter's own check finds the
+      difference. An empty entry and a missing one mean the same, so the conversion carries them over or the check
+      treats them alike; a test converts every open design. Only with `[beta] dsl = true` (decision 51).
+      *(gracious-fermat)*
 
 ## What edakit needs from EasyEDA Pro and easyeda-mcp-pro ([upstream/README.md](upstream/README.md))
 
