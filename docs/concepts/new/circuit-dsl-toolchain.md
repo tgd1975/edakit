@@ -859,6 +859,9 @@ Written by the session that builds the plan: number, date, decision, reason. Sta
    circuit`, older than the merge and only with the switch, stay open: a designator that starts with a digit
    (GuitarML's `9v1`) and a graph with empty entries (`nc: []`, `layout: {}`) are refused, nothing written. Reason:
    48's "until the owner asks", asked.
+52. 2026-11-04, the owner's word: circuit-dsl.md, circuit-dsl-language.md, this plan and circuit-dsl-beta-review.md
+   stay in `docs/concepts/new/` while the DSL is a beta, and move to `done/` – with every link and path that names
+   them, in code and catalog too – once the beta is done. Reason: "Nach done erst, wenn wir Beta erledigt haben".
 
 ## Not in this plan
 
