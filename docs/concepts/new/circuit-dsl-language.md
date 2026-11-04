@@ -1,10 +1,10 @@
 # The circuit language: the notation, what it means, and its definition on SysML v2 and KerML
 
-Status 2026-11-03: built with [circuit-dsl-toolchain.md](circuit-dsl-toolchain.md), merged as 1.1.3 and withdrawn from
-main by #287 on the owner's word – a beta, the explorative DSL, on the branch `claude/friendly-mccarthy-n4kt6y`,
-switched on per project in edakit.toml (circuit-dsl-toolchain.md, decision 48); the deviations 6, 15, 27, 28 and 32
-confirmed by the owner. 2026-10-31: detail concept to [circuit-dsl.md](circuit-dsl.md), asked for by the owner the
-same day. It fixes what that concept leaves to "the language": every construct with its syntax, its meaning, what it
+Status 2026-11-04: on main as a beta since edakit 1.1.17 (#344) – the explorative DSL, switched on per project with
+`[beta] dsl = true` in edakit.toml (circuit-dsl-toolchain.md, decisions 48 to 51). 2026-11-03: built with
+[circuit-dsl-toolchain.md](circuit-dsl-toolchain.md), merged as 1.1.3 and withdrawn from main by #287 on the owner's
+word; the deviations 6, 15, 27, 28 and 32 confirmed by the owner. 2026-10-31: detail concept to
+[circuit-dsl.md](circuit-dsl.md), asked for by the owner the same day. It fixes what that concept leaves to "the language": every construct with its syntax, its meaning, what it
 writes into the resolved graph and the errors it raises; how the compiler resolves names and expands usages, loops and
 variants; the derivation rules; the electrical library on SysML v2 that the notation is defined on and the exports map
 to. It is written so that the session that builds it needs no question answered: where circuit-dsl.md left a choice
