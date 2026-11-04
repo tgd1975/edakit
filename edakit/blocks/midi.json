@@ -162,8 +162,8 @@
     0,
     5.5
    ],
-   "notes": "The sender's current loop – isolated from this board's ground (net key isolated, on in4, led_a and in5): the range is the loop's own (a 5 V sender), the simulation does not hold it to this board's ground.",
-   "isolated": true
+   "isolated": true,
+   "notes": "The sender's current loop – isolated from this board's ground (net key isolated, on in4, led_a and in5): the range is the loop's own (a 5 V sender), the simulation does not hold it to this board's ground."
   },
   {
    "name": "led_a",

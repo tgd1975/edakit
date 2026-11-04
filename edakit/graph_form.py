@@ -50,6 +50,9 @@ HEADER = ["# The hardware graph (handbook 3.1): components, nets and cables keye
           "# or role through the parts entries. edakit graph json writes the resolved graph beside it (graph.json)."]
 
 
+GENERATED = (".toml", ".circuit")       # sources the resolved graph.json is generated from
+
+
 class FormError(ValueError):
     pass
 
@@ -95,9 +98,10 @@ def indent_of(path):
 
 
 def generated_path(cfg):
-    """Where the resolved graph of a TOML graph goes: beside it, as .json; None for a JSON graph, the source itself."""
+    """Where the resolved graph of a TOML or a .circuit graph goes: beside it, as .json; None for a JSON graph, the
+    source itself."""
     graph = Path(cfg.graph)
-    return graph.with_suffix(".json") if graph.suffix == ".toml" else None
+    return graph.with_suffix(".json") if graph.suffix in GENERATED else None
 
 
 def keyed(graph):
@@ -113,10 +117,36 @@ def keyed(graph):
     return out
 
 
+def sources(cfg):
+    """What a resolved graph is generated from, as a message names it: a TOML graph – and a .circuit one where the
+    project switches the explorative DSL on ([beta] dsl = true)."""
+    return "a TOML or a .circuit graph" if getattr(cfg, "dsl", False) else "a TOML graph"
+
+
+def drift(cfg):
+    """What differs between the generated graph.json and what the source resolves to now, compared canonically – None
+    when it is current, not written (the hook's --check says so; language 12, item 16) or the graph is JSON, the source
+    itself; SYNC.graph."""
+    from .firmware import differences
+    out = generated_path(cfg)
+    if out is None or not out.exists():
+        return None
+    source = load_graph(cfg.graph)
+    g = resolved(source, design_of(cfg.graph, load_parts(cfg.parts_dirs or cfg.parts), list(cfg.boards), source))
+    try:
+        data = json.loads(out.read_text(encoding="utf-8"))
+    except json.JSONDecodeError:
+        return ["not valid JSON"]
+    old = data.get("graph", data) if isinstance(data, dict) else data
+    if isinstance(old, dict) and canonical(old) == canonical(g):
+        return None
+    return differences(keyed(old), keyed(g)) or ["the order of lists only"]
+
+
 def main_json(cfg, args):
     from .firmware import differences
     source = load_graph(cfg.graph)
-    design = design_of(cfg.graph, load_parts(cfg.parts), list(cfg.boards), source)
+    design = design_of(cfg.graph, load_parts(cfg.parts_dirs or cfg.parts), list(cfg.boards), source)
     g = resolved(source, design)
     out = generated_path(cfg)
     words = [f"{where}: {why}" for where, _, why in design.unresolved]
@@ -124,7 +154,7 @@ def main_json(cfg, args):
     if args.check:
         if out is None:
             print(f"{cfg.relative(cfg.graph)} is the graph – nothing is generated from a JSON graph (edakit graph json "
-                  "--check checks the file beside a TOML graph)")
+                  f"--check checks the file beside {sources(cfg)})")
             return 0
         rel = cfg.relative(out)
         if not out.exists():
@@ -144,10 +174,17 @@ def main_json(cfg, args):
         for line in lines or ["formatting only"]:
             print(f"  {line}")
         return 2
+    if getattr(args, "map", None):
+        if Path(cfg.graph).suffix != ".circuit":
+            print("edakit graph json: --map is the source map of a .circuit graph", file=sys.stderr)
+            return 1
+        from .lang.compile import compile as compile_circuit
+        Path(args.map).write_text(json.dumps(compile_circuit(cfg)[1].as_dict(), indent=1, ensure_ascii=False) + "\n",
+                                  encoding="utf-8")
     if args.write:
         if out is None:
             print(f"edakit graph json: {cfg.relative(cfg.graph)} is the graph itself – --write writes the file beside "
-                  "a TOML graph, never over a JSON one", file=sys.stderr)
+                  f"{sources(cfg)}, never over a JSON one", file=sys.stderr)
             return 1
         text = render(g, indent_of(out))
         same = out.exists() and out.read_text(encoding="utf-8") == text
@@ -317,24 +354,43 @@ def one(design, ref):
 def set_graph(text, value):
     """edakit.toml with [project] graph = value: its graph line's value replaced – the comment after it kept –, or a
     line added after the last key of [project]."""
+    return set_project_key(text, "graph", value)
+
+
+def set_project_key(text, key, value):
+    """edakit.toml with [project] KEY = value, as set_graph sets graph."""
     lines = text.splitlines(keepends=True)
     head = next((i for i, ln in enumerate(lines) if re.match(r"\s*\[project\]\s*(#.*)?$", ln)), None)
     if head is None:
         raise FormError("edakit.toml has no [project] table")
     end = next((i for i in range(head + 1, len(lines)) if re.match(r"\s*\[", lines[i])), len(lines))
-    at = next((i for i in range(head + 1, end) if re.match(r"\s*graph\s*=", lines[i])), None)
+    at = next((i for i in range(head + 1, end) if re.match(rf"\s*{key}\s*=", lines[i])), None)
     if at is not None:
-        m = re.match(r"""(\s*graph\s*=\s*)("(?:[^"\\]|\\.)*"|'[^']*')(.*)""", lines[at], re.S)
+        m = re.match(rf"""(\s*{key}\s*=\s*)("(?:[^"\\]|\\.)*"|'[^']*')(.*)""", lines[at], re.S)
         if m:
             lines[at] = m.group(1) + toml_edit.quoted(value) + m.group(3)
     else:
         last = max((i for i in range(head + 1, end) if re.match(r"""\s*[\w"'-]+\s*=""", lines[i])), default=head)
         lines[last] = lines[last] if lines[last].endswith("\n") else lines[last] + "\n"
-        lines.insert(last + 1, f"graph = {toml_edit.quoted(value)}\n")
+        lines.insert(last + 1, f"{key} = {toml_edit.quoted(value)}\n")
     new = "".join(lines)
-    if tomllib.loads(new).get("project", {}).get("graph") != value:
-        raise FormError("edakit.toml: [project] graph could not be set by a line edit – set it by hand")
+    if tomllib.loads(new).get("project", {}).get(key) != value:
+        raise FormError(f"edakit.toml: [project] {key} could not be set by a line edit – set it by hand")
     return new
+
+
+def needs_edakit(text, have):
+    """edakit.toml with [project] edakit at least ">=have" – kept where it names that or more already."""
+    from .version import _key, parse
+    base = str(have).split("+")[0]
+    old = tomllib.loads(text).get("project", {}).get("edakit")
+    try:
+        lows = [n for op, n in parse(old) if op in (">=", ">", "==")] if old else []
+    except ValueError:
+        lows = []
+    if lows and max(_key(n) for n in lows) >= _key(base):
+        return text
+    return set_project_key(text, "edakit", f">={base}")
 
 
 def canonical(graph):
@@ -343,6 +399,8 @@ def canonical(graph):
 
 
 def main_convert(cfg, args):
+    if getattr(args, "to", None) == "circuit":
+        return main_convert_circuit(cfg, args)
     from . import config, convert
     from .firmware import differences
     from .release import gate
@@ -351,12 +409,15 @@ def main_convert(cfg, args):
     if src_path.suffix == ".toml":
         print(f"{rel} is TOML already – nothing to convert")
         return 0
+    if src_path.suffix == ".circuit":
+        print(f"{rel} is the circuit language already – nothing to convert")
+        return 0
     target = src_path.with_suffix(".toml")
     if target.exists():
         print(f"edakit graph convert: {cfg.relative(target)} is there already – remove it, or set [project] graph to it",
               file=sys.stderr)
         return 1
-    parts, boards = load_parts(cfg.parts), list(cfg.boards)
+    parts, boards = load_parts(cfg.parts_dirs or cfg.parts), list(cfg.boards)
     source = load_graph(src_path)
     try:
         design = design_of(src_path, parts, boards, source)
@@ -406,6 +467,84 @@ def main_convert(cfg, args):
     why = (f"the graph moved to {value} (edakit graph convert): the circuit hash takes its data, every value and "
            "connection carried over; the files were the signed ones")
     if line := convert.carry_signoffs(new, before, by="edakit graph convert", why=why):
+        print(line)
+    if new.firmware is not None:
+        print("with [firmware]: edakit firmware writes the contract again – its state_sha256 is the new circuit hash")
+    return 0
+
+
+def main_convert_circuit(cfg, args):
+    """edakit graph convert --to circuit: a JSON or a TOML graph as hardware/graph.circuit – flat statements, no
+    usages –, [project] graph and edakit set, the resolved graph.json beside it, the sign-offs of scope circuit carried
+    over; the text read back before anything is written."""
+    from . import __version__, config, convert
+    from .firmware import differences
+    from .lang.compile import build_text
+    from .lang.convert import ConvertError, to_circuit
+    from .lang.reader import CompileError
+    from .release import gate
+    src_path = Path(cfg.graph)
+    rel = cfg.relative(src_path)
+    if src_path.suffix == ".circuit":
+        print(f"{rel} is the circuit language already – nothing to convert")
+        return 0
+    target = src_path.with_suffix(".circuit")
+    if target.exists():
+        print(f"edakit graph convert: {cfg.relative(target)} is there already – remove it, or set [project] graph to it",
+              file=sys.stderr)
+        return 1
+    parts, boards = load_parts(cfg.parts_dirs or cfg.parts), list(cfg.boards)
+    source = load_graph(src_path)
+    try:
+        design = design_of(src_path, parts, boards, source)
+        text = to_circuit(source, design)
+    except (FormError, ConvertError, CompileError) as e:
+        print(f"edakit graph convert: {rel}: {e} – fix it in {rel} first", file=sys.stderr)
+        return 1
+    want = converted(resolved(source, design))
+    try:
+        back, _, back_design = build_text(text, target, cfg.root, parts)
+    except CompileError as e:
+        print(f"edakit graph convert: the source would not compile – nothing written:\n{e}", file=sys.stderr)
+        return 1
+    got = resolved(back, back_design)
+    if canonical(got) != canonical(want):           # the writer's own check: what it writes reads back to the graph
+        lines = differences(keyed(gate.arranged(want)), keyed(gate.arranged(got)))
+        print(f"edakit graph convert: the source would not read back to {rel} – nothing written:\n  "
+              + "\n  ".join(lines), file=sys.stderr)
+        return 1
+    value = target.relative_to(cfg.root).as_posix() if target.is_relative_to(cfg.root) else str(target)
+    try:
+        toml_text = needs_edakit(set_graph(cfg.path.read_text(encoding="utf-8"), value), __version__)
+    except FormError as e:
+        print(f"edakit graph convert: {e}", file=sys.stderr)
+        return 1
+    out = target.with_suffix(".json")
+    generated = render(got, indent_of(out))
+    lines = text.count("\n")
+    if args.dry_run:
+        sys.stdout.write(text)
+        print(f"\nwould write {cfg.relative(target)} ({lines} lines; {rel} has "
+              f"{src_path.read_text(encoding='utf-8').count(chr(10))})")
+        print(f"would set [project] graph = {toml_edit.quoted(value)} in {cfg.relative(cfg.path)}, and edakit to the "
+              "version that reads the language")
+        print(f"would write {cfg.relative(out)}: the resolved graph, generated from {cfg.relative(target)}")
+        return 0
+    before = gate.state_hash(cfg)
+    target.write_text(text, encoding="utf-8")
+    cfg.path.write_text(toml_text, encoding="utf-8")
+    out.write_text(generated, encoding="utf-8")
+    print(f"{cfg.relative(target)} written: {lines} lines, flat statements, pins by name or role")
+    print(f"{cfg.relative(cfg.path)}: [project] graph = {toml_edit.quoted(value)}, edakit "
+          f"{tomllib.loads(toml_text)['project']['edakit']}")
+    print(f"{cfg.relative(out)} written: the resolved graph, generated from {cfg.relative(target)} – commit both; the "
+          "pre-commit hook runs edakit graph json --check")
+    if src_path.suffix == ".toml":
+        print(f"{rel} is no longer read – remove it with git rm once the conversion is committed")
+    new = config.load(cfg.path)
+    why = (f"the graph moved to {value} (edakit graph convert --to circuit): the circuit hash takes its compiled data, "
+           "every value and connection carried over; the files were the signed ones")
+    if line := convert.carry_signoffs(new, before, by="edakit graph convert --to circuit", why=why):
         print(line)
     if new.firmware is not None:
         print("with [firmware]: edakit firmware writes the contract again – its state_sha256 is the new circuit hash")

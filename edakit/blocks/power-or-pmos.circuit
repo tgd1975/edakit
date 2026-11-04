@@ -1,0 +1,36 @@
+def power-or-pmos
+  title "Two supplies ORed: USB through a Schottky, the other one through back-to-back P-MOSFETs"
+  about "Two supplies onto one rail, neither one fed backwards (hint HINT.two_supplies). The preferred supply (usb)
+      reaches the rail through an SS34; the other one (bat: cells or a second input) through two AO3401A in series
+      with a common source, whose gates usb pulls up. While usb is present both MOSFETs are off and their body diodes
+      point against each other: bat is cut off in both directions. Without usb, R1 pulls the gates to ground and bat
+      feeds the rail with milliohms instead of a diode drop. As built in the reference project (pytree D-44, Q8/Q9,
+      D40)."
+  port bat "the supply that is cut off while usb is present: cells or a second input"
+  port usb "the preferred supply, e.g. USB VBUS behind its fuse; it drives the gates"
+  port out "the ORed rail"
+  port gnd "ground"
+  part Q1 transistor AO3401A lcsc C15127 "{as}: bat cut-off PMOS, drain at bat"
+  part Q2 transistor AO3401A lcsc C15127 "{as}: bat cut-off PMOS, drain at the rail"
+  part R1 resistor 0805W8F1002T5E lcsc C17414 value 10k "{as}: gates to ground 10 k"
+  part D1 diode SS34 lcsc C8678 "{as}: usb OR diode"
+  net bat Q1.drain
+  net usb 0..5.5 V Q1.gate Q2.gate R1.1 D1.anode
+  net mid -500 mV..5.5 V Q1.source Q2.source
+    notes "Common source of the back-to-back pair."
+  net out 0..5.5 V Q2.drain D1.cathode
+  net gnd R1.2
+  covers LVL.undefined PATH.reverse HINT.two_supplies
+  notes "Both MOSFETs stay off only while bat stays below usb + |VGS(th)|. Above it they conduct in part: fresh
+      lithium AA cells (5.4 V) against USB at 4.75 V with the worst-case VGS(th) of -0.5 V gave about 0.18 A and 0.17
+      W in the reference project (M-1). The simulation uses the typical threshold. edakit sim reports it as
+      LIM.range/gate (a warning) in the scenarios with bat above usb."
+  notes "AO3401A: VGS max ±12 V – both supplies up to about 10 V, as for reverse-pmos; 3.2 A at 70 °C, 85 mΩ at VGS
+      -2.5 V."
+  notes "A reversed bat meets Q1's drain with source and gate outside (PATH.reverse): give the connector or holder of
+      bat \"source\": \"reversible\". The block replaces reverse-pmos on that input."
+  notes "sim.json: both supplies as sources, scenarios with each one alone and with both at mismatched voltages (bat
+      high, usb low and the other way round); in none of them may a source take current."
+  notes "While usb ramps up or down (1–20 ms) neither path may conduct for a moment – the MOSFETs are half off, D1
+      does not conduct yet. A large load can brown out; the reference project accepted a restart under full load."
+  notes "A Schottky in the bat path instead would cost 0.3–0.4 V, often the whole reserve of a battery."

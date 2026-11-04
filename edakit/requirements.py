@@ -69,6 +69,7 @@ from pathlib import Path
 PREFIX = {"need": "N", "requirement": "R"}           # [[need]] N-<n>, [[requirement]] R-<n>
 KEYS = {"need": ("id", "text", "who", "source", "status", "reason"),
         "requirement": ("id", "text", "source", "from", "binding", "verify", "status", "reason")}
+DSL_KEYS = ("subject", "require")    # a requirement's keys of the explorative DSL – read only with [beta] dsl = true
 STATUS = ("draft", "accepted", "dropped")
 BINDING = ("must", "should", "may")
 VERIFY = ("rows", "signoff", "script", "accept")
@@ -98,6 +99,9 @@ class Entry:
     binding: str = ""           # requirement: must, should, may
     verify: list = field(default_factory=list)   # requirement: [(kind, text)] – rows, signoff, script, accept
     reason: str = ""            # why; required when dropped
+    subject: str = ""           # requirement: the part, net, usage or definition it is about (DOCS.ref resolves it)
+    require: str = ""           # requirement: the condition as stated – D.i within 2 mA .. 15 mA –, kept as text
+    satisfied_by: list = field(default_factory=list)   # the parts and nets whose `satisfies` names it (the graph's)
 
 
 def _either(words):
@@ -138,8 +142,10 @@ def _verify(raw):
     return out
 
 
-def _entry(kind, i, raw, path):
-    """One [[need]] or [[requirement]]: (Entry or None, its ID or None, problems – each starting with the ID)."""
+def _entry(kind, i, raw, path, dsl=False):
+    """One [[need]] or [[requirement]]: (Entry or None, its ID or None, problems – each starting with the ID); dsl adds
+    the DSL's keys subject and require."""
+    known = KEYS[kind] + (DSL_KEYS if dsl and kind == "requirement" else ())
     prefix = PREFIX[kind]
     if not isinstance(raw, dict):
         return None, None, [f"[[{kind}]] {i}: must be a table"]
@@ -147,7 +153,7 @@ def _entry(kind, i, raw, path):
     eid = eid if isinstance(eid, str) and ENTRY_ID.fullmatch(eid) and eid[0] == prefix else None
     bad = [] if eid else [f"id is missing ({prefix}-<n>)" if "id" not in raw else
                           f"id {raw['id']!r} – a {kind} is {prefix}-<n>, e.g. {prefix}-1"]
-    bad += [f"unknown key '{k}' (known: {', '.join(KEYS[kind])})" for k in raw if k not in KEYS[kind]]
+    bad += [f"unknown key '{k}' (known: {', '.join(known)})" for k in raw if k not in known]
     bad += _text(raw, "text", required=True) + _text(raw, "source") + _text(raw, "reason")
     bad += _choice(raw, "status", STATUS, required=False)            # without the key a draft
     reason = raw.get("reason", "")
@@ -157,6 +163,7 @@ def _entry(kind, i, raw, path):
         bad += _text(raw, "who")
     else:
         bad += _choice(raw, "binding", BINDING) + _verify(raw)
+        bad += (_text(raw, "subject") + _text(raw, "require")) if dsl else []
         refs = raw.get("from", [])
         if not isinstance(refs, list) or not all(isinstance(r, str) and r.strip() for r in refs):
             bad.append('from must be a list of texts, e.g. ["N-2", "D-8"]')
@@ -166,12 +173,17 @@ def _entry(kind, i, raw, path):
         return None, eid, problems
     return Entry(kind, eid, raw["text"], raw.get("status", "draft"), Path(path), who=raw.get("who", ""),
                  source=raw.get("source", ""), from_=list(raw.get("from", [])), binding=raw.get("binding", ""),
-                 verify=[next(iter(v.items())) for v in raw.get("verify", [])], reason=raw.get("reason", "")), eid, []
+                 verify=[next(iter(v.items())) for v in raw.get("verify", [])], reason=raw.get("reason", ""),
+                 subject=raw.get("subject", ""), require=raw.get("require", "")), eid, []
 
 
-def read(path):
+def read(path, dsl=False):
     """(entries, problems) of one requirements file: the entries without a problem – the needs, then the requirements,
-    each in file order – and what is wrong, each problem starting with the entry's ID ([[need]] 3 without one)."""
+    each in file order – and what is wrong, each problem starting with the entry's ID ([[need]] 3 without one). A
+    .circuit file is read in the circuit language's notation (lang/requirements.py)."""
+    if Path(path).suffix == ".circuit":
+        from .lang.requirements import read as read_circuit
+        return read_circuit(path)
     try:
         data = tomllib.loads(Path(path).read_text(encoding="utf-8"))
     except tomllib.TOMLDecodeError as e:
@@ -184,7 +196,7 @@ def read(path):
             problems.append(f"{kind} must be an array of tables: [[{kind}]]")
             continue
         for i, raw in enumerate(items, 1):
-            entry, eid, bad = _entry(kind, i, raw, path)
+            entry, eid, bad = _entry(kind, i, raw, path, dsl)
             if eid and eid in seen:
                 bad.append(f"{eid}: twice in this file")
             seen.add(eid)
@@ -203,7 +215,7 @@ def load(cfg):
         if not path.is_file():
             out.append(f"{name}: not found – named in [project] requirements")
             continue
-        found, bad = read(path)
+        found, bad = read(path, getattr(cfg, "dsl", False))
         for e in found:
             if e.id in home:
                 bad.append(f"{e.id}: already in {home[e.id]}")
@@ -260,6 +272,8 @@ def listing(cfg, entries):
         for e in reqs:
             lines.append(f"  {e.id:<5} {e.status:<9} {e.binding:<7} {e.text}")
             lines += labelled("source: ", [e.source], REQUIREMENT_COLUMN) if e.source else []
+            lines += labelled("subject: ", [e.subject], REQUIREMENT_COLUMN) if e.subject else []
+            lines += labelled("require: ", [e.require], REQUIREMENT_COLUMN) if e.require else []
             lines += labelled("from: ", [", ".join(e.from_) or "–"], REQUIREMENT_COLUMN)
             lines += labelled("verify: ", evidence(e), REQUIREMENT_COLUMN)
             lines += labelled("reason: ", [e.reason], REQUIREMENT_COLUMN) if e.reason else []
@@ -284,6 +298,8 @@ def chain(cfg, entries, eid):
         lines += labelled(f"{'source':<8}", [e.source], 2) if e.source else []
         lines += labelled(f"{'from':<8}", refs or ["–"], 2)
         lines += labelled(f"{'text':<8}", [e.text], 2)
+        lines += labelled(f"{'subject':<8}", [e.subject], 2) if e.subject else []
+        lines += labelled(f"{'require':<8}", [e.require], 2) if e.require else []
         lines += labelled(f"{'reason':<8}", [e.reason], 2) if e.reason else []
         lines += labelled(f"{'verify':<8}", evidence(e), 2)
         lines += labelled("", [NOT_HERE], 10) if e.verify else []
@@ -399,6 +415,11 @@ def check(rep, cfg):
         for kind, text in e.verify:
             if why := unresolved(kind, text, cfg, catalog, signoffs):
                 found(e, "DOCS.ref", f"{e.id}: verify {kind} {repr(text) if kind == 'rows' else text} – {why}")
+    for e, msg in (graph_refs(cfg, reqs, by_id) if getattr(cfg, "dsl", False) else []):   # the DSL's keys only
+        if e is not None:
+            found(e, "DOCS.ref", msg)
+        else:
+            rep.errors.append(("DOCS.ref", msg))
     for n in live:   # an accepted need: never a draft
         if n.kind == "need" and n.status == "accepted" and not any(n.id in r.from_ for r in reqs):
             found(n, "DOCS.need", f"{n.id}: accepted, but no requirement names it in from")
@@ -409,6 +430,84 @@ def check(rep, cfg):
     rep.warnings += [("DOCS.derived", f"{r.id}: {derived(r)}") for r in reqs if not stated.requirement(r)]
     rep.drafts += [("DOCS.draft", f'{e.id}: a draft – the user has not approved it (status "accepted", or "dropped" with '
                             "a reason)") for e in live if e.status == "draft"]
+
+
+# --- DOCS.ref on subject, require, satisfies and decision (T.15 of circuit-dsl-toolchain.md) ---------------------------
+REQUIRE = re.compile(r"^(\S+)\s+(within|<=|>=|<|>|==)\s+(.+)$")
+
+
+def require_problem(text):
+    """What is wrong with the form of a requirement's `require` – PART.i within 2 mA .. 15 mA, NET.v < 5.5 V – or
+    None; the condition itself is checked by what verify names."""
+    from .lang.units import UnitError, parse
+    m = REQUIRE.match(text.strip())
+    if not m or "." not in m.group(1):
+        return "a quantity reference (D.i, +5V.v), an operator (< <= > >= == within) and a quantity"
+    try:
+        q = parse(re.sub(r"\s*\.\.\s*", "..", m.group(3)))
+    except UnitError as e:
+        return str(e)
+    if q is None or q.unit is None or (m.group(2) == "within" and q.point):
+        return f"{m.group(3)}: a quantity with its unit" + (" – a range for within" if m.group(2) == "within" else "")
+    return None
+
+
+def namespace(cfg):
+    """({kind: names} the graph and its source know – parts, nets, and for a .circuit graph its usages and
+    definitions –, the Design)."""
+    from .design import Design
+    d = Design.from_config(cfg)
+    out = {"part": set(d.comps), "net": set(d.nets), "usage": set(), "def": set()}
+    if Path(cfg.graph).suffix == ".circuit":
+        from .lang.blocks import library
+        from .lang.compile import load_sources, project_of, resolve
+        root, dirs = project_of(cfg.graph)
+        model = resolve(load_sources(cfg.graph, root), root, dirs)
+        out["usage"] = {st.instance for st in model.statements if type(st).__name__ == "Use"}
+        out["def"] = set(model.defs) | set(library())
+    return out, d
+
+
+def decisions_of(cfg):
+    """The IDs D-n of the headings "## D-…" of the decision log [release] publish.decisions names; None without one."""
+    log = ((cfg.release or {}).get("publish") or {}).get("decisions")
+    if not log:
+        return None
+    path = cfg.resolve(log)
+    if not path.exists():
+        return set()
+    return set(re.findall(r"^##\s+(D-[1-9]\d*)\b", path.read_text(encoding="utf-8"), re.M))
+
+
+def graph_refs(cfg, reqs, by_id):
+    """[(entry or None, message)]: a requirement's subject that names nothing of the graph or its source, a require of
+    no form; a part's or net's satisfies that names no requirement, a decision that names no heading of the decision
+    log. Fills each requirement's satisfied_by."""
+    from .config import ConfigError
+    try:
+        names, d = namespace(cfg)
+    except (ConfigError, ValueError):
+        return []
+    out = []
+    for e in reqs:
+        if e.subject and not any(e.subject in s for s in names.values()):
+            out.append((e, f"{e.id}: subject {e.subject} – no part, net, usage or definition of the graph"))
+        if e.require and (why := require_problem(e.require)):
+            out.append((e, f"{e.id}: require {e.require!r} – {why}"))
+    decisions = decisions_of(cfg)
+    objects = [(c.get("designator"), c) for c in d.graph.get("components") or []]
+    objects += [(n.get("name"), n) for n in d.graph.get("nets") or []]
+    for name, obj in objects:
+        for rid in obj.get("satisfies") or []:
+            if rid in by_id:
+                by_id[rid].satisfied_by.append(name)
+            else:
+                out.append((None, f"{name}: satisfies {rid} – no requirement {rid} in the requirements files"))
+        if decisions is not None:
+            for did in obj.get("decision") or []:
+                if did not in decisions:
+                    out.append((None, f"{name}: decision {did} – no heading \"## {did}\" in the decision log"))
+    return out
 
 
 # --- DOCS.derived: a requirement names who stated it -----------------------------------------------------------------

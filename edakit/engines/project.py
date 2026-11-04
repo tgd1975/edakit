@@ -1,7 +1,8 @@
 """SYNC, GEO, PARTS and DOCS before the layout: what `edakit check` checks beyond the graph – own parts against their
 source and footprint copies against their data (SYNC.source, SYNC.footprint), holes and formed leads on the
 footprint geometry (GEO.hole, GEO.formed), stock, supplier, footprint data and the sign-off of every part (PARTS.*),
-the requirements file (DOCS.*), the project's scripts and agents (SYNC.scripts, SYNC.agents).
+the requirements file (DOCS.*), the project's scripts and agents (SYNC.scripts, SYNC.agents), and in a project with
+the explorative DSL switched on ([beta] dsl = true) the resolved graph generated beside its source (SYNC.graph).
 
 These checks live with what they read (part.py, stock.py, order.py, footprint.py, checks.py, requirements.py,
 scripts.py) and report into a Recorder: an error, a warning, a pending point, a note or a draft of the requirements
@@ -114,6 +115,7 @@ def check_mpn(design, rec, cfg):
 def run(design, cfg):
     """The findings of the checks beyond the graph, for a project (cfg)."""
     from .. import checks, footprint, library, order, part, requirements, scripts, stock
+    from ..graph_form import drift, generated_path
     rec = Recorder()
     part.check(design, rec, cfg)
     if not checks.check_holes(design, rec, checks.footprint_geometry(design, cfg)):
@@ -134,10 +136,14 @@ def run(design, cfg):
     else:   # required (requirements decision 5): open like a sign-off, edakit check passes, the gate does not release
         rec.pending.append(("DOCS.file", f"{cfg.path.name}: [project] requirements names no requirements file – "
                                          "write it with /edakit:requirements"))
+    if getattr(cfg, "dsl", False) and (lines := drift(cfg)):      # the explorative DSL's generated graph
+        rel = cfg.relative(generated_path(cfg))
+        rec.errors.append(("SYNC.graph", f"{rel}: drift from {cfg.relative(cfg.graph)} – {'; '.join(lines[:6])}"
+                                         + (f" (+{len(lines) - 6})" if len(lines) > 6 else "")))
     for level, msg in scripts.findings(cfg):
         rec.add(level, "SYNC.scripts", msg)
     for f in (scripts.agents(cfg).findings if cfg.agents else []):
         rec.add("error", "SYNC.agents", f.msg)
     for f in rec.findings:
-        f.stage = "G" if f.code.startswith(("DOCS.", "SYNC.scripts", "SYNC.agents")) else "P"
+        f.stage = "G" if f.code.startswith(("DOCS.", "SYNC.scripts", "SYNC.agents", "SYNC.graph")) else "P"
     return rec.findings

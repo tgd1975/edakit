@@ -6,7 +6,8 @@ codes of each stage, the parts schema, the check IDs of before with the codes th
 A generated section sits between `<!-- edakit:generated KIND ARGS -->` and `<!-- edakit:end -->` in a chapter of
 handbook/; KIND is table (ARGS: engine prefixes – code, title and severity, each code linked to its engine's page of
 the catalog), codes (the same with the rule and its details), engines (each engine's prefix and what it decides),
-kinds (the parts schema), replaced (the map of before) or command (ARGS: a subcommand – its synopsis and help line from the command line's own parser). Without
+kinds (the parts schema), replaced (the map of before), rules (the circuit language's derivation rules, lang/rules.py)
+or command (ARGS: a subcommand – its synopsis and help line from the command line's own parser). Without
 --write the command lists the sections that differ from the catalog; tests/test_catalog.py holds the handbook to it.
 
 Chapter 19 takes three more kinds from the tests' own data, not the catalog (the concept
@@ -26,6 +27,7 @@ from pathlib import Path
 from . import codes, old_map
 
 ROOT = Path(__file__).resolve().parents[2] / "handbook"
+DSL = ROOT.parent / "docs" / "dsl"        # the explorative DSL's pages: their sections show its codes too
 TESTS = ROOT.parent / "tests"
 JUDGEMENTS = ("real", "lacks", "criterion", "known gap")
 BLOCK = re.compile(r"(<!-- edakit:generated ([a-z]+)([^>]*) -->\n)(.*?)(<!-- edakit:end -->)", re.S)
@@ -35,10 +37,16 @@ def severity(e):
     return e["severity"] + "".join(f", {g}: {s}" for g, s in (e.get("grades") or {}).items())
 
 
-def codes_section(prefixes):
+def shown(dsl=False):
+    """The codes a page shows: a handbook chapter those outside every beta, a page of the DSL all of them."""
+    from . import released_codes
+    return codes() if dsl else released_codes()
+
+
+def codes_section(prefixes, dsl=False):
     """Each code of the engines with these prefixes: title, severity, what it replaces, the rule and its details."""
     out = []
-    for name, e in codes().items():
+    for name, e in shown(dsl).items():
         if name.split(".")[0] not in prefixes:
             continue
         old = f"; replaces {', '.join(e['replaces'])}" if e.get("replaces") else ""
@@ -54,23 +62,31 @@ def page_of(name):
     return f"../docs/catalog/{name.split('.')[0].lower()}.html"
 
 
-def table_section(prefixes):
+def link(name, dsl=False):
+    """A code as the table writes it: linked to its catalog page – a beta's code has none, edakit explain says it."""
+    from . import beta
+    page = f"../catalog/{name.split('.')[0].lower()}.html" if dsl else page_of(name)
+    return f"`{name}`" if beta(name) else f"[`{name}`]({page}#{name})"
+
+
+def table_section(prefixes, dsl=False):
     """The short kind: each code of the engines with these prefixes as a row – code, title, severity –, the code
     linked to the catalog page; rule, why, fix and sources are there and in edakit explain."""
     out = ["| Code | Title | Severity |", "| --- | --- | --- |"]
-    for name, e in codes().items():
+    for name, e in shown(dsl).items():
         if name.split(".")[0] in prefixes:
             old = f"; replaces {', '.join(e['replaces'])}" if e.get("replaces") else ""
-            out.append(f"| [`{name}`]({page_of(name)}#{name}) | {e['title']} | {severity(e)}{old} |")
-    out += ["", "Rule, why, fix and sources of each: `edakit explain CODE`, or the code on its page of the catalog."]
+            out.append(f"| {link(name, dsl)} | {e['title']} | {severity(e)}{old} |")
+    out += ["", "Rule, why, fix and sources of each: `edakit explain CODE`" + (
+        " – the explorative DSL's codes are not in the catalog." if dsl else ", or the code on its page of the catalog.")]
     return "\n".join(out)
 
 
 def engines_section():
     """Each engine of the catalog: its prefix and what it decides, in the catalog's order."""
-    from . import engines
+    from . import released_engines
     out = ["| Engine | Decides |", "|---|---|"]
-    out += [f"| {e['prefix']} | {e['decides']} |" for e in engines().values()]
+    out += [f"| {e['prefix']} | {e['decides']} |" for e in released_engines().values()]
     return "\n".join(out)
 
 
@@ -115,7 +131,7 @@ def command_section(name):
 
 
 def commands():
-    """The subcommands of the command line, in the parser's order."""
+    """The subcommands of the command line, in the parser's order – edakit's without the DSL (build_parser)."""
     from ..cli import build_parser
     return list(build_parser()._subparsers._group_actions[0].choices)
 
@@ -224,17 +240,20 @@ def tally_section():
         f"{sum(d['fixed'] for d in designs)} false alarms fixed."])
 
 
-def render(kind, args):
+def render(kind, args, dsl=False):
     if kind == "table":
-        return table_section(args.split())
+        return table_section(args.split(), dsl)
     if kind == "codes":
-        return codes_section(args.split())
+        return codes_section(args.split(), dsl)
     if kind == "engines":
         return engines_section()
     if kind == "kinds":
         return kinds_section()
     if kind == "replaced":
         return replaced_section()
+    if kind == "rules":                                  # the circuit language's derivation rules (lang/rules.py)
+        from ..lang.rules import describe
+        return describe() + "\n"
     if kind == "command":
         return command_section(args)
     if kind == "references":
@@ -246,14 +265,22 @@ def render(kind, args):
     raise ValueError(f"unknown generated section {kind!r}")
 
 
-def update(text):
-    """The chapter with every generated section rendered anew."""
-    return BLOCK.sub(lambda m: m.group(1) + render(m.group(2), m.group(3).strip()).rstrip() + "\n" + m.group(5), text)
+def update(text, dsl=False):
+    """The chapter with every generated section rendered anew – dsl for a page of the explorative DSL."""
+    return BLOCK.sub(lambda m: m.group(1) + render(m.group(2), m.group(3).strip(), dsl).rstrip() + "\n" + m.group(5),
+                     text)
 
 
-def stale(root=ROOT):
+def pages(root=None):
+    """[(path, dsl)]: the handbook's chapters and the explorative DSL's pages, or the pages of one folder."""
+    if root is not None:
+        return [(p, Path(root).resolve() == DSL.resolve()) for p in sorted(Path(root).glob("*.md"))]
+    return [(p, False) for p in sorted(ROOT.glob("*.md"))] + [(p, True) for p in sorted(DSL.glob("*.md"))]
+
+
+def stale(root=None):
     """Chapters whose generated sections differ from the catalog."""
-    return [p for p in sorted(Path(root).glob("*.md")) if update(t := p.read_text(encoding="utf-8")) != t]
+    return [p for p, dsl in pages(root) if update(t := p.read_text(encoding="utf-8"), dsl) != t]
 
 
 def main(argv=None):
@@ -261,8 +288,8 @@ def main(argv=None):
     found = stale()
     for p in found:
         if write:
-            p.write_text(update(p.read_text(encoding="utf-8")), encoding="utf-8")
-        print(f"{'written' if write else 'stale'}: handbook/{p.name}")
+            p.write_text(update(p.read_text(encoding="utf-8"), p.parent == DSL), encoding="utf-8")
+        print(f"{'written' if write else 'stale'}: {p.relative_to(ROOT.parent).as_posix()}")
     return 1 if found and not write else 0
 
 

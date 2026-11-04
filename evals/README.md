@@ -59,3 +59,29 @@ What the first runs changed in edakit: `bin/edakit` falls back to the plugin's `
 `edakit sim` reports artifacts it could not write as a note after its complete results; the SessionStart hook names the
 path of `bin/edakit` when edakit is not on PATH; the flyback finding names the motor's winding instead of a coil, which
 a run had taken for a relay.
+
+## The explorative DSL, 2026-11-03
+
+Three cases for the circuit language, a beta a project switches on with `[beta] dsl = true`
+([docs/dsl/](../docs/dsl/README.md)); their test project `led-bar-circuit` has the switch.
+
+| Case | Task | Graded by |
+|---|---|---|
+| `add-led-circuit` | a status LED on GP8 from the block library, on led-bar in the circuit language (`led-bar-circuit`) | the source has the usage, the resolved graph the LED; block add, check and sim ran; the `DONE:` line |
+| `repeat-leds` | four LEDs with their resistors on GP16 to GP19, written as one `for` | the source has a loop, the resolved graph GP19's net; check and sim ran; the `DONE:` line |
+| `variant-smd` | a variant in `variants/smd/` with J1 assembled (`bom yes`) and another button | the variant file names its base and sets `bom yes`; check ran; the `DONE:` line |
+
+One run per case, Sonnet 5.5, the plugin at the branch of the circuit language (`28b5c1c`; the two cases whose grader
+threw again at `9d1289e`); in a cloud container as the user `eval` with `TMPDIR=/srv/evaltmp`.
+
+| Case | Sonnet 5.5 | Turns | Cost |
+|---|---|---|---|
+| add-led-circuit | 1.00 | 5 | 0.13 USD |
+| repeat-leds | 1.00 – first 0.80: the grader `source-has-a-for` threw | 8 | 0.17 USD |
+| variant-smd | 1.00 – first 0.75: the grader `variant-file` threw | 10 | 0.18 USD |
+
+What the runs changed: the runner compiles a regex grader as JavaScript, which knows no inline `(?m)` – the flag goes
+to `flags`, and a test refuses inline flags in every grader; docs/dsl/variants.md says what a variant keeps beside
+its source, which the run of variant-smd had to find out. repeat-leds wrote its loop of parts and nets by hand, not with `use
+led` – the case asks for a loop only. The copy of the second runs was not synced again after it was unpacked:
+`bin/edakit` wanted to rebuild edakit from PyPI, which a run cannot reach, and Sonnet took the copy's `.venv` instead.

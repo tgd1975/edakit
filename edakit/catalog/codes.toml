@@ -52,6 +52,11 @@ decides = "the order at the maker is the release: form, parts, quote, read, file
 prefix = "DOCS"
 decides = "documents and requirements quote the design"
 
+[engines.DEF]
+prefix = "DEF"
+decides = "every derived value is the value its record derives"
+beta = "dsl"                 # the explorative DSL's: out of the catalog, the handbook and `edakit rules` (edakit/beta.py)
+
 [engines.HINT]
 prefix = "HINT"
 decides = "patterns that need judgement, as notes"
@@ -818,6 +823,36 @@ grades = { margin = "warning", unchecked = "note" }
 replaces = []
 sources = [
   "edakit handbook 8.6",
+]
+
+[codes."DEF.derive"]
+title = "derived values within their window"
+rule = "A part whose value a derivation record of the graph derives (derivations: the circuit language's derive, edakit block add --set) has a value inside the record's window, and every number the record used is what its source says now – the parts entry's field, the net's range, the catalog's table."
+why = "A record says which value a rule of edakit's proposes from the entries and ranges; a part outside it was chosen otherwise, or the entries changed after the record was written."
+fix = "Another part of the series inside the window (the candidates edakit block add --set names), or accept with the reason; for a record whose inputs changed edakit graph json --write (a .circuit source) or edakit graph derive --write (a JSON graph)."
+severity = "warning"
+grades = { inputs = "warning" }
+details = [
+  "the window: one step of the series around the derived value (series_resistor, divider, rc), or [R_min, R_max] of a pull-up – the record names the rule, its inputs with their sources, the series' nearest value and what the chosen value predicts; the engine compares numbers only and never evaluates a rule",
+  "inputs: a record's input taken from a parts entry (C2297 values.vf_typ_v), a net's range (net LED_G1 v[1]) or a catalog table differs from what that source holds now",
+]
+replaces = []
+sources = [
+  "docs/concepts/new/circuit-dsl-language.md, section 7",
+  "docs/concepts/new/circuit-dsl-toolchain.md, T.8",
+]
+
+[codes."SYNC.graph"]
+title = "the resolved graph current"
+beta = "dsl"
+rule = "In a project with the explorative DSL switched on, beside a TOML or a .circuit graph the generated graph.json is what the source resolves to now, with the parts entries as they are."
+why = "Scripts, the firmware and a reviewer's diff read the generated file; one written before a change describes the old circuit, and the pre-commit hook is not the only way a file reaches a commit."
+fix = "edakit graph json --write writes it again; commit it with the source (handbook 3.1)."
+severity = "error"
+replaces = []
+sources = [
+  "edakit handbook 3.1, The JSON generated beside a TOML graph",
+  "docs/concepts/new/circuit-dsl-language.md, section 8 and item 16",
 ]
 
 [codes."SYNC.agents"]
