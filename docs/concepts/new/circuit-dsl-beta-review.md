@@ -8,8 +8,8 @@ every facet of the DSL works only in a project whose edakit.toml switches it on,
 `explorative-dsl-beta-fixes`, five commits on the DSL branch's tip `5ee220f` (`1dd3e31` to `460a3e4`) – the DSL
 branch itself is another session's and unchanged; it takes them as a fast-forward. The decisions below taken as
 recommended and confirmed by the owner the same day (decision 50 of circuit-dsl-toolchain.md). Left: the
-fast-forward of the DSL branch, the session that holds it; the branch is not proposed for main until the owner
-asks (decision 48).
+fast-forward of the DSL branch – overtaken: on 2026-11-04 the branch went onto main on the owner's word as edakit
+1.1.17 (#344), with main merged in (decision 51 of circuit-dsl-toolchain.md).
 
 ## Why
 
