@@ -4,7 +4,7 @@ Open work that needs the owner's computer, a maker or the owner's word. The stat
 and plans the sections name; this list is what is left to do of them, in the order it can be done. No item is deleted.
 
 **Layout.** Every item, in every section, open or closed, is a line with a checkbox and an ID unique in this file,
-counted up and never reused – whoever adds an item takes the next free ID and counts it up here. Next free ID: TD-152.
+counted up and never reused – whoever adds an item takes the next free ID and counts it up here. Next free ID: TD-153.
 
 - Open: `- [ ] TD-<n> - **Title:** what and why.` – a step's own name after the dash (`- [ ] TD-31 - **D.4** …`).
 - Done: ticked, the commit that did it, the date at the end, moved to [Closed todos](#closed-todos), newest first –
@@ -29,6 +29,8 @@ to touch.
 
 ## For the owner
 
+- [ ] TD-152 - **OK for #351 (easyeda-mcp-pro pinned to 1.11.0, M-11 fixed upstream):** checked live; a `minor` –
+      after the merge every project updates server and bridge extension together (handbook 2.4, 2.5). *(edakit-d2)*
 - [ ] TD-108 - **A photo of the delivered tree:** one picture of the lit tree in its hill into pytree's `docs/img/` –
       it replaces the render on `docs/projects/pytree.md`. *(edakit-ce)*
 
@@ -70,7 +72,8 @@ Nothing to do until there is an answer or a release; whichever session learns of
       version".
 - [ ] TD-140 - **M-11, easyeda-mcp-pro #864 and #865:** answer questions; when a release takes the fix, raise the
       pin, check it live on pytree's `tree` with `layout_tree` open, and drop the closing of the other schematics in
-      `schematic check` and stage S. *(edakit-7b)*
+      `schematic check` and stage S. Released in 1.9.0; all of it done in #351, waiting for the merge (TD-152).
+      *(edakit-7b, edakit-d2)*
 
 ## Closed todos
 
