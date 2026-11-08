@@ -8,7 +8,7 @@
 # IMPORTANT: in server mode stdout speaks the MCP protocol. Never print anything to stdout.
 set -euo pipefail
 
-EASYEDA_MCP_VERSION="${EASYEDA_MCP_VERSION:-1.8.0}"
+EASYEDA_MCP_VERSION="${EASYEDA_MCP_VERSION:-1.11.0}"
 RUNTIME_DIR="${EASYEDA_MCP_RUNTIME_DIR:-$HOME/.easyeda-mcp-pro/runtime/$EASYEDA_MCP_VERSION}"
 ENTRY="$RUNTIME_DIR/node_modules/easyeda-mcp-pro/dist/index.js"
 

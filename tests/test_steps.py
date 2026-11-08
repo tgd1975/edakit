@@ -105,7 +105,7 @@ def test_schematic_create(project, monkeypatch, capsys, save):
     for name in ("wait_for_bridge", "open_project", "label_sheet"):
         monkeypatch.setattr(schematic.eda, name, lambda *a, **k: True)
     monkeypatch.setattr(schematic.eda, "save_if_matching", lambda *a, **k: 0)
-    monkeypatch.setattr(schematic, "check_reopened", lambda mcp, name, comps, nets: 0)   # the save opened again (#117)
+    monkeypatch.setattr(schematic, "check_reopened", lambda mcp, name, comps, nets: 0)   # the save opened again
     monkeypatch.setattr(schematic.eda, "verify_nets", lambda mcp, nets, placed: 0)
     for name in ("prepare_schematic", "close_other_schematic_tabs", "mark_nc"):
         monkeypatch.setattr(schematic, name, lambda *a, **k: None)
