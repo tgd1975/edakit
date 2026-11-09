@@ -29,9 +29,6 @@ to touch.
 
 ## For the owner
 
-- [ ] TD-153 - **OK for #362 (Actions policy for `pull_request_target`), before 2026-12-02:** say OK – merged with
-      `merge.py`, then `python3 .github/rulesets.py apply` on your word; without it no pull request reaches main
-      from 2026-12-02, the notes lane included. *(edakit-b9)*
 - [ ] TD-108 - **A photo of the delivered tree:** one picture of the lit tree in its hill into pytree's `docs/img/` –
       it replaces the render on `docs/projects/pytree.md`. *(edakit-ce)*
 
@@ -74,6 +71,8 @@ Nothing to do until there is an answer or a release; whichever session learns of
 
 ## Closed todos
 
+- [x] TD-153 - **OK for #362 (Actions policy for `pull_request_target`):** given; merged as ba9078f9, applied with
+      `rulesets.py apply` – GitHub has the policy as the file says. [2026-11-09]
 - [x] TD-152 - **OK for #351 (easyeda-mcp-pro pinned to 1.11.0, M-11 fixed upstream):** given; merged as
       edakit 1.2.0 (#351). *(edakit-d2)* [2026-11-09]
 - [x] TD-140 - **M-11, easyeda-mcp-pro #864 and #865:** released in 1.9.0; the pin raised to 1.11.0, checked live on
