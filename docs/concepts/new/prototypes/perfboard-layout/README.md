@@ -14,7 +14,7 @@ Nothing of the steps LR.1 to LR.8 is built. A script does the check and the draw
 | [bell-perfboard.toml](bell-perfboard.toml) | The plan as text: `[perfboard]`, `[place]`, `[near]`, `[[wire]]`. It is for the bell's THT circuit (`automatic_christmas_bell`, `variants/tht`), whose graph and parts stay unchanged. | The board file of a hand-wired variant (LR.8) |
 | [pad-per-hole.toml](pad-per-hole.toml) | The kind as data: pitch, pads, the tolerances for bending leads | LR.1 |
 | [perfboard.py](perfboard.py) | Builds the nets the plan makes and compares them with the graph's. Checks the grid, the bodies, the wires, the mounting holes and `near`, then draws and writes the lists. | LR.2 to LR.4 |
-| [bell-perfboard.build.md](bell-perfboard.build.md) | Its output: the findings, the build list from low to high, the test list for the multimeter and the material | LR.4 |
+| [bell-perfboard.build.md](bell-perfboard.build.md) | Its output: the findings, the cut list, the build list from low to high, the test list for the multimeter and the material | LR.4 |
 
 ```bash
 python3 perfboard.py bell-perfboard.toml <automatic_christmas_bell>/variants/tht
@@ -40,8 +40,9 @@ The board is 33 × 22 holes, which is the size of the bell's 85 × 56 mm PCB, cu
   pull-downs and the buttons stand across or on them; C1 and J1 sit at the right end, C1's plus in J1's row 17.
   Short wires on top bring +5 V from the Nano's 5V pin down to row 22 and from there around C1 into row 17; another
   one joins the LED cathodes to the Nano's GND (pin 4).
-- **In all:** 8 insulated wires (46 cm) and 76 solder bridges, 46 of them in the three long rows (cathodes, ground,
-  +5 V). Every row of bridges is straight.
+- **In all:** 8 insulated wires (445 mm in seven colours) and 76 bridges, every row of them straight. The cut list
+  makes them 17 pieces of bare wire – 11 × 5 mm, 3 × 10 mm, one each of 35, 45 and 50 mm for the rows of cathodes,
+  ground and +5 V –; the 12 bridges beside the wires' ends are the wires' stripped ends.
 
 ## What the check says
 
@@ -87,9 +88,12 @@ What the first versions left open is decided in the concept (its decisions 11 to
   infers them from the pin name, or on a button from the role.
 - A module on sockets is raised, and the test list measures without it (19); `near` is the gap between body boxes
   (20); the bridges are soldered once the leads are in (21).
+- A cut list with lengths rounded up to 5 mm (22): a straight row of bridges is one piece, a bridge beside a wire's
+  end that wire's stripped end (23).
 
-The tolerances in [pad-per-hole.toml](pad-per-hole.toml) are still assumptions without a source: 0.8 mm for bending a
-lead, 1.5 mm of straight lead for an axial part, and no copper rating – LR.1 takes them from a board's datasheet.
+The values in [pad-per-hole.toml](pad-per-hole.toml) are still assumptions without a source: 0.8 mm for bending a
+lead, 1.5 mm of straight lead for an axial part, no copper rating, and the cut list's allowances (5 mm stripped,
+5 mm slack, 1 mm of bare wire beyond the outer pads) – LR.1 takes them from a board's datasheet and a first build.
 
 The prototype does not cover:
 

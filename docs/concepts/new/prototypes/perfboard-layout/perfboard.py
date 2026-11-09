@@ -4,7 +4,7 @@
     python3 perfboard.py bell-perfboard.toml <automatic_christmas_bell>/variants/tht
 
 Reads the plan ([perfboard], [place], [near], [[wire]]), the kind beside it (pad-per-hole.toml) and the project's
-hardware/graph.toml and parts entries. Builds the nets the plan makes – pins in holes, solder bridges between
+hardware/graph.toml and parts entries. Builds the nets the plan makes – pins in holes, bridges of bare wire between
 neighbouring holes on the bottom, insulated wires on top joining their two ends – and compares them with the graph's;
 checks the grid, the bodies, the wires, the mounting holes and the hand-over's `near`. Writes <plan>.top.svg,
 <plan>.bottom.svg (the bottom side in the same orientation as the top, decision 12 of the concept) and <plan>.build.md
@@ -679,7 +679,7 @@ def draw(plan, kind, res, parts, title, bottom):
         svg.add(f'<line x1="{x + 56:.2f}" y1="{y:.2f}" x2="{x + 59:.2f}" y2="{y:.2f}" stroke="#2a2116" '
                 f'stroke-width="1.3" stroke-linecap="round"/><line x1="{x + 56:.2f}" y1="{y:.2f}" x2="{x + 59:.2f}" '
                 f'y2="{y:.2f}" stroke="#f28e2b" stroke-width="0.95" stroke-linecap="round"/>')
-        svg.text(x + 60, y, "solder bridge, coloured by net",
+        svg.text(x + 60, y, "bridge of bare wire, coloured by net",
                  size=1.3, anchor="start", fill="#444")
         used = []
         for w in wires:
@@ -834,10 +834,44 @@ def draw_module_raised(svg, d, p, info, X, Y, shape_svg):
 
 
 ORDER = [("resistor-low", "Resistors ¼ W, lying flat"), ("resistor-high", "Resistors 1 W, 1–2 mm above the board"),
-         ("wire", "Insulated wires on top – each end through its hole, bent onto the pad below"),
+         ("wire", "Insulated wires on top – each end through its hole and bent onto the pad of the lead beside it"),
          ("module", "Sockets"), ("button", "Buttons"), ("connector", "Pin header"), ("led", "LEDs"),
-         ("capacitor", "Electrolytic capacitor"), ("bridge", "Solder bridges on the bottom, once the leads are in"),
+         ("capacitor", "Electrolytic capacitor"),
+         ("bridge", "Bare wire on the bottom, once the leads are in – laid over the pads, soldered at each"),
          ("test", "Test"), ("plug", "Module")]
+COLOUR_OF_NET = {"GND": "black", "+5V": "red"}
+
+
+def cutlist(plan, kind, res):
+    """Insulated wires by colour and bare pieces by length, every length rounded up to the step (decision 22): a
+    straight row of bridges is one piece; a single bridge beside a wire's end is that wire's stripped end."""
+    pitch, cw = kind["pitch_mm"], kind["wires"]
+    step = plan["perfboard"].get("cut_step_mm", cw["step_mm"])
+
+    def up(x):
+        return int(math.ceil(x / step - 1e-9) * step)
+
+    wires = res["wires"]
+    ends = {h for w in wires if w["kind"] == "wire" for h in (w["holes"][0], w["holes"][-1])}
+    insulated, bare, by_end = [], [], []
+    for w in wires:
+        if w["kind"] == "wire":
+            pts = [parse_hole(h) for h in w["path"]]
+            top = sum(math.dist(a, b) for a, b in zip(pts, pts[1:])) * pitch
+            colour = w.get("color", COLOUR_OF_NET.get(w["net"], "any"))
+            insulated.append({"colour": colour, "mm": up(top + cw["slack_mm"] + 2 * cw["strip_mm"]), "wire": w})
+        else:
+            steps = len(w["holes"]) - 1
+            if steps == 1 and (w["holes"][0] in ends or w["holes"][1] in ends):
+                by_end.append(w)
+            else:
+                bare.append({"mm": up(steps * pitch + 2 * cw["bridge_end_mm"]), "wire": w})
+    return {"step": step, "strip": cw["strip_mm"], "insulated": insulated, "bare": bare, "by_end": by_end}
+
+
+def holes_of(w):
+    return ("–" if len(w["holes"]) == 2 else " … ").join(w["path"]) if w["kind"] == "bridge" else \
+        f"{w['path'][0]}–{w['path'][-1]}"
 
 
 def lists(plan, kind, res, graph, parts):
@@ -851,9 +885,32 @@ def lists(plan, kind, res, graph, parts):
         out.append(f"- **{sev}** `{code}` – {text}")
     out.append("")
 
-    def length(w):
-        pts = [parse_hole(h) for h in w["path"]]
-        return sum(math.dist(a, b) for a, b in zip(pts, pts[1:])) * pitch
+    cut = cutlist(plan, kind, res)
+    out.append(f"## Cut list – lengths rounded up to {cut['step']} mm\n")
+    out.append(f"**Insulated wire, solid core, on top** – may turn corners; strip {cut['strip']} mm at each end: "
+               f"through its hole and over onto the pad of the lead beside it, which makes the bridge to that lead.\n")
+    out.append("| Colour | Length | Holes | Net |")
+    out.append("| --- | --- | --- | --- |")
+    colours = list(dict.fromkeys(i["colour"] for i in cut["insulated"]))
+    for c in colours:
+        for i in sorted((i for i in cut["insulated"] if i["colour"] == c), key=lambda i: -i["mm"]):
+            out.append(f"| {c} | {i['mm']} mm | {holes_of(i['wire'])} | {i['wire']['net']} |")
+    per_colour = {c: sum(i["mm"] for i in cut["insulated"] if i["colour"] == c) for c in colours}
+    out.append("\nPer colour: " + ", ".join(f"{c} {mm} mm" for c, mm in per_colour.items()) + ".\n")
+    out.append("**Bare tinned wire, straight, on the bottom** – one piece per row of bridges, laid over the pads and "
+               "soldered at each.\n")
+    out.append("| Length | Pieces | Holes |")
+    out.append("| --- | --- | --- |")
+    by_len = defaultdict(list)
+    for b in cut["bare"]:
+        by_len[b["mm"]].append(b["wire"])
+    for mm in sorted(by_len, reverse=True):
+        out.append(f"| {mm} mm | {len(by_len[mm])} | " +
+                   ", ".join(f"{holes_of(w)} {w['net']}" for w in by_len[mm]) + " |")
+    bare_total = sum(b["mm"] for b in cut["bare"])
+    out.append(f"\nIn all {len(cut['bare'])} pieces, {bare_total} mm. A wire's stripped end makes the "
+               f"{len(cut['by_end'])} bridges beside the wires' ends: "
+               + ", ".join(holes_of(w) for w in cut["by_end"]) + ".\n")
 
     out.append("## Build list – from low to high\n")
     groups = defaultdict(list)
@@ -864,8 +921,7 @@ def lists(plan, kind, res, graph, parts):
         if k == "resistor":
             k = "resistor-high" if p.axial[1] > 3 else "resistor-low"
         groups[k].append(d)
-    n_bridges = sum(len(w["holes"]) - 1 for w in groups["bridge"])
-    wire_total = 0.0
+    cut_mm = {id(i["wire"]): i["mm"] for i in cut["insulated"] + cut["bare"]}
     step = 0
     for key, head in ORDER:
         if key == "plug":
@@ -883,14 +939,10 @@ def lists(plan, kind, res, graph, parts):
         rows = []
         for it in items:
             if key == "bridge":
-                n = len(it["holes"]) - 1
-                path = "–".join(it["path"]) if n == 1 else " … ".join(it["path"])
-                rows.append(f"holes {path} {it['net']}" + (f" ({n})" if n > 1 else ""))
+                if id(it) in cut_mm:
+                    rows.append(f"holes {holes_of(it)} {it['net']} ({cut_mm[id(it)]} mm)")
             elif key == "wire":
-                ln = length(it) + 16
-                wire_total += ln
-                rows.append(f"{it.get('color', '')}, holes {it['path'][0]}–{it['path'][-1]} {it['net']} "
-                            f"({ln:.0f} mm)")
+                rows.append(f"{it.get('color', '')}, holes {holes_of(it)} {it['net']} ({cut_mm[id(it)]} mm)")
             else:
                 p = placed[it]
                 e = p.entry
@@ -916,8 +968,8 @@ def lists(plan, kind, res, graph, parts):
                 else:
                     rows.append(f"{it} {comp.get('value', '')} in holes {hole_name(p.holes['1'])}–"
                                 f"{hole_name(p.holes['2'])}")
-        extra = f" – {n_bridges} in all" if key == "bridge" else ""
-        out.append(f"{step}. **{head}{extra}:** " + "; ".join(rows) + ".")
+        tail = (f" The bridges beside the wires' ends are their stripped ends." if key == "bridge" else "")
+        out.append(f"{step}. **{head}:** " + "; ".join(rows) + "." + tail)
     out.append("")
 
     out.append("## Test list – multimeter in beep mode, U1 not plugged in\n")
@@ -980,8 +1032,10 @@ def lists(plan, kind, res, graph, parts):
     out.append("## Material\n")
     out.append(f"- Perfboard, a pad per hole: {cols} × {rows} holes ({cols * pitch:.1f} × {rows * pitch:.1f} mm), "
                f"cut from a Euro board 160 × 100 mm; four holes drilled to {MOUNT_DRILL} mm.")
-    out.append(f"- Insulated wire, solid core, in the plan's colours: {wire_total / 10:.0f} cm; solder for "
-               f"{n_bridges} bridges.")
+    out.append("- Insulated wire, solid core: " + ", ".join(f"{c} {math.ceil(mm / 10)} cm" for c, mm in
+                                                            per_colour.items()) + " – the cut list.")
+    out.append(f"- Bare tinned copper wire 0.6 mm: {math.ceil(bare_total / 10)} cm in {len(cut['bare'])} pieces – "
+               f"the cut list; leads cut off the resistors do for the short ones.")
     out.append("- Two female headers 1×15 for U1 – already an `[[extra]]` of the bell's tht variant.")
     return "\n".join(out) + "\n"
 
