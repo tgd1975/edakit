@@ -29,10 +29,6 @@ to touch.
 
 ## For the owner
 
-- [ ] TD-157 - **OK for #367 (pytree's pictures not under MIT):** a line in the README's licence table, pytree's
-      decision P-27, due 2026-11-30 – merged with `python3 .github/merge.py 367` on the owner's word. *(edakit-9d)*
-- [ ] TD-154 - **OK for #365 (perfboard layout, LR.1 to LR.6):** the plan of a hand-wired board checked against the
-      graph and drawn – merged with `python3 .github/merge.py 365` on the owner's word. *(edakit-9d)*
 - [ ] TD-108 - **A photo of the delivered tree:** one picture of the lit tree in its hill into pytree's `docs/img/` –
       it replaces the render on `docs/projects/pytree.md`. *(edakit-ce)*
 
@@ -76,13 +72,16 @@ Nothing to do until there is an answer or a release; whichever session learns of
 ## Perfboard layout ([docs/concepts/new/perfboard-layout.md](docs/concepts/new/perfboard-layout.md))
 
 - [ ] TD-155 - **LR.7 (the examples):** a perfboard variant of coin-cell-led and of blinker-555, their through-hole
-      parts chosen with the skill part-search, each with a plan the tests hold – after #365. *(edakit-9d)*
+      parts chosen with the skill part-search, each with a plan the tests hold. *(edakit-9d)*
 - [ ] TD-156 - **LR.8 (the bell):** a perfboard variant of the bell from its THT parts, starting from the prototype's
-      plan, with `joined = [["4", "29"]]` in the Nano's entry – in automatic_christmas_bell by its session, after #365.
+      plan, with `joined = [["4", "29"]]` in the Nano's entry – in automatic_christmas_bell by its session, with edakit 1.2.1 or later.
       *(edakit-9d)*
 
 ## Closed todos
 
+- [x] TD-157 - **OK for #367 (pytree's pictures not under MIT):** given; merged as d1cf46fc – the README's licence
+      table names `docs/projects/pytree/` as pytree's, all rights reserved (pytree P-27). [2026-11-10]
+- [x] TD-154 - **OK for #365 (perfboard layout, LR.1 to LR.6):** given; merged as 16b2e1c7, edakit 1.2.1. [2026-11-10]
 - [x] TD-153 - **OK for #362 (Actions policy for `pull_request_target`):** given; merged as ba9078f9, applied with
       `rulesets.py apply` – GitHub has the policy as the file says. [2026-11-09]
 - [x] TD-152 - **OK for #351 (easyeda-mcp-pro pinned to 1.11.0, M-11 fixed upstream):** given; merged as
