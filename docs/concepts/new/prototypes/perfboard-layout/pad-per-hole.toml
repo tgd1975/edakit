@@ -1,0 +1,17 @@
+# A perfboard kind as data – sketch of edakit/perfboards/pad-per-hole.toml (step LR.1 of ../../perfboard-layout.md).
+# Values marked "assumption" have no source yet; LR.1 takes them from the board's datasheet.
+
+name = "Lochraster, a pad per hole"
+pitch_mm = 2.54
+hole_mm = 1.0                  # assumption: the usual drill of a 2.54 mm perfboard
+pad_mm = 1.8                   # assumption: round pad, tinned
+sides = 1                      # pads on the bottom only; the top is bare substrate
+groups = "none"                # no holes joined by copper: every connection is a wire or a bridge
+sizes = { euro = [63, 39], half_euro = [39, 31] }   # holes of a 160 x 100 and a 100 x 80 mm board – assumption
+
+[tolerance]
+lead_bend_mm = 0.8             # assumption: how far a lead may be bent to reach a hole of the grid
+axial_bend_mm = 1.5            # assumption: straight lead between body and bend, per side, for an axial part
+
+[copper]                       # a current only with its source – none yet
+source = ""
