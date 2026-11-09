@@ -4,7 +4,7 @@ Open work that needs the owner's computer, a maker or the owner's word. The stat
 and plans the sections name; this list is what is left to do of them, in the order it can be done. No item is deleted.
 
 **Layout.** Every item, in every section, open or closed, is a line with a checkbox and an ID unique in this file,
-counted up and never reused – whoever adds an item takes the next free ID and counts it up here. Next free ID: TD-154.
+counted up and never reused – whoever adds an item takes the next free ID and counts it up here. Next free ID: TD-157.
 
 - Open: `- [ ] TD-<n> - **Title:** what and why.` – a step's own name after the dash (`- [ ] TD-31 - **D.4** …`).
 - Done: ticked, the commit that did it, the date at the end, moved to [Closed todos](#closed-todos), newest first –
@@ -29,6 +29,8 @@ to touch.
 
 ## For the owner
 
+- [ ] TD-154 - **OK for #365 (perfboard layout, LR.1 to LR.6):** the plan of a hand-wired board checked against the
+      graph and drawn – merged with `python3 .github/merge.py 365` on the owner's word. *(edakit-9d)*
 - [ ] TD-108 - **A photo of the delivered tree:** one picture of the lit tree in its hill into pytree's `docs/img/` –
       it replaces the render on `docs/projects/pytree.md`. *(edakit-ce)*
 
@@ -68,6 +70,14 @@ Nothing to do until there is an answer or a release; whichever session learns of
 - [ ] TD-36 - **EasyEDA, #45 to #52 and our comments to #36 and #38:** answer questions; when a release fixes one,
       check it live, take it up and say so in upstream/README.md. EasyEDA's first answer is often "update to the latest
       version".
+
+## Perfboard layout ([docs/concepts/new/perfboard-layout.md](docs/concepts/new/perfboard-layout.md))
+
+- [ ] TD-155 - **LR.7 (the examples):** a perfboard variant of coin-cell-led and of blinker-555, their through-hole
+      parts chosen with the skill part-search, each with a plan the tests hold – after #365. *(edakit-9d)*
+- [ ] TD-156 - **LR.8 (the bell):** a perfboard variant of the bell from its THT parts, starting from the prototype's
+      plan, with `joined = [["4", "29"]]` in the Nano's entry – in automatic_christmas_bell by its session, after #365.
+      *(edakit-9d)*
 
 ## Closed todos
 

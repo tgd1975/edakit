@@ -11,6 +11,10 @@ script that checks its nets against the graph and draws both views, and the cut,
 reference for LR.1 to LR.4. Its rounds brought decisions 11 to 23: the owner's 11 to 15 and 22, Claude's 16 to 21 and
 23, confirmed by the owner the same day.
 
+In implementation since 2026-11-09, on the owner's word ("implementiere das perfboard concept"): LR.1 to LR.6 are
+built in [#365](https://github.com/tgd1975/edakit/pull/365) – `edakit perfboard`, the codes PERF.*, stage L, handbook
+7.9 –, waiting for the owner's OK; LR.7 and LR.8 are TD-155 and TD-156 in `TODO.md`.
+
 ## Why
 
 After step 7 a circuit is "enough to wire it by hand or to build it on a perfboard" (`docs/steps/README.md`). How is
