@@ -4,10 +4,11 @@
     python3 perfboard.py bell-perfboard.toml <automatic_christmas_bell>/variants/tht
 
 Reads the plan ([perfboard], [place], [near], [[wire]]), the kind beside it (pad-per-hole.toml) and the project's
-hardware/graph.toml and parts entries. Builds the nets the plan makes – pins in holes, bare wires over the pads they
-pass, bridges, insulated wires end to end – and compares them with the graph's; checks the grid, the bodies, the
-wires, the mounting holes and the hand-over's `near`. Writes <plan>.top.svg, <plan>.bottom.svg (mirrored, seen from
-below) and <plan>.build.md (findings, build list, test list for the multimeter, material) beside the plan.
+hardware/graph.toml and parts entries. Builds the nets the plan makes – pins in holes, solder bridges between
+neighbouring holes on the bottom, insulated wires on top joining their two ends – and compares them with the graph's;
+checks the grid, the bodies, the wires, the mounting holes and the hand-over's `near`. Writes <plan>.top.svg,
+<plan>.bottom.svg (the bottom side in the same orientation as the top, decision 12 of the concept) and <plan>.build.md
+(findings, build list, test list for the multimeter, material) beside the plan.
 
 Standard library only (Python 3.11+). A sketch for the concept, not edakit code; edakit's pytest does not collect it.
 """
@@ -220,7 +221,7 @@ class UF:
 
 
 def expand(path, straight):
-    """The holes a wire touches: every hole along a bare wire, only the ends of an insulated one."""
+    """The holes a wire touches: every hole along a road of bridges, only the ends of an insulated wire."""
     pts = [parse_hole(h) for h in path]
     if not straight:
         return [pts[0], pts[-1]], []          # the points between are bends above the board, not holes
@@ -233,6 +234,20 @@ def expand(path, straight):
         for i in range(1, n + 1):
             holes.append((c1 + (c2 - c1) * i // n, r1 + (r2 - r1) * i // n))
     return holes, bad
+
+
+def box(p):
+    """The bounding box of a part's bodies on the board: x0, y0, x1, y1."""
+    xs, ys = [], []
+    for kind_s, (cx, cy), size in p.shapes():
+        w, h = (size, size) if kind_s == "circle" else size
+        xs += [cx - w / 2, cx + w / 2]
+        ys += [cy - h / 2, cy + h / 2]
+    return min(xs), min(ys), max(xs), max(ys)
+
+
+def box_gap(a, b):
+    return max(b[0] - a[2], a[0] - b[2], b[1] - a[3], a[1] - b[3], 0)      # as edakit/pcb.py
 
 
 def check(plan, kind, graph, parts):
@@ -298,39 +313,46 @@ def check(plan, kind, graph, parts):
         for b in ds[i + 1:]:
             if any(overlap(sa, sb) for sa in placed[a].shapes() for sb in placed[b].shapes()):
                 f("error", "PERF.body", f"the bodies of {a} and {b} overlap")
-    for h, who in pin_at.items():
-        pt = ((h[0] + 0.5) * pitch, (h[1] - 0.5) * pitch)
-        for d, p in placed.items():
-            if d != who.split(".")[0] and any(inside(pt, s) for s in p.shapes()):
-                f("error", "PERF.body", f"{d}'s body covers the lead {who} in {hole_name(h)}")
 
-    # wires
+    def under_body(h, own=None):
+        pt = ((h[0] + 0.5) * pitch, (h[1] - 0.5) * pitch)
+        return [d for d, p in placed.items() if d != own and any(inside(pt, s) for s in p.shapes())]
+
+    for h, who in pin_at.items():
+        for d in under_body(h, who.split(".")[0]):
+            f("error", "PERF.body", f"{d}'s body covers the lead {who} in {hole_name(h)}")
+
+    # wires: on the bottom only bridges between neighbouring holes, everything else an insulated wire on top
     uf, ufb = UF(), UF()          # ufb: the board alone, without what a plugged-in module joins inside
-    wire_holes, bare_at, wires = defaultdict(set), {}, []
+    bottom_at, wires = {}, []
     for i, w in enumerate(plan.get("wire", [])):
-        kind_w = w.get("kind", "bare" if w["side"] == "bottom" else "insulated")
-        holes, bad = expand(w["path"], straight=kind_w != "insulated")
+        side = w.get("side", "bottom")
+        kind_w = w.get("kind", "bridge" if side == "bottom" else "wire")
+        if side == "bottom" and kind_w != "bridge":
+            f("error", "PERF.wire", f"{w['net']}: {' '.join(w['path'])} – on the bottom only bridges between "
+                                    f"neighbouring holes; a longer connection is a wire on top")
+        if side == "top" and kind_w == "bridge":
+            f("error", "PERF.wire", f"{w['net']}: a bridge is soldered on the bottom, not on top")
+        holes, bad = expand(w["path"], straight=kind_w == "bridge")
         for seg in bad:
-            f("error", "PERF.wire", f"{w['net']}: the bare wire {seg} is not straight along a row or a column")
-        if kind_w == "bridge" and (len(holes) != 2 or sum(map(abs, (holes[0][0] - holes[1][0],
-                                                                    holes[0][1] - holes[1][1]))) != 1):
-            f("error", "PERF.wire", f"{w['net']}: a bridge joins two neighbouring holes, not {' '.join(w['path'])}")
+            f("error", "PERF.wire", f"{w['net']}: the bridges {seg} do not run along a row or a column")
         for h in holes:
             if not (0 <= h[0] < cols and 1 <= h[1] <= rows):
                 f("error", "PERF.offboard", f"{w['net']}: {hole_name(h)} is off the board")
             if h in keep:
-                f("error", "PERF.mount", f"{w['net']}: wire at {hole_name(h)}, beside mounting hole {keep[h]}")
+                f("error", "PERF.mount", f"{w['net']}: {hole_name(h)} is beside mounting hole {keep[h]}")
             uf.union(("w", i), ("h", h))
             ufb.union(("w", i), ("h", h))
-            wire_holes[h].add(i)
-        if kind_w == "insulated":
+        if kind_w == "wire":
             for h in holes:
                 if h in pin_at:
-                    f("error", "PERF.twopins", f"{w['net']}: the insulated wire ends in {hole_name(h)}, where "
-                                               f"{pin_at[h]} already is")
+                    f("error", "PERF.twopins", f"{w['net']}: the wire ends in {hole_name(h)}, where {pin_at[h]} "
+                                               f"already is – it goes into a free hole beside it, with a bridge")
+                for d in under_body(h):
+                    f("error", "PERF.body", f"{w['net']}: the wire's end in {hole_name(h)} lies under {d}")
         else:
             for h in holes:
-                bare_at.setdefault(h, w["net"])
+                bottom_at.setdefault(h, w["net"])
         wires.append({**w, "kind": kind_w, "holes": holes})
 
     # nets the plan makes against the graph's
@@ -375,9 +397,24 @@ def check(plan, kind, graph, parts):
     for i, w in enumerate(wires):
         nets = comp_nets.get(uf.find(("w", i)), set())
         if nets and w["net"] not in nets:
-            f("error", "PERF.label", f"the wire {' '.join(w['path'])} is labelled {w['net']} but joins "
+            f("error", "PERF.label", f"{' '.join(w['path'])} is labelled {w['net']} but joins "
                                      f"{', '.join(sorted(nets))}")
-
+    # where two nets meet: a hole whose bridges, wire ends and lead belong to different nets
+    meet = defaultdict(list)
+    for w in wires:
+        if w["kind"] == "bridge":
+            what = ("bridge " + "–".join(w["path"])) if len(w["holes"]) == 2 else "bridges " + " … ".join(w["path"])
+        else:
+            what = "wire " + "–".join([w["path"][0], w["path"][-1]])
+        for h in w["holes"]:
+            meet[h].append((w["net"], f"{w['net']} {what}"))
+    for h, who in pin_at.items():
+        d, n = who.split(".")
+        if h in meet and (d, n) in net_of:
+            meet[h].append((net_of[(d, n)], f"{d}.{pin_label(placed[d].entry, n)} ({net_of[(d, n)]})"))
+    for h, items in sorted(meet.items(), key=lambda kv: kv[0][::-1]):
+        if len({net for net, _ in items}) > 1:
+            f("error", "PERF.meet", f"{hole_name(h)} joins " + " with ".join(dict.fromkeys(t for _, t in items)))
     for net in graph["nets"]:
         if len(net_comps[net]) == 1:
             roots = defaultdict(list)
@@ -388,15 +425,15 @@ def check(plan, kind, graph, parts):
                 main = max(roots.values(), key=len)
                 for members in roots.values():
                     if members is not main:
-                        f("note", "PERF.inside", f"{net}: " + ", ".join(
-                            f"{d}.{placed[d].entry['pins'][n]['name']} in {hole_name(placed[d].holes[n])}"
-                            for d, n in members) + " joins the net only inside the plugged-in module")
+                        f("note", "PERF.inside", f"{net}: " + ", ".join(sorted([
+                            f"{d}.{pin_label(placed[d].entry, n)} in {hole_name(placed[d].holes[n])}"
+                            for d, n in members])) + " join the rest only inside the plugged-in module")
 
-    # the hand-over's near
+    # the hand-over's near: the gap between the bodies' boxes, as on a PCB
     near_mm = plan.get("near_mm", 6)
     for a, b in plan.get("near", {}).items():
         if a in placed and b in placed:
-            gap = min(math.dist(ha, hb) for ha in placed[a].holes.values() for hb in placed[b].holes.values()) * pitch
+            gap = box_gap(box(placed[a]), box(placed[b]))
             if gap > near_mm:
                 f("warning", "PERF.near", f"{a} is {gap:.1f} mm from {b}, more than {near_mm} mm")
 
@@ -408,7 +445,13 @@ def check(plan, kind, graph, parts):
                     f("note", "PERF.under", f"{e} sits under {d} (8.5 mm sockets)")
 
     return {"findings": findings, "placed": placed, "wires": wires, "pin_at": pin_at, "net_of": net_of,
-            "uf": uf, "ufb": ufb, "bare_at": bare_at, "keep": keep}
+            "uf": uf, "ufb": ufb, "bottom_at": bottom_at, "keep": keep}
+
+
+def pin_label(entry, n):
+    """A pin as the builder knows it: anode/cathode, plus/minus by role, else the entry's name."""
+    role = entry["pins"][n].get("role")
+    return role if role in ("anode", "cathode", "plus", "minus") else entry["pins"][n]["name"]
 
 
 # ---------------------------------------------------------------------------------------------------------------------
@@ -435,15 +478,20 @@ class Svg:
         return "\n".join(self.out + ["</svg>"]) + "\n"
 
 
+def runs(holes):
+    """Unit steps of a bridge path: each a bridge between two neighbouring holes."""
+    return list(zip(holes, holes[1:]))
+
+
 def draw(plan, kind, res, parts, title, bottom):
     pitch = kind["pitch_mm"]
     cols, rows = plan["perfboard"]["holes"]
     W, H = cols * pitch, rows * pitch
-    ml, mt, mr, mb = 8, 17, 8, 15
+    ml, mt, mr, mb = 8, 17, 8, 17
     svg = Svg(W + ml + mr, H + mt + mb)
 
     def X(x):
-        return ml + ((W - x) if bottom else x)
+        return ml + x
 
     def Y(y):
         return mt + y
@@ -451,14 +499,14 @@ def draw(plan, kind, res, parts, title, bottom):
     def hc(h):
         return (h[0] + 0.5) * pitch, (h[1] - 0.5) * pitch
 
-    side = "bottom view – seen from below, mirrored: A1 is at the top right" if bottom else \
-        "top view – component side, A1 at the top left"
+    side = ("bottom side – seen through the board from above, in the same orientation as the top view"
+            if bottom else "top view – component side, A1 at the top left")
     svg.text(ml, 4.5, title, size=2.6, anchor="start", weight="bold")
     svg.text(ml, 8.4, side, size=1.9, anchor="start", fill="#444")
     svg.text(ml, 11.4, "Prototype of docs/concepts/new/perfboard-layout.md – drawn by perfboard.py, not by edakit",
              size=1.3, anchor="start", fill="#777")
     svg.add(f'<rect x="{ml:.2f}" y="{mt:.2f}" width="{W:.2f}" height="{H:.2f}" rx="0.8" '
-            f'fill="{"#c9ab74" if bottom else "#dcc596"}" stroke="#8a7146" stroke-width="0.3"/>')
+            f'fill="{"#d2b886" if bottom else "#dcc596"}" stroke="#8a7146" stroke-width="0.3"/>')
     for c in range(cols):
         x = X((c + 0.5) * pitch)
         svg.text(x, mt - 1.4, col_name(c), size=1.05, fill="#555")
@@ -470,20 +518,22 @@ def draw(plan, kind, res, parts, title, bottom):
 
     placed, wires, pin_at = res["placed"], res["wires"], res["pin_at"]
     mounts = {parse_hole(m) for m in plan["perfboard"].get("mounting", [])}
+    wire_ends = {}
+    for w in wires:
+        if w["kind"] == "wire":
+            for h in (w["holes"][0], w["holes"][-1]):
+                wire_ends[h] = WIRE_COLOURS.get(w.get("color", ""), NET_COLOURS.get(w["net"], "#555"))
 
-    # holes and pads
+    # empty holes, faint
     for c in range(cols):
         for r in range(1, rows + 1):
-            if (c, r) in mounts:
+            if (c, r) in mounts or (bottom and (c, r) in pin_at):
                 continue
             x, y = hc((c, r))
             if bottom:
-                fill = "#b9bfc5" if (c, r) in pin_at else "#d3d8dc"
-                svg.add(f'<circle cx="{X(x):.2f}" cy="{Y(y):.2f}" r="0.9" fill="{fill}" stroke="#9aa1a8" '
-                        f'stroke-width="0.12"/>')
-                inner = "#6d7378" if (c, r) in pin_at else "#5b4a33"
-                svg.add(f'<circle cx="{X(x):.2f}" cy="{Y(y):.2f}" r="{0.32 if (c, r) in pin_at else 0.42}" '
-                        f'fill="{inner}"/>')
+                svg.add(f'<circle cx="{X(x):.2f}" cy="{Y(y):.2f}" r="0.78" fill="#e4d8c0" stroke="#b9a684" '
+                        f'stroke-width="0.1"/>')
+                svg.add(f'<circle cx="{X(x):.2f}" cy="{Y(y):.2f}" r="0.36" fill="#8a7654"/>')
             else:
                 svg.add(f'<circle cx="{X(x):.2f}" cy="{Y(y):.2f}" r="0.48" fill="#7a6545"/>')
     for (c, r) in mounts:
@@ -504,44 +554,48 @@ def draw(plan, kind, res, parts, title, bottom):
                 f'fill="{fill}" stroke="{stroke}" stroke-width="{width}" fill-opacity="{opacity}"{d}/>')
 
     if bottom:
-        # part outlines for orientation, then the copper: bare wires, bridges
+        # part outlines for orientation, the bridges, the soldered leads on top of them, the wires coming through
         for d, p in placed.items():
             for s in p.shapes():
-                svg.add(shape_svg(s, "none", "#7a6648", width=0.15, dash="0.5 0.35"))
+                svg.add(shape_svg(s, "none", "#8a7550", width=0.15, dash="0.5 0.35"))
+        for h, who in pin_at.items():
+            x, y = hc(h)
+            svg.add(f'<circle cx="{X(x):.2f}" cy="{Y(y):.2f}" r="1.02" fill="#5c6269" stroke="#16181b" '
+                    f'stroke-width="0.28"/>')
+            svg.add(f'<circle cx="{X(x):.2f}" cy="{Y(y):.2f}" r="0.3" fill="#d9dde1"/>')
         for w in wires:
-            if w["kind"] == "insulated":
+            if w["kind"] != "bridge":
                 continue
             col = NET_COLOURS.get(w["net"], "#555")
-            pts = " ".join(f"{X(hc(parse_hole(h))[0]):.2f},{Y(hc(parse_hole(h))[1]):.2f}" for h in w["path"])
-            width = 1.45 if w["kind"] == "bridge" else 0.7
-            svg.add(f'<polyline points="{pts}" fill="none" stroke="{col}" stroke-width="{width}" '
-                    f'stroke-linecap="round" stroke-linejoin="round" stroke-opacity="0.92"/>')
-        for w in wires:
-            if w["kind"] == "bare" and len(w["holes"]) > 3:
-                a, b = parse_hole(w["path"][0]), parse_hole(w["path"][1])
+            for a, b in runs(w["holes"]):
                 (x1, y1), (x2, y2) = hc(a), hc(b)
+                for colour, width in (("#2a2116", 1.3), (col, 0.95)):
+                    svg.add(f'<line x1="{X(x1):.2f}" y1="{Y(y1):.2f}" x2="{X(x2):.2f}" y2="{Y(y2):.2f}" '
+                            f'stroke="{colour}" stroke-width="{width}" stroke-linecap="round"/>')
+        for h, col in wire_ends.items():
+            x, y = hc(h)
+            svg.add(f'<circle cx="{X(x):.2f}" cy="{Y(y):.2f}" r="0.62" fill="#ffffff" stroke="{col}" '
+                    f'stroke-width="0.42"/>')
+        for w in wires:
+            if w["kind"] == "bridge" and len(w["holes"]) > 4:
+                best = max(zip(w["path"], w["path"][1:]), key=lambda s: math.dist(parse_hole(s[0]), parse_hole(s[1])))
+                (x1, y1), (x2, y2) = hc(parse_hole(best[0])), hc(parse_hole(best[1]))
                 vertical = abs(x1 - x2) < 0.01
                 x, y = (x1 + x2) / 2, (y1 + y2) / 2
-                if math.dist((x1, y1), (x2, y2)) < 3 * pitch and len(w["path"]) > 2:
-                    a, b = parse_hole(w["path"][1]), parse_hole(w["path"][2])
-                    (x1, y1), (x2, y2) = hc(a), hc(b)
-                    vertical = abs(x1 - x2) < 0.01
-                    x, y = (x1 + x2) / 2, (y1 + y2) / 2
-                x, y = (x + 1.1 * (1 if not bottom else -1), y) if vertical else (x, y - 1.25)
+                x, y = (x + 1.35, y) if vertical else (x + 1.27, y - 1.45)
                 svg.text(X(x), Y(y), w["net"], size=0.95, fill=NET_COLOURS.get(w["net"], "#333"),
                          rotate=-90 if vertical else 0, halo=True)
         for d, p in placed.items():
-            body = p.shapes()[0]
-            cx, cy = body[1]
+            cx, cy = p.shapes()[0][1]
             if p.fp.get("raised"):
                 cx = p.shapes("raised")[0][1][0] + 9
                 cy = (p.place(p.fp["pads"]["1"])[1] + p.place(p.fp["pads"]["16"])[1]) / 2 + 1.27
-            svg.text(X(cx), Y(cy), d, size=1.25, fill="#5a4a30", halo=True)
+            svg.text(X(cx), Y(cy), d, size=1.25, fill="#4d3f27", halo=True)
     else:
         for d, p in placed.items():
             draw_part_top(svg, d, p, parts[d], X, Y, shape_svg)
         for w in wires:
-            if w["kind"] != "insulated":
+            if w["kind"] != "wire":
                 continue
             col = WIRE_COLOURS.get(w.get("color", ""), NET_COLOURS.get(w["net"], "#555"))
             pts = " ".join(f"{X(hc(parse_hole(h))[0]):.2f},{Y(hc(parse_hole(h))[1]):.2f}" for h in w["path"])
@@ -560,31 +614,46 @@ def draw(plan, kind, res, parts, title, bottom):
     # legend
     ly = mt + H + 4.2
     if bottom:
-        svg.text(ml, ly, "Copper side. Bare tinned wire and solder bridges; the colours only tell the nets apart.",
-                 size=1.35, anchor="start", fill="#444")
+        x, y = ml, ly
+        svg.add(f'<circle cx="{x + 1:.2f}" cy="{y:.2f}" r="1.02" fill="#5c6269" stroke="#16181b" '
+                f'stroke-width="0.28"/><circle cx="{x + 1:.2f}" cy="{y:.2f}" r="0.3" fill="#d9dde1"/>')
+        svg.text(x + 2.6, y, "soldered lead", size=1.3, anchor="start")
+        svg.add(f'<circle cx="{x + 19:.2f}" cy="{y:.2f}" r="0.62" fill="#ffffff" stroke="#f28e2b" '
+                f'stroke-width="0.42"/>')
+        svg.text(x + 20.4, y, "wire from the top", size=1.3, anchor="start")
+        svg.add(f'<circle cx="{x + 40:.2f}" cy="{y:.2f}" r="0.78" fill="#e4d8c0" stroke="#b9a684" stroke-width="0.1"/>'
+                f'<circle cx="{x + 40:.2f}" cy="{y:.2f}" r="0.36" fill="#8a7654"/>')
+        svg.text(x + 41.4, y, "empty hole", size=1.3, anchor="start")
+        svg.add(f'<line x1="{x + 56:.2f}" y1="{y:.2f}" x2="{x + 59:.2f}" y2="{y:.2f}" stroke="#2a2116" '
+                f'stroke-width="1.3" stroke-linecap="round"/><line x1="{x + 56:.2f}" y1="{y:.2f}" x2="{x + 59:.2f}" '
+                f'y2="{y:.2f}" stroke="#f28e2b" stroke-width="0.95" stroke-linecap="round"/>')
+        svg.text(x + 60, y, "solder bridge, coloured by net",
+                 size=1.3, anchor="start", fill="#444")
         used = []
         for w in wires:
-            if w["kind"] != "insulated" and w["net"] not in used:
+            if w["kind"] == "bridge" and w["net"] not in used:
                 used.append(w["net"])
-        x, y = ml, ly + 3.2
+        x, y = ml, ly + 3.3
         for net in used:
             svg.add(f'<line x1="{x:.2f}" y1="{y:.2f}" x2="{x + 3:.2f}" y2="{y:.2f}" stroke="{NET_COLOURS.get(net)}" '
-                    f'stroke-width="1.1" stroke-linecap="round"/>')
+                    f'stroke-width="1.3" stroke-linecap="round"/>')
             svg.text(x + 3.8, y, net, size=1.3, anchor="start")
             x += 14
             if x > ml + W - 10:
                 x, y = ml, y + 2.8
     else:
-        svg.text(ml, ly, "Parts as seen from above; insulated wires on top in their colour, entering the board at the "
-                         "dots. The wiring below is in the bottom view.", size=1.35, anchor="start", fill="#444")
+        svg.text(ml, ly, "Parts as seen from above; insulated wires in their colour, entering the board at the dots. "
+                         "The bridges are in the bottom view.", size=1.3, anchor="start", fill="#444")
         x, y = ml, ly + 3.2
         for w in wires:
-            if w["kind"] == "insulated":
+            if w["kind"] == "wire":
                 col = WIRE_COLOURS.get(w.get("color", ""), "#555")
                 svg.add(f'<line x1="{x:.2f}" y1="{y:.2f}" x2="{x + 3:.2f}" y2="{y:.2f}" stroke="{col}" '
                         f'stroke-width="0.8" stroke-linecap="round"/>')
-                svg.text(x + 3.8, y, f"{w['net']}: {w['path'][0]} → {w['path'][-1]}", size=1.3, anchor="start")
-                x += 30
+                svg.text(x + 3.8, y, f"{w['net']} {w['path'][0]}–{w['path'][-1]}", size=1.2, anchor="start")
+                x += 23
+                if x > ml + W - 15:
+                    x, y = ml, y + 2.6
         svg.text(ml, y + 3, "LED: flat side = cathode, + = anode (long lead).  C1: stripe = minus.  "
                             "Dashed circles: nut of the M3 mounting holes.", size=1.3, anchor="start", fill="#444")
     return svg.done()
@@ -625,7 +694,6 @@ def draw_part_top(svg, d, p, info, X, Y, shape_svg):
         svg.add(shape_svg(body, LED_FILL.get(colour, "#ccc"), "#555", width=0.25, opacity=0.9))
         roles = {v["role"]: n for n, v in entry["pins"].items()}
         ka, kc = hc(holes[roles["anode"]]), hc(holes[roles["cathode"]])
-        # the flat on the cathode side: a chord across the circle, perpendicular to the leads
         ux, uy = kc[0] - ka[0], kc[1] - ka[1]
         ln = math.hypot(ux, uy)
         ux, uy = ux / ln, uy / ln
@@ -650,8 +718,8 @@ def draw_part_top(svg, d, p, info, X, Y, shape_svg):
                 f'y2="{my - ux * half:.2f}" stroke="#c9d6ea" stroke-width="1.6"/>')
         svg.text(mx, my, "−", size=1.6, fill="#1a2f50", weight="bold")
         svg.text(mp[0] - ux * 1.6, mp[1] - uy * 1.6, "+", size=1.6, fill="#ffffff", weight="bold")
-        svg.text(X(cx) - ux * 1.5, Y(cy) - uy * 1.5 - 1.0, d, size=1.5, fill="#ffffff", weight="bold")
-        svg.text(X(cx) - ux * 1.5, Y(cy) - uy * 1.5 + 1.0, "1000 µF", size=1.1, fill="#ffffff")
+        svg.text(X(cx) - ux * 1.5 - 2.2, Y(cy) - uy * 1.5, d, size=1.5, fill="#ffffff", weight="bold")
+        svg.text(X(cx) - ux * 1.5 + 2.2, Y(cy) - uy * 1.5, "1000 µF", size=1.0, fill="#ffffff")
     elif kind == "button":
         svg.add(shape_svg(body, "#3a3a3a", "#111", rx=0.5))
         svg.add(f'<circle cx="{X(cx):.2f}" cy="{Y(cy):.2f}" r="1.75" fill="#7a7a7a" stroke="#222" '
@@ -663,13 +731,19 @@ def draw_part_top(svg, d, p, info, X, Y, shape_svg):
         for n, h in holes.items():
             x, y = hc(h)
             svg.add(f'<rect x="{x - 0.32:.2f}" y="{y - 0.32:.2f}" width="0.64" height="0.64" fill="#d4af37"/>')
-        x1, y1 = hc(holes["1"])
         names = {"1": "GND", "2": "+5V", "3": "sig"}
-        for n, h in holes.items():
-            x, y = hc(h)
-            svg.text(x, y + 1.7, n, size=0.9, fill="#222", weight="bold")
-        svg.text(X(cx), Y(cy) + 3.3, f"{d} servo: " + "  ".join(f"{n} {names[n]}" for n in sorted(holes)),
-                 size=1.0, fill="#222", halo=True)
+        vertical = len({h[0] for h in holes.values()}) == 1
+        if vertical:
+            last = max(holes.values(), key=lambda h: h[1])
+            x, y = hc(last)
+            svg.text(x, y + 2.0, f"{d} servo", size=1.1, fill="#222", weight="bold", halo=True)
+            svg.text(x, y + 3.5, " · ".join(f"{n} {names[n]}" for n in sorted(holes)), size=0.85, fill="#222",
+                     anchor="end", halo=True)
+        else:
+            for n, h in holes.items():
+                x, y = hc(h)
+                svg.text(x, y + 1.7, n, size=0.9, fill="#222", weight="bold")
+            svg.text(X(cx), Y(cy) + 3.3, f"{d} servo", size=1.1, fill="#222", weight="bold", halo=True)
     else:
         svg.add(shape_svg(body, "#ccc", "#555"))
         svg.text(X(cx), Y(cy), d, size=1.2)
@@ -696,29 +770,24 @@ def draw_module_raised(svg, d, p, info, X, Y, shape_svg):
                  rotate=-90)
     rx, ry = raised[1]
     svg.text(X(rx) + 2, Y(ry) - 0.6, f"{d}  {comp['label'].split('(')[0].strip()}", size=1.6, fill="#1f5fa8",
-             weight="bold")
-    svg.text(X(rx) + 2, Y(ry) + 1.6, "on two 1×15 female headers, 8.5 mm", size=1.1, fill="#1f5fa8")
+             weight="bold", halo=True)
+    svg.text(X(rx) + 2, Y(ry) + 1.6, "on two 1×15 female headers, 8.5 mm", size=1.1, fill="#1f5fa8", halo=True)
 
 
 # ---------------------------------------------------------------------------------------------------------------------
 # Lists
 
 
-def pin_label(entry, n):
-    """A pin as the builder knows it: anode/cathode, plus/minus by role, else the entry's name."""
-    role = entry["pins"][n].get("role")
-    return role if role in ("anode", "cathode", "plus", "minus") else entry["pins"][n]["name"]
-
-
-ORDER = [("bridge", "Solder bridges (bottom)"), ("bare", "Bare wires (bottom, tinned copper 0.6 mm)"),
-         ("resistor-low", "Resistors ¼ W, lying flat"), ("resistor-high", "Resistors 1 W, 1–2 mm above the board"),
+ORDER = [("resistor-low", "Resistors ¼ W, lying flat"), ("resistor-high", "Resistors 1 W, 1–2 mm above the board"),
+         ("wire", "Insulated wires on top – each end through its hole, bent onto the pad below"),
          ("module", "Sockets"), ("button", "Buttons"), ("connector", "Pin header"), ("led", "LEDs"),
-         ("capacitor", "Electrolytic capacitor"), ("insulated", "Insulated wires (top)"), ("plug", "Module")]
+         ("capacitor", "Electrolytic capacitor"), ("bridge", "Solder bridges on the bottom, once the leads are in"),
+         ("test", "Test"), ("plug", "Module")]
 
 
 def lists(plan, kind, res, graph, parts):
     pitch = kind["pitch_mm"]
-    placed, wires, pin_at, net_of, uf = res["placed"], res["wires"], res["pin_at"], res["net_of"], res["uf"]
+    placed, wires, pin_at, net_of = res["placed"], res["wires"], res["pin_at"], res["net_of"]
     out = []
     errors = [x for x in res["findings"] if x[0] == "error"]
     out.append("## Check\n")
@@ -732,7 +801,6 @@ def lists(plan, kind, res, graph, parts):
         return sum(math.dist(a, b) for a, b in zip(pts, pts[1:])) * pitch
 
     out.append("## Build list – from low to high\n")
-    step = 0
     groups = defaultdict(list)
     for w in wires:
         groups[w["kind"]].append(w)
@@ -741,11 +809,17 @@ def lists(plan, kind, res, graph, parts):
         if k == "resistor":
             k = "resistor-high" if p.axial[1] > 3 else "resistor-low"
         groups[k].append(d)
-    bare_total = ins_total = 0.0
+    n_bridges = sum(len(w["holes"]) - 1 for w in groups["bridge"])
+    wire_total = 0.0
+    step = 0
     for key, head in ORDER:
         if key == "plug":
             step += 1
             out.append(f"{step}. **{head}:** plug U1 into its sockets, USB socket at the left edge.")
+            continue
+        if key == "test":
+            step += 1
+            out.append(f"{step}. **{head}:** the test list below, before U1 is plugged in.")
             continue
         items = groups.get(key)
         if not items:
@@ -754,27 +828,23 @@ def lists(plan, kind, res, graph, parts):
         rows = []
         for it in items:
             if key == "bridge":
-                rows.append(f"{it['path'][0]}–{it['path'][1]} {it['net']}")
-            elif key == "bare":
-                ln = length(it) + 4
-                bare_total += ln
-                rows.append(f"{' → '.join(it['path'])} {it['net']} ({ln:.0f} mm)")
-            elif key == "insulated":
+                n = len(it["holes"]) - 1
+                path = "–".join(it["path"]) if n == 1 else " … ".join(it["path"])
+                rows.append(f"{path} {it['net']}" + (f" ({n})" if n > 1 else ""))
+            elif key == "wire":
                 ln = length(it) + 16
-                ins_total += ln
-                rows.append(f"{it.get('color', '')} {it['path'][0]} → {it['path'][-1]} {it['net']} ({ln:.0f} mm, "
-                            f"along {' '.join(it['path'][1:-1])})")
+                wire_total += ln
+                rows.append(f"{it.get('color', '')} {it['path'][0]}–{it['path'][-1]} {it['net']} ({ln:.0f} mm)")
             else:
                 p = placed[it]
                 e = p.entry
                 comp = parts[it]["comp"]
+                roles = {v.get("role"): n for n, v in e["pins"].items()}
                 if key == "led":
-                    roles = {v["role"]: n for n, v in e["pins"].items()}
                     rows.append(f"{it} {e['values'].get('color', '')}: anode (long lead) in "
                                 f"{hole_name(p.holes[roles['anode']])}, cathode (flat) in "
                                 f"{hole_name(p.holes[roles['cathode']])}")
                 elif key == "capacitor":
-                    roles = {v["role"]: n for n, v in e["pins"].items()}
                     rows.append(f"{it} {comp['part']}: plus in {hole_name(p.holes[roles['plus']])}, minus (stripe) "
                                 f"in {hole_name(p.holes[roles['minus']])}")
                 elif key == "module":
@@ -789,51 +859,49 @@ def lists(plan, kind, res, graph, parts):
                                 f"{hole_name(p.holes['3'])}")
                 else:
                     rows.append(f"{it} {comp.get('value', '')}: {hole_name(p.holes['1'])}–{hole_name(p.holes['2'])}")
-        out.append(f"{step}. **{head}:** " + "; ".join(rows) + ".")
+        extra = f" – {n_bridges} in all" if key == "bridge" else ""
+        out.append(f"{step}. **{head}{extra}:** " + "; ".join(rows) + ".")
     out.append("")
 
     out.append("## Test list – multimeter in beep mode, U1 not plugged in\n")
-    # supply first: what lies between +5V and GND
-    between = []
-    for d in parts:
-        e = parts[d]["entry"]
-        nets = {net_of.get((d, n)) for n in e["pins"]}
-        if {"+5V", "GND"} <= nets:
-            between.append(d)
-    ohms = [parts[d]["entry"]["values"]["value_ohm"] for d in between if "value_ohm" in parts[d]["entry"]["values"]]
-    par = 1 / sum(1 / r for r in ohms) if ohms else None
+    between = [d for d in parts if {"+5V", "GND"} <= {net_of.get((d, n)) for n in parts[d]["entry"]["pins"]}]
+    res_between = [d for d in between if parts[d]["entry"].get("kind") == "resistor"]
     caps = [d for d in between if parts[d]["entry"].get("kind") == "capacitor"]
+    par = 1 / sum(1 / parts[d]["entry"]["values"]["value_ohm"] for d in res_between)
     j1 = placed.get("J1")
     a, b = (hole_name(j1.holes["2"]), hole_name(j1.holes["1"])) if j1 else ("+5V", "GND")
-    res_between = [d for d in between if parts[d]["entry"].get("kind") == "resistor"]
     out.append(f"1. **Before the first power-up:** +5V ({a}) to GND ({b}) reads about {par:.0f} Ω "
                f"({' ∥ '.join(res_between)}) once {', '.join(caps)} has charged – 0 Ω is a short.")
     out.append("2. **Each net beeps** from its first hole to every other:\n")
     out.append("| Net | From | To |")
     out.append("| --- | --- | --- |")
     for net in graph["nets"]:
-        members = sorted(((hole_name(placed[d].holes[n]), f"{d}.{pin_label(parts[d]['entry'], n)}")
-                          for (d, n), nn in net_of.items() if nn == net and d in placed),
-                         key=lambda m: parse_hole(m[0])[::-1])
-        if len(members) < 2:
-            continue
-        root = {m: res["ufb"].find(("h", parse_hole(m[0]))) for m in members}
-        first = members[0]
-        beep = [m for m in members[1:] if root[m] == root[first]]
-        later = [m for m in members[1:] if root[m] != root[first]]
-        tail = f"; not yet {', '.join(f'{h} ({w})' for h, w in later)} – joined inside the module" if later else ""
-        out.append(f"| {net} | {first[0]} ({first[1]}) | " + ", ".join(f"{h} ({w})" for h, w in beep) + tail + " |")
-    out.append("\n3. **Next to each bridge and bare wire nothing else beeps** – the neighbouring pads of other "
-               "nets:\n")
+        members = [(parse_hole(hole_name(placed[d].holes[n])), f"{d}.{pin_label(parts[d]['entry'], n)}")
+                   for (d, n), nn in net_of.items() if nn == net and d in placed]
+        groups_b = defaultdict(list)
+        for h, who in members:
+            groups_b[res["ufb"].find(("h", h))].append((h, who))
+        parts_of_net = sorted((sorted(g, key=lambda m: (m[0][1], m[0][0])) for g in groups_b.values()),
+                              key=len, reverse=True)
+        for i, g in enumerate(parts_of_net):
+            if len(g) < 2:
+                continue
+            label = net if len(parts_of_net) == 1 else f"{net} ({i + 1})"
+            first = g[0]
+            out.append(f"| {label} | {hole_name(first[0])} ({first[1]}) | " +
+                       ", ".join(f"{hole_name(h)} ({w})" for h, w in g[1:]) + " |")
+        if len(parts_of_net) > 1:
+            out.append(f"| | | {net} (1) and (2) are joined inside U1: they beep once it is plugged in |")
+    out.append("\n3. **Next to each bridge nothing else beeps** – the neighbouring pads of other nets:\n")
     copper = {}
     for h, who in pin_at.items():
         d, n = who.split(".")
         copper[h] = net_of.get((d, n), f"free {who}")
-    for h, net in res["bare_at"].items():
+    for h, net in res["bottom_at"].items():
         copper.setdefault(h, net)
     pairs = set()
     for w in wires:
-        if w["kind"] == "insulated":
+        if w["kind"] != "bridge":
             continue
         for h in w["holes"]:
             for dc, dr in ((1, 0), (-1, 0), (0, 1), (0, -1)):
@@ -855,8 +923,8 @@ def lists(plan, kind, res, graph, parts):
     out.append("## Material\n")
     out.append(f"- Perfboard, a pad per hole: {cols} × {rows} holes ({cols * pitch:.1f} × {rows * pitch:.1f} mm), "
                f"cut from a Euro board 160 × 100 mm; four holes drilled to {MOUNT_DRILL} mm.")
-    out.append(f"- Bare tinned copper wire 0.6 mm: {bare_total / 10:.0f} cm; insulated wire (two colours): "
-               f"{ins_total / 10:.0f} cm.")
+    out.append(f"- Insulated wire, solid core, in the plan's colours: {wire_total / 10:.0f} cm; solder for "
+               f"{n_bridges} bridges.")
     out.append("- Two female headers 1×15 for U1 – already an `[[extra]]` of the bell's tht variant.")
     return "\n".join(out) + "\n"
 
@@ -882,7 +950,7 @@ def main():
     head = (f"# {graph['name']} on a perfboard – check, build list, test list\n\n"
             f"Written by `perfboard.py` from [{args.plan.name}]({args.plan.name}) and the graph of "
             f"`{args.project.name}`; the drawings are [top]({stem.name}.top.svg) and "
-            f"[bottom, mirrored]({stem.name}.bottom.svg). A prototype – see the [README](README.md).\n\n")
+            f"[bottom]({stem.name}.bottom.svg), both seen from above. A prototype – see the [README](README.md).\n\n")
     stem.with_suffix(".build.md").write_text(head + lists(plan, kind, res, graph, parts))
     errors = sum(1 for x in res["findings"] if x[0] == "error")
     print(f"{errors} errors, {len(res['findings']) - errors} warnings/notes; wrote {stem.name}.top.svg, "
