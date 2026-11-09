@@ -1,6 +1,7 @@
 """The protection of main as text (.github/rulesets/, .github/rulesets.py, docs/concepts/done/versioning.md): the
 checks main requires are the ones merge.py waits for, nobody may bypass main or move a version's tag, only the
-admin role merges, and the comparison with GitHub ignores what GitHub adds."""
+admin role merges, `pull_request_target` is allowed for exactly the workflows that use it, and the comparison with
+GitHub ignores what GitHub adds."""
 
 import importlib.util
 import json
@@ -24,6 +25,7 @@ def _load(name):
 rs = _load("rulesets")
 merge = _load("merge")
 RULESETS, SETTINGS = rs.wanted()
+POLICIES = rs.wanted_policies()
 
 
 def rules(name):
@@ -75,6 +77,43 @@ def test_the_comparison_names_what_differs():
     found = rs.differences({"main": live, "old": {}}, dict(SETTINGS, allow_squash_merge=True),
                            {"main": RULESETS["main"], "tags": RULESETS["tags"]}, SETTINGS)
     assert [w for w, _, _ in found] == ["ruleset main", "ruleset tags", "ruleset old", "settings"]
+
+
+def _on(text):
+    """The events of a workflow's `on:` block – the keys indented below it."""
+    lines = text.splitlines()
+    start = lines.index("on:")
+    events = []
+    for line in lines[start + 1:]:
+        if line and not line.startswith(" "):
+            break
+        if line.startswith("  ") and not line.startswith("   ") and line.strip().split(":")[0]:
+            events.append(line.strip().split(":")[0])
+    return events
+
+
+def test_pull_request_target_is_allowed_for_exactly_the_workflows_on_it():
+    # from 2026-12-02 GitHub blocks the event in a public repository without a policy that allows it
+    on_it = sorted(f".github/workflows/{p.name}" for p in (ROOT / ".github" / "workflows").glob("*.yml")
+                   if "pull_request_target" in _on(p.read_text()))
+    assert on_it == [".github/workflows/pull-request.yml"]
+    [policy] = POLICIES.values()
+    assert policy["enforcement"] == "active"
+    assert policy["conditions"]["workflow_path"] == {"include": on_it, "exclude": []}
+    assert policy["rules"] == [{"type": "restrict_action_events",
+                                "parameters": {"allowed_events": ["pull_request_target"]}}]
+
+
+def test_the_comparison_of_policies_ignores_what_github_adds_and_names_what_differs():
+    want = json.loads(json.dumps(POLICIES))
+    name = next(iter(want))
+    live = {name: dict(want[name], id=3, target="actions", source_type="Repository", source="tgd1975/edakit",
+                       node_id="x", _links={}, created_at="t", updated_at="t")}
+    assert rs.differences({}, {}, {}, {}, live, want) == []
+    live[name]["enforcement"] = "disabled"
+    live["old"] = {"name": "old"}
+    assert [w for w, _, _ in rs.differences({}, {}, {}, {}, live, want)] == [f"policy {name}", "policy old"]
+    assert [w for w, _, _ in rs.differences({}, {}, {}, {}, {}, want)] == [f"policy {name}"]
 
 
 def test_merge_numbers_again_only_a_version_whose_main_moved():
