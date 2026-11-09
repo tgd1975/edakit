@@ -686,8 +686,8 @@ sources = [
 [codes."SYNC.schematic"]
 title = "schematic = graph"
 rule = "Every schematic in EasyEDA has exactly the graph's parts (LCSC number, designator) and nets (pins, no-connects)."
-why = "The schematic is generated, but EasyEDA can lose or move things: while another schematic of the project is open – the board's schematic, a copy of the template –, the bridge's net reading can list a pin on a second net with no wire, label or flag there: a net flag of the other schematic that happens to sit on a wire end of this one (M-11). The check closes every saved schematic tab and reads the schematic as saved with no other one open, so the result does not depend on what ran before in the session."
-fix = "Generate it again (edakit schematic create --save, layout --save) and check again; never edit a schematic by hand. A schematic with unsaved changes – this one or another left open beside it: save it or close its tab without saving."
+why = "The schematic is generated, but EasyEDA can lose or move things. The check reads the schematic as saved – its saved tabs closed and its pages opened again –, not as a session left it. Before easyeda-mcp-pro 1.9.0 the bridge's net reading could list a pin on a second net while another schematic of the project was open (M-11)."
+fix = "Generate it again (edakit schematic create --save, layout --save) and check again; never edit a schematic by hand. A schematic with unsaved changes: save it or close its tab without saving."
 severity = "error"
 replaces = ["S-2"]
 sources = [
