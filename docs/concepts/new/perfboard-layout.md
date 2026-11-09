@@ -7,9 +7,9 @@ das wäre doch auch eine Möglichkeit, das generieren zu lassen"), decided in a 
 
 On 2026-11-09 a prototype on the bell settled what a plan looks like – the owner: "jetzt passts".
 [prototypes/perfboard-layout/](prototypes/perfboard-layout/README.md) holds the bell's THT circuit as a plan, a
-script that checks its nets against the graph and draws both views, and the build and test lists; it is the reference
-for LR.1 to LR.4. Its rounds brought decisions 11 to 21: the owner's 11 to 15, Claude's 16 to 21, confirmed by the
-owner the same day.
+script that checks its nets against the graph and draws both views, and the cut, build and test lists; it is the
+reference for LR.1 to LR.4. Its rounds brought decisions 11 to 23: the owner's 11 to 15 and 22, Claude's 16 to 21 and
+23, confirmed by the owner the same day.
 
 ## Why
 
@@ -195,8 +195,8 @@ circuit. The bell has such variants already (`variants/tht`, `variants/esp32tht`
 ## Decisions
 
 The owner's answers of 2026-11-03 in a decision round, decisions 6 to 10 Claude's, confirmed by the owner the same day.
-Decisions 11 to 23 came from the prototype on 2026-11-09: 11 to 15 and 22 the owner's, 16 to 21 Claude's, confirmed by
-the owner the same day, 23 Claude's.
+Decisions 11 to 23 came from the prototype on 2026-11-09: 11 to 15 and 22 the owner's, 16 to 21 and 23 Claude's,
+confirmed by the owner the same day.
 
 | # | Decision | Reason | Alternatives |
 | --- | --- | --- | --- |
