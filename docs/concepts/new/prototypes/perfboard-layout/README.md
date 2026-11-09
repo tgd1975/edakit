@@ -1,9 +1,10 @@
 # Prototype: the bell on a perfboard
 
 Written on 2026-11-09 for the concept [perfboard-layout.md](../../perfboard-layout.md), on the owner's request for an
-example board "damit wir wissen, dass wir vom gleichen reden". Its first versions led to the concept's decisions 11
-(on the bottom only straight solder bridges between neighbouring holes, everything else an insulated wire on top) and
-12 (the bottom view in the orientation of the top view, soldered leads clearly marked); this version follows both.
+example board "damit wir wissen, dass wir vom gleichen reden", and accepted the same day ("jetzt passts"). Its rounds
+brought the concept's decisions 11 to 21 – straight bridges below and wires on top, the bottom view in the top's
+orientation, hole names as printed, parts by role, mounting holes in mm and the rest –; this version follows all of
+them and is the reference for the steps LR.1 to LR.4.
 
 Nothing of the steps LR.1 to LR.8 is built. A script does the check and the drawings, as the scripts of
 [footprint-data](../footprint-data/README.md) do; it is no edakit code, and edakit's pytest does not collect it.
@@ -51,7 +52,7 @@ On the plan it finds no error and gives three notes:
   shows ground as two groups that beep together once U1 is plugged in.
 
 A copy of the plan with three typical mistakes: the bridge L8–L9 forgotten, the ground row started one hole too early
-(M16 instead of N16, where the +5 V wire comes through), and LED3 turned like the green LEDs:
+(M16 instead of N16, where the +5 V wire comes through), and LED3 the wrong way round (`anode = "L2", cathode = "L3"`):
 
 ```text
 error   PERF.short     +5V (9 pins) and GND (12 pins) and LED_Y1_A (LED3.anode in L2) in one piece of copper
@@ -69,30 +70,26 @@ hole where bridges turn – within a row of them or where two rows end in the sa
 version had three such corners (AC22, AE18/AE17 and H8). The codes `PERF.*` are the
 prototype's own names, not edakit's.
 
-## What the prototype had to decide
+## Decided on the prototype
 
-The concept leaves these points open, or they could be read another way:
+What the first versions left open is decided in the concept (its decisions 11 to 21):
 
-1. **Rows of bridges.** Decision 11 allows straight bridges between neighbouring holes only; the prototype takes a
-   straight row of them as allowed, one bridge per step, and lets rows meet at a lead or in the middle of another row
-   (ground's branch at M2). Ground and +5 V are such rows. The alternative is one wire on top from member to member,
-   with a bridge at each end.
-2. **Hole names and designators are the same strings.** R8 is a hole and a resistor, and so are C1, J1, S1 and U1.
-   The build list reads "R5 330Ω: R8–R4". The prototype keeps decision 10 as it is.
-3. **`at` is the hole of pin 1, and `rot` turns counterclockwise as seen from the top, in steps of 90°.** The yellow
-   LEDs have their cathode on pin 1, the green and red ones their anode. So two LEDs that sit the same way need
-   `rot = 270` and `rot = 90`. This is the same trap as on the PCB ("yellow footprint has its + on pad 2"). For a
-   part with two leads, holes named by role would avoid it: `LED3 = { anode = "L3", cathode = "L2" }`.
-4. **Pins a part joins itself count:** the Nano's two GND pins, and the button's pins 1/2 and 3/4. The prototype takes
-   this from the same pin name, or on a button from the same role. The parts entry has no key for it; only the
-   button's notes mention it. What a plugged-in module joins inside does not count for the test list.
-5. **The mounting holes miss the frame.** The bell's frame has its M3 holes 78 × 49 mm apart. On the grid, B2 to AF21
-   is 76.2 × 48.3 mm. A hole name cannot hit the frame's spacing. So either `mounting` takes positions in mm, drilled
-   between holes, or the frame gets new holes. The prototype does not check this; it matters for LR.8.
-6. **A module on sockets has a raised body.** Wires under it on top are allowed: five run there. A part under it would
-   be a note, given the 8.5 mm sockets.
-7. **The tolerances in pad-per-hole.toml are assumptions:** 0.8 mm for bending a lead, 1.5 mm of straight lead for
-   an axial part, and no copper rating.
+- On the bottom only straight bridges between neighbouring holes; rows of them meet at a lead or in the middle of
+  another row; everything else is a wire on top, its ends in free holes beside the pins with a bridge below
+  (11, 16, 17). `PERF.corner` finds a bridge that turns.
+- The bottom view in the orientation of the top view, soldered leads clearly marked (12).
+- Holes written as the board prints them; the lists say "hole R8" (13).
+- Parts with two leads by the holes of their roles, as the LEDs and C1 here (14); `PERF.place` finds leads that do
+  not span the holes named.
+- Mounting holes in mm, as `[[holes]]` of a PCB's board file: here the bell frame's, 78 × 49 mm apart, centred on
+  the board and drilled between the holes (15).
+- Pins a part joins inside count as one node, through a key `joined` in the parts entry (18) – the script still
+  infers them from the pin name, or on a button from the role.
+- A module on sockets is raised, and the test list measures without it (19); `near` is the gap between body boxes
+  (20); the bridges are soldered once the leads are in (21).
+
+The tolerances in [pad-per-hole.toml](pad-per-hole.toml) are still assumptions without a source: 0.8 mm for bending a
+lead, 1.5 mm of straight lead for an axial part, and no copper rating – LR.1 takes them from a board's datasheet.
 
 The prototype does not cover:
 
