@@ -4,9 +4,9 @@
 #
 # Holes: column letter and row number, A1 at the top left seen from the top (decision 10). rot is counterclockwise
 # seen from the top, in steps of 90°; at is the hole of pin 1. Axial parts give their lead span in holes.
-# Wires (decision 11): on the bottom only solder bridges between neighbouring holes – a path of them runs along a row
-# or a column, one bridge per step; everything longer is an insulated wire on top, each end through a free hole
-# beside its pin and joined to it by a bridge below.
+# Wires (decision 11): on the bottom only straight solder bridges between neighbouring holes – a path of them runs
+# along one row or one column, one bridge per step, never around a corner; everything else is an insulated wire on
+# top, each end through a free hole beside its pin and joined to it by a bridge below.
 
 [perfboard]
 kind = "pad-per-hole"                       # pad-per-hole.toml beside this file
@@ -25,8 +25,9 @@ LED3 = { at = "L2", rot = 270 }             # yellow, step 3
 LED2 = { at = "O2", rot = 270 }             # yellow, step 4
 LED1 = { at = "R3", rot = 90 }              # red, step 5
 
-# Series resistors upright below their LEDs: pin 1 (Nano side) in row 8, pin 2 (anode side) in row 4
-R4 = { at = "F8", rot = 90, span = 4 }
+# Series resistors upright below their LEDs: pin 1 (Nano side) in row 8, pin 2 (anode side) in row 4. R4 stands right
+# above its Nano pin (D6, H9) and reaches row 3, where a straight row of bridges leads to LED5's anode.
+R4 = { at = "H8", rot = 90, span = 5 }
 R3 = { at = "I8", rot = 90, span = 4 }
 R2 = { at = "L8", rot = 90, span = 4 }
 R1 = { at = "O8", rot = 90, span = 4 }
@@ -39,7 +40,7 @@ S1 = { at = "W22", rot = 180 }              # start: a at W22, T22 on +5V; b at 
 R7 = { at = "S20", rot = 90, span = 4 }     # BTN_START (beside T20) to GND (S16)
 S2 = { at = "AB22", rot = 180 }             # reset: a at AB22, Y22 on +5V; b at AB20, Y20
 R6 = { at = "X20", rot = 90, span = 4 }     # BTN_RESET (beside Y20) to GND (X16)
-C1 = { at = "AC18", rot = 90 }              # plus at AC18, minus at AC16 on the ground row
+C1 = { at = "AC17", rot = 90 }              # plus at AC17 in J1's row, minus at AC15 above the ground row
 J1 = { at = "AF16", rot = 270 }             # servo at the right edge: 1 GND AF16, 2 +5V AF17, 3 signal AF18
 
 [near]                                      # the hand-over's pairs, as in hardware/boards/tht.toml of the bell
@@ -86,7 +87,12 @@ net = "GND"
 path = ["N16", "AF16"]                      # R8, R9, R7, R6, C1 minus, J1 pin 1
 side = "bottom"
 
-# ---- +5 V: a wire from the Nano's 5V down to row 22, along it to the buttons, up to C1 and J1 ----
+[[wire]]
+net = "GND"
+path = ["AC15", "AC16"]                     # C1 minus
+side = "bottom"
+
+# ---- +5 V: a wire from the Nano's 5V down to row 22, along it to the buttons, a wire up to C1 and J1 ----
 
 [[wire]]
 net = "+5V"
@@ -101,24 +107,25 @@ color = "red"
 
 [[wire]]
 net = "+5V"
-path = ["M22", "AB22"]                      # R8, R9, S1 a, S2 a
+path = ["M22", "AC22"]                      # R8, R9, S1 a, S2 a
 side = "bottom"
 
 [[wire]]
 net = "+5V"
-path = ["AB22", "AC22", "AC18"]             # C1 plus
-side = "bottom"
+path = ["AC22", "AD21", "AD18", "AE17"]     # around C1
+side = "top"
+color = "red"
 
 [[wire]]
 net = "+5V"
-path = ["AC18", "AE18", "AE17", "AF17"]     # J1 pin 2
+path = ["AC17", "AF17"]                     # C1 plus, the wire's end, J1 pin 2
 side = "bottom"
 
 # ---- LED channels: anode bridges, Nano pins to resistors ----
 
 [[wire]]
 net = "LED_G1_A"
-path = ["F3", "F4"]
+path = ["F3", "H3"]                         # LED5's anode to R4
 side = "bottom"
 
 [[wire]]
@@ -143,7 +150,7 @@ side = "bottom"
 
 [[wire]]
 net = "LED_G1"
-path = ["F8", "H8", "H9"]                   # D6
+path = ["H8", "H9"]                         # D6
 side = "bottom"
 
 [[wire]]

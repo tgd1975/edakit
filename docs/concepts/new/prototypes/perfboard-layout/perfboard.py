@@ -355,6 +355,26 @@ def check(plan, kind, graph, parts):
                 bottom_at.setdefault(h, w["net"])
         wires.append({**w, "kind": kind_w, "holes": holes})
 
+    # bridges run straight: no corner within a row of bridges, and none where two rows end in the same empty hole
+    run_ends, run_middles = defaultdict(set), set()
+    wire_end_holes = {h for w in wires if w["kind"] == "wire" for h in (w["holes"][0], w["holes"][-1])}
+    for w in wires:
+        if w["kind"] != "bridge" or len(w["holes"]) < 2:
+            continue
+        pts = [parse_hole(h) for h in w["path"]]
+        axes = ["row" if a[1] == b[1] else "column" for a, b in zip(pts, pts[1:])]
+        corners = [hole_name(pts[i + 1]) for i in range(len(axes) - 1) if axes[i] != axes[i + 1]]
+        if corners:
+            f("error", "PERF.corner", f"{w['net']}: the bridges {' … '.join(w['path'])} turn at "
+                                      f"{', '.join(corners)} – bridges run straight; take a wire on top")
+        for h in (w["holes"][0], w["holes"][-1]):
+            run_ends[h].add(axes[0] if h == w["holes"][0] else axes[-1])
+        run_middles.update(w["holes"][1:-1])
+    for h, axes in run_ends.items():
+        if len(axes) > 1 and h not in pin_at and h not in wire_end_holes and h not in run_middles:
+            f("error", "PERF.corner", f"bridges turn at the empty hole {hole_name(h)} – bridges run straight; "
+                                      f"take a wire on top")
+
     # nets the plan makes against the graph's
     net_of = {}
     for net, spec in graph["nets"].items():
@@ -487,7 +507,7 @@ def draw(plan, kind, res, parts, title, bottom):
     pitch = kind["pitch_mm"]
     cols, rows = plan["perfboard"]["holes"]
     W, H = cols * pitch, rows * pitch
-    ml, mt, mr, mb = 8, 17, 8, 17
+    ml, mt, mr, mb = 8, 17, 8, 19
     svg = Svg(W + ml + mr, H + mt + mb)
 
     def X(x):
@@ -655,7 +675,9 @@ def draw(plan, kind, res, parts, title, bottom):
                 if x > ml + W - 15:
                     x, y = ml, y + 2.6
         svg.text(ml, y + 3, "LED: flat side = cathode, + = anode (long lead).  C1: stripe = minus.  "
-                            "Dashed circles: nut of the M3 mounting holes.", size=1.3, anchor="start", fill="#444")
+                            "J1: 1 GND (brown), 2 +5V, 3 signal.", size=1.3, anchor="start", fill="#444")
+        svg.text(ml, y + 5.4, "Dashed circles: nut of the M3 mounting holes.", size=1.3, anchor="start",
+                 fill="#444")
     return svg.done()
 
 
@@ -734,11 +756,12 @@ def draw_part_top(svg, d, p, info, X, Y, shape_svg):
         names = {"1": "GND", "2": "+5V", "3": "sig"}
         vertical = len({h[0] for h in holes.values()}) == 1
         if vertical:
+            for n, h in holes.items():
+                x, y = hc(h)
+                svg.text(x + 0.78, y, n, size=0.8, fill="#ffffff", weight="bold")
             last = max(holes.values(), key=lambda h: h[1])
             x, y = hc(last)
-            svg.text(x, y + 2.0, f"{d} servo", size=1.1, fill="#222", weight="bold", halo=True)
-            svg.text(x, y + 3.5, " · ".join(f"{n} {names[n]}" for n in sorted(holes)), size=0.85, fill="#222",
-                     anchor="end", halo=True)
+            svg.text(x + 1.27, y + 2.0, f"{d} servo", size=1.0, fill="#222", weight="bold", anchor="end", halo=True)
         else:
             for n, h in holes.items():
                 x, y = hc(h)
