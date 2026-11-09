@@ -5,6 +5,11 @@ Umsetzung auf den Europlatinen … da braucht man auch eine Anordnung der Elemen
 das wäre doch auch eine Möglichkeit, das generieren zu lassen"), decided in a decision round the same day (decisions
 1 to 5 the owner's, 6 to 10 Claude's and confirmed, at the end). Nothing built: every step starts on the owner's word.
 
+A prototype on the bell (2026-11-09), to agree on what a plan looks like:
+[prototypes/perfboard-layout/](prototypes/perfboard-layout/README.md) holds the bell's THT circuit as a plan, a
+script that checks its nets against the graph and draws both views, the build and test lists, and the points the
+prototype had to decide.
+
 ## Why
 
 After step 7 a circuit is "enough to wire it by hand or to build it on a perfboard" (`docs/steps/README.md`). How is
@@ -109,7 +114,6 @@ The plan is the layout of a hand-wired board; its checks belong where the layout
   lies in the drawer off it.
 
 The drawings are SVG, as `edakit schematic draw` writes them, and read in the light and the dark theme of the site.
-
 
 ## Who writes the plan
 
