@@ -155,8 +155,8 @@ and answers come as time allows.
 
 ## Licence
 
-MIT – see [LICENSE](LICENSE) –, except for third-party material the tests use. Each folder of
-[tests/open_designs/](tests/open_designs/) names its source, licence and changes in its README:
+MIT – see [LICENSE](LICENSE) –, except for pytree's schematic and pictures and for third-party material the tests
+use. Each folder of [tests/open_designs/](tests/open_designs/) names its source, licence and changes in its README:
 
 | Path | Source | Licence |
 | --- | --- | --- |
@@ -169,6 +169,7 @@ MIT – see [LICENSE](LICENSE) –, except for third-party material the tests us
 | `tests/open_designs/atoomnetmarc-adlsc/` | atoomnetmarc, *ADLSC* (a WLED controller) | [Apache 2.0](https://www.apache.org/licenses/LICENSE-2.0), the licence's text in the folder's LICENSE |
 | `tests/open_designs/esp32-devkitc-v4/` | Espressif Systems, *ESP32-DevKitC V4* schematic | none stated – only the circuit's facts are transcribed, not the drawing |
 | `tests/open_designs/whbeers-fuzz-face/` | whbeers, *Random Input* (a Fuzz Face) | [CC0 1.0](https://creativecommons.org/publicdomain/zero/1.0/) |
+| `docs/projects/pytree/` | pytree, the programming advent calendar: its schematic and the pictures of the tree | pytree: © pytree, all rights reserved – not under edakit's MIT license |
 | `tests/fixtures/jlcpcb/`, `easyeda/`, `datasheets/`, `makers/` | short excerpts of the pages and API answers of JLCPCB, LCSC, EasyEDA, AISLER, Eurocircuits and PCBway, with source and date, for the parsers' tests | the sites' own; not under MIT |
 
 This is a reading of the sources' licences, not legal advice.
