@@ -67,7 +67,7 @@ J1 = { at = "A10", rot = 270 }
 [[wire]]
 net = "VCC"
 path = ["D2", "D9"]          # straight between holes; more points for a bent run
-side = "top"                 # top: insulated wire; bottom: solder bridges only (decision 11)
+side = "top"                 # top: insulated wire; bottom: straight solder bridges only (decision 11)
 
 [[wire]]
 net = "GND"
@@ -76,8 +76,9 @@ side = "bottom"
 kind = "bridge"              # a solder bridge between two neighbouring pads
 ```
 
-On the bottom there are only solder bridges between neighbouring holes (decision 11): a bridge path along a row or a
-column is a row of bridges, one per step. Everything longer is an insulated wire on top; each of its ends goes through
+On the bottom there are only straight solder bridges between neighbouring holes (decision 11): a bridge path along
+one row or one column is a row of bridges, one per step, and never turns a corner. Everything else is an insulated
+wire on top; each of its ends goes through
 a free hole beside its pin and is joined to it by a bridge below, since a lead and a wire do not fit into one hole.
 
 A kind with strips that are cut gets `cuts = [...]` in a section `[strips]` – not on the two kinds built first. Wire
@@ -96,8 +97,9 @@ The plan is the layout of a hand-wired board; its checks belong where the layout
   perfboard takes through-hole parts only (decision 3).
 - **Bodies.** Body boxes (footprint outline, `body.box`) do not overlap; an axial part's span is at least its body
   plus the bend of its leads; nothing sits on a mounting hole.
-- **Wires.** On the bottom only bridges between neighbouring holes, along a row or a column; where a hole joins two
-  nets – a bridge, a wire's end, a lead –, the finding names that hole. An insulated wire on top ends in free holes
+- **Wires.** On the bottom only bridges between neighbouring holes, straight along one row or one column – a corner
+  within a row of bridges, or two rows ending at right angles in the same empty hole, is a finding naming that hole;
+  where a hole joins two nets – a bridge, a wire's end, a lead –, the finding names that hole too. An insulated wire on top ends in free holes
   that no body covers and may cross others; each wire has its length.
 - **Current.** A wire, a bridge or a strip carries its net's current – from the simulation where it has one, against
   the wire's gauge and the copper's rating from the kind's data.
@@ -172,7 +174,7 @@ decisions 11 and 12 the owner's of 2026-11-09, on the prototype.
 | 8 | The examples get a variant each, `examples/coin-cell-led/variants/perfboard/` and `examples/blinker-555/variants/perfboard/`, their through-hole parts chosen with the skill part-search in LR.7 – blinker-555's switch with 2.54 mm terminals | decision 5; the tests hold a variant like the example | plans only in the tests' fixtures |
 | 9 | The bell's perfboard build is a variant in automatic_christmas_bell, built by that repository's session after LR.7 | the bell's files are its repository's | a copy of the bell in edakit's tests |
 | 10 | Holes named by column letter and row number, A1 at the top left seen from the top; the kinds `pad-per-hole` and `3-hole-strips` | as many Euro boards print them at their edges | coordinates in mm; numbers for both axes |
-| 11 | On the bottom only solder bridges between neighbouring holes; everything longer an insulated wire on top | "auf der Oberseite mit Kabeln und auf der Unterseite mit kurzen blanken Brücken, die nebeneinander liegende Punkte verbinden … keine Kabel auf der Unterseite – wie löte ich die denn gut an?" | bare wire on the bottom along a row of pads (the prototype's first version) |
+| 11 | On the bottom only straight solder bridges between neighbouring holes, never around a corner; everything else an insulated wire on top | "auf der Oberseite mit Kabeln und auf der Unterseite mit kurzen blanken Brücken, die nebeneinander liegende Punkte verbinden … keine Kabel auf der Unterseite – wie löte ich die denn gut an?"; "eine Brücke unten muss gerade sein … wenn sie schon so verwinkelt ist, warum sie dann nicht kurz oben führen?" | bare wire on the bottom along a row of pads (the prototype's first version) |
 | 12 | The bottom view in the orientation of the top view, soldered leads clearly stronger than empty holes | "das muss gleich orientiert sein wie top … sonst tut man sich beim Lesen schwer"; "Pins, die gelötet sind, deutlich stärker als geschlossenes Loch" | the bottom view mirrored, seen from below (the concept until then) |
 
 By the yardstick: nothing of the plan stays in someone's head – the board file holds it, edakit checks and draws it.

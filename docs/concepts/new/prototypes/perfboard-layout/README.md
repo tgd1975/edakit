@@ -1,9 +1,9 @@
 # Prototype: the bell on a perfboard
 
 Written on 2026-11-09 for the concept [perfboard-layout.md](../../perfboard-layout.md), on the owner's request for an
-example board "damit wir wissen, dass wir vom gleichen reden". Its first version led to the concept's decisions 11
-(on the bottom only solder bridges between neighbouring holes, everything longer an insulated wire on top) and 12 (the
-bottom view in the orientation of the top view, soldered leads clearly marked); this version follows both.
+example board "damit wir wissen, dass wir vom gleichen reden". Its first versions led to the concept's decisions 11
+(on the bottom only straight solder bridges between neighbouring holes, everything else an insulated wire on top) and
+12 (the bottom view in the orientation of the top view, soldered leads clearly marked); this version follows both.
 
 Nothing of the steps LR.1 to LR.8 is built. A script does the check and the drawings, as the scripts of
 [footprint-data](../footprint-data/README.md) do; it is no edakit code, and edakit's pytest does not collect it.
@@ -30,15 +30,17 @@ The board is 33 × 22 holes, which is the size of the bell's 85 × 56 mm PCB, cu
 - **Nano:** on the left with its USB socket at the edge, as on the THT PCB.
 - **LED row:** along the back edge in countdown order (R-13). The cathodes sit in row 2 and are joined by a row of
   bridges, the anodes in row 3. Each series resistor stands upright below its LED, bridged to the anode above and to
-  the Nano's pin below.
+  the Nano's pin below; R4 stands right above its pin (D6) and reaches row 3, where a straight row of bridges leads
+  to LED5's anode.
 - **Wires under the Nano:** the Nano's pins D6, D5, D4, D3 and D2 carry G1, G2, R, Y2 and Y1, which is not the
   countdown order G1, G2, Y1, Y2, R. So Y2 and R go as wires on top, under the Nano between its sockets, and come up
   at its right end. The servo signal and the two button lines take the same way.
 - **Power:** below the Nano, ground runs as a row of bridges along row 16 and +5 V along row 22. R8, R9, the two
-  pull-downs and the buttons stand across or on them; C1 and J1 sit at the right end. A short wire on top brings
-  +5 V from the Nano's 5V pin down to row 22, another one joins the LED cathodes to the Nano's GND (pin 4).
-- **In all:** 7 insulated wires (43 cm) and 81 solder bridges, 45 of them in the three long rows (cathodes, ground,
-  +5 V).
+  pull-downs and the buttons stand across or on them; C1 and J1 sit at the right end, C1's plus in J1's row 17.
+  Short wires on top bring +5 V from the Nano's 5V pin down to row 22 and from there around C1 into row 17; another
+  one joins the LED cathodes to the Nano's GND (pin 4).
+- **In all:** 8 insulated wires (46 cm) and 76 solder bridges, 46 of them in the three long rows (cathodes, ground,
+  +5 V). Every row of bridges is straight.
 
 ## What the check says
 
@@ -62,16 +64,19 @@ error   PERF.meet      L3 joins LED_Y1_A bridge L3–L4 with LED3.cathode (GND)
 error   PERF.meet      M16 joins GND bridges M16 … AF16 with +5V bridge M15–M16 with +5V wire M16–M22
 ```
 
-`PERF.meet` names the hole where two nets touch, which is where the soldering iron goes. The codes `PERF.*` are the
+`PERF.meet` names the hole where two nets touch, which is where the soldering iron goes. `PERF.corner` names the
+hole where bridges turn – within a row of them or where two rows end in the same empty hole; the plan's previous
+version had three such corners (AC22, AE18/AE17 and H8). The codes `PERF.*` are the
 prototype's own names, not edakit's.
 
 ## What the prototype had to decide
 
 The concept leaves these points open, or they could be read another way:
 
-1. **Rows of bridges.** Decision 11 allows bridges between neighbouring holes only; the prototype takes a path of
-   them along a row or a column as allowed, one bridge per step. Ground and +5 V are such rows. The alternative is
-   one wire on top from member to member, with a bridge at each end.
+1. **Rows of bridges.** Decision 11 allows straight bridges between neighbouring holes only; the prototype takes a
+   straight row of them as allowed, one bridge per step, and lets rows meet at a lead or in the middle of another row
+   (ground's branch at M2). Ground and +5 V are such rows. The alternative is one wire on top from member to member,
+   with a bridge at each end.
 2. **Hole names and designators are the same strings.** R8 is a hole and a resistor, and so are C1, J1, S1 and U1.
    The build list reads "R5 330Ω: R8–R4". The prototype keeps decision 10 as it is.
 3. **`at` is the hole of pin 1, and `rot` turns counterclockwise as seen from the top, in steps of 90°.** The yellow
