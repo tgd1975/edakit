@@ -8,6 +8,10 @@ written once, by `.github/merge.py`, from the fragments in [changes/](changes/RE
 update edakit@edakit`, then `/reload-plugins` or a new session; `edakit version` names the version that runs and what an
 update brings.
 
+## 1.2.1 – 2026-11-10
+
+- The plan of a hand-wired board on a perfboard (handbook 7.9): a board with `wired = true` may have a board file with `[perfboard]`, `[place]` by hole or by role, `[[holes]]` in mm and `[[wire]]` – bridges on the bottom, insulated wires on top. `edakit perfboard` builds the nets the plan makes and holds them to the graph (PERF.net), checks places, grid, bodies, mounting holes, wires and current (PERF.place, .grid, .body, .mount, .wire, .current) and the hand-over (SYNC.plan), and draws the top view, the bottom view in the top's orientation and the cut, build and test lists. Two kinds as data, `edakit/perfboards/pad-per-hole.toml` and `3-hole-strips.toml`; a parts entry's `joined` names the pins a part joins inside. The plan is stage L of the gate, in the layout hash, its drawings and lists the run's manufacturing files under M-5; a project whose boards are all bought or hand-wired, with a plan, runs S, L and F without `--eda`. SYNC.footprint no longer notes the parts of a bought or hand-wired board as not dumped – there is no copy in EasyEDA to compare.
+
 ## 1.2.0 – 2026-11-09
 
 - **When updating:** easyeda-mcp-pro is pinned to 1.11.0 (was 1.8.0), and server and bridge extension must have the

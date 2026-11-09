@@ -2,7 +2,9 @@
 
     edakit gate             P (parts), G (graph), E (simulation) and the project's checks before S; offline, seconds
     edakit gate --eda       plus S (schematic), L (board), F (manufacturing files) and the project's checks after F;
-                            EasyEDA with the bridge, minutes
+                            EasyEDA with the bridge, minutes. A project whose boards are all bought or hand-wired,
+                            with the plan of a perfboard (handbook 7.9), runs them without --eda: the plan is its
+                            stage L, its drawings and lists are its manufacturing files
 
 The project's checks ([[release.stages]] and [scripts.<name>] of kind check, scripts.gate_checks): phase export is a
 stage each, with its id – stage_checks runs it; phase order and acceptance are lines of section 6, after the export.
@@ -253,8 +255,13 @@ def electrical_hash(cfg):
 
 def layout_files(cfg):
     from ..pcb import geometry_file
+    from ..perfboard import plan_boards
     made = cfg.made()     # a bought or hand-wired board has no layout: no board file, no artwork, no footprint geometry
     files = [cfg.resolve(b.file) for b in made.values()]
+    # the plan of a hand-wired board on a perfboard is its layout (handbook 7.9), and the geometry beside it if any
+    perf = plan_boards(cfg)
+    files += [cfg.resolve(b.file) for b, _ in perf.values()]
+    files += [f for b, _ in perf.values() if (f := geometry_file(cfg, b)).is_file()]
     # the artwork the board files place ([[silk.art]]), each SVG once however often it is placed
     files += dict.fromkeys(cfg.resolve(a["svg"]) for b in made.values() for a in b.silk.get("art", [])
                            if "svg" in a)
@@ -273,7 +280,8 @@ def footprint_data(cfg):
     design = Design.from_config(cfg)
     if not has_data(design.parts):
         return []
-    made = set(cfg.made())
+    from ..perfboard import plan_boards
+    made = set(cfg.made()) | set(plan_boards(cfg))
     keys = {k for des, c in design.comps.items() if (c.get("board") in made or c.get("board") is None)
             and (k := design.entry_key(des)) and "footprint_data" in design.parts[k]}
     ignore = set(cfg.release.get("hash_ignore", []))
@@ -646,7 +654,9 @@ def stage_fab(cfg, outdir, step=None):
     rows = []
     d = outdir / "fab"
     d.mkdir(exist_ok=True)
-    rows += [unmade_row("L", "L", b) for b in cfg.boards.values() if b.unmade]
+    from ..perfboard import plan_boards
+    perf = plan_boards(cfg)          # a perfboard's plan is stage L of its own (perfboard.rows)
+    rows += [unmade_row("L", "L", b) for b in cfg.boards.values() if b.unmade and b.name not in perf]
     for board in cfg.made().values():
         if step:  # one step per board: with EasyEDA up to five minutes each
             step(f"L/F board and manufacturing files: {board.name}")
@@ -688,8 +698,10 @@ def manifest_rows(cfg, board, d):
 def fab_hashes(cfg, outdir):
     """fab_method, fab_layers per board and fab_sha256 of this run's manufacturing files (stage F)."""
     from . import fab
+    from ..perfboard import build_layers, plan_boards
     try:
         layers = {b: fab.fab_layers(outdir / "fab" / b, b) for b in cfg.made()}
+        layers.update({b: build_layers(outdir / "fab" / b) for b in plan_boards(cfg)})
     except Exception as e:   # unreadable files: FILES.manifest/FILES.set name them; the sign-offs with scope 'fab' then do not count
         print(f"  fab hash not computed: {e}", file=sys.stderr)
         return {}
@@ -732,6 +744,11 @@ def write_manifest(cfg, outdir, head, decision):
         for name in dict.fromkeys([*upload(cfg, b), f"odb_{b}.zip", f"bom_{b}_mpn.csv"]):
             f = fab / b / name
             if f.exists():
+                files[str(f.relative_to(outdir))] = hashlib.sha256(f.read_bytes()).hexdigest()
+    from ..perfboard import BUILD_FILES, plan_boards
+    for b in plan_boards(cfg):     # a perfboard's build files: what the person who solders it builds from (7.9)
+        for name in BUILD_FILES:
+            if (f := fab / b / name).exists():
                 files[str(f.relative_to(outdir))] = hashlib.sha256(f.read_bytes()).hexdigest()
     manifest = {"released": decision == "RELEASED", "decision": decision, "time": head["time"],
                 "git": head["git_commit"] + (" + uncommitted changes" if head["git_dirty"] else ""),
@@ -1151,7 +1168,10 @@ def main(cfg, args):
     stages = stages_of(cfg)
     stages = stages[:3] + [(c.id, c.title, c.about) for c in before] + stages[3:] + [
         (c.id, c.title, c.about) for c in after]
-    step = eda.Steps(2 + len(before) + (1 + len(cfg.made()) + len(after) if args.eda else 0))
+    from .. import perfboard
+    perf = perfboard.plan_boards(cfg)
+    eda_run = args.eda or bool(perf and not cfg.made())   # nothing EasyEDA makes: S, L and F run without it
+    step = eda.Steps(2 + len(before) + (1 + len(cfg.made()) + len(after) if eda_run else 0))
     step("P/G parts and graph")
     rows, g_json = stage_graph(cfg, design)
     (outdir / "graph_checks.json").write_text(json.dumps(g_json, indent=1, ensure_ascii=False) + "\n", encoding="utf-8")
@@ -1174,7 +1194,9 @@ def main(cfg, args):
         rows += more
         stages_run |= ran
     files = {}
-    if args.eda:
+    if perf:        # stage L of a hand-wired board on a perfboard: its plan, offline (handbook 7.9)
+        rows += perfboard.rows(cfg, design, outdir)
+    if eda_run:
         step("S schematic against the graph")
         rows += stage_schematic(cfg, outdir)
         rows += stage_fab(cfg, outdir, step)
@@ -1190,7 +1212,7 @@ def main(cfg, args):
     reqs = requirements.evaluate(entries, [*sim["checks"], *rows], signoff, stages_run,
                                  project_checks)   # [] without the key; script: the checks of this run
     decision, reasons = decide(rows, sim["checks"], signoff, stages_run, stages, reqs)
-    if args.eda:
+    if eda_run:
         files = write_manifest(cfg, outdir, head, decision)
         (outdir / MAKERS).write_text(json.dumps(maker_findings(cfg, rows), indent=1, ensure_ascii=False) + "\n",
                                      encoding="utf-8")

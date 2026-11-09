@@ -4,7 +4,7 @@ Open work that needs the owner's computer, a maker or the owner's word. The stat
 and plans the sections name; this list is what is left to do of them, in the order it can be done. No item is deleted.
 
 **Layout.** Every item, in every section, open or closed, is a line with a checkbox and an ID unique in this file,
-counted up and never reused – whoever adds an item takes the next free ID and counts it up here. Next free ID: TD-157.
+counted up and never reused – whoever adds an item takes the next free ID and counts it up here. Next free ID: TD-158.
 
 - Open: `- [ ] TD-<n> - **Title:** what and why.` – a step's own name after the dash (`- [ ] TD-31 - **D.4** …`).
 - Done: ticked, the commit that did it, the date at the end, moved to [Closed todos](#closed-todos), newest first –
@@ -29,6 +29,8 @@ to touch.
 
 ## For the owner
 
+- [ ] TD-157 - **OK for #367 (pytree's pictures not under MIT):** a line in the README's licence table, pytree's
+      decision P-27, due 2026-11-30 – merged with `python3 .github/merge.py 367` on the owner's word. *(edakit-9d)*
 - [ ] TD-154 - **OK for #365 (perfboard layout, LR.1 to LR.6):** the plan of a hand-wired board checked against the
       graph and drawn – merged with `python3 .github/merge.py 365` on the owner's word. *(edakit-9d)*
 - [ ] TD-108 - **A photo of the delivered tree:** one picture of the lit tree in its hill into pytree's `docs/img/` –
