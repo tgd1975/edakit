@@ -2,9 +2,9 @@
 
 Written on 2026-11-09 for the concept [perfboard-layout.md](../../perfboard-layout.md), on the owner's request for an
 example board "damit wir wissen, dass wir vom gleichen reden", and accepted the same day ("jetzt passts"). Its rounds
-brought the concept's decisions 11 to 21 – straight bridges below and wires on top, the bottom view in the top's
-orientation, hole names as printed, parts by role, mounting holes in mm and the rest –; this version follows all of
-them and is the reference for the steps LR.1 to LR.4.
+brought the concept's decisions 11 to 23 – straight bridges below and wires on top, the bottom view in the top's
+orientation, hole names as printed, parts by role, mounting holes in mm, the cut list and the rest –; this version
+follows all of them and is the reference for the steps LR.1 to LR.4.
 
 Nothing of the steps LR.1 to LR.8 is built. A script does the check and the drawings, as the scripts of
 [footprint-data](../footprint-data/README.md) do; it is no edakit code, and edakit's pytest does not collect it.
@@ -73,7 +73,7 @@ prototype's own names, not edakit's.
 
 ## Decided on the prototype
 
-What the first versions left open is decided in the concept (its decisions 11 to 21):
+What the first versions left open is decided in the concept (its decisions 11 to 23):
 
 - On the bottom only straight bridges between neighbouring holes; rows of them meet at a lead or in the middle of
   another row; everything else is a wire on top, its ends in free holes beside the pins with a bridge below
