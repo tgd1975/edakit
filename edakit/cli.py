@@ -43,6 +43,8 @@
     edakit schematic draw            the schematic as SVG from graph and parts database – no EasyEDA (offline);
                                      labels, or wired through by style in the schematic file
     edakit pcb dump|plan|place|parts|nets|apply|tooling|pour|autolayout|takeover
+    edakit perfboard [--board B]     the plan of a hand-wired board on a perfboard: its nets against the graph, grid,
+                                     bodies, wires; top and bottom view, cut, build and test lists (offline)
     edakit route all|read|dsn|route|check|apply|verify|pours|reload|drc|save
     edakit route diagnose [--net N]  why each open connection is open: walled in, blocked, or a free way (offline)
     edakit silk apply|check|preview
@@ -333,6 +335,11 @@ def build_parser(dsl=False):
     p.add_argument("--wait", type=int, default=90, help="seconds to wait for the bridge")
     _common(p)
 
+    p = sub.add_parser("perfboard", help="the plan of a hand-wired board on a perfboard ([perfboard] in its board "
+                                         "file): checked against the graph, drawn, its cut, build and test lists")
+    p.add_argument("--board", help="the hand-wired board (default: every one with a plan)")
+    _common(p)
+
     p = sub.add_parser("pcb", help="placement plan, parts and nets sync, fixed parts, tooling holes, pours")
     p.add_argument("action", choices=["dump", "plan", "place", "parts", "nets", "apply", "tooling", "pour",
                                       "autolayout", "takeover"])
@@ -571,6 +578,9 @@ def _main(argv=None):
     if args.command == "schematic":
         from . import schematic
         return schematic.main(cfg, args)
+    if args.command == "perfboard":
+        from . import perfboard
+        return perfboard.main(cfg, args)
     if args.command == "pcb":      # pcb dump, route all: made again after an easyeda script changed the library (8.6)
         from . import pcb, scripts
         return scripts.after_step(cfg, args, pcb.main(cfg, args))

@@ -1,0 +1,24 @@
+{
+ "graph": {
+  "name": "perfboard-test",
+  "version": "1.0",
+  "date": "2026-11-09",
+  "description": "Press the button, the LED lights – on a perfboard.",
+  "components": [
+   {"designator": "J1", "type": "connector", "label": "Supply", "part": "HDR-2", "lcsc": "T-HDR2", "bom": false,
+    "pins": {"1": "1", "2": "2"}},
+   {"designator": "SW1", "type": "button", "label": "Push button", "part": "BTN-6x6", "lcsc": "T-BTN6", "bom": false,
+    "pins": {"1": "1", "2": "2", "3": "3", "4": "4"}, "nc": ["2", "4"]},
+   {"designator": "R1", "type": "resistor", "label": "LED series resistor", "part": "R-AX-150", "lcsc": "T-R150",
+    "value": "150", "bom": false, "pins": {"1": "1", "2": "2"}},
+   {"designator": "D1", "type": "led", "label": "LED red", "part": "LED-5-RED", "lcsc": "T-LED5", "value": "red",
+    "bom": false, "pins": {"1": "-", "2": "+"}}
+  ],
+  "nets": [
+   {"name": "VCC", "v": [0, 5], "pins": ["J1.1", "SW1.3"]},
+   {"name": "LED_SW", "v": [0, 5], "pins": ["SW1.1", "R1.1"]},
+   {"name": "LED_A", "v": [0, 5], "pins": ["R1.2", "D1.2"]},
+   {"name": "GND", "v": [0, 0], "pins": ["D1.1", "J1.2"]}
+  ]
+ }
+}

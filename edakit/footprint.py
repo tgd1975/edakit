@@ -461,6 +461,8 @@ def check(d, rep, cfg):
         if key not in keys:
             continue
         geo = dumped(des)
+        if not geo and (b := cfg.boards.get(d.comps[des].get("board"))) is not None and b.unmade:
+            continue        # a bought or hand-wired board has no copy in EasyEDA to compare
         if not geo:
             rep.notes.append(("SYNC.footprint", f"{des}: not in the footprint geometry of its board – edakit pcb dump once it is "
                                       f"in the PCB; until then the copy is not compared with the data of {key}"))

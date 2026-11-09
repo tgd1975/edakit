@@ -53,6 +53,10 @@ board. Stages S and L/F leave it out with one information row each (`SYNC.schema
 "bought board – no schematic, PCB or manufacturing files", "hand-wired board – …"). FILES.manifest, the manifest and the
 protocol header ("bought, not made: usb; hand-wired, not made: panel") count the made boards only.
 
+A hand-wired board on a perfboard has stage L all the same – its plan (7.9): PERF.* and SYNC.plan, offline, its
+drawings and lists in `fab/<board>/`, the manifest and the fab hash. When every board is bought or hand-wired and one
+has a plan, S, L and F run without `--eda`.
+
 **The radio checks** LIM.eirp, LIM.band (stage G) and PARTS.fact (stage P) grade by the graph's `purpose.use` (chapter
 15): what the firmware or a parts entry can settle – a band or a power the firmware has to keep, a radio nobody stated –
 is a warning for a board that is sold (`"sale"`), accepted in the sign-off file (8.2) or accepted on the component, and
@@ -193,6 +197,8 @@ Every run records three hashes in the protocol header, and a run with stage F a 
   well, after the files, as canonical JSON without the keys of `[release] hash_ignore`: a changed pad voids the
   sign-offs of scope `layout` as a changed geometry does. A project without footprint data keeps its hash; one with it
   has "footprint data" among what the protocol header says the hash covers.
+- **layout of a perfboard**: the plan of a hand-wired board on a perfboard (7.9) counts as the board file of a made
+  board does, with the footprint data of its parts
 - **fab** (`fab_sha256`): what the manufacturer builds from, per made board –
   - every Gerber layer of `fab/<board>/gerber/` rasterised at 0.02 mm as GEO.copper does, in the frame of the board
     outline (documentation and drill-drawing layers left out: nobody builds from them);
