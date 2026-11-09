@@ -29,8 +29,6 @@ to touch.
 
 ## For the owner
 
-- [ ] TD-152 - **OK for #351 (easyeda-mcp-pro pinned to 1.11.0, M-11 fixed upstream):** checked live; a `minor` –
-      after the merge every project updates server and bridge extension together (handbook 2.4, 2.5). *(edakit-d2)*
 - [ ] TD-108 - **A photo of the delivered tree:** one picture of the lit tree in its hill into pytree's `docs/img/` –
       it replaces the render on `docs/projects/pytree.md`. *(edakit-ce)*
 
@@ -70,13 +68,14 @@ Nothing to do until there is an answer or a release; whichever session learns of
 - [ ] TD-36 - **EasyEDA, #45 to #52 and our comments to #36 and #38:** answer questions; when a release fixes one,
       check it live, take it up and say so in upstream/README.md. EasyEDA's first answer is often "update to the latest
       version".
-- [ ] TD-140 - **M-11, easyeda-mcp-pro #864 and #865:** answer questions; when a release takes the fix, raise the
-      pin, check it live on pytree's `tree` with `layout_tree` open, and drop the closing of the other schematics in
-      `schematic check` and stage S. Released in 1.9.0; all of it done in #351, waiting for the merge (TD-152).
-      *(edakit-7b, edakit-d2)*
 
 ## Closed todos
 
+- [x] TD-152 - **OK for #351 (easyeda-mcp-pro pinned to 1.11.0, M-11 fixed upstream):** given; merged as
+      edakit 1.2.0 (#351). *(edakit-d2)* [2026-11-09]
+- [x] TD-140 - **M-11, easyeda-mcp-pro #864 and #865:** released in 1.9.0; the pin raised to 1.11.0, checked live on
+      pytree's `tree` with `layout_tree` open, the closing of the other schematics dropped, the projectId "current"
+      that 1.9.0 refuses replaced by the project's UUID – edakit 1.2.0 (#351). *(edakit-7b, edakit-d2)* [2026-11-09]
 - [x] TD-149 - **OK for #332 (the LESD5D5.0CT1G is a bidirectional TVS):** given; merged as edakit 1.1.16 (#332).
       *(edakit-c6)* [2026-11-03]
 - [x] TD-145 - **Is the LESD5D5.0CT1G bidirectional?** Yes – symbol p. 1 and I–V curve p. 2; `values.tvs
