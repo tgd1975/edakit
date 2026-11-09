@@ -137,6 +137,20 @@ def joined_inside(entry):
 class Part:
     def __init__(self, d, spec, info, pitch, tol):
         self.d, self.spec, self.entry, self.comp = d, spec, info["entry"], info["comp"]
+        self.role_error = None
+        if "at" not in spec:                  # by role (decision 14): { anode = "L3", cathode = "L2" }
+            by_role = {v.get("role"): n for n, v in self.entry["pins"].items()}
+            given = {by_role[r]: parse_hole(h) for r, h in spec.items() if r in by_role}
+            if len(given) != 2 or set(given) != set(self.entry["pins"]):
+                raise SystemExit(f"{d}: placed by role, but its roles are {sorted(by_role)}")
+            other = next(n for n in given if n != "1")
+            dc, dr = given[other][0] - given["1"][0], given[other][1] - given["1"][1]
+            spec = {**spec, "at": hole_name(given["1"]),
+                    "rot": {(1, 0): 0, (0, -1): 90, (-1, 0): 180, (0, 1): 270}.get(
+                        (int(math.copysign(1, dc)) if dc else 0, int(math.copysign(1, dr)) if dr else 0), 0)}
+            self.given = given
+        else:
+            self.given = None
         self.rot = spec.get("rot", 0)
         fp_name = self.entry["footprint"]
         self.anchor = parse_hole(spec["at"])
@@ -159,6 +173,9 @@ class Part:
         gy = sum(g[1] for g in grid.values()) * pitch / len(grid)
         self.bend = max(math.hypot((x - cx) - (grid[n][0] * pitch - gx), (y - cy) - (grid[n][1] * pitch - gy))
                         for n, (x, y) in exact.items())
+        if self.given and any(self.holes[n] != h for n, h in self.given.items()):
+            self.role_error = ", ".join(f"{self.entry['pins'][n].get('role')} in {hole_name(self.holes[n])}"
+                                        for n in self.given)
         # board position of the anchor hole, and the shift that centres the footprint on its holes
         self.origin = ((self.anchor[0] + 0.5) * pitch + (gx - cx), (self.anchor[1] - 0.5) * pitch + (gy - cy))
 
@@ -236,6 +253,15 @@ def expand(path, straight):
     return holes, bad
 
 
+def mounts(plan, kind):
+    """The mounting holes as {name: (x, y down, d)}: the plan gives x to the right and y up from the lower left
+    corner seen from the top, as a PCB's board file does."""
+    pitch = kind["pitch_mm"]
+    rows = plan["perfboard"]["holes"][1]
+    return {f"{h['x']:g}/{h['y']:g}": (h["x"], rows * pitch - h["y"], h.get("d", MOUNT_DRILL))
+            for h in plan.get("holes", [])}
+
+
 def box(p):
     """The bounding box of a part's bodies on the board: x0, y0, x1, y1."""
     xs, ys = [], []
@@ -265,6 +291,8 @@ def check(plan, kind, graph, parts):
             f("error", "PERF.unknown", f"{d} is placed but not in the graph")
             continue
         placed[d] = Part(d, spec, parts[d], pitch, tol)
+        if placed[d].role_error:
+            f("error", "PERF.place", f"{d}: its leads lie {placed[d].role_error}, not where the plan names them")
     for d in parts:
         if d not in placed:
             f("error", "PERF.unplaced", f"{d} is in the graph but has no place")
@@ -279,14 +307,16 @@ def check(plan, kind, graph, parts):
                 f("error", "PERF.twopins", f"{hole_name(h)} holds {pin_at[h]} and {d}.{n}")
             pin_at[h] = f"{d}.{n}"
 
-    # mounting holes
+    # mounting holes, in mm as on a PCB (decision 15): the pads under the nut stay free
     keep = {}
-    for m in plan["perfboard"].get("mounting", []):
-        mc, mr = parse_hole(m)
-        for dc in (-1, 0, 1):
-            for dr in (-1, 0, 1):
-                keep[(mc + dc, mr + dr)] = m
-        centre = ((mc + 0.5) * pitch, (mr - 0.5) * pitch)
+    for m, (cx, cy, dia) in mounts(plan, kind).items():
+        centre = (cx, cy)
+        if not (dia / 2 < cx < cols * pitch - dia / 2 and dia / 2 < cy < rows * pitch - dia / 2):
+            f("error", "PERF.mount", f"mounting hole {m} lies off the board")
+        for c in range(cols):
+            for r in range(1, rows + 1):
+                if math.dist(((c + 0.5) * pitch, (r - 0.5) * pitch), centre) < MOUNT_KEEP + kind["pad_mm"] / 2:
+                    keep[(c, r)] = m
         for d, p in placed.items():
             for s in p.shapes():
                 if overlap(("circle", centre, 2 * MOUNT_KEEP), s):
@@ -537,7 +567,10 @@ def draw(plan, kind, res, parts, title, bottom):
         svg.text(ml + W + 1.6, y, str(r), size=1.05, fill="#555")
 
     placed, wires, pin_at = res["placed"], res["wires"], res["pin_at"]
-    mounts = {parse_hole(m) for m in plan["perfboard"].get("mounting", [])}
+    drilled = mounts(plan, kind)
+    gone = {(c, r) for c in range(cols) for r in range(1, rows + 1)
+            for cx, cy, dia in drilled.values()
+            if math.dist(((c + 0.5) * pitch, (r - 0.5) * pitch), (cx, cy)) < dia / 2 + kind["pad_mm"] / 2}
     wire_ends = {}
     for w in wires:
         if w["kind"] == "wire":
@@ -547,7 +580,7 @@ def draw(plan, kind, res, parts, title, bottom):
     # empty holes, faint
     for c in range(cols):
         for r in range(1, rows + 1):
-            if (c, r) in mounts or (bottom and (c, r) in pin_at):
+            if (c, r) in gone or (bottom and (c, r) in pin_at):
                 continue
             x, y = hc((c, r))
             if bottom:
@@ -556,11 +589,10 @@ def draw(plan, kind, res, parts, title, bottom):
                 svg.add(f'<circle cx="{X(x):.2f}" cy="{Y(y):.2f}" r="0.36" fill="#8a7654"/>')
             else:
                 svg.add(f'<circle cx="{X(x):.2f}" cy="{Y(y):.2f}" r="0.48" fill="#7a6545"/>')
-    for (c, r) in mounts:
-        x, y = hc((c, r))
+    for x, y, dia in drilled.values():
         svg.add(f'<circle cx="{X(x):.2f}" cy="{Y(y):.2f}" r="{MOUNT_KEEP}" fill="none" stroke="#999" '
                 f'stroke-width="0.15" stroke-dasharray="0.6 0.4"/>')
-        svg.add(f'<circle cx="{X(x):.2f}" cy="{Y(y):.2f}" r="{MOUNT_DRILL / 2}" fill="#ffffff" stroke="#777" '
+        svg.add(f'<circle cx="{X(x):.2f}" cy="{Y(y):.2f}" r="{dia / 2}" fill="#ffffff" stroke="#777" '
                 f'stroke-width="0.2"/>')
 
     def shape_svg(s, fill, stroke, width=0.2, dash=None, opacity=1.0, rx=0.4):
@@ -853,35 +885,37 @@ def lists(plan, kind, res, graph, parts):
             if key == "bridge":
                 n = len(it["holes"]) - 1
                 path = "–".join(it["path"]) if n == 1 else " … ".join(it["path"])
-                rows.append(f"{path} {it['net']}" + (f" ({n})" if n > 1 else ""))
+                rows.append(f"holes {path} {it['net']}" + (f" ({n})" if n > 1 else ""))
             elif key == "wire":
                 ln = length(it) + 16
                 wire_total += ln
-                rows.append(f"{it.get('color', '')} {it['path'][0]}–{it['path'][-1]} {it['net']} ({ln:.0f} mm)")
+                rows.append(f"{it.get('color', '')}, holes {it['path'][0]}–{it['path'][-1]} {it['net']} "
+                            f"({ln:.0f} mm)")
             else:
                 p = placed[it]
                 e = p.entry
                 comp = parts[it]["comp"]
                 roles = {v.get("role"): n for n, v in e["pins"].items()}
                 if key == "led":
-                    rows.append(f"{it} {e['values'].get('color', '')}: anode (long lead) in "
-                                f"{hole_name(p.holes[roles['anode']])}, cathode (flat) in "
+                    rows.append(f"{it} {e['values'].get('color', '')}: anode (long lead) in hole "
+                                f"{hole_name(p.holes[roles['anode']])}, cathode (flat) in hole "
                                 f"{hole_name(p.holes[roles['cathode']])}")
                 elif key == "capacitor":
-                    rows.append(f"{it} {comp['part']}: plus in {hole_name(p.holes[roles['plus']])}, minus (stripe) "
-                                f"in {hole_name(p.holes[roles['minus']])}")
+                    rows.append(f"{it} {comp['part']}: plus in hole {hole_name(p.holes[roles['plus']])}, minus "
+                                f"(stripe) in hole {hole_name(p.holes[roles['minus']])}")
                 elif key == "module":
                     hs = sorted(p.holes.values(), key=lambda h: (h[1], h[0]))
-                    rows.append(f"two 1×15 female headers for {it}: {hole_name(hs[0])}–{hole_name(hs[14])} and "
+                    rows.append(f"two 1×15 female headers for {it}: holes {hole_name(hs[0])}–{hole_name(hs[14])} and "
                                 f"{hole_name(hs[15])}–{hole_name(hs[29])}")
                 elif key == "button":
                     rows.append(f"{it} ({comp['label'].lower()}): " +
-                                ", ".join(f"{n} in {hole_name(h)}" for n, h in sorted(p.holes.items())))
+                                ", ".join(f"{n} in hole {hole_name(h)}" for n, h in sorted(p.holes.items())))
                 elif key == "connector":
-                    rows.append(f"{it}: pin 1 (GND, brown) in {hole_name(p.holes['1'])}, pin 3 (signal) in "
-                                f"{hole_name(p.holes['3'])}")
+                    rows.append(f"{it}: pin 1 (GND, brown) in hole {hole_name(p.holes['1'])}, pin 3 (signal) in "
+                                f"hole {hole_name(p.holes['3'])}")
                 else:
-                    rows.append(f"{it} {comp.get('value', '')}: {hole_name(p.holes['1'])}–{hole_name(p.holes['2'])}")
+                    rows.append(f"{it} {comp.get('value', '')} in holes {hole_name(p.holes['1'])}–"
+                                f"{hole_name(p.holes['2'])}")
         extra = f" – {n_bridges} in all" if key == "bridge" else ""
         out.append(f"{step}. **{head}{extra}:** " + "; ".join(rows) + ".")
     out.append("")
@@ -896,7 +930,7 @@ def lists(plan, kind, res, graph, parts):
     out.append(f"1. **Before the first power-up:** +5V ({a}) to GND ({b}) reads about {par:.0f} Ω "
                f"({' ∥ '.join(res_between)}) once {', '.join(caps)} has charged – 0 Ω is a short.")
     out.append("2. **Each net beeps** from its first hole to every other:\n")
-    out.append("| Net | From | To |")
+    out.append("| Net | From hole | To holes |")
     out.append("| --- | --- | --- |")
     for net in graph["nets"]:
         members = [(parse_hole(hole_name(placed[d].holes[n])), f"{d}.{pin_label(parts[d]['entry'], n)}")
@@ -936,7 +970,7 @@ def lists(plan, kind, res, graph, parts):
     for (h1, n1), (h2, n2) in sorted(pairs):
         by_nets[tuple(sorted([n1, n2]))].append(f"{h1}–{h2}")
     out.append("<details><summary>" + f"{len(pairs)} pairs of neighbouring holes" + "</summary>\n")
-    out.append("| Nets | Holes |")
+    out.append("| Nets | Neighbouring holes |")
     out.append("| --- | --- |")
     for (n1, n2), hs in sorted(by_nets.items()):
         out.append(f"| {n1} / {n2} | {', '.join(hs)} |")

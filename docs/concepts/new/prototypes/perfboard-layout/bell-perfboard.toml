@@ -2,8 +2,10 @@
 # would stand in the board file of a hand-wired variant (../../perfboard-layout.md, "The plan as text").
 # A prototype: written by hand on 2026-11-09, checked and drawn by perfboard.py, not by edakit.
 #
-# Holes: column letter and row number, A1 at the top left seen from the top (decision 10). rot is counterclockwise
-# seen from the top, in steps of 90°; at is the hole of pin 1. Axial parts give their lead span in holes.
+# Holes: column letter and row number as the board prints them, A1 at the top left seen from the top (decisions 10,
+# 13). A part sits by the hole of its pin 1 and a rotation – counterclockwise seen from the top, in steps of 90° –, or,
+# with two leads, by the holes of its roles (decision 14). Axial parts give their lead span in holes. Mounting holes
+# in mm as on a PCB: x to the right, y up, from the lower left corner seen from the top (decision 15).
 # Wires (decision 11): on the bottom only straight solder bridges between neighbouring holes – a path of them runs
 # along one row or one column, one bridge per step, never around a corner; everything else is an insulated wire on
 # top, each end through a free hole beside its pin and joined to it by a bridge below.
@@ -11,19 +13,38 @@
 [perfboard]
 kind = "pad-per-hole"                       # pad-per-hole.toml beside this file
 holes = [33, 22]                            # 33 columns (A to AG) x 22 rows = 83.8 x 55.9 mm, as the PCB's 85 x 56
-mounting = ["B2", "AF2", "B21", "AF21"]     # drilled out to 3.2 mm for M3 – see the README on the frame's holes
+
+[[holes]]                                   # the bell frame's M3 holes, 78 x 49 mm apart as on the PCB, centred
+x = 2.91
+y = 3.44
+d = 3.2
+
+[[holes]]
+x = 80.91
+y = 3.44
+d = 3.2
+
+[[holes]]
+x = 2.91
+y = 52.44
+d = 3.2
+
+[[holes]]
+x = 80.91
+y = 52.44
+d = 3.2
 
 [place]
 # Arduino Nano on two 1x15 female headers, USB at the left edge as on the PCB (rot 270 turns the socket end left)
 U1 = { at = "P9", rot = 270 }
 
-# The LED row along the back edge in countdown order (R-13): cathodes in row 2, anodes in row 3.
-# The yellow LEDs have their cathode on pin 1, the green and red ones their anode – hence 270 against 90.
-LED5 = { at = "F3", rot = 90 }              # green, step 1
-LED4 = { at = "I3", rot = 90 }              # green, step 2
-LED3 = { at = "L2", rot = 270 }             # yellow, step 3
-LED2 = { at = "O2", rot = 270 }             # yellow, step 4
-LED1 = { at = "R3", rot = 90 }              # red, step 5
+# The LED row along the back edge in countdown order (R-13): cathodes in row 2, anodes in row 3 – by role, so the
+# yellow ones (cathode on pin 1) and the green and red ones (anode on pin 1) read alike
+LED5 = { anode = "F3", cathode = "F2" }     # green, step 1
+LED4 = { anode = "I3", cathode = "I2" }     # green, step 2
+LED3 = { anode = "L3", cathode = "L2" }     # yellow, step 3
+LED2 = { anode = "O3", cathode = "O2" }     # yellow, step 4
+LED1 = { anode = "R3", cathode = "R2" }     # red, step 5
 
 # Series resistors upright below their LEDs: pin 1 (Nano side) in row 8, pin 2 (anode side) in row 4. R4 stands right
 # above its Nano pin (D6, H9) and reaches row 3, where a straight row of bridges leads to LED5's anode.
@@ -40,7 +61,7 @@ S1 = { at = "W22", rot = 180 }              # start: a at W22, T22 on +5V; b at 
 R7 = { at = "S20", rot = 90, span = 4 }     # BTN_START (beside T20) to GND (S16)
 S2 = { at = "AB22", rot = 180 }             # reset: a at AB22, Y22 on +5V; b at AB20, Y20
 R6 = { at = "X20", rot = 90, span = 4 }     # BTN_RESET (beside Y20) to GND (X16)
-C1 = { at = "AC17", rot = 90 }              # plus at AC17 in J1's row, minus at AC15 above the ground row
+C1 = { plus = "AC17", minus = "AC15" }      # plus in J1's row, minus above the ground row
 J1 = { at = "AF16", rot = 270 }             # servo at the right edge: 1 GND AF16, 2 +5V AF17, 3 signal AF18
 
 [near]                                      # the hand-over's pairs, as in hardware/boards/tht.toml of the bell

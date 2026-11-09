@@ -12,15 +12,15 @@ Written by `perfboard.py` from [bell-perfboard.toml](bell-perfboard.toml) and th
 
 ## Build list – from low to high
 
-1. **Resistors ¼ W, lying flat:** R1 330Ω: O8–O4; R2 330Ω: L8–L4; R3 330Ω: I8–I4; R4 330Ω: H8–H3; R5 330Ω: R8–R4; R6 4.7kΩ: X20–X16; R7 4.7kΩ: S20–S16.
-2. **Resistors 1 W, 1–2 mm above the board:** R8 100Ω: N22–N16; R9 100Ω: Q22–Q16.
-3. **Insulated wires on top – each end through its hole, bent onto the pad below:** black M4–M8 GND (26 mm); red M16–M22 +5V (31 mm); red AC22–AE17 +5V (31 mm); yellow K10–P8 LED_Y2 (39 mm); white J10–S8 LED_R (49 mm); blue F10–AG18 SERVO (105 mm); orange C10–T19 BTN_START (82 mm); violet B10–Y19 BTN_RESET (97 mm).
-4. **Sockets:** two 1×15 female headers for U1: B9–P9 and B15–P15.
-5. **Buttons:** S1 (start button): 1 in W22, 2 in T22, 3 in W20, 4 in T20; S2 (reset button): 1 in AB22, 2 in Y22, 3 in AB20, 4 in Y20.
-6. **Pin header:** J1: pin 1 (GND, brown) in AF16, pin 3 (signal) in AF18.
-7. **LEDs:** LED1 red: anode (long lead) in R3, cathode (flat) in R2; LED2 yellow: anode (long lead) in O3, cathode (flat) in O2; LED3 yellow: anode (long lead) in L3, cathode (flat) in L2; LED4 green: anode (long lead) in I3, cathode (flat) in I2; LED5 green: anode (long lead) in F3, cathode (flat) in F2.
-8. **Electrolytic capacitor:** C1 1000uF 16V: plus in AC17, minus (stripe) in AC15.
-9. **Solder bridges on the bottom, once the leads are in – 76 in all:** F2 … R2 GND (12); M2 … M4 GND (2); M8–M9 GND; O15–O16 GND; N16 … AF16 GND (18); AC15–AC16 GND; M15–M16 +5V; M22 … AC22 +5V (16); AC17 … AF17 +5V (3); F3 … H3 LED_G1_A (2); I3–I4 LED_G2_A; L3–L4 LED_Y1_A; O3–O4 LED_Y2_A; R3–R4 LED_R_A; H8–H9 LED_G1; I8–I9 LED_G2; L8–L9 LED_Y1; K9–K10 LED_Y2; P8–O8 LED_Y2; J9–J10 LED_R; S8–R8 LED_R; F9–F10 SERVO; AG18–AF18 SERVO; C9–C10 BTN_START; T19–T20 BTN_START; S20–T20 BTN_START; B9–B10 BTN_RESET; Y19–Y20 BTN_RESET; X20–Y20 BTN_RESET.
+1. **Resistors ¼ W, lying flat:** R1 330Ω in holes O8–O4; R2 330Ω in holes L8–L4; R3 330Ω in holes I8–I4; R4 330Ω in holes H8–H3; R5 330Ω in holes R8–R4; R6 4.7kΩ in holes X20–X16; R7 4.7kΩ in holes S20–S16.
+2. **Resistors 1 W, 1–2 mm above the board:** R8 100Ω in holes N22–N16; R9 100Ω in holes Q22–Q16.
+3. **Insulated wires on top – each end through its hole, bent onto the pad below:** black, holes M4–M8 GND (26 mm); red, holes M16–M22 +5V (31 mm); red, holes AC22–AE17 +5V (31 mm); yellow, holes K10–P8 LED_Y2 (39 mm); white, holes J10–S8 LED_R (49 mm); blue, holes F10–AG18 SERVO (105 mm); orange, holes C10–T19 BTN_START (82 mm); violet, holes B10–Y19 BTN_RESET (97 mm).
+4. **Sockets:** two 1×15 female headers for U1: holes B9–P9 and B15–P15.
+5. **Buttons:** S1 (start button): 1 in hole W22, 2 in hole T22, 3 in hole W20, 4 in hole T20; S2 (reset button): 1 in hole AB22, 2 in hole Y22, 3 in hole AB20, 4 in hole Y20.
+6. **Pin header:** J1: pin 1 (GND, brown) in hole AF16, pin 3 (signal) in hole AF18.
+7. **LEDs:** LED1 red: anode (long lead) in hole R3, cathode (flat) in hole R2; LED2 yellow: anode (long lead) in hole O3, cathode (flat) in hole O2; LED3 yellow: anode (long lead) in hole L3, cathode (flat) in hole L2; LED4 green: anode (long lead) in hole I3, cathode (flat) in hole I2; LED5 green: anode (long lead) in hole F3, cathode (flat) in hole F2.
+8. **Electrolytic capacitor:** C1 1000uF 16V: plus in hole AC17, minus (stripe) in hole AC15.
+9. **Solder bridges on the bottom, once the leads are in – 76 in all:** holes F2 … R2 GND (12); holes M2 … M4 GND (2); holes M8–M9 GND; holes O15–O16 GND; holes N16 … AF16 GND (18); holes AC15–AC16 GND; holes M15–M16 +5V; holes M22 … AC22 +5V (16); holes AC17 … AF17 +5V (3); holes F3 … H3 LED_G1_A (2); holes I3–I4 LED_G2_A; holes L3–L4 LED_Y1_A; holes O3–O4 LED_Y2_A; holes R3–R4 LED_R_A; holes H8–H9 LED_G1; holes I8–I9 LED_G2; holes L8–L9 LED_Y1; holes K9–K10 LED_Y2; holes P8–O8 LED_Y2; holes J9–J10 LED_R; holes S8–R8 LED_R; holes F9–F10 SERVO; holes AG18–AF18 SERVO; holes C9–C10 BTN_START; holes T19–T20 BTN_START; holes S20–T20 BTN_START; holes B9–B10 BTN_RESET; holes Y19–Y20 BTN_RESET; holes X20–Y20 BTN_RESET.
 10. **Test:** the test list below, before U1 is plugged in.
 11. **Module:** plug U1 into its sockets, USB socket at the left edge.
 
@@ -29,7 +29,7 @@ Written by `perfboard.py` from [bell-perfboard.toml](bell-perfboard.toml) and th
 1. **Before the first power-up:** +5V (AF17) to GND (AF16) reads about 50 Ω (R8 ∥ R9) once C1 has charged – 0 Ω is a short.
 2. **Each net beeps** from its first hole to every other:
 
-| Net | From | To |
+| Net | From hole | To holes |
 | --- | --- | --- |
 | +5V | M15 (U1.5V) | AC17 (C1.plus), AF17 (J1.2), N22 (R8.1), Q22 (R9.1), T22 (S1.2), W22 (S1.1), Y22 (S2.2), AB22 (S2.1) |
 | GND (1) | O15 (U1.GND) | AC15 (C1.minus), N16 (R8.2), Q16 (R9.2), S16 (R7.2), X16 (R6.2), AF16 (J1.1) |
@@ -53,7 +53,7 @@ Written by `perfboard.py` from [bell-perfboard.toml](bell-perfboard.toml) and th
 
 <details><summary>27 pairs of neighbouring holes</summary>
 
-| Nets | Holes |
+| Nets | Neighbouring holes |
 | --- | --- |
 | +5V / GND | AC16–AC17, AD16–AD17, AE16–AE17, AF16–AF17, M16–N16 |
 | +5V / SERVO | AF17–AF18 |
