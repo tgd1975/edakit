@@ -6,7 +6,7 @@
 # 13). A part sits by the hole of its pin 1 and a rotation – counterclockwise seen from the top, in steps of 90° –, or,
 # with two leads, by the holes of its roles (decision 14). Axial parts give their lead span in holes. Mounting holes
 # in mm as on a PCB: x to the right, y up, from the lower left corner seen from the top (decision 15).
-# Wires (decision 11): on the bottom only straight solder bridges between neighbouring holes – a path of them runs
+# Wires (decision 11): on the bottom only straight bridges of bare wire between neighbouring holes – a path of them runs
 # along one row or one column, one bridge per step, never around a corner; everything else is an insulated wire on
 # top, each end through a free hole beside its pin and joined to it by a bridge below.
 

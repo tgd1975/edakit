@@ -15,3 +15,10 @@ axial_bend_mm = 1.5            # assumption: straight lead between body and bend
 
 [copper]                       # a current only with its source – none yet
 source = ""
+
+[wires]                        # the cut list – assumptions until a build measures them
+board_mm = 1.6                 # board thickness
+strip_mm = 5                   # stripped at each end of an insulated wire: through the board, over to the lead beside it
+slack_mm = 5                   # an insulated wire's extra length for its bends on top
+bridge_end_mm = 1.0            # bare wire beyond the centre of a bridge's outer pads
+step_mm = 5                    # every length rounded up to this step
