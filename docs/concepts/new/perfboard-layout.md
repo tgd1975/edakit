@@ -16,7 +16,7 @@ After step 7 a circuit is "enough to wire it by hand or to build it on a perfboa
 left to the maker: where each part sits on the grid, which strips are cut, where the wires run, on which side. That
 plan lives on squared paper or in someone's head – by the yardstick (`docs/concepts/done/design-as-text.md`) exactly
 what should be text. And its mistakes are the classic ones of the build: a strip not cut, a cut in the wrong row, the
-bottom view drawn without mirroring, a wire to the neighbouring hole – found with the multimeter, after soldering.
+bottom side read the wrong way round, a wire to the neighbouring hole – found with the multimeter, after soldering.
 
 edakit already holds what a plan needs: the graph has the nets of each board, the parts entries have pads, leads and
 bodies (`footprint_data`, the library cache of `part import`, `lead`, `body`, handbook 4.2 and 4.5), a hand-wired
@@ -67,7 +67,7 @@ J1 = { at = "A10", rot = 270 }
 [[wire]]
 net = "VCC"
 path = ["D2", "D9"]          # straight between holes; more points for a bent run
-side = "top"                 # top: insulated wire; bottom: bare wire or a solder bridge
+side = "top"                 # top: insulated wire; bottom: solder bridges only (decision 11)
 
 [[wire]]
 net = "GND"
@@ -75,6 +75,10 @@ path = ["H11", "H12"]
 side = "bottom"
 kind = "bridge"              # a solder bridge between two neighbouring pads
 ```
+
+On the bottom there are only solder bridges between neighbouring holes (decision 11): a bridge path along a row or a
+column is a row of bridges, one per step. Everything longer is an insulated wire on top; each of its ends goes through
+a free hole beside its pin and is joined to it by a bridge below, since a lead and a wire do not fit into one hole.
 
 A kind with strips that are cut gets `cuts = [...]` in a section `[strips]` – not on the two kinds built first. Wire
 colours follow the net (supply red, ground black) unless the plan names one.
@@ -92,8 +96,9 @@ The plan is the layout of a hand-wired board; its checks belong where the layout
   perfboard takes through-hole parts only (decision 3).
 - **Bodies.** Body boxes (footprint outline, `body.box`) do not overlap; an axial part's span is at least its body
   plus the bend of its leads; nothing sits on a mounting hole.
-- **Wires.** Bare wires and bridges on the bottom do not cross and touch no foreign pad; insulated wires on top may
-  cross; each wire has its length.
+- **Wires.** On the bottom only bridges between neighbouring holes, along a row or a column; where a hole joins two
+  nets – a bridge, a wire's end, a lead –, the finding names that hole. An insulated wire on top ends in free holes
+  that no body covers and may cross others; each wire has its length.
 - **Current.** A wire, a bridge or a strip carries its net's current – from the simulation where it has one, against
   the wire's gauge and the copper's rating from the kind's data.
 - **The hand-over.** `fixed`, `edge` and `near` hold as on a PCB: a connector at the edge, the decoupling capacitor
@@ -102,12 +107,13 @@ The plan is the layout of a hand-wired board; its checks belong where the layout
 ## What edakit draws and writes
 
 - **Top view:** parts with their designators and polarity, wires in their colours, hole names at the edges.
-- **Bottom view, mirrored** and labelled "seen from below": pads, bridges, bare wires (strips and cuts on a kind that
-  has them) – the mirror is drawn by edakit, never by the maker.
-- **Build list:** the order of soldering from low to high – bridges and links, resistors, diodes, sockets,
-  capacitors, connectors, modules –, each with its holes and its polarity.
+- **Bottom view in the orientation of the top view** (decision 12): seen through the board from above, A1 at the top
+  left in both, so the two read alike. Soldered leads clearly stronger than empty holes, the bridges, the holes where
+  a wire comes through from the top (strips and cuts on a kind that has them).
+- **Build list:** the order of soldering from low to high – resistors, wires on top, diodes, sockets, capacitors,
+  connectors, the bridges once the leads they join are in, modules last –, each with its holes and its polarity.
 - **Test list for the multimeter:** per net the pairs of holes that must beep across each wire and bridge; next to
-  each bridge and bare wire the neighbouring pads of other nets that must not; supply to ground before the first
+  each bridge the neighbouring pads of other nets that must not; supply to ground before the first
   power-up.
 - **The order:** the board, wire and sockets as items off the board (`[[extra]]`, handbook 8.4), so `edakit order`
   puts them into the cart – and, once it is built, the parts on hand (`docs/concepts/done/parts-on-hand.md`) take what
@@ -142,8 +148,8 @@ circuit. The bell has such variants already (`variants/tht`, `variants/esp32tht`
 | --- | --- | --- |
 | LR.1 (the kinds) | `edakit/perfboards/pad-per-hole.toml` and `3-hole-strips.toml`: pitch, hole, groups, sizes, copper rating with source | both read, a test per kind |
 | LR.2 (plan and nets) | `[perfboard]`, `[place]` in holes, `[[wire]]` read from the board file of a board `wired = true`; the nets the plan makes against the graph's | open, short, pin without hole, two pins in a hole each a test |
-| LR.3 (the other checks) | grid and bend tolerance, SMD, bodies and spans, bare wires, current, the hand-over's `fixed`, `edge`, `near` | a negative test each |
-| LR.4 (drawings and lists) | top view, mirrored bottom view, build list, test list for the multimeter, the board and the wire as `[[extra]]` | SVGs read in both themes |
+| LR.3 (the other checks) | grid and bend tolerance, SMD, bodies and spans, bridges only below, current, the hand-over's `fixed`, `edge`, `near` | a negative test each |
+| LR.4 (drawings and lists) | top view, bottom view in its orientation, build list, test list for the multimeter, the board and the wire as `[[extra]]` | SVGs read in both themes |
 | LR.5 (stage L) | the plan in the layout hash of a hand-wired board, stage L runs LR.2 and LR.3, the agent pcb-reviewer's M-5 on it (decision 4) | the gate of a variant passes and fails as it should |
 | LR.6 (the round) | the skill pcb-round with the perfboard round, the handbook's section (7 or 4.5) | handbook and skill name the same keys |
 | LR.7 (the examples) | a perfboard variant of coin-cell-led and of blinker-555, each with a plan the tests hold | both pass the gate |
@@ -151,7 +157,8 @@ circuit. The bell has such variants already (`variants/tht`, `variants/esp32tht`
 
 ## Decisions
 
-The owner's answers of 2026-11-03 in a decision round, decisions 6 to 10 Claude's, confirmed by the owner the same day.
+The owner's answers of 2026-11-03 in a decision round, decisions 6 to 10 Claude's, confirmed by the owner the same day;
+decisions 11 and 12 the owner's of 2026-11-09, on the prototype.
 
 | # | Decision | Reason | Alternatives |
 | --- | --- | --- | --- |
@@ -165,5 +172,7 @@ The owner's answers of 2026-11-03 in a decision round, decisions 6 to 10 Claude'
 | 8 | The examples get a variant each, `examples/coin-cell-led/variants/perfboard/` and `examples/blinker-555/variants/perfboard/`, their through-hole parts chosen with the skill part-search in LR.7 – blinker-555's switch with 2.54 mm terminals | decision 5; the tests hold a variant like the example | plans only in the tests' fixtures |
 | 9 | The bell's perfboard build is a variant in automatic_christmas_bell, built by that repository's session after LR.7 | the bell's files are its repository's | a copy of the bell in edakit's tests |
 | 10 | Holes named by column letter and row number, A1 at the top left seen from the top; the kinds `pad-per-hole` and `3-hole-strips` | as many Euro boards print them at their edges | coordinates in mm; numbers for both axes |
+| 11 | On the bottom only solder bridges between neighbouring holes; everything longer an insulated wire on top | "auf der Oberseite mit Kabeln und auf der Unterseite mit kurzen blanken Brücken, die nebeneinander liegende Punkte verbinden … keine Kabel auf der Unterseite – wie löte ich die denn gut an?" | bare wire on the bottom along a row of pads (the prototype's first version) |
+| 12 | The bottom view in the orientation of the top view, soldered leads clearly stronger than empty holes | "das muss gleich orientiert sein wie top … sonst tut man sich beim Lesen schwer"; "Pins, die gelötet sind, deutlich stärker als geschlossenes Loch" | the bottom view mirrored, seen from below (the concept until then) |
 
 By the yardstick: nothing of the plan stays in someone's head – the board file holds it, edakit checks and draws it.

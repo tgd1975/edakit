@@ -4,6 +4,9 @@
 #
 # Holes: column letter and row number, A1 at the top left seen from the top (decision 10). rot is counterclockwise
 # seen from the top, in steps of 90°; at is the hole of pin 1. Axial parts give their lead span in holes.
+# Wires (decision 11): on the bottom only solder bridges between neighbouring holes – a path of them runs along a row
+# or a column, one bridge per step; everything longer is an insulated wire on top, each end through a free hole
+# beside its pin and joined to it by a bridge below.
 
 [perfboard]
 kind = "pad-per-hole"                       # pad-per-hole.toml beside this file
@@ -14,7 +17,7 @@ mounting = ["B2", "AF2", "B21", "AF21"]     # drilled out to 3.2 mm for M3 – s
 # Arduino Nano on two 1x15 female headers, USB at the left edge as on the PCB (rot 270 turns the socket end left)
 U1 = { at = "P9", rot = 270 }
 
-# The LED row along the back edge in countdown order (R-13): cathodes in row 2 on the ground wire, anodes in row 3.
+# The LED row along the back edge in countdown order (R-13): cathodes in row 2, anodes in row 3.
 # The yellow LEDs have their cathode on pin 1, the green and red ones their anode – hence 270 against 90.
 LED5 = { at = "F3", rot = 90 }              # green, step 1
 LED4 = { at = "I3", rot = 90 }              # green, step 2
@@ -29,19 +32,15 @@ R2 = { at = "L8", rot = 90, span = 4 }
 R1 = { at = "O8", rot = 90, span = 4 }
 R5 = { at = "R8", rot = 90, span = 4 }
 
-# Servo plug and its buffer capacitor at the right, the capacitor's plus on the 5 V wire of column AB
-J1 = { at = "AC13", rot = 180 }             # pin 1 GND at AC13, pin 2 +5V at AB13, pin 3 signal at AA13
-C1 = { at = "AB11", rot = 90 }              # plus at AB11, minus at AB9
-
-# Buttons on the 5 V wire of row 16, their pull-downs to the ground wire of row 22, start left of reset as on the PCB
-S1 = { at = "Q16", rot = 0 }                # pins 1, 2 (a) at Q16, T16; pins 3, 4 (b) at Q18, T18
-S2 = { at = "W16", rot = 0 }                # a at W16, Z16; b at W18, Z18
-R7 = { at = "U18", rot = 270, span = 4 }    # BTN_START to GND
-R6 = { at = "AA18", rot = 270, span = 4 }   # BTN_RESET to GND
-
-# Base load 1 W between the 5 V wire (row 16) and the ground wire (row 22)
-R8 = { at = "H16", rot = 270, span = 6 }
-R9 = { at = "K16", rot = 270, span = 6 }
+# Below the Nano: ground along row 16, +5 V along row 22; what lies between the two stands across them
+R8 = { at = "N22", rot = 90, span = 6 }     # base load 1 W: +5V in row 22, GND in row 16
+R9 = { at = "Q22", rot = 90, span = 6 }
+S1 = { at = "W22", rot = 180 }              # start: a at W22, T22 on +5V; b at W20, T20
+R7 = { at = "S20", rot = 90, span = 4 }     # BTN_START (beside T20) to GND (S16)
+S2 = { at = "AB22", rot = 180 }             # reset: a at AB22, Y22 on +5V; b at AB20, Y20
+R6 = { at = "X20", rot = 90, span = 4 }     # BTN_RESET (beside Y20) to GND (X16)
+C1 = { at = "AC18", rot = 90 }              # plus at AC18, minus at AC16 on the ground row
+J1 = { at = "AF16", rot = 270 }             # servo at the right edge: 1 GND AF16, 2 +5V AF17, 3 signal AF18
 
 [near]                                      # the hand-over's pairs, as in hardware/boards/tht.toml of the bell
 R4 = "LED5"
@@ -53,73 +52,94 @@ R7 = "S1"
 R6 = "S2"
 C1 = "J1"
 
-# ---- ground: the wire along the LED cathodes, down the right edge and back along the bottom row ----
+# ---- ground: along the LED cathodes, over a wire to the Nano's GND (pin 4); below the Nano from its GND (pin 29)
+# along row 16 to J1 ----
 
 [[wire]]
 net = "GND"
-path = ["F2", "AD2", "AD22", "H22"]
+path = ["F2", "R2"]                         # the five cathodes, 12 bridges
 side = "bottom"
 
 [[wire]]
 net = "GND"
-path = ["M2", "M9"]                         # to the Nano's GND (pin 4)
+path = ["M2", "M4"]
 side = "bottom"
 
 [[wire]]
 net = "GND"
-path = ["AB9", "AD9"]                       # C1 minus
+path = ["M4", "M8"]
+side = "top"
+color = "black"
+
+[[wire]]
+net = "GND"
+path = ["M8", "M9"]
 side = "bottom"
 
 [[wire]]
 net = "GND"
-path = ["AC13", "AD13"]                     # J1 pin 1
+path = ["O15", "O16"]
 side = "bottom"
-kind = "bridge"
 
-# ---- +5 V: from the Nano's 5V pin into row 16, up column AB to J1 and C1 ----
+[[wire]]
+net = "GND"
+path = ["N16", "AF16"]                      # R8, R9, R7, R6, C1 minus, J1 pin 1
+side = "bottom"
+
+# ---- +5 V: a wire from the Nano's 5V down to row 22, along it to the buttons, up to C1 and J1 ----
 
 [[wire]]
 net = "+5V"
 path = ["M15", "M16"]
 side = "bottom"
-kind = "bridge"
 
 [[wire]]
 net = "+5V"
-path = ["H16", "AB16", "AB11"]
+path = ["M16", "M22"]
+side = "top"
+color = "red"
+
+[[wire]]
+net = "+5V"
+path = ["M22", "AB22"]                      # R8, R9, S1 a, S2 a
 side = "bottom"
 
-# ---- LED channels: resistor to anode, Nano pin to resistor ----
+[[wire]]
+net = "+5V"
+path = ["AB22", "AC22", "AC18"]             # C1 plus
+side = "bottom"
+
+[[wire]]
+net = "+5V"
+path = ["AC18", "AE18", "AE17", "AF17"]     # J1 pin 2
+side = "bottom"
+
+# ---- LED channels: anode bridges, Nano pins to resistors ----
 
 [[wire]]
 net = "LED_G1_A"
 path = ["F3", "F4"]
 side = "bottom"
-kind = "bridge"
 
 [[wire]]
 net = "LED_G2_A"
 path = ["I3", "I4"]
 side = "bottom"
-kind = "bridge"
 
 [[wire]]
 net = "LED_Y1_A"
 path = ["L3", "L4"]
 side = "bottom"
-kind = "bridge"
 
 [[wire]]
 net = "LED_Y2_A"
 path = ["O3", "O4"]
 side = "bottom"
-kind = "bridge"
 
 [[wire]]
 net = "LED_R_A"
 path = ["R3", "R4"]
 side = "bottom"
-kind = "bridge"
 
 [[wire]]
 net = "LED_G1"
@@ -130,78 +150,103 @@ side = "bottom"
 net = "LED_G2"
 path = ["I8", "I9"]                         # D5
 side = "bottom"
-kind = "bridge"
 
 [[wire]]
 net = "LED_Y1"
 path = ["L8", "L9"]                         # D2
 side = "bottom"
-kind = "bridge"
+
+# D3 and D4 do not lie in countdown order: their wires run under the Nano, between its sockets, and come up at its
+# right end
 
 [[wire]]
 net = "LED_Y2"
-path = ["K9", "K10", "Q10", "Q8", "O8"]     # D3: under the Nano and out at its right end
+path = ["K9", "K10"]
+side = "bottom"
+
+[[wire]]
+net = "LED_Y2"
+path = ["K10", "Q10", "Q8", "P8"]
+side = "top"
+color = "yellow"
+
+[[wire]]
+net = "LED_Y2"
+path = ["P8", "O8"]
 side = "bottom"
 
 [[wire]]
 net = "LED_R"
-path = ["J9", "J11", "R11", "R8"]           # D4: one row lower, around LED_Y2
+path = ["J9", "J10"]
 side = "bottom"
 
-# ---- servo signal under the Nano to J1 ----
+[[wire]]
+net = "LED_R"
+path = ["J10", "J11", "S11", "S8"]
+side = "top"
+color = "white"
+
+[[wire]]
+net = "LED_R"
+path = ["S8", "R8"]
+side = "bottom"
+
+# ---- servo signal and buttons: wires under the Nano and out at its right end ----
 
 [[wire]]
 net = "SERVO"
-path = ["F9", "F12", "AA12", "AA13"]        # D8
+path = ["F9", "F10"]                        # D8
 side = "bottom"
 
-# ---- buttons: insulated wires on top, under the Nano between its headers and out at its right end; each ends in a
-# hole beside the pin and is joined to it by a bridge below. They cross once (Q14) – on top that is allowed. ----
+[[wire]]
+net = "SERVO"
+path = ["F10", "F12", "AG12", "AG18"]
+side = "top"
+color = "blue"
+
+[[wire]]
+net = "SERVO"
+path = ["AG18", "AF18"]                     # J1 pin 3
+side = "bottom"
 
 [[wire]]
 net = "BTN_START"
 path = ["C9", "C10"]                        # D11
 side = "bottom"
-kind = "bridge"
 
 [[wire]]
 net = "BTN_START"
-path = ["C10", "C13", "Q13", "Q15", "P16", "P18"]
+path = ["C10", "C13", "T13", "T19"]
 side = "top"
 color = "orange"
 
 [[wire]]
 net = "BTN_START"
-path = ["P18", "Q18"]                       # S1 pin 3
+path = ["T19", "T20"]                       # S1 pin 4
 side = "bottom"
-kind = "bridge"
 
 [[wire]]
 net = "BTN_START"
-path = ["T18", "U18"]                       # S1 pin 4 to R7
+path = ["S20", "T20"]                       # R7
 side = "bottom"
-kind = "bridge"
 
 [[wire]]
 net = "BTN_RESET"
 path = ["B9", "B10"]                        # D12
 side = "bottom"
-kind = "bridge"
 
 [[wire]]
 net = "BTN_RESET"
-path = ["B10", "B14", "R14", "R15", "V15", "V18"]
+path = ["B10", "B14", "Y14", "Y19"]         # crosses the start wire once, at T14 – on top that is allowed
 side = "top"
 color = "violet"
 
 [[wire]]
 net = "BTN_RESET"
-path = ["V18", "W18"]                       # S2 pin 3
+path = ["Y19", "Y20"]                       # S2 pin 4
 side = "bottom"
-kind = "bridge"
 
 [[wire]]
 net = "BTN_RESET"
-path = ["Z18", "AA18"]                      # S2 pin 4 to R6
+path = ["X20", "Y20"]                       # R6
 side = "bottom"
-kind = "bridge"
