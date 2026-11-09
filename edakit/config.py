@@ -1048,12 +1048,23 @@ def load(path=None) -> Config:
         unmade = [k for k in UNMADE if entry.get(k) is True]
         if len(unmade) > 1:
             problems.append(f"[boards.{name}] bought or wired, not both – a bought assembly or parts wired by hand")
-        if unmade:     # made by nobody: no EasyEDA documents, no board file
+        if unmade:     # made by nobody: no EasyEDA documents, no board file – but the plan of a perfboard (7.9)
             what = UNMADE[unmade[0]]
+            plan = _read(root / file) if (root / file).is_file() else None
+            perfboard = unmade[0] == "wired" and plan is not None and "perfboard" in plan
             problems += [f"[boards.{name}] {k}: a {what} board is not drawn – no schematic, PCB or board file"
-                         for k in ("template", "schematic", "pcb", "file") if k in entry]
-            if "file" not in entry and (root / file).exists():
-                problems.append(f"{file}: a {what} board ({unmade[0]} = true in [boards.{name}]) has no board file")
+                         for k in ("template", "schematic", "pcb", "file") if k in entry
+                         and not (k == "file" and perfboard)]
+            if perfboard:
+                from .perfboard import PlanError, read_plan
+                try:
+                    read_plan(plan, file)
+                except PlanError as e:
+                    problems.append(str(e))
+            elif "file" not in entry and plan is not None:
+                problems.append(f"{file}: a {what} board ({unmade[0]} = true in [boards.{name}]) has no board file"
+                                + (" – only the plan of a perfboard, with [perfboard] (handbook 7.9)"
+                                   if unmade[0] == "wired" else ""))
             files[name] = (file, {})
             continue
         if (root / file).exists():

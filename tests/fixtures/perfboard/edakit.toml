@@ -1,0 +1,14 @@
+# Test project of the perfboard plan (handbook 7.9, tests/test_perfboard.py): a pin header, a push button, an axial
+# resistor and a 5 mm LED on a hand-wired board – press the button, the LED lights. Every footprint is data
+# (footprint_data), so the test needs no library cache.
+
+[project]
+name = "perfboard-test"
+graph = "hardware/graph.json"
+parts = "hardware/parts"
+artifacts = "build/edakit"
+reports = "build/release"
+
+[boards.panel]
+title = "Button and LED"
+wired = true                     # hand-wired, on a perfboard: hardware/boards/panel.toml holds the plan

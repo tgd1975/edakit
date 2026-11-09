@@ -106,6 +106,7 @@ Each engine decides one kind of relation – on the graph, the parts, the simula
 | PATH | what a reversed, unfed or misplaced supply reaches |
 | SIM | the scenarios run, are complete and reach the states they expect |
 | GEO | copper, holes, print, widths and distances on plan and Gerber files |
+| PERF | the plan of a hand-wired board on a perfboard makes the graph's nets and can be built |
 | FILES | manufacturing files and sheets complete and consistent |
 | PARTS | parts entries complete, well-formed, verified, orderable |
 | ORDER | the order at the maker is the release: form, parts, quote, read, files, finish, review, confirm; the supplier's cart is the basket |
