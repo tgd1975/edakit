@@ -8,6 +8,12 @@ written once, by `.github/merge.py`, from the fragments in [changes/](changes/RE
 update edakit@edakit`, then `/reload-plugins` or a new session; `edakit version` names the version that runs and what an
 update brings.
 
+## 1.2.3 – 2026-11-10
+
+- `edakit schematic copy` names the template EasyEDA cannot read and the way without a copy, `edakit schematic layout --save`, instead of ending on EasyEDA's bare TypeError (#337).
+- A `[[silk.art]]` entry without `svg`, or with a key it does not take, is an error of the board file when edakit loads it – entry, key and the keys it takes –, not a KeyError in `silk apply` once it has reached EasyEDA (#338).
+- An `easyeda` script that calls `eda.ensure_pcb_focus`, `activate_pcb` or `save_pcb` before `eda.open_pcb` is told to open the board's PCB first, not left with `KeyError: 'uuid'`; handbook 8.6 names the order (#339).
+
 ## 1.2.2 – 2026-11-10
 
 - GEO.pour measures the copper-free circle and pieces on every seen face, not only on a poured one: a face that `[looks] visible` names – both faces without `[looks]` – and that the board file does not pour warns above `[copper] max_bare_mm` and `max_bare_mm2`, saying that the board file pours nothing there (#340).

@@ -417,7 +417,8 @@ The silkscreen's keys, described in 7.7:
   in, `board_label_corner` then means its corner);
 - `[[art]]` ({`svg`, `x`, `y`, `width_mm`, `rot`, `side`, `fit`}): `fit = "content"` scales the bounds of the drawn
   shapes to `width_mm` and centres them on `x`, `y`; `"viewbox"` does so with the SVG's viewBox – art drawn in a
-  frame keeps its place in it;
+  frame keeps its place in it. `svg` is required (the path from the project root); an entry without it, or with
+  another key, is an error of the board file when edakit loads it – `pcb plan` and `check` name it offline;
 - `[[texts]]` ({`text`, `x`, `y`, `h_mm` (1.2), `rot`, `side`, `font`}): `font` is `default` (stroke font) or a font
   family EasyEDA knows.
 
@@ -1153,7 +1154,7 @@ Generate, check, copy or lay out a schematic in EasyEDA – or draw it without.
 `edakit schematic copy [--source] [--target] [--save]` – EasyEDA: ✓
 
 - **Reads:** schematic
-- **Writes:** copy
+- **Writes:** copy; a source EasyEDA cannot read: nothing, exit 1 naming `schematic layout --save` (6.3)
 
 `edakit schematic layout [--dry-run] [--reread] [--force] [--save]` – EasyEDA: ✓ / –
 

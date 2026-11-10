@@ -76,6 +76,7 @@ LOOKS_MARK = "remove"   # edakit's default of order.mark on a board with [looks]
                         # decided in the files and so in the fab hash before gate and M-5 (the owner, 2026-10-31)
 MASKS = ("green", "purple", "red", "yellow", "blue", "white", "black")   # order.mask: solder mask colours
 ART_FITS = ("content", "viewbox")   # [[silk.art]] fit: scaled and centred by the drawn shapes or by the frame
+ART_KEYS = ("svg", "x", "y", "width_mm", "rot", "side", "fit")   # [[silk.art]]: what an entry takes (silk.art_items)
 SILKSCREENS = ("white", "black")   # order.silkscreen: white print, on a white mask black (silkscreen_on)
 # [order]: every field of a maker's order form as a key in edakit's words, with edakit's default – the board edakit
 # assumes when nothing is said, the same for every maker (handbook 10.2). Three layers, the later wins per key: these
@@ -637,6 +638,11 @@ def _board(name, entry, b, file="", project=None, quantity=5):
         raise ConfigError(f"board {name}: silk.unlabelled must be a table of designator = reason (GEO.silk), "
                           "e.g. { R21 = \"no room between the star tracks\" }")
     for i, art in enumerate(silk.get("art", []) if isinstance(silk.get("art"), list) else [], 1):
+        unknown = [k for k in art if k not in ART_KEYS] if isinstance(art, dict) else []
+        if isinstance(art, dict) and (unknown or "svg" not in art):
+            said = [f"unknown key {', '.join(repr(k) for k in unknown)}"] if unknown else []
+            said += ["no svg – the path of the SVG from the project root"] if "svg" not in art else []
+            raise ConfigError(f"board {name}: silk.art[{i}]: {', '.join(said)} (known: {', '.join(ART_KEYS)})")
         if isinstance(art, dict) and art.get("fit", "content") not in ART_FITS:
             raise ConfigError(f'board {name}: silk.art[{i}].fit must be "content" or "viewbox", not {art["fit"]!r} – '
                               "content: the drawn shapes are scaled to width_mm; viewbox: the SVG's frame")
