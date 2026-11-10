@@ -1,0 +1,130 @@
+{
+ "lcsc": "C110153",
+ "mpn": "K2-1102DP-C4SW-04",
+ "manufacturer": "Korean Hroparts Elec",
+ "kind": "button",
+ "package": "6×6 THT, 5 mm high",
+ "footprint": "KEY-TH_4P-L6.0-W6.0-P4.50-LS6.50",
+ "jlc_class": "Extended Part",
+ "datasheet": {
+  "url": "https://datasheet.lcsc.com/datasheet/pdf/cba7e973dea59ba592ee1d81fd516f49.pdf",
+  "pinout_page": null
+ },
+ "pins": {
+  "1": {
+   "name": "1",
+   "type": "passive",
+   "role": "a"
+  },
+  "2": {
+   "name": "2",
+   "type": "passive",
+   "role": "a"
+  },
+  "3": {
+   "name": "3",
+   "type": "passive",
+   "role": "b"
+  },
+  "4": {
+   "name": "4",
+   "type": "passive",
+   "role": "b"
+  }
+ },
+ "values": {
+  "r_on_ohm": 0.1
+ },
+ "limits": {
+  "i_max_a": 0.05,
+  "v_max_v": 12
+ },
+ "spice": {},
+ "lead": {
+  "*": {
+   "shape": "rect",
+   "a_mm": 0.7,
+   "b_mm": 0.3,
+   "tol_mm": null,
+   "hole_rec_mm": 1.0,
+   "source": "HRO K2-1102DP drawing: 4 leads 0.70 mm wide, PCB layout Ø1.00 mm; thickness 0.3 mm assumption"
+  }
+ },
+ "sources": [
+  "HRO K2-1102DP drawing (2013-05-30): 6 × 6 mm, pins 6.5 × 4.5 mm, holes Ø1.0 mm; LCSC: 50 mA / 12 V",
+  "pin names as in the EasyEDA symbol (1-4); footprint (LCSC SVG): 1-2 and 3-4 are 6.5 mm apart = the two terminal strips, connected inside like the SMD version C127509",
+  "r_on: assumption without datasheet evidence",
+  "footprint_data: the library footprint KEY-TH_4P-L6.0-W6.0-P4.50-LS6.50 (edakit part import), 2026-11-10 (edakit part footprint) – the print is the copy's in EasyEDA until lines, texts, marks or outline are written"
+ ],
+ "notes": null,
+ "verified": {
+  "by": "Claude Opus 5.5 (datasheet check)",
+  "date": "2026-10-26",
+  "datasheet": "HRO K2-1102DP drawing (2013-05-30)",
+  "checked": [
+   "pins 1/2 and 3/4 connected inside (terminal strips across the 6.5 mm side)",
+   "LCSC: 50 mA / 12 V; load here about 1 mA"
+  ],
+  "open": []
+ },
+ "footprint_data": {
+  "origin": [
+   0,
+   0
+  ],
+  "pads": {
+   "4": {
+    "x": 3.25,
+    "y": -2.25,
+    "shape": "ELLIPSE",
+    "w": 2.0,
+    "h": 2.0,
+    "rot": 180.0,
+    "hole": [
+     1.3,
+     1.3
+    ]
+   },
+   "2": {
+    "x": 3.25,
+    "y": 2.25,
+    "shape": "ELLIPSE",
+    "w": 2.0,
+    "h": 2.0,
+    "rot": 180.0,
+    "hole": [
+     1.3,
+     1.3
+    ]
+   },
+   "1": {
+    "x": -3.25,
+    "y": 2.25,
+    "shape": "ELLIPSE",
+    "w": 2.0,
+    "h": 2.0,
+    "rot": 180.0,
+    "hole": [
+     1.3,
+     1.3
+    ]
+   },
+   "3": {
+    "x": -3.25,
+    "y": -2.25,
+    "shape": "ELLIPSE",
+    "w": 2.0,
+    "h": 2.0,
+    "rot": 180.0,
+    "hole": [
+     1.3,
+     1.3
+    ]
+   }
+  }
+ },
+ "compliance": {
+  "rohs": true,
+  "source": "LCSC part page (RoHS), 2026-11-10"
+ }
+}

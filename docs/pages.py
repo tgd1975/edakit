@@ -1,9 +1,8 @@
 """edakit's documentation as one site for GitHub Pages, assembled into build/pages and built by MkDocs. The navigation
 is data – NAV, a table of tab, file and short title, by reader (docs/concepts/done/documentation-newcomer.md, steps N.1
-and N.2): Start, A circuit, A board, Extend, Develop, Handbook, Reference, Explorative DSL – the beta of [beta] dsl,
-docs/dsl/ – and Inside edakit as tabs across the top, the sidebar showing the current tab alone, at most eight entries
-but for the handbook. The sources – the concepts, skills,
-agents, evals and the rules of a session – are on the site behind the tab "Inside edakit": its sidebar holds an
+and N.2): Start, A circuit, A prototype, A board, Extend, Develop, Handbook, Reference, Explorative DSL – the beta of
+[beta] dsl, docs/dsl/ – and Inside edakit as tabs across the top, the sidebar showing the current tab alone, at most
+eight entries but for the handbook. The sources – the concepts, skills, agents, evals and the rules of a session – are on the site behind the tab "Inside edakit": its sidebar holds an
 overview and the index of each kind, the pages themselves are not in the navigation, every page of them marked as a
 source.
 
@@ -55,8 +54,9 @@ def title_of(text, fallback):
 
 # The navigation: (tab, [(repo path, title of at most five words)]); a tab's first page is its index page where it is
 # one (README.md, handbook/README.md). "A circuit" and "A board" are the steps, the person's manual, in the order of the
-# walkthrough. The handbook's chapters stand by their numbers, 1 to 18 – its index says which to read when; Reference
-# points to 9 and 10 from its overview.
+# walkthrough; "A prototype" between them is the perfboard, after step 7 and before a board or instead of one. The
+# handbook's chapters stand by their numbers, 1 to 18 – its index says which to read when; Reference points to 9 and 10
+# from its overview.
 NAV = [
     ("Start", [
         ("README.md", "Start"),
@@ -75,6 +75,9 @@ NAV = [
         ("docs/steps/05-decide-on-what-was-found.md", "5 Decide on the findings"),
         ("docs/steps/06-settle-parts-and-cost.md", "6 Parts and cost"),
         ("docs/steps/07-draw-and-hand-over.md", "7 Draw and hand over"),
+    ]),
+    ("A prototype", [
+        ("docs/steps/prototype.md", "Build it on a perfboard"),
     ]),
     ("A board", [
         ("docs/steps/08-have-it-reviewed.md", "8 Have it reviewed"),
@@ -151,13 +154,14 @@ FENCE_FORMAT = "!!python/name:pymdownx.superfences.fence_code_format"
 REDIRECTS = {"inside-edakit/index.html": "../inside/"}
 
 
-# Where a page lands on the site follows its tab (the owner's decision of 2026-11-02): /start/…, /circuit/…, /board/…,
-# /extend/…, /develop/…, /handbook/…, /reference/…, /inside/…; the files in the repository stay where the code, the
+# Where a page lands on the site follows its tab (the owner's decision of 2026-11-02): /start/…, /circuit/…,
+# /prototype/…, /board/…, /extend/…, /develop/…, /handbook/…, /reference/…, /inside/…; the files in the repository stay where the code, the
 # skills and the projects name them. The catalog's own pages stay at /catalog/: generated HTML whose relative links
 # (../brand/…) are those of docs/catalog/ in the repository.
-TAB_DIR = {"Start": "start", "A circuit": "circuit", "A board": "board", "Extend": "extend", "Develop": "develop",
-           "Handbook": "handbook", "Reference": "reference", "Explorative DSL": "dsl", "Inside edakit": "inside"}
+TAB_DIR = {"Start": "start", "A circuit": "circuit", "A prototype": "prototype", "A board": "board", "Extend": "extend",
+           "Develop": "develop", "Handbook": "handbook", "Reference": "reference", "Explorative DSL": "dsl", "Inside edakit": "inside"}
 INDEXES = {"README.md": "index.md", "handbook/README.md": "handbook/index.md", "docs/steps/README.md": "circuit/index.md",
+           "docs/steps/prototype.md": "prototype/index.md",
            "docs/projects/README.md": "start/projects/index.md", "docs/reference/README.md": "reference/index.md",
            "docs/inside-edakit.md": "inside/index.md", "docs/dsl/README.md": "dsl/index.md",   # a tab's index: Material shows the tab's other entries
            "docs/concepts/README.md": "inside/concepts/index.md", "skills/README.md": "inside/skills/index.md",
@@ -195,7 +199,8 @@ def old_site_path(src):
                "docs/brand/README.md": "brand/index.md", "docs/concepts/README.md": "concepts/index.md",
                "docs/projects/README.md": "projects/index.md", "docs/steps/README.md": "steps/index.md",
                "skills/README.md": "skills/index.md", "agents/README.md": "agents/index.md",
-               "docs/dsl/README.md": "dsl/index.md"}   # new since: no old address
+               "docs/dsl/README.md": "dsl/index.md",
+               "docs/steps/prototype.md": "prototype/index.md"}   # new since: no old address
     if src in special:
         return special[src]
     if src.startswith("skills/") and src.endswith("/SKILL.md"):

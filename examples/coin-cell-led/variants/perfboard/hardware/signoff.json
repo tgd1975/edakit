@@ -1,0 +1,46 @@
+{
+ "about": "Sign-offs for the release gate (edakit gate) of the perfboard variant. Each counts only for the hash of its scope: 'circuit' = state_sha256, 'electrical' = electrical_sha256, 'layout' = layout_sha256 (the plan with the footprint data), 'fab' = fab_sha256 (the drawings and lists the gate writes into fab/main/). Parts are signed in their parts entry (field 'verified').",
+ "state_sha256": "c1ffee3ad4c336ae95011a09732f20567d985552bfbfa2453931050ec9ea7de9",
+ "layout_sha256": "43bf60f797efe96aa59677d763c85a1dca896ddd40af4cb284c1caf947df7d8a",
+ "fab_sha256": "f684ecb1f5d2bdc176af52762534536097987cef9e7d8965b6bf9ae840d245ff",
+ "manual": [
+  {
+   "id": "M-1",
+   "phase": "export",
+   "scope": "circuit",
+   "text": "Critical parts (BT1, D1) checked a second time against the datasheet, independently – the agent electrical-reviewer in its own session",
+   "done_by": "agent electrical-reviewer (own session)",
+   "date": "2026-11-10",
+   "note": "M-1: OK for state c1ffee3ad4c336ae95011a09732f20567d985552bfbfa2453931050ec9ea7de9; requirements met: R-1, R-2. Changed since da4d9070 (OK there too): the reviewer's notes applied – D1 rs_ohm 8 (p. 5) and VR 5 V from IR ≤ 10 µA at VR = 5 V (p. 3), BT1's lead per pin and height 8.9 mm, the graph's layout note for this holder. R-1: 1.92 mA at used/vf-max against 1 mA; R-2: leakage under 0.05 µA against 1 µA. Notes, none blocking: no moulded '+' on the holder – the clip end is plus; C5365915's open item names this plan's hole; D1's solder joint 2 mm from the epoxy (datasheet p. 3). Datasheets Kinghelm KH-CR2032-2-1 rev F 9b2ef878…, XINGLIGHT XL-504SURD 477fa83a…, read 2026-11-10."
+  },
+  {
+   "id": "M-6",
+   "phase": "export",
+   "scope": "electrical",
+   "text": "Regulatory review: circuit and parts against EU law for the purpose in the graph – the agent regulatory-reviewer in its own session. No finding 'block' open. Support, not legal advice: no claim to correctness, nothing legally guaranteed",
+   "done_by": "agent regulatory-reviewer (own session)",
+   "date": "2026-11-10",
+   "note": "M-6: OK for state c1ffee3ad4c336ae95011a09732f20567d985552bfbfa2453931050ec9ea7de9 (electrical fee1183debdfe2f6813758d77e3ee523a5e708f314a7f803394d028f70f1e3f4) and purpose private. Changed since da4d9070 (OK there too): data only (D1 rs_ohm and VR source, BT1 height, sim numbers in texts) – no part, net, purpose, requirement or compliance block. Notes, none blocking: EMC benign by EMVG § 2(3) Nr. 2 (judgement); coin cell removable by hand, adults only (D-5); spent cell to collection (BattDG § 6), board separately at end of life (ElektroG § 10); RoHS stated for all four parts, REACH and the perfboard, wire and solder unstated – no duty for private; no purpose.country, German references; a board given away or sold needs a new M-6. Support, not legal advice: no claim to correctness, nothing legally guaranteed."
+  },
+  {
+   "id": "M-5",
+   "phase": "export",
+   "scope": "fab",
+   "text": "The perfboard plan reviewed independently (buildability, mechanics, operation, looks) on the drawings and lists of a gate run with this plan – the agent pcb-reviewer. No finding 'block' open, every 'important' finding fixed or rejected by the owner",
+   "done_by": "agent pcb-reviewer (own session)",
+   "date": "2026-11-10",
+   "note": "M-5: OK for fab f684ecb1f5d2bdc176af52762534536097987cef9e7d8965b6bf9ae840d245ff; layout 43bf60f797efe96aa59677d763c85a1dca896ddd40af4cb284c1caf947df7d8a. Gate run 20261110-090401, fab/main/ reviewed in full. The first round's important findings fixed in edakit perfboard: BT1's ends marked + and − and no '(stripe)' in its build row; the build list says a wire's stripped end is soldered with the lead in its pad. Also fixed: the GND wire enters at J1, clear of D1's flange; the legend names only this board's marks; the wires' colours in step 2. Notes, none blocking: the build row could name the metal clip as the + end; the GND wire along row 1 clears D1's flange by about 0.06 mm with 1.6 mm insulation – thin wire, or D1 seated just clear; trim the stripped end J1→J2 to J2's pad. Left out as notes: more tests in the test list, the cut line, a mirrored bottom view, feet."
+  },
+  {
+   "id": "M-4",
+   "phase": "acceptance",
+   "scope": "layout",
+   "text": "Acceptance test of the soldered board: the test list of build.md, BT1's + end (the metal clip) on hole D10 and D1's anode in J3, D1 lights while SW1 is pressed and is dark once it is released",
+   "done_by": null,
+   "date": null,
+   "note": null
+  }
+ ],
+ "accept": [],
+ "electrical_sha256": "fee1183debdfe2f6813758d77e3ee523a5e708f314a7f803394d028f70f1e3f4"
+}

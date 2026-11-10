@@ -96,8 +96,8 @@ The drawing lands in `build/edakit/schematic_main.svg`. It quotes the simulation
 
 You read no datasheet and computed no value. Each finding came with its reason, and each number with its source.
 
-This is a result on its own: a checked circuit with its drawing. It is enough to wire it by hand, build it on a
-perfboard or put it into a document. The [hand-wired board](glossary.md#hand-wired-board) goes through the same
+This is a result on its own: a checked circuit with its drawing. It is enough to wire it by hand,
+[build it on a perfboard](steps/prototype.md) or put it into a document. The [hand-wired board](glossary.md#hand-wired-board) goes through the same
 checks.
 
 ## Next

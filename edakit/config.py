@@ -43,6 +43,7 @@ POUR_MIN_WIDTH_MM = 0.25         # pour_only: the narrowest neck the computed po
 POUR_MIN_PIECE_MM2 = 2.0         # pour_regions: the smallest piece of a shared layer that gets an outline
 HEADER_KEEP_MM = 1.27            # on_headers: the plastic of a 2.54 mm pin header, half its width around each pin
 PASTE_GAP_MM = 0.4               # [release] assembly paste_gap_mm: SMD pads of different parts, assembled side (GEO.spacing)
+SMD_VIA_KEEP_MM = 0.3            # [routing] smd_via_keep_mm: a via left open from a reflowed SMD pad (GEO.spacing/margin)
 MAX_BARE_MM = 5.0                # [copper] max_bare_mm: largest copper-free circle on a poured or seen layer (GEO.pour)
 MAX_BARE_MM2 = 20.0              # [copper] max_bare_mm2: largest copper-free piece on a poured or seen layer (GEO.pour) – the
                                  # area of the 5 mm circle, π × 2.5² = 19.6 mm²
@@ -632,6 +633,9 @@ def _board(name, entry, b, file="", project=None, quantity=5):
     keep = b.get("routing", {}).get("hand_solder_keep_mm", 0)
     if isinstance(keep, bool) or not isinstance(keep, (int, float)) or keep < 0:
         raise ConfigError(f"board {name}: routing.hand_solder_keep_mm must be a distance in mm, 0 or more (0 = off)")
+    keep = b.get("routing", {}).get("smd_via_keep_mm", SMD_VIA_KEEP_MM)
+    if isinstance(keep, bool) or not isinstance(keep, (int, float)) or keep < 0:
+        raise ConfigError(f"board {name}: routing.smd_via_keep_mm must be a distance in mm, 0 or more (0 = off)")
     silk = b.get("silk", {})
     if not isinstance(silk.get("solder_side", False), bool):
         raise ConfigError(f"board {name}: silk.solder_side must be true or false")

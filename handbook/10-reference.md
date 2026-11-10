@@ -437,6 +437,9 @@ The silkscreen's keys, described in 7.7:
 - `hand_solder_keep_mm` (0 = off) – GEO.spacing: vias and pads of other nets at least this far, in mm, from the pads
   of `bom: false` parts on their solder side – a through-hole pad's the side its part does not sit on, an SMD pad's
   its own; `route dsn` writes via keep-outs around them (7.5);
+- `smd_via_keep_mm` (0.3, 0 = off) – GEO.spacing/margin, only with `[order] vias = "untented"`: every via, of any net,
+  at least this far, in mm, from the SMD pads the assembler reflows on an assembled side; `route dsn` writes via
+  keep-outs around them, the fanout keeps the distance, `route check` and the gate warn (7.5);
 - `drc_rules` (none: GEO.drc as before) – `"check"`: the gate reads the rule set of EasyEDA's DRC with the DRC, and
   GEO.drc holds it to these rules – clearance, edge clearance, track widths, via, classes (7.5); `"write"`:
   `route all` writes that rule set into EasyEDA before its DRC, reads it back after a reload, and the gate checks it

@@ -18,8 +18,8 @@ hand. Each page says what you do, what you are asked, what you decide and what y
 | 9 | [Lay out the board](09-lay-out-the-board.md) | Claude; you say how it looks |
 | 10 | [Order the board](10-order-the-board.md) | Claude up to the cart; you order, pay and test |
 
-Steps 1 to 7 give a checked circuit and its drawing. That is enough to wire it by hand or to build it on a perfboard.
-Steps 8 to 10 make a board from it.
+Steps 1 to 7 give a checked circuit and its drawing. That is enough to wire it by hand or to
+[build it on a perfboard](prototype.md). Steps 8 to 10 make a board from it.
 
 Three texts, three uses. The steps say what you do. The [walkthrough](../../handbook/17-walkthrough.md) shows every
 step once, on a real board. The [handbook](../../handbook/README.md) has everything, for Claude and for looking

@@ -4,7 +4,7 @@ Open work that needs the owner's computer, a maker or the owner's word. The stat
 and plans the sections name; this list is what is left to do of them, in the order it can be done. No item is deleted.
 
 **Layout.** Every item, in every section, open or closed, is a line with a checkbox and an ID unique in this file,
-counted up and never reused – whoever adds an item takes the next free ID and counts it up here. Next free ID: TD-158.
+counted up and never reused – whoever adds an item takes the next free ID and counts it up here. Next free ID: TD-160.
 
 - Open: `- [ ] TD-<n> - **Title:** what and why.` – a step's own name after the dash (`- [ ] TD-31 - **D.4** …`).
 - Done: ticked, the commit that did it, the date at the end, moved to [Closed todos](#closed-todos), newest first –
@@ -71,14 +71,22 @@ Nothing to do until there is an answer or a release; whichever session learns of
 
 ## Perfboard layout ([docs/concepts/new/perfboard-layout.md](docs/concepts/new/perfboard-layout.md))
 
-- [ ] TD-155 - **LR.7 (the examples):** a perfboard variant of coin-cell-led and of blinker-555, their through-hole
-      parts chosen with the skill part-search, each with a plan the tests hold. *(edakit-9d)*
+- [ ] TD-155 - **LR.7 (the examples):** a perfboard variant of blinker-555, its through-hole parts chosen with the
+      skill part-search, with a plan the tests hold – coin-cell-led's is TD-159. *(edakit-9d)*
 - [ ] TD-156 - **LR.8 (the bell):** a perfboard variant of the bell from its THT parts, starting from the prototype's
       plan, with `joined = [["4", "29"]]` in the Nano's entry – in automatic_christmas_bell by its session, with edakit 1.2.1 or later.
       *(edakit-9d)*
 
+## The gallery ([docs/projects/](docs/projects/README.md))
+
+- [ ] TD-158 - **desk-led's page (#343):** a page in `docs/projects/` with the pictures of desk-led's first release,
+      once it is released – the gallery shows what is built; #343 closes with it. *(edakit-9d)*
+
 ## Closed todos
 
+- [x] TD-159 - **LR.7, coin-cell-led:** its perfboard variant `examples/coin-cell-led/variants/perfboard/` – through-hole
+      parts, the plan on 14 × 15 holes, M-1, M-6 and M-5 signed, the gate RELEASED offline, held by tests; split off
+      TD-155 on the owner's word, merged as edakit 1.2.4 (#370). [2026-11-10]
 - [x] TD-157 - **OK for #367 (pytree's pictures not under MIT):** given; merged as d1cf46fc – the README's licence
       table names `docs/projects/pytree/` as pytree's, all rights reserved (pytree P-27). [2026-11-10]
 - [x] TD-154 - **OK for #365 (perfboard layout, LR.1 to LR.6):** given; merged as 16b2e1c7, edakit 1.2.1. [2026-11-10]
