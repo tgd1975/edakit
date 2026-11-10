@@ -1075,6 +1075,20 @@ def test_copper_per_side_settings(project):
     assert by["TOP: copper share at least 10 % ([copper] min_cover)"] == ("warn", "TOP: 6 % copper")
 
 
+def test_a_keep_out_with_pour_false_is_no_bare_copper(project):
+    """#335: the area of a keep-out with pour = false is left bare on purpose – GEO.pour measures the layer without it:
+    the bare BOTTOM, nearly all inside such a keep-out, passes; TOP is measured as before."""
+    def kept(ex, p):
+        bare_bottom(ex, p)
+        f = p.root / "hardware" / "boards" / "main.toml"
+        f.write_text(f.read_text() + '\n[[routing.keepouts]]\nlayer = "BOTTOM"\nwhat = "all"\nrect = [0, 0, 30, 20]\n'
+                     'pour = false\n')
+    by = {r["check"]: (r["result"], r["actual"]) for r in run(project, kept) if r["id"] == "GEO.pour"}
+    assert by["BOTTOM: no copper-free circle above 5 mm inside the pour outline (poured: GND)"] == \
+        ("pass", "BOTTOM: 1 % copper, largest copper-free circle Ø 0.0 mm")
+    assert by["TOP: no copper-free circle above 5 mm inside the pour outline (seen, no pour)"][0] == "warn"
+
+
 def test_a_bare_strip_is_measured_by_its_area():
     """#103: a GND island walled in by other nets – a strip of 3 x 35 mm – passes the circle (Ø 3 mm) but its 105 mm²
     are a piece above max_bare_mm2; a gap of 0.5 mm between foreign copper is no piece a pour of 0.75 mm fills."""

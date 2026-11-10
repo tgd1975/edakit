@@ -947,6 +947,15 @@ def _pour_area(rules):
     return area.difference(unary_union(circles(keep))) if keep else area
 
 
+def _on(rules, outline, layer):
+    """The pour area on one layer: outline (of _pour_area) without the keep-outs with pour = false on that layer – the
+    NO_POURS regions of `pcb pour` (pcb.pour_keepout_areas), as written, windows not cut out."""
+    board = rules.board
+    cut = [Polygon([tuple(v * MIL_PER_MM for v in board.eda_point(x, y)) for x, y in pts]).buffer(0)
+           for la, pts in pcb.pour_keepout_areas(board) if la == layer]
+    return outline.difference(unary_union(cut)) if cut else outline
+
+
 def _layer_copper(rules, data, routes, segs):
     """(net, copper) per layer: pads (those without a net too), tracks, vias."""
     copper = {"TOP": [], "BOTTOM": []}
@@ -993,7 +1002,7 @@ def pour_pieces(rules, data, routes, segs=None, regions=None):
     for net, specs in sorted(rules.pour_only.items()):
         for layer, clearance, width in specs:
             out[(net, layer)] = claims[(net, layer)] if (net, layer) in claims \
-                else _computed(outline, copper[layer], net, clearance, width)
+                else _computed(_on(rules, outline, layer), copper[layer], net, clearance, width)
     return out
 
 
@@ -1028,7 +1037,8 @@ def _other_pour(rules, outline, copper, claims, net, layer):
     if not specs:
         return Polygon()
     own = unary_union([g for n, g in copper[layer] if n == net])
-    pieces = _computed(outline, copper[layer], net, specs[0].get("clearance_mm", POUR_CLEARANCE_MM) * MIL_PER_MM,
+    pieces = _computed(_on(rules, outline, layer), copper[layer], net,
+                       specs[0].get("clearance_mm", POUR_CLEARANCE_MM) * MIL_PER_MM,
                        specs[0].get("min_width_mm", POUR_MIN_WIDTH_MM) * MIL_PER_MM)
     return unary_union([g for g in pieces if g.intersects(own)])
 
@@ -1053,12 +1063,13 @@ def stitch_channels(rules, outline, copper, claims, keep=None):
                 continue
             for lay in (layer, other):
                 foreign[lay].setdefault(net, unary_union([g for n, g in copper[lay] if n != net]).buffer(r + rules.clear))
-            free = outline.buffer(-r).difference(foreign[layer][net]).difference(foreign[other][net]).intersection(target)
+            free = _on(rules, outline, layer).buffer(-r).difference(foreign[layer][net]).difference(
+                foreign[other][net]).intersection(target)
             if keep is not None and not keep.is_empty:
                 free = free.difference(keep.buffer(r))
             own = unary_union([g for n, g in copper[layer] if n == net])
             taken = unary_union([g for k, gs in claims.items() if k[1] == layer for g in gs])
-            for g in _computed(outline, copper[layer], net, clearance, width, taken):
+            for g in _computed(_on(rules, outline, layer), copper[layer], net, clearance, width, taken):
                 if g.intersects(own) or g.area <= rules.min_piece:
                     continue
                 room = [p for p in _polygons(g.intersection(free)) if p.area >= 1]
@@ -1078,7 +1089,8 @@ def _regions(rules, outline, copper, keep=None):
         for net, clearance, width in nets:
             own = unary_union([g for n, g in copper[layer] if n == net])
             near = own.buffer(clearance)
-            pieces = _computed(outline, copper[layer], net, clearance, width, unary_union(taken) if taken else None)
+            pieces = _computed(_on(rules, outline, layer), copper[layer], net, clearance, width,
+                               unary_union(taken) if taken else None)
             claims[(net, layer)] = [g for g in pieces if g.intersects(own) and g.difference(near).area > rules.min_piece]
             taken += claims[(net, layer)]
     stitch = stitch_channels(rules, outline, copper, claims, keep)

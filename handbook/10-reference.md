@@ -441,8 +441,10 @@ The silkscreen's keys, described in 7.7:
   GEO.drc holds it to these rules – clearance, edge clearance, track widths, via, classes (7.5); `"write"`:
   `route all` writes that rule set into EasyEDA before its DRC, reads it back after a reload, and the gate checks it
   as with `"check"`;
-- `[[routing.keepouts]]` ({layer, what = "wire"|"all", rect | polygon, windows, window_mm}), `[[routing.fixed_wires]]`
-  ({net, layer, width_mil, points}).
+- `[[routing.keepouts]]` ({layer, what = "wire"|"all", rect | polygon, windows, window_mm, pour}),
+  `[[routing.fixed_wires]]` ({net, layer, width_mil, points}). `pour` (true): `false` keeps the pours out of the area
+  too – a `NO_POURS` region on its layer in EasyEDA, a rule area in KiCad, the area as written, windows not cut out
+  (7.2).
 
 `[copper]`, copper per layer in the Gerber files (GEO.pour warns beyond each limit):
 

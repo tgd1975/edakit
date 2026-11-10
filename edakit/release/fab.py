@@ -1564,7 +1564,8 @@ def bare_pieces(free, width, other=None):
 def check_copper_sides(board, design, d, rows):
     """GEO.pour: copper per layer from the Gerber files on the raster of GEO.copper, widened to the outline. Per layer the copper
     share of the board area (outline without mounting and NPTH holes) and the largest copper-free circle inside
-    the pour outline (pcb.pour_outline without the keep circles of the holes, as `pcb pour` pours): information on a
+    the pour outline (pcb.pour_outline without the keep circles of the holes and the layer's keep-outs with
+    pour = false, as `pcb pour` pours): information on a
     layer without pour that [looks] does not name as visible, a warning above [copper] max_bare_mm on a layer the board
     file pours ([[pours]], default GND on both) – a pour EasyEDA left empty where its net has no pad, or never filled –
     and on a seen face without pour (#340: the face [looks] visible names, both faces without [looks]), whose warning
@@ -1603,6 +1604,9 @@ def check_copper_sides(board, design, d, rows):
                    + [(*board.eda_point(h["x"], h["y"]), h["d"] / 2) for h in board.holes])   # NPTH, mounting holes
     whole = area(outline) & ~drilled
     inside = area(pour, [(*board.eda_point(x, y), r) for x, y, r in pcb.pour_keepouts(board)]) & ~drilled  # NO_POURS
+    kept = {layer: np.zeros_like(inside) for layer in ("TOP", "BOTTOM")}   # keep-outs with pour = false: no pour there
+    for layer, pts in pcb.pour_keepout_areas(board):
+        kept[layer] |= area([board.eda_point(*q) for q in pts])
     probe = json.loads((g / gerber.FILES["probe"]).read_text())["pins"]
     anchors = {"T": [], "B": []}       # (x, y, r): pads of FlyingProbeTesting.json (all of them), plated holes and vias
     for row in probe["rows"]:
@@ -1624,9 +1628,9 @@ def check_copper_sides(board, design, d, rows):
     seen = {"TOP", "BOTTOM"} if not board.looks else {board.looks["visible"].upper()}  # #340: the faces people see
     coppers = {k: cu.render(cu.ops[k]) & ~drilled for k in "TB"}
     for k, layer in (("T", "TOP"), ("B", "BOTTOM")):
-        copper = coppers[k]
+        copper, free = coppers[k], inside & ~kept[layer]
         share = 100 * (copper & whole).sum() / max(1, whole.sum())
-        dia, r, c = free_circle(inside & ~copper)
+        dia, r, c = free_circle(free & ~copper)
         dia *= res
         at = f"({cu.x0 + c * res:.1f}, {cu.y0 + (cu.h - r) * res:.1f}) mm"
         text = f"{share:.0f} % copper, largest copper-free circle Ø {dia:.1f} mm" + (f" at {at}" if dia else "")
@@ -1637,7 +1641,7 @@ def check_copper_sides(board, design, d, rows):
                      f"outline ({how})", dia <= limit, f"{layer}: {text}" + ("" if dia <= limit else bare),
                      f"Ø <= {limit:g} mm ([copper] max_bare_mm)", None if dia <= limit else "warn")
             width = gap.get(layer, 2 * POUR_CLEARANCE_MM + POUR_MIN_WIDTH_MM)   # no pour there: the default pour's gap
-            pieces = bare_pieces(inside & ~copper, width / res, coppers["B" if k == "T" else "T"])
+            pieces = bare_pieces(free & ~copper, width / res, coppers["B" if k == "T" else "T"])
             big = [q for q in pieces if q[0] * res * res > limit2]
 
             def piece(a, box, share):

@@ -2027,15 +2027,42 @@ def pour_keepouts(board):
             + [(tx, ty, board.tooling_keep) for tx, ty in board.tooling])
 
 
+def keepout_outline(k):
+    """The area of a [[routing.keepouts]] entry as written, plan mm: its rect or polygon – windows not cut out."""
+    if "rect" in k:
+        x0, y0, x1, y1 = k["rect"]
+        return [(x0, y0), (x1, y0), (x1, y1), (x0, y1)]
+    return [tuple(p) for p in k["polygon"]]
+
+
+def pour_keepout_areas(board):
+    """[(layer name, outline in plan mm)] that no pour may cover: every [[routing.keepouts]] entry with pour = false,
+    once per layer it names (both without layer), its rect or polygon as written – windows open it for tracks only."""
+    out = []
+    for k in board.routing.get("keepouts", []):
+        if k.get("pour", True) is not False:
+            continue
+        layers = [k["layer"]] if isinstance(k.get("layer"), str) else list(k.get("layer", ["TOP", "BOTTOM"]))
+        out += [(layer, keepout_outline(k)) for layer in layers]
+    return out
+
+
 def keep_regions(cfg, board, mcp):
-    """A NO_POURS region on all copper layers around each of pour_keepouts – earlier ones replaced. EasyEDA fills a
-    pour polygon with a hole as its outer contour; it leaves a region free (E-13, 3.2.209). It keeps no region name
-    (RegionName null), so edakit knows its regions by the ids it remembered (<artifacts>/pcb/<board>_keep_regions.json)
-    and by their place: a NO_POURS region on all layers centred on a hole. Returns the number set."""
+    """A NO_POURS region on all copper layers around each of pour_keepouts, and one on its layer over each keep-out
+    with pour = false (pour_keepout_areas) – earlier ones replaced. EasyEDA fills a pour polygon with a hole as its
+    outer contour; it leaves a region free (E-13, 3.2.209). It keeps no region name (RegionName null), so edakit knows
+    its regions by the ids it remembered (<artifacts>/pcb/<board>_keep_regions.json) and by their place: a NO_POURS
+    region on all layers centred on a hole, or on a keep-out's layer centred on that keep-out. Returns the number
+    set."""
     memo = cfg.artifact("pcb", f"{board.name}_keep_regions.json")
     mine = set(json.loads(memo.read_text())) if memo.exists() else set()
     keep = pour_keepouts(board)
-    centres = [board.eda_point(x, y) for x, y, _ in keep]
+    shapes = [(MULTI_LAYER, [board.eda_point(px, py) for px, py in circle_points(x, y, r)], f"around ({x}, {y})")
+              for x, y, r in keep]
+    shapes += [(LAYER_ID[layer], [board.eda_point(px, py) for px, py in pts], f"over the keep-out on {layer}")
+               for layer, pts in pour_keepout_areas(board)]
+    centres = [(layer, (sum(x for x, _ in pts) / len(pts), sum(y for _, y in pts) / len(pts)))
+               for layer, pts, _ in shapes]
 
     def ours(st):
         if st["PrimitiveId"] in mine:
@@ -2043,24 +2070,23 @@ def keep_regions(cfg, board, mcp):
         nums = [v for v in ((st.get("ComplexPolygon") or {}).get("polygon") or []) if not isinstance(v, str)]
         if len(nums) > 4 and nums[-2:] == nums[:2]:    # the closing point
             nums = nums[:-2]
-        if st.get("RuleType") != [NO_POURS] or st.get("Layer") != MULTI_LAYER or len(nums) < 6:
+        if st.get("RuleType") != [NO_POURS] or len(nums) < 6:
             return False
         cx, cy = sum(nums[0::2]) / len(nums[0::2]) / MIL_PER_MM, sum(nums[1::2]) / len(nums[1::2]) / MIL_PER_MM
-        return any(math.dist((cx, cy), c) < 0.05 for c in centres)
+        return any(st.get("Layer") == layer and math.dist((cx, cy), c) < 0.05 for layer, c in centres)
     old = [st["PrimitiveId"] for st in map(eda.state, api(mcp, "PCB_PrimitiveRegion.getAll") or []) if ours(st)]
     if old:
         api(mcp, "PCB_PrimitiveRegion.delete", old)
     made = []
-    for n, (x, y, r) in enumerate(keep, 1):
+    for n, (layer, pts, where) in enumerate(shapes, 1):
         ensure_pcb_focus(mcp)
-        pts = [board.eda_point(px, py) for px, py in circle_points(x, y, r)]
-        region = api(mcp, "PCB_PrimitiveRegion.create", MULTI_LAYER, outline_arg(pts), [NO_POURS], f"{KEEP_REGION}_{n}")
+        region = api(mcp, "PCB_PrimitiveRegion.create", layer, outline_arg(pts), [NO_POURS], f"{KEEP_REGION}_{n}")
         if not region:
-            raise SystemExit(f"NO_POURS region around ({x}, {y}) not created")
+            raise SystemExit(f"NO_POURS region {where} not created")
         made.append(eda.state(region).get("PrimitiveId") or region.get("primitiveId"))
     memo.parent.mkdir(parents=True, exist_ok=True)
     memo.write_text(json.dumps([m for m in made if m]))
-    return len(keep)
+    return len(shapes)
 
 
 def pour(cfg, board, mcp, keep_islands_on=None, regions=None):
@@ -2074,7 +2100,7 @@ def pour(cfg, board, mcp, keep_islands_on=None, regions=None):
     if old:
         api(mcp, "PCB_PrimitivePour.delete", old)
     if n := keep_regions(cfg, board, mcp):
-        print(f"  {n} NO_POURS region(s) around the holes")
+        print(f"  {n} NO_POURS region(s) around the holes and over the keep-outs with pour = false")
     pts = [board.eda_point(*q) for q in pour_outline(board)]
     for spec in board.pours:
         for layer_name in spec.get("layers", ["TOP", "BOTTOM"]):
