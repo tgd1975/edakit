@@ -178,6 +178,9 @@ no claim, no auto-layout: you write the plan, edakit checks and draws it, a pers
   warns (GEO.pour: a copper-free circle above `[copper] max_bare_mm`, 5 mm, or a piece above `max_bare_mm2`, 20 mm²);
   give the area a second pour net (`pour_regions`) or a pad or via of the pour net (`stitch`), then `route pours` again.
 - While a free pad (tooling hole) is in the PCB, filling pours fails – edakit takes them out and puts them back.
+- A pour fill that stops with "no-copper … the bridge's, not the board's" (M-13): the PCB is saved – restart
+  EasyEDA, then `edakit route fill`, then `edakit route drc`; not `route all` again, it creates the pours anew. "the
+  board's, not the bridge's": the net has nothing on that layer to hold the pour (handbook 7.6).
 - Net classes need the simulated currents (`edakit sim` first). `route check` holds the routed tracks and fixed wires
   to GEO.width before anything is written; `[routing] widths = "sim"` routes at the IPC widths of the simulation instead of
   a hand-written class table (handbook 7.5).

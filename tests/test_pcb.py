@@ -1074,3 +1074,47 @@ def test_the_holes_are_kept_free_by_no_pours_regions_not_by_a_notch(project, mon
     assert whole.contains(Point(3.0, 3.0)) and whole.contains(Point(20.0, 10.0))      # no notch any more
     area = route._pour_area(route.Rules(board))                       # the computed pour leaves the circles out
     assert not area.contains(Point(3.0 * MIL, 3.0 * MIL)) and area.contains(Point(3.0 * MIL, 5.0 * MIL))
+
+
+def test_a_keep_out_with_pour_false_keeps_the_pours_out_on_its_layer(project, monkeypatch):
+    """#335: a [[routing.keepouts]] entry with pour = false gets a NO_POURS region of its rect on its layer, named on
+    after the holes' regions; windows open it for tracks only. One without the key (what = "all" too) gets none, as
+    before. An earlier region of the keep-out is known by its place: on its layer, centred on it. The offline pour of
+    route check leaves the area out on that layer only."""
+    import json
+
+    from shapely.geometry import Point
+    cfg = project.config()
+    board = cfg.board()
+    board.tooling, board.holes = [], [{"x": 20.0, "y": 10.0, "d": 3.2, "keep": 3.5}]
+    rect = [4.0, 4.0, 10.0, 8.0]
+    board.routing["keepouts"] = [{"layer": "TOP", "what": "all", "rect": rect, "pour": False, "windows": ["D1"]},
+                                 {"layer": "BOTTOM", "what": "all", "rect": [12.0, 4.0, 16.0, 8.0]}]
+    pts = [board.eda_point(x, y) for x, y in [(4.0, 4.0), (10.0, 4.0), (10.0, 8.0), (4.0, 8.0)]]
+    earlier = pcb.outline_arg(pts)["$polygon"]
+    calls = []
+
+    def api(mcp, path, *args, **kw):
+        calls.append((path, args))
+        if path == "PCB_PrimitiveRegion.getAll":
+            return [{"state": {"PrimitiveId": "r-keep", "RuleType": [7], "Layer": pcb.TOP, "RegionName": None,
+                               "ComplexPolygon": {"polygon": earlier}}},
+                    {"state": {"PrimitiveId": "r-other-side", "RuleType": [7], "Layer": pcb.BOTTOM,
+                               "RegionName": None, "ComplexPolygon": {"polygon": earlier}}}]
+        if path == "PCB_PrimitiveRegion.create":
+            return {"state": {"PrimitiveId": f"new{len(calls)}"}}
+        return True
+    monkeypatch.setattr(pcb, "api", api)
+    monkeypatch.setattr(pcb, "ensure_pcb_focus", lambda mcp: None)
+    assert pcb.keep_regions(cfg, board, None) == 2
+    assert ("PCB_PrimitiveRegion.delete", (["r-keep"],)) in calls                # the user's region on BOTTOM stays
+    made = [a for p, a in calls if p == "PCB_PrimitiveRegion.create"]
+    assert [(a[0], a[2], a[3]) for a in made] == [(pcb.MULTI_LAYER, [7], "edakit_keep_1"),
+                                                  (pcb.TOP, [7], "edakit_keep_2")]
+    assert made[1][1] == pcb.outline_arg(pts)
+    assert len(json.loads(cfg.artifact("pcb", "main_keep_regions.json").read_text())) == 2
+    rules = route.Rules(board)
+    area = route._pour_area(rules)
+    centre = Point(7.0 * MIL, (board.eda_point(7.0, 6.0)[1]) * MIL)
+    assert area.contains(centre)
+    assert not route._on(rules, area, "TOP").intersects(centre) and route._on(rules, area, "BOTTOM").contains(centre)

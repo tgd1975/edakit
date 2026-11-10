@@ -78,6 +78,13 @@ while a free pad is in the PCB, pour fills fail – edakit takes them out before
 polygon with a hole is not filled – the pour follows the outline, and a `NO_POURS` region keeps the keep circle of each
 mounting and tooling hole free (E-13). On KiCad a rule area does the same, and KiCad fills right up to it.
 
+A keep-out of `[[routing.keepouts]]` keeps tracks (and with `what = "all"` vias) out, not the pour – the pour fills it,
+as a board under a print may need. With `pour = false` the pour stays out too: `pcb pour` and `route pours` set a
+`NO_POURS` region over its rect or polygon on its layer (both without `layer`), KiCad a rule area there that keeps out
+zones – an area a datasheet keeps free of copper, between a battery holder's pads say. The region takes the area as
+written; `windows` open it for tracks only. The computed pours of `route check` and the bare area of GEO.pour leave it
+out on that layer.
+
 ## 7.3 Parts and nets without dialogs
 
 `PCB_Document.importChanges` always opens a confirmation dialog, so edakit does the same through the API:
@@ -532,6 +539,7 @@ smd_via_keep_mm = 0.3        # GEO.spacing/margin: with [order] vias = "untented
 layer = "BOTTOM"
 what = "wire"                      # or "all"
 rect = [-80, 110, 80, 200]         # plan mm; windows = ["D1"] keeps those pads reachable
+# pour = false                     # no pour in the area either (default true: the pour fills it)
 
 [[routing.fixed_wires]]            # protected tracks Freerouting routes around (e.g. a short switching loop)
 net = "SW"
@@ -854,7 +862,19 @@ The gate writes nothing: its GEO.drc fails then, and `edakit route drc` before i
 
 `[[pours]]` of the board file: net, layers, `plane` (with `fanout`, 7.5), `stitch`, `pour_only`. Filled with
 `easyeda_pcb_rebuild_copper`, a net's fresh pours in one call (easyeda-mcp-pro 1.7.0, M-10) – after an unverified
-rebuild (`readback-mismatch`) the bridge refuses every further one until EasyEDA restarts, and `route` stops with that. With
+rebuild (`readback-mismatch`) the bridge refuses every further one until EasyEDA restarts. A fill that does not come
+back "rebuilt" saves the PCB and stops, naming each pour (net, layer, id) and its status:
+
+- a pour whose net has no pad, via or track on its layer: **the board's** – EasyEDA drops it (below); give the layer a
+  pad or via of the net, or another net in `[[pours]]`.
+- otherwise **the bridge's**, with easyeda-mcp-pro's version: on 1.8.0 a fill of pours created in the same EasyEDA
+  session came back "no-copper" with pads under them, one pour per call as well (desk-led, M-13). Running `route
+  pours` again does not help – it creates the pours anew. Restart EasyEDA, then `edakit route fill`: the pours already
+  in the saved PCB filled one per call, TOP first, the tooling holes set again; then `edakit route drc` (with
+  `drc_rules = "write"` first `route reload`). It stitches nothing – a board with `stitch` gets its vias from the next
+  `route pours` that fills.
+
+With
 `stitch = "BOTTOM"` edakit fills once keeping islands, puts a via into every loose island on that side where it
 overlaps the pour of the other side (with clearance), then fills again without islands.
 

@@ -270,6 +270,25 @@ def test_tracks_vias_and_zones_are_written_and_kept_by_the_next_parts_run(projec
     assert kb.vias(cfg, board) == [(pytest.approx(a["x"]), pytest.approx(a["y"] - 100), pytest.approx(24), "GND")]
 
 
+def test_a_keep_out_with_pour_false_is_a_rule_area_against_pours_on_its_layer(project):
+    """#335: a keep-out with pour = false becomes a rule area over its rect on its layer that keeps out the pours and
+    allows tracks, vias and pads (the DSN keeps those out); one without the key adds none."""
+    cfg = kicad_project(project)
+    board = cfg.board()
+    board.routing["keepouts"] = [{"layer": "TOP", "what": "all", "rect": [4.0, 4.0, 10.0, 8.0], "pour": False},
+                                 {"layer": "BOTTOM", "what": "all", "rect": [12.0, 4.0, 16.0, 8.0]}]
+    kb.write_parts(cfg, board)
+    assert kb.write_zones(cfg, board) == 2
+    pcb = kb.load(cfg, board)
+    area, = [z for z in pcb.zones if sexp.value(z, "name") == "edakit_keepout_1"]
+    assert sexp.value(area, "layer") == "F.Cu"
+    keep = kb.first(area, "keepout")
+    assert sexp.value(keep, "copperpour") == "not_allowed" and sexp.value(keep, "tracks") == "allowed"
+    pts = [(float(c[1]), -float(c[2])) for c in kb.first(kb.first(area, "polygon"), "pts")[1:]]
+    assert pts == [pytest.approx(board.eda_point(x, y)) for x, y in [(4, 4), (10, 4), (10, 8), (4, 8)]]
+    assert len(pcb.zones) == 2 + len(board.holes) + len(board.tooling) + 1
+
+
 def test_the_project_file_carries_the_rules_of_the_board_file(project):
     cfg = kicad_project(project)
     board = cfg.board()

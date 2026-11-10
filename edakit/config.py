@@ -626,6 +626,10 @@ def _board(name, entry, b, file="", project=None, quantity=5):
     thickness = b.get("thickness_mm", THICKNESS_MM)
     if isinstance(thickness, bool) or not isinstance(thickness, (int, float)) or thickness <= 0:
         raise ConfigError(f"board {name}: thickness_mm must be a thickness in mm, more than 0")
+    for i, k in enumerate(b.get("routing", {}).get("keepouts", [])):
+        if isinstance(k, dict) and not isinstance(k.get("pour", True), bool):
+            raise ConfigError(f"board {name}: routing.keepouts[{i}].pour must be true or false (false: no pour in "
+                              "the area either)")
     keep = b.get("routing", {}).get("hand_solder_keep_mm", 0)
     if isinstance(keep, bool) or not isinstance(keep, (int, float)) or keep < 0:
         raise ConfigError(f"board {name}: routing.hand_solder_keep_mm must be a distance in mm, 0 or more (0 = off)")

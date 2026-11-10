@@ -536,6 +536,18 @@ def test_routing_hand_solder_keep_key():
             _board("b", {}, {"routing": {"hand_solder_keep_mm": value}})
 
 
+def test_a_keep_out_takes_pour_true_or_false():
+    """#335: pour = false keeps the pours out of a keep-out too; without the key the pour fills it, as before."""
+    from edakit.config import _board
+    from edakit.pcb import pour_keepout_areas
+    keep = {"layer": "TOP", "what": "all", "rect": [1, 2, 3, 4]}
+    assert pour_keepout_areas(_board("b", {}, {"routing": {"keepouts": [keep]}})) == []
+    assert pour_keepout_areas(_board("b", {}, {"routing": {"keepouts": [{**keep, "pour": False}]}})) == \
+        [("TOP", [(1, 2), (3, 2), (3, 4), (1, 4)])]
+    with pytest.raises(ConfigError, match=r"routing.keepouts\[0\].pour must be true or false"):
+        _board("b", {}, {"routing": {"keepouts": [{**keep, "pour": "no"}]}})
+
+
 def test_hash_ignore_is_a_list_of_key_names(project):
     toml = project.root / "edakit.toml"
     text = toml.read_text()
