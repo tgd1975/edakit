@@ -19,6 +19,7 @@ STEPS = ROOT / "docs" / "steps"
 INDEX = STEPS / "README.md"
 PAGES = sorted(STEPS.glob("[0-9][0-9]-*.md"))
 PROTOTYPE = STEPS / "prototype.md"              # the perfboard: a step without a number, a tab of its own
+PROTOTYPE_WORDS = 500                           # a step's budget and the example's cut list
 EXAMPLE = ROOT / "examples" / "coin-cell-led"
 PAGE_WORDS, INDEX_WORDS, ALL_WORDS = 400, 300, 4000
 TO_A_CIRCUIT, TO_A_BOARD = 3000, 6000          # words from the start page to a checked circuit, to an ordered board
@@ -58,7 +59,7 @@ def test_ten_pages_and_an_index_in_the_navigation():
 
 def test_the_prototype_stands_between_the_circuit_and_the_board():
     """The perfboard (handbook 7.9) as the tab "A prototype" between "A circuit" and "A board": one page in the shape of
-    a step without a number, within a step's budget, its two links at the end into the handbook."""
+    a step without a number, within a step's budget and its cut list, its two links at the end into the handbook."""
     spec = importlib.util.spec_from_file_location("pages", ROOT / "docs" / "pages.py")
     mod = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(mod)
@@ -71,7 +72,7 @@ def test_the_prototype_stands_between_the_circuit_and_the_board():
     assert {"What you do", "What you decide", "What you have", "Read on"} <= set(heads) and heads[-1] == "Read on"
     body, links = body_and_links(PROTOTYPE)
     assert len(links) == 2 and all(re.match(r"\.\./\.\./handbook/\d\d-[\w-]+\.md#", link) for link in links)
-    assert "handbook/" not in re.sub(r"```.*?```", "", body, flags=re.S) and words(PROTOTYPE) <= PAGE_WORDS
+    assert "handbook/" not in re.sub(r"```.*?```", "", body, flags=re.S) and words(PROTOTYPE) <= PROTOTYPE_WORDS
     assert "(prototype.md)" in INDEX.read_text(encoding="utf-8")
 
 
