@@ -4,7 +4,7 @@ Open work that needs the owner's computer, a maker or the owner's word. The stat
 and plans the sections name; this list is what is left to do of them, in the order it can be done. No item is deleted.
 
 **Layout.** Every item, in every section, open or closed, is a line with a checkbox and an ID unique in this file,
-counted up and never reused – whoever adds an item takes the next free ID and counts it up here. Next free ID: TD-160.
+counted up and never reused – whoever adds an item takes the next free ID and counts it up here. Next free ID: TD-161.
 
 - Open: `- [ ] TD-<n> - **Title:** what and why.` – a step's own name after the dash (`- [ ] TD-31 - **D.4** …`).
 - Done: ticked, the commit that did it, the date at the end, moved to [Closed todos](#closed-todos), newest first –
@@ -29,6 +29,9 @@ to touch.
 
 ## For the owner
 
+- [ ] TD-160 - **Report M-13 upstream:** an issue at oaslananka/easyeda-mcp-pro – pours created through the API come
+      back `no-copper` in the same EasyEDA session (upstream/README.md, M-13; edakit's way out `route fill`, #372). A
+      session drafts it on your word; you post it or give the OK. *(edakit-9d)*
 - [ ] TD-108 - **A photo of the delivered tree:** one picture of the lit tree in its hill into pytree's `docs/img/` –
       it replaces the render on `docs/projects/pytree.md`. *(edakit-ce)*
 
