@@ -96,6 +96,20 @@ def test_a_kind_without_a_source_for_its_current_or_with_bad_groups_is_refused()
         perfboard.load_kind("stripboard")
 
 
+def test_the_cut_list_counts_in_whole_millimetres():
+    """Decision 22 as the owner changed it on 2026-11-10: no 5 mm steps, and no fraction of a millimetre either – the
+    kinds' step is 1 mm, a step or a strip of a fraction is refused, a plan's cut_step_mm may only be coarser."""
+    kind = perfboard.load_kind("pad-per-hole")
+    assert kind["wires"]["step_mm"] == 1 == perfboard.load_kind("3-hole-strips")["wires"]["step_mm"]
+    for key, v in (("step_mm", 0.5), ("strip_mm", 2.5), ("step_mm", 0)):
+        assert f"wires.{key} must be a whole number of mm >= 1, not {v!r}" in perfboard.kind_problems(
+            {**kind, "wires": {**kind["wires"], key: v}})
+    with pytest.raises(perfboard.PlanError, match="cut_step_mm must be a whole number of mm >= 1, not 2.5"):
+        perfboard.read_plan({"perfboard": {"kind": "pad-per-hole", "holes": [3, 3], "cut_step_mm": 2.5}}, "x")
+    assert perfboard.read_plan({"perfboard": {"kind": "pad-per-hole", "holes": [3, 3], "cut_step_mm": 5.0}},
+                               "x").cut_step_mm == 5
+
+
 def test_three_hole_strips_join_runs_of_three_along_a_row():
     plan = perfboard.read_plan({"perfboard": {"kind": "3-hole-strips", "holes": [7, 2]}}, "x.toml")
     assert plan.group_of((0, 1)) == plan.group_of((2, 1)) != plan.group_of((3, 1))
@@ -352,7 +366,8 @@ def test_the_command_draws_both_views_and_writes_the_lists(pb, monkeypatch, caps
     width = float(re.search(r'viewBox="0 0 ([\d.]+)', top.read_text()).group(1))
     assert width >= perfboard.MIN_WIDTH_MM         # a board of 14 columns: the legend's lines still fit beside it
     text = build.read_text()
-    for line in ("| black | 50 mm | L4–B5 | GND |", "| 10 mm | 1 | A4 … C4 VCC |",
+    for line in ("## Cut list – lengths in whole millimetres, rounded up", "| black | 49 mm | L4–B5 | GND |",
+                 "| 8 mm | 1 | A4 … C4 VCC |",
                  "A wire's stripped end makes the 2 bridges beside the wires' ends: L3–L4, A5–B5.",
                  "D1 red: anode (long lead) in hole L2, cathode (flat) in hole L3",
                  "| LED_SW | C2 (SW1.1) | F2 (SW1.2), G2 (R1.1) |", "item = \"Lochraster, a pad per hole, 14 x 8 holes\""):
@@ -402,14 +417,15 @@ def test_the_cut_list_is_drawn_at_full_size(pb, monkeypatch, capsys):
     w, h, vw, vh = re.search(r'width="([\d.]+)mm" height="([\d.]+)mm" viewBox="0 0 ([\d.]+) ([\d.]+)"', svg).groups()
     assert (w, h) == (vw, vh)                      # a unit of the drawing is a millimetre on paper
     rows = cut_rows(svg)
-    assert [(k, mm) for k, mm, _ in rows] == [("insulated", 50), ("bare", 10), ("bare", 5), ("bare", 5)]
+    assert [(k, mm) for k, mm, _ in rows] == [("insulated", 49), ("bare", 8), ("bare", 5), ("bare", 5)]
     zero = rows[0][2][0][1]
-    assert [r[2][0] for r in rows] == [("conductor", zero, 50.0), ("conductor", zero, 10.0), ("conductor", zero, 5.0),
+    assert [r[2][0] for r in rows] == [("conductor", zero, 49.0), ("conductor", zero, 8.0), ("conductor", zero, 5.0),
                                        ("conductor", zero, 5.0)]
-    assert rows[0][2][1] == ("insulation", zero + 5, 40.0)            # strip 5 mm at each end
+    assert rows[0][2][1] == ("insulation", zero + 5, 39.0)            # strip 5 mm at each end
     cm = [float(x) for x in re.findall(r'<line class="cm" x1="([\d.]+)"', svg)]
-    assert cm == [zero + 10 * i for i in range(6)]                     # 0 to 5 cm: the longest piece, 50 mm
-    for text in ("50 mm", "strip 5 mm left, 5 mm right", "black, L4–B5 GND", "A4 … C4 VCC", "F2–G2"):
+    assert cm == [zero + 10 * i for i in range(6)]                     # 0 to 5 cm: up to the longest piece, 49 mm
+    for text in ("49 mm", "strip 5 mm left, 5 mm right", "black, L4–B5 GND", "A4 … C4 VCC", "F2–G2",
+                 "0 to 5 cm must measure 50 mm on a ruler", "Lengths in whole millimetres, rounded up"):
         assert text in svg, text
     assert "![The cut list at 1:1](cut.svg)" in (d / "build.md").read_text()
 
@@ -504,8 +520,8 @@ def test_the_example_variant_is_built_from_its_plan(tmp_path, monkeypatch, capsy
     assert "BT1 KH-CR2032-2-1: its + end on hole D10, its − end on hole L10" in build and "(stripe)" not in build
     assert "do not solder it yet" in build and "black, holes J1–N10 GND" in build
     assert ">+<" in top and ">−<" in top and "Capacitor" not in top and "mounting holes" not in top
-    assert [(k, mm) for k, mm, _ in cut_rows((drawn / "cut.svg").read_text())][:2] == [("insulated", 50),
-                                                                                       ("insulated", 45)]
+    assert [(k, mm) for k, mm, _ in cut_rows((drawn / "cut.svg").read_text())][:2] == [("insulated", 49),
+                                                                                       ("insulated", 41)]
     assert '<img src="../pictures/perfboard-cut.svg"' in page
     for side in ("top", "bottom", "cut"):
         assert (drawn / f"{side}.svg").read_text() == (ROOT / "docs" / "pictures" / f"perfboard-{side}.svg").read_text()

@@ -48,15 +48,15 @@ Three drawings and `build.md`'s four lists. First the example's cut list. The in
 
 | Colour | Length | Holes | Net |
 | --- | --- | --- | --- |
-| red | 45 mm | A2–C10 | VBAT |
-| black | 50 mm | J1–N10 | GND |
+| red | 41 mm | A2–C10 | VBAT |
+| black | 49 mm | J1–N10 | GND |
 
 Strip 5 mm at each end: through its hole and over onto the pad of the lead beside it. Bare wire below, one piece per
 straight row:
 
 | Length | Pieces | Holes |
 | --- | --- | --- |
-| 10 mm | 1 | L10 … N10 GND |
+| 8 mm | 1 | L10 … N10 GND |
 | 5 mm | 2 | E4–F4 LED_SW, J4–J3 LED_ANODE |
 
 `cut.svg` draws it at 1:1: printed at 100 %, lay each piece on its row.

@@ -10,7 +10,7 @@ and drawn (handbook 7.9, concept docs/concepts/new/perfboard-layout.md).
 The plan, in the board file (hardware/boards/<board>.toml) of a board with wired = true:
 
     [perfboard]  kind = "pad-per-hole" | "3-hole-strips" (edakit/perfboards/<kind>.toml), holes = [columns, rows],
-                 cut_step_mm (optional: the cut list's step, default the kind's)
+                 cut_step_mm (optional: the cut list's step, a whole number of mm, default the kind's 1 mm)
     [[holes]]    mounting holes in mm, x right and y up from the board's lower left corner seen from the top: x, y, d,
                  keep (the diameter kept free around it, default the nut of its screw)
     [place]      designator = { at = "P9", rot = 270 } – the hole of pin 1, counterclockwise seen from the top in steps
@@ -108,9 +108,17 @@ def kind_problems(data):
     for key in ("strip_mm", "slack_mm", "bridge_end_mm", "step_mm"):
         if not isinstance(data.get("wires", {}).get(key), (int, float)):
             out.append(f"wires.{key} must be a length in mm")
+    for key in ("strip_mm", "step_mm"):     # what the cut list prints: whole millimetres, no fractions (decision 22)
+        v = data.get("wires", {}).get(key)
+        if isinstance(v, (int, float)) and not whole_mm(v):
+            out.append(f"wires.{key} must be a whole number of mm >= 1, not {v!r}")
     if not data.get("sources"):
         out.append("sources: where pitch, hole and copper come from")
     return out
+
+
+def whole_mm(v):
+    return not isinstance(v, bool) and isinstance(v, (int, float)) and v >= 1 and float(v).is_integer()
 
 
 def load_kind(name):
@@ -219,6 +227,18 @@ def _num(where, v, positive=True):
     return float(v)
 
 
+def whole_step(where, v):
+    """The cut list's step: whole millimetres, no fractions (decision 22)."""
+    if not whole_mm(v):
+        raise PlanError(f"{where} must be a whole number of mm >= 1, not {v!r}")
+    return int(v)
+
+
+def rounding(step):
+    """How the cut list's lengths are rounded, in words."""
+    return "in whole millimetres, rounded up" if step == 1 else f"rounded up to {step:g} mm"
+
+
 def is_plan(raw):
     return "perfboard" in (raw or {})
 
@@ -296,7 +316,7 @@ def read_plan(raw, where):
                 near_mm=_num(f"{where}: near_mm", raw.get("near_mm", NEAR_MM)),
                 edge_mm=_num(f"{where}: edge_mm", raw.get("edge_mm", EDGE_MM), False),
                 edge_ok=set(raw.get("edge_ok", [])),
-                cut_step_mm=_num(f"{where}: cut_step_mm", pb["cut_step_mm"]) if "cut_step_mm" in pb else None)
+                cut_step_mm=whole_step(f"{where}: cut_step_mm", pb["cut_step_mm"]) if "cut_step_mm" in pb else None)
 
 
 def board_plan(cfg, board):
@@ -1271,8 +1291,8 @@ def holes_of(w):
 
 
 def cutlist(res):
-    """Insulated wires by colour and pieces of bare wire by length, every length rounded up to the step (decision
-    22): a straight row of bridges is one piece; a single bridge beside a wire's end is that wire's stripped end
+    """Insulated wires by colour and pieces of bare wire by length, every length rounded up to the step – whole
+    millimetres unless the plan's cut_step_mm is coarser (decision 22): a straight row of bridges is one piece; a single bridge beside a wire's end is that wire's stripped end
     (decision 23)."""
     plan = res.plan
     cw = plan.kind["wires"]
@@ -1330,7 +1350,7 @@ def draw_cut(res, title):
     svg.text(x0, 5.0, f"{title} – cut list", size=3.4, anchor="start", weight="bold")
     svg.text(x0, 10.0, f"1:1 printed at 100 %, not fitted to the page: 0 to {span // 10} cm must measure {span} mm "
                       "on a ruler.", size=2.1, anchor="start", fill="#444")
-    svg.text(x0, 13.4, f"Lengths rounded up to {cut['step']:g} mm – lay a piece on its row and cut it at the end.",
+    svg.text(x0, 13.4, f"Lengths {rounding(cut['step'])} – lay a piece on its row and cut it at the end.",
              size=2.1, anchor="start", fill="#444")
     base = top + ruler
     for mm in range(span + 1):          # the ruler: mm, 5 mm and cm ticks up from its edge, the cm numbered
@@ -1390,7 +1410,7 @@ def lists(res, title, findings_too=True):
         out += [f"- **{f.severity}** `{f.code}{'/' + f.grade if f.grade else ''}` – {f.text}" for f in res.findings]
         out.append("")
     cut = cutlist(res)
-    out.append(f"## Cut list – lengths rounded up to {cut['step']:g} mm\n")
+    out.append(f"## Cut list – lengths {rounding(cut['step'])}\n")
     out.append("![The cut list at 1:1](cut.svg)\n")
     per_colour = {}
     if cut["insulated"]:

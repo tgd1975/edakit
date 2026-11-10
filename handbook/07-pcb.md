@@ -1263,7 +1263,8 @@ error   PERF.net/meet    L2: joins GND bridges F2 … R2 with LED3.anode (LED_Y1
 - `build.md` – the findings, then four lists:
   - the **cut list**: the insulated wires by colour with their lengths, the pieces of bare wire grouped by length – a
     straight row of bridges is one piece, a single bridge beside a wire's end is that wire's stripped end –, every
-    length rounded up to the kind's step or `cut_step_mm`, with the drawing `cut.svg`;
+    length rounded up to whole millimetres – or to a coarser `cut_step_mm`, a whole number of mm –, with the
+    drawing `cut.svg`;
   - the **build list** from low to high, each part with its holes and its polarity, the insulated wires with their
     stripped ends bent onto the pads but soldered only with the lead or the bridges there, the bridges once the leads
     they join are in, the test before a module is plugged in;

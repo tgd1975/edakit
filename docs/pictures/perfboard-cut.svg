@@ -2,7 +2,7 @@
 <rect width="140.80" height="73.00" fill="#ffffff"/>
 <text x="6.00" y="5.00" font-size="3.4" fill="#222" text-anchor="start" dominant-baseline="central" font-weight="bold">Coin cell LED on a perfboard – cut list</text>
 <text x="6.00" y="10.00" font-size="2.1" fill="#444" text-anchor="start" dominant-baseline="central" font-weight="normal">1:1 printed at 100 %, not fitted to the page: 0 to 5 cm must measure 50 mm on a ruler.</text>
-<text x="6.00" y="13.40" font-size="2.1" fill="#444" text-anchor="start" dominant-baseline="central" font-weight="normal">Lengths rounded up to 5 mm – lay a piece on its row and cut it at the end.</text>
+<text x="6.00" y="13.40" font-size="2.1" fill="#444" text-anchor="start" dominant-baseline="central" font-weight="normal">Lengths in whole millimetres, rounded up – lay a piece on its row and cut it at the end.</text>
 <line x1="6.00" y1="24.50" x2="6.00" y2="21.50" stroke="#333" stroke-width="0.18"/>
 <text x="6.00" y="19.90" font-size="2.2" fill="#333" text-anchor="middle" dominant-baseline="central" font-weight="normal">0</text>
 <line class="cm" x1="6.00" y1="24.50" x2="6.00" y2="66.50" stroke="#c9ced6" stroke-width="0.15"/>
@@ -69,22 +69,22 @@
 <text x="57.50" y="19.90" font-size="2.2" fill="#333" text-anchor="start" dominant-baseline="central" font-weight="normal">cm</text>
 <line x1="6.00" y1="24.50" x2="56.00" y2="24.50" stroke="#333" stroke-width="0.2"/>
 <text x="6.60" y="27.30" font-size="2.2" fill="#444" text-anchor="start" dominant-baseline="central" font-weight="bold" paint-order="stroke" stroke="#ffffff" stroke-width="0.35">Insulated wire, solid core, on top</text>
-<g data-cut="insulated" data-mm="50">
-<rect class="conductor" x="6.00" y="32.15" width="50.00" height="0.7" fill="#c87f4a"/>
-<rect class="insulation" x="11.00" y="31.60" width="40.00" height="1.8" rx="0.4" fill="#2b2b2b" stroke="#333" stroke-width="0.12"/>
-<text x="69.00" y="32.50" font-size="2.5" fill="#222" text-anchor="end" dominant-baseline="central" font-weight="bold">50 mm</text>
+<g data-cut="insulated" data-mm="49">
+<rect class="conductor" x="6.00" y="32.15" width="49.00" height="0.7" fill="#c87f4a"/>
+<rect class="insulation" x="11.00" y="31.60" width="39.00" height="1.8" rx="0.4" fill="#2b2b2b" stroke="#333" stroke-width="0.12"/>
+<text x="69.00" y="32.50" font-size="2.5" fill="#222" text-anchor="end" dominant-baseline="central" font-weight="bold">49 mm</text>
 <text x="71.00" y="32.50" font-size="2.5" fill="#333" text-anchor="start" dominant-baseline="central" font-weight="normal">strip 5 mm left, 5 mm right – black, J1–N10 GND</text>
 </g>
-<g data-cut="insulated" data-mm="45">
-<rect class="conductor" x="6.00" y="38.15" width="45.00" height="0.7" fill="#c87f4a"/>
-<rect class="insulation" x="11.00" y="37.60" width="35.00" height="1.8" rx="0.4" fill="#d62728" stroke="#333" stroke-width="0.12"/>
-<text x="69.00" y="38.50" font-size="2.5" fill="#222" text-anchor="end" dominant-baseline="central" font-weight="bold">45 mm</text>
+<g data-cut="insulated" data-mm="41">
+<rect class="conductor" x="6.00" y="38.15" width="41.00" height="0.7" fill="#c87f4a"/>
+<rect class="insulation" x="11.00" y="37.60" width="31.00" height="1.8" rx="0.4" fill="#d62728" stroke="#333" stroke-width="0.12"/>
+<text x="69.00" y="38.50" font-size="2.5" fill="#222" text-anchor="end" dominant-baseline="central" font-weight="bold">41 mm</text>
 <text x="71.00" y="38.50" font-size="2.5" fill="#333" text-anchor="start" dominant-baseline="central" font-weight="normal">strip 5 mm left, 5 mm right – red, A2–C10 VBAT</text>
 </g>
 <text x="6.60" y="46.30" font-size="2.2" fill="#444" text-anchor="start" dominant-baseline="central" font-weight="bold" paint-order="stroke" stroke="#ffffff" stroke-width="0.35">Bare tinned wire, straight, on the bottom</text>
-<g data-cut="bare" data-mm="10">
-<rect class="conductor" x="6.00" y="51.15" width="10.00" height="0.7" fill="#a9adb3" stroke="#6b6f75" stroke-width="0.08"/>
-<text x="69.00" y="51.50" font-size="2.5" fill="#222" text-anchor="end" dominant-baseline="central" font-weight="bold">10 mm</text>
+<g data-cut="bare" data-mm="8">
+<rect class="conductor" x="6.00" y="51.15" width="8.00" height="0.7" fill="#a9adb3" stroke="#6b6f75" stroke-width="0.08"/>
+<text x="69.00" y="51.50" font-size="2.5" fill="#222" text-anchor="end" dominant-baseline="central" font-weight="bold">8 mm</text>
 <text x="71.00" y="51.50" font-size="2.5" fill="#333" text-anchor="start" dominant-baseline="central" font-weight="normal">L10 … N10 GND</text>
 </g>
 <g data-cut="bare" data-mm="5">

@@ -27,5 +27,5 @@ source = ""
 strip_mm = 5                   # stripped at each end of an insulated wire: through the board, over to the lead beside it
 slack_mm = 5                   # an insulated wire's extra length for its bends on top
 bridge_end_mm = 1.0            # bare wire beyond the centre of a bridge's outer pads
-step_mm = 5                    # every length rounded up to this step
+step_mm = 1                    # every length rounded up to whole mm – no coarser step (owner, 2026-11-10)
 bare_mm = 0.6                  # the bare tinned wire of the bridges
