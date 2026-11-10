@@ -1,6 +1,8 @@
 # EMC in the layout: fast nets, long tracks, return paths, supply entry, crystals, USB data, cables
 
-Status 2026-11-10: open, nothing decided, nothing built. Asked for by the owner: whether edakit's rules cover EMC best
+Status 2026-11-10: decided, nothing built. The decisions were taken by the owner the same day in a decision round in
+Claude Code's form (Decisions, at the end): all seven steps, in three branches. The building starts on the owner's word
+("umsetzen"). Asked for by the owner: whether edakit's rules cover EMC best
 practice, and how likely pytree is to run into trouble because of its longer tracks. A first version listed six gaps
 ("ja. was ist mit den anderen punkten?"). The owner then asked for a review of it: "review emc-layout .... sind alle
 regeln belegt? sind alle regeln im kontext von edakit sinnvoll und umsetzbar?" and "auch anhand von den anderen
@@ -46,7 +48,7 @@ The review found that the first version did not hold up in three places:
   ATmega328P) give none.
 - It selected fast nets by `clock_hz` and `fn`. No project's graph sets these, pytree included.
 
-So this version proposes:
+The steps, all decided (Decisions, 1):
 
 | Step | What | Source | Hits in the projects today | Size (session time) |
 | --- | --- | --- | --- | --- |
@@ -290,16 +292,17 @@ All projects plug USB into a module today.
 - **What the rows prove:** the regulatory review (M-6) can name the warnings, and the accepted ones with their reasons,
   as layout measures taken. That is no evidence that a board complies; only a measurement is.
 
-## Open decisions
+## Decisions
 
-1. **Scope.** Recommendation: all seven steps, in three branches (EMC.1–EMC.4, EMC.5, EMC.6 with EMC.7), about one
-   and a half working days of session time. The alternative is EMC.1–EMC.4 alone, about half a day; the rest stays in
-   this concept.
-2. **A clock without `clock_hz`** (EMC.1, step 2). Recommendation: it counts as fast, and the coverage line names it.
-   The alternative is that it counts only with `clock_hz` set; then pytree's chain would not count until its graph sets
-   the field.
-3. **Severity of GEO.length and GEO.return.** Recommendation: a warning for every purpose, accepted with its reason. The
-   alternative is grading by purpose like the regulatory codes.
+Decisions 1 to 3 were taken by the owner on 2026-11-10 in a decision round in Claude Code's form. Decision 4 lists what
+Claude decided itself; the owner confirmed it in the same round ("Alles bestätigt").
+
+| # | Question | Recommendation | Alternatives | Decision |
+| --- | --- | --- | --- | --- |
+| 1 | Scope | all seven steps, in three branches: EMC.1–EMC.4, EMC.5, EMC.6 with EMC.7 – about one and a half working days of session time | EMC.1–EMC.5, about a day, crystal and USB pair left in the concept; EMC.1–EMC.4 alone, about half a day, the return-path rules as review questions only | accepted: all seven |
+| 2 | A clock without `clock_hz` (EMC.1, step 2) | it counts as fast; `edakit check --coverage` names every clock counted so | it counts only with `clock_hz` set – every project today would stay unchecked until its graph sets the field | accepted: it counts as fast |
+| 3 | Severity of GEO.length and GEO.return | a warning for every purpose, accepted with its reason | graded by purpose like the regulatory codes (handbook 15.4): a note for a board for oneself or a gift, a warning for one sold | accepted: a warning for every purpose |
+| 4 | Decided by Claude | (a) a net is fast with edges above 50 kHz (SZZA009 1.3); (b) a series resistor is "next to the driver" within 10 mm, a number no source gives; (c) SPRAAR7J's 5.08 mm hold for capacitors across a gap too; (d) the part fact `t_edge_ns` and the note on long inputs dropped; (e) HINT.supply_entry only on boards with fast nets, 470 pF instead of 100 nF; (f) the live run for crystal and USB pair on Raspberry Pi's RP2350A Minimal design, its licence checked first | – | confirmed |
 
 ## The review of 2026-11-10
 
