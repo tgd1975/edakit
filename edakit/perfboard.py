@@ -1322,14 +1322,16 @@ def draw_cut(res, title):
     note = (f"Not cut: the bridges {', '.join(holes_of(w) for w in cut['by_end'])} are the wires' stripped ends."
             if cut["by_end"] else "" if ins or bare else "Nothing to cut: the plan has no wire and no bridge.")
     wide = max([11 + len(r[1]) * size * 0.56 for _, r in rows if r] + [0])   # the length, then the text beside it
-    top, ruler = 15.0, 6.5
+    top, ruler = 18.0, 6.5
     y_end = top + ruler + sum((5.0 if i == 0 else 7.0) if r is None else CUT_ROW_MM for i, (_, r) in enumerate(rows))
     w = max(x0 + span + 4 + wide + 4, 100.0)
     h = y_end + (6.5 if note else 3)
     svg = Svg(w, h, mm=True)
     svg.text(x0, 5.0, f"{title} – cut list", size=3.4, anchor="start", weight="bold")
-    svg.text(x0, 10.0, f"1:1 when printed at 100 % – lengths rounded up to {cut['step']:g} mm; lay a piece on its "
-                      "row and cut it at the end", size=2.1, anchor="start", fill="#444")
+    svg.text(x0, 10.0, f"1:1 printed at 100 %, not fitted to the page: 0 to {span // 10} cm must measure {span} mm "
+                      "on a ruler.", size=2.1, anchor="start", fill="#444")
+    svg.text(x0, 13.4, f"Lengths rounded up to {cut['step']:g} mm – lay a piece on its row and cut it at the end.",
+             size=2.1, anchor="start", fill="#444")
     base = top + ruler
     for mm in range(span + 1):          # the ruler: mm, 5 mm and cm ticks up from its edge, the cm numbered
         x = x0 + mm

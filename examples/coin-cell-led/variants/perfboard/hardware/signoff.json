@@ -2,7 +2,7 @@
  "about": "Sign-offs for the release gate (edakit gate) of the perfboard variant. Each counts only for the hash of its scope: 'circuit' = state_sha256, 'electrical' = electrical_sha256, 'layout' = layout_sha256 (the plan with the footprint data), 'fab' = fab_sha256 (the drawings and lists the gate writes into fab/main/). Parts are signed in their parts entry (field 'verified').",
  "state_sha256": "c1ffee3ad4c336ae95011a09732f20567d985552bfbfa2453931050ec9ea7de9",
  "layout_sha256": "43bf60f797efe96aa59677d763c85a1dca896ddd40af4cb284c1caf947df7d8a",
- "fab_sha256": "f684ecb1f5d2bdc176af52762534536097987cef9e7d8965b6bf9ae840d245ff",
+ "fab_sha256": "519fcba1fbb4230475cc612caeb2d5dc87e41b70bb2f4256f055dd6b521b1066",
  "manual": [
   {
    "id": "M-1",
@@ -29,7 +29,7 @@
    "text": "The perfboard plan reviewed independently (buildability, mechanics, operation, looks) on the drawings and lists of a gate run with this plan – the agent pcb-reviewer. No finding 'block' open, every 'important' finding fixed or rejected by the owner",
    "done_by": "agent pcb-reviewer (own session)",
    "date": "2026-11-10",
-   "note": "M-5: OK for fab f684ecb1f5d2bdc176af52762534536097987cef9e7d8965b6bf9ae840d245ff; layout 43bf60f797efe96aa59677d763c85a1dca896ddd40af4cb284c1caf947df7d8a. Gate run 20261110-090401, fab/main/ reviewed in full. The first round's important findings fixed in edakit perfboard: BT1's ends marked + and − and no '(stripe)' in its build row; the build list says a wire's stripped end is soldered with the lead in its pad. Also fixed: the GND wire enters at J1, clear of D1's flange; the legend names only this board's marks; the wires' colours in step 2. Notes, none blocking: the build row could name the metal clip as the + end; the GND wire along row 1 clears D1's flange by about 0.06 mm with 1.6 mm insulation – thin wire, or D1 seated just clear; trim the stripped end J1→J2 to J2's pad. Left out as notes: more tests in the test list, the cut line, a mirrored bottom view, feet."
+   "note": "M-5: OK for fab 519fcba1fbb4230475cc612caeb2d5dc87e41b70bb2f4256f055dd6b521b1066; layout 43bf60f797efe96aa59677d763c85a1dca896ddd40af4cb284c1caf947df7d8a. Gate run 20261110-100121, fab/main/ reviewed in full (top.svg, bottom.svg, cut.svg, build.md). Changed since f684ecb1 (OK there too): cut.svg, the cut list at 1:1 – lengths, strip, holes, nets, colours and the stripped-end bridges agree with build.md and the plan, scale true (1 unit = 1 mm, piece widths = lengths); its caption asks for 100 %, not fitted, and a ruler check of 0 to 5 cm = 50 mm. Notes, none blocking: the 5 mm rounding goes into the insulation (red 9.6 mm, black 7 mm over the path) – draw the exact length at 1:1 and round only the material; one-pitch bridges E4–F4 and J4–J3 from R1's bent lead or trimmed after soldering. Still open from before: the metal clip as BT1's +, D1's flange clearance to the GND wire (thin wire), trim the stripped end J1→J2 to J2's pad; the material list names no core diameter (AWG 22–24 fits the 1.0 mm hole)."
   },
   {
    "id": "M-4",
