@@ -1,8 +1,9 @@
 # EMC in the layout: fast nets, long tracks, return paths, supply entry, crystals, USB data, cables
 
 Status 2026-11-10: decided, nothing built. The decisions were taken by the owner the same day in a decision round in
-Claude Code's form (Decisions, at the end): all seven steps, in three branches. The building starts on the owner's word
-("umsetzen"). Asked for by the owner: whether edakit's rules cover EMC best
+Claude Code's form (Decisions, at the end): all seven steps, in three branches. A plan for the test firmware was added
+the same day as EMC.8, on the owner's word, in a fourth branch. The building starts on the owner's word ("umsetzen").
+Asked for by the owner: whether edakit's rules cover EMC best
 practice, and how likely pytree is to run into trouble because of its longer tracks. A first version listed six gaps
 ("ja. was ist mit den anderen punkten?"). The owner then asked for a review of it: "review emc-layout .... sind alle
 regeln belegt? sind alle regeln im kontext von edakit sinnvoll und umsetzbar?" and "auch anhand von den anderen
@@ -59,15 +60,16 @@ The steps, all decided (Decisions, 1):
 | EMC.5 | GEO.return: the reference copper under every fast track on the Gerber raster | SZZA009 2.1.2, 2.1.4, 2.2.3; SCAA082A 1.6; SPRAAR7J 2 | pytree: V_LED without a capacitor to GND near U3–U5 | 3–5 h |
 | EMC.6 | HINT.crystal: a crystal on the board, its place and its neighbours | SZZA009 2.4.1, 2.1.3; Raspberry Pi, Hardware design with RP2350, 4 | none: every crystal sits on a module | about 1 h |
 | EMC.7 | domain usb: the routed USB pair | Raspberry Pi, Hardware design with RP2350, 5.1; SPRAAR7J 1.2 | none: USB plugs into a module everywhere | 1–2 h |
+| EMC.8 | `edakit firmware emc`: a plan for the test firmware of an EMC measurement, from the circuit | the firmware contract (handbook 3.5), EMC.1 | pytree: the chain shifting with its read-back, 24 channels, DIP mirrored | 1–2 h |
 
-Together that is about one and a half working days of session time, in three branches (EMC.1–EMC.4, EMC.5, EMC.6 with
-EMC.7). Each branch goes onto main with the owner's OK, as a `patch` version. The sizes are measured against
-proposal #103, a check of the same kind on the same Gerber raster (GEO.pour's bare area per side): from the issue at 11:45 to
-the merge of #138 at 15:28 on 2026-11-01, triage, tests, catalog and handbook included. The steps without hits today
-are tested on synthetic Gerber files, as `tests/test_fab.py` writes them. A live run on a published design with a
-crystal and a USB pair on two layers is possible too: Raspberry Pi's RP2350A Minimal KiCad design, through edakit's
-KiCad toolchain, which writes `pcb.json` and Gerber files from a KiCad board (`edakit/toolchain/kicad/fab.py`). Its
-licence is checked before anything of it goes into the repository.
+Together that is about two working days of session time, in four branches (EMC.1–EMC.4, EMC.5, EMC.6 with EMC.7, EMC.8).
+Each branch goes onto main with the owner's OK, as a `patch` version. The sizes are measured against proposal #103, a
+check of the same kind on the same Gerber raster (GEO.pour's bare area per side): from the issue at 11:45 to the merge
+of #138 at 15:28 on 2026-11-01, triage, tests, catalog and handbook included. The steps without hits today are tested on
+synthetic Gerber files, as `tests/test_fab.py` writes them. A live run on a published design with a crystal and a USB
+pair on two layers is possible too: Raspberry Pi's RP2350A Minimal KiCad design, through edakit's KiCad toolchain, which
+writes `pcb.json` and Gerber files from a KiCad board (`edakit/toolchain/kicad/fab.py`). Its licence is checked before
+anything of it goes into the repository.
 
 Dropped: the edge time as a part fact (no datasheet gives it), and the note on long inputs with an internal pull-up (no
 source asks for a length limit).
@@ -282,6 +284,68 @@ All projects plug USB into a module today.
 
 **Tests.** Synthetic files, and Raspberry Pi's RP2350A Minimal design as a live run (1 mm, its pair over ground).
 
+## EMC.8 A plan for the test firmware
+
+Added on the owner's word the same day: "ja", to "Soll ich das als EMC.8 ins Konzept schreiben?".
+
+**Why.** An EMC measurement needs a firmware that keeps the board busy and shows when it fails. That holds for a
+pre-check with a near-field probe and for a day in a lab, where every hour spent programming is the dearest one.
+edakit does not write that firmware: the contract has no firmware format, and what the firmware must do stays with the
+project (handbook 3.5; `docs/concepts/done/requirements.md`, decision 3). But edakit knows from the circuit most of
+what it must do.
+
+**What.** `edakit firmware emc` writes it as a plan, `hardware/firmware_emc.json`, and prints it in readable form. The
+project's assistant writes the test firmware from it, in the project's language. The plan has four parts.
+
+1. **Emissions, in two stages.**
+   - *Typical:* the busiest mode the product has in use. edakit does not know the modes, so the plan names this as a
+     gap for the project to fill.
+   - *Stress:* everything at once, all the time, to find the sources:
+     - the fast nets of EMC.1 running without pause at their clock: a chain shifting continuously, its latch after
+       every frame;
+     - every output of `channels` on;
+     - every PWM net at its `pwm_hz`;
+     - a buzzer at its resonance;
+     - the highest supply current of the simulation's scenarios, as the check that the stage is complete.
+2. **Immunity made visible.**
+   - A chain with `read_back` shifts a pattern and compares what comes back, continuously. A mismatch shows on an output
+     the plan names: an LED channel, or an MCU pin with an LED.
+   - Every input of `inputs` is mirrored: a DIP switch's bits on LED channels, a button press counted and shown. A
+     wrong read or a phantom press under a field or a discharge shows at once.
+   - A heartbeat on one LED, so that a restart is seen.
+   - Together they show whether the board keeps running, recovers by itself or needs a restart. These are the
+     performance criteria A, B and C of the immunity standards; the standards were not read for this concept.
+3. **The limits the circuit sets**, which the test firmware keeps:
+   - **The way in:** a fixed combination of the inputs at power-up, never reached in normal use; for pytree, SW2 and
+     SW3 held while plugging in.
+   - **Loads that must not stay on:** a buzzer's coil, a motor, a relay or a solenoid behind a transistor runs as in
+     use, never steady on, unless the simulation's steady state holds every limit.
+4. **The gaps, named:** a fast net without `clock_hz` ("the firmware's clock"), a buzzer without its resonance, the
+   product's modes.
+
+**Data.** All of it exists but one value:
+
+- the contract: `pins`, `pwm`, `inputs`, `buses`, `bus_speed`, `chains`, `channels`;
+- EMC.1's fast nets;
+- the simulation's scenarios.
+
+New is a value `f_res_hz` for the kind `buzzer` in `kinds.toml`, from the datasheet. Today the kind has only
+`coil_ohm`.
+
+**A command of its own**, not a section of `firmware.json`: a project whose pre-commit hook runs `edakit firmware
+--check` would otherwise have to write its contract again after the update. So the plan is opt-in, and the version is
+`patch`.
+
+**pytree.** From today's contract the plan would say:
+
+| Part | What it says for pytree |
+| --- | --- |
+| Stress stage | TLC_CLK and TLC_SDI shift continuously, at the firmware's clock (no `clock_hz` in the graph). TLC_LE latches after every 24 bits, TLC_OE stays at its active level from `pins`. All 24 channels are on, the star's three outputs on. The buzzer runs at its resonance; the entry has none, and the datasheet gives 2.048 kHz per pytree's `docs/schaltungsbeschreibung.md`. |
+| Immunity | the read-back over TLC_SDO, a mismatch shown on the star's red; the eight DIP bits on eight channels; SW2 and SW3 counted |
+| Way in | SW2 and SW3 held while plugging in |
+| Limit | the buzzer never steady HIGH (the coil and R41 behind Q1) |
+| Gaps | the clock, the buzzer's resonance, the modes |
+
 ## What stays out
 
 - **Simulation of emissions** (field solvers, near-field models): not text-sized and not checkable by an LLM.
@@ -295,7 +359,8 @@ All projects plug USB into a module today.
 ## Decisions
 
 Decisions 1 to 3 were taken by the owner on 2026-11-10 in a decision round in Claude Code's form. Decision 4 lists what
-Claude decided itself; the owner confirmed it in the same round ("Alles bestätigt").
+Claude decided itself; the owner confirmed it in the same round ("Alles bestätigt"). Decision 5 followed the same
+day, on the owner's word.
 
 | # | Question | Recommendation | Alternatives | Decision |
 | --- | --- | --- | --- | --- |
@@ -303,6 +368,7 @@ Claude decided itself; the owner confirmed it in the same round ("Alles bestäti
 | 2 | A clock without `clock_hz` (EMC.1, step 2) | it counts as fast; `edakit check --coverage` names every clock counted so | it counts only with `clock_hz` set – every project today would stay unchecked until its graph sets the field | accepted: it counts as fast |
 | 3 | Severity of GEO.length and GEO.return | a warning for every purpose, accepted with its reason | graded by purpose like the regulatory codes (handbook 15.4): a note for a board for oneself or a gift, a warning for one sold | accepted: a warning for every purpose |
 | 4 | Decided by Claude | (a) a net is fast with edges above 50 kHz (SZZA009 1.3); (b) a series resistor is "next to the driver" within 10 mm, a number no source gives; (c) SPRAAR7J's 5.08 mm hold for capacitors across a gap too; (d) the part fact `t_edge_ns` and the note on long inputs dropped; (e) HINT.supply_entry only on boards with fast nets, 470 pF instead of 100 nF; (f) the live run for crystal and USB pair on Raspberry Pi's RP2350A Minimal design, its licence checked first | – | confirmed |
+| 5 | A plan for the test firmware (EMC.8) | `edakit firmware emc`, a command of its own after EMC.1, in a fourth branch | – | added on the owner's word ("ja"), a step like the others |
 
 ## The review of 2026-11-10
 
