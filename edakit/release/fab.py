@@ -56,7 +56,8 @@ assembly preview at JLCPCB.
   GEO.spacing on every assembled side, SMD pads of different parts on different nets at least the paste gap apart
        ([release] assembly paste_gap_mm), measured as GEO.spacing
   GEO.pour copper per layer from the Gerber files: share of the board area and largest copper-free circle (info); a
-       circle above [copper] max_bare_mm or a copper-free piece above [copper] max_bare_mm2 on a poured layer, a share
+       circle above [copper] max_bare_mm or a copper-free piece above [copper] max_bare_mm2 on a poured layer or a
+       seen one ([looks] visible, both without [looks]), a share
        below [copper] min_cover, a copper piece without pad, via or plated hole: warn
   GEO.ring every plated hole keeps JLCPCB's annular ring (component hole 0.18 mm, warn below 0.20 mm; via 0.05 mm, on
        the via's own pad, a pour around it not counted); in the same pass every two plated holes JLCPCB's hole-to-hole
@@ -1564,8 +1565,10 @@ def check_copper_sides(board, design, d, rows):
     """GEO.pour: copper per layer from the Gerber files on the raster of GEO.copper, widened to the outline. Per layer the copper
     share of the board area (outline without mounting and NPTH holes) and the largest copper-free circle inside
     the pour outline (pcb.pour_outline without the keep circles of the holes, as `pcb pour` pours): information on a
-    layer without pour, a warning above [copper] max_bare_mm on a layer the board file pours ([[pours]], default GND
-    on both) – a pour EasyEDA left empty where its net has no pad, or never filled. There every copper-free piece a pour could fill (bare_pieces: opened
+    layer without pour that [looks] does not name as visible, a warning above [copper] max_bare_mm on a layer the board
+    file pours ([[pours]], default GND on both) – a pour EasyEDA left empty where its net has no pad, or never filled –
+    and on a seen face without pour (#340: the face [looks] visible names, both faces without [looks]), whose warning
+    says that the board file pours nothing there. There every copper-free piece a pour could fill (bare_pieces: opened
     with a disc of 2 x clearance_mm + min_width_mm) above [copper] max_bare_mm2 warns too – a long strip, an island
     walled in by other nets, that the circle misses. A share below [copper] min_cover warns. On every layer a copper piece that
     touches no pad (FlyingProbeTesting.json), via or plated hole warns: an island left by a fill with islands kept.
@@ -1618,6 +1621,7 @@ def check_copper_sides(board, design, d, rows):
             gap[layer] = min(gap.get(layer, w), w)      # the narrowest gap a pour of the layer fills
     limit, cover = board.copper["max_bare_mm"], board.copper["min_cover"]
     limit2 = board.copper["max_bare_mm2"]
+    seen = {"TOP", "BOTTOM"} if not board.looks else {board.looks["visible"].upper()}  # #340: the faces people see
     coppers = {k: cu.render(cu.ops[k]) & ~drilled for k in "TB"}
     for k, layer in (("T", "TOP"), ("B", "BOTTOM")):
         copper = coppers[k]
@@ -1626,11 +1630,14 @@ def check_copper_sides(board, design, d, rows):
         dia *= res
         at = f"({cu.x0 + c * res:.1f}, {cu.y0 + (cu.h - r) * res:.1f}) mm"
         text = f"{share:.0f} % copper, largest copper-free circle Ø {dia:.1f} mm" + (f" at {at}" if dia else "")
-        if poured[layer]:
+        if poured[layer] or layer in seen:
+            how = f"poured: {', '.join(poured[layer])}" if poured[layer] else "seen, no pour"
+            bare = "" if poured[layer] else " – the board file pours nothing on this seen face"
             rows.add("L", "GEO.pour", board.name, f"{layer}: no copper-free circle above {limit:g} mm inside the pour "
-                     f"outline (poured: {', '.join(poured[layer])})", dia <= limit, f"{layer}: {text}",
+                     f"outline ({how})", dia <= limit, f"{layer}: {text}" + ("" if dia <= limit else bare),
                      f"Ø <= {limit:g} mm ([copper] max_bare_mm)", None if dia <= limit else "warn")
-            pieces = bare_pieces(inside & ~copper, gap[layer] / res, coppers["B" if k == "T" else "T"])
+            width = gap.get(layer, 2 * POUR_CLEARANCE_MM + POUR_MIN_WIDTH_MM)   # no pour there: the default pour's gap
+            pieces = bare_pieces(inside & ~copper, width / res, coppers["B" if k == "T" else "T"])
             big = [q for q in pieces if q[0] * res * res > limit2]
 
             def piece(a, box, share):
@@ -1641,15 +1648,17 @@ def check_copper_sides(board, design, d, rows):
             if big:
                 many = f"{len(big)} pieces, {sum(q[0] for q in big) * res * res:.0f} mm² together: " if len(big) > 1 \
                     else ""
-                found = f"{layer}: {many}" + "; ".join(piece(*q) for q in big[:5]) + (" …" if len(big) > 5 else "")
+                found = f"{layer}: {many}" + "; ".join(piece(*q) for q in big[:5]) + (" …" if len(big) > 5 else "") \
+                    + bare
             else:
                 found = f"{layer}: largest copper-free piece {pieces[0][0] * res * res:.1f} mm²" if pieces \
                     else f"{layer}: no copper-free piece"
             rows.add("L", "GEO.pour", board.name, f"{layer}: no copper-free piece above {limit2:g} mm² inside the pour "
-                     f"outline (gaps from {gap[layer]:g} mm)", not big, found,
+                     f"outline (gaps from {width:g} mm)", not big, found,
                      f"<= {limit2:g} mm² ([copper] max_bare_mm2)", "warn" if big else None)
         else:
-            rows.add("L", "GEO.pour", board.name, f"{layer}: copper share and largest copper-free circle (no pour)", True,
+            rows.add("L", "GEO.pour", board.name, f"{layer}: copper share and largest copper-free circle (no pour, not seen)",
+                     True,
                      f"{layer}: {text}", "information", "info")
         if layer in cover:
             rows.add("L", "GEO.pour", board.name, f"{layer}: copper share at least {cover[layer]:g} % ([copper] min_cover)",

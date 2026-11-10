@@ -427,6 +427,30 @@ def test_a_template_of_an_older_graph_is_named_before_it_is_copied(cfg, monkeypa
     assert "! 'generated_main' was drawn from graph v0.9, the graph is v1.0" in capsys.readouterr().out
 
 
+class FakeUnreadable(FakeDocs):
+    """#337: on desk-led, a new EasyEDA Pro 3.2.209 project, getSchematicInfo of the template just generated threw
+    "TypeError: Cannot read properties of undefined (reading 'Symbol')" in schematic copy, after its name had been
+    read – the name lookup swallows the error, the reads of the template's title block and parts did not."""
+
+    def call(self, tool, timeout=130, **args):
+        if args.get("path") == "DMT_Schematic.getSchematicInfo" and self.names_read:
+            return {"ok": False, "error": "TypeError: Cannot read properties of undefined (reading 'Symbol')"}
+        if args.get("path") == "DMT_Schematic.getSchematicInfo":
+            self.names_read = True
+        return super().call(tool, timeout, **args)
+
+    names_read = False
+
+
+def test_a_template_easyeda_cannot_read_names_the_way_without_a_copy(cfg, monkeypatch, capsys):
+    mcp = FakeUnreadable()
+    assert run_copy(cfg, monkeypatch, mcp) == 1
+    assert mcp.deleted == [] and mcp.renames == [] and "s-copy" not in mcp.sch
+    err = capsys.readouterr().err
+    assert "EasyEDA cannot read the template 'generated_main'" in err
+    assert "reading 'Symbol'" in err and "`edakit schematic layout --save`" in err
+
+
 def test_a_template_the_page_rename_renamed_is_named_back(cfg, capsys):
     """LT-10: the first schematic create in a new project left the template named "LED bar template" – the title of
     its page – and a panel named generated_main. The name is read again after the title block and put back; a panel
@@ -528,7 +552,7 @@ def test_the_probe_throwing_counts_as_an_inactive_pcb_tab(monkeypatch):
     monkeypatch.setattr(eda, "api", api)
     monkeypatch.setattr(eda, "open_pcb", lambda mcp, name: switched.append("open_pcb"))
     monkeypatch.setattr(eda.time, "sleep", lambda s: None)
-    monkeypatch.setitem(eda.PCB, "name", "main")
+    monkeypatch.setattr(eda, "PCB", {"name": "main", "uuid": "pcb-1"})
     eda.activate_pcb(None)
     assert switched == ["DMT_EditorControl.openDocument", "open_pcb"]
 
@@ -666,6 +690,22 @@ def test_create_save_reads_the_template_again_from_its_save(cfg, capsys):
     assert schematic.check_reopened(mcp, "generated_main", comps, nets) == 0
     assert "opened again from the save: matches the graph" in capsys.readouterr().out
     assert "t-lay1" in [tab["tabId"] for tab in mcp.tabs]
+
+
+# --- a project script that focuses the PCB before opening it (#339) ----------------------------------------------------
+
+@pytest.mark.parametrize("call", [eda.ensure_pcb_focus, eda.activate_pcb, eda.save_pcb])
+def test_focusing_the_pcb_before_open_pcb_says_to_open_it_first(monkeypatch, call):
+    """An easyeda script that calls ensure_pcb_focus (or what relies on it) before open_pcb in the session: the module
+    has no PCB yet – a message naming open_pcb, not KeyError: 'uuid'. The bridge is never asked."""
+    monkeypatch.setattr(eda, "PCB", {})
+    asked = []
+    monkeypatch.setattr(eda, "api", lambda mcp, path, *a, **kw: asked.append(path))
+    monkeypatch.setattr(eda, "pcb_answers", lambda mcp: False)
+    monkeypatch.setattr(eda.time, "sleep", lambda s: None)
+    with pytest.raises(SystemExit) as e:
+        call(None)
+    assert "open_pcb(mcp, board.pcb)" in str(e.value) and asked == []
 
 
 # --- projectId: the open project's UUID, not "current" (easyeda-mcp-pro 1.9.0, #884) -------------------------------

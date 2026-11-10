@@ -106,6 +106,10 @@ made – its page, the company and graph version of its title block, the parts m
 drawn from another graph version than the current one is named before the copy. `layout` builds the board schematic
 without a copy: in a new project it renames the default board's schematic.
 
+A source EasyEDA cannot read ends the run before anything is copied, with EasyEDA's error and the way without a copy,
+`layout --save` – in a new EasyEDA Pro 3.2.209 project `getSchematicInfo` threw a TypeError on the template just
+generated.
+
 `layout` deletes all wires, flags, rectangles and texts of the page, moves and rotates the parts and wires them again.
 What it arranges stands in the schematic file `hardware/schematic.toml` (10.3):
 

@@ -8,6 +8,16 @@ written once, by `.github/merge.py`, from the fragments in [changes/](changes/RE
 update edakit@edakit`, then `/reload-plugins` or a new session; `edakit version` names the version that runs and what an
 update brings.
 
+## 1.2.3 – 2026-11-10
+
+- `edakit schematic copy` names the template EasyEDA cannot read and the way without a copy, `edakit schematic layout --save`, instead of ending on EasyEDA's bare TypeError (#337).
+- A `[[silk.art]]` entry without `svg`, or with a key it does not take, is an error of the board file when edakit loads it – entry, key and the keys it takes –, not a KeyError in `silk apply` once it has reached EasyEDA (#338).
+- An `easyeda` script that calls `eda.ensure_pcb_focus`, `activate_pcb` or `save_pcb` before `eda.open_pcb` is told to open the board's PCB first, not left with `KeyError: 'uuid'`; handbook 8.6 names the order (#339).
+
+## 1.2.2 – 2026-11-10
+
+- GEO.pour measures the copper-free circle and pieces on every seen face, not only on a poured one: a face that `[looks] visible` names – both faces without `[looks]` – and that the board file does not pour warns above `[copper] max_bare_mm` and `max_bare_mm2`, saying that the board file pours nothing there (#340).
+
 ## 1.2.1 – 2026-11-10
 
 - The plan of a hand-wired board on a perfboard (handbook 7.9): a board with `wired = true` may have a board file with `[perfboard]`, `[place]` by hole or by role, `[[holes]]` in mm and `[[wire]]` – bridges on the bottom, insulated wires on top. `edakit perfboard` builds the nets the plan makes and holds them to the graph (PERF.net), checks places, grid, bodies, mounting holes, wires and current (PERF.place, .grid, .body, .mount, .wire, .current) and the hand-over (SYNC.plan), and draws the top view, the bottom view in the top's orientation and the cut, build and test lists. Two kinds as data, `edakit/perfboards/pad-per-hole.toml` and `3-hole-strips.toml`; a parts entry's `joined` names the pins a part joins inside. The plan is stage L of the gate, in the layout hash, its drawings and lists the run's manufacturing files under M-5; a project whose boards are all bought or hand-wired, with a plan, runs S, L and F without `--eda`. SYNC.footprint no longer notes the parts of a bought or hand-wired board as not dumped – there is no copy in EasyEDA to compare.

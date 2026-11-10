@@ -272,6 +272,28 @@ def test_silk_board_label_side_and_region_keys(tmp_path):
             _board("b", {}, {"silk": {"board_label_region": region}})
 
 
+def test_silk_art_needs_svg_and_known_keys(project):
+    """#338: a [[silk.art]] entry without svg, or with a key it does not take, is an error of the board file when the
+    config loads – not a KeyError in silk.art_items once silk apply has reached EasyEDA."""
+    board = project.root / "hardware" / "boards" / "main.toml"
+    text = board.read_text()
+    board.write_text(text + '\n[[silk.art]]\nfile = "art/cell.svg"\nx = 10\ny = 10\nwidth_mm = 5\n')
+    with pytest.raises(ConfigError) as e:
+        project.config()
+    assert str(e.value) == ("board main: silk.art[1]: unknown key 'file', no svg – the path of the SVG from the "
+                            "project root (known: svg, x, y, width_mm, rot, side, fit)")
+    board.write_text(text + '\n[[silk.art]]\nx = 10\ny = 10\nwidth_mm = 5\n')
+    with pytest.raises(ConfigError, match=r"board main: silk.art\[1\]: no svg – the path of the SVG"):
+        project.config()
+    board.write_text(text + '\n[[silk.art]]\nsvg = "a.svg"\nx = 1\ny = 1\nwidth_mm = 5\n'
+                            '\n[[silk.art]]\nsvg = "b.svg"\nx = 1\ny = 1\nwidth_mm = 5\nlayer = "top"\n')
+    with pytest.raises(ConfigError, match=r"board main: silk.art\[2\]: unknown key 'layer' \(known: svg, x, y"):
+        project.config()
+    board.write_text(text + '\n[[silk.art]]\nsvg = "a.svg"\nx = 1\ny = 1\nwidth_mm = 5\nrot = 90\nside = "bottom"\n'
+                            'fit = "viewbox"\n')
+    assert project.config().board().silk["art"][0]["svg"] == "a.svg"     # every key it takes: loads as before
+
+
 def test_silk_place_key(tmp_path):
     """Step 2.3: [silk.place] fixes single designators – x, y (plan mm), rot, side – as [place] fixes parts."""
     from edakit.config import _board

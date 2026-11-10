@@ -4,7 +4,7 @@ Open work that needs the owner's computer, a maker or the owner's word. The stat
 and plans the sections name; this list is what is left to do of them, in the order it can be done. No item is deleted.
 
 **Layout.** Every item, in every section, open or closed, is a line with a checkbox and an ID unique in this file,
-counted up and never reused – whoever adds an item takes the next free ID and counts it up here. Next free ID: TD-158.
+counted up and never reused – whoever adds an item takes the next free ID and counts it up here. Next free ID: TD-159.
 
 - Open: `- [ ] TD-<n> - **Title:** what and why.` – a step's own name after the dash (`- [ ] TD-31 - **D.4** …`).
 - Done: ticked, the commit that did it, the date at the end, moved to [Closed todos](#closed-todos), newest first –
@@ -76,6 +76,11 @@ Nothing to do until there is an answer or a release; whichever session learns of
 - [ ] TD-156 - **LR.8 (the bell):** a perfboard variant of the bell from its THT parts, starting from the prototype's
       plan, with `joined = [["4", "29"]]` in the Nano's entry – in automatic_christmas_bell by its session, with edakit 1.2.1 or later.
       *(edakit-9d)*
+
+## The gallery ([docs/projects/](docs/projects/README.md))
+
+- [ ] TD-158 - **desk-led's page (#343):** a page in `docs/projects/` with the pictures of desk-led's first release,
+      once it is released – the gallery shows what is built; #343 closes with it. *(edakit-9d)*
 
 ## Closed todos
 

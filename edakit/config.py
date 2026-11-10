@@ -43,8 +43,8 @@ POUR_MIN_WIDTH_MM = 0.25         # pour_only: the narrowest neck the computed po
 POUR_MIN_PIECE_MM2 = 2.0         # pour_regions: the smallest piece of a shared layer that gets an outline
 HEADER_KEEP_MM = 1.27            # on_headers: the plastic of a 2.54 mm pin header, half its width around each pin
 PASTE_GAP_MM = 0.4               # [release] assembly paste_gap_mm: SMD pads of different parts, assembled side (GEO.spacing)
-MAX_BARE_MM = 5.0                # [copper] max_bare_mm: largest copper-free circle on a poured layer (GEO.pour)
-MAX_BARE_MM2 = 20.0              # [copper] max_bare_mm2: largest copper-free piece on a poured layer (GEO.pour) – the
+MAX_BARE_MM = 5.0                # [copper] max_bare_mm: largest copper-free circle on a poured or seen layer (GEO.pour)
+MAX_BARE_MM2 = 20.0              # [copper] max_bare_mm2: largest copper-free piece on a poured or seen layer (GEO.pour) – the
                                  # area of the 5 mm circle, π × 2.5² = 19.6 mm²
 UNIFORM = {"led": "row"}         # uniform: LEDs side by side point the same way – the plan check without the key
 UNIFORM_WAYS = ("row", "+x", "-x", "+y", "-y")
@@ -76,6 +76,7 @@ LOOKS_MARK = "remove"   # edakit's default of order.mark on a board with [looks]
                         # decided in the files and so in the fab hash before gate and M-5 (the owner, 2026-10-31)
 MASKS = ("green", "purple", "red", "yellow", "blue", "white", "black")   # order.mask: solder mask colours
 ART_FITS = ("content", "viewbox")   # [[silk.art]] fit: scaled and centred by the drawn shapes or by the frame
+ART_KEYS = ("svg", "x", "y", "width_mm", "rot", "side", "fit")   # [[silk.art]]: what an entry takes (silk.art_items)
 SILKSCREENS = ("white", "black")   # order.silkscreen: white print, on a white mask black (silkscreen_on)
 # [order]: every field of a maker's order form as a key in edakit's words, with edakit's default – the board edakit
 # assumes when nothing is said, the same for every maker (handbook 10.2). Three layers, the later wins per key: these
@@ -431,7 +432,7 @@ def _net_classes(nc):
 
 
 def _copper(name, c):
-    """[copper] of a board file (GEO.pour): max_bare_mm (largest copper-free circle on a poured layer, mm), max_bare_mm2
+    """[copper] of a board file (GEO.pour): max_bare_mm (largest copper-free circle on a poured or seen layer, mm), max_bare_mm2
     (largest copper-free piece there, mm²) and min_cover {layer: least copper share in % of the board area}; without it
     no share is required."""
     if not isinstance(c, dict):
@@ -637,6 +638,11 @@ def _board(name, entry, b, file="", project=None, quantity=5):
         raise ConfigError(f"board {name}: silk.unlabelled must be a table of designator = reason (GEO.silk), "
                           "e.g. { R21 = \"no room between the star tracks\" }")
     for i, art in enumerate(silk.get("art", []) if isinstance(silk.get("art"), list) else [], 1):
+        unknown = [k for k in art if k not in ART_KEYS] if isinstance(art, dict) else []
+        if isinstance(art, dict) and (unknown or "svg" not in art):
+            said = [f"unknown key {', '.join(repr(k) for k in unknown)}"] if unknown else []
+            said += ["no svg – the path of the SVG from the project root"] if "svg" not in art else []
+            raise ConfigError(f"board {name}: silk.art[{i}]: {', '.join(said)} (known: {', '.join(ART_KEYS)})")
         if isinstance(art, dict) and art.get("fit", "content") not in ART_FITS:
             raise ConfigError(f'board {name}: silk.art[{i}].fit must be "content" or "viewbox", not {art["fit"]!r} – '
                               "content: the drawn shapes are scaled to width_mm; viewbox: the SVG's frame")
