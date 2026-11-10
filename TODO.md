@@ -4,7 +4,7 @@ Open work that needs the owner's computer, a maker or the owner's word. The stat
 and plans the sections name; this list is what is left to do of them, in the order it can be done. No item is deleted.
 
 **Layout.** Every item, in every section, open or closed, is a line with a checkbox and an ID unique in this file,
-counted up and never reused – whoever adds an item takes the next free ID and counts it up here. Next free ID: TD-153.
+counted up and never reused – whoever adds an item takes the next free ID and counts it up here. Next free ID: TD-158.
 
 - Open: `- [ ] TD-<n> - **Title:** what and why.` – a step's own name after the dash (`- [ ] TD-31 - **D.4** …`).
 - Done: ticked, the commit that did it, the date at the end, moved to [Closed todos](#closed-todos), newest first –
@@ -29,8 +29,6 @@ to touch.
 
 ## For the owner
 
-- [ ] TD-152 - **OK for #351 (easyeda-mcp-pro pinned to 1.11.0, M-11 fixed upstream):** checked live; a `minor` –
-      after the merge every project updates server and bridge extension together (handbook 2.4, 2.5). *(edakit-d2)*
 - [ ] TD-108 - **A photo of the delivered tree:** one picture of the lit tree in its hill into pytree's `docs/img/` –
       it replaces the render on `docs/projects/pytree.md`. *(edakit-ce)*
 
@@ -70,13 +68,27 @@ Nothing to do until there is an answer or a release; whichever session learns of
 - [ ] TD-36 - **EasyEDA, #45 to #52 and our comments to #36 and #38:** answer questions; when a release fixes one,
       check it live, take it up and say so in upstream/README.md. EasyEDA's first answer is often "update to the latest
       version".
-- [ ] TD-140 - **M-11, easyeda-mcp-pro #864 and #865:** answer questions; when a release takes the fix, raise the
-      pin, check it live on pytree's `tree` with `layout_tree` open, and drop the closing of the other schematics in
-      `schematic check` and stage S. Released in 1.9.0; all of it done in #351, waiting for the merge (TD-152).
-      *(edakit-7b, edakit-d2)*
+
+## Perfboard layout ([docs/concepts/new/perfboard-layout.md](docs/concepts/new/perfboard-layout.md))
+
+- [ ] TD-155 - **LR.7 (the examples):** a perfboard variant of coin-cell-led and of blinker-555, their through-hole
+      parts chosen with the skill part-search, each with a plan the tests hold. *(edakit-9d)*
+- [ ] TD-156 - **LR.8 (the bell):** a perfboard variant of the bell from its THT parts, starting from the prototype's
+      plan, with `joined = [["4", "29"]]` in the Nano's entry – in automatic_christmas_bell by its session, with edakit 1.2.1 or later.
+      *(edakit-9d)*
 
 ## Closed todos
 
+- [x] TD-157 - **OK for #367 (pytree's pictures not under MIT):** given; merged as d1cf46fc – the README's licence
+      table names `docs/projects/pytree/` as pytree's, all rights reserved (pytree P-27). [2026-11-10]
+- [x] TD-154 - **OK for #365 (perfboard layout, LR.1 to LR.6):** given; merged as 16b2e1c7, edakit 1.2.1. [2026-11-10]
+- [x] TD-153 - **OK for #362 (Actions policy for `pull_request_target`):** given; merged as ba9078f9, applied with
+      `rulesets.py apply` – GitHub has the policy as the file says. [2026-11-09]
+- [x] TD-152 - **OK for #351 (easyeda-mcp-pro pinned to 1.11.0, M-11 fixed upstream):** given; merged as
+      edakit 1.2.0 (#351). *(edakit-d2)* [2026-11-09]
+- [x] TD-140 - **M-11, easyeda-mcp-pro #864 and #865:** released in 1.9.0; the pin raised to 1.11.0, checked live on
+      pytree's `tree` with `layout_tree` open, the closing of the other schematics dropped, the projectId "current"
+      that 1.9.0 refuses replaced by the project's UUID – edakit 1.2.0 (#351). *(edakit-7b, edakit-d2)* [2026-11-09]
 - [x] TD-149 - **OK for #332 (the LESD5D5.0CT1G is a bidirectional TVS):** given; merged as edakit 1.1.16 (#332).
       *(edakit-c6)* [2026-11-03]
 - [x] TD-145 - **Is the LESD5D5.0CT1G bidirectional?** Yes – symbol p. 1 and I–V curve p. 2; `values.tvs

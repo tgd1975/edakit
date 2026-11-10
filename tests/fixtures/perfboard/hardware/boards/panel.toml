@@ -1,0 +1,42 @@
+# The plan of the hand-wired board panel (handbook 7.9): 14 x 8 holes of a pad per hole.
+
+[perfboard]
+kind = "pad-per-hole"
+holes = [14, 8]
+
+[[holes]]                        # one M3 hole at the lower right, in mm from the lower left corner
+x = 32.5
+y = 3.0
+d = 3.2
+
+[place]
+J1 = { at = "A4", rot = 270 }    # pin 1 VCC in A4, pin 2 GND in A5
+SW1 = { at = "C2" }              # a (1, 2) in C2, F2; b (3, 4) in C4, F4
+R1 = { at = "G2", span = 4 }     # G2 to K2
+D1 = { anode = "L2", cathode = "L3" }
+
+[[wire]]
+net = "VCC"
+path = ["A4", "C4"]              # a row of bridges: J1.1 to SW1.3
+
+[[wire]]
+net = "LED_SW"
+path = ["F2", "G2"]
+
+[[wire]]
+net = "LED_A"
+path = ["K2", "L2"]
+
+[[wire]]
+net = "GND"
+path = ["L3", "L4"]              # the cathode to the wire's end beside it
+
+[[wire]]
+net = "GND"
+path = ["L4", "L6", "B6", "B5"]  # an insulated wire on top, around the parts
+side = "top"
+color = "black"
+
+[[wire]]
+net = "GND"
+path = ["A5", "B5"]

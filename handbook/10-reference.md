@@ -109,7 +109,8 @@ the outputs of a part with behaviour `logic` (3.1, 5.1).
   layout commands refuse it with `--board` and skip it without; `edakit order` writes no BOM and `edakit cost` no PCB
   or assembly for it.
 - `wired` – as `bought` in the graph, checks and simulation, made by nobody, with the same errors and the same boards
-  left out. Its parts are the project's, each in the carts (`hand_assembly.md`: "hand-wired, no PCB").
+  left out. Its parts are the project's, each in the carts (`hand_assembly.md`: "hand-wired, no PCB"). Built on a
+  perfboard its board file holds the plan of the perfboard, `[perfboard]` (10.2, 7.9) – `file` may name it then.
 - Not both keys on one board; STRUCT.board/wired notes a bought board without a module.
 
 ### [release]
@@ -384,6 +385,19 @@ The keys stand at the top of the file, without a prefix (`[place]`, `[[holes]]`)
 - `thickness_mm` – the mechanical model `mech_<board>.json` takes the lead protrusion from it (lead `length_mm` −
   `thickness_mm`, 7.4), and with `order` the order form and the fab hash (8.2). FILES.order fails a thickness the
   maker's form does not have (JLCPCB, FR-4, 2 layers: 0.4, 0.6, 0.8, 1.0, 1.2, 1.6, 2.0).
+
+### The plan of a perfboard
+
+The board file of a hand-wired board (`wired = true`) built on a perfboard (7.9) holds only these keys:
+
+| Key | Default | Meaning |
+|---|---|---|
+| `[perfboard]` | – | `kind` (a file of `edakit/perfboards/`: `pad-per-hole`, `3-hole-strips`), `holes` = [columns, rows] of the piece used, `cut_step_mm` (optional: the cut list's step, default the kind's) |
+| `[[holes]]` | – | mounting holes: `x`, `y` in mm, x right and y up from the board's lower left corner seen from the top; `d` (3.2); `keep` – the diameter kept free around it, default 1.875 × d (an M3 nut) |
+| `[place]` | – | `designator = { at = "P9", rot = 270 }` – the hole of pin 1, the rotation counterclockwise from the top; `span` for an axial part's lead span in holes – or `{ anode = "L3", cathode = "L2" }`, the holes of two roles |
+| `[[wire]]` | – | `net`, `path` (holes), `side` – `bottom` (default): a straight row of bridges between neighbouring holes, `top`: an insulated wire, its ends and the bends between them –, `color` |
+| `[near]`, `near_mm`, `edge_mm`, `edge_ok` | 6, 1 | the hand-over, as on a PCB |
+| `revision` | – | as on a PCB |
 
 ### [silk]
 
@@ -1149,6 +1163,21 @@ Generate, check, copy or lay out a schematic in EasyEDA – or draw it without.
 
 - **Reads:** graph, parts, the schematic file if there; for a `{sim:…}` note the saved simulation result
 - **Writes:** `schematic_<board>.svg` (or F)
+
+### edakit perfboard
+
+<!-- edakit:generated command perfboard -->
+`edakit perfboard [--board BOARD]`
+
+The plan of a hand-wired board on a perfboard ([perfboard] in its board file): checked against the graph, drawn, its cut, build and test lists.
+<!-- edakit:end -->
+
+`edakit perfboard [--board B]` – EasyEDA: no
+
+- **Reads:** the board file of every hand-wired board with `[perfboard]` (or of B), the kind of `edakit/perfboards/`,
+  graph, parts entries (`footprint_data`, `body`, `joined`), the footprint geometry beside the board file and the
+  library cache of `part import`, `<artifacts>/sim/net_currents.json`
+- **Writes:** `<artifacts>/perfboard/<board>/top.svg`, `bottom.svg`, `build.md` (7.9); exit 1 on an error
 
 ### edakit pcb
 

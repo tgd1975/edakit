@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>PERF – edakit rule catalog</title><link rel="icon" type="image/svg+xml" href="../brand/edakit-favicon.svg"><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;600&display=swap"><style>
+:root {
+  /* a reference, read by section: a sidebar of contents, entries in one column, drawings full width */
+  --bg: #f4f6f6; --surface: #ffffff; --ink: #1d2626; --muted: #5d6b6b; --line: #d5dddd; --accent: #0e6c6a;
+  --err: #b42318; --warn: #a15c07; --pend: #6941c6; --note: #475467; --ok: #087443;
+  --display: "IBM Plex Sans", "Helvetica Neue", Arial, sans-serif; --body: "IBM Plex Sans", "Helvetica Neue", Arial, sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #111717; --surface: #182020; --ink: #e3eaea; --muted: #97a6a6; --line: #2c3838; --accent: #5cc4c0;
+  --err: #f97066; --warn: #fdb022; --pend: #b692f6; --note: #98a2b3; --ok: #47cd89; color-scheme: dark; } }
+:root[data-theme="dark"] {
+  --bg: #111717; --surface: #182020; --ink: #e3eaea; --muted: #97a6a6; --line: #2c3838; --accent: #5cc4c0;
+  --err: #f97066; --warn: #fdb022; --pend: #b692f6; --note: #98a2b3; --ok: #47cd89; color-scheme: dark; }
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--ink); font: 15px/1.55 var(--body); }
+a { color: var(--accent); }
+code { font-family: var(--mono); font-size: 0.9em; }
+.layout { display: grid; grid-template-columns: 15rem minmax(0, 1fr); gap: 2rem; max-width: 84rem; margin: 0 auto;
+  padding: 1.5rem 1.25rem 4rem; }
+nav { position: sticky; top: 1rem; align-self: start; max-height: calc(100vh - 2rem); overflow: auto; font-size: 0.9rem; }
+nav ol { list-style: none; padding: 0; margin: 0; display: grid; gap: 0.2rem; }
+nav ol ol { padding-left: 0.9rem; margin: 0.2rem 0 0.4rem; }
+nav a { text-decoration: none; color: var(--ink); }
+nav a:hover, nav a:focus-visible { color: var(--accent); }
+nav a[aria-current="page"] { color: var(--accent); font-weight: 600; }
+nav .label { color: var(--muted); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.04em; }
+nav ol.engines { display: flex; flex-wrap: wrap; gap: 0.2rem 0.7rem; }
+nav ol.engines > li:has(ol.sub) { flex-basis: 100%; }
+header.top h1 { font: 600 2rem/1.15 var(--display); margin: 0 0 0.4rem; text-wrap: balance; }
+header.top p { color: var(--muted); max-width: 70ch; margin: 0; }
+header.top p.brand { margin-bottom: 0.6rem; }
+p.lead { font-size: 1.05rem; }
+:target { scroll-margin-top: 1rem; }
+tr:target td, tr:target th { background: color-mix(in srgb, var(--surface) 80%, var(--accent)); }
+article:target { outline: 2px solid var(--accent); outline-offset: 2px; }
+ul.inline { list-style: none; padding: 0; display: flex; flex-wrap: wrap; gap: 0.3rem 1rem; max-width: none; }
+table.codes tr.sec th { background: transparent; border-bottom: 1px solid var(--ink); padding-top: 0.9rem; font-weight: 400; }
+table.codes td:first-child { white-space: nowrap; }
+.card h3 a { text-decoration: none; }
+h2 { font: 600 1.45rem/1.2 var(--display); margin: 2.6rem 0 0.8rem; padding-top: 0.6rem; border-top: 2px solid var(--ink);
+  text-wrap: balance; }
+h3 { font: 600 1.1rem/1.3 var(--display); margin: 1.6rem 0 0.6rem; }
+h4 { font: 600 1rem/1.3 var(--display); margin: 0; }
+p, li, dd { max-width: 75ch; }
+.muted, .meta { color: var(--muted); }
+.brand a { display: inline-flex; align-items: center; gap: 0.5rem; }
+.brand img { display: block; }
+.meta { font-size: 0.85rem; margin: 0.4rem 0 0; }
+.tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(9.5rem, 1fr)); gap: 0.75rem; margin: 1rem 0; }
+.tile { background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 0.8rem; display: grid; }
+.tile .big { font: 600 1.8rem/1 var(--display); font-variant-numeric: tabular-nums; }
+.tile .of { color: var(--muted); font-size: 0.85rem; }
+.tile .lbl { font-weight: 600; margin-top: 0.3rem; }
+.tile .sub { color: var(--muted); font-size: 0.8rem; }
+.scroll { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; background: var(--surface); font-size: 0.9rem; }
+th, td { text-align: left; vertical-align: top; padding: 0.45rem 0.6rem; border-bottom: 1px solid var(--line); }
+th { font-weight: 600; background: color-mix(in srgb, var(--surface) 85%, var(--accent)); }
+td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+.chips { display: flex; flex-wrap: wrap; gap: 0.3rem; }
+.chip { display: inline-block; font-size: 0.75rem; line-height: 1.5; padding: 0 0.45rem; border-radius: 999px;
+  border: 1px solid currentColor; white-space: nowrap; }
+.chip.error { color: var(--err); } .chip.warning { color: var(--warn); } .chip.pending { color: var(--pend); }
+.chip.note { color: var(--note); } .chip.built { color: var(--ok); } .chip.partial { color: var(--warn); }
+.chip.open { color: var(--muted); } .chip.out { color: var(--muted); text-decoration: line-through; }
+.engine > h3 { border-bottom: 1px solid var(--line); padding-bottom: 0.3rem; }
+article.code { background: var(--surface); border: 1px solid var(--line); border-left: 3px solid var(--accent);
+  border-radius: 4px; padding: 0.8rem 1rem; margin: 0.7rem 0; }
+article.code header { display: flex; flex-wrap: wrap; gap: 0.5rem 1rem; align-items: baseline; justify-content: space-between; }
+article.code .rule { margin: 0.5rem 0; }
+article.code dl, .card dl { display: grid; grid-template-columns: 7.5rem minmax(0, 1fr); gap: 0.3rem 0.8rem; margin: 0.4rem 0 0; }
+dt { font-weight: 600; color: var(--muted); font-size: 0.85rem; }
+dd { margin: 0; }
+ul.details { margin: 0.3rem 0; padding-left: 1.2rem; font-size: 0.9rem; }
+ol.sources, ul.sources { margin: 0; padding-left: 1.2rem; font-size: 0.85rem; }
+.filter { display: flex; gap: 0.6rem; align-items: center; flex-wrap: wrap; }
+.filter input { font: inherit; padding: 0.35rem 0.6rem; border: 1px solid var(--line); border-radius: 4px;
+  background: var(--surface); color: var(--ink); min-width: 16rem; }
+.filter input:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.ecards { display: grid; grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr)); gap: .75rem; margin: .5rem 0 1.5rem; }
+.ecard { display: flex; flex-direction: column; gap: .35rem; padding: .8rem .9rem; border: 1px solid var(--line);
+  border-radius: 8px; background: var(--surface); color: var(--ink); text-decoration: none; }
+.ecard:hover, .ecard:focus-visible { border-color: var(--accent); }
+.ehead { display: flex; align-items: baseline; gap: .4rem; font-weight: 600; }
+.ehead code { font-size: 1.05rem; color: var(--accent); }
+.ecount { margin-left: auto; font-size: 1.3rem; font-weight: 700; }
+.edecides { font-size: .92rem; }
+.esev { font-size: .8rem; color: var(--muted); }
+details.group { border-top: 1px solid var(--line); padding: .4rem 0; }
+details.group > summary { cursor: pointer; padding: .3rem 0; font-weight: 600; }
+details.group table { margin-top: .4rem; }
+.cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(22rem, 1fr)); gap: 1rem; }
+.card, .table-card, article.circuit { background: var(--surface); border: 1px solid var(--line); border-radius: 6px;
+  padding: 0.9rem 1rem; }
+.card h3, .table-card h3, article.circuit h3 { margin-top: 0; }
+.table-card { margin: 0.8rem 0; }
+ul.review { padding-left: 1.2rem; font-size: 0.88rem; }
+article.circuit { margin: 1rem 0; }
+.drawing { overflow-x: auto; background: #ffffff; border: 1px solid var(--line); border-radius: 4px; margin: 0.6rem 0; }
+.drawing svg { display: block; width: 100%; min-width: 46rem; height: auto; }
+table.faults { margin-top: 0.4rem; }
+table.kv { width: auto; min-width: 24rem; }
+table.kv tr.sec th { background: transparent; border-bottom: 1px solid var(--ink); padding-top: 0.9rem; }
+table.kv .src { font-weight: 400; color: var(--muted); font-size: 0.85rem; margin-left: 0.5rem; }
+table.kv td.val { font-variant-numeric: tabular-nums; }
+table.cand td:first-child { white-space: nowrap; }
+td, dd, li { overflow-wrap: anywhere; }
+footer { color: var(--muted); font-size: 0.85rem; margin-top: 3rem; }
+@media (max-width: 52rem) {
+  .layout { grid-template-columns: minmax(0, 1fr); gap: 1rem; padding: 1rem 1rem 3rem; }
+  nav { position: static; max-height: none; }
+  nav > ol { display: flex; flex-wrap: wrap; gap: 0.3rem 0.9rem; }
+  nav ol ol.sub { display: none; }
+  article.code dl, .card dl { grid-template-columns: minmax(0, 1fr); }
+  .cards { grid-template-columns: minmax(0, 1fr); }
+  table.kv { min-width: 0; }
+}
+@media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto !important; } }
+</style></head><body><div class="layout"><nav aria-label="Rule catalog"><ol><li><a href="index.html" title="Overview">Overview</a></li><li><span class="label">Engines</span><ol class="engines"><li><a href="struct.html" title="STRUCT">STRUCT</a></li><li><a href="sync.html" title="SYNC">SYNC</a></li><li><a href="lim.html" title="LIM – limits">LIM</a></li><li><a href="lvl.html" title="LVL – levels">LVL</a></li><li><a href="req.html" title="REQ – requires">REQ</a></li><li><a href="path.html" title="PATH – paths">PATH</a></li><li><a href="sim.html" title="SIM">SIM</a></li><li><a href="geo.html" title="GEO">GEO</a></li><li><a href="perf.html" aria-current="page" title="PERF">PERF</a><ol class="sub"><li><a href="#PERF.net">PERF.net</a></li><li><a href="#PERF.place">PERF.place</a></li><li><a href="#PERF.grid">PERF.grid</a></li><li><a href="#PERF.body">PERF.body</a></li><li><a href="#PERF.mount">PERF.mount</a></li><li><a href="#PERF.wire">PERF.wire</a></li><li><a href="#PERF.current">PERF.current</a></li></ol></li><li><a href="files.html" title="FILES">FILES</a></li><li><a href="parts.html" title="PARTS">PARTS</a></li><li><a href="order.html" title="ORDER">ORDER</a></li><li><a href="docs.html" title="DOCS">DOCS</a></li><li><a href="hint.html" title="HINT">HINT</a></li></ol></li><li><a href="domains.html" title="Domains">Domains</a></li><li><a href="tables.html" title="Tables">Tables</a></li><li><a href="schema.html" title="Parts schema">Parts schema</a></li><li><a href="circuits.html" title="Reference circuits">Reference circuits</a></li><li><a href="open-designs.html" title="Open designs">Open designs</a></li><li><a href="candidates.html" title="maker-coverage candidates">maker-coverage candidates</a></li><li><a href="before.html" title="Check IDs of before">Check IDs of before</a></li></ol></nav><main><header class="top"><p class="meta brand"><a href="../"><picture><source media="(prefers-color-scheme: dark)" srcset="../brand/edakit-mark-dark.svg"><img src="../brand/edakit-mark.svg" width="28" height="28" alt=""></picture>edakit documentation</a></p><h1><code>PERF</code></h1></header><p class="lead">The plan of a hand-wired board on a perfboard makes the graph&#x27;s nets and can be built – 7 codes.</p><p>Each engine decides one kind of relation; a finding's code is <code>ENGINE.relation</code>. Severities are the catalog's defaults – a project's domains may set others; a grade is a sub-case with its own severity, a topic the part of a code a domain switches on.</p><p class="filter"><label for="q">Filter codes</label> <input id="q" type="search" placeholder="LIM.range, pull-up, USB-C …" autocomplete="off"></p><article class="code" id="PERF.net" data-text="perf.net perfboard plan = graph the copper of the plan – the leads in their holes, the pads a kind joins, the bridges below, the insulated wires on top and the pins a part joins inside – makes exactly the graph&#x27;s nets of the board: no net open, no two nets in one piece of copper, every wire joining the net it is labelled with."><header><h4><code>PERF.net</code> perfboard plan = graph</h4><div class="chips"><span class="chip error">error</span><span class="chip error">open: error</span><span class="chip error">short: error</span><span class="chip error">meet: error</span><span class="chip error">label: error</span><span class="chip error">joined: error</span><span class="chip note">inside: note</span></div></header><p class="rule">The copper of the plan – the leads in their holes, the pads a kind joins, the bridges below, the insulated wires on top and the pins a part joins inside – makes exactly the graph&#x27;s nets of the board: no net open, no two nets in one piece of copper, every wire joining the net it is labelled with.</p><ul class="details"><li>the nets the plan makes, from the holes, the copper groups of the kind (<code>groups</code> of <code>edakit/perfboards/&lt;kind&gt;.toml</code>: none on a pad per hole, runs of three on <code>3-hole-strips</code>), the bridges of <code>[[wire]]</code> with side bottom (every hole along the path), the insulated wires with side top (their two ends) and the pins a part joins inside (<code>joined</code> of the parts entry, a button&#x27;s pins that share a role, 4.1), against the graph&#x27;s nets of the board: open, short, a wire labelled with a net it does not join (label), a hole or a strip where two nets meet (meet) – why it exists: a strip not cut, a bridge in the wrong row, the bottom read the wrong way round, found only with the multimeter (perfboard-layout, Why)</li><li>a module on sockets (kind module) joins its pins inside – the nets are whole with it plugged in; pins that reach the rest of their net only inside it are a note (inside), and the test list measures them as groups of their own (decision 19) – why it exists: the bell&#x27;s LED cathodes reach ground only through the Nano&#x27;s second GND pin</li><li>a key <code>joined</code> of a parts entry that is not a list of pin groups of the entry: grade joined</li></ul><dl><dt>Why</dt><dd>The classic mistakes of a hand-wired board – a bridge forgotten, a row started one hole too early, an LED the wrong way round – are found with the multimeter after soldering. On the Christmas bell&#x27;s plan the check found all three in a copy built to break, each with the hole where the soldering iron goes.</dd><dt>What to do</dt><dd>Add the missing bridge or wire, move the bridge or the part that joins two nets – the finding of grade meet names the hole –, or correct the wire&#x27;s net.</dd><dt>Sources</dt><dd><ol class="sources"><li>edakit concept &#x27;Perfboard layout&#x27; (docs/concepts/new/perfboard-layout.md), decisions of 2026-11-03 and 2026-11-09: decisions 1, 11, 16 to 19</li><li>edakit handbook 7.9</li></ol></dd></dl></article><article class="code" id="PERF.place" data-text="perf.place every part in its holes every part of the hand-wired board has a place in the plan, lies within the board&#x27;s holes, has one lead per hole, and a part placed by the holes of its roles has its leads in exactly those holes."><header><h4><code>PERF.place</code> every part in its holes</h4><div class="chips"><span class="chip error">error</span><span class="chip error">unplaced: error</span><span class="chip error">unknown: error</span><span class="chip error">offboard: error</span><span class="chip error">two: error</span><span class="chip error">role: error</span><span class="chip error">span: error</span><span class="chip error">geometry: error</span></div></header><p class="rule">Every part of the hand-wired board has a place in the plan, lies within the board&#x27;s holes, has one lead per hole, and a part placed by the holes of its roles has its leads in exactly those holes.</p><ul class="details"><li>every part of the board in <code>[place]</code> (unplaced), no designator there that is not on the board (unknown), every lead and every wire end within <code>holes</code> of <code>[perfboard]</code> (offboard), one lead per hole (two); a part placed by role (<code>anode = &quot;L3&quot;, cathode = &quot;L2&quot;</code>) has its leads where its roles are named, edakit derives the rotation (role); span only on a part with two leads (span); its footprint geometry known – the geometry beside the board file, <code>footprint_data</code>, or the library cache of <code>edakit part import</code> (geometry) – why it exists: decision 14 of perfboard-layout, the bell&#x27;s LEDs by role</li></ul><dl><dt>Why</dt><dd>A part the plan leaves out is soldered from memory; two leads in one hole do not fit; an LED placed by its rotation reads alike for a yellow one with its cathode on pin 1 and a green one with its anode there – the trap the bell&#x27;s PCB had.</dd><dt>What to do</dt><dd>Give the part its place – <code>at</code> and <code>rot</code>, or the holes of its roles –, move it onto the board, or correct the holes the plan names.</dd><dt>Sources</dt><dd><ol class="sources"><li>edakit concept &#x27;Perfboard layout&#x27; (docs/concepts/new/perfboard-layout.md), decisions of 2026-11-03 and 2026-11-09: decisions 10, 13, 14</li><li>edakit handbook 7.9</li></ol></dd></dl></article><article class="code" id="PERF.grid" data-text="perf.grid leads on the grid every pad of a placed part lands on a hole of the 2.54 mm grid within the bend a lead takes (tolerance.lead_bend_mm of the kind); a bent lead within it is a note; a part with smd pads is an error – a perfboard takes through-hole parts only."><header><h4><code>PERF.grid</code> leads on the grid</h4><div class="chips"><span class="chip error">error</span><span class="chip note">bent: note</span><span class="chip error">smd: error</span></div></header><p class="rule">Every pad of a placed part lands on a hole of the 2.54 mm grid within the bend a lead takes (tolerance.lead_bend_mm of the kind); a bent lead within it is a note; a part with SMD pads is an error – a perfboard takes through-hole parts only.</p><ul class="details"><li>the pads of the footprint geometry, turned by <code>rot</code>, fitted onto the holes: the largest distance of a pad from its hole once the part is centred on its holes, against <code>tolerance.lead_bend_mm</code> of the kind (an assumption of 0.8 mm until a build measures it); above 0.05 mm a note (bent); a pad without a hole an error (smd) – why it exists: decision 3 of perfboard-layout, the bell&#x27;s buttons</li></ul><dl><dt>Why</dt><dd>A part whose pins are off the grid – a slide switch with terminals 2.0 mm apart, a terminal block at 3.5 mm – does not go into the holes, and an SMD part has no lead to go through them. The bell&#x27;s buttons, 6.5 x 4.5 mm on 7.62 x 5.08 mm, are bent by 0.63 mm.</dd><dt>What to do</dt><dd>A part with pins on the 2.54 mm grid, another rotation, or – for an SMD part – a through-hole part in a variant of its own (handbook 3, 10.4).</dd><dt>Sources</dt><dd><ol class="sources"><li>edakit concept &#x27;Perfboard layout&#x27; (docs/concepts/new/perfboard-layout.md), decisions of 2026-11-03 and 2026-11-09: decision 3, &#x27;What edakit checks&#x27;</li><li>edakit/perfboards/pad-per-hole.toml: pitch 2.54 mm (Rademacher 710-5, CIF 4987709)</li></ol></dd></dl></article><article class="code" id="PERF.body" data-text="perf.body bodies apart, spans long enough the bodies of the placed parts do not overlap and cover no other part&#x27;s lead and no wire&#x27;s end; an axial part&#x27;s span holds its body and the bends of its leads; a part under a module on sockets is a note."><header><h4><code>PERF.body</code> bodies apart, spans long enough</h4><div class="chips"><span class="chip error">error</span><span class="chip error">span: error</span><span class="chip note">under: note</span></div></header><p class="rule">The bodies of the placed parts do not overlap and cover no other part&#x27;s lead and no wire&#x27;s end; an axial part&#x27;s span holds its body and the bends of its leads; a part under a module on sockets is a note.</p><ul class="details"><li>bodies as boxes – <code>body.box</code> of the parts entry, else the footprint&#x27;s box – or round where the footprint&#x27;s name says so (<code>_BD5.0</code> of a radial LED or capacitor), an axial part&#x27;s body (<code>-L6.5</code> and <code>_BD2.5</code>, or <code>body.box</code>) between its leads, a module&#x27;s sockets one pitch around each pin: no two overlap, none covers a lead or a wire&#x27;s end; an axial part&#x27;s <code>span</code> in holes at least its body plus <code>tolerance.axial_bend_mm</code> on each side (span); a part under a module on sockets (under) – why it exists: decision 19 of perfboard-layout</li></ul><dl><dt>Why</dt><dd>Two bodies in one place do not fit, a lead under a body cannot be soldered or reached by the probe, and a resistor bent too close at its body cracks; a module on 8.5 mm sockets has room under it for wires, not for parts that might touch it.</dd><dt>What to do</dt><dd>Move one of the parts, give the axial part a longer span, or move the part from under the module.</dd><dt>Sources</dt><dd><ol class="sources"><li>edakit concept &#x27;Perfboard layout&#x27; (docs/concepts/new/perfboard-layout.md), decisions of 2026-11-03 and 2026-11-09: decision 19, &#x27;What edakit checks&#x27;</li><li>edakit/perfboards/pad-per-hole.toml: tolerance.axial_bend_mm (an assumption until a build)</li></ol></dd></dl></article><article class="code" id="PERF.mount" data-text="perf.mount mounting holes free every mounting hole of the plan lies on the board, no lead, bridge or wire end sits under the nut around it, and no body reaches into it."><header><h4><code>PERF.mount</code> mounting holes free</h4><div class="chips"><span class="chip error">error</span></div></header><p class="rule">Every mounting hole of the plan lies on the board, no lead, bridge or wire end sits under the nut around it, and no body reaches into it.</p><ul class="details"><li><code>[[holes]]</code> in mm, x right and y up from the board&#x27;s lower left corner seen from the top: inside the board; the pads whose centre lies within <code>keep</code> / 2 plus half a pad of the hole&#x27;s centre stay free – <code>keep</code> of the hole, default 1.875 x d, the corners of an M3 nut (6.01 mm, ISO 4032) for d = 3.2 – why it exists: decision 15 of perfboard-layout</li></ul><dl><dt>Why</dt><dd>A frame&#x27;s holes rarely meet the 2.54 mm grid – the bell&#x27;s are 78 x 49 mm apart, the grid gives 76.2 x 48.3 –, so they are drilled between the holes; a pad under the nut shorts to the screw or is crushed.</dd><dt>What to do</dt><dd>Move the part or the wire from the nut, or the mounting hole – in mm, as on a PCB.</dd><dt>Sources</dt><dd><ol class="sources"><li>edakit concept &#x27;Perfboard layout&#x27; (docs/concepts/new/perfboard-layout.md), decisions of 2026-11-03 and 2026-11-09: decision 15</li><li>ISO 4032, hexagon nuts: M3 width across corners e min 6.01 mm</li></ol></dd></dl></article><article class="code" id="PERF.wire" data-text="perf.wire bridges straight, wires into free holes on the bottom only straight rows of bridges between neighbouring holes: none turns a corner, and two rows meet at a lead or in the middle of another row, never at right angles in an empty hole; an insulated wire on top ends in a free hole, not in a lead&#x27;s, and not under a body."><header><h4><code>PERF.wire</code> bridges straight, wires into free holes</h4><div class="chips"><span class="chip error">error</span><span class="chip error">corner: error</span><span class="chip error">end: error</span></div></header><p class="rule">On the bottom only straight rows of bridges between neighbouring holes: none turns a corner, and two rows meet at a lead or in the middle of another row, never at right angles in an empty hole; an insulated wire on top ends in a free hole, not in a lead&#x27;s, and not under a body.</p><ul class="details"><li><code>[[wire]]</code> with side bottom: every step along a row or a column, no corner within it and none where two rows end in the same empty hole (corner); side top: both ends in free holes, not under a body – a module on sockets is raised, its sockets are bodies (end) – why it exists: decisions 11, 16, 17 of perfboard-layout</li></ul><dl><dt>Why</dt><dd>A bridge around a corner is a wire that should run on top, where it is easy to solder; a lead and a wire do not fit into one hole, so a wire&#x27;s end goes into the free hole beside the lead, joined to it by a bridge below.</dd><dt>What to do</dt><dd>Straighten the bridges or take a wire on top for the way around the corner; move the wire&#x27;s end into a free hole beside the pin.</dd><dt>Sources</dt><dd><ol class="sources"><li>edakit concept &#x27;Perfboard layout&#x27; (docs/concepts/new/perfboard-layout.md), decisions of 2026-11-03 and 2026-11-09: decisions 11, 16, 17</li></ol></dd></dl></article><article class="code" id="PERF.current" data-text="perf.current copper carries the current a bridge, a wire or a strip carries the current of its net – the largest current of a part on it from the simulation – within the copper&#x27;s rating of the kind&#x27;s data; without a rating with its source a note names the currents."><header><h4><code>PERF.current</code> copper carries the current</h4><div class="chips"><span class="chip error">error</span><span class="chip note">unknown: note</span></div></header><p class="rule">A bridge, a wire or a strip carries the current of its net – the largest current of a part on it from the simulation – within the copper&#x27;s rating of the kind&#x27;s data; without a rating with its source a note names the currents.</p><ul class="details"><li>the nets of the plan&#x27;s bridges and wires against <code>copper.max_a</code> of the kind with <code>copper.source</code>, the currents from <code>&lt;artifacts&gt;/sim/net_currents.json</code> of <code>edakit sim</code>; without a rating a note with the three largest (unknown); without a simulation nothing – why it exists: &#x27;What edakit checks&#x27;, Current, of perfboard-layout</li></ul><dl><dt>Why</dt><dd>A current only with its source, never a guess: no datasheet of a perfboard rates its pads, and the bell&#x27;s ground carries 0.8 A with the servo stalled.</dd><dt>What to do</dt><dd>A rating with its source in edakit/perfboards/&lt;kind&gt;.toml (copper.max_a, copper.source), or a thicker wire for the net.</dd><dt>Sources</dt><dd><ol class="sources"><li>edakit concept &#x27;Perfboard layout&#x27; (docs/concepts/new/perfboard-layout.md), decisions of 2026-11-03 and 2026-11-09: &#x27;What edakit checks&#x27;, Current</li></ol></dd></dl></article><footer>Written by <code>docs/catalog/build.py</code>; <code>tests/test_catalog_page.py</code> holds it to the catalog.</footer></main></div><script>
+const q = document.getElementById('q');
+if (q) q.addEventListener('input', () => {
+  const s = q.value.trim().toLowerCase();
+  document.querySelectorAll('[data-text]').forEach(a => { a.hidden = s && !a.dataset.text.includes(s); });
+  document.querySelectorAll('.group').forEach(g => {
+    g.hidden = s && !g.querySelector('[data-text]:not([hidden])');
+    if (g.tagName === 'DETAILS') g.open = !!s && !g.hidden;
+  });
+});
+function openTarget() {
+  const id = decodeURIComponent(location.hash.slice(1));
+  const el = id && document.getElementById(id);
+  const d = el && el.closest('details');
+  if (d) { d.open = true; el.scrollIntoView(); }
+}
+window.addEventListener('hashchange', openTarget);
+openTarget();
+</script></body></html>

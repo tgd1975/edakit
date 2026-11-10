@@ -29,7 +29,7 @@ from .eda import MCP_SERVER
 from .toolchain import is_kicad
 
 PROC = Path("/proc")
-DEFAULT_TIMEOUT_MS = 15000  # easyeda-mcp-pro 1.8.0 without BRIDGE_TIMEOUT_MS (src/config/env.ts:69)
+DEFAULT_TIMEOUT_MS = 15000  # easyeda-mcp-pro 1.11.0 without BRIDGE_TIMEOUT_MS (src/config/env.ts:69)
 ORIGINAL_DEPTH = 5          # levels an extension returns without maxDepth – or one older than 1.7.0 whatever is asked
 EXTENSION_HINT = ("copy the extension of the pinned server (bash edakit/easyeda/mcp-server.sh extension --copy .), "
                   "uninstall the old one in EasyEDA, import, restart EasyEDA (handbook 2.5)")
