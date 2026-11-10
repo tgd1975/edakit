@@ -41,8 +41,8 @@ boards of the project in the current repository. You **change nothing**, neither
   visible side but the LEDs – and yours to judge.
 
 **A perfboard** (a hand-wired board with `[perfboard]` in its board file, handbook 7.9): the plan in the board file,
-`edakit perfboard 2>&1 | cat` and its `<artifacts>/perfboard/<board>/top.svg`, `bottom.svg`, `build.md`; for M-5 the
-same three files in the gate run's `fab/<board>/`, whose hashes the fab hash covers. There you look at what a person
+`edakit perfboard 2>&1 | cat` and its `<artifacts>/perfboard/<board>/top.svg`, `bottom.svg`, `cut.svg`, `build.md`; for
+M-5 the same four files in the gate run's `fab/<board>/`, whose hashes the fab hash covers. There you look at what a person
 soldering it meets: parts in the order of their nets, short bridges, few and short wires on top, nothing under a
 module that it may touch, the nuts of the mounting holes free, a connector reachable at the edge, the polarity of
 every part readable in the top view, a build list that can be followed from low to high and a test list that finds

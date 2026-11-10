@@ -8,6 +8,12 @@ written once, by `.github/merge.py`, from the fragments in [changes/](changes/RE
 update edakit@edakit`, then `/reload-plugins` or a new session; `edakit version` names the version that runs and what an
 update brings.
 
+## 1.3.0 – 2026-11-10
+
+- `edakit perfboard` draws the cut list at 1:1, `cut.svg` beside `top.svg` and `bottom.svg`: a centimetre ruler over a 1 cm grid, the insulated wires and then the pieces of bare wire, each from the longest down and left-aligned at the ruler's zero, beside each its length, for a wire what is stripped at its left and right end, and its holes and net; printed at 100 % a piece is laid on its row and cut at its end. `build.md` shows it in its cut list, the steps page "Build it on a perfboard" shows the example's.
+- The cut list counts in whole millimetres, rounded up, no longer in steps of 5 mm – the kinds' `step_mm` is 1; a step or strip of a fraction of a millimetre is refused, `cut_step_mm` may only be a whole number of mm.
+- **When updating:** `cut.svg` is one of a hand-wired board's build files under M-5 and the cut list's lengths change, so the fab hash of such a board changes and its M-5 no longer counts – run `edakit gate` and have the agent pcb-reviewer sign M-5 again for the new run.
+
 ## 1.2.6 – 2026-11-10
 
 - A `[[routing.keepouts]]` entry with `pour = false` keeps the pours out of its area too: a `NO_POURS` region on its layer in EasyEDA, a rule area in KiCad; the computed pours and GEO.pour leave it out (#335).

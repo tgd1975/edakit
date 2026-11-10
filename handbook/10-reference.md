@@ -392,7 +392,7 @@ The board file of a hand-wired board (`wired = true`) built on a perfboard (7.9)
 
 | Key | Default | Meaning |
 |---|---|---|
-| `[perfboard]` | – | `kind` (a file of `edakit/perfboards/`: `pad-per-hole`, `3-hole-strips`), `holes` = [columns, rows] of the piece used, `cut_step_mm` (optional: the cut list's step, default the kind's) |
+| `[perfboard]` | – | `kind` (a file of `edakit/perfboards/`: `pad-per-hole`, `3-hole-strips`), `holes` = [columns, rows] of the piece used, `cut_step_mm` (optional: the cut list's step, a whole number of mm, default the kind's 1 mm) |
 | `[[holes]]` | – | mounting holes: `x`, `y` in mm, x right and y up from the board's lower left corner seen from the top; `d` (3.2); `keep` – the diameter kept free around it, default 1.875 × d (an M3 nut) |
 | `[place]` | – | `designator = { at = "P9", rot = 270 }` – the hole of pin 1, the rotation counterclockwise from the top; `span` for an axial part's lead span in holes – or `{ anode = "L3", cathode = "L2" }`, the holes of two roles |
 | `[[wire]]` | – | `net`, `path` (holes), `side` – `bottom` (default): a straight row of bridges between neighbouring holes, `top`: an insulated wire, its ends and the bends between them –, `color` |
@@ -1184,7 +1184,8 @@ The plan of a hand-wired board on a perfboard ([perfboard] in its board file): c
 - **Reads:** the board file of every hand-wired board with `[perfboard]` (or of B), the kind of `edakit/perfboards/`,
   graph, parts entries (`footprint_data`, `body`, `joined`), the footprint geometry beside the board file and the
   library cache of `part import`, `<artifacts>/sim/net_currents.json`
-- **Writes:** `<artifacts>/perfboard/<board>/top.svg`, `bottom.svg`, `build.md` (7.9); exit 1 on an error
+- **Writes:** `<artifacts>/perfboard/<board>/top.svg`, `bottom.svg`, `cut.svg` (the cut list at 1:1), `build.md`
+  (7.9); exit 1 on an error
 
 ### edakit pcb
 
