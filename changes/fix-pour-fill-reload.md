@@ -1,2 +1,0 @@
-patch
-- `route pours`, `route all` and `route fill` save the PCB and load it again before they fill: once pads, vias or tracks were created or deleted through the API in a session – the tooling holes of the last fill, `route apply`'s tracks –, EasyEDA's copper engine fills nothing until the PCB is reloaded (M-13, found live on desk-led). A second `route pours` in one EasyEDA session works now, and `route fill` needs no restart of EasyEDA before it.
