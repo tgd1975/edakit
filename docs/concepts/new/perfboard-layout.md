@@ -147,8 +147,8 @@ The plan is the layout of a hand-wired board; its checks belong where the layout
 - **Build list:** the order of soldering from low to high – resistors, wires on top, sockets, buttons, connectors,
   diodes, capacitors, then the bridges once the leads they join are in, the test, the module last (decision 21) –,
   each with its holes and its polarity.
-- **Cut list** (decision 22), lengths rounded up to 5 mm: the insulated wires by colour, each with its length and
-  the 5 mm stripped at its ends, and the pieces of bare wire grouped by length, so the maker cuts each length in one
+- **Cut list** (decision 22), lengths in whole millimetres, rounded up: the insulated wires by colour, each with its
+  length and the 5 mm stripped at its ends, and the pieces of bare wire grouped by length, so the maker cuts each length in one
   go. A straight row of bridges is one piece, laid over the pads and soldered at each; a single bridge beside a wire's
   end is that wire's stripped end, bent onto the lead's pad, and no piece of its own (decision 23). The allowances –
   board thickness, stripped end, slack, bare wire beyond the outer pads, the step – are values of the kind's data. The
@@ -227,7 +227,7 @@ confirmed by the owner the same day.
 | 19 | A module on sockets is raised: wires on top may run under it, a part under it is a note; what it joins inside joins the nets but not the test list, which measures without it | the bell's five wires under the Nano; its LED cathodes reach ground only through the Nano's second GND pin | the module's outline as a body on the board |
 | 20 | `near` measured as on a PCB, the gap between the bodies' boxes | the same hand-over as for a PCB (`box_gap` in `edakit/pcb.py`) | the gap between pads |
 | 21 | The build list solders the bridges once the leads they join are in, after the parts, before the test and the module | a bridge joins the solder of a lead to its neighbour | bridges first, as links on a stripboard |
-| 22 | A cut list: the insulated wires on top (coloured, may turn corners) and the bridges of bare wire below (straight), lengths in steps of 5 mm | "cool wäre es, wenn dann noch eine Stückliste für die Kabeln (farbige Ummantelung, können um Ecken gehen, Oberseite) und Brücken (blanker Draht, nur gerade, Unterseite) ausgegeben wird. Längen in gröberen Schritten (z. B. 5 mm)" | the wire's total length in the material only |
+| 22 | A cut list: the insulated wires on top (coloured, may turn corners) and the bridges of bare wire below (straight), lengths in whole millimetres, rounded up – changed by the owner on 2026-11-10, first in steps of 5 mm | "cool wäre es, wenn dann noch eine Stückliste für die Kabeln (farbige Ummantelung, können um Ecken gehen, Oberseite) und Brücken (blanker Draht, nur gerade, Unterseite) ausgegeben wird. Längen in gröberen Schritten (z. B. 5 mm)"; on 2026-11-10, after the 1:1 drawing of the cut list showed the 5 mm going into the insulation: "lassen wir die 5mm rundung weg - sie dürfte mehr probleme schaffen, als ich dachte. aber wir gehen bei den drähten nicht in den sub mm bereich ... alle angaben sind mm keine nachkomma" | the wire's total length in the material only |
 | 23 | A straight row of bridges is one piece of bare wire; a single bridge beside a wire's end is that wire's stripped end, no piece of its own; the allowances are values of the kind's data | one piece is cut and soldered faster than a row of short ones; the stripped end lies on that pad anyway | a piece per bridge; the bridge beside a wire's end as a piece of its own |
 
 By the yardstick: nothing of the plan stays in someone's head – the board file holds it, edakit checks and draws it.
