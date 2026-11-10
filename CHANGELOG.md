@@ -8,6 +8,11 @@ written once, by `.github/merge.py`, from the fragments in [changes/](changes/RE
 update edakit@edakit`, then `/reload-plugins` or a new session; `edakit version` names the version that runs and what an
 update brings.
 
+## 1.2.6 – 2026-11-10
+
+- A `[[routing.keepouts]]` entry with `pour = false` keeps the pours out of its area too: a `NO_POURS` region on its layer in EasyEDA, a rule area in KiCad; the computed pours and GEO.pour leave it out (#335).
+- `route pours` and `route all` save the PCB and stop when a pour fill does not come back "rebuilt", naming each pour, its status and easyeda-mcp-pro's version, and whether the cause is the board (the net has no pad, via or track on that layer) or the bridge; the new step `edakit route fill` fills the pours already in the PCB one per call after a restart of EasyEDA and sets the tooling holes again – for the bridge's "no-copper" on fresh pours (M-13, #336).
+
 ## 1.2.5 – 2026-11-10
 
 - GEO.spacing/margin: on a board whose vias stay open (`[order] vias = "untented"`), every via – of any net, the pad's own too – keeps `[routing] smd_via_keep_mm` (0.3 mm, 0 = off) from every SMD pad the assembler reflows; `route dsn` writes a via keep-out around those pads, the fanout keeps the distance, `route check` and the gate warn, one row per pad and via. Tented vias, the default, are not measured (#341).
