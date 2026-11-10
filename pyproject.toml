@@ -24,7 +24,7 @@ edakit = "edakit.cli:main"
 
 [dependency-groups]
 dev = [
-    "pytest>=8",
+    "pytest>=9.2.0",
     "pytest-xdist>=3.8.0",
 ]
 sysml = [               # the conformance test of the circuit language's exports (pytest -m sysml); never installed by default
