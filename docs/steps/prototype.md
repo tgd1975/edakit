@@ -20,15 +20,17 @@ wires on top. edakit holds it to the circuit and draws both sides:
 
 ```text
 $ edakit perfboard
-tht: Lochraster, a pad per hole, 33 × 22 holes, 19 parts, 8 wires, 76 bridges
-  note     PERF.grid/bent   S1: leads bent by 0.63 mm into the 2.54 mm grid (allowed 0.8 mm)
+main: Lochraster, a pad per hole, 14 × 15 holes, 4 parts, 2 wires, 7 bridges
+  note     PERF.grid/bent   SW1: leads bent by 0.63 mm into the 2.54 mm grid (allowed 0.8 mm)
   …
-  0 errors; -> build/edakit/perfboard/tht/top.svg, build/edakit/perfboard/tht/bottom.svg, build/edakit/perfboard/tht/build.md
+  0 errors; -> build/edakit/perfboard/main/top.svg, build/edakit/perfboard/main/bottom.svg, build/edakit/perfboard/main/build.md
 ```
 
-![The Christmas bell's THT circuit on a perfboard, top view, drawn by edakit perfboard](../pictures/perfboard-top.svg)
+![The walkthrough's circuit with through-hole parts on a perfboard, top view, drawn by edakit perfboard](../pictures/perfboard-top.svg)
 
 ![The same board's bottom side, seen through the board from above](../pictures/perfboard-bottom.svg)
+
+The walkthrough's example as a prototype: [its plan and parts](../../examples/coin-cell-led/variants/perfboard/README.md).
 
 ## What you are asked
 

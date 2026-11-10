@@ -15,11 +15,11 @@ agent [harness](https://tgd1975.github.io/edakit/develop/architecture/) for circ
 
 | The circuit, drawn by `edakit schematic draw` | A prototype, drawn by `edakit perfboard` | The board, from its Gerber files |
 | --- | --- | --- |
-| ![The walkthrough's schematic: a CR2032, a push button, a red LED and its resistor](examples/coin-cell-led/docs/schematic.svg) | ![The Christmas bell's THT circuit on a perfboard, top view](docs/pictures/perfboard-top.svg) | ![The walkthrough's round board, top side](examples/coin-cell-led/docs/silk_main_top.png) |
+| ![The walkthrough's schematic: a CR2032, a push button, a red LED and its resistor](examples/coin-cell-led/docs/schematic.svg) | ![The same circuit with through-hole parts on a perfboard, top view](docs/pictures/perfboard-top.svg) | ![The walkthrough's round board, top side](examples/coin-cell-led/docs/silk_main_top.png) |
 
 The walkthrough's example: a coin cell, a button and a red LED, drawn in EasyEDA Pro – every file of it is text in
-[examples/coin-cell-led](examples/coin-cell-led/). The prototype is the Christmas bell's through-hole circuit, its
-plan [checked and drawn](https://tgd1975.github.io/edakit/prototype/) by edakit. The same on KiCad: a 555 blinker in
+[examples/coin-cell-led](examples/coin-cell-led/), its prototype on a perfboard in
+[variants/perfboard](examples/coin-cell-led/variants/perfboard/). The same on KiCad: a 555 blinker in
 [examples/blinker-555](examples/blinker-555/), with
 [its walkthrough](https://tgd1975.github.io/edakit/handbook/18-walkthrough-kicad/).
 

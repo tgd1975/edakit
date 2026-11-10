@@ -1,0 +1,113 @@
+{
+  "lcsc": "C2895493",
+  "mpn": "XL-504SURD",
+  "manufacturer": "XINGLIGHT(成兴光)",
+  "kind": "led",
+  "package": "5 mm THT",
+  "footprint": "LED-TH_BD5.9-P2.54-FD-RED",
+  "jlc_class": "Extended Part",
+  "datasheet": {
+    "url": "https://item.szlcsc.com/datasheet/XL-504SURD/3136208.html",
+    "pinout_page": 7
+  },
+  "pins": {
+    "1": {
+      "name": "A",
+      "type": "passive",
+      "role": "anode"
+    },
+    "2": {
+      "name": "K",
+      "type": "passive",
+      "role": "cathode"
+    }
+  },
+  "values": {
+    "color": "red",
+    "vf_typ_v": 2.2,
+    "vf_min_v": 1.8,
+    "vf_max_v": 2.4,
+    "vf_at_a": 0.02,
+    "rs_ohm": 8
+  },
+  "limits": {
+    "if_max_a": 0.02,
+    "vr_max_v": 5,
+    "p_max_w": 0.07
+  },
+  "spice": {},
+  "sources": [
+    "LCSC parameter table via EasyEDA (2026-10-20)",
+    "Vf 2.2 V @ 20 mA per LCSC",
+    "pin names as in the EasyEDA symbol, read 2026-11-10: 1 = A, 2 = K – the symbol now agrees with the footprint, whose print marks pad 1 as anode (+); the Christmas bell's entry of 2026-10-20 still had 1 = K, 2 = A",
+    "footprint_data: the library footprint LED-TH_BD5.9-P2.54-FD-RED (edakit part import), 2026-11-10 (edakit part footprint) – the print is the copy's in EasyEDA until lines, texts, marks or outline are written",
+    "XINGLIGHT XL-504SURD datasheet p. 3: IR ≤ 10 µA at VR = 5 V – the basis of vr_max_v 5",
+    "rs_ohm 8 from the V-I curve, datasheet p. 5: about 2.02 V at 20 mA and 2.49 V at 80 mA",
+    "datasheet p. 3: the solder joint at least 2.0 mm from the epoxy base"
+  ],
+  "notes": null,
+  "verified": {
+    "by": "Claude Opus 5.5 (datasheet check, automated)",
+    "date": "2026-10-20",
+    "datasheet": "XINGLIGHT XL-504SURD",
+    "checked": [
+      "IF 20 mA, IFP 80 mA, Pd 70 mW, VF 1.8/2.2/2.4 V @ 20 mA",
+      "IR ≤ 10 µA at VR = 5 V (p. 3); rs about 8 Ω from the V-I curve (p. 5) – the coin-cell-led perfboard variant, 2026-11-10"
+    ],
+    "open": [],
+    "second_check": {
+      "by": "agent electrical-reviewer (Claude, independent session, M-1)",
+      "date": "2026-10-22",
+      "datasheet": "XINGLIGHT datasheet p. 7",
+      "checked": [
+        "footprint print (\"+\" or diode symbol, flat at pad 2) matches pin 1 = anode"
+      ],
+      "hint": "pin numbers as in the library, not the datasheet (there ① = cathode); the square pad is the anode"
+    },
+    "datasheet_sha256": "477fa83a7cb3ac3b5a86394490438e2e7369939b29877a37d40d9709b8689dcf"
+  },
+  "lead": {
+    "*": {
+      "shape": "square",
+      "a_mm": 0.5,
+      "b_mm": 0.5,
+      "tol_mm": null,
+      "hole_rec_mm": null,
+      "source": "agent electrical-reviewer, M-1 addendum 2026-10-22: XINGLIGHT datasheet (C2895493) p. 7 outline dimension, lead 0.5 in front and side view"
+    }
+  },
+  "footprint_data": {
+    "origin": [
+      0,
+      0
+    ],
+    "pads": {
+      "2": {
+        "x": 1.27,
+        "y": 0.0,
+        "shape": "ELLIPSE",
+        "w": 1.524,
+        "h": 1.524,
+        "hole": [
+          0.914,
+          0.914
+        ]
+      },
+      "1": {
+        "x": -1.27,
+        "y": 0.0,
+        "shape": "RECT",
+        "w": 1.524,
+        "h": 1.524,
+        "hole": [
+          0.914,
+          0.914
+        ]
+      }
+    }
+  },
+  "compliance": {
+    "rohs": true,
+    "source": "LCSC part page (RoHS), 2026-11-10"
+  }
+}

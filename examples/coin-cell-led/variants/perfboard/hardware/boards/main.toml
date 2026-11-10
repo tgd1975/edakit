@@ -1,0 +1,46 @@
+# The plan of the hand-wired board main (handbook 7.9): coin-cell-led on 14 x 15 holes of a perfboard with a pad per
+# hole. Holes by column letter and row number, A1 at the top left seen from the top.
+
+[perfboard]
+kind = "pad-per-hole"
+holes = [14, 15]                 # 14 columns (A to N) x 15 rows = 35.6 x 38.1 mm
+
+[place]
+SW1 = { at = "B2" }              # a (1, 2) in B2, E2: VBAT; b (3, 4) in B4, E4: LED_SW
+R1 = { at = "F4", span = 4 }     # F4 to J4
+D1 = { anode = "J3", cathode = "J2" }   # beside the button: the LED shows the press
+BT1 = { plus = "D10", minus = "L10" }   # the holder lying flat, pins 20 mm apart: 8 holes
+
+[[wire]]
+net = "LED_SW"
+path = ["E4", "F4"]              # SW1.4 to R1.1
+
+[[wire]]
+net = "LED_ANODE"
+path = ["J4", "J3"]              # R1.2 to D1's anode
+
+[[wire]]
+net = "VBAT"
+path = ["A2", "B2"]              # SW1.1 to the wire's end beside it
+
+[[wire]]
+net = "VBAT"
+path = ["A2", "A10", "C10"]      # an insulated wire on top, down the left edge to BT1's plus
+side = "top"
+
+[[wire]]
+net = "VBAT"
+path = ["C10", "D10"]
+
+[[wire]]
+net = "GND"
+path = ["J2", "J1"]              # D1's cathode to the wire's end above it, clear of D1's flange
+
+[[wire]]
+net = "GND"
+path = ["J1", "N1", "N10"]       # an insulated wire on top, along the top and down the right edge to BT1's minus
+side = "top"
+
+[[wire]]
+net = "GND"
+path = ["L10", "N10"]            # BT1's minus out from under the holder
