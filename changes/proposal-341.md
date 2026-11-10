@@ -1,0 +1,2 @@
+patch
+- GEO.spacing/margin: on a board whose vias stay open (`[order] vias = "untented"`), every via – of any net, the pad's own too – keeps `[routing] smd_via_keep_mm` (0.3 mm, 0 = off) from every SMD pad the assembler reflows; `route dsn` writes a via keep-out around those pads, the fanout keeps the distance, `route check` and the gate warn, one row per pad and via. Tented vias, the default, are not measured (#341).

@@ -70,6 +70,8 @@ assembly preview at JLCPCB.
        a through-hole pad's the side its part does not sit on, an SMD pad's its own –, vias and pads of other nets at
        least that far away; pads as GEO.spacing, vias from the via drill file (net: the tracks of pcb.json that end on
        them)
+  GEO.spacing with [order] vias = "untented": every via, of any net, at least [routing] smd_via_keep_mm (0.3 mm) from a
+       reflowed SMD pad on an assembled side (warn, one row per pad and via)
   GEO.silk with [looks]: on the visible side every PCB text of the silkscreen is one the board file puts there (the board
        label on its side, the [[silk.texts]] of the side, with [silk] designators on it the designators and group
        labels), and no part on it shows its designator while [silk] designators names the other side (waive GEO.silk on
@@ -1070,6 +1072,41 @@ def check_hand_joints(cfg, board, design, d, rows):
         if g["waived"]:
             rows.add("L", "GEO.spacing", board.name, f"hand-soldered joint: {route.joint_text(g, keep, board)}", True,
                      f"{g['mil'] * MM:.2f} mm", want, "waived")
+            rows[-1]["reason"] = g["waived"]
+
+
+def check_smd_vias(cfg, board, design, d, rows):
+    """GEO.spacing/margin with [routing] smd_via_keep_mm (0.3 mm, 0 = off) on a board whose vias stay open ([order] vias =
+    "untented"): no via of any net, its own too, closer than the keep to a reflowed SMD pad – an SMD pad on an assembled
+    side ([release] assembly sides) of a part not soldered by hand (route.reflowed_pads). Pads as `route read` saw them
+    (as GEO.spacing), vias from the via drill file with the net of the tracks of pcb.json that end on them. A warning per
+    pad and via, so an accept covers one pair; waive GEO.spacing on the pad's part or net or on the via's net lists it as
+    waived. Tented, plugged or filled vias, the key 0 or no side assembled: no row."""
+    from .. import route
+    rules = route.Rules(board)
+    keep = rules.smd_keep
+    _, sides = route.paste_rule(cfg)
+    if not (keep and sides):
+        return
+    want = f">= {keep * MM:g} mm ([routing] smd_via_keep_mm, vias untented)"
+    pcb = json.loads((d / "pcb.json").read_text())
+    data, why = route.board_as_read(cfg, board, pcb["components"])
+    if data is None:
+        rows.add("L", "GEO.spacing", board.name, "pad shapes for the vias at reflowed SMD pads", False, why,
+                 "the PCB as read", "warn")
+        return
+    hand = route.hand_soldered(design.graph, board.name)
+    vias = pcb_vias(d, pcb["lines"], rules.via[1])
+    gaps = route.smd_via_gaps(data, keep, hand, sides, vias, route.pad_accepts(design.graph, "GEO.spacing", "via"))
+    pads = route.reflowed_pads(data, hand, sides)
+    what = "open vias keep clear of the reflowed SMD pads"
+    rows.add("L", "GEO.spacing", board.name, what, True,
+             f"{len(pads)} SMD pads on {' and '.join(sides)}, {len(vias)} vias, "
+             f"{sum(1 for g in gaps if not g['waived'])} closer", want)
+    for g in gaps:
+        rows.add("L", "GEO.spacing", board.name, f"open via at a reflowed SMD pad: {g['pad']}", False,
+                 route.smd_via_text(g, keep, board), want, "waived" if g["waived"] else "warn")
+        if g["waived"]:
             rows[-1]["reason"] = g["waived"]
 
 
@@ -2125,6 +2162,7 @@ def run(cfg, board, out, offline=False, verbose=False):
     check_pad_clearance(cfg, board, design, d, rows)
     check_paste_gap(cfg, board, design, d, rows)
     check_hand_joints(cfg, board, design, d, rows)
+    check_smd_vias(cfg, board, design, d, rows)
     check_looks(board, d, rows)
     check_visible_print(cfg, board, design, d, rows)
     check_fab(cfg, board, design, d, rows)

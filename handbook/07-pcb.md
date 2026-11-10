@@ -526,6 +526,7 @@ layer_cost = { TOP = [1.0, 1.8], BOTTOM = [2.2, 3.0] }   # preferred / against p
 classes = { POWER = { width_mil = 18, nets = ["VIN", "+5V"] }, GND = { width_mil = 18, nets = ["GND"] } }
 widths = "classes"           # or "sim": every class at least the IPC-2221 width of the simulated currents (below)
 hand_solder_keep_mm = 0.5    # GEO.spacing: vias and pads of other nets this far from hand-soldered joints (0 = off, below)
+smd_via_keep_mm = 0.3        # GEO.spacing/margin: with [order] vias = "untented", every via this far from a reflowed SMD pad
 
 [[routing.keepouts]]               # no tracks (vias allowed) on a side or in an area
 layer = "BOTTOM"
@@ -702,6 +703,28 @@ the side D1 sits on, below hand_solder_keep_mm 0.5`.
 On a real project the layout reviews found a via 0.25 mm from an LED joint, a via 0.26 mm between two potentiometer
 pins and a resistor pad 0.37 mm from an LED joint, each after every check had passed; 0.5 mm finds all three and passes
 the released board. The gate measures the same on the PCB (GEO.spacing, 8.1).
+
+### Open vias at reflowed SMD pads (GEO.spacing/margin)
+
+An open via next to a reflowed SMD pad draws the solder off the joint into its hole, and the joint is left lean – in
+its own net too, where neither EasyEDA's DRC nor the clearance looks. On a board whose vias stay open (`[order] vias =
+"untented"`), `smd_via_keep_mm` (0.3 mm, 0 = off) keeps every via, of any net, that far from every reflowed SMD pad –
+an SMD pad on an assembled side (`[release] assembly` `sides`) of a part not soldered by hand –, copper to copper.
+Tented, plugged and epoxy-filled vias, edakit's default `tented` among them, are not measured: they leave no hole for
+the solder to flow into.
+
+`route dsn` writes a via keep-out of that size around every such pad, the fanout of a plane searches its spot from
+half the pad's larger side + via radius + the larger of clearance and keep on, and `route check` reports a via that is
+closer all the same as a warning – no new attempt, no exit code. The gate measures it on the PCB, a warning per pad and
+via (8.1); `accept` GEO.spacing on the pad's part or net, or on the via's net, accepts a pair:
+
+```text
+reflowed SMD pads (GEO.spacing/margin, vias untented): 4 on TOP, 1 vias closer than smd_via_keep_mm 0.3
+    D1.2 (VIN) – via VIN at (77.20, 13.25): 0.10 mm apart on TOP, an assembled side, below smd_via_keep_mm 0.3 (vias untented) – warning
+```
+
+The 0.3 mm is AllPCB's recommendation against solder wicking (a secondary source); a fab with a smaller figure sets
+its own.
 
 ### Track widths (GEO.width offline)
 

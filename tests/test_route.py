@@ -1275,3 +1275,80 @@ def test_a_nets_pours_are_filled_in_one_call_and_a_refused_fill_stops(monkeypatc
                                                          "verification."}
     with pytest.raises(SystemExit, match="restart EasyEDA"):
         route.fill(None, None, Mcp([ok, refused]), ["GND", "+5V"])
+
+
+# --- GEO.spacing/margin (#341): open vias keep smd_via_keep_mm from reflowed SMD pads
+
+UNTENTED = '\n[order]\nvias = "untented"\n'
+SMD_TO_VIA = 0.85 + 0.10 + 24 / MIL / 2       # D1.2's half height + 0.10 mm + the via's radius, from D1.2's centre
+
+
+def test_smd_via_gaps_count_every_net_at_reflowed_smd_pads_only():
+    """A via of the pad's own net counts as well; a hand-soldered part, a side that is not assembled and a
+    through-hole pad are not looked at."""
+    def gaps(vias, hand=(), sides=("TOP",)):
+        return [(g["pad"], g["via"], g["layer"], round(g["mil"] / MIL, 2))
+                for g in route.smd_via_gaps(STAGE, 0.3 * MIL, set(hand), sides, vias)]
+    own = [("VIN", mm(77.2, 12 + SMD_TO_VIA), 24)]
+    assert gaps(own) == [("D1.2", "VIN", "TOP", 0.1)]
+    assert gaps([(None, mm(77.2, 12 + SMD_TO_VIA), 24)]) == [("D1.2", None, "TOP", 0.1)]
+    assert gaps(own, hand=("D1",)) == []                                           # bom: false – the joint's keep
+    assert gaps(own, sides=("BOTTOM",)) == []                                      # TOP not assembled
+    assert gaps([("GND", mm(84, 11 - 0.7 - 0.1 - 24 / MIL / 2), 24)]) == []        # J1.1 is through hole
+    assert [p["ref"] + "." + p["num"] for p in route.reflowed_pads(STAGE, set(), ("TOP",))] == [
+        "D1.1", "D1.2", "C2.1", "C2.2"]
+
+
+def test_route_check_warns_on_an_open_via_at_a_reflowed_pad(project, capsys):
+    routed_stage(project)
+    with_via(project, net="VIN", at=(77.2, 12 + SMD_TO_VIA))
+    code, out = route_cmd(project, "check", capsys)
+    assert code == 0 and "reflowed" not in out                                     # tented, edakit's default
+    routed_stage(project)
+    f = project.root / "hardware" / "boards" / "main.toml"
+    f.write_text(f.read_text() + UNTENTED)
+    with_via(project, net="VIN", at=(77.2, 12 + SMD_TO_VIA))
+    code, out = route_cmd(project, "check", capsys)
+    assert code == 0                                                               # a warning: no exit code
+    assert "reflowed SMD pads (GEO.spacing/margin, vias untented): 4 on TOP, 1 vias closer than smd_via_keep_mm 0.3" \
+        in out
+    assert "D1.2 (VIN) – via VIN at (77.20, 13.25): 0.10 mm apart on TOP, an assembled side, below smd_via_keep_mm " \
+           "0.3 (vias untented) – warning" in out
+
+
+def test_dsn_keeps_vias_away_from_reflowed_smd_pads(project, tmp_path):
+    cfg = routed_stage(project)
+    data = json.loads((project.root / "build" / "edakit" / "route" / "main_board.json").read_text())
+    rules = route.Rules(cfg.board())
+    rules.reflow = ("TOP",)
+    assert rules.smd_keep == 0                                                     # tented: no keep-out
+    route.write_dsn(rules, data, tmp_path / "tented.dsn")
+    assert "via_keepout" not in (tmp_path / "tented.dsn").read_text()
+    f = project.root / "hardware" / "boards" / "main.toml"
+    f.write_text(f.read_text() + UNTENTED)
+    rules = route.Rules(config.load(project.root / "edakit.toml").board())
+    rules.reflow = ("TOP",)
+    assert rules.smd_keep == pytest.approx(0.3 * MIL)
+    route.write_dsn(rules, data, tmp_path / "open.dsn")
+    text = (tmp_path / "open.dsn").read_text()
+    assert re.findall(r'via_keepout "(S\d+_\w+)"', text) == ["S0_TOP", "S1_TOP", "S2_TOP", "S3_TOP"]
+    [(_, area)] = [k for k in route.smd_keepouts(rules, data)][3:]                  # around C2.2, 1.0 x 1.3 mm
+    from shapely.geometry import Point
+    c2 = route.pad_outline(data["pads"][5])
+    assert c2.buffer(0.3 * MIL - 0.01).within(area) and Point(*mm(68.95 + 0.5 + 0.31, 12)).within(area) is False
+
+
+def test_fanout_keeps_smd_via_keep_from_reflowed_pads(plane_board):
+    """With vias untented, the fanout via of R1.1 (SMD, TOP, reflowed) starts at half side + radius + 0.3 mm and keeps
+    0.3 mm from every reflowed SMD pad, its own too."""
+    make, data = plane_board
+    rules = make()
+    [(_, _, _, _, s, v)] = route.fanout(rules, data)
+    assert math.dist(s, v) == pytest.approx(D0, abs=0.01)                          # tented: as before
+    rules = make("fanout = true", '[order]\nvias = "untented"\n')
+    rules.reflow = ("TOP",)
+    [(_, _, _, _, s, v)] = route.fanout(rules, data)
+    assert math.dist(s, v) == pytest.approx(20 + 12 + 0.3 * MIL, abs=0.01)
+    from shapely.geometry import Point
+    for p in route.reflowed_pads(data, set(), ("TOP",)):
+        assert Point(v).distance(route.pad_outline(p)) - 12 >= 0.3 * MIL - 0.02

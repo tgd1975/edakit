@@ -573,6 +573,21 @@ def via_at_smd_tab(ex, project):
     via(ex, *TAB_VIA)
 
 
+OPEN_VIA = (10.8, 9 - 0.85 - 0.1 - 0.6096 / 2)   # 0.10 mm (copper to copper) below D1.2 (VIN), reflowed on TOP
+
+
+def open_vias(project):
+    board_file(project, 'remark = "2 NPTH tooling holes added by customer."',
+               'remark = "2 NPTH tooling holes added by customer."\nvias = "untented"')
+
+
+def open_via_at_smd_pad(ex, project):
+    """The boards' vias left open ([order] vias = "untented") and a VIN via without a track 0.10 mm below the reflowed
+    SMD pad D1.2 (VIN) – in its own net, where the clearance does not look (proposal #341)."""
+    open_vias(project)
+    via(ex, *OPEN_VIA)
+
+
 def track_at_joint(ex, project):
     """A GND track on BOTTOM from J1.2 that passes 0.20 mm below J1.1 (VIN), J1's solder side – tracks do not count
     for GEO.spacing. It starts on J1.2, so GEO.pour sees no loose copper."""
@@ -861,6 +876,9 @@ FAULTS = [
     ("a via next to a hand-soldered SMD tab", via_at_smd_tab,
      [("GEO.spacing", "fail", "D1.2 (VIN) – via (no track, net unknown) at (10.80, 7.50): 0.35 mm apart on TOP, the side "
        "D1 sits on, below hand_solder_keep_mm 0.5")]),
+    ("an open via next to a reflowed SMD pad", open_via_at_smd_pad,
+     [("GEO.spacing", "warn", "D1.2 (VIN) – via (no track, net unknown) at (10.80, 7.75): 0.10 mm apart on TOP, an "
+       "assembled side, below smd_via_keep_mm 0.3 (vias untented)")]),
     # GEO.silk (#81) – only with [looks] in the board file
     ("a designator shown on the visible side", visible_designator,
      [("GEO.silk", "fail", "TOP (visible): C2 shows its designator – [silk] designators is bottom")]),
@@ -1469,6 +1487,40 @@ def test_hand_solder_keep_off_gives_no_row(project):
         board_file(p, "hand_solder_keep_mm = 0.5", "hand_solder_keep_mm = 0")
     rows = run(project, off)
     assert findings(rows) == [] and not [r for r in rows if r["id"] == "GEO.spacing" and "hand-soldered" in r["check"]]
+
+
+def smd_rows(rows):
+    return [r for r in rows if r["id"] == "GEO.spacing" and "reflowed" in r["check"]]
+
+
+def smd_keep_off(ex, project):
+    open_via_at_smd_pad(ex, project)
+    board_file(project, "hand_solder_keep_mm = 0.5", "hand_solder_keep_mm = 0.5\nsmd_via_keep_mm = 0")
+
+
+@pytest.mark.parametrize("fault", [pytest.param(lambda ex, p: via(ex, *OPEN_VIA), id="tented"),
+                                   pytest.param(smd_keep_off, id="key 0")])
+def test_a_tented_via_at_a_reflowed_smd_pad_gives_no_row(project, fault):
+    """GEO.spacing/margin measures open vias only: tented – edakit's default – or the key 0, no row (the owner's
+    answer on #341: the source's mechanism is solder flowing into the via's hole)."""
+    rows = run(project, fault)
+    assert findings(rows) == [] and not smd_rows(rows)
+
+
+def test_open_vias_name_the_reflowed_smd_pads(project):
+    assert [(r["result"], r["actual"], r["expected"]) for r in smd_rows(run(project, lambda ex, p: open_vias(p)))] == [
+        ("pass", "4 SMD pads on TOP, 0 vias, 0 closer", ">= 0.3 mm ([routing] smd_via_keep_mm, vias untented)")]
+
+
+def test_an_open_via_at_a_reflowed_smd_pad_is_waived_on_its_net(project):
+    def waived(ex, p):
+        open_via_at_smd_pad(ex, p)
+        graph(p, lambda g: next(n for n in g["graph"]["nets"] if n["name"] == "VIN").update(
+            accept={"GEO.spacing:via": "test: the via is filled by hand"}))
+    rows = run(project, waived)
+    assert findings(rows) == [("GEO.spacing", "waived")]
+    w = next(r for r in rows if r["result"] == "waived")
+    assert w["reason"] == "test: the via is filled by hand" and w["check"] == "open via at a reflowed SMD pad: D1.2"
 
 
 def test_the_clean_export_names_the_hand_soldered_joints(project):
