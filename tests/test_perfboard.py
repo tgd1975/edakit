@@ -449,7 +449,8 @@ def test_a_project_without_a_plan_keeps_its_gate(project, monkeypatch):
 
 def test_the_example_variant_is_built_from_its_plan(tmp_path, monkeypatch, capsys):
     """coin-cell-led on a perfboard, examples/coin-cell-led/variants/perfboard: the circuit checked, the plan clean, the
-    lines the steps page "Build it on a perfboard" quotes printed, and the drawings of docs/pictures/ the command's."""
+    lines the steps page "Build it on a perfboard" quotes printed, its cut list the one of build.md, and the drawings of
+    docs/pictures/ the command's."""
     shutil.copytree(EXAMPLE, tmp_path / "coin-cell-led", ignore=shutil.ignore_patterns("build"))
     monkeypatch.chdir(tmp_path / "coin-cell-led" / "variants" / "perfboard")
     monkeypatch.delenv("EDAKIT_CONFIG", raising=False)
@@ -463,6 +464,8 @@ def test_the_example_variant_is_built_from_its_plan(tmp_path, monkeypatch, capsy
     assert len(quoted) >= 3 and [q for q in quoted if q not in out] == [], out
     drawn = Path("build/edakit/perfboard/main")
     build, top = (drawn / "build.md").read_text(), (drawn / "top.svg").read_text()
+    rows = [ln for ln in page.split("## What you have")[1].splitlines() if ln.startswith("| ")]
+    assert len(rows) == 8 and [r for r in rows if r not in build] == [] and "strip 5 mm at each end" in build
     # its M-5: a holder fits both ways round – its ends named and marked, no stripe; a wire's end soldered with its lead
     assert "BT1 KH-CR2032-2-1: its + end on hole D10, its − end on hole L10" in build and "(stripe)" not in build
     assert "do not solder it yet" in build and "black, holes J1–N10 GND" in build

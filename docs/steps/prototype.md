@@ -44,9 +44,23 @@ the check M-5 of [Have it reviewed](08-have-it-reviewed.md).
 
 ## What you have
 
-The two drawings and four lists in `build.md`. The cut list gives each wire with its length. The build list goes from
-low parts to high. The test list says what the multimeter must read, and the material list what to buy. `edakit gate`
-checks the plan as the layout, without EasyEDA.
+The two drawings and four lists in `build.md`. First the cut list, here the example's. The insulated wires on top:
+
+| Colour | Length | Holes | Net |
+| --- | --- | --- | --- |
+| red | 45 mm | A2–C10 | VBAT |
+| black | 50 mm | J1–N10 | GND |
+
+Strip 5 mm at each end: through its hole and over onto the pad of the lead beside it. The bare wire on the bottom,
+one piece per straight row:
+
+| Length | Pieces | Holes |
+| --- | --- | --- |
+| 10 mm | 1 | L10 … N10 GND |
+| 5 mm | 2 | E4–F4 LED_SW, J4–J3 LED_ANODE |
+
+The build list goes from low parts to high. The test list says what the multimeter must read, and the material list
+what to buy. `edakit gate` checks the plan as the layout, without EasyEDA.
 
 Then you solder and test. A board from the same circuit: [Have it reviewed](08-have-it-reviewed.md).
 
