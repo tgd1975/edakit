@@ -72,12 +72,12 @@ Read only (it closes the saved schematic tabs and activates its pages, though), 
 duplicate, LCSC), nets (every graph pin on its net, no foreign pins, no unknown nets), pin numbers **and names** and
 no-connect markers.
 
-It reads the schematic **as saved, with no other schematic open**: every saved schematic tab is closed first – the
-PCB's stay –, then every page of this one opened again. While another schematic of the project is open, the bridge
-can list a pin on a second net: pytree's template showed U4.11 on V_LED whenever the board's schematic `layout_tree`
-was open – stage F focuses it last –, because a V_LED flag of `layout_tree` sits on the end of the template's wire
-from U4.11 and the bridge takes the flags of every open schematic but the wires of one (M-11 in `upstream/README.md`,
-#117). So the same template passed or failed by what ran before.
+It reads the schematic **as saved**: its saved tabs are closed first – other schematics and the PCB stay open –, then
+every page of it opened again. Until easyeda-mcp-pro 1.9.0 another open schematic of the project could put a pin on a
+second net: pytree's template showed U4.11 on V_LED whenever the board's schematic `layout_tree` was open, because a
+V_LED flag of `layout_tree` sits on the end of the template's wire from U4.11 and the bridge took the flags of every
+open schematic but the wires of one (M-11 in `upstream/README.md`, #117). Since 1.9.0 it reads the focused page
+only, and the check no longer closes the other schematics.
 
 A tab with unsaved changes stays open – closing it would throw them away –; the check reads this schematic's as drawn,
 and names either in a finding of its own (`saved`): save it, or close its tab without saving.

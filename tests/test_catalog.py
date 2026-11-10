@@ -186,7 +186,8 @@ def test_the_handbook_lists_every_engine():
     from edakit.catalog import handbook
     text = (handbook.ROOT / "14-design.md").read_text(encoding="utf-8")
     assert "<!-- edakit:generated engines -->" in text
-    assert all(f"| {e['prefix']} | {e['decides']} |" in text for e in catalog.engines().values())
+    assert all(f"| {e['prefix']} | {e['decides']} |" in text for e in catalog.released_engines().values())
+    assert all(f"| {e['prefix']} |" not in text for e in catalog.engines().values() if e.get("beta"))   # DEF: the DSL's
 
 
 def test_the_handbook_lists_what_the_catalog_holds():
@@ -195,7 +196,11 @@ def test_the_handbook_lists_what_the_catalog_holds():
     from edakit.catalog import handbook
     assert handbook.stale() == []
     shown = "".join(p.read_text(encoding="utf-8") for p in handbook.ROOT.glob("*.md"))
-    assert all(f"[`{name}`]({handbook.page_of(name)}#{name})" in shown for name in catalog.codes())  # in a table
+    assert all(f"[`{name}`]({handbook.page_of(name)}#{name})" in shown for name in catalog.released_codes())
+    beta = [n for n in catalog.codes() if catalog.beta(n)]
+    assert beta and not any(f"`{name}`" in shown for name in beta)          # the explorative DSL's: not in the handbook
+    dsl = "".join(p.read_text(encoding="utf-8") for p in handbook.DSL.glob("*.md"))
+    assert all(f"`{name}`" in dsl for name in beta if name.startswith("DEF."))   # on the DSL's own page
     assert all(f"`{kind}`" in shown for kind in schema.kinds()["kinds"])
 
 

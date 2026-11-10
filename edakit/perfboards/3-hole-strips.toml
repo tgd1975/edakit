@@ -1,0 +1,31 @@
+# A perfboard kind as data (handbook 7.9): Lochstreifen, a pad over three holes of a row – a lead and two wires
+# share a pad. Read by edakit/perfboard.py; a value without a source is marked an assumption.
+
+name = "Lochstreifen, a pad over three holes"
+pitch_mm = 2.54                # Rademacher 710-5 and CIF 4987709: grid 2.54 mm
+hole_mm = 1.0                  # both: holes 1.0 mm
+pad_mm = 1.8                   # assumption: the width of a strip of three, tinned – no datasheet gives it
+copper_um = 35                 # Rademacher 710-5: 35 µm copper
+board_mm = 1.6                 # CIF 4987709: 1.6 mm (Rademacher 710-5: 1.5 mm FR2)
+sides = 1                      # pads on the bottom only; the top is bare substrate
+groups = { along = "row", length = 3 }   # runs of three holes along each row, from column A: A–C, D–F, …
+sizes = { euro = [63, 39], half_euro = [39, 31] }   # holes of a 160 x 100 and a 100 x 80 mm board: 160 / 2.54 = 63
+sources = [
+  "Rademacher 710-5 at Bürklin: 160 x 100 mm, grid 2.54 mm, FR2, 35 µm copper, holes 1 mm – https://www.buerklin.com/en/p/rademacher/pcbs/710-5/10H7762/ (read 2026-11-09)",
+  "CIF Lochrasterplatine at RS 4987709: grid 2.54 mm, holes 1 mm, 160 x 100 x 1.6 mm FR4 – https://de.rs-online.com/web/p/matrix-platinen/4987709 (read 2026-11-09)",
+]
+
+[tolerance]
+lead_bend_mm = 0.8             # assumption: how far a lead may be bent to reach a hole of the grid – until a build
+axial_bend_mm = 1.5            # assumption: straight lead between body and bend, per side, of an axial part
+
+[copper]                       # what a pad or a bridge carries: a current only with its source – none yet
+max_a = 0                      # 0: unknown, PERF.current says so
+source = ""
+
+[wires]                        # the cut list (decision 22, 23) – assumptions until a build measures them
+strip_mm = 5                   # stripped at each end of an insulated wire: through the board, over to the lead beside it
+slack_mm = 5                   # an insulated wire's extra length for its bends on top
+bridge_end_mm = 1.0            # bare wire beyond the centre of a bridge's outer pads
+step_mm = 5                    # every length rounded up to this step
+bare_mm = 0.6                  # the bare tinned wire of the bridges

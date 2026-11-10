@@ -3,8 +3,8 @@
     edakit graph show NAME [--json FILE]
 
 NAME is a designator (U1) or a net name (LED_CLK). For a part: type, board, label, LCSC number or part number, its
-parts entry (key, kind, value, the limits and values it gives), every pin with its name, role and net, the accepts of
-the component; for a net: its voltage range, fn, accepts, the cables that carry it, every pin on it with the part's
+parts entry (key, kind, value, the limits and values it gives), the derivation records of its value (rule, derived
+value, window, chosen value), every pin with its name, role and net, the accepts of the component; for a net: its voltage range, fn, accepts, the cables that carry it, every pin on it with the part's
 kind and the pin's role. Then the findings of `edakit check` on it – those whose place is NAME or whose accept may sit
 on it. Read-only; an exact name, a designator before a net of the same name.
 """
@@ -41,7 +41,8 @@ def part_view(design, des):
             "lcsc": c.get("lcsc", ""), "part": c.get("part", ""), "bom": c.get("bom", True),
             "entry": design.entry_key(des) or "", "kind": entry.get("kind", ""),
             "value": c.get("value") or entry.get("value", ""), "limits": entry.get("limits") or {},
-            "values": entry.get("values") or {}, "pins": pins, "accept": c.get("accept") or {}}
+            "values": entry.get("values") or {}, "pins": pins, "accept": c.get("accept") or {},
+            "derived": [r for r in design.graph.get("derivations") or [] if isinstance(r, dict) and r.get("part") == des]}
 
 
 def net_view(design, name):
@@ -75,6 +76,14 @@ def text(view, found):
         for key in ("limits", "values"):
             if v[key]:
                 lines.append(f"  {key:<9} " + ", ".join(f"{k} = {x}" for k, x in v[key].items()))
+        for r in v.get("derived") or []:
+            unit = (r.get("derived") or {}).get("unit", "")
+            ser = r.get("series") or {}
+            lo, hi = (ser.get("window") or [None, None])[:2]
+            chosen = (r.get("chosen") or {}).get("value")
+            lines.append(f"  derived   {r.get('key', 'value')} {(r.get('derived') or {}).get('value')} {unit} by "
+                         f"{r.get('rule')} ({r.get('from')}) – {ser.get('name')} {ser.get('nearest')}, window {lo}…{hi}"
+                         + (f", chosen {chosen} {unit}" if chosen is not None else ""))
         lines.append("  pins")
         lines += [f"    {p['pin']:<4} {p['name']:<12} {p['role']:<10} {p['net']}" for p in v["pins"]]
     else:

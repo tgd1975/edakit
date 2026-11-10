@@ -1,7 +1,8 @@
 """edakit's documentation as one site for GitHub Pages, assembled into build/pages and built by MkDocs. The navigation
 is data – NAV, a table of tab, file and short title, by reader (docs/concepts/done/documentation-newcomer.md, steps N.1
-and N.2): Start, A circuit, A board, Extend, Develop, Handbook, Reference and Inside edakit as tabs across the top, the
-sidebar showing the current tab alone, at most eight entries but for the handbook. The sources – the concepts, skills,
+and N.2): Start, A circuit, A board, Extend, Develop, Handbook, Reference, Explorative DSL – the beta of [beta] dsl,
+docs/dsl/ – and Inside edakit as tabs across the top, the sidebar showing the current tab alone, at most eight entries
+but for the handbook. The sources – the concepts, skills,
 agents, evals and the rules of a session – are on the site behind the tab "Inside edakit": its sidebar holds an
 overview and the index of each kind, the pages themselves are not in the navigation, every page of them marked as a
 source.
@@ -119,6 +120,14 @@ NAV = [
         ("docs/catalog/index.html", "Rule catalog"),
         ("CHANGELOG.md", "Changelog"),
     ]),
+    ("Explorative DSL", [        # the beta of [beta] dsl: the circuit language, a tab of its own (docs/dsl/)
+        ("docs/dsl/README.md", "Overview"),
+        ("docs/dsl/language.md", "The circuit language"),
+        ("docs/dsl/derivations.md", "Derivations"),
+        ("docs/dsl/variants.md", "Variants and requirements"),
+        ("docs/dsl/sysml.md", "SysML v2 and KerML"),
+        ("docs/dsl/editor.md", "The editor"),
+    ]),
     ("Inside edakit", [          # the sources: an overview, then the index of each kind
         ("docs/inside-edakit.md", "Overview"),
         ("docs/concepts/README.md", "Concepts"),
@@ -147,10 +156,10 @@ REDIRECTS = {"inside-edakit/index.html": "../inside/"}
 # skills and the projects name them. The catalog's own pages stay at /catalog/: generated HTML whose relative links
 # (../brand/…) are those of docs/catalog/ in the repository.
 TAB_DIR = {"Start": "start", "A circuit": "circuit", "A board": "board", "Extend": "extend", "Develop": "develop",
-           "Handbook": "handbook", "Reference": "reference", "Inside edakit": "inside"}
+           "Handbook": "handbook", "Reference": "reference", "Explorative DSL": "dsl", "Inside edakit": "inside"}
 INDEXES = {"README.md": "index.md", "handbook/README.md": "handbook/index.md", "docs/steps/README.md": "circuit/index.md",
            "docs/projects/README.md": "start/projects/index.md", "docs/reference/README.md": "reference/index.md",
-           "docs/inside-edakit.md": "inside/index.md",   # a tab's index: Material shows the tab's other entries
+           "docs/inside-edakit.md": "inside/index.md", "docs/dsl/README.md": "dsl/index.md",   # a tab's index: Material shows the tab's other entries
            "docs/concepts/README.md": "inside/concepts/index.md", "skills/README.md": "inside/skills/index.md",
            "agents/README.md": "inside/agents/index.md", "evals/README.md": "inside/evals.md",
            "CLAUDE.md": "inside/claude.md", "docs/brand/README.md": "develop/brand.md", "CHANGELOG.md": "reference/changelog.md"}
@@ -185,7 +194,8 @@ def old_site_path(src):
                "CHANGELOG.md": "changelog.md", "CLAUDE.md": "inside/claude.md", "docs/inside-edakit.md": "inside/index.md",
                "docs/brand/README.md": "brand/index.md", "docs/concepts/README.md": "concepts/index.md",
                "docs/projects/README.md": "projects/index.md", "docs/steps/README.md": "steps/index.md",
-               "skills/README.md": "skills/index.md", "agents/README.md": "agents/index.md"}
+               "skills/README.md": "skills/index.md", "agents/README.md": "agents/index.md",
+               "docs/dsl/README.md": "dsl/index.md"}   # new since: no old address
     if src in special:
         return special[src]
     if src.startswith("skills/") and src.endswith("/SKILL.md"):

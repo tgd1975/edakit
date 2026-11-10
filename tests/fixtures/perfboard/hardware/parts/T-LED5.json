@@ -1,0 +1,49 @@
+{
+ "lcsc": "T-LED5",
+ "mpn": "LED-5-RED",
+ "manufacturer": "test",
+ "kind": "led",
+ "package": "THT LED 5 mm",
+ "footprint": "LED-TH_BD5.0-P2.54-FD",
+ "pins": {
+  "1": {
+   "name": "-",
+   "type": "passive",
+   "role": "cathode"
+  },
+  "2": {
+   "name": "+",
+   "type": "passive",
+   "role": "anode"
+  }
+ },
+ "values": {
+  "color": "red"
+ },
+ "footprint_data": {
+  "pads": {
+   "1": {
+    "x": -1.27,
+    "y": 0,
+    "shape": "RECT",
+    "w": 1.6,
+    "h": 1.6,
+    "hole": [
+     0.9,
+     0.9
+    ]
+   },
+   "2": {
+    "x": 1.27,
+    "y": 0,
+    "shape": "ELLIPSE",
+    "w": 1.6,
+    "h": 1.6,
+    "hole": [
+     0.9,
+     0.9
+    ]
+   }
+  }
+ }
+}

@@ -1,20 +1,20 @@
 # The circuit language: the notation, what it means, and its definition on SysML v2 and KerML
 
-Status 2026-11-03: built with [circuit-dsl-toolchain.md](circuit-dsl-toolchain.md), merged as 1.1.3 and withdrawn from
-main by #287 on the owner's word – a beta, the explorative DSL, on the branch `claude/friendly-mccarthy-n4kt6y`,
-switched on per project in edakit.toml (circuit-dsl-toolchain.md, decision 48); the deviations 6, 15, 27, 28 and 32
-confirmed by the owner. 2026-10-31: detail concept to [circuit-dsl.md](circuit-dsl.md), asked for by the owner the
-same day. It fixes what that concept leaves to "the language": every construct with its syntax, its meaning, what it
-writes into the resolved graph and the errors it raises; how the compiler resolves names and expands usages, loops and
-variants; the derivation rules; the electrical library on SysML v2 that the notation is defined on and the exports map
-to. It is written so that the session that builds it needs no question answered: where circuit-dsl.md left a choice
-open, this document takes it and marks it "decided"; the owner confirmed the seventeen decisions of section 12 on
-2026-10-31. The toolchain – modules, commands, tests, the steps and their order – is
-[circuit-dsl-toolchain.md](circuit-dsl-toolchain.md). Facts about edakit are those of main at `2f4628a`, with the TOML
-form of circuit-language-plan.md built (L.1 to L.8, settled the same day); facts about SysML v2 and KerML come from
-the specifications and the library files named in the sources. Against the yardstick (CLAUDE.md): the source and the
-resolved graph are text in the project's repository; a model edits the source through the CLI and `graph show`;
-nothing of the circuit lives only in EasyEDA or in someone's head.
+Status 2026-11-04: on main as a beta since edakit 1.1.17 (#344) – the explorative DSL, switched on per project with
+`[beta] dsl = true` in edakit.toml (circuit-dsl-toolchain.md, decisions 48 to 51). 2026-11-03: built with
+[circuit-dsl-toolchain.md](circuit-dsl-toolchain.md), merged as 1.1.3 and withdrawn from main by #287 on the owner's
+word; the deviations 6, 15, 27, 28 and 32 confirmed by the owner. 2026-10-31: detail concept to
+[circuit-dsl.md](circuit-dsl.md), asked for by the owner the same day. It fixes what that concept leaves to "the
+language": every construct with its syntax, its meaning, what it writes into the resolved graph and the errors it
+raises; how the compiler resolves names and expands usages, loops and variants; the derivation rules; the electrical
+library on SysML v2 that the notation is defined on and the exports map to. It is written so that the session that
+builds it needs no question answered: where circuit-dsl.md left a choice open, this document takes it and marks it
+"decided"; the owner confirmed the seventeen decisions of section 12 on 2026-10-31. The toolchain – modules, commands,
+tests, the steps and their order – is [circuit-dsl-toolchain.md](circuit-dsl-toolchain.md). Facts about edakit are those
+of main at `2f4628a`, with the TOML form of circuit-language-plan.md built (L.1 to L.8, settled the same day); facts
+about SysML v2 and KerML come from the specifications and the library files named in the sources. Against the yardstick
+(CLAUDE.md): the source and the resolved graph are text in the project's repository; a model edits the source through
+the CLI and `graph show`; nothing of the circuit lives only in EasyEDA or in someone's head.
 
 ## 1. The frame
 

@@ -22,9 +22,9 @@ def _repo(tmp_path):
 
 
 def test_the_steps_of_each_configuration_whose_files_are_staged():
-    configs = [{"path": "edakit.toml", "dir": "", "inputs": ["docs/hardware.md"], "toml_graph": False,
+    configs = [{"path": "edakit.toml", "dir": "", "inputs": ["docs/hardware.md"], "generated_graph": False,
                 "firmware": True, "docs": False},
-               {"path": "variants/tht/edakit.toml", "dir": "variants/tht", "inputs": [], "toml_graph": True,
+               {"path": "variants/tht/edakit.toml", "dir": "variants/tht", "inputs": [], "generated_graph": True,
                 "firmware": False, "docs": True}]
     assert h.plan(["README.md"], configs) == []
     main = h.plan(["docs/hardware.md"], configs)
@@ -184,3 +184,20 @@ def test_a_doc_pin_table_the_graph_names_triggers_its_configuration(tmp_path):
     for form in ('{"checks": {%s}}', '{"locks": {%s}}', '{"version": "4", "graph": {"locks": {%s}}}'):  # pytree's
         (root / "hardware" / "graph.json").write_text(form % table)
         assert "docs/hw.md" in h.configs(root)[0]["inputs"], form
+
+
+def test_a_circuit_graph_is_checked_as_a_toml_one(tmp_path):
+    """T.4 of circuit-dsl-toolchain.md: a configuration whose [project] graph is a .circuit file gets the step
+    graph json --check, as a TOML one does; a JSON one does not."""
+    root = _repo(tmp_path)
+    (root / "edakit.toml").write_text('[project]\nname = "a"\ngraph = "hardware/graph.circuit"\n\n[boards.main]\n'
+                                      'template = "t"\n\n[beta]\ndsl = true\n')
+    (root / "hardware").mkdir()
+    (root / "hardware" / "graph.circuit").write_text("graph a\n")
+    [c] = h.configs(root)
+    assert c["generated_graph"] and "hardware/graph.circuit" in c["inputs"]
+    assert h.plan(["hardware/graph.circuit"], [c]) == [("edakit.toml", [["check"], ["sim"],
+                                                                         ["graph", "json", "--check"]])]
+    (root / "edakit.toml").write_text('[project]\nname = "a"\n\n[boards.main]\ntemplate = "t"\n')
+    [c] = h.configs(root)
+    assert not c["generated_graph"]

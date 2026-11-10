@@ -1,8 +1,8 @@
 # A language of its own for the circuit: what it would have to be, on which basis, and when
 
-Status 2026-11-03: built – all four stages, merged as edakit 1.1.3 (#279) and withdrawn from main by #287 on the
-owner's word – a beta, the explorative DSL, on the branch `claude/friendly-mccarthy-n4kt6y`, switched on per project
-in edakit.toml (circuit-dsl-toolchain.md, decision 48). 2026-11-02: decided ("When it brings value"). 2026-10-31:
+Status 2026-11-04: on main as a beta since edakit 1.1.17 (#344) – the explorative DSL, switched on per project with
+`[beta] dsl = true` in edakit.toml (circuit-dsl-toolchain.md, decisions 48 to 51). 2026-11-03: built – all four
+stages, merged as edakit 1.1.3 (#279) and withdrawn from main by #287 on the owner's word. 2026-11-02: decided ("When it brings value"). 2026-10-31:
 concept, asked for by the owner after the review of [circuit-language.md](../done/circuit-language.md) deferred the
 language of that sketch. It answers four questions: whether a fitting language exists already, what a language of
 edakit's own would have to be able to do to be worth building, on which basis – SysML v2, KerML, an existing circuit

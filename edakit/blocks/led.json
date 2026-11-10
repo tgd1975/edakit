@@ -6,6 +6,11 @@
   "in": "the driving signal: a GPIO or a logic output",
   "gnd": "ground"
  },
+ "params": {
+  "i": {
+   "default": "10 mA"
+  }
+ },
  "components": [
   {
    "designator": "R1",
@@ -53,6 +58,17 @@
    "pins": [
     "D1.2"
    ]
+  }
+ ],
+ "derivations": [
+  {
+   "targets": [
+    "R1.value"
+   ],
+   "rule": "series_resistor",
+   "args": {
+    "0": "i"
+   }
   }
  ],
  "covers": [

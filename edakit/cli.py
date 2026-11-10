@@ -43,6 +43,8 @@
     edakit schematic draw            the schematic as SVG from graph and parts database – no EasyEDA (offline);
                                      labels, or wired through by style in the schematic file
     edakit pcb dump|plan|place|parts|nets|apply|tooling|pour|autolayout|takeover
+    edakit perfboard [--board B]     the plan of a hand-wired board on a perfboard: its nets against the graph, grid,
+                                     bodies, wires; top and bottom view, cut, build and test lists (offline)
     edakit route all|read|dsn|route|check|apply|verify|pours|reload|drc|save
     edakit route diagnose [--net N]  why each open connection is open: walled in, blocked, or a free way (offline)
     edakit silk apply|check|preview
@@ -72,6 +74,32 @@ from __future__ import annotations
 import argparse
 import sys
 
+DSL_ACTIONS = ("fmt", "derive", "sysml", "kerml")   # `edakit graph` of the explorative DSL ([beta] dsl)
+DSL_OPTIONS = ("--to", "--out", "--map", "--set", "--part")   # its options of graph and block add
+
+
+def dsl_words(argv):
+    """True when a command line names something of the explorative DSL – `lsp`, an action of DSL_ACTIONS after
+    `graph`, and after `graph` or `block` `--to circuit`, `--to toml` or another option of DSL_OPTIONS: only then the
+    parser knows them (build_parser(dsl=True)); every other command line is parsed, and refused, as edakit without the
+    DSL. The other commands' own --out stays theirs."""
+    argv = list(argv)
+    if argv[:1] == ["lsp"]:
+        return True
+    if argv[:1] not in (["graph"], ["block"]):
+        return False
+    if argv[:1] == ["graph"] and any(a in DSL_ACTIONS for a in argv[1:2]):
+        return True
+    for i, a in enumerate(argv):
+        name, eq, value = a.partition("=")
+        if name == "--to":
+            value = value if eq else (argv[i + 1] if i + 1 < len(argv) else "")
+            if value in ("toml", "circuit"):
+                return True
+        elif name in DSL_OPTIONS:
+            return True
+    return False
+
 
 def _common(p):
     p.add_argument("--config", help="path to edakit.toml (default: search upwards from the current directory)")
@@ -83,7 +111,23 @@ def _no_scripts(p):
                                                              "as they are (handbook 8.6)")
 
 
-def build_parser():
+def dsl_used(args):
+    """The command of the explorative DSL a parsed command line runs – "edakit graph fmt", "edakit graph convert --to
+    circuit", … –, or None: what a project without [beta] dsl = true refuses."""
+    if args.command == "graph":
+        if args.action in DSL_ACTIONS:
+            return f"edakit graph {args.action}"
+        options = [o for o, on in (("--to circuit", args.to == "circuit"), ("--map", args.map), ("--out", args.out))
+                   if on]
+        return " ".join(["edakit graph", args.action, *options]) if options else None
+    if args.command == "block" and (args.set or args.part):
+        return "edakit block add --set/--part"
+    return None
+
+
+def build_parser(dsl=False):
+    """The command line's parser – edakit's without the DSL; dsl=True adds the explorative DSL's actions, options and
+    `lsp`, hidden from the help (dsl_words decides, edakit/beta.py refuses them without [beta] dsl = true)."""
     from .version import version
     ap = argparse.ArgumentParser(prog="edakit", description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--version", action="version", version=f"edakit {version()}",
@@ -119,7 +163,8 @@ def build_parser():
 
     p = sub.add_parser("graph", help="what the graph says about one part or net; the resolved graph as JSON; a JSON "
                                      "graph moved to TOML")
-    p.add_argument("action", choices=["show", "json", "convert"])
+    p.add_argument("action", choices=["show", "json", "convert", *(DSL_ACTIONS if dsl else ())],
+                   **({"metavar": "{show,json,convert}"} if dsl else {}))
     p.add_argument("name", nargs="?", help="show: a designator (U1) or a net name (LED_CLK)")
     p.add_argument("--json", help="show: write the view and its findings as JSON")
     p.add_argument("--write", action="store_true", help="json: write the resolved graph beside a TOML graph "
@@ -127,7 +172,15 @@ def build_parser():
     p.add_argument("--check", action="store_true", help="json: compare the generated file with the graph, write "
                                                         "nothing; exit 2 on drift")
     p.add_argument("--dry-run", action="store_true", help="convert: print what would change, write nothing")
+    if dsl:     # the explorative DSL's (docs/dsl/README.md): parsed, never shown
+        p.add_argument("--to", choices=["toml", "circuit"], default="toml", help=argparse.SUPPRESS)
+        p.add_argument("--out", metavar="DIR", help=argparse.SUPPRESS)
+        p.add_argument("--map", metavar="FILE", help=argparse.SUPPRESS)
+    p.set_defaults(files=[], to="toml", out=None, map=None)
     _common(p)
+
+    if dsl:
+        sub.add_parser("lsp")                     # the explorative DSL's language server
 
     p = sub.add_parser("domains", help="the domains of the project: on, off, suggested; the reviewers' questions")
     p.add_argument("--review", choices=["electrical", "regulatory", "pcb"], help="the questions of the enabled domains "
@@ -151,6 +204,10 @@ def build_parser():
     p.add_argument("--without", action="extend", nargs="+", metavar="DES", help="add: leave out these optional parts "
                                                                                 "of the block")
     p.add_argument("--board", help="add: board of the new parts (needed with several boards)")
+    if dsl:     # the explorative DSL's derivations (docs/dsl/derivations.md)
+        p.add_argument("--set", action="extend", nargs="+", metavar="PARAM=VALUE", help=argparse.SUPPRESS)
+        p.add_argument("--part", action="extend", nargs="+", metavar="DES=KEY", help=argparse.SUPPRESS)
+    p.set_defaults(set=None, part=None)
     p.add_argument("--file", help="a block from this JSON file instead of the library")
     p.add_argument("--dry-run", action="store_true", help="add: show what would change, write nothing")
     _common(p)
@@ -278,6 +335,11 @@ def build_parser():
     p.add_argument("--wait", type=int, default=90, help="seconds to wait for the bridge")
     _common(p)
 
+    p = sub.add_parser("perfboard", help="the plan of a hand-wired board on a perfboard ([perfboard] in its board "
+                                         "file): checked against the graph, drawn, its cut, build and test lists")
+    p.add_argument("--board", help="the hand-wired board (default: every one with a plan)")
+    _common(p)
+
     p = sub.add_parser("pcb", help="placement plan, parts and nets sync, fixed parts, tooling holes, pours")
     p.add_argument("action", choices=["dump", "plan", "place", "parts", "nets", "apply", "tooling", "pour",
                                       "autolayout", "takeover"])
@@ -363,6 +425,8 @@ def build_parser():
     p = sub.add_parser("doctor", help="check the tool chain")
     p.add_argument("--offline", action="store_true", help="skip the bridge part: start no server, ask no bridge")
     _common(p)
+    if dsl:
+        sub.metavar = "{" + ",".join(c for c in sub.choices if c != "lsp") + "}"   # lsp: the DSL's, unlisted
     return ap
 
 
@@ -376,7 +440,20 @@ def main(argv=None):
 
 
 def _main(argv=None):
-    args = build_parser().parse_args(argv)
+    argv = sys.argv[1:] if argv is None else list(argv)
+    parser = build_parser(dsl=dsl_words(argv))
+    if argv[:2] == ["graph", "fmt"]:
+        args, rest = parser.parse_known_args(argv)
+        if rest and not any(a.startswith("-") for a in rest):
+            # `graph fmt --check A B`: before Python 3.13 argparse fills the positionals before the option and leaves
+            # the files after it over – they are the files fmt names; no other command takes more than it declares
+            if args.name is None:
+                args.name, rest = rest[0], rest[1:]
+            args.files = [*args.files, *rest]
+        elif rest:
+            parser.error(f"unrecognized arguments: {' '.join(rest)}")
+    else:
+        args = parser.parse_args(argv)
     sys.stdout.reconfigure(line_buffering=True)  # progress shows up at once, also when piped
     if args.command == "lock":
         from . import lock
@@ -402,6 +479,17 @@ def _main(argv=None):
     if args.command == "block" and args.action in ("list", "show"):
         from . import block
         return block.main(None, args)
+    if args.command == "lsp":            # the editor's: no project needed – each file's project switches the DSL on
+        from .lang import server
+        return server.main(args)
+    if args.command == "graph" and args.action == "fmt" and args.name:     # files named: each one's project decides
+        from . import beta
+        off = [f for f in [args.name, *args.files] if not beta.dsl_of(f)]
+        if off:
+            print(beta.refusal(f"edakit graph fmt {off[0]}"), file=sys.stderr)
+            return 1
+        from .lang import cli as lang_cli
+        return lang_cli.main(None, args)
     from . import config
     try:
         cfg = config.load(args.config)
@@ -416,6 +504,10 @@ def _main(argv=None):
         code, cfg = scripts.before_step(cfg, args)
         if code is not None:
             return code
+    if not cfg.dsl and (what := dsl_used(args)):
+        from . import beta
+        print(beta.refusal(what), file=sys.stderr)
+        return 1
     if args.command == "check":
         from . import checks
         return checks.main(cfg, args)
@@ -434,6 +526,9 @@ def _main(argv=None):
     if args.command == "graph" and args.action == "show":
         from . import graph_show
         return graph_show.main(cfg, args)
+    if args.command == "graph" and args.action in DSL_ACTIONS:
+        from .lang import cli as lang_cli
+        return lang_cli.main(cfg, args)
     if args.command == "graph":
         from . import graph_form
         return graph_form.main(cfg, args)
@@ -483,6 +578,9 @@ def _main(argv=None):
     if args.command == "schematic":
         from . import schematic
         return schematic.main(cfg, args)
+    if args.command == "perfboard":
+        from . import perfboard
+        return perfboard.main(cfg, args)
     if args.command == "pcb":      # pcb dump, route all: made again after an easyeda script changed the library (8.6)
         from . import pcb, scripts
         return scripts.after_step(cfg, args, pcb.main(cfg, args))

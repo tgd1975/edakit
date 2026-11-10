@@ -1,0 +1,19 @@
+def button
+  title "Push button to ground with a pull-up"
+  about "A push button pulls a signal to ground; a 10 kΩ pull-up holds it high while the button is open, also before
+      the firmware runs. Without the resistor the MCU's internal pull-up does the job once the firmware has set it."
+  port in "the signal to the MCU input"
+  port vcc "the logic supply of that input (3.3 V or 5 V)"
+  port gnd "ground"
+  part SW1 button TS-1187A-B-A-B lcsc C318884 "{as}: push button"
+    nc B D
+    notes "Pins 1/2 and 3/4 are connected inside."
+  part R1 resistor 0805W8F1002T5E lcsc C17414 value 10k "{as}: pull-up 10 k"
+  net in @vcc SW1.A R1.2
+  net vcc R1.1
+  net gnd SW1.C
+  covers LVL.undefined HINT.debounce
+  notes "Debounce in the firmware (hint HINT.debounce)."
+  notes "sim.json: the net under the MCU's inputs; the button under buttons in one load, so that LVL.threshold sees
+      both levels."
+  notes "On a strapping pin the pull-up must agree with the boot level (LVL.boot)."
