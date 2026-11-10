@@ -5,7 +5,7 @@ and drawn (handbook 7.9, concept docs/concepts/new/perfboard-layout.md).
                                     the nets the plan makes against the graph's (PERF.net), the places, the grid, the
                                     bodies, the mounting holes, the wires, the current (PERF.*) and the hand-over
                                     (SYNC.plan); the top view, the bottom view in the orientation of the top view, and
-                                    the cut, build and test lists -> <artifacts>/perfboard/<board>/
+                                    the cut list at 1:1, the cut, build and test lists -> <artifacts>/perfboard/<board>/
 
 The plan, in the board file (hardware/boards/<board>.toml) of a board with wired = true:
 
@@ -964,8 +964,10 @@ def check(cfg, board, plan=None, design=None, currents=None):
 # --- drawing --------------------------------------------------------------------------------------------------------
 
 class Svg:
-    def __init__(self, w, h, scale=9):
-        self.out = [f'<svg xmlns="http://www.w3.org/2000/svg" width="{w * scale:.0f}" height="{h * scale:.0f}" '
+    def __init__(self, w, h, scale=9, mm=False):
+        """mm: width and height in millimetres, a unit of the drawing one on paper (the cut list at 1:1)."""
+        size = f'width="{w:.2f}mm" height="{h:.2f}mm"' if mm else f'width="{w * scale:.0f}" height="{h * scale:.0f}"'
+        self.out = [f'<svg xmlns="http://www.w3.org/2000/svg" {size} '
                     f'viewBox="0 0 {w:.2f} {h:.2f}" font-family="DejaVu Sans, Arial, sans-serif">',
                     f'<rect width="{w:.2f}" height="{h:.2f}" fill="#ffffff"/>']
 
@@ -1297,6 +1299,79 @@ def cutlist(res):
     return {"step": step, "strip": cw["strip_mm"], "insulated": insulated, "bare": bare, "by_end": by_end}
 
 
+CUT_ROW_MM = 6.0                 # the cut list at 1:1: a row per piece
+CUT_COPPER, CUT_TIN = "#c87f4a", "#a9adb3"   # a stripped end of solid copper, the bare tinned wire
+
+
+def draw_cut(res, title):
+    """The cut list at 1:1 (cut.svg): a centimetre ruler over a 1 cm grid, the insulated wires and then the pieces of
+    bare wire, each from the longest down and left-aligned at the ruler's zero; beside each its length, for a wire
+    what is stripped at its left and right end, and its holes and net. Printed at 100 % a piece can be laid on it."""
+    cut = cutlist(res)
+    strip = cut["strip"]
+    ins = sorted(cut["insulated"], key=lambda i: -i["mm"])
+    bare = sorted(cut["bare"], key=lambda b: -b["mm"])
+    span = max(10, math.ceil(max([i["mm"] for i in ins + bare], default=10) / 10) * 10)
+    x0, size = 6.0, 2.5
+    rows = [("Insulated wire, solid core, on top", None)] * bool(ins) + [
+        ("insulated", (i["mm"], f"strip {strip:g} mm left, {strip:g} mm right – "
+                       f"{i['colour'] if i['colour'] != 'any' else 'any colour'}, {holes_of(i['wire'])} "
+                       f"{i['wire']['net']}", i)) for i in ins] + [
+        ("Bare tinned wire, straight, on the bottom", None)] * bool(bare) + [
+        ("bare", (b["mm"], f"{holes_of(b['wire'])} {b['wire']['net']}", b)) for b in bare]
+    note = (f"Not cut: the bridges {', '.join(holes_of(w) for w in cut['by_end'])} are the wires' stripped ends."
+            if cut["by_end"] else "" if ins or bare else "Nothing to cut: the plan has no wire and no bridge.")
+    wide = max([11 + len(r[1]) * size * 0.56 for _, r in rows if r] + [0])   # the length, then the text beside it
+    top, ruler = 15.0, 6.5
+    y_end = top + ruler + sum((5.0 if i == 0 else 7.0) if r is None else CUT_ROW_MM for i, (_, r) in enumerate(rows))
+    w = max(x0 + span + 4 + wide + 4, 100.0)
+    h = y_end + (6.5 if note else 3)
+    svg = Svg(w, h, mm=True)
+    svg.text(x0, 5.0, f"{title} – cut list", size=3.4, anchor="start", weight="bold")
+    svg.text(x0, 10.0, f"1:1 when printed at 100 % – lengths rounded up to {cut['step']:g} mm; lay a piece on its "
+                      "row and cut it at the end", size=2.1, anchor="start", fill="#444")
+    base = top + ruler
+    for mm in range(span + 1):          # the ruler: mm, 5 mm and cm ticks up from its edge, the cm numbered
+        x = x0 + mm
+        tick = 3.0 if mm % 10 == 0 else 2.0 if mm % 5 == 0 else 1.2
+        svg.add(f'<line x1="{x:.2f}" y1="{base:.2f}" x2="{x:.2f}" y2="{base - tick:.2f}" stroke="#333" '
+                f'stroke-width="{0.18 if mm % 10 == 0 else 0.1}"/>')
+        if mm % 10 == 0:
+            svg.text(x, base - 4.6, str(mm // 10), size=2.2, fill="#333")
+            svg.add(f'<line class="cm" x1="{x:.2f}" y1="{base:.2f}" x2="{x:.2f}" y2="{y_end:.2f}" stroke="#c9ced6" '
+                    'stroke-width="0.15"/>')
+    svg.text(x0 + span + 1.5, base - 4.6, "cm", size=2.2, anchor="start", fill="#333")
+    svg.add(f'<line x1="{x0:.2f}" y1="{base:.2f}" x2="{x0 + span:.2f}" y2="{base:.2f}" stroke="#333" '
+            'stroke-width="0.2"/>')
+    y = base
+    for i, (kind, r) in enumerate(rows):
+        if r is None:                   # a section's heading, between the grid's lines
+            y += 0 if i == 0 else 2.0
+            svg.text(x0 + 0.6, y + 2.8, kind, size=2.2, anchor="start", fill="#444", weight="bold", halo=True)
+            y += 5.0
+            continue
+        mm, text, item = r
+        yc = y + CUT_ROW_MM / 2
+        svg.add(f'<g data-cut="{kind}" data-mm="{mm}">')
+        if kind == "insulated":
+            svg.add(f'<rect class="conductor" x="{x0:.2f}" y="{yc - 0.35:.2f}" width="{mm:.2f}" height="0.7" '
+                    f'fill="{CUT_COPPER}"/>')
+            colour = WIRE_COLOURS.get(item["colour"], "#8a8a8a")
+            svg.add(f'<rect class="insulation" x="{x0 + strip:.2f}" y="{yc - 0.9:.2f}" width="{mm - 2 * strip:.2f}" '
+                    f'height="1.8" rx="0.4" fill="{colour}" stroke="#333" stroke-width="0.12"/>')
+        else:
+            svg.add(f'<rect class="conductor" x="{x0:.2f}" y="{yc - 0.35:.2f}" width="{mm:.2f}" height="0.7" '
+                    f'fill="{CUT_TIN}" stroke="#6b6f75" stroke-width="0.08"/>')
+        tx = x0 + span + 4
+        svg.text(tx + 9, yc, f"{mm} mm", size=size, anchor="end", weight="bold")      # the lengths right-aligned
+        svg.text(tx + 11, yc, text, size=size, anchor="start", fill="#333")
+        svg.add("</g>")
+        y += CUT_ROW_MM
+    if note:
+        svg.text(x0, y_end + 3.2, note, size=2.1, anchor="start", fill="#444")
+    return svg.done()
+
+
 def build_group(p):
     if p.raised:
         return "socket"
@@ -1314,6 +1389,7 @@ def lists(res, title, findings_too=True):
         out.append("")
     cut = cutlist(res)
     out.append(f"## Cut list – lengths rounded up to {cut['step']:g} mm\n")
+    out.append("![The cut list at 1:1](cut.svg)\n")
     per_colour = {}
     if cut["insulated"]:
         out.append(f"**Insulated wire, solid core, on top** – may turn corners; strip {cut['strip']:g} mm at each "
@@ -1545,22 +1621,24 @@ def out_dir(cfg, board):
 
 
 def write(cfg, res):
-    """Top view, bottom view and the lists into <artifacts>/perfboard/<board>/: [top, bottom, build]."""
+    """Top view, bottom view, the cut list at 1:1 and the lists into <artifacts>/perfboard/<board>/: [top, bottom,
+    cut, build]."""
     d = out_dir(cfg, res.board)
     d.mkdir(parents=True, exist_ok=True)
     title = f"{res.board.title or res.board.name} on a perfboard"
-    files = [d / "top.svg", d / "bottom.svg", d / "build.md"]
+    files = [d / "top.svg", d / "bottom.svg", d / "cut.svg", d / "build.md"]
     files[0].write_text(draw(res, False, title), encoding="utf-8")
     files[1].write_text(draw(res, True, title), encoding="utf-8")
+    files[2].write_text(draw_cut(res, title), encoding="utf-8")
     head = (f"# {title} – check, cut list, build list, test list\n\nWritten by `edakit perfboard` from "
             f"`{res.board.file or 'hardware/boards/' + res.board.name + '.toml'}` and the graph; the drawings are "
-            "[top](top.svg) and [bottom](bottom.svg), both seen from above.\n\n![top](top.svg)\n\n![bottom](bottom.svg)"
-            "\n\n")
-    files[2].write_text(head + lists(res, title), encoding="utf-8")
+            "[top](top.svg) and [bottom](bottom.svg), both seen from above, and the [cut list](cut.svg) at 1:1."
+            "\n\n![top](top.svg)\n\n![bottom](bottom.svg)\n\n")
+    files[3].write_text(head + lists(res, title), encoding="utf-8")
     return files
 
 
-BUILD_FILES = ("top.svg", "bottom.svg", "build.md")   # a perfboard's build files, in a gate run's fab/<board>/
+BUILD_FILES = ("top.svg", "bottom.svg", "cut.svg", "build.md")   # a perfboard's build files, in a gate run's fab/<board>/
 
 
 def build_layers(d):

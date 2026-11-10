@@ -1,0 +1,3 @@
+minor
+- `edakit perfboard` draws the cut list at 1:1, `cut.svg` beside `top.svg` and `bottom.svg`: a centimetre ruler over a 1 cm grid, the insulated wires and then the pieces of bare wire, each from the longest down and left-aligned at the ruler's zero, beside each its length, for a wire what is stripped at its left and right end, and its holes and net; printed at 100 % a piece is laid on its row and cut at its end. `build.md` shows it in its cut list, the steps page "Build it on a perfboard" shows the example's.
+- **When updating:** `cut.svg` is one of a hand-wired board's build files under M-5, so the fab hash of such a board changes and its M-5 no longer counts – run `edakit gate` and have the agent pcb-reviewer sign M-5 again for the new run.

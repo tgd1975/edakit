@@ -1256,10 +1256,14 @@ error   PERF.net/meet    L2: joins GND bridges F2 … R2 with LED3.anode (LED_Y1
 - `bottom.svg` – the bottom side seen through the board from above, in the orientation of the top view, A1 at the top
   left in both: the soldered leads clearly stronger than the empty holes, the bridges as bars coloured by net, a ring
   where a wire comes through from the top, the strips of a kind that has them;
+- `cut.svg` – the cut list at 1:1, its size in millimetres: a centimetre ruler over a 1 cm grid, the insulated wires
+  and then the pieces of bare wire, each group from the longest down and left-aligned at the ruler's zero, a wire's
+  stripped ends in copper; beside each piece its length, for a wire what is stripped at its left and right end, and
+  its holes and net. Printed at 100 % you lay a piece on its row and cut it at its end;
 - `build.md` – the findings, then four lists:
   - the **cut list**: the insulated wires by colour with their lengths, the pieces of bare wire grouped by length – a
     straight row of bridges is one piece, a single bridge beside a wire's end is that wire's stripped end –, every
-    length rounded up to the kind's step or `cut_step_mm`;
+    length rounded up to the kind's step or `cut_step_mm`, with the drawing `cut.svg`;
   - the **build list** from low to high, each part with its holes and its polarity, the insulated wires with their
     stripped ends bent onto the pads but soldered only with the lead or the bridges there, the bridges once the leads
     they join are in, the test before a module is plugged in;

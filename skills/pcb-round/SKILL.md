@@ -158,7 +158,7 @@ no claim, no auto-layout: you write the plan, edakit checks and draws it, a pers
    the hole where bridges turn) and run again until none is left; notes (a bent lead, a net joined inside a module, a
    current without rating) go into the report.
 4. **Show:** `<artifacts>/perfboard/<board>/top.svg` and `bottom.svg` to the user (both seen from above), with the
-   cut list and the build list of `build.md`.
+   cut list – `cut.svg`, at 1:1 – and the build list of `build.md`.
 5. **Gate and review:** `edakit gate 2>&1 | cat` runs the plan as stage L (a project of hand-wired boards needs no
    `--eda`); the agent pcb-reviewer reviews the run's `fab/<board>/` for M-5.
 

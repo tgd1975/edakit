@@ -1184,7 +1184,8 @@ The plan of a hand-wired board on a perfboard ([perfboard] in its board file): c
 - **Reads:** the board file of every hand-wired board with `[perfboard]` (or of B), the kind of `edakit/perfboards/`,
   graph, parts entries (`footprint_data`, `body`, `joined`), the footprint geometry beside the board file and the
   library cache of `part import`, `<artifacts>/sim/net_currents.json`
-- **Writes:** `<artifacts>/perfboard/<board>/top.svg`, `bottom.svg`, `build.md` (7.9); exit 1 on an error
+- **Writes:** `<artifacts>/perfboard/<board>/top.svg`, `bottom.svg`, `cut.svg` (the cut list at 1:1), `build.md`
+  (7.9); exit 1 on an error
 
 ### edakit pcb
 

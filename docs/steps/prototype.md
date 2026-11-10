@@ -23,7 +23,7 @@ $ edakit perfboard
 main: Lochraster, a pad per hole, 14 × 15 holes, 4 parts, 2 wires, 7 bridges
   note     PERF.grid/bent   SW1: leads bent by 0.63 mm into the 2.54 mm grid (allowed 0.8 mm)
   …
-  0 errors; -> build/edakit/perfboard/main/top.svg, build/edakit/perfboard/main/bottom.svg, build/edakit/perfboard/main/build.md
+  0 errors; -> build/edakit/perfboard/main/top.svg, build/edakit/perfboard/main/bottom.svg, build/edakit/perfboard/main/cut.svg, build/edakit/perfboard/main/build.md
 ```
 
 ![The walkthrough's circuit with through-hole parts on a perfboard, top view, drawn by edakit perfboard](../pictures/perfboard-top.svg)
@@ -44,20 +44,24 @@ the check M-5 of [Have it reviewed](08-have-it-reviewed.md).
 
 ## What you have
 
-The two drawings and four lists in `build.md`. First the cut list, here the example's. The insulated wires on top:
+Three drawings and `build.md`'s four lists. First the example's cut list. The insulated wires on top:
 
 | Colour | Length | Holes | Net |
 | --- | --- | --- | --- |
 | red | 45 mm | A2–C10 | VBAT |
 | black | 50 mm | J1–N10 | GND |
 
-Strip 5 mm at each end: through its hole and over onto the pad of the lead beside it. The bare wire on the bottom,
-one piece per straight row:
+Strip 5 mm at each end: through its hole and over onto the pad of the lead beside it. Bare wire below, one piece per
+straight row:
 
 | Length | Pieces | Holes |
 | --- | --- | --- |
 | 10 mm | 1 | L10 … N10 GND |
 | 5 mm | 2 | E4–F4 LED_SW, J4–J3 LED_ANODE |
+
+`cut.svg` draws it at 1:1: printed at 100 %, lay each piece on its row.
+
+<img src="../pictures/perfboard-cut.svg" alt="The cut list, 1:1" width="100%">
 
 The build list goes from low parts to high. The test list says what the multimeter must read, and the material list
 what to buy. `edakit gate` checks the plan as the layout, without EasyEDA.
