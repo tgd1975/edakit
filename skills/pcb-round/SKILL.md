@@ -23,6 +23,10 @@ the KiCad schematic; `pcb apply` writes parts, outline, holes and rules; KiCad h
 row get one from `edakit pcb place --rest --write`. Everything below that names EasyEDA's GUI or the claim does not
 apply.
 
+**A perfboard** (a hand-wired board, `wired = true`, whose board file holds `[perfboard]`, handbook 7.9): the same
+role on a grid of holes, offline, no EasyEDA – the round of section "Perfboard" below instead of sections 0 to the
+end.
+
 ## 0. Take over
 
 ```bash
@@ -135,6 +139,28 @@ recreated: delete them, `edakit pcb parts --write`, `edakit pcb dump`, then the 
 the pours – vias, a pour – and `route all` and `route pours` fill over it: after either, it is outdated, and
 `edakit run <name> 2>&1 | cat` under the claim places it again, before `silk apply` – `edakit scripts` names its place.
 Commit `hardware/scripts.lock` with what the scripts wrote.
+
+## Perfboard
+
+The plan of a hand-wired board soldered on a perfboard, in its board file (handbook 7.9, keys in 10.2). No EasyEDA,
+no claim, no auto-layout: you write the plan, edakit checks and draws it, a person solders it.
+
+1. **Take over:** `edakit handover 2>&1 | cat` – what is fixed, at the edge, next to its host. Every part of the board
+   is through-hole (an SMD part is PERF.grid/smd: a circuit in SMD gets a variant of its own with through-hole parts,
+   handbook 3, 10.4). Footprints: `footprint_data` of the entries, else `edakit part import <LCSC>` for the library's.
+2. **Write the plan:** `[perfboard]` with the kind and the holes of the piece used; `[[holes]]` in mm where a frame
+   needs them; `[place]` – connectors and modules at the edge first, then the parts in the order of their nets, a part
+   with two leads by its roles (`anode = "L3", cathode = "L2"`), an axial part with its `span`; `[[wire]]` – straight
+   rows of bridges on the bottom along a net's pins, everything that would turn a corner as an insulated wire on top,
+   each end in a free hole beside its pin with a bridge to it. Pins a module joins inside go into its parts entry as
+   `joined` only on the circuit's side: ask for it as a request to the circuit, as for any change of an entry.
+3. **Check:** `edakit perfboard 2>&1 | cat` – fix every error (PERF.net names the hole where two nets meet, PERF.wire
+   the hole where bridges turn) and run again until none is left; notes (a bent lead, a net joined inside a module, a
+   current without rating) go into the report.
+4. **Show:** `<artifacts>/perfboard/<board>/top.svg` and `bottom.svg` to the user (both seen from above), with the
+   cut list and the build list of `build.md`.
+5. **Gate and review:** `edakit gate 2>&1 | cat` runs the plan as stage L (a project of hand-wired boards needs no
+   `--eda`); the agent pcb-reviewer reviews the run's `fab/<board>/` for M-5.
 
 ## Known limits
 

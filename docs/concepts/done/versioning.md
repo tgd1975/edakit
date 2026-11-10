@@ -209,10 +209,10 @@ rule has handled so far. The option stays open.
 
 ### The rules, as text
 
-The files sit in `.github/rulesets/` – one per ruleset, and `settings.json` for the merge settings. They are applied
-with `python3 .github/rulesets.py apply`, and without `apply` the script shows what differs between the files and
-GitHub. The protection is then text in the repository like everything else. A change to it goes through a pull
-request and is applied after the merge, on the owner's word.
+The files sit in `.github/rulesets/` – one per ruleset, `settings.json` for the merge settings and `actions/` for the
+Actions policies (below, "The check `paths`"). They are applied with `python3 .github/rulesets.py apply`, and without
+`apply` the script shows what differs between the files and GitHub. The protection is then text in the repository like
+everything else. A change to it goes through a pull request and is applied after the merge, on the owner's word.
 
 | Ruleset | Target | Rules | Bypass |
 | --- | --- | --- | --- |
@@ -267,6 +267,11 @@ number and the changelog's top section. They never check out or run the head's c
 a commit status named `paths` and `version` onto the pull request's head (`statuses: write`), so the required check
 sits where GitHub and `merge.py` look for it, whatever commit a run on `pull_request_target` is reported on
 (`.github/workflows/pull-request.yml`).
+
+From 2026-12-02 GitHub blocks `pull_request_target` in a public repository that has no Actions event policy for it –
+a brownout on 2026-11-09 held #361 for an hour. On the owner's decision of the same day the policy is text too:
+`.github/rulesets/actions/pull-request-target.json` allows the event for `pull-request.yml` alone, a test holds it to
+the workflows that use it, and `rulesets.py` compares and applies it with the rulesets.
 
 ### What changes for a session
 

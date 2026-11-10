@@ -5,7 +5,7 @@ project is set up. The short way: [Install the tools](../docs/steps/01-install.m
 project](../docs/steps/02-start-a-project.md).
 
 Tested on Linux (Ubuntu) with Python 3.11–3.14, ngspice 45, Freerouting 2.4.1 and Claude Code 2.1.3xx; on EasyEDA with
-EasyEDA Pro 3.2.209, easyeda-mcp-pro 1.8.0 and Node 24, on KiCad with KiCad 10.0.6. Windows and macOS should work for
+EasyEDA Pro 3.2.209, easyeda-mcp-pro 1.11.0 and Node 24, on KiCad with KiCad 10.0.6. Windows and macOS should work for
 everything except the bundled Freerouting download (set `FREEROUTING_JAR`) – untested.
 
 ## 2.1 What talks to what
@@ -26,7 +26,7 @@ server with 115 tools plus a controlled generic call into the extension API. eda
 
 1. **The EDA program**, for a board – one of the two; when to take which is in 16.1:
    - **EasyEDA Pro**, the default (desktop, not the web version): from easyeda.com. Create or open your project once.
-     With it **Node 24** (easyeda-mcp-pro 1.8.0 requires it): `nvm install 24`. Started from a desktop client without
+     With it **Node 24** (easyeda-mcp-pro 1.11.0 requires it): `nvm install 24`. Started from a desktop client without
      nvm in PATH, the launcher sources nvm itself. Then the MCP server, the bridge and the window, sections 2.4 to 2.6.
    - **KiCad 10**, the other choice, from KiCad's PPA – Ubuntu's own packages are older:
      `sudo add-apt-repository ppa:kicad/kicad-10.0-releases && sudo apt install kicad`. No Node, no server, no bridge:
@@ -125,8 +125,8 @@ session. The first line of the working agreements names the edakit that runs.
 
 Sections 2.4 to 2.6 set up EasyEDA Pro; on KiCad they have nothing to do.
 
-`edakit/easyeda/mcp-server.sh` installs easyeda-mcp-pro **pinned** to 1.8.0 into
-`~/.easyeda-mcp-pro/runtime/1.8.0` (once) and starts `node` directly, with safe defaults:
+`edakit/easyeda/mcp-server.sh` installs easyeda-mcp-pro **pinned** to 1.11.0 into
+`~/.easyeda-mcp-pro/runtime/1.11.0` (once) and starts `node` directly, with safe defaults:
 
 | Setting | Value | Why |
 |---|---|---|
@@ -167,7 +167,7 @@ missing, but Auto-Connect stays on and connects. Until edakit 1.0.6 edakit built
 "MCP Pro Bridge (depth 12, schematic PDF, ODB++)" in the extension manager; since 1.7.0 the original does all three
 (upstream M-2 to M-4) – uninstall the patched one the same way.
 
-Check with `edakit doctor`: "bridge extension 1.8.0 = server 1.8.0", and "return depth" – it asks
+Check with `edakit doctor`: "bridge extension 1.11.0 = server 1.11.0", and "return depth" – it asks
 `DMT_Project.getCurrentProjectInfo` 12 levels deep, whose answer then shows the pages written out instead of
 `[MaxDepth]`; an extension older than 1.7.0 ignores the depth asked. It probes the depth only while EasyEDA is free or
 claimed by you; the version and registry lines come from `easyeda_health_check`, which needs no claim.

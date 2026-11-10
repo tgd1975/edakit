@@ -8,6 +8,24 @@ written once, by `.github/merge.py`, from the fragments in [changes/](changes/RE
 update edakit@edakit`, then `/reload-plugins` or a new session; `edakit version` names the version that runs and what an
 update brings.
 
+## 1.2.1 – 2026-11-10
+
+- The plan of a hand-wired board on a perfboard (handbook 7.9): a board with `wired = true` may have a board file with `[perfboard]`, `[place]` by hole or by role, `[[holes]]` in mm and `[[wire]]` – bridges on the bottom, insulated wires on top. `edakit perfboard` builds the nets the plan makes and holds them to the graph (PERF.net), checks places, grid, bodies, mounting holes, wires and current (PERF.place, .grid, .body, .mount, .wire, .current) and the hand-over (SYNC.plan), and draws the top view, the bottom view in the top's orientation and the cut, build and test lists. Two kinds as data, `edakit/perfboards/pad-per-hole.toml` and `3-hole-strips.toml`; a parts entry's `joined` names the pins a part joins inside. The plan is stage L of the gate, in the layout hash, its drawings and lists the run's manufacturing files under M-5; a project whose boards are all bought or hand-wired, with a plan, runs S, L and F without `--eda`. SYNC.footprint no longer notes the parts of a bought or hand-wired board as not dumped – there is no copy in EasyEDA to compare.
+
+## 1.2.0 – 2026-11-09
+
+- **When updating:** easyeda-mcp-pro is pinned to 1.11.0 (was 1.8.0), and server and bridge extension must have the
+  same version. Copy the extension out of the pinned server (`bash <plugin>/edakit/easyeda/mcp-server.sh extension
+  --copy .`), in EasyEDA uninstall the old "MCP Pro Bridge", import the new one, allow "External Interaction", restart
+  EasyEDA, then end every running `easyeda-mcp-pro` server (`pgrep -af easyeda-mcp-pro`; Claude Code's restarts with
+  `/mcp`). `edakit doctor` then shows "bridge extension 1.11.0 = server 1.11.0" (handbook 2.4, 2.5).
+- `schematic check` and stage S close only their own schematic's tabs before they read; the other schematics stay
+  open. easyeda-mcp-pro 1.9.0 reads the nets of the focused page only (M-11, our #865), so a net flag of another open
+  schematic no longer puts a pin on a second net (#117). Another schematic with unsaved changes is no longer a
+  finding `saved`.
+- edakit sends the open project's UUID as `projectId` to easyeda-mcp-pro's tools instead of `"current"`, which its
+  schematic and PCB reads refuse since 1.9.0 (`current-project-uuid-mismatch`).
+
 ## 1.1.17 – 2026-11-04
 
 - The explorative DSL, a beta: a project that sets `[beta] dsl = true` in edakit.toml may write its graph as

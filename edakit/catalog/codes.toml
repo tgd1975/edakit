@@ -36,6 +36,10 @@ decides = "the scenarios run, are complete and reach the states they expect"
 prefix = "GEO"
 decides = "copper, holes, print, widths and distances on plan and Gerber files"
 
+[engines.PERF]
+prefix = "PERF"
+decides = "the plan of a hand-wired board on a perfboard makes the graph's nets and can be built"
+
 [engines.FILES]
 prefix = "FILES"
 decides = "manufacturing files and sheets complete and consistent"
@@ -686,8 +690,8 @@ sources = [
 [codes."SYNC.schematic"]
 title = "schematic = graph"
 rule = "Every schematic in EasyEDA has exactly the graph's parts (LCSC number, designator) and nets (pins, no-connects)."
-why = "The schematic is generated, but EasyEDA can lose or move things: while another schematic of the project is open – the board's schematic, a copy of the template –, the bridge's net reading can list a pin on a second net with no wire, label or flag there: a net flag of the other schematic that happens to sit on a wire end of this one (M-11). The check closes every saved schematic tab and reads the schematic as saved with no other one open, so the result does not depend on what ran before in the session."
-fix = "Generate it again (edakit schematic create --save, layout --save) and check again; never edit a schematic by hand. A schematic with unsaved changes – this one or another left open beside it: save it or close its tab without saving."
+why = "The schematic is generated, but EasyEDA can lose or move things. The check reads the schematic as saved – its saved tabs closed and its pages opened again –, not as a session left it. Before easyeda-mcp-pro 1.9.0 the bridge's net reading could list a pin on a second net while another schematic of the project was open (M-11)."
+fix = "Generate it again (edakit schematic create --save, layout --save) and check again; never edit a schematic by hand. A schematic with unsaved changes: save it or close its tab without saving."
 severity = "error"
 replaces = ["S-2"]
 sources = [
@@ -739,6 +743,7 @@ severity = "error"
 details = [
   "fixed parts in the PCB = plan (± 0.02 mm, rotation, side); the plan itself without findings – why it exists: a part moved by hand or by the auto-layout",
   "the plan keeps the circuit's hand-over: `layout.fixed`, `.edge`, `.near` of the graph, a decoupling capacitor of its own next to every IC (7.4) – why it exists: the auto-layout put a decoupling capacitor 24 mm from its IC; what the circuit designer knew got lost on the way to the layout",
+  "on a hand-wired board with the plan of a perfboard (7.9): `edge`, `near` and the decoupling of the hand-over held as on a PCB, by the gap between the bodies' boxes, and `[near]` of its board file – why it exists: decision 20 of perfboard-layout",
   "every part the graph puts on the board has a row in `[place]` of the board file – by hand, from `pcb place`, or written back by `pcb autolayout` with `auto = true` (7.4); a part on a bought or hand-wired board (4.5) is on no made board and needs none. The board file decides it alone; the row names the parts without one: `D1, R2: no row in hardware/boards/main.toml [place] (2 of 17 parts)` – why it exists: what EasyEDA's auto-layout placed was in no file: the layout hash did not cover it, SYNC.plan held it to nothing, the direction check, the mated plugs and the mechanical model did not see it, and after a dump the next auto-layout could put it elsewhere – `pcb autolayout` writes its positions back, `pcb takeover --write` takes a board placed before",
 ]
 replaces = ["L-7", "L-12", "L-20"]
@@ -1100,6 +1105,110 @@ sources = [
   "pytree's gate runs 20261027-211238 and 20261027-214622: Gerber_BottomSilkscreenLayer.GBO of the first holds the glyphs 'D31' at x 1.26…3.03, y 163.37…164.17 mm (0.686 mm², not in the second); pcb.json of both has the version line 'pytree · Baum · Rev 2 · 2026' as the only PCB text of the bottom silkscreen – the 'D31' was the part's designator",
   "edakit handbook 7.5 (the visible side, [looks]), 7.7 (silkscreen: hide, [[silk.texts]], the board label) and 8.1 (L-17)",
   "edakit handbook 17.11, the layout review of the walkthrough on examples/coin-cell-led, note 1: BT1's designator lay under the cell, fixed in the example by [silk] place; the handover note there: the cell (Ø 20 mm) stands 2 mm out of BT1 (16 mm wide) on both long sides; docs/concepts/done/walkthrough-gaps.md B3",
+]
+
+[codes."PERF.net"]
+title = "perfboard plan = graph"
+rule = "The copper of the plan – the leads in their holes, the pads a kind joins, the bridges below, the insulated wires on top and the pins a part joins inside – makes exactly the graph's nets of the board: no net open, no two nets in one piece of copper, every wire joining the net it is labelled with."
+why = "The classic mistakes of a hand-wired board – a bridge forgotten, a row started one hole too early, an LED the wrong way round – are found with the multimeter after soldering. On the Christmas bell's plan the check found all three in a copy built to break, each with the hole where the soldering iron goes."
+fix = "Add the missing bridge or wire, move the bridge or the part that joins two nets – the finding of grade meet names the hole –, or correct the wire's net."
+severity = "error"
+grades = { open = "error", short = "error", meet = "error", label = "error", joined = "error", inside = "note" }
+details = [
+  "the nets the plan makes, from the holes, the copper groups of the kind (`groups` of `edakit/perfboards/<kind>.toml`: none on a pad per hole, runs of three on `3-hole-strips`), the bridges of `[[wire]]` with side bottom (every hole along the path), the insulated wires with side top (their two ends) and the pins a part joins inside (`joined` of the parts entry, a button's pins that share a role, 4.1), against the graph's nets of the board: open, short, a wire labelled with a net it does not join (label), a hole or a strip where two nets meet (meet) – why it exists: a strip not cut, a bridge in the wrong row, the bottom read the wrong way round, found only with the multimeter (perfboard-layout, Why)",
+  "a module on sockets (kind module) joins its pins inside – the nets are whole with it plugged in; pins that reach the rest of their net only inside it are a note (inside), and the test list measures them as groups of their own (decision 19) – why it exists: the bell's LED cathodes reach ground only through the Nano's second GND pin",
+  "a key `joined` of a parts entry that is not a list of pin groups of the entry: grade joined",
+]
+sources = [
+  "edakit concept 'Perfboard layout' (docs/concepts/new/perfboard-layout.md), decisions of 2026-11-03 and 2026-11-09: decisions 1, 11, 16 to 19",
+  "edakit handbook 7.9",
+]
+
+[codes."PERF.place"]
+title = "every part in its holes"
+rule = "Every part of the hand-wired board has a place in the plan, lies within the board's holes, has one lead per hole, and a part placed by the holes of its roles has its leads in exactly those holes."
+why = "A part the plan leaves out is soldered from memory; two leads in one hole do not fit; an LED placed by its rotation reads alike for a yellow one with its cathode on pin 1 and a green one with its anode there – the trap the bell's PCB had."
+fix = "Give the part its place – `at` and `rot`, or the holes of its roles –, move it onto the board, or correct the holes the plan names."
+severity = "error"
+grades = { unplaced = "error", unknown = "error", offboard = "error", two = "error", role = "error", span = "error", geometry = "error" }
+details = [
+  "every part of the board in `[place]` (unplaced), no designator there that is not on the board (unknown), every lead and every wire end within `holes` of `[perfboard]` (offboard), one lead per hole (two); a part placed by role (`anode = \"L3\", cathode = \"L2\"`) has its leads where its roles are named, edakit derives the rotation (role); span only on a part with two leads (span); its footprint geometry known – the geometry beside the board file, `footprint_data`, or the library cache of `edakit part import` (geometry) – why it exists: decision 14 of perfboard-layout, the bell's LEDs by role",
+]
+sources = [
+  "edakit concept 'Perfboard layout' (docs/concepts/new/perfboard-layout.md), decisions of 2026-11-03 and 2026-11-09: decisions 10, 13, 14",
+  "edakit handbook 7.9",
+]
+
+[codes."PERF.grid"]
+title = "leads on the grid"
+rule = "Every pad of a placed part lands on a hole of the 2.54 mm grid within the bend a lead takes (tolerance.lead_bend_mm of the kind); a bent lead within it is a note; a part with SMD pads is an error – a perfboard takes through-hole parts only."
+why = "A part whose pins are off the grid – a slide switch with terminals 2.0 mm apart, a terminal block at 3.5 mm – does not go into the holes, and an SMD part has no lead to go through them. The bell's buttons, 6.5 x 4.5 mm on 7.62 x 5.08 mm, are bent by 0.63 mm."
+fix = "A part with pins on the 2.54 mm grid, another rotation, or – for an SMD part – a through-hole part in a variant of its own (handbook 3, 10.4)."
+severity = "error"
+grades = { bent = "note", smd = "error" }
+details = [
+  "the pads of the footprint geometry, turned by `rot`, fitted onto the holes: the largest distance of a pad from its hole once the part is centred on its holes, against `tolerance.lead_bend_mm` of the kind (an assumption of 0.8 mm until a build measures it); above 0.05 mm a note (bent); a pad without a hole an error (smd) – why it exists: decision 3 of perfboard-layout, the bell's buttons",
+]
+sources = [
+  "edakit concept 'Perfboard layout' (docs/concepts/new/perfboard-layout.md), decisions of 2026-11-03 and 2026-11-09: decision 3, 'What edakit checks'",
+  "edakit/perfboards/pad-per-hole.toml: pitch 2.54 mm (Rademacher 710-5, CIF 4987709)",
+]
+
+[codes."PERF.body"]
+title = "bodies apart, spans long enough"
+rule = "The bodies of the placed parts do not overlap and cover no other part's lead and no wire's end; an axial part's span holds its body and the bends of its leads; a part under a module on sockets is a note."
+why = "Two bodies in one place do not fit, a lead under a body cannot be soldered or reached by the probe, and a resistor bent too close at its body cracks; a module on 8.5 mm sockets has room under it for wires, not for parts that might touch it."
+fix = "Move one of the parts, give the axial part a longer span, or move the part from under the module."
+severity = "error"
+grades = { span = "error", under = "note" }
+details = [
+  "bodies as boxes – `body.box` of the parts entry, else the footprint's box – or round where the footprint's name says so (`_BD5.0` of a radial LED or capacitor), an axial part's body (`-L6.5` and `_BD2.5`, or `body.box`) between its leads, a module's sockets one pitch around each pin: no two overlap, none covers a lead or a wire's end; an axial part's `span` in holes at least its body plus `tolerance.axial_bend_mm` on each side (span); a part under a module on sockets (under) – why it exists: decision 19 of perfboard-layout",
+]
+sources = [
+  "edakit concept 'Perfboard layout' (docs/concepts/new/perfboard-layout.md), decisions of 2026-11-03 and 2026-11-09: decision 19, 'What edakit checks'",
+  "edakit/perfboards/pad-per-hole.toml: tolerance.axial_bend_mm (an assumption until a build)",
+]
+
+[codes."PERF.mount"]
+title = "mounting holes free"
+rule = "Every mounting hole of the plan lies on the board, no lead, bridge or wire end sits under the nut around it, and no body reaches into it."
+why = "A frame's holes rarely meet the 2.54 mm grid – the bell's are 78 x 49 mm apart, the grid gives 76.2 x 48.3 –, so they are drilled between the holes; a pad under the nut shorts to the screw or is crushed."
+fix = "Move the part or the wire from the nut, or the mounting hole – in mm, as on a PCB."
+severity = "error"
+details = [
+  "`[[holes]]` in mm, x right and y up from the board's lower left corner seen from the top: inside the board; the pads whose centre lies within `keep` / 2 plus half a pad of the hole's centre stay free – `keep` of the hole, default 1.875 x d, the corners of an M3 nut (6.01 mm, ISO 4032) for d = 3.2 – why it exists: decision 15 of perfboard-layout",
+]
+sources = [
+  "edakit concept 'Perfboard layout' (docs/concepts/new/perfboard-layout.md), decisions of 2026-11-03 and 2026-11-09: decision 15",
+  "ISO 4032, hexagon nuts: M3 width across corners e min 6.01 mm",
+]
+
+[codes."PERF.wire"]
+title = "bridges straight, wires into free holes"
+rule = "On the bottom only straight rows of bridges between neighbouring holes: none turns a corner, and two rows meet at a lead or in the middle of another row, never at right angles in an empty hole; an insulated wire on top ends in a free hole, not in a lead's, and not under a body."
+why = "A bridge around a corner is a wire that should run on top, where it is easy to solder; a lead and a wire do not fit into one hole, so a wire's end goes into the free hole beside the lead, joined to it by a bridge below."
+fix = "Straighten the bridges or take a wire on top for the way around the corner; move the wire's end into a free hole beside the pin."
+severity = "error"
+grades = { corner = "error", end = "error" }
+details = [
+  "`[[wire]]` with side bottom: every step along a row or a column, no corner within it and none where two rows end in the same empty hole (corner); side top: both ends in free holes, not under a body – a module on sockets is raised, its sockets are bodies (end) – why it exists: decisions 11, 16, 17 of perfboard-layout",
+]
+sources = [
+  "edakit concept 'Perfboard layout' (docs/concepts/new/perfboard-layout.md), decisions of 2026-11-03 and 2026-11-09: decisions 11, 16, 17",
+]
+
+[codes."PERF.current"]
+title = "copper carries the current"
+rule = "A bridge, a wire or a strip carries the current of its net – the largest current of a part on it from the simulation – within the copper's rating of the kind's data; without a rating with its source a note names the currents."
+why = "A current only with its source, never a guess: no datasheet of a perfboard rates its pads, and the bell's ground carries 0.8 A with the servo stalled."
+fix = "A rating with its source in edakit/perfboards/<kind>.toml (copper.max_a, copper.source), or a thicker wire for the net."
+severity = "error"
+grades = { unknown = "note" }
+details = [
+  "the nets of the plan's bridges and wires against `copper.max_a` of the kind with `copper.source`, the currents from `<artifacts>/sim/net_currents.json` of `edakit sim`; without a rating a note with the three largest (unknown); without a simulation nothing – why it exists: 'What edakit checks', Current, of perfboard-layout",
+]
+sources = [
+  "edakit concept 'Perfboard layout' (docs/concepts/new/perfboard-layout.md), decisions of 2026-11-03 and 2026-11-09: 'What edakit checks', Current",
 ]
 
 [codes."FILES.sheet"]

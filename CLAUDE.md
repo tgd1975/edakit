@@ -38,7 +38,8 @@ A requirements file covers the circuit only; what firmware and mechanics must do
   number is the owner's. Such a branch goes onto main as a pull request through `python3 .github/merge.py <n>`, never
   by a local merge: the script numbers it, waits for the checks and merges, and `release.yml` sets the tag. Concepts
   and TODO.md go through the notes lane and are no version.
-- **main is protected** by the rulesets in `.github/rulesets/`: nothing reaches it but a pull request with the checks
+- **main is protected** by the rulesets in `.github/rulesets/` – with the Actions policy that keeps
+  `pull_request_target` open for the checks paths and version –: nothing reaches it but a pull request with the checks
   test, kicad, build, paths and version green, no force push, no deletion, no bypass, and a version's tag is never
   moved. Every session acts as the owner's account, so this guards against slips and the Actions – the owner's OK for
   code stays the rule above. A refused push to main ("Repository rule violations") moves its commit to a branch; no
