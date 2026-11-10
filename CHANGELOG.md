@@ -8,6 +8,10 @@ written once, by `.github/merge.py`, from the fragments in [changes/](changes/RE
 update edakit@edakit`, then `/reload-plugins` or a new session; `edakit version` names the version that runs and what an
 update brings.
 
+## 1.3.3 – 2026-11-10
+
+- `edakit doctor` runs again in a folder without edakit.toml: since the explorative DSL's refusal (edakit 1.1.x) it stopped with `AttributeError: 'NoneType' object has no attribute 'dsl'` there.
+
 ## 1.3.2 – 2026-11-10
 
 - `route pours`, `route all` and `route fill` save the PCB and load it again before they fill: once pads, vias or tracks were created or deleted through the API in a session – the tooling holes of the last fill, `route apply`'s tracks –, EasyEDA's copper engine fills nothing until the PCB is reloaded (M-13, found live on desk-led). A second `route pours` in one EasyEDA session works now, and `route fill` needs no restart of EasyEDA before it.
