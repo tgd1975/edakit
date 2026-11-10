@@ -1160,7 +1160,7 @@ def draw(res, bottom, title):
         svg.add(f'<circle cx="{x + 40:.2f}" cy="{y:.2f}" r="0.78" fill="#e4d8c0" stroke="#b9a684" stroke-width="0.1"/>'
                 f'<circle cx="{x + 40:.2f}" cy="{y:.2f}" r="0.36" fill="#8a7654"/>')
         svg.text(x + 41.4, y, "empty hole", size=1.3, anchor="start")
-        svg.text(x + 56, y, "bars: bridges of bare wire, coloured by net", size=1.3, anchor="start", fill="#444")
+        svg.text(x + 56, y, "bars: bridges, coloured by net", size=1.3, anchor="start", fill="#444")
         x, y = ml, ly + 3.3
         for net in dict.fromkeys(w["net"] for w in res.wires if w["kind"] == "bridge"):
             svg.add(f'<line x1="{x:.2f}" y1="{y:.2f}" x2="{x + 3:.2f}" y2="{y:.2f}" stroke="{colours.get(net)}" '
@@ -1527,7 +1527,7 @@ def lists(res, title, findings_too=True):
                     rows.append(f"holes {holes_of(it)} {it['net']} ({cut_mm[id(it)]} mm of bare wire)")
                 elif (b := bent_of.get(id(it))):
                     rows.append(f"{lead_text(res, b['part'], b['pin'])} in {hole_name(b['at'])} bent onto the pad of "
-                                f"{hole_name(b['to'])}")
+                                f"{hole_name(b['to'])} and cut at its far edge")
                 elif id(it) in long_end:
                     rows.append(f"the stripped end along holes {holes_of(it)} {it['net']}")
             elif key == "wire":

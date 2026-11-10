@@ -371,8 +371,8 @@ def test_the_command_draws_both_views_and_writes_the_lists(pb, monkeypatch, caps
                  "| 8 mm | 1 | A4 … C4 VCC |",
                  "Not cut: the wires' stripped ends make the bridges L3–L4, A5–B5. A lead bent over on the bottom "
                  "makes the bridges F2–G2 (R1's lead in G2), K2–L2 (D1's anode lead in L2).",
-                 "holes A4 … C4 VCC (8 mm of bare wire); R1's lead in G2 bent onto the pad of F2; D1's anode lead in L2 "
-                 "bent onto the pad of K2. The bridges beside the wires' ends are their stripped ends.",
+                 "holes A4 … C4 VCC (8 mm of bare wire); R1's lead in G2 bent onto the pad of F2 and cut at its far edge; "
+                 "D1's anode lead in L2 bent onto the pad of K2 and cut at its far edge. The bridges beside the wires' ends are their stripped ends.",
                  "R1 150 in holes G2–K2 – leave R1's lead in G2 long and unsoldered: bent onto the pad of F2 once the "
                  "leads are in, it is the bridge there.",
                  "D1 red: anode (long lead) in hole L2, cathode (flat) in hole L3",
