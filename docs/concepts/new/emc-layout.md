@@ -9,6 +9,11 @@ projekten überprüfen (glocke, pedal)".
 This version is the result of that review, the same day. Every rule now rests on a source that was read; the review's
 findings and what they changed are listed at the end. Written against main at `77ee7cb0`.
 
+The reviewed version then deferred three steps "until the first project that needs it", at "2–3 days" for GEO.return.
+The owner rejected that reasoning: "und dann braucht das das projekt sofort und wir haben keine tage zeit für die
+umsetzung ... reden wir hier von deiner zeit? warum so lange?". Nothing is deferred now. The sizes are session time,
+measured against how long a comparable check took here (the table of steps, below).
+
 This concept supports layout and covers technical risk only. It is not legal advice, guarantees nothing legally and
 makes no claim to be correct. Whether a board meets EMVG § 6 or 2014/30/EU stays with the regulatory review (M-6,
 handbook 15).
@@ -43,20 +48,24 @@ The review found that the first version did not hold up in three places:
 
 So this version proposes:
 
-| Step | What | Source | Hits in the projects today |
-| --- | --- | --- | --- |
-| EMC.1 | Fast nets: which nets count, and a coverage line when edakit cannot tell | SZZA009 1.3, 2.6.3 | pytree: the SPI chain |
-| EMC.2 | GEO.length: a fast net longer than 101.6 mm from its driver without a series resistor next to the driver | SZZA009 2.4.2, 2.4.3, 2.2.5 | pytree: TLC_CLK 126.5 mm, TLC_SDO 118.4 mm |
-| EMC.3 | Questions for the layout review (M-5) in the core domain: ground under fast tracks, gridding, fast tracks at the board edge, Freerouting and fast nets, crystals | SZZA009 2.1–2.6, SCAA082A 1.6, SPRAAR7J 2 | every board with fast nets |
-| EMC.4 | HINT.supply_entry: a small capacitor at the supply entry of a board with fast nets, a place for a ferrite | SZZA009 2.2.4, 2.5.4, 2.5.5, 3.3, 4 | pytree: J1 |
+| Step | What | Source | Hits in the projects today | Size (session time) |
+| --- | --- | --- | --- | --- |
+| EMC.1 | Fast nets: which nets count, and a coverage line when edakit cannot tell | SZZA009 1.3, 2.6.3 | pytree: the SPI chain | about 1 h |
+| EMC.2 | GEO.length: a fast net longer than 101.6 mm from its driver without a series resistor next to the driver | SZZA009 2.4.2, 2.4.3, 2.2.5 | pytree: TLC_CLK 126.5 mm, TLC_SDO 118.4 mm | about 2 h |
+| EMC.3 | Questions for the layout review (M-5) in the core domain: ground under fast tracks, gridding, fast tracks at the board edge, Freerouting and fast nets, crystals | SZZA009 2.1–2.6, SCAA082A 1.6, SPRAAR7J 2 | every board with fast nets | about ½ h |
+| EMC.4 | HINT.supply_entry: a small capacitor at the supply entry of a board with fast nets, a place for a ferrite | SZZA009 2.2.4, 2.5.4, 2.5.5, 3.3, 4 | pytree: J1 | about 1 h |
+| EMC.5 | GEO.return: the reference copper under every fast track on the Gerber raster | SZZA009 2.1.2, 2.1.4, 2.2.3; SCAA082A 1.6; SPRAAR7J 2 | pytree: V_LED without a capacitor to GND near U3–U5 | 3–5 h |
+| EMC.6 | HINT.crystal: a crystal on the board, its place and its neighbours | SZZA009 2.4.1, 2.1.3; Raspberry Pi, Hardware design with RP2350, 4 | none: every crystal sits on a module | about 1 h |
+| EMC.7 | domain usb: the routed USB pair | Raspberry Pi, Hardware design with RP2350, 5.1; SPRAAR7J 1.2 | none: USB plugs into a module everywhere | 1–2 h |
 
-Deferred, each with its own trigger:
-
-| Step | What | Waits for |
-| --- | --- | --- |
-| EMC.5 | GEO.return: the return path of every fast track on the Gerber raster | a second project with fast nets, or the owner's word (2–3 days) |
-| EMC.6 | HINT.crystal | the first project with a crystal on its own board |
-| EMC.7 | domain usb: the routed USB pair | the first project that routes USB data on its board |
+Together that is about one and a half working days of session time, in three branches (EMC.1–EMC.4, EMC.5, EMC.6 with
+EMC.7). Each branch goes onto main with the owner's OK, as a `patch` version. The sizes are measured against
+proposal #103, a check of the same kind on the same Gerber raster (GEO.pour's bare area per side): from the issue at 11:45 to
+the merge of #138 at 15:28 on 2026-11-01, triage, tests, catalog and handbook included. The steps without hits today
+are tested on synthetic Gerber files, as `tests/test_fab.py` writes them. A live run on a published design with a
+crystal and a USB pair on two layers is possible too: Raspberry Pi's RP2350A Minimal KiCad design, through edakit's
+KiCad toolchain, which writes `pcb.json` and Gerber files from a KiCad board (`edakit/toolchain/kicad/fab.py`). Its
+licence is checked before anything of it goes into the repository.
 
 Dropped: the edge time as a part fact (no datasheet gives it), and the note on long inputs with an internal pull-up (no
 source asks for a length limit).
@@ -68,7 +77,7 @@ They leave nothing that exists only in EasyEDA or in someone's head.
 
 | Project | Board | Nets above 50 kHz | What the proposed rules would report |
 | --- | --- | --- | --- |
-| pytree | tree, two layers, RP2350-Zero module; tracks on TOP (pytree's "hinten"), V_LED poured on BOTTOM | the SPI chain to U3–U5: TLC_CLK (1 MHz, `firmware/leds.py`), TLC_SDI, TLC_SDO. LE pulses once per update, and OE, the star and the buzzer switch at 0.5–2 kHz. All of these are below 50 kHz. | EMC.2: TLC_CLK 126.5 mm to U3 and TLC_SDO 118.4 mm from U3, no series resistor (TLC_SDI 92.3 mm passes). EMC.4: J1. EMC.5 if built: no capacitor between V_LED and GND near U3–U5 (only C1 and C4, in the foot). |
+| pytree | tree, two layers, RP2350-Zero module; tracks on TOP (pytree's "hinten"), V_LED poured on BOTTOM | the SPI chain to U3–U5: TLC_CLK (1 MHz, `firmware/leds.py`), TLC_SDI, TLC_SDO. LE pulses once per update, and OE, the star and the buzzer switch at 0.5–2 kHz. All of these are below 50 kHz. | EMC.2: TLC_CLK 126.5 mm to U3 and TLC_SDO 118.4 mm from U3, no series resistor (TLC_SDI 92.3 mm passes). EMC.4: J1. EMC.5: no capacitor between V_LED and GND near U3–U5 (only C1 and C4, in the foot). |
 | bell (automatic_christmas_bell, all variants: Nano, ESP32, THT, SMD) | main, two layers, Arduino Nano or ESP32 module | none: servo at 50 Hz, LEDs, two buttons with 4.7 kΩ pull-downs | nothing. The first version would have flagged SERVO (66.3 mm) and the button lines (96–109 mm). |
 | desk-led | main, battery, switch, LED | none, no MCU | nothing |
 | pedal (AwesomeStudioPedal) | no PCB and no edakit project: NodeMCU-32S on wires, five footswitches with 10 kΩ pull-ups and LEDs on 30 cm and more of cable (maker-coverage) | none: footswitches and LEDs are static or slow | Only the cable rules apply. HINT.cable_line and HINT.esd exist; SZZA009 2.5.3 adds the ratio of return wires (EMC.3, cable question). The radio (BLE) is the domain radio's. |
@@ -76,7 +85,9 @@ They leave nothing that exists only in EasyEDA or in someone's head.
 The lengths are measured on the released runs: pytree `20261101-225744`, bell `20261101-142527`. They are the shortest
 path over tracks from the MCU's pad to each load's pad, computed by `loop_length_mm` of `edakit/release/fab.py`.
 
-Only one bus on one board is a target today. That sets the size of what is worth building now.
+Only one bus on one board is a target today. That is no reason to wait. A check has to be in place before the board
+that needs it is ordered, or it comes too late by construction. GEO.pour came the other way round: pytree's bare back
+was seen by eye the evening before the order (GEO.pour, why).
 
 ## EMC.1 Fast nets
 
@@ -188,31 +199,63 @@ protection and simulation sources. With the condition "fast nets on the board", 
 **pytree.** J1, if its part entry gives the pin role `vbus`; otherwise the matcher misses it, and the coverage line says
 so.
 
-## EMC.5 GEO.return – deferred
+## EMC.5 GEO.return – the reference under fast tracks
 
-The check the questions of EMC.3 stand in for, on the Gerber raster.
+The check behind the EMC.3 questions on slots, splits and supply pours, on the Gerber raster.
 
-- **Rule:** for every track of a fast net, the reference copper on the other layer under it. Where it has a gap, the
-  return detour: the shortest path in ground copper around the gap, both layers, joined through vias and through
-  0 Ω bridges and capacitors between reference nets. Compared with the gap's width.
-- **Sources:** as EMC.3.
-- **Data:** GEO.copper's raster (`gerber.Copper`) has the copper per net and island, joined through plated holes
-  (`net_mask`, the union of islands). New would be a geodesic distance on that raster.
-- **Size:** two to three days with negative tests. Today it would find one thing on one board, pytree's V_LED reference
-  without a capacitor at the drivers.
+**Rule.** For every track of a fast net (EMC.1), the reference copper under it on the other layer: a ground net, or a
+supply poured there. A **warning** for each of these:
 
-*Recommendation:* build it with the second project that has fast nets, or on the owner's word.
+- **A gap** in that copper (a slot, the edge of a pour) whose two sides are not joined within 5.08 mm of the crossing.
+  They are joined by a via, a 0 Ω bridge, or a capacitor of 1 µF or less between two reference nets.
+  - SCAA082A 1.6: a 0 Ω resistor over the slot.
+  - SPRAAR7J 2: stitching capacitors of "1 µF or lower and placed as close as possible to the plane crossing", and
+    stitching vias "within 200 mils".
+- **A supply as the reference** with no capacitor between it and the receiving part's ground within 5.08 mm of the
+  part. The return cannot cross to the part's ground there.
+- **A ground fill under the track tied at one point only.** SZZA009 2.2.3: "A ground-fill-pattern geometry connected at
+  only one point is just a ground shield".
 
-## EMC.6 HINT.crystal – deferred
+The 5.08 mm are SPRAAR7J's 200 mils for stitching vias. They are used for the capacitors as well, where the source says
+only "as close as possible". SPRAAR7J is written for high-speed interfaces, so the distance is strict for an MCU board.
 
-The rules are in EMC.3 (crystal). A hint makes sense where the graph has a part of kind `crystal` on a board. Every
-project has its crystal on a module, so it would find nothing today.
+**How.**
 
-*Recommendation:* build it with the first project that has a crystal on its own board, together with `layout.near` for
-the crystal and its capacitors as the hand-over to the layout. Raspberry Pi's guide insists on its recommended crystal
-and circuit (4, 4.1). The load capacitance is maker-coverage CK-13.
+- The reference copper is GEO.copper's raster (`gerber.Copper`): `net_mask` of the ground nets, and of the supplies
+  poured on that layer.
+- Along each track, every 0.5 mm, the band under it as wide as the track. A run of samples without reference copper is
+  a gap.
+- For a gap: `ndimage.label` of the reference copper inside a disc of 5.08 mm around it, on both layers. The copper is
+  joined through the vias, and through the bridges and capacitors whose pads lie in the disc. Copper before and after
+  the gap in one component counts as joined.
+- That is the labelling GEO.copper does already, on a window; a global detour path is not needed.
+- The tie points of a fill are its pads and vias, counted by the union of islands that GEO.copper keeps.
 
-## EMC.7 Domain usb: the routed pair – deferred
+**pytree.** Its tracks lie on TOP, and BOTTOM is V_LED: a supply as the reference. U3–U5 have no capacitor between
+V_LED and GND, so the warning names TLC_CLK, TLC_SDI and TLC_SDO at each driver. The fix is a capacitor of 1 µF or
+less (100 nF, 0603) from V_LED to GND next to each driver.
+
+**Tests.** Synthetic Gerber files with a slot, a stitched slot and a supply pour with and without its capacitor.
+Live runs on pytree's and the bell's released runs.
+
+## EMC.6 HINT.crystal
+
+**Rule.** A note where the graph has a part of kind `crystal` on a board:
+
+- the crystal and its load capacitors next to the MCU's pins, handed to the layout as `layout.near`;
+- the tracks as short as possible, and the recommended crystal and circuit where the MCU's maker names them
+  (Raspberry Pi, Hardware design with RP2350, 4 and 4.1);
+- on the routed board, as information:
+  - every part within 25.4 mm of the crystal that is neither its MCU nor one of its load capacitors (SZZA009 2.4.1:
+    "No unrelated components should be closer than 1 inch to the crystal");
+  - every fast track that passes under it (SPRAAR7J 2: no high-speed traces "under or near crystals").
+
+The load capacitance itself is maker-coverage CK-13.
+
+**Tests.** A graph with a crystal (`kinds.toml` has the kind), synthetic placements. Live run: Raspberry Pi's RP2350A
+Minimal design.
+
+## EMC.7 Domain usb: the routed pair
 
 What applies when D+ and D− are routed on the board itself:
 
@@ -225,27 +268,38 @@ What applies when D+ and D− are routed on the board itself:
 - **Ground:** solid and uninterrupted under the whole length of the pair (same source). SPRAAR7J lists the USB 2.0 pair
   as a critical signal (1.2).
 
-*Recommendation:* build it with the first project that routes USB data. All projects plug USB into a module today.
+**Rule**, in the domain usb, when the pins with the roles `dp_*` and `dn_*` are routed on the board:
+
+- both tracks on one layer;
+- the pair over ground for its whole length, checked by EMC.5 with the pair as fast nets;
+- a note with the board's thickness from the order: at more than 1 mm the 90 Ω are out of reach on two layers, so the
+  note names a 1.0 mm board, the compromise, or a module;
+- for an MCU whose entry asks for series resistors (the RP2350: 27 Ω), the resistors next to the chip.
+
+All projects plug USB into a module today.
+
+**Tests.** Synthetic files, and Raspberry Pi's RP2350A Minimal design as a live run (1 mm, its pair over ground).
 
 ## What stays out
 
 - **Simulation of emissions** (field solvers, near-field models): not text-sized and not checkable by an LLM.
 - **A measurement or pre-compliance test:** the owner's, in a lab or with a near-field probe. A project records the
   result in its decision log.
-- **Grading by purpose** (handbook 15.4): it grades the regulatory codes. GEO.length is a technical check, so it is the
-  same warning for every purpose.
+- **Grading by purpose** (handbook 15.4): it grades the regulatory codes. GEO.length and GEO.return are technical checks,
+  so each is the same warning for every purpose.
 - **What the rows prove:** the regulatory review (M-6) can name the warnings, and the accepted ones with their reasons,
   as layout measures taken. That is no evidence that a board complies; only a measurement is.
 
 ## Open decisions
 
-1. **Scope now.** Recommendation: EMC.1–EMC.4 now; EMC.5 with the second project that has fast nets; EMC.6 and EMC.7
-   with their first project. The alternative is EMC.5 now as well, two to three days more.
+1. **Scope.** Recommendation: all seven steps, in three branches (EMC.1–EMC.4, EMC.5, EMC.6 with EMC.7), about one
+   and a half working days of session time. The alternative is EMC.1–EMC.4 alone, about half a day; the rest stays in
+   this concept.
 2. **A clock without `clock_hz`** (EMC.1, step 2). Recommendation: it counts as fast, and the coverage line names it.
    The alternative is that it counts only with `clock_hz` set; then pytree's chain would not count until its graph sets
    the field.
-3. **Severity of GEO.length.** Recommendation: a warning for every purpose, accepted with its reason. The alternative is
-   grading by purpose like the regulatory codes.
+3. **Severity of GEO.length and GEO.return.** Recommendation: a warning for every purpose, accepted with its reason. The
+   alternative is grading by purpose like the regulatory codes.
 
 ## The review of 2026-11-10
 
@@ -261,10 +315,11 @@ What applies when D+ and D− are routed on the board itself:
 | 8 | "The RP2350's edges take a few nanoseconds" and "slow slew" as a remedy: the slow slew is the reset value already. | EMC.2: the remedy is the drive, 4 → 2 mA. |
 | 9 | 100 nF at the supply entry: SZZA009 asks for below 1000 pF at the connector, for its low ESR at 50–500 MHz. | EMC.4. |
 | 10 | Long inputs with internal pull-ups (old point 7): no source gives a length limit. SZZA009 2.4.4 asks for a pull-up on a line to a switch, and the internal one is one. Bell (96–109 mm, 4.7 kΩ) and pytree (36–64 mm) are static inputs. | Dropped; HINT.debounce, HINT.esd and HINT.cable_line stay. |
-| 11 | GEO.return as the first step: two to three days of work for a single finding on a single board today. Its rules with numbers come from SPRAAR7J, written for high-speed interfaces. | Deferred (EMC.5); the questions of EMC.3 carry the rules now. |
-| 12 | HINT.crystal and the USB pair now: no project has a crystal or USB data on its own board. | Deferred with their triggers (EMC.6, EMC.7). |
+| 11 | GEO.return's rules with numbers come from SPRAAR7J, written for high-speed interfaces. | EMC.5 says so; the questions of EMC.3 carry the same rules for the layout review. |
+| 12 | HINT.crystal and the USB pair: no project has a crystal or USB data on its own board. | Tested on synthetic files and a published design (EMC.6, EMC.7). |
 | 13 | The pytree numbers were totals per net, not paths. OE and the star counted as risks, but they are below 50 kHz. | Measured paths; the table above. |
 | 14 | "M-6 reads the rows as evidence" claimed too much. | "What stays out": a record of measures taken, no evidence of compliance. |
+| 15 | The reviewed version deferred EMC.5–EMC.7 "until the first project that needs it", at "2–3 days" for EMC.5. A check that waits for its project comes too late by construction. The days were a guess at a person's work, not measured against this repository: proposal #103, a check on the same raster, took under four hours from the issue to the merge. | Nothing deferred. Sizes in session time, measured against #103. EMC.5 got simpler: labelling inside a disc instead of a detour path. |
 
 ## Sources
 
