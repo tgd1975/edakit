@@ -1,0 +1,2 @@
+patch
+- GEO.under (new, a note): a track that passes between the two pads of a small chip part – two SMD pads on one layer, at most 4.5 × 2.0 mm over both (0402 to 1206) – on the part's own layer, unless its net is the net of both pads; 0 Ω bridges are left out. `route check` and the gate name the part, the track's net and the smallest distance to a pad of another net; nothing stops, `accept` GEO.under on the part or the net (#342).

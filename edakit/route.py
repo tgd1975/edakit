@@ -531,6 +531,103 @@ def smd_via_text(item, keep_mil, board=None):
             f"smd_via_keep_mm {keep_mil * mm:g} (vias untented)")
 
 
+UNDER_MAX_MM = (4.5, 2.0)   # GEO.under: a small chip part – both pads within this extent (along, across): up to 1206
+
+
+def chip_gaps(data):
+    """GEO.under: the small two-terminal chip parts of a board and the space between their pads – a part with exactly two
+    SMD pads on one copper layer whose outer extent is at most UNDER_MAX_MM (0402 to 1206, from the pads, not the
+    footprint's name). The gap is the rectangle from the facing edge of one pad to that of the other, across the width
+    of the pads. -> [(ref, layer, (pad a, pad b), gap polygon in mil)] in the order of the parts."""
+    by_ref = defaultdict(list)
+    for p in data["pads"]:
+        if p["ref"]:
+            by_ref[p["ref"]].append(p)
+    out = []
+    for ref in sorted(by_ref, key=natural_key):
+        pads = sorted(by_ref[ref], key=lambda p: natural_key(str(p["num"])))
+        if len(pads) != 2 or pads[0]["layer"] not in LAYERS or pads[0]["layer"] != pads[1]["layer"]:
+            continue
+        (ax, ay), (bx, by) = ((p["x"], p["y"]) for p in pads)
+        d =math.dist((ax, ay), (bx, by))
+        if d < 1e-6:
+            continue
+        u, v = ((bx - ax) / d, (by - ay) / d), (-(by - ay) / d, (bx - ax) / d)
+        spans = []
+        for p in pads:
+            pts = list(pad_outline(p).exterior.coords)
+            s = [x * u[0] + y * u[1] for x, y in pts]
+            t = [x * v[0] + y * v[1] for x, y in pts]
+            spans.append((min(s), max(s), min(t), max(t)))
+        (s0, s1, ta, tb), (s2, s3, tc, td) = spans
+        t0, t1 = min(ta, tc), max(tb, td)
+        along, across = UNDER_MAX_MM
+        if s3 - s0 > along * MIL_PER_MM + 0.01 or t1 - t0 > across * MIL_PER_MM + 0.01 or s2 <= s1:
+            continue
+        corners = [(s * u[0] + t * v[0], s * u[1] + t * v[1]) for s, t in ((s1, t0), (s2, t0), (s2, t1), (s1, t1))]
+        out.append((ref, LAYERS[pads[0]["layer"]], tuple(pads), Polygon(corners)))
+    return out
+
+
+def under_tracks(data, tracks, skip=(), waivers=({}, {})):
+    """GEO.under: tracks that pass between the two pads of a small chip part (chip_gaps) on the part's own layer, unless
+    the track's net is the net of both pads. tracks: [(net or None, layer "TOP"/"BOTTOM", (x, y), (x, y), width)] in
+    mil; skip: designators left out (0 Ω bridges, which are there for a track to pass between their pads). The distance
+    is the smallest one, copper to copper, from the net's tracks there to a pad of another net (a pad without a net
+    counts as another). Waived when the part or the track's net has the accept (pad_accepts(graph, "GEO.under", "")).
+    -> [{"part", "layer", "net", "pads" ([(name, net)]), "mil", "waived"}], one per part and net, closest first."""
+    from shapely.strtree import STRtree
+    parts, nets = waivers
+    pieces = [(net, layer, LineString([a, b]).buffer(w / 2) if a != b else Point(a).buffer(w / 2))
+              for net, layer, a, b, w in tracks]
+    tree = STRtree([g for _, _, g in pieces]) if pieces else None
+    out = []
+    for ref, layer, pads, gap in chip_gaps(data):
+        if ref in skip or tree is None:
+            continue
+        through = defaultdict(list)
+        for j in tree.query(gap, predicate="intersects"):
+            net, lay, g = pieces[j]
+            if lay == layer and g.intersection(gap).area > 0.01:
+                through[net or None].append(g)
+        for net, gs in through.items():
+            if net and all(p["net"] == net for p in pads):
+                continue
+            others = [p for p in pads if not (net and p["net"] == net)]
+            copper = unary_union(gs)
+            out.append({"part": ref, "layer": layer, "net": net,
+                        "pads": [(f"{p['ref']}.{p['num']}", p["net"] or None) for p in pads],
+                        "mil": min(pad_outline(p).distance(copper) for p in others),
+                        "waived": next((w[k] for w, k in ((parts, ref), (nets, net)) if k and k in w), None)})
+    return sorted(out, key=lambda x: (round(x["mil"], 3), natural_key(x["part"]), str(x["net"])))
+
+
+def under_text(item):
+    """'D1: a track of LED_SW passes between its pads (D1.1 LED_SW, D1.2 GND) on TOP, 0.28 mm from a pad of another
+    net'"""
+    pads = ", ".join(f"{n} {net or 'no net'}" for n, net in item["pads"])
+    return (f"{item['part']}: a track of {item['net'] or '(no net)'} passes between its pads ({pads}) on "
+            f"{item['layer']}, {item['mil'] / MIL_PER_MM:.2f} mm from a pad of another net")
+
+
+def report_under(cfg, rules, data, routes):
+    """GEO.under, printed: the tracks of the SES that pass between the pads of a small chip part – notes, no exit code
+    changes and no new attempt. 0 Ω bridges are left out."""
+    skip, waivers = set(), ({}, {})
+    if cfg.graph.exists():
+        from .design import Design, load_graph
+        skip = set(Design.from_config(cfg).bridges())
+        waivers = pad_accepts(load_graph(cfg.graph), "GEO.under", "")
+    tracks = [(net, layer, a, b, w) for net, segs in segments(rules, routes, data).items() for layer, w, a, b in segs]
+    found = under_tracks(data, tracks, skip, waivers)
+    open_ = [g for g in found if not g["waived"]]
+    say(f"tracks between the pads of small chip parts (GEO.under): {len(open_)}"
+        + (f", {len(found) - len(open_)} accepted" if len(found) > len(open_) else ""))
+    for g in found[:20]:
+        print(f"    {under_text(g)} – " + (f"accepted: {g['waived']}" if g["waived"] else "note"), flush=True)
+    return open_
+
+
 def fixed_wires(rules):
     """[[routing.fixed_wires]]: {net, layer, width_mil, points (plan mm)} – protected in the DSN: Freerouting
     routes around them and keeps them (e.g. a short switching loop)."""
@@ -2421,6 +2518,7 @@ def main(cfg, args):
                         print(f"    {line}", flush=True)
                     near = report_joints(cfg, board, rules, data, routes)
                     report_smd_vias(cfg, board, rules, data, routes)     # warnings: no new attempt for them
+                    report_under(cfg, rules, data, routes)               # notes: no new attempt for them
                     nested = report_regions(rules, data, routes)
                     thin = report_widths(cfg, board, rules, routes)   # no new attempt routes wider
                     if not (open_nets or bad or near or nested) or thin:

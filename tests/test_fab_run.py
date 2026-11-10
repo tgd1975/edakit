@@ -330,7 +330,7 @@ def findings(rows):
 
 
 CHECKS = ["SYNC.pcb", "GEO.copper", "GEO.drc", "SYNC.footprint", "GEO.width", "SYNC.plan", "GEO.mark", "GEO.hole",
-          "GEO.loop", "GEO.spacing", "GEO.pour", "GEO.ring", "GEO.silk", "SYNC.bom", "PARTS.stock", "SYNC.cpl", "FILES.set",
+          "GEO.loop", "GEO.spacing", "GEO.under", "GEO.pour", "GEO.ring", "GEO.silk", "SYNC.bom", "PARTS.stock", "SYNC.cpl", "FILES.set",
           "SYNC.odb", "FILES.order"]   # FILES.order with the board file's [order]; [looks] adds GEO.silk rows; SYNC.odb
 #                                        information on every assembled board ([release] maker_files = "all", #153)
 
@@ -1340,8 +1340,9 @@ def test_the_acknowledgement_alone_leaves_the_other_kinds_passing(project):
 
 
 def test_every_check_has_a_fault():
-    """SYNC.odb's faults are in test_odb.py: here no maker of [cart] makers takes ODB++, and its row is information."""
-    assert {cid for _, _, e in FAULTS for cid, _, _ in e} == set(CHECKS) - {"SYNC.odb"}
+    """SYNC.odb's faults are in test_odb.py: here no maker of [cart] makers takes ODB++, and its row is information.
+    GEO.under is a note – information, which findings() leaves out –, so its faults have tests of their own below."""
+    assert {cid for _, _, e in FAULTS for cid, _, _ in e} == set(CHECKS) - {"SYNC.odb", "GEO.under"}
 
 
 def test_the_order_form_of_the_clean_export(project):
@@ -1521,6 +1522,73 @@ def test_an_open_via_at_a_reflowed_smd_pad_is_waived_on_its_net(project):
     assert findings(rows) == [("GEO.spacing", "waived")]
     w = next(r for r in rows if r["result"] == "waived")
     assert w["reason"] == "test: the via is filled by hand" and w["check"] == "open via at a reflowed SMD pad: D1.2"
+
+
+def under_rows(rows):
+    return [r for r in rows if r["id"] == "GEO.under"]
+
+
+UNDER = [(10.8, 9), (10.8, 6.5), (20, 6.5), (20, 11)]   # from D1.2 (VIN) up through the middle of C2 (0805, +5V/GND)
+
+
+def track_under_c2(ex, project, net="VIN"):
+    """A 0.3 mm track of VIN from D1.2 that runs between the pads of C2 (0805: +5V, GND) on TOP, 0.30 mm from each
+    (proposal #342: desk-led's LED_SW between the pads of R1 and D1) – its net a signal of 50 mA, so that 0.3 mm is
+    wide enough (GEO.width)."""
+    ex.currents["nets"][net]["i_max_a"] = 0.05
+    ex.line(net, 1, UNDER, 0.3)
+
+
+def test_a_track_between_the_pads_of_a_chip_part_is_a_note(project):
+    """GEO.under: a note – information, the gate does not stop – naming the part, the track's net, its pads and the
+    smallest distance to a pad of another net. D1 (SMA, 6.9 mm over its pads) is no small chip part, J1 is through-hole."""
+    rows = run(project, track_under_c2)
+    assert findings(rows) == []
+    assert [(r["result"], r["actual"]) for r in under_rows(rows)] == [
+        ("pass", "1 small chip parts, 1 with a track between their pads"),
+        ("info", "C2: a track of VIN passes between its pads (C2.1 +5V, C2.2 GND) on TOP, 0.30 mm from a pad of another "
+                 "net")]
+
+
+def test_the_clean_export_has_no_track_between_chip_pads(project):
+    assert [(r["result"], r["actual"]) for r in under_rows(run(project))] == [
+        ("pass", "1 small chip parts, 0 with a track between their pads")]
+
+
+def test_a_track_of_the_net_of_both_pads_is_no_note(project):
+    """The owner's answer on #342: a track on the net of both pads passes – here C2 with both pads on GND."""
+    def fault(ex, p):
+        for pad in ("C2.1", "C2.2"):
+            ex.pad(pad)["Net"] = "GND"
+        track_under_c2(ex, p, "GND")
+    rows = [r for r in under_rows(run(project, fault)) if r["result"] != "pass"]
+    assert rows == []
+
+
+def test_a_track_on_another_layer_is_no_note(project):
+    """Only on the part's own layer: a track on BOTTOM under C2 (TOP) passes."""
+    rows = run(project, lambda ex, p: ex.line("VIN", 2, [(20, 6.5), (20, 11)], 0.3))
+    assert [r["result"] for r in under_rows(rows)] == ["pass"]
+
+
+def test_a_zero_ohm_bridge_is_left_out(project):
+    """A 0 Ω resistor is placed so that a track can pass between its pads (#1): C2's entry made one, no note."""
+    def fault(ex, p):
+        track_under_c2(ex, p)
+        p.save_part(LCSC["C2"], {**p.part(LCSC["C2"]), "kind": "resistor", "values": {"value_ohm": 0}})
+        assert Design.from_config(p.config()).bridges() == ["C2"]
+    rows = run(project, fault)
+    assert [r["actual"] for r in under_rows(rows) if r["result"] != "pass"] == []
+
+
+def test_a_track_between_chip_pads_is_accepted_on_the_part(project):
+    def fault(ex, p):
+        track_under_c2(ex, p)
+        graph(p, lambda g: project.comp(g, "C2").update(accept={"GEO.under": "test: the mask web is checked"}))
+    rows = under_rows(run(project, fault))
+    assert [(r["result"], r.get("reason")) for r in rows if r["result"] != "pass"] == [
+        ("waived", "test: the mask web is checked")]
+    assert rows[0]["actual"] == "1 small chip parts, 0 with a track between their pads"
 
 
 def test_the_clean_export_names_the_hand_soldered_joints(project):

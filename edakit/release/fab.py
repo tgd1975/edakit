@@ -72,6 +72,8 @@ assembly preview at JLCPCB.
        them)
   GEO.spacing with [order] vias = "untented": every via, of any net, at least [routing] smd_via_keep_mm (0.3 mm) from a
        reflowed SMD pad on an assembled side (warn, one row per pad and via)
+  GEO.under no track between the two pads of a small chip part (0402 to 1206) on its side, unless its net is the net of
+       both pads; 0 Ω bridges left out (information, one row per part and net)
   GEO.silk with [looks]: on the visible side every PCB text of the silkscreen is one the board file puts there (the board
        label on its side, the [[silk.texts]] of the side, with [silk] designators on it the designators and group
        labels), and no part on it shows its designator while [silk] designators names the other side (waive GEO.silk on
@@ -1106,6 +1108,32 @@ def check_smd_vias(cfg, board, design, d, rows):
     for g in gaps:
         rows.add("L", "GEO.spacing", board.name, f"open via at a reflowed SMD pad: {g['pad']}", False,
                  route.smd_via_text(g, keep, board), want, "waived" if g["waived"] else "warn")
+        if g["waived"]:
+            rows[-1]["reason"] = g["waived"]
+
+
+def check_under(cfg, board, design, d, rows):
+    """GEO.under (a note): no track passes between the two pads of a small chip part (0402 to 1206, read from the pads,
+    route.chip_gaps) on the part's own layer, unless its net is the net of both pads; 0 Ω bridges are left out. Pads
+    as `route read` saw them (as GEO.spacing), tracks from pcb.json. One row per part and net, information; accept
+    GEO.under on the part or the net lists it as waived."""
+    from .. import route
+    pcb = json.loads((d / "pcb.json").read_text())
+    what = "no track between the pads of a small chip part"
+    data, why = route.board_as_read(cfg, board, pcb["components"])
+    if data is None:
+        rows.add("L", "GEO.under", board.name, what, True, f"not checked: {why}", "the PCB as read", "info")
+        return
+    tracks = [(ln["Net"] or None, route.LAYERS[ln["Layer"]], (ln["StartX"], ln["StartY"]), (ln["EndX"], ln["EndY"]),
+               ln["LineWidth"]) for ln in pcb["lines"] if ln["Layer"] in route.LAYERS]
+    found = route.under_tracks(data, tracks, set(design.bridges()), route.pad_accepts(design.graph, "GEO.under", ""))
+    chips = route.chip_gaps(data)
+    rows.add("L", "GEO.under", board.name, what, True,
+             f"{len(chips)} small chip parts, {sum(1 for g in found if not g['waived'])} with a track between their pads",
+             "no track of another net between the pads")
+    for g in found:
+        rows.add("L", "GEO.under", board.name, f"track between the pads of {g['part']}", True, route.under_text(g),
+                 "no track of another net between the pads", "waived" if g["waived"] else "info")
         if g["waived"]:
             rows[-1]["reason"] = g["waived"]
 
@@ -2163,6 +2191,7 @@ def run(cfg, board, out, offline=False, verbose=False):
     check_paste_gap(cfg, board, design, d, rows)
     check_hand_joints(cfg, board, design, d, rows)
     check_smd_vias(cfg, board, design, d, rows)
+    check_under(cfg, board, design, d, rows)
     check_looks(board, d, rows)
     check_visible_print(cfg, board, design, d, rows)
     check_fab(cfg, board, design, d, rows)

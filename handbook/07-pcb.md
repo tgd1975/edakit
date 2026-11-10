@@ -726,6 +726,25 @@ reflowed SMD pads (GEO.spacing/margin, vias untented): 4 on TOP, 1 vias closer t
 The 0.3 mm is AllPCB's recommendation against solder wicking (a secondary source); a fab with a smaller figure sets
 its own.
 
+### Tracks between the pads of a chip part (GEO.under)
+
+Freerouting likes the space between the two pads of an 0805: a track there keeps the clearance, so DRC and GEO.spacing
+pass it, but it runs a few tenths of a millimetre from both pads under a thin web of solder mask – a part that shifts
+or solder that flows bridges it to a pad of another net, and it cannot be repaired once the part is soldered. It also
+cuts a pour on that side into pieces. `route check` names every such track as a note, and the gate does the same on
+the PCB (8.1); neither stops:
+
+```text
+tracks between the pads of small chip parts (GEO.under): 1
+    D1: a track of LED_SW passes between its pads (D1.1 LED_SW, D1.2 GND) on TOP, 0.28 mm from a pad of another net – note
+```
+
+A small chip part is read from the pads: exactly two SMD pads on one layer, at most 4.5 × 2.0 mm over both (0402 to
+1206). Only the part's own layer counts, and a track on the net of both pads, or between the pads of a 0 Ω bridge
+(3.3), is no note. Route around the part, or move or turn it in `[place]` so that each track leaves its pad outward;
+where the track has to pass there, `accept` GEO.under on the part or the net with the reason. Routing between the pads
+is common practice and no standard gives a distance, so it stays a reminder.
+
 ### Track widths (GEO.width offline)
 
 With the gate's own widths (stages, 8.1) the check holds the narrowest SES track of every net and every

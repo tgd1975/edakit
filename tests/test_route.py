@@ -1352,3 +1352,52 @@ def test_fanout_keeps_smd_via_keep_from_reflowed_pads(plane_board):
     from shapely.geometry import Point
     for p in route.reflowed_pads(data, set(), ("TOP",)):
         assert Point(v).distance(route.pad_outline(p)) - 12 >= 0.3 * MIL - 0.02
+
+
+# --- GEO.under (#342): a track between the two pads of a small chip part, on the part's layer
+
+def test_under_tracks_name_the_part_the_net_and_the_distance():
+    """C2 (0805: +5V, GND) at (68, 12): a 0.3 mm VIN track down its middle is 0.30 mm from both pads; one of GND only
+    counts to the +5V pad; on BOTTOM, of the net of both pads, or outside the gap it is none; D1 (SMA, 6.9 mm over its
+    pads) and J1 (through-hole) are no small chip parts."""
+    def under(net, layer="TOP", x=68, skip=()):
+        track = [(net, layer, mm(x, 10), mm(x, 14), 0.3 * MIL)]
+        return [(g["part"], g["net"], round(g["mil"] / MIL, 2)) for g in route.under_tracks(STAGE, track, set(skip))]
+    assert [ref for ref, *_ in route.chip_gaps(STAGE)] == ["C2"]
+    assert under("VIN") == [("C2", "VIN", 0.3)]
+    assert under(None) == [("C2", None, 0.3)]
+    assert under("GND", x=68.2) == [("C2", "GND", 0.5)]       # to C2.1 (+5V) only: it touches its own C2.2
+    assert under("VIN", layer="BOTTOM") == []
+    assert under("VIN", x=66) == []                          # beside the part, not between its pads
+    assert under("VIN", skip=("C2",)) == []                  # a 0 Ω bridge
+    both = {**STAGE, "pads": [{**p, "net": "GND"} if p["ref"] == "C2" else p for p in STAGE["pads"]]}
+    assert route.under_tracks(both, [("GND", "TOP", mm(68, 10), mm(68, 14), 0.3 * MIL)]) == []
+    waived = route.under_tracks(STAGE, [("VIN", "TOP", mm(68, 10), mm(68, 14), 0.3 * MIL)],
+                                waivers=({}, {"VIN": "test"}))
+    assert [g["waived"] for g in waived] == ["test"]
+
+
+@pytest.mark.parametrize("size, small", [((0.6, 0.6, 1.0), True), ((1.125, 1.75, 2.925), True),
+                                         ((1.125, 2.65, 2.925), False), ((1.6, 1.8, 3.0), False)])
+def test_chip_gaps_read_the_size_from_the_pads(size, small):
+    """0402 and 1206 (KiCad's R_1206_3216Metric: 4.05 × 1.75 mm over its pads) are small chip parts; a 1210 (2.65 mm
+    across) and a part 4.6 mm over its pads are not."""
+    w, h, pitch = size
+    data = {"pads": [stage_pad("R1", "1", "A", 10, 10, w, h), stage_pad("R1", "2", "B", 10 + pitch, 10, w, h)]}
+    assert bool(route.chip_gaps(data)) is small
+
+
+def test_route_check_notes_a_track_between_chip_pads(project, capsys):
+    routed_stage(project)
+    code, out = route_cmd(project, "check", capsys)
+    assert code == 0 and "tracks between the pads of small chip parts (GEO.under): 0" in out
+    routed_stage(project)
+    f = project.root / "build" / "edakit" / "route" / "main.ses"
+    f.write_text(f.read_text().replace('(net "GND" ', '(net "GND" (wire (path TOP 1800 '
+                                       + " ".join(f"{round(v * 100)}" for p in ((68, 15), (68, 11.5)) for v in mm(*p))
+                                       + ")) ", 1))
+    code, out = route_cmd(project, "check", capsys)
+    assert code == 0                                                               # a note: no exit code
+    assert "tracks between the pads of small chip parts (GEO.under): 1" in out
+    assert "C2: a track of GND passes between its pads (C2.1 +5V, C2.2 GND) on TOP, 0.22 mm from a pad of another " \
+           "net – note" in out
