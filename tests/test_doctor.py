@@ -165,3 +165,12 @@ def test_the_odb_tool_of_the_server(project, tmp_path):
     assert level == "WARN" and "a maker of [cart] makers takes ODB++" in text and "runtime folder" in hint
     (tools / "L1_export.js").write_text("    registry.register({\n        name: 'easyeda_export_odb',")
     assert doctor.odb_line(project.config(), tmp_path, True)[0] == "OK"
+
+
+def test_doctor_runs_outside_a_project(tmp_path, monkeypatch, capsys):
+    """`edakit doctor` in a folder without edakit.toml: the setup lines and the missing project, no traceback – the
+    refusal of the explorative DSL's commands (cli.dsl_used) needs a project and is not asked without one."""
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.delenv("EDAKIT_CONFIG", raising=False)
+    code, out, started = run_doctor(monkeypatch, capsys, ["doctor", "--offline"])
+    assert started == [] and "Node" in out and "edakit.toml" in out
