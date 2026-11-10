@@ -2456,9 +2456,10 @@ def next_steps(cfg, board):
 
 def fill_message(cfg, board, failed, places, bare, error, again=False):
     """Why pours are not filled and what to run: [(pour id, status)] failed, bare: those the board leaves bare.
-    The board's are said as the board's; for the rest the cause is the bridge, whose fill of pours created in the same
-    EasyEDA session comes back "no-copper" on easyeda-mcp-pro 1.8.0 (M-13): the PCB is saved, EasyEDA restarted, and
-    `route fill` fills the pours already there one per call."""
+    The board's are said as the board's; for the rest the cause is the bridge or EasyEDA: after an unverified rebuild
+    the bridge refuses every further one until EasyEDA restarts (M-10); a "no-copper" with copper of the net under the
+    pour is EasyEDA's copper engine not seeing what the API changed (M-13) – `route fill` reloads the PCB and fills
+    the pours already there one per call."""
     def name(pid):
         net, layer = places.get(pid, ("?", "?"))
         return f"{net} {layer} ({pid})"
@@ -2473,11 +2474,18 @@ def fill_message(cfg, board, failed, places, bare, error, again=False):
     if bridge := [s for p, s in failed if p not in bare]:
         opt = board_option(cfg, board)
         code = "M-13" if "no-copper" in bridge else "M-10"    # M-10: locked after an unverified rebuild
-        lines.append(f"  the bridge's, not the board's (easyeda-mcp-pro {mcp_version()}, handbook 12, {code}): "
-                     + ("one pour per call failed as well. If EasyEDA was restarted before this run, the bridge fills "
-                        "none of them – report it with this message; else " if again else "the PCB is saved. ")
-                     + f"Restart EasyEDA, then `edakit route fill{opt}` fills the pours there one per call, then "
-                     + next_steps(cfg, board) + ".")
+        head = f"  the bridge's, not the board's (easyeda-mcp-pro {mcp_version()}, handbook 12, {code}): "
+        if code == "M-10":
+            lines.append(head + ("one pour per call failed as well. " if again else "the PCB is saved. ")
+                         + f"Restart EasyEDA, then `edakit route fill{opt}` fills the pours there one per call, then "
+                         + next_steps(cfg, board) + ".")
+        elif again:
+            lines.append(head + "one pour per call failed as well, after the PCB was reloaded. Restart EasyEDA, then "
+                         f"`edakit route fill{opt}` once more, then {next_steps(cfg, board)} – if it fails after the "
+                         "restart too, report it with this message.")
+        else:
+            lines.append(head + f"the PCB is saved. `edakit route fill{opt}` loads it again and fills the pours there "
+                         f"one per call, then {next_steps(cfg, board)}.")
     return "\n".join(lines)
 
 
@@ -2495,10 +2503,13 @@ def stop_unfilled(cfg, board, mcp, failed, places, error, again=False):
 
 def fill(cfg, board, mcp, nets, keep_islands_on=None, regions=None):
     """The pours of nets created anew (pcb.pour) and filled, a net's pours in one call – since easyeda-mcp-pro 1.7.0
-    the bridge verifies a net's second fresh pour against the copper the first one left (M-10). A fill that does not
-    come back "rebuilt" saves the PCB and stops: a pour without pad, via or track of its net is the board's, the rest
-    is filled by `route fill` after a restart of EasyEDA (M-13)."""
+    the bridge verifies a net's second fresh pour against the copper the first one left (M-10). Before the fill the PCB
+    is saved and loaded again: after pads, vias or tracks were created or deleted through the API in the session,
+    EasyEDA's rebuildCopperRegion() returns no copper until the PCB is reloaded (M-13, live 2026-11-10). A fill that
+    does not come back "rebuilt" saves the PCB and stops: a pour without pad, via or track of its net is the board's,
+    the rest is filled by `route fill`."""
     pcb.pour(cfg, board, mcp, keep_islands_on, regions)
+    eda.reload_pcb(mcp)         # M-13: the copper engine sees what the API changed only after a reload
     ensure_pcb_focus(mcp)
     places = pour_places(mcp, nets)
     by_net = {}
@@ -2513,9 +2524,11 @@ def fill(cfg, board, mcp, nets, keep_islands_on=None, regions=None):
 
 def fill_saved(cfg, board, mcp):
     """`route fill`: the pours of [[pours]] already in the PCB filled one per call – no new pours, no NO_POURS
-    regions –, the tooling holes set again, the PCB saved. For a PCB whose `route pours` stopped with "no-copper" on
-    a bridge that fills no pour created in the same EasyEDA session (M-13): saved, EasyEDA restarted, then this."""
+    regions –, the tooling holes set again, the PCB saved. The PCB is saved and loaded again first (M-13): for a PCB
+    whose `route pours` stopped with "no-copper", or that an `easyeda` script changed since its pours were filled."""
     nets = sorted({p["net"] for p in board.pours})
+    ensure_pcb_focus(mcp)
+    eda.reload_pcb(mcp)         # M-13: the copper engine sees what the API changed only after a reload
     ensure_pcb_focus(mcp)
     places = pour_places(mcp, nets)
     if not places:

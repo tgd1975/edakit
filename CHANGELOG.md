@@ -8,6 +8,10 @@ written once, by `.github/merge.py`, from the fragments in [changes/](changes/RE
 update edakit@edakit`, then `/reload-plugins` or a new session; `edakit version` names the version that runs and what an
 update brings.
 
+## 1.3.2 – 2026-11-10
+
+- `route pours`, `route all` and `route fill` save the PCB and load it again before they fill: once pads, vias or tracks were created or deleted through the API in a session – the tooling holes of the last fill, `route apply`'s tracks –, EasyEDA's copper engine fills nothing until the PCB is reloaded (M-13, found live on desk-led). A second `route pours` in one EasyEDA session works now, and `route fill` needs no restart of EasyEDA before it.
+
 ## 1.3.1 – 2026-11-10
 
 - `edakit perfboard` cuts no piece of bare wire where something already there makes the bridge: a straight row of bridges that starts at a wire's end is that wire's stripped end, the strip there longer by the row, and a single bridge to a hole with the lead of an LED, a diode, a capacitor or a resistor is that lead bent over on the bottom – an LED's first. The cut list and `cut.svg` give what is stripped at each end by its hole and name the bridges no piece is cut for; the build list leaves a lead that bends long and unsoldered and bends it in the bridges' step.

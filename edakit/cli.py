@@ -47,7 +47,7 @@
                                      bodies, wires; top and bottom view, cut, build and test lists (offline)
     edakit route all|read|dsn|route|check|apply|verify|pours|reload|drc|save
     edakit route fill                the pours already in the PCB filled one per call, tooling holes set again –
-                                     after `route pours` stopped with "no-copper" and EasyEDA was restarted (M-13)
+                                     after `route pours` stopped with "no-copper" – the PCB reloaded first (M-13)
     edakit route diagnose [--net N]  why each open connection is open: walled in, blocked, or a free way (offline)
     edakit silk apply|check|preview
     edakit export                    PDFs, Gerber, BOM, CPL, netlist and a project copy to <artifacts>/export
