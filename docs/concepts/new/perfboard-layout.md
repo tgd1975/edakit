@@ -202,7 +202,7 @@ circuit. The bell has such variants already (`variants/tht`, `variants/esp32tht`
 
 The owner's answers of 2026-11-03 in a decision round, decisions 6 to 10 Claude's, confirmed by the owner the same day.
 Decisions 11 to 23 came from the prototype on 2026-11-09: 11 to 15 and 22 the owner's, 16 to 21 and 23 Claude's,
-confirmed by the owner the same day.
+confirmed by the owner the same day. Decision 24 is the owner's of 2026-11-10, and 22 the owner changed that day.
 
 | # | Decision | Reason | Alternatives |
 | --- | --- | --- | --- |
@@ -229,5 +229,6 @@ confirmed by the owner the same day.
 | 21 | The build list solders the bridges once the leads they join are in, after the parts, before the test and the module | a bridge joins the solder of a lead to its neighbour | bridges first, as links on a stripboard |
 | 22 | A cut list: the insulated wires on top (coloured, may turn corners) and the bridges of bare wire below (straight), lengths in whole millimetres, rounded up – changed by the owner on 2026-11-10, first in steps of 5 mm | "cool wäre es, wenn dann noch eine Stückliste für die Kabeln (farbige Ummantelung, können um Ecken gehen, Oberseite) und Brücken (blanker Draht, nur gerade, Unterseite) ausgegeben wird. Längen in gröberen Schritten (z. B. 5 mm)"; on 2026-11-10, after the 1:1 drawing of the cut list showed the 5 mm going into the insulation: "lassen wir die 5mm rundung weg - sie dürfte mehr probleme schaffen, als ich dachte. aber wir gehen bei den drähten nicht in den sub mm bereich ... alle angaben sind mm keine nachkomma" | the wire's total length in the material only |
 | 23 | A straight row of bridges is one piece of bare wire; a single bridge beside a wire's end is that wire's stripped end, no piece of its own; the allowances are values of the kind's data | one piece is cut and soldered faster than a row of short ones; the stripped end lies on that pad anyway | a piece per bridge; the bridge beside a wire's end as a piece of its own |
+| 24 | No piece of bare wire where something already there makes the bridge: a straight row of bridges that starts at a wire's end is that wire's stripped end, longer by the row (2.54 mm a bridge beyond the first); a single bridge to a hole with the lead of an LED, a diode, a capacitor or a resistor is that lead bent over on the bottom – an LED's first, each lead once – left long and unsoldered until the bridges' step | the owner on 2026-11-10, on the example's cut list: "L10-N10 ... das ist doch bitte einfach das schwaze kabel – LED_SW und LED_ANODE ... das sind einfach die umgebogenen beine von der LED" | a piece for every row not beside a wire's end (decision 23 alone) |
 
 By the yardstick: nothing of the plan stays in someone's head – the board file holds it, edakit checks and draws it.
