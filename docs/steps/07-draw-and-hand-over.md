@@ -16,8 +16,8 @@ drawn: 4 parts, 3 wires, 2 flags, 122 x 93 mm
 
 ## What you decide
 
-Where you stop. A checked circuit and its drawing are a result of their own: you can wire it by hand, build it on a
-perfboard or put it into a document. A [hand-wired board](../glossary.md#hand-wired-board) goes through the same
+Where you stop. A checked circuit and its drawing are a result of their own: you can wire it by hand,
+[build it on a perfboard](prototype.md) or put it into a document. A [hand-wired board](../glossary.md#hand-wired-board) goes through the same
 checks. Or you go on to a board.
 
 ## What you are asked

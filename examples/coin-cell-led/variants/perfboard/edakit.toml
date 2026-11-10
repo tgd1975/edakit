@@ -1,0 +1,14 @@
+# edakit project file of coin-cell-led, variant perfboard – reference: handbook/10-reference.md, the perfboard: 7.9.
+#
+# The circuit of the walkthrough's example (../../edakit.toml) with through-hole parts, soldered by hand on a perfboard
+# with a pad per hole: the plan is hardware/boards/main.toml. No EDA program, no PCB, no maker.
+
+[project]
+name = "coin-cell-led-perfboard"
+company = "edakit example"
+quantity = 1                     # one board, built by hand
+requirements = "../../hardware/requirements.toml"   # what the circuit must do: the example's file (10.4)
+
+[boards.main]
+title = "Coin cell LED"
+wired = true                     # hand-wired, on a perfboard: hardware/boards/main.toml holds the plan (7.9)

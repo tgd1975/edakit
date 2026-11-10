@@ -19,6 +19,8 @@ from edakit.config import ConfigError, load
 from edakit.design import Design
 
 FIXTURE = Path(__file__).resolve().parent / "fixtures" / "perfboard"
+ROOT = Path(__file__).resolve().parents[1]
+EXAMPLE = ROOT / "examples" / "coin-cell-led"            # its variant perfboard: LR.7
 
 
 @pytest.fixture
@@ -347,6 +349,8 @@ def test_the_command_draws_both_views_and_writes_the_lists(pb, monkeypatch, caps
     assert top.read_text().startswith("<svg") and "top view – component side, A1 at the top left" in top.read_text()
     assert "in the orientation of the top view" in bottom.read_text()
     assert '<rect width=' in top.read_text() and 'fill="#ffffff"' in top.read_text()   # its own white ground
+    width = float(re.search(r'viewBox="0 0 ([\d.]+)', top.read_text()).group(1))
+    assert width >= perfboard.MIN_WIDTH_MM         # a board of 14 columns: the legend's lines still fit beside it
     text = build.read_text()
     for line in ("| black | 50 mm | L4–B5 | GND |", "| 10 mm | 1 | A4 … C4 VCC |",
                  "A wire's stripped end makes the 2 bridges beside the wires' ends: L3–L4, A5–B5.",
@@ -439,3 +443,41 @@ def test_a_project_without_a_plan_keeps_its_gate(project, monkeypatch):
     cfg = project.config()
     assert g.layout_files(cfg) == [cfg.resolve(b.file) for b in cfg.made().values()] + [
         f for f in g.layout_files(cfg) if f.name.endswith(".geometry.json")]
+
+
+# --- LR.7: the example ----------------------------------------------------------------------------------------------
+
+def test_the_example_variant_is_built_from_its_plan(tmp_path, monkeypatch, capsys):
+    """coin-cell-led on a perfboard, examples/coin-cell-led/variants/perfboard: the circuit checked, the plan clean, the
+    lines the steps page "Build it on a perfboard" quotes printed, and the drawings of docs/pictures/ the command's."""
+    shutil.copytree(EXAMPLE, tmp_path / "coin-cell-led", ignore=shutil.ignore_patterns("build"))
+    monkeypatch.chdir(tmp_path / "coin-cell-led" / "variants" / "perfboard")
+    monkeypatch.delenv("EDAKIT_CONFIG", raising=False)
+    assert cli.main(["check"]) == 0
+    capsys.readouterr()
+    assert cli.main(["perfboard"]) == 0
+    out = capsys.readouterr().out
+    page = (ROOT / "docs" / "steps" / "prototype.md").read_text(encoding="utf-8")
+    block = re.search(r"```text\n\$ edakit perfboard\n(.*?)```", page, re.S).group(1)
+    quoted = [ln.strip() for ln in block.splitlines() if ln.strip() and ln.strip() != "…"]
+    assert len(quoted) >= 3 and [q for q in quoted if q not in out] == [], out
+    drawn = Path("build/edakit/perfboard/main")
+    build, top = (drawn / "build.md").read_text(), (drawn / "top.svg").read_text()
+    # its M-5: a holder fits both ways round – its ends named and marked, no stripe; a wire's end soldered with its lead
+    assert "BT1 KH-CR2032-2-1: its + end on hole D10, its − end on hole L10" in build and "(stripe)" not in build
+    assert "do not solder it yet" in build and "black, holes J1–N10 GND" in build
+    assert ">+<" in top and ">−<" in top and "Capacitor" not in top and "mounting holes" not in top
+    for side in ("top", "bottom"):
+        assert (drawn / f"{side}.svg").read_text() == (ROOT / "docs" / "pictures" / f"perfboard-{side}.svg").read_text()
+
+
+@pytest.mark.skipif(not shutil.which("ngspice"), reason="ngspice not installed")
+def test_the_example_variant_passes_the_gate(tmp_path, monkeypatch, capsys):
+    """Its gate without EasyEDA: stage L is the plan, M-1, M-6 and M-5 signed for the hashes of this state."""
+    shutil.copytree(EXAMPLE, tmp_path / "coin-cell-led", ignore=shutil.ignore_patterns("build"))
+    monkeypatch.chdir(tmp_path / "coin-cell-led" / "variants" / "perfboard")
+    monkeypatch.delenv("EDAKIT_CONFIG", raising=False)
+    code = cli.main(["gate"])
+    out = capsys.readouterr().out
+    assert code == 0 and "\nRELEASED" in out, out
+

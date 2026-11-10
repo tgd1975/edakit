@@ -1,0 +1,93 @@
+{
+ "lcsc": "C58668",
+ "mpn": "MFR0W4F1500A50",
+ "manufacturer": "UNI-ROYAL(厚声)",
+ "footprint": "RES-TH_BD2.5-L6.5-P10.50-D0.6",
+ "jlc_class": "Extended Part",
+ "kind": "resistor",
+ "pins": {
+  "1": {
+   "name": "1",
+   "type": "passive",
+   "role": "1"
+  },
+  "2": {
+   "name": "2",
+   "type": "passive",
+   "role": "2"
+  }
+ },
+ "sources": [
+  "mpn, manufacturer, footprint, jlc_class, pin numbers and names: EasyEDA library data of C58668, https://easyeda.com/api/products/C58668/components?version=6.4.19.5, read 2026-11-10 (edakit part import)",
+  "UNI-ROYAL MFR series specification (LCSC): MF 1/4W Ø2.2 ± 0.3 × 6.5 ± 1.0 mm, lead 0.54 mm, 250 V working; order code MFR0 W4 F 1500 A50: 1/4 W, ±1 %, 150 Ω",
+  "footprint_data: the library footprint RES-TH_BD2.5-L6.5-P10.50-D0.6 (edakit part import), 2026-11-10 (edakit part footprint) – the print is the copy's in EasyEDA until lines, texts, marks or outline are written"
+ ],
+ "verified": {
+  "by": "Claude Opus 5.5 (skill part-search)",
+  "date": "2026-11-10",
+  "datasheet": "UNI-ROYAL MFR series specification (LCSC, one document for the series)",
+  "datasheet_sha256": "a4c17c09acd8577cfa500444646d11501862b27ace1ee0f9aea16d72fac6c8b4",
+  "checked": [
+   "order code MFR0W4F1500A50: 1/4 W, ±1 %, 150 Ω",
+   "MF 1/4W: 250 V, lead 0.54 mm"
+  ],
+  "open": []
+ },
+ "package": "THT axial Ø2.2 × 6.5 mm",
+ "datasheet": {
+  "url": "https://datasheet.lcsc.com/datasheet/pdf/d64f229a8d7408b8f346128da3329b41.pdf?productCode=C58668",
+  "pinout_page": null
+ },
+ "values": {
+  "value_ohm": 150.0,
+  "tolerance": 0.01
+ },
+ "limits": {
+  "p_max_w": 0.25,
+  "v_max_v": 250
+ },
+ "spice": {},
+ "lead": {
+  "*": {
+   "shape": "round",
+   "a_mm": 0.54,
+   "tol_mm": 0.05,
+   "hole_rec_mm": null,
+   "source": "UNI-ROYAL metal film spec, MF 1/4W: lead Ø0.54 mm"
+  }
+ },
+ "compliance": {
+  "rohs": true,
+  "source": "UNI-ROYAL MFR series specification: lead-free metal film fixed resistors"
+ },
+ "footprint_data": {
+  "origin": [
+   0,
+   0
+  ],
+  "pads": {
+   "1": {
+    "x": -5.25,
+    "y": 0.0,
+    "shape": "ELLIPSE",
+    "w": 1.88,
+    "h": 1.88,
+    "hole": [
+     1.0,
+     1.0
+    ]
+   },
+   "2": {
+    "x": 5.25,
+    "y": 0.0,
+    "shape": "ELLIPSE",
+    "w": 1.88,
+    "h": 1.88,
+    "hole": [
+     1.0,
+     1.0
+    ]
+   }
+  }
+ }
+}

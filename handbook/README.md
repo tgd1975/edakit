@@ -20,14 +20,15 @@ come first.
 
 The station ends with the drawn schematic – [6.5, without an EDA
 program](06-schematic.md#65-drawn-without-an-eda-program) – and the hand-over to the layout (`edakit handover`,
-[14.1](14-design.md#141-roles)): enough for a hand-wired build, a perfboard or a document, or the input of the board.
+[14.1](14-design.md#141-roles)): enough for a hand-wired build, a perfboard – its plan checked and drawn,
+[7.9](07-pcb.md#79-a-perfboard) – or a document, or the input of the board.
 
 ## The board
 
 | | Chapter | Read it when |
 |---|---|---|
 | 6 | [Schematic](06-schematic.md) | you generate or arrange schematics |
-| 7 | [PCB](07-pcb.md) | you place, route, pour, print |
+| 7 | [PCB](07-pcb.md) | you place, route, pour, print, or plan a perfboard |
 | 8 | [Release gate](08-release-gate.md) | you prepare an order |
 | 16 | [KiCad as the tool chain](16-kicad.md) | you weigh KiCad against EasyEDA Pro, the default, or draw in KiCad (`toolchain = "kicad"`) |
 | 17 | [Walkthrough on EasyEDA: a coin cell, a button, an LED](17-walkthrough.md) | you want to see every step once, on the smallest board |
