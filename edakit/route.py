@@ -9,13 +9,15 @@ start, has a fixed 900 s limit and left nets open. So routing happens outside Ea
                at least the IPC-2221 width of its simulated current); parts, pins and nets in a fixed order; with
                fanout on a plane, a protected via and stub for each SMD pad on the other layer; with
                hand_solder_keep_mm a via keep-out around every hand-soldered joint on its solder side (GEO.spacing;
-               an SMD pad of a bom: false part on its own side)
+               an SMD pad of a bom: false part on its own side); on a board with [order] vias = "untented" a via
+               keep-out of smd_via_keep_mm around every reflowed SMD pad on an assembled side (GEO.spacing/margin)
     3 route    offline: Freerouting (pinned, downloads itself once, SHA-256 checked), no GUI -> <board>.ses
     4 check    offline: pads of different parts on different nets at least the clearance apart (GEO.spacing), SMD pads on
                an assembled side at least the paste gap apart (GEO.spacing), pads of other nets at least
                hand_solder_keep_mm from a hand-soldered joint on its solder side (GEO.spacing; no new attempt helps there),
                every net connected, clearances >= rule, nothing in keep-outs, vias of other nets at least
-               hand_solder_keep_mm from a hand-soldered joint (GEO.spacing), track widths of the SES and the fixed wires
+               hand_solder_keep_mm from a hand-soldered joint (GEO.spacing), with vias = "untented" every via at least
+               smd_via_keep_mm from a reflowed SMD pad (GEO.spacing/margin, a warning), track widths of the SES and the fixed wires
                against the simulated currents (GEO.width as in the gate: below IPC-2221 fails, below the class width
                warns); with [looks] the track length per side, the vias and the visible side against its limits
                (warnings only); preview PNG with open connections in yellow.
@@ -64,7 +66,7 @@ from shapely.geometry import LineString, Point, Polygon, box
 from shapely.ops import unary_union
 
 from . import drc_rules, eda, pcb
-from .config import MIL_PER_MM, PASTE_GAP_MM, POUR_CLEARANCE_MM, POUR_MIN_WIDTH_MM
+from .config import MIL_PER_MM, PASTE_GAP_MM, POUR_CLEARANCE_MM, POUR_MIN_WIDTH_MM, SMD_VIA_KEEP_MM
 from .design import natural_key
 from .eda import api, ensure_pcb_focus
 from .toolchain import is_kicad
@@ -118,6 +120,12 @@ class Rules:
         # hand: the designators soldered by hand (bom: false in the graph) – set by the caller, who has the graph
         self.joint_keep = r.get("hand_solder_keep_mm", 0) * MIL_PER_MM
         self.hand = set()
+        # GEO.spacing/margin: every via, of any net, keeps this much (mil) from a reflowed SMD pad – only on a board that
+        # leaves its vias open ([order] vias = "untented": an open via draws the solder off the pad); 0 = off.
+        # reflow: the assembled sides ("TOP", "BOTTOM") – set by the caller, who has the project (paste_rule)
+        self.smd_keep = (r.get("smd_via_keep_mm", SMD_VIA_KEEP_MM) * MIL_PER_MM
+                         if (getattr(board, "order", None) or {}).get("vias", "tented") == "untented" else 0)
+        self.reflow = ()
         # pour_regions: layer -> [(net, clearance mil, min width mil)] in claim order (priority, then as written), for
         # the layers that several nets pour on
         self.regions = {}
@@ -465,6 +473,161 @@ def joint_text(item, keep_mil, board=None):
             + f", below hand_solder_keep_mm {keep_mil * mm:g}")
 
 
+def reflowed_pads(data, hand, sides):
+    """GEO.spacing/margin: the SMD pads the assembler reflows – on an assembled side (sides: "TOP", "BOTTOM"), of a
+    part that is not soldered by hand (hand: bom: false) -> [pad] in the order of the pads."""
+    return [p for p in data["pads"] if p["ref"] and p["ref"] not in hand and LAYERS.get(p["layer"]) in sides]
+
+
+def smd_keepouts(rules, data):
+    """GEO.spacing/margin in the DSN: a via keep-out around every reflowed SMD pad (reflowed_pads), the pad grown by
+    smd_keep – the same Specctra via_keepout as at the hand-soldered joints, for vias of every net. -> [(layer, convex
+    polygon in mil)]"""
+    if not (rules.smd_keep and rules.reflow):
+        return []
+    segs = 4
+    grow = rules.smd_keep / math.cos(math.pi / (4 * segs))
+    return [(LAYERS[p["layer"]], pad_outline(p).buffer(grow, quad_segs=segs))
+            for p in reflowed_pads(data, rules.hand, rules.reflow)]
+
+
+def smd_via_gaps(data, keep_mil, hand, sides, vias=(), waivers=({}, {})):
+    """GEO.spacing/margin: vias of any net – its own too – closer than keep_mil to a reflowed SMD pad (reflowed_pads),
+    copper to copper: an open via next to the pad draws the solder off the joint. vias: [(net or None, (x, y), diameter)]
+    in mil. A pair is waived when the pad's part or net, or the via's net, has the accept (pad_accepts(graph,
+    "GEO.spacing", "via")). -> [{"pad", "net", "layer", "via" (its net or None), "mil", "at" (the via's centre),
+    "waived"}], closest first."""
+    from shapely.strtree import STRtree
+    parts, nets = waivers
+    pads = reflowed_pads(data, hand, sides)
+    if not (keep_mil and pads and vias):
+        return []
+    centres = [Point(v) for _, v, _ in vias]
+    tree, reach = STRtree(centres), keep_mil + max(d for _, _, d in vias) / 2
+    out = []
+    for p in pads:
+        g, own = pad_outline(p), p["net"] or None
+        for j in sorted(tree.query(g, predicate="dwithin", distance=reach)):
+            vnet, v, d = vias[j]
+            gap = g.distance(centres[j]) - d / 2
+            if gap >= keep_mil - 0.01:
+                continue
+            out.append({"pad": f"{p['ref']}.{p['num']}", "net": own, "layer": LAYERS[p["layer"]], "via": vnet,
+                        "mil": gap, "at": tuple(v),
+                        "waived": next((w[k] for w, k in ((parts, p["ref"]), (nets, own), (nets, vnet)) if k and k in w),
+                                       None)})
+    return sorted(out, key=lambda x: (round(x["mil"], 3), natural_key(x["pad"]), x["at"]))
+
+
+def smd_via_text(item, keep_mil, board=None):
+    """'BT1.1 (VBAT) – via VBAT at (33.35, 30.28): 0.18 mm apart on TOP, an assembled side, below smd_via_keep_mm 0.3
+    (vias untented)' – the via's centre in plan mm with the board, else in EasyEDA mm."""
+    mm = 1 / MIL_PER_MM
+    x, y = (v * mm for v in item["at"])
+    if board is not None:
+        x, y = board.plan_point(x, y)
+    return (f"{item['pad']} ({item['net'] or 'no net'}) – via {item['via'] or '(no track, net unknown)'} at "
+            f"({x:.2f}, {y:.2f}): {item['mil'] * mm:.2f} mm apart on {item['layer']}, an assembled side, below "
+            f"smd_via_keep_mm {keep_mil * mm:g} (vias untented)")
+
+
+UNDER_MAX_MM = (4.5, 2.0)   # GEO.under: a small chip part – both pads within this extent (along, across): up to 1206
+
+
+def chip_gaps(data):
+    """GEO.under: the small two-terminal chip parts of a board and the space between their pads – a part with exactly two
+    SMD pads on one copper layer whose outer extent is at most UNDER_MAX_MM (0402 to 1206, from the pads, not the
+    footprint's name). The gap is the rectangle from the facing edge of one pad to that of the other, across the width
+    of the pads. -> [(ref, layer, (pad a, pad b), gap polygon in mil)] in the order of the parts."""
+    by_ref = defaultdict(list)
+    for p in data["pads"]:
+        if p["ref"]:
+            by_ref[p["ref"]].append(p)
+    out = []
+    for ref in sorted(by_ref, key=natural_key):
+        pads = sorted(by_ref[ref], key=lambda p: natural_key(str(p["num"])))
+        if len(pads) != 2 or pads[0]["layer"] not in LAYERS or pads[0]["layer"] != pads[1]["layer"]:
+            continue
+        (ax, ay), (bx, by) = ((p["x"], p["y"]) for p in pads)
+        d =math.dist((ax, ay), (bx, by))
+        if d < 1e-6:
+            continue
+        u, v = ((bx - ax) / d, (by - ay) / d), (-(by - ay) / d, (bx - ax) / d)
+        spans = []
+        for p in pads:
+            pts = list(pad_outline(p).exterior.coords)
+            s = [x * u[0] + y * u[1] for x, y in pts]
+            t = [x * v[0] + y * v[1] for x, y in pts]
+            spans.append((min(s), max(s), min(t), max(t)))
+        (s0, s1, ta, tb), (s2, s3, tc, td) = spans
+        t0, t1 = min(ta, tc), max(tb, td)
+        along, across = UNDER_MAX_MM
+        if s3 - s0 > along * MIL_PER_MM + 0.01 or t1 - t0 > across * MIL_PER_MM + 0.01 or s2 <= s1:
+            continue
+        corners = [(s * u[0] + t * v[0], s * u[1] + t * v[1]) for s, t in ((s1, t0), (s2, t0), (s2, t1), (s1, t1))]
+        out.append((ref, LAYERS[pads[0]["layer"]], tuple(pads), Polygon(corners)))
+    return out
+
+
+def under_tracks(data, tracks, skip=(), waivers=({}, {})):
+    """GEO.under: tracks that pass between the two pads of a small chip part (chip_gaps) on the part's own layer, unless
+    the track's net is the net of both pads. tracks: [(net or None, layer "TOP"/"BOTTOM", (x, y), (x, y), width)] in
+    mil; skip: designators left out (0 Ω bridges, which are there for a track to pass between their pads). The distance
+    is the smallest one, copper to copper, from the net's tracks there to a pad of another net (a pad without a net
+    counts as another). Waived when the part or the track's net has the accept (pad_accepts(graph, "GEO.under", "")).
+    -> [{"part", "layer", "net", "pads" ([(name, net)]), "mil", "waived"}], one per part and net, closest first."""
+    from shapely.strtree import STRtree
+    parts, nets = waivers
+    pieces = [(net, layer, LineString([a, b]).buffer(w / 2) if a != b else Point(a).buffer(w / 2))
+              for net, layer, a, b, w in tracks]
+    tree = STRtree([g for _, _, g in pieces]) if pieces else None
+    out = []
+    for ref, layer, pads, gap in chip_gaps(data):
+        if ref in skip or tree is None:
+            continue
+        through = defaultdict(list)
+        for j in tree.query(gap, predicate="intersects"):
+            net, lay, g = pieces[j]
+            if lay == layer and g.intersection(gap).area > 0.01:
+                through[net or None].append(g)
+        for net, gs in through.items():
+            if net and all(p["net"] == net for p in pads):
+                continue
+            others = [p for p in pads if not (net and p["net"] == net)]
+            copper = unary_union(gs)
+            out.append({"part": ref, "layer": layer, "net": net,
+                        "pads": [(f"{p['ref']}.{p['num']}", p["net"] or None) for p in pads],
+                        "mil": min(pad_outline(p).distance(copper) for p in others),
+                        "waived": next((w[k] for w, k in ((parts, ref), (nets, net)) if k and k in w), None)})
+    return sorted(out, key=lambda x: (round(x["mil"], 3), natural_key(x["part"]), str(x["net"])))
+
+
+def under_text(item):
+    """'D1: a track of LED_SW passes between its pads (D1.1 LED_SW, D1.2 GND) on TOP, 0.28 mm from a pad of another
+    net'"""
+    pads = ", ".join(f"{n} {net or 'no net'}" for n, net in item["pads"])
+    return (f"{item['part']}: a track of {item['net'] or '(no net)'} passes between its pads ({pads}) on "
+            f"{item['layer']}, {item['mil'] / MIL_PER_MM:.2f} mm from a pad of another net")
+
+
+def report_under(cfg, rules, data, routes):
+    """GEO.under, printed: the tracks of the SES that pass between the pads of a small chip part – notes, no exit code
+    changes and no new attempt. 0 Ω bridges are left out."""
+    skip, waivers = set(), ({}, {})
+    if cfg.graph.exists():
+        from .design import Design, load_graph
+        skip = set(Design.from_config(cfg).bridges())
+        waivers = pad_accepts(load_graph(cfg.graph), "GEO.under", "")
+    tracks = [(net, layer, a, b, w) for net, segs in segments(rules, routes, data).items() for layer, w, a, b in segs]
+    found = under_tracks(data, tracks, skip, waivers)
+    open_ = [g for g in found if not g["waived"]]
+    say(f"tracks between the pads of small chip parts (GEO.under): {len(open_)}"
+        + (f", {len(found) - len(open_)} accepted" if len(found) > len(open_) else ""))
+    for g in found[:20]:
+        print(f"    {under_text(g)} – " + (f"accepted: {g['waived']}" if g["waived"] else "note"), flush=True)
+    return open_
+
+
 def fixed_wires(rules):
     """[[routing.fixed_wires]]: {net, layer, width_mil, points (plan mm)} – protected in the DSN: Freerouting
     routes around them and keeps them (e.g. a short switching loop)."""
@@ -483,7 +646,9 @@ def fanout(rules, data):
     to the direction away from the part's centre first. Via and stub keep the clearance from foreign copper (pads, fixed
     wires, the other fanouts) and the fanout vias from each other; the via stays inside the edge clearance and off the
     hole, tooling and `what = "all"` keep-outs, the stub off those and off every keep-out on its layer; with GEO.spacing on, the
-    via keeps joint_keep from the hand-soldered joints of other nets. A pad without a spot stops the run. -> [(net, "R1.1", layer, width, pad centre, via)] in mil, by net and pad."""
+    via keeps joint_keep from the hand-soldered joints of other nets; with smd_keep (vias untented) it keeps that from
+    every reflowed SMD pad, its own pad too, and the search at a reflowed pad starts from half side + via radius +
+    max(clearance, smd_keep). A pad without a spot stops the run. -> [(net, "R1.1", layer, width, pad centre, via)] in mil, by net and pad."""
     on_plane = defaultdict(set)
     for net, layer in planes(rules):
         on_plane[net].add(layer)
@@ -505,6 +670,9 @@ def fanout(rules, data):
     copper += [(net, {layer}, LineString(pts), w / 2, False) for net, layer, w, pts in fixed_wires(rules)]
     comp_at = {c["ref"]: c for c in data["components"]}
     joints = [(p["net"], pad_outline(p)) for p, _ in hand_joints(data, rules.hand)] if rules.joint_keep else []
+    reflowed = reflowed_pads(data, rules.hand, rules.reflow) if rules.smd_keep else []
+    smd = [pad_outline(q) for q in reflowed]
+    reflowed_ids = {q["id"] for q in reflowed}
     steps = range(int(FANOUT_REACH_MIL / FANOUT_STEP_MIL) + 1)
     out = []
 
@@ -519,7 +687,8 @@ def fanout(rules, data):
             else 0.0
         turn = 360 / FANOUT_DIRECTIONS
         dirs = sorted(range(FANOUT_DIRECTIONS), key=lambda k: (abs((k * turn - away + 180) % 360 - 180), k))
-        d0 = max(p["shape"][1], p["shape"][2]) / 2 + r_via + clear
+        d0 = max(p["shape"][1], p["shape"][2]) / 2 + r_via + (max(clear, rules.smd_keep) if p["id"] in reflowed_ids
+                                                               else clear)
         reach = Point(x, y).buffer(d0 + FANOUT_REACH_MIL + r_via + clear + w)
         near = [(n, lays, g, half, via) for n, lays, g, half, via in copper
                 if (n != net or via) and g.distance(reach) <= half]
@@ -535,7 +704,8 @@ def fanout(rules, data):
                 if all(via.distance(g) >= half + r_via + clear - eps and
                        (n == net or layer not in lays or stub.distance(g) >= half + w / 2 + clear - eps)
                        for n, lays, g, half, _ in near) and \
-                        all(via.distance(g) >= r_via + rules.joint_keep - eps for n, g in joints if n != net):
+                        all(via.distance(g) >= r_via + rules.joint_keep - eps for n, g in joints if n != net) and \
+                        all(via.distance(g) >= r_via + rules.smd_keep - eps for g in smd):
                     spot = v
                     break
             if spot:
@@ -546,6 +716,7 @@ def fanout(rules, data):
                              f"{clear} mil from foreign copper with a {rules.via[1]} mil via, inside the edge clearance "
                              "and off hole, tooling and keep-out areas"
                              + (" and hand_solder_keep_mm from hand-soldered joints of other nets" if joints else "")
+                             + (" and smd_via_keep_mm from reflowed SMD pads" if smd else "")
                              + "; give the pad room in the plan")
         out.append((net, name, layer, w, (x, y), spot))
         copper.append((net, {"TOP", "BOTTOM"}, Point(spot), r_via, True))
@@ -630,6 +801,11 @@ def write_dsn(rules, data, out, variant=0):
         pts = list(g.exterior.coords)[:-1]
         L.append(f"    (via_keepout {q(f'J{i}_{layer}')} (polygon {layer} 0 " + " ".join(f"{f(x)} {f(y)}" for x, y in pts)
                  + "))")
+    smd = smd_keepouts(rules, data)
+    for i, (layer, g) in enumerate(smd):
+        pts = list(g.exterior.coords)[:-1]
+        L.append(f"    (via_keepout {q(f'S{i}_{layer}')} (polygon {layer} 0 " + " ".join(f"{f(x)} {f(y)}" for x, y in pts)
+                 + "))")
     # planes last in the structure: placed further up, Freerouting 2.4.1 read no connections any more (0 unrouted)
     for net, layer in planes(rules):
         L.append(f"    (plane {q(net)} (polygon {layer} 0 "
@@ -673,7 +849,8 @@ def write_dsn(rules, data, out, variant=0):
     say(f"DSN: {len(routed)} nets with >= 2 pins, {len(data['pads'])} pads, {len(padstacks)} padstacks, {len(keep)} hole "
         f"keep-outs, {len(strips)} edge strips, {len(extra)} keep-out pieces, {len(fixed)} fixed wires, "
         + (f"{len(fans)} fanout vias, " if fans else "")
-        + (f"{len(joints)} via keep-outs at hand-soldered joints (GEO.spacing), " if joints else "") + f"clearance {rules.clear} mil"
+        + (f"{len(joints)} via keep-outs at hand-soldered joints (GEO.spacing), " if joints else "")
+        + (f"{len(smd)} via keep-outs at reflowed SMD pads (GEO.spacing/margin), " if smd else "") + f"clearance {rules.clear} mil"
         + (f", order {variant}" if variant else "")
         + (f", pour-only (no tracks): {', '.join(sorted(rules.pour_only))}" if rules.pour_only else "") + f" -> {out}")
     for (name, w), members in sorted(cls.items()):
@@ -1213,7 +1390,7 @@ def clearance_check(rules, data, routes):
 def pad_accepts(graph, code="GEO.spacing", topic="clearance"):
     """The accepts of one code (and topic) in the graph (the inner object, as design.load_graph returns it): ({designator:
     reason}, {net: reason}) – GEO.spacing:clearance between pads of different parts, :paste the paste gap, :joint the
-    hand-soldered joints, :holes the hole-to-hole spacing; GEO.ring the annular ring."""
+    hand-soldered joints, :via the vias at reflowed SMD pads, :holes the hole-to-hole spacing; GEO.ring the annular ring."""
     from .findings import accept_reason
 
     def of(items, key):
@@ -1384,6 +1561,24 @@ def report_joints(cfg, board, rules, data, routes=None):
         + (f", {len(gaps) - len(near)} waived" if len(gaps) > len(near) else ""))
     for g in gaps[:20]:
         print(f"    {joint_text(g, rules.joint_keep, board)}" + (f" – waived: {g['waived']}" if g["waived"] else ""),
+              flush=True)
+    return near
+
+
+def report_smd_vias(cfg, board, rules, data, routes):
+    """GEO.spacing/margin, printed: the vias of the SES closer than smd_via_keep_mm to a reflowed SMD pad, waived ones
+    with their reason – warnings, no exit code changes. Nothing while the vias are tented or no side is assembled."""
+    if not (rules.smd_keep and rules.reflow):
+        return []
+    vias = [(net, tuple(v), rules.via[1]) for net, r in routes.items() for v in r["vias"]]
+    gaps = smd_via_gaps(data, rules.smd_keep, rules.hand, rules.reflow, vias, graph_accepts(cfg, "GEO.spacing", "via"))
+    near = [g for g in gaps if not g["waived"]]
+    n = len(reflowed_pads(data, rules.hand, rules.reflow))
+    say(f"reflowed SMD pads (GEO.spacing/margin, vias untented): {n} on {' and '.join(rules.reflow)}, {len(near)} vias "
+        f"closer than smd_via_keep_mm {rules.smd_keep / MIL_PER_MM:g}"
+        + (f", {len(gaps) - len(near)} waived" if len(gaps) > len(near) else ""))
+    for g in gaps[:20]:
+        print(f"    {smd_via_text(g, rules.smd_keep, board)} – " + (f"waived: {g['waived']}" if g["waived"] else "warning"),
               flush=True)
     return near
 
@@ -2262,9 +2457,11 @@ def write_rules(board, mcp, say=print):
 def main(cfg, args):
     board = cfg.board(args.board, made=True)
     rules = Rules(board, args.clearance)
-    if rules.joint_keep and cfg.graph.exists():
+    if (rules.joint_keep or rules.smd_keep) and cfg.graph.exists():
         from .design import load_graph
         rules.hand = hand_soldered(load_graph(cfg.graph), board.name)
+    if rules.smd_keep:
+        rules.reflow = paste_rule(cfg)[1]
     P = paths(cfg, board)
     passes = args.passes or rules.passes
     reload = ["reload"] if drc_rules.mode(board) == "write" else []    # else only when the DRC asks (E-7)
@@ -2320,6 +2517,8 @@ def main(cfg, args):
                     for line in bad[:20]:
                         print(f"    {line}", flush=True)
                     near = report_joints(cfg, board, rules, data, routes)
+                    report_smd_vias(cfg, board, rules, data, routes)     # warnings: no new attempt for them
+                    report_under(cfg, rules, data, routes)               # notes: no new attempt for them
                     nested = report_regions(rules, data, routes)
                     thin = report_widths(cfg, board, rules, routes)   # no new attempt routes wider
                     if not (open_nets or bad or near or nested) or thin:

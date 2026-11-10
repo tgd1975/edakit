@@ -1275,3 +1275,129 @@ def test_a_nets_pours_are_filled_in_one_call_and_a_refused_fill_stops(monkeypatc
                                                          "verification."}
     with pytest.raises(SystemExit, match="restart EasyEDA"):
         route.fill(None, None, Mcp([ok, refused]), ["GND", "+5V"])
+
+
+# --- GEO.spacing/margin (#341): open vias keep smd_via_keep_mm from reflowed SMD pads
+
+UNTENTED = '\n[order]\nvias = "untented"\n'
+SMD_TO_VIA = 0.85 + 0.10 + 24 / MIL / 2       # D1.2's half height + 0.10 mm + the via's radius, from D1.2's centre
+
+
+def test_smd_via_gaps_count_every_net_at_reflowed_smd_pads_only():
+    """A via of the pad's own net counts as well; a hand-soldered part, a side that is not assembled and a
+    through-hole pad are not looked at."""
+    def gaps(vias, hand=(), sides=("TOP",)):
+        return [(g["pad"], g["via"], g["layer"], round(g["mil"] / MIL, 2))
+                for g in route.smd_via_gaps(STAGE, 0.3 * MIL, set(hand), sides, vias)]
+    own = [("VIN", mm(77.2, 12 + SMD_TO_VIA), 24)]
+    assert gaps(own) == [("D1.2", "VIN", "TOP", 0.1)]
+    assert gaps([(None, mm(77.2, 12 + SMD_TO_VIA), 24)]) == [("D1.2", None, "TOP", 0.1)]
+    assert gaps(own, hand=("D1",)) == []                                           # bom: false – the joint's keep
+    assert gaps(own, sides=("BOTTOM",)) == []                                      # TOP not assembled
+    assert gaps([("GND", mm(84, 11 - 0.7 - 0.1 - 24 / MIL / 2), 24)]) == []        # J1.1 is through hole
+    assert [p["ref"] + "." + p["num"] for p in route.reflowed_pads(STAGE, set(), ("TOP",))] == [
+        "D1.1", "D1.2", "C2.1", "C2.2"]
+
+
+def test_route_check_warns_on_an_open_via_at_a_reflowed_pad(project, capsys):
+    routed_stage(project)
+    with_via(project, net="VIN", at=(77.2, 12 + SMD_TO_VIA))
+    code, out = route_cmd(project, "check", capsys)
+    assert code == 0 and "reflowed" not in out                                     # tented, edakit's default
+    routed_stage(project)
+    f = project.root / "hardware" / "boards" / "main.toml"
+    f.write_text(f.read_text() + UNTENTED)
+    with_via(project, net="VIN", at=(77.2, 12 + SMD_TO_VIA))
+    code, out = route_cmd(project, "check", capsys)
+    assert code == 0                                                               # a warning: no exit code
+    assert "reflowed SMD pads (GEO.spacing/margin, vias untented): 4 on TOP, 1 vias closer than smd_via_keep_mm 0.3" \
+        in out
+    assert "D1.2 (VIN) – via VIN at (77.20, 13.25): 0.10 mm apart on TOP, an assembled side, below smd_via_keep_mm " \
+           "0.3 (vias untented) – warning" in out
+
+
+def test_dsn_keeps_vias_away_from_reflowed_smd_pads(project, tmp_path):
+    cfg = routed_stage(project)
+    data = json.loads((project.root / "build" / "edakit" / "route" / "main_board.json").read_text())
+    rules = route.Rules(cfg.board())
+    rules.reflow = ("TOP",)
+    assert rules.smd_keep == 0                                                     # tented: no keep-out
+    route.write_dsn(rules, data, tmp_path / "tented.dsn")
+    assert "via_keepout" not in (tmp_path / "tented.dsn").read_text()
+    f = project.root / "hardware" / "boards" / "main.toml"
+    f.write_text(f.read_text() + UNTENTED)
+    rules = route.Rules(config.load(project.root / "edakit.toml").board())
+    rules.reflow = ("TOP",)
+    assert rules.smd_keep == pytest.approx(0.3 * MIL)
+    route.write_dsn(rules, data, tmp_path / "open.dsn")
+    text = (tmp_path / "open.dsn").read_text()
+    assert re.findall(r'via_keepout "(S\d+_\w+)"', text) == ["S0_TOP", "S1_TOP", "S2_TOP", "S3_TOP"]
+    [(_, area)] = [k for k in route.smd_keepouts(rules, data)][3:]                  # around C2.2, 1.0 x 1.3 mm
+    from shapely.geometry import Point
+    c2 = route.pad_outline(data["pads"][5])
+    assert c2.buffer(0.3 * MIL - 0.01).within(area) and Point(*mm(68.95 + 0.5 + 0.31, 12)).within(area) is False
+
+
+def test_fanout_keeps_smd_via_keep_from_reflowed_pads(plane_board):
+    """With vias untented, the fanout via of R1.1 (SMD, TOP, reflowed) starts at half side + radius + 0.3 mm and keeps
+    0.3 mm from every reflowed SMD pad, its own too."""
+    make, data = plane_board
+    rules = make()
+    [(_, _, _, _, s, v)] = route.fanout(rules, data)
+    assert math.dist(s, v) == pytest.approx(D0, abs=0.01)                          # tented: as before
+    rules = make("fanout = true", '[order]\nvias = "untented"\n')
+    rules.reflow = ("TOP",)
+    [(_, _, _, _, s, v)] = route.fanout(rules, data)
+    assert math.dist(s, v) == pytest.approx(20 + 12 + 0.3 * MIL, abs=0.01)
+    from shapely.geometry import Point
+    for p in route.reflowed_pads(data, set(), ("TOP",)):
+        assert Point(v).distance(route.pad_outline(p)) - 12 >= 0.3 * MIL - 0.02
+
+
+# --- GEO.under (#342): a track between the two pads of a small chip part, on the part's layer
+
+def test_under_tracks_name_the_part_the_net_and_the_distance():
+    """C2 (0805: +5V, GND) at (68, 12): a 0.3 mm VIN track down its middle is 0.30 mm from both pads; one of GND only
+    counts to the +5V pad; on BOTTOM, of the net of both pads, or outside the gap it is none; D1 (SMA, 6.9 mm over its
+    pads) and J1 (through-hole) are no small chip parts."""
+    def under(net, layer="TOP", x=68, skip=()):
+        track = [(net, layer, mm(x, 10), mm(x, 14), 0.3 * MIL)]
+        return [(g["part"], g["net"], round(g["mil"] / MIL, 2)) for g in route.under_tracks(STAGE, track, set(skip))]
+    assert [ref for ref, *_ in route.chip_gaps(STAGE)] == ["C2"]
+    assert under("VIN") == [("C2", "VIN", 0.3)]
+    assert under(None) == [("C2", None, 0.3)]
+    assert under("GND", x=68.2) == [("C2", "GND", 0.5)]       # to C2.1 (+5V) only: it touches its own C2.2
+    assert under("VIN", layer="BOTTOM") == []
+    assert under("VIN", x=66) == []                          # beside the part, not between its pads
+    assert under("VIN", skip=("C2",)) == []                  # a 0 Ω bridge
+    both = {**STAGE, "pads": [{**p, "net": "GND"} if p["ref"] == "C2" else p for p in STAGE["pads"]]}
+    assert route.under_tracks(both, [("GND", "TOP", mm(68, 10), mm(68, 14), 0.3 * MIL)]) == []
+    waived = route.under_tracks(STAGE, [("VIN", "TOP", mm(68, 10), mm(68, 14), 0.3 * MIL)],
+                                waivers=({}, {"VIN": "test"}))
+    assert [g["waived"] for g in waived] == ["test"]
+
+
+@pytest.mark.parametrize("size, small", [((0.6, 0.6, 1.0), True), ((1.125, 1.75, 2.925), True),
+                                         ((1.125, 2.65, 2.925), False), ((1.6, 1.8, 3.0), False)])
+def test_chip_gaps_read_the_size_from_the_pads(size, small):
+    """0402 and 1206 (KiCad's R_1206_3216Metric: 4.05 × 1.75 mm over its pads) are small chip parts; a 1210 (2.65 mm
+    across) and a part 4.6 mm over its pads are not."""
+    w, h, pitch = size
+    data = {"pads": [stage_pad("R1", "1", "A", 10, 10, w, h), stage_pad("R1", "2", "B", 10 + pitch, 10, w, h)]}
+    assert bool(route.chip_gaps(data)) is small
+
+
+def test_route_check_notes_a_track_between_chip_pads(project, capsys):
+    routed_stage(project)
+    code, out = route_cmd(project, "check", capsys)
+    assert code == 0 and "tracks between the pads of small chip parts (GEO.under): 0" in out
+    routed_stage(project)
+    f = project.root / "build" / "edakit" / "route" / "main.ses"
+    f.write_text(f.read_text().replace('(net "GND" ', '(net "GND" (wire (path TOP 1800 '
+                                       + " ".join(f"{round(v * 100)}" for p in ((68, 15), (68, 11.5)) for v in mm(*p))
+                                       + ")) ", 1))
+    code, out = route_cmd(project, "check", capsys)
+    assert code == 0                                                               # a note: no exit code
+    assert "tracks between the pads of small chip parts (GEO.under): 1" in out
+    assert "C2: a track of GND passes between its pads (C2.1 +5V, C2.2 GND) on TOP, 0.22 mm from a pad of another " \
+           "net – note" in out

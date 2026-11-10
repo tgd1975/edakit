@@ -92,6 +92,7 @@ and `SYNC.agents` in G; the rest in L. Their codes, generated from the catalog:
 | [`GEO.formed`](../docs/catalog/geo.html#GEO.formed) | formed leads fit one way | error, margin: warning, unknown: note, counter: note; replaces P-8 |
 | [`GEO.pour`](../docs/catalog/geo.html#GEO.pour) | copper per side | warning, margin: warning; replaces L-15 |
 | [`GEO.spacing`](../docs/catalog/geo.html#GEO.spacing) | pads and holes keep their distance | error, margin: warning, apart: warning; replaces L-13, L-14, L-16, L-18 |
+| [`GEO.under`](../docs/catalog/geo.html#GEO.under) | no track between the pads of a small chip part | note |
 | [`GEO.ring`](../docs/catalog/geo.html#GEO.ring) | annular ring | error, margin: warning; replaces L-16 |
 | [`GEO.keepout`](../docs/catalog/geo.html#GEO.keepout) | keep-out areas free of copper | warning, edge: warning |
 | [`GEO.hole`](../docs/catalog/geo.html#GEO.hole) | hole fits the lead | error, margin: warning, unknown: note; replaces P-7, L-9 |
