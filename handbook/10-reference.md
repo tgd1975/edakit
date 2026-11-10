@@ -1265,8 +1265,8 @@ Route with Freerouting and write the result into EasyEDA.
   Import Changes item); tracks, vias, pours; with `[scripts]`, `all` and `pours` mark a change of `pcb:<b>` gone in
   `hardware/scripts.lock` – the pours filled anew over the copper of `easyeda` scripts (8.6)
 - **fill:** the pours of `[[pours]]` already in the PCB filled one per call – no new pours, no `NO_POURS` regions –,
-  the tooling holes set again, the PCB saved; after `pours` or `all` stopped with "no-copper" and EasyEDA was
-  restarted (7.6, M-13). A pour whose net has no pad, via or track on its layer is named as the board's
+  the tooling holes set again, the PCB saved – the PCB saved and loaded again first; after `pours` or `all` stopped
+  with "no-copper" (7.6, M-13). A pour whose net has no pad, via or track on its layer is named as the board's
 
 `edakit route diagnose [--net N]` – EasyEDA: no
 

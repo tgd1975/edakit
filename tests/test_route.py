@@ -312,7 +312,7 @@ def regions(tmp_path, monkeypatch):
     for mod in (pcb, route):
         monkeypatch.setattr(mod, "api", rec.api)
         monkeypatch.setattr(mod, "ensure_pcb_focus", lambda mcp: None)
-    for name in ("open_project", "open_pcb"):
+    for name in ("open_project", "open_pcb", "reload_pcb"):
         monkeypatch.setattr(eda, name, lambda *a, **k: None)
     monkeypatch.setattr(eda, "connect", lambda *a, **k: rec)
     monkeypatch.setattr(eda, "start", lambda *a, **k: rec)
@@ -1257,7 +1257,7 @@ class FakeBridge:
     `answer(ids)` as easyeda_pcb_rebuild_copper's reply. Records the rebuild calls and whether the PCB was saved."""
 
     def __init__(self, answer, pours=(("p1", "GND", 1), ("p2", "GND", 2)), pads=(("GND", 12),), vias=(), lines=()):
-        self.answer, self.rebuilds, self.saved = answer, [], 0
+        self.answer, self.rebuilds, self.saved, self.reloads = answer, [], 0, []
         self.lists = {"PCB_PrimitivePour.getAll": [{"state": {"PrimitiveId": i, "Net": n, "Layer": la}}
                                                    for i, n, la in pours],
                       "PCB_PrimitivePad.getAll": [{"state": {"Net": n, "Layer": la}} for n, la in pads],
@@ -1294,6 +1294,11 @@ def coin_cell(tmp_path, monkeypatch):
     monkeypatch.setattr(pcb, "pour", lambda *a, **k: done.append("pour"))
     monkeypatch.setattr(pcb, "tooling", lambda *a, **k: done.append("tooling"))
     monkeypatch.setattr(route, "ensure_pcb_focus", lambda mcp: None)
+
+    def reload(mcp):        # eda.reload_pcb: saved and loaded again – how many rebuilds came before it
+        done.append("reload")
+        mcp.reloads.append(len(mcp.rebuilds))
+    monkeypatch.setattr(route.eda, "reload_pcb", reload)
     monkeypatch.setenv("EASYEDA_MCP_VERSION", "1.8.0")
     return cfg, cfg.board(made=True), done
 
@@ -1316,8 +1321,8 @@ def test_a_nets_pours_are_filled_in_one_call_and_a_refused_fill_stops(coin_cell)
 
 def test_no_copper_of_fresh_pours_saves_and_route_fill_fills_them_one_per_call(coin_cell):
     """M-13 (desk-led on easyeda-mcp-pro 1.8.0): a fill of fresh pours comes back "no-copper" although GND has a pad
-    under both. route pours saves the PCB and stops, naming the pours and the bridge; after a restart `route fill` fills
-    the pours already there one per call – no new pours –, and sets the tooling holes again."""
+    under both. route pours saves the PCB and stops, naming the pours and the bridge; `route fill` loads the PCB again
+    and fills the pours already there one per call – no new pours, no restart –, and sets the tooling holes again."""
     cfg, board, done = coin_cell
     mcp = FakeBridge(lambda ids: rebuilt(ids, "rebuilt" if len(ids) == 1 else "no-copper"))
     with pytest.raises(SystemExit) as e:
@@ -1327,10 +1332,11 @@ def test_no_copper_of_fresh_pours_saves_and_route_fill_fills_them_one_per_call(c
     assert "the bridge's, not the board's (easyeda-mcp-pro 1.8.0" in msg and "the board's, not the bridge's" not in msg
     assert "the PCB is saved" in msg and mcp.saved == 1
     assert "`edakit route fill`" in msg and "`edakit route drc`" in msg and "--board" not in msg   # one board
-    assert done == ["pour"]
+    assert "Restart EasyEDA" not in msg                                            # route fill reloads the PCB
+    assert done == ["pour", "reload"]
     done.clear()
     route.fill_saved(cfg, board, mcp)
-    assert mcp.rebuilds[1:] == [["p1"], ["p2"]] and done == ["tooling"] and mcp.saved == 2
+    assert mcp.rebuilds[1:] == [["p1"], ["p2"]] and done == ["reload", "tooling"] and mcp.saved == 2
 
 
 def test_route_fill_that_fails_as_well_says_so(coin_cell):
@@ -1341,8 +1347,9 @@ def test_route_fill_that_fails_as_well_says_so(coin_cell):
         route.fill_saved(cfg, board, mcp)
     msg = str(e.value)
     assert msg.startswith("pours not filled: GND TOP (p1) no-copper")
-    assert "easyeda-mcp-pro 1.8.0" in msg and "one pour per call failed as well" in msg
-    assert mcp.rebuilds == [["p1"]] and done == [] and mcp.saved == 1
+    assert "easyeda-mcp-pro 1.8.0" in msg and "one pour per call failed as well, after the PCB was reloaded" in msg
+    assert "Restart EasyEDA, then `edakit route fill` once more" in msg and "report it with this message" in msg
+    assert mcp.rebuilds == [["p1"]] and done == ["reload"] and mcp.saved == 1
 
 
 def test_a_pour_whose_net_has_no_copper_on_its_layer_is_the_boards(coin_cell):
@@ -1361,10 +1368,24 @@ def test_a_pour_whose_net_has_no_copper_on_its_layer_is_the_boards(coin_cell):
     assert "restart" not in msg
     with pytest.raises(SystemExit, match="GND BOTTOM: the board's"):
         route.fill_saved(cfg, board, mcp)
-    assert mcp.rebuilds[1:] == [["p1"], ["p2"]] and done == ["pour", "tooling"]
+    assert mcp.rebuilds[1:] == [["p1"], ["p2"]] and done == ["pour", "reload", "reload", "tooling"]
     mcp = FakeBridge(answer, pads=(("GND", 1),), vias=("GND",))      # a GND via holds the bottom pour
     with pytest.raises(SystemExit, match="the bridge's, not the board's"):
         route.fill(cfg, board, mcp, ["GND"])
+
+
+def test_the_pcb_is_reloaded_before_every_fill(coin_cell):
+    """M-13, live on desk-led 2026-11-10 (EasyEDA Pro 3.2.209, easyeda-mcp-pro 1.11.0): once tooling holes, vias or
+    tracks were created through the API in the session, EasyEDA's rebuildCopperRegion() returns no copper – for every
+    pour, until the PCB is loaded again; a second `route pours` failed so, and the same fill passed after a reload.
+    route pours and route fill save and reload the PCB before their first rebuild; a stitched net before each fill."""
+    cfg, board, done = coin_cell
+    mcp = FakeBridge(rebuilt)
+    route.fill(cfg, board, mcp, ["GND"])
+    assert done == ["pour", "reload"] and mcp.reloads == [0] and mcp.rebuilds == [["p1", "p2"]]
+    mcp = FakeBridge(rebuilt)
+    route.fill_saved(cfg, board, mcp)
+    assert mcp.reloads == [0] and mcp.rebuilds == [["p1"], ["p2"]]
 
 
 def test_bare_pours():
