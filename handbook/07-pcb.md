@@ -867,12 +867,13 @@ back "rebuilt" saves the PCB and stops, naming each pour (net, layer, id) and it
 
 - a pour whose net has no pad, via or track on its layer: **the board's** – EasyEDA drops it (below); give the layer a
   pad or via of the net, or another net in `[[pours]]`.
-- otherwise **the bridge's**, with easyeda-mcp-pro's version: on 1.8.0 a fill of pours created in the same EasyEDA
-  session came back "no-copper" with pads under them, one pour per call as well (desk-led, M-13). Running `route
-  pours` again does not help – it creates the pours anew. Restart EasyEDA, then `edakit route fill`: the pours already
-  in the saved PCB filled one per call, TOP first, the tooling holes set again; then `edakit route drc` (with
-  `drc_rules = "write"` first `route reload`). It stitches nothing – a board with `stitch` gets its vias from the next
-  `route pours` that fills.
+- otherwise **the bridge's or EasyEDA's**, with easyeda-mcp-pro's version. Once pads, vias or tracks were created or
+  deleted through the API in a session – the tooling holes of the last fill, `route apply`'s tracks –, EasyEDA's
+  copper engine fills nothing until the PCB is loaded again (desk-led, M-13). So `route pours` saves and reloads the
+  PCB before it fills, and `edakit route fill` does too: the pours already in the saved PCB filled one per call, TOP
+  first, the tooling holes set again, no restart; then `edakit route drc` (with `drc_rules = "write"` first `route
+  reload`). It stitches nothing – a board with `stitch` gets its vias from the next `route pours` that fills. Only
+  when that fails as well: restart EasyEDA and run `route fill` once more.
 
 With
 `stitch = "BOTTOM"` edakit fills once keeping islands, puts a via into every loose island on that side where it
