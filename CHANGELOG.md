@@ -8,6 +8,11 @@ written once, by `.github/merge.py`, from the fragments in [changes/](changes/RE
 update edakit@edakit`, then `/reload-plugins` or a new session; `edakit version` names the version that runs and what an
 update brings.
 
+## 1.2.5 – 2026-11-10
+
+- GEO.spacing/margin: on a board whose vias stay open (`[order] vias = "untented"`), every via – of any net, the pad's own too – keeps `[routing] smd_via_keep_mm` (0.3 mm, 0 = off) from every SMD pad the assembler reflows; `route dsn` writes a via keep-out around those pads, the fanout keeps the distance, `route check` and the gate warn, one row per pad and via. Tented vias, the default, are not measured (#341).
+- GEO.under (new, a note): a track that passes between the two pads of a small chip part – two SMD pads on one layer, at most 4.5 × 2.0 mm over both (0402 to 1206) – on the part's own layer, unless its net is the net of both pads; 0 Ω bridges are left out. `route check` and the gate name the part, the track's net and the smallest distance to a pad of another net; nothing stops, `accept` GEO.under on the part or the net (#342).
+
 ## 1.2.4 – 2026-11-10
 
 - The perfboard in the documentation: the site's tab "A prototype" between "A circuit" and "A board" with the page "Build it on a perfboard", the perfboard plan in the glossary, its drawing on the start page, and the handbook's index pointing to 7.9.
