@@ -820,7 +820,19 @@ The gate writes nothing: its GEO.drc fails then, and `edakit route drc` before i
 
 `[[pours]]` of the board file: net, layers, `plane` (with `fanout`, 7.5), `stitch`, `pour_only`. Filled with
 `easyeda_pcb_rebuild_copper`, a net's fresh pours in one call (easyeda-mcp-pro 1.7.0, M-10) – after an unverified
-rebuild (`readback-mismatch`) the bridge refuses every further one until EasyEDA restarts, and `route` stops with that. With
+rebuild (`readback-mismatch`) the bridge refuses every further one until EasyEDA restarts. A fill that does not come
+back "rebuilt" saves the PCB and stops, naming each pour (net, layer, id) and its status:
+
+- a pour whose net has no pad, via or track on its layer: **the board's** – EasyEDA drops it (below); give the layer a
+  pad or via of the net, or another net in `[[pours]]`.
+- otherwise **the bridge's**, with easyeda-mcp-pro's version: on 1.8.0 a fill of pours created in the same EasyEDA
+  session came back "no-copper" with pads under them, one pour per call as well (desk-led, M-13). Running `route
+  pours` again does not help – it creates the pours anew. Restart EasyEDA, then `edakit route fill`: the pours already
+  in the saved PCB filled one per call, TOP first, the tooling holes set again; then `edakit route drc` (with
+  `drc_rules = "write"` first `route reload`). It stitches nothing – a board with `stitch` gets its vias from the next
+  `route pours` that fills.
+
+With
 `stitch = "BOTTOM"` edakit fills once keeping islands, puts a via into every loose island on that side where it
 overlaps the pour of the other side (with clearance), then fills again without islands.
 

@@ -46,6 +46,8 @@
     edakit perfboard [--board B]     the plan of a hand-wired board on a perfboard: its nets against the graph, grid,
                                      bodies, wires; top and bottom view, cut, build and test lists (offline)
     edakit route all|read|dsn|route|check|apply|verify|pours|reload|drc|save
+    edakit route fill                the pours already in the PCB filled one per call, tooling holes set again –
+                                     after `route pours` stopped with "no-copper" and EasyEDA was restarted (M-13)
     edakit route diagnose [--net N]  why each open connection is open: walled in, blocked, or a free way (offline)
     edakit silk apply|check|preview
     edakit export                    PDFs, Gerber, BOM, CPL, netlist and a project copy to <artifacts>/export
@@ -356,7 +358,7 @@ def build_parser(dsl=False):
 
     p = sub.add_parser("route", help="route with Freerouting and write the result into EasyEDA")
     p.add_argument("action", choices=["all", "read", "dsn", "route", "check", "diagnose", "apply", "verify", "pours",
-                                      "reload", "drc", "save"])
+                                      "fill", "reload", "drc", "save"])
     p.add_argument("--board")
     p.add_argument("--net", help="diagnose: only this net")
     p.add_argument("--passes", type=int, help="maximum Freerouting passes")

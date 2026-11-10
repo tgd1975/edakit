@@ -1249,29 +1249,125 @@ def test_dsn_keeps_vias_away_from_hand_soldered_joints(project, tmp_path):
     assert found == [("J0_BOTTOM", "BOTTOM"), ("J1_BOTTOM", "BOTTOM"), ("J2_TOP", "TOP"), ("J3_TOP", "TOP")]
 
 
-def test_a_nets_pours_are_filled_in_one_call_and_a_refused_fill_stops(monkeypatch):
+COIN_CELL = Path(__file__).resolve().parents[1] / "examples" / "coin-cell-led"
+
+
+class FakeBridge:
+    """easyeda-mcp-pro faked for the pour fill: the PCB's pours, pads, vias and tracks as getAll states, and
+    `answer(ids)` as easyeda_pcb_rebuild_copper's reply. Records the rebuild calls and whether the PCB was saved."""
+
+    def __init__(self, answer, pours=(("p1", "GND", 1), ("p2", "GND", 2)), pads=(("GND", 12),), vias=(), lines=()):
+        self.answer, self.rebuilds, self.saved = answer, [], 0
+        self.lists = {"PCB_PrimitivePour.getAll": [{"state": {"PrimitiveId": i, "Net": n, "Layer": la}}
+                                                   for i, n, la in pours],
+                      "PCB_PrimitivePad.getAll": [{"state": {"Net": n, "Layer": la}} for n, la in pads],
+                      "PCB_PrimitiveVia.getAll": [{"state": {"Net": n}} for n in vias],
+                      "PCB_PrimitiveLine.getAll": [{"state": {"Net": n, "Layer": la}} for n, la in lines]}
+
+    def call(self, tool, **kw):
+        if tool == route.REBUILD:
+            self.rebuilds.append(kw["pourIds"])
+            return self.answer(kw["pourIds"])
+        if kw["path"] == "PCB_Document.save":
+            self.saved += 1
+            return {"ok": True, "result": True}
+        return {"ok": True, "result": self.lists.get(kw["path"], [])}
+
+
+def rebuilt(ids, status="rebuilt"):
+    """The bridge's reply when every pour of ids came back with status – success only when all were rebuilt."""
+    res = {"success": status == "rebuilt", "results": [{"pourId": i, "status": status, "verified": True} for i in ids]}
+    return res if res["success"] else {**res, "error": "One or more pours produced no copper and were not counted "
+                                                       "as successful rebuilds."}
+
+
+@pytest.fixture
+def coin_cell(tmp_path, monkeypatch):
+    """examples/coin-cell-led (GND poured on TOP and BOTTOM, two tooling holes) with pcb.pour and pcb.tooling
+    recorded instead of called."""
+    import shutil
+
+    from edakit import pcb
+    shutil.copytree(COIN_CELL, tmp_path / "coin-cell-led", ignore=shutil.ignore_patterns("build"))
+    cfg = config.load(tmp_path / "coin-cell-led" / "edakit.toml")
+    done = []
+    monkeypatch.setattr(pcb, "pour", lambda *a, **k: done.append("pour"))
+    monkeypatch.setattr(pcb, "tooling", lambda *a, **k: done.append("tooling"))
+    monkeypatch.setattr(route, "ensure_pcb_focus", lambda mcp: None)
+    monkeypatch.setenv("EASYEDA_MCP_VERSION", "1.8.0")
+    return cfg, cfg.board(made=True), done
+
+
+def test_a_nets_pours_are_filled_in_one_call_and_a_refused_fill_stops(coin_cell):
     """M-10 (easyeda-mcp-pro 1.7.0): a net's fresh pours in one rebuild call, net by net; when the bridge refuses (an
     earlier rebuild unverified), route stops instead of going on with empty pours."""
-    from edakit import pcb
-    calls = []
-    monkeypatch.setattr(pcb, "pour", lambda *a, **k: None)
-    monkeypatch.setattr(route, "ensure_pcb_focus", lambda mcp: None)
-    monkeypatch.setattr(route, "api", lambda mcp, path, *a: [{"state": {"PrimitiveId": "p1", "Net": "GND"}},
-                                                             {"state": {"PrimitiveId": "p2", "Net": "GND"}},
-                                                             {"state": {"PrimitiveId": "p3", "Net": "VCC"}},
-                                                             {"state": {"PrimitiveId": "p4", "Net": "+5V"}}])
+    cfg, board, _ = coin_cell
+    pours = (("p1", "GND", 1), ("p2", "GND", 2), ("p3", "VCC", 1), ("p4", "+5V", 1))
+    mcp = FakeBridge(rebuilt, pours)
+    route.fill(cfg, board, mcp, ["GND", "+5V"])
+    assert mcp.rebuilds == [["p4"], ["p1", "p2"]]
+    answers = iter([rebuilt(["p4"]), {"success": False, "results": [], "error": "A previous native PCB copper rebuild "
+                                                                                 "ended without complete verification."}])
+    mcp = FakeBridge(lambda ids: next(answers), pours, pads=(("GND", 12), ("+5V", 12)))
+    with pytest.raises(SystemExit, match=r"(?s)GND TOP \(p1\) refused.*M-10\): the PCB is saved\. Restart EasyEDA") as e:
+        route.fill(cfg, board, mcp, ["GND", "+5V"])
+    assert "`edakit route fill`" in str(e.value) and mcp.saved == 1
 
-    class Mcp:
-        def __init__(self, answers):
-            self.answers = iter(answers)
 
-        def call(self, tool, **kw):
-            calls.append(kw["pourIds"])
-            return next(self.answers)
-    ok = {"success": True, "results": [{"pourId": "p", "status": "rebuilt", "verified": True}]}
-    route.fill(None, None, Mcp([ok, ok]), ["GND", "+5V"])
-    assert calls == [["p4"], ["p1", "p2"]]
-    refused = {"success": False, "results": [], "error": "A previous native PCB copper rebuild ended without complete "
-                                                         "verification."}
-    with pytest.raises(SystemExit, match="restart EasyEDA"):
-        route.fill(None, None, Mcp([ok, refused]), ["GND", "+5V"])
+def test_no_copper_of_fresh_pours_saves_and_route_fill_fills_them_one_per_call(coin_cell):
+    """M-13 (desk-led on easyeda-mcp-pro 1.8.0): a fill of fresh pours comes back "no-copper" although GND has a pad
+    under both. route pours saves the PCB and stops, naming the pours and the bridge; after a restart `route fill` fills
+    the pours already there one per call – no new pours –, and sets the tooling holes again."""
+    cfg, board, done = coin_cell
+    mcp = FakeBridge(lambda ids: rebuilt(ids, "rebuilt" if len(ids) == 1 else "no-copper"))
+    with pytest.raises(SystemExit) as e:
+        route.fill(cfg, board, mcp, ["GND"])
+    msg = str(e.value)
+    assert msg.startswith("pours not filled: GND TOP (p1) no-copper, GND BOTTOM (p2) no-copper")
+    assert "the bridge's, not the board's (easyeda-mcp-pro 1.8.0" in msg and "the board's, not the bridge's" not in msg
+    assert "the PCB is saved" in msg and mcp.saved == 1
+    assert "`edakit route fill`" in msg and "`edakit route drc`" in msg and "--board" not in msg   # one board
+    assert done == ["pour"]
+    done.clear()
+    route.fill_saved(cfg, board, mcp)
+    assert mcp.rebuilds[1:] == [["p1"], ["p2"]] and done == ["tooling"] and mcp.saved == 2
+
+
+def test_route_fill_that_fails_as_well_says_so(coin_cell):
+    """A bridge that fills nothing, one pour per call either: route fill stops at the first pour and says what failed."""
+    cfg, board, done = coin_cell
+    mcp = FakeBridge(lambda ids: rebuilt(ids, "no-copper"))
+    with pytest.raises(SystemExit) as e:
+        route.fill_saved(cfg, board, mcp)
+    msg = str(e.value)
+    assert msg.startswith("pours not filled: GND TOP (p1) no-copper")
+    assert "easyeda-mcp-pro 1.8.0" in msg and "one pour per call failed as well" in msg
+    assert mcp.rebuilds == [["p1"]] and done == [] and mcp.saved == 1
+
+
+def test_a_pour_whose_net_has_no_copper_on_its_layer_is_the_boards(coin_cell):
+    """desk-led's first round: GND poured on BOTTOM without a GND pad, via or track there – EasyEDA drops it
+    (handbook 7.6). That "no-copper" is the board's: said so, no restart asked for; route fill goes on past it."""
+    cfg, board, done = coin_cell
+    one = {"p1": "rebuilt", "p2": "no-copper"}
+    answer = lambda ids: {"success": all(one[i] == "rebuilt" for i in ids), "error": "no copper",  # noqa: E731
+                          "results": [{"pourId": i, "status": one[i], "verified": True} for i in ids]}
+    mcp = FakeBridge(answer, pads=(("GND", 1),))
+    with pytest.raises(SystemExit) as e:
+        route.fill(cfg, board, mcp, ["GND"])
+    msg = str(e.value)
+    assert msg.startswith("pours not filled: GND BOTTOM (p2) no-copper")
+    assert "GND BOTTOM: the board's, not the bridge's – GND has no pad, via or track on BOTTOM" in msg
+    assert "restart" not in msg
+    with pytest.raises(SystemExit, match="GND BOTTOM: the board's"):
+        route.fill_saved(cfg, board, mcp)
+    assert mcp.rebuilds[1:] == [["p1"], ["p2"]] and done == ["pour", "tooling"]
+    mcp = FakeBridge(answer, pads=(("GND", 1),), vias=("GND",))      # a GND via holds the bottom pour
+    with pytest.raises(SystemExit, match="the bridge's, not the board's"):
+        route.fill(cfg, board, mcp, ["GND"])
+
+
+def test_bare_pours():
+    places = {"a": ("GND", "TOP"), "b": ("GND", "BOTTOM"), "c": ("VBAT", "BOTTOM")}
+    assert route.bare_pours(places, [{"Net": "GND", "Layer": 1}], [{"Net": "VBAT"}], []) == {"b"}
+    assert route.bare_pours(places, [{"Net": "GND", "Layer": 12}], [], [{"Net": "VBAT", "Layer": 2}]) == set()

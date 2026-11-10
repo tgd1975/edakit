@@ -1247,12 +1247,12 @@ Placement plan, parts and nets sync, fixed parts, tooling holes, pours.
 ### edakit route
 
 <!-- edakit:generated command route -->
-`edakit route [--board BOARD] [--net NET] [--passes PASSES] [--threads THREADS] [--clearance CLEARANCE] [--no-optimizer] [--cleanup] [--no-scripts] {all,read,dsn,route,check,diagnose,apply,verify,pours,reload,drc,save}`
+`edakit route [--board BOARD] [--net NET] [--passes PASSES] [--threads THREADS] [--clearance CLEARANCE] [--no-optimizer] [--cleanup] [--no-scripts] {all,read,dsn,route,check,diagnose,apply,verify,pours,fill,reload,drc,save}`
 
 Route with Freerouting and write the result into EasyEDA.
 <!-- edakit:end -->
 
-`edakit route all|read|dsn|route|check|apply|verify [--cleanup]|pours|reload|drc|save [--passes N] [--threads 4] [--clearance MIL] [--no-optimizer]`
+`edakit route all|read|dsn|route|check|apply|verify [--cleanup]|pours|fill|reload|drc|save [--passes N] [--threads 4] [--clearance MIL] [--no-optimizer]`
 – EasyEDA: ✓ / – (dsn, route, check offline)
 
 - **Reads:** PCB, rules (`--passes`, `--clearance` over `[routing] passes`, `clearance_mil`); `net_currents.json`
@@ -1260,6 +1260,9 @@ Route with Freerouting and write the result into EasyEDA.
 - **Writes:** `route/<board>_board.json`, `.dsn`, `.ses`, `_routing.png`, `_drc.json`, `_netlist_diff.json` (with an
   Import Changes item); tracks, vias, pours; with `[scripts]`, `all` and `pours` mark a change of `pcb:<b>` gone in
   `hardware/scripts.lock` – the pours filled anew over the copper of `easyeda` scripts (8.6)
+- **fill:** the pours of `[[pours]]` already in the PCB filled one per call – no new pours, no `NO_POURS` regions –,
+  the tooling holes set again, the PCB saved; after `pours` or `all` stopped with "no-copper" and EasyEDA was
+  restarted (7.6, M-13). A pour whose net has no pad, via or track on its layer is named as the board's
 
 `edakit route diagnose [--net N]` – EasyEDA: no
 

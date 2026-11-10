@@ -2205,25 +2205,154 @@ def stitch_islands(rules, mcp, data, routes, net, layer_name, stitch_file):
     say(f"{net} {layer_name}: {loose} loose islands, {len(vias)} stitched with a via, {loose - len(vias)} without room")
 
 
+REBUILD = "easyeda_pcb_rebuild_copper"
+
+
+def mcp_version():
+    """The easyeda-mcp-pro edakit starts – the pin of mcp-server.sh, or EASYEDA_MCP_VERSION when set."""
+    if v := os.environ.get("EASYEDA_MCP_VERSION"):
+        return v
+    m = re.search(r"EASYEDA_MCP_VERSION:-([\d.]+)", eda.MCP_SERVER.read_text())
+    return m.group(1) if m else "?"
+
+
+def pour_places(mcp, nets):
+    """{pour id: (net, layer name)} of the pours of `nets` in the open PCB."""
+    return {st["PrimitiveId"]: (st["Net"], LAYERS.get(st["Layer"], str(st["Layer"])))
+            for st in map(eda.state, api(mcp, "PCB_PrimitivePour.getAll") or []) if st.get("Net") in nets}
+
+
+def bare_pours(places, pads, vias, lines):
+    """The pours of `places` whose net has no pad, via or track on their layer – EasyEDA drops every piece of a pour
+    that touches none (handbook 7.6), so their fill comes back "no-copper" because of the board, not the bridge.
+    pads, vias, lines: states as the PCB_Primitive….getAll of EasyEDA give them (Net, Layer; 12 = every layer)."""
+    has = {(p.get("Net"), p.get("Layer")) for p in pads} | {(t.get("Net"), t.get("Layer")) for t in lines}
+    via_nets = {v.get("Net") for v in vias}
+    return {pid for pid, (net, layer) in places.items()
+            if net not in via_nets and (net, pcb.LAYER_ID[layer]) not in has and (net, 12) not in has}
+
+
+def rebuild(mcp, ids):
+    """One easyeda_pcb_rebuild_copper call for the pours `ids`, each pour's status printed."""
+    ensure_pcb_focus(mcp)
+    res = mcp.call(REBUILD, confirmWrite=True, pourIds=ids, timeout=300)
+    for r in res.get("results") or []:
+        print(f"    pour {r.get('pourId')}: {r.get('status')}", flush=True)
+    return res
+
+
+def not_filled(res, ids):
+    """[(pour id, status)] of a rebuild that did not fill all of `ids` – "refused" where the bridge answered for none
+    (after an unverified rebuild, M-10)."""
+    got = {r.get("pourId"): r.get("status") for r in res.get("results") or []}
+    return [(i, got.get(i, "refused")) for i in ids if got.get(i, "refused") != "rebuilt"]
+
+
+def board_option(cfg, board):
+    return f" --board {board.name}" if len(cfg.made()) > 1 else ""
+
+
+def next_steps(cfg, board):
+    """What route all would still run after its pours: the reload with the rule set (drc_rules = "write") and the DRC."""
+    opt = board_option(cfg, board)
+    reload = f"`edakit route reload{opt}`, then " if drc_rules.mode(board) == "write" else ""
+    return f"{reload}`edakit route drc{opt}`"
+
+
+def fill_message(cfg, board, failed, places, bare, error, again=False):
+    """Why pours are not filled and what to run: [(pour id, status)] failed, bare: those the board leaves bare.
+    The board's are said as the board's; for the rest the cause is the bridge, whose fill of pours created in the same
+    EasyEDA session comes back "no-copper" on easyeda-mcp-pro 1.8.0 (M-13): the PCB is saved, EasyEDA restarted, and
+    `route fill` fills the pours already there one per call."""
+    def name(pid):
+        net, layer = places.get(pid, ("?", "?"))
+        return f"{net} {layer} ({pid})"
+    lines = [f"pours not filled: {', '.join(f'{name(p)} {s}' for p, s in failed)}"
+             + (f" – the bridge: {error}" if error else "")]
+    for pid, _ in failed:
+        if pid in bare:
+            net, layer = places[pid]
+            lines.append(f"  {net} {layer}: the board's, not the bridge's – {net} has no pad, via or track on {layer}, "
+                         f"and EasyEDA drops a pour that touches none (handbook 7.6). Give it a pad or via of {net} "
+                         "there, or the layer to another net in [[pours]] of the board file.")
+    if bridge := [s for p, s in failed if p not in bare]:
+        opt = board_option(cfg, board)
+        code = "M-13" if "no-copper" in bridge else "M-10"    # M-10: locked after an unverified rebuild
+        lines.append(f"  the bridge's, not the board's (easyeda-mcp-pro {mcp_version()}, handbook 12, {code}): "
+                     + ("one pour per call failed as well. If EasyEDA was restarted before this run, the bridge fills "
+                        "none of them – report it with this message; else " if again else "the PCB is saved. ")
+                     + f"Restart EasyEDA, then `edakit route fill{opt}` fills the pours there one per call, then "
+                     + next_steps(cfg, board) + ".")
+    return "\n".join(lines)
+
+
+def stop_unfilled(cfg, board, mcp, failed, places, error, again=False):
+    """Save the PCB – the pours stay as they are for `route fill` – and stop with fill_message."""
+    ensure_pcb_focus(mcp)
+    pads, vias, lines = ([eda.state(x) for x in api(mcp, f"PCB_Primitive{cls}.getAll") or []]
+                         for cls in ("Pad", "Via", "Line"))
+    bare = bare_pours({p: places[p] for p, s in failed if s == "no-copper" and p in places}, pads, vias, lines)
+    saved = api(mcp, "PCB_Document.save")
+    msg = fill_message(cfg, board, failed, places, bare, error, again)
+    raise SystemExit(msg if saved or not any(p not in bare for p, _ in failed)
+                     else msg.replace("the PCB is saved", "saving the PCB failed – save it in EasyEDA"))
+
+
 def fill(cfg, board, mcp, nets, keep_islands_on=None, regions=None):
     """The pours of nets created anew (pcb.pour) and filled, a net's pours in one call – since easyeda-mcp-pro 1.7.0
-    the bridge verifies a net's second fresh pour against the copper the first one left (M-10). One that ends
-    unverified ("readback-mismatch") still makes the bridge refuse every further rebuild until EasyEDA restarts."""
+    the bridge verifies a net's second fresh pour against the copper the first one left (M-10). A fill that does not
+    come back "rebuilt" saves the PCB and stops: a pour without pad, via or track of its net is the board's, the rest
+    is filled by `route fill` after a restart of EasyEDA (M-13)."""
     pcb.pour(cfg, board, mcp, keep_islands_on, regions)
     ensure_pcb_focus(mcp)
+    places = pour_places(mcp, nets)
     by_net = {}
-    for st in map(eda.state, api(mcp, "PCB_PrimitivePour.getAll") or []):
-        if st.get("Net") in nets:
-            by_net.setdefault(st["Net"], []).append(st["PrimitiveId"])
+    for pid, (net, _) in places.items():
+        by_net.setdefault(net, []).append(pid)
     for net, ids in sorted(by_net.items()):
-        ensure_pcb_focus(mcp)
-        res = mcp.call("easyeda_pcb_rebuild_copper", confirmWrite=True, pourIds=ids, timeout=300)
-        for r in res.get("results") or []:
-            print(f"    pour {r.get('pourId')}: {r.get('status')}", flush=True)
+        res = rebuild(mcp, ids)
         if res.get("success") is False:
-            raise SystemExit(f"pours of {net} not filled: {res.get('error') or 'the rebuild was not verified'} – the "
-                             "bridge refuses every further fill until EasyEDA restarts: save, restart EasyEDA, run again "
-                             "(handbook 12, M-10)")
+            stop_unfilled(cfg, board, mcp, not_filled(res, ids) or [(i, "refused") for i in ids], places,
+                          res.get("error") or "the rebuild was not verified")
+
+
+def fill_saved(cfg, board, mcp):
+    """`route fill`: the pours of [[pours]] already in the PCB filled one per call – no new pours, no NO_POURS
+    regions –, the tooling holes set again, the PCB saved. For a PCB whose `route pours` stopped with "no-copper" on
+    a bridge that fills no pour created in the same EasyEDA session (M-13): saved, EasyEDA restarted, then this."""
+    nets = sorted({p["net"] for p in board.pours})
+    ensure_pcb_focus(mcp)
+    places = pour_places(mcp, nets)
+    if not places:
+        raise SystemExit(f"no pour of {', '.join(nets)} in the PCB – `edakit route pours` creates and fills them")
+    bare = []
+    for pid in sorted(places, key=lambda p: (places[p][0], pcb.LAYER_ID[places[p][1]], p)):   # TOP first
+        res = rebuild(mcp, [pid])
+        if res.get("success") is False:
+            failed = not_filled(res, [pid]) or [(pid, "refused")]
+            ensure_pcb_focus(mcp)
+            pads, vias, lines = ([eda.state(x) for x in api(mcp, f"PCB_Primitive{cls}.getAll") or []]
+                                 for cls in ("Pad", "Via", "Line"))
+            if failed[0][1] == "no-copper" and bare_pours({pid: places[pid]}, pads, vias, lines):
+                bare += failed           # verified no copper: the bridge goes on with the next pour
+                continue
+            stop_unfilled(cfg, board, mcp, failed, places, res.get("error") or "the rebuild was not verified",
+                          again=True)
+    pcb.tooling(cfg, board, mcp)
+    if any(p.get("stitch") for p in board.pours):
+        say("stitch of [[pours]]: `route fill` fills the pours as they are and sets no via – the loose islands stay "
+            "loose until a `route pours` fills")
+    report_fills(mcp)
+    if bare:
+        stop_unfilled(cfg, board, mcp, bare, places, None)
+    say(f"PCB saved: {api(mcp, 'PCB_Document.save')} – next: {next_steps(cfg, board)}")
+
+
+def report_fills(mcp):
+    for pid in api(mcp, "PCB_PrimitivePoured.getAllPrimitiveId") or []:
+        st = eda.state(api(mcp, "PCB_PrimitivePour.get", pid))
+        fills = eda.state(api(mcp, "PCB_PrimitivePoured.get", pid))["PourFills"]
+        say(f"pour {st.get('Net')} {LAYERS.get(st['Layer'], st['Layer'])}: {len(fills)} filled areas")
 
 
 def pours(cfg, board, rules, mcp, data=None, routes=None, stitch_file=None, regions=None, planned=()):
@@ -2249,10 +2378,7 @@ def pours(cfg, board, rules, mcp, data=None, routes=None, stitch_file=None, regi
             stitch_islands(rules, mcp, data, routes, spec["net"], spec["stitch"], stitch_file)
     fill(cfg, board, mcp, nets, regions=regions)
     pcb.tooling(cfg, board, mcp)
-    for pid in api(mcp, "PCB_PrimitivePoured.getAllPrimitiveId") or []:
-        st = eda.state(api(mcp, "PCB_PrimitivePour.get", pid))
-        fills = eda.state(api(mcp, "PCB_PrimitivePoured.get", pid))["PourFills"]
-        say(f"pour {st.get('Net')} {LAYERS.get(st['Layer'], st['Layer'])}: {len(fills)} filled areas")
+    report_fills(mcp)
 
 
 def write_rules(board, mcp, say=print):
@@ -2295,7 +2421,7 @@ def main(cfg, args):
         for step in steps:
             if len(steps) > 1:
                 step_line(step)
-            if step in ("read", "apply", "verify", "pours", "reload", "drc", "save") and mcp is None and not kc:
+            if step in ("read", "apply", "verify", "pours", "fill", "reload", "drc", "save") and mcp is None and not kc:
                 mcp = eda.connect(cfg, args.verbose)
                 eda.open_project(mcp, cfg)
                 eda.open_pcb(mcp, board.pcb)
@@ -2390,6 +2516,10 @@ def main(cfg, args):
                 data = json.loads(P["board"].read_text()) if P["board"].exists() else None
                 routes = read_ses(P["ses"], rules) if P["ses"].exists() else {}
                 pours(cfg, board, rules, mcp, data, routes, P["stitch"], regions, planned)
+            elif step == "fill" and kc:
+                say("nothing to fill: kicad-cli fills the zones in `route pours`")
+            elif step == "fill":
+                fill_saved(cfg, board, mcp)
             elif step == "reload" and kc:
                 say("nothing to reload: the KiCad PCB is a file")
             elif step == "reload" and drc_rules.mode(board) == "write":

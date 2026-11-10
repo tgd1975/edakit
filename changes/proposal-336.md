@@ -1,0 +1,2 @@
+patch
+- `route pours` and `route all` save the PCB and stop when a pour fill does not come back "rebuilt", naming each pour, its status and easyeda-mcp-pro's version, and whether the cause is the board (the net has no pad, via or track on that layer) or the bridge; the new step `edakit route fill` fills the pours already in the PCB one per call after a restart of EasyEDA and sets the tooling holes again – for the bridge's "no-copper" on fresh pours (M-13, #336).
