@@ -506,7 +506,7 @@ def _main(argv=None):
         code, cfg = scripts.before_step(cfg, args)
         if code is not None:
             return code
-    if not cfg.dsl and (what := dsl_used(args)):
+    if cfg is not None and not cfg.dsl and (what := dsl_used(args)):   # doctor runs without a project
         from . import beta
         print(beta.refusal(what), file=sys.stderr)
         return 1
