@@ -445,9 +445,10 @@ The silkscreen's keys, described in 7.7:
 
 `[copper]`, copper per layer in the Gerber files (GEO.pour warns beyond each limit):
 
-- `max_bare_mm` (5) – the largest copper-free circle inside the pour outline of a layer that `[[pours]]` pours;
+- `max_bare_mm` (5) – the largest copper-free circle inside the pour outline of a layer that `[[pours]]` pours, and
+  of a seen face it does not pour (the side `[looks] visible` names, both sides without `[looks]`);
 - `max_bare_mm2` (20) – the largest copper-free piece there in mm² that a pour could fill, opened with a disc of
-  2 × `clearance_mm` + `min_width_mm` of `[[pours]]`;
+  2 × `clearance_mm` + `min_width_mm` of `[[pours]]` (0.75 mm on a face without pour);
 - `min_cover` (`{TOP = %, BOTTOM = %}`, none) – the least copper share of the board area per layer.
 
 `[net_classes]`: `NAME = {min_a, width_mm}` – class by the largest simulated current, practical minimum width (default

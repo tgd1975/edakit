@@ -4,7 +4,7 @@ file. Each test lists every row that fails or warns, so a check that fires as we
 
 The export is the example's input stage: J1 (JST PH, through-hole), D1 (SS34 against reverse polarity) and C2 (22 µF)
 with the nets VIN, +5V and GND, on a board of 30 x 20 mm with one M3 hole and two tooling holes, every track on TOP,
-no pours (`pours = []`).
+no pours (`pours = []`), so both faces are seen and bare: `[copper]` raises the limits of GEO.pour (#340).
 The whole example has never been routed or exported, so no real export of it exists. This one has the files that
 `fab.collect` leaves, with the fields the checks read: pcb.json, drc.json, bom_easyeda.json, cpl_easyeda.xlsx,
 jlc_parts.json (so PARTS.stock stays offline), and the Gerber and drill files with FlyingProbeTesting.json; drc_rules.json
@@ -52,6 +52,11 @@ ORDER = """
 [order]                          # tooling holes of its own on an Economic board: order.md tells JLCPCB (FILES.order)
 remark = "2 NPTH tooling holes added by customer."
 """
+COPPER = """
+[copper]                         # no pour, no [looks]: both faces are seen and bare (GEO.pour, #340) – allowed here
+max_bare_mm = 20
+max_bare_mm2 = 600
+"""
 RR_D = 0.1016                      # EasyEDA's RoundRect on the mask layers: corners of this diameter (ordering step 0b)
 ROUNDRECT_MACRO = ("%AMRoundRect*1,1,$1,$2,$3*1,1,$1,$4,$5*1,1,$1,0-$2,0-$3*1,1,$1,0-$4,0-$5*20,1,$1,$2,$3,$4,$5,0*"
                    "20,1,$1,$4,$5,0-$2,0-$3,0*20,1,$1,0-$2,0-$3,0-$4,0-$5,0*20,1,$1,0-$4,0-$5,$2,$3,0*"
@@ -88,7 +93,7 @@ what = "input"
 
 [routing]
 hand_solder_keep_mm = 0.5        # GEO.spacing: J1 is soldered by hand (bom: false), its joints are on BOTTOM
-""" + ORDER
+""" + COPPER + ORDER
 
 
 def turn(p, rot):
@@ -467,8 +472,14 @@ def paste(ex, project):
 def bare_bottom(ex, project):
     """GND poured on BOTTOM by the board file, but the BOTTOM Gerber holds only J1's two pads: a pour never filled."""
     board_file(project, "pours = []\n", "")
+    board_file(project, COPPER, "")                         # the default limits
     f = project.root / "hardware" / "boards" / "main.toml"
     f.write_text(f.read_text() + '\n[[pours]]\nnet = "GND"\nlayers = ["BOTTOM"]\n')
+
+
+def unpoured_faces(ex, project):
+    """#340: nothing poured and no [looks], so both faces are seen – at the default limits both are too bare."""
+    board_file(project, COPPER, "")
 
 
 def loose_copper(ex, project):
@@ -793,9 +804,19 @@ FAULTS = [
     ("two SMD parts with their pads closer than the paste gap", paste,
      [("GEO.spacing", "fail", "C2.2 (GND) – D1.2 (VIN): 0.300 mm apart on TOP, below the paste gap 0.400 mm")]),
     # GEO.pour
-    ("a poured layer left bare", bare_bottom,
+    ("a poured layer left bare", bare_bottom,                 # and TOP, seen, left without pour (#340)
      [("GEO.pour", "warn", "BOTTOM: 1 % copper, largest copper-free circle Ø 19.0 mm at (13.2, 10.1) mm"),
-      ("GEO.pour", "warn", "BOTTOM: 491 mm² in x 0.5–29.5, y 0.5–19.5 mm (other side 7 % copper)")]),
+      ("GEO.pour", "warn", "BOTTOM: 491 mm² in x 0.5–29.5, y 0.5–19.5 mm (other side 7 % copper)"),
+      ("GEO.pour", "warn", "TOP: 6 % copper, largest copper-free circle Ø 8.2 mm at (5.0, 4.5) mm – the board file "
+       "pours nothing on this seen face"),
+      ("GEO.pour", "warn", "TOP: 458 mm² in x 0.5–29.5, y 0.5–19.5 mm (other side 0 % copper) – the board file pours "
+       "nothing on this seen face")]),
+    ("a seen face without pour", unpoured_faces,             # #340
+     [("GEO.pour", "warn", "TOP: 6 % copper, largest copper-free circle Ø 8.2 mm at (5.0, 4.5) mm – the board file "
+       "pours nothing on this seen face"),
+      ("GEO.pour", "warn", "BOTTOM: 1 % copper, largest copper-free circle Ø 19.0 mm at (13.2, 10.1) mm – the board "
+       "file pours nothing"),
+      ("GEO.pour", "warn", "TOP: "), ("GEO.pour", "warn", "BOTTOM: 491 mm²")]),
     ("copper that touches no pad, via or hole", loose_copper,
      [("GEO.pour", "warn", "TOP: 1 piece without pad, via or hole: 16.2 mm² around (10.5, 4.5) mm")]),
     # GEO.ring
@@ -1006,16 +1027,36 @@ def test_no_paste_gap_on_a_side_that_is_not_assembled(project):
 
 
 def test_copper_per_side_of_the_clean_export(project):
-    """GEO.pour on the clean export: nothing poured (pours = []), so share and bare circle are information; the 3 pieces of
-    TOP (the three nets' tracks with their pads) and J1's two pads on BOTTOM all touch a pad."""
+    """GEO.pour on the clean export: nothing poured (pours = []) and no [looks], so both faces are seen and measured
+    (#340), at the export's raised [copper] limits; the 3 pieces of TOP (the three nets' tracks with their pads) and J1's
+    two pads on BOTTOM all touch a pad."""
     rows = {r["check"]: (r["result"], r["actual"]) for r in run(project) if r["id"] == "GEO.pour"}
     assert rows == {
-        "TOP: copper share and largest copper-free circle (no pour)":
-            ("info", "TOP: 6 % copper, largest copper-free circle Ø 8.2 mm at (5.0, 4.5) mm"),
+        "TOP: no copper-free circle above 20 mm inside the pour outline (seen, no pour)":
+            ("pass", "TOP: 6 % copper, largest copper-free circle Ø 8.2 mm at (5.0, 4.5) mm"),
+        "TOP: no copper-free piece above 600 mm² inside the pour outline (gaps from 0.75 mm)":
+            ("pass", "TOP: largest copper-free piece 458.3 mm²"),
         "TOP: every copper piece touches a pad, via or plated hole": ("pass", "TOP: 3 pieces"),
-        "BOTTOM: copper share and largest copper-free circle (no pour)":
-            ("info", "BOTTOM: 1 % copper, largest copper-free circle Ø 19.0 mm at (13.2, 10.1) mm"),
+        "BOTTOM: no copper-free circle above 20 mm inside the pour outline (seen, no pour)":
+            ("pass", "BOTTOM: 1 % copper, largest copper-free circle Ø 19.0 mm at (13.2, 10.1) mm"),
+        "BOTTOM: no copper-free piece above 600 mm² inside the pour outline (gaps from 0.75 mm)":
+            ("pass", "BOTTOM: largest copper-free piece 490.8 mm²"),
         "BOTTOM: every copper piece touches a pad, via or plated hole": ("pass", "BOTTOM: 2 pieces")}
+
+
+def test_only_the_visible_face_is_held_without_pour(project):
+    """#340: with [looks] visible = "top" only TOP is a seen face – too bare at the default limits without a pour –, the
+    unpoured BOTTOM is information as before."""
+    def top_seen(ex, p):
+        unpoured_faces(ex, p)
+        f = p.root / "hardware" / "boards" / "main.toml"
+        f.write_text(f.read_text() + '\n[looks]\nvisible = "top"\n')
+    rows = [r for r in run(project, top_seen) if r["id"] == "GEO.pour"]
+    assert sorted((r["check"].split(":")[0], r["result"]) for r in rows if r["result"] != "pass") == \
+        [("BOTTOM", "info"), ("TOP", "warn"), ("TOP", "warn")]
+    info, = [r for r in rows if r["result"] == "info"]
+    assert info["check"] == "BOTTOM: copper share and largest copper-free circle (no pour, not seen)"
+    assert all("pours nothing on this seen face" in r["actual"] for r in rows if r["result"] == "warn")
 
 
 def test_copper_per_side_settings(project):
