@@ -425,38 +425,35 @@ def check_pins(mcp, graph_comps, sch, graph_nets, rep):
 
 
 def close_schematic_tabs(mcp, sch_uuid):
-    """Close every saved schematic tab – this schematic's and every other one's; the PCB's stay. Returns the titles left
-    open because they hold unsaved changes: (this schematic's, other schematics')."""
+    """Close this schematic's saved tabs, so that its pages open again from the save; other schematics and the PCB
+    stay. Returns the titles of its tabs left open because they hold unsaved changes."""
     try:
         tree = api(mcp, "DMT_EditorControl.getSplitScreenTree")
     except MCPError as e:
         print(f"  ? tabs not readable ({e}) – the schematic is read as it is open")
-        return [], []
-    own, others = [], []
+        return []
+    unsaved = []
     for tab in list(iter_tabs(tree)):
         data = tab.get("data") or {}
-        if not data.get("sch"):
+        if not data.get("sch") or data.get("data-schematic-uuid") != sch_uuid:
             continue
         if tab.get("isUnSaved"):
-            (own if data.get("data-schematic-uuid") == sch_uuid else others).append(tab["title"])
+            unsaved.append(tab["title"])
             continue
         try:
             api(mcp, "DMT_EditorControl.closeDocument", tab["tabId"])
         except MCPError as e:
             print(f"  ? tab {tab['title']} not closed ({e}) – read as it is open")
-    return own, others
+    return unsaved
 
 
 def read_saved(mcp, name):
-    """The schematic `name` as saved, with no other schematic open: every saved schematic tab closed first, every page
-    of this one opened again and read – (parts, nets, titles of its tabs with unsaved changes, of other schematics'
-    left open). While another schematic of the project is open – the board's schematic, a copy of the template, which
-    stage F focuses last –, the bridge lists a pin on a second net with no primitive there (M-11, #117: pytree's U4.11
-    on V_LED with layout_tree open, matching with it closed – a net flag of layout_tree sits on the end of its wire);
-    a tab left open would make the result depend on what ran before in the session. A tab with unsaved changes stays
-    open – closing it would throw them away –; this schematic's is read as drawn."""
+    """The schematic `name` as saved: its saved tabs closed first, every page opened again and read – (parts, nets,
+    titles of its tabs with unsaved changes). Other open schematics do not matter since easyeda-mcp-pro 1.9.0 reads
+    the nets of the focused page only (M-11, #117: before, pytree's U4.11 was on V_LED with layout_tree open). A tab
+    with unsaved changes stays open – closing it would throw them away –; it is read as drawn."""
     sch_uuid, pages = eda.find_pages(mcp, name)
-    unsaved, others = close_schematic_tabs(mcp, sch_uuid)
+    unsaved = close_schematic_tabs(mcp, sch_uuid)
     sch_comps, sch_nets = [], {}
     for page in pages:    # both tools answer for the focused page: counted only while it stayed active
         parts, nets = eda.read_on_page(mcp, sch_uuid, page, lambda: (
@@ -469,20 +466,19 @@ def read_saved(mcp, name):
             sch_nets[net["net_name"]]["nodes"] += net.get("nodes", [])
     sch_comps = [c for c in sch_comps if c.get("component_kind", "part") == "part" and c.get("reference")]
     print(f"schematic '{name}': {len(pages)} page(s), {len(sch_comps)} parts, {len(sch_nets)} nets"
-          + (" – as drawn, unsaved changes" if unsaved else ", as saved")
-          + (f" – open beside it, unsaved: {', '.join(others)}" if others else ""))
-    return sch_comps, list(sch_nets.values()), unsaved, others
+          + (" – as drawn, unsaved changes" if unsaved else ", as saved"))
+    return sch_comps, list(sch_nets.values()), unsaved
 
 
 def check_reopened(mcp, name, comps, nets):
-    """After `create --save`: the saved schematic opened again against the graph – the drift of M-11 shows where it
-    starts. Returns the number of differences."""
+    """After `create --save`: the saved schematic opened again against the graph – a drift shows where it starts.
+    Returns the number of differences."""
     rep = Findings()
-    sch_comps, sch_nets, _, _ = read_saved(mcp, name)
+    sch_comps, sch_nets, _ = read_saved(mcp, name)
     compare(comps, nets, sch_comps, sch_nets, rep)
     if rep.count():
         print(f"  ! '{name}' saved, but opened again from the save it differs from the graph ({rep.count()}) – "
-              "the nets of the saved schematic (M-11, handbook 6.2):")
+              "the nets of the saved schematic (handbook 6.2):")
         rep.print()
     else:
         print(f"  '{name}' opened again from the save: matches the graph")
@@ -490,8 +486,8 @@ def check_reopened(mcp, name, comps, nets):
 
 
 def check(cfg, args):
-    """Read only (it closes the saved schematic tabs and activates its pages, though): the schematic as saved, with
-    no other schematic open (read_saved).
+    """Read only (it closes the schematic's saved tabs and activates its pages, though): the schematic as saved
+    (read_saved).
     Exit 0 = same as the graph, 2 = differences, 1 = error."""
     if is_kicad(cfg):                 # the gate's stage S calls this directly: KiCad's netlist and ERC (handbook 16)
         from .toolchain.kicad import schematic as kicad_schematic
@@ -507,13 +503,10 @@ def check(cfg, args):
             return 1
         eda.open_project(mcp, cfg)
         rep = Findings()
-        sch_comps, sch_nets, unsaved, others = read_saved(mcp, name)
+        sch_comps, sch_nets, unsaved = read_saved(mcp, name)
         if unsaved:
             rep.add("saved", f"{name}: unsaved changes in EasyEDA – read as drawn in this session, not as saved; save "
                     "it (`schematic create --save`) or close its tab without saving, and check again")
-        for title in others:
-            rep.add("saved", f"{title}: another schematic with unsaved changes stays open – the bridge can list its "
-                    f"nets in {name}'s (M-11); save it or close its tab without saving, and check again")
         sch = compare(graph_comps, graph_nets, sch_comps, sch_nets, rep)
         if not args.no_pins:
             check_pins(mcp, graph_comps, sch, graph_nets, rep)

@@ -1,0 +1,63 @@
+{
+  "name": "edakit-circuit",
+  "displayName": "edakit circuit language",
+  "description": "The circuit language of edakit: colours, the language server's errors and findings, go to definition, hover, completion, formatting, and the graph commands.",
+  "version": "0.1.0",
+  "publisher": "edakit",
+  "license": "MIT",
+  "private": true,
+  "engines": {
+    "vscode": "^1.90.0"
+  },
+  "categories": ["Programming Languages", "Formatters", "Linters"],
+  "activationEvents": ["onLanguage:circuit"],
+  "main": "./out/extension.js",
+  "contributes": {
+    "languages": [
+      {
+        "id": "circuit",
+        "aliases": ["edakit circuit", "circuit"],
+        "extensions": [".circuit"],
+        "configuration": "./language-configuration.json"
+      }
+    ],
+    "grammars": [
+      {
+        "language": "circuit",
+        "scopeName": "source.circuit",
+        "path": "./syntaxes/circuit.tmLanguage.json"
+      }
+    ],
+    "commands": [
+      {"command": "edakit.graphJson", "title": "edakit: write the resolved graph (graph json --write)"},
+      {"command": "edakit.graphCheck", "title": "edakit: check the resolved graph (graph json --check)"},
+      {"command": "edakit.graphShow", "title": "edakit: show the part or net under the cursor (graph show)"},
+      {"command": "edakit.fmt", "title": "edakit: format the source (graph fmt)"}
+    ],
+    "taskDefinitions": [
+      {"type": "edakit", "required": ["action"], "properties": {"action": {"type": "string", "enum": ["json", "check"]}}}
+    ],
+    "configuration": {
+      "title": "edakit",
+      "properties": {
+        "edakit.command": {
+          "type": "string",
+          "default": "edakit",
+          "description": "The edakit executable: on the PATH, or a path such as /path/to/edakit/bin/edakit."
+        }
+      }
+    }
+  },
+  "scripts": {
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./"
+  },
+  "dependencies": {
+    "vscode-languageclient": "9.0.1"
+  },
+  "devDependencies": {
+    "@types/node": "20.14.10",
+    "@types/vscode": "1.90.0",
+    "typescript": "5.5.4"
+  }
+}

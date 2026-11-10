@@ -8,6 +8,40 @@ written once, by `.github/merge.py`, from the fragments in [changes/](changes/RE
 update edakit@edakit`, then `/reload-plugins` or a new session; `edakit version` names the version that runs and what an
 update brings.
 
+## 1.2.2 – 2026-11-10
+
+- GEO.pour measures the copper-free circle and pieces on every seen face, not only on a poured one: a face that `[looks] visible` names – both faces without `[looks]` – and that the board file does not pour warns above `[copper] max_bare_mm` and `max_bare_mm2`, saying that the board file pours nothing there (#340).
+
+## 1.2.1 – 2026-11-10
+
+- The plan of a hand-wired board on a perfboard (handbook 7.9): a board with `wired = true` may have a board file with `[perfboard]`, `[place]` by hole or by role, `[[holes]]` in mm and `[[wire]]` – bridges on the bottom, insulated wires on top. `edakit perfboard` builds the nets the plan makes and holds them to the graph (PERF.net), checks places, grid, bodies, mounting holes, wires and current (PERF.place, .grid, .body, .mount, .wire, .current) and the hand-over (SYNC.plan), and draws the top view, the bottom view in the top's orientation and the cut, build and test lists. Two kinds as data, `edakit/perfboards/pad-per-hole.toml` and `3-hole-strips.toml`; a parts entry's `joined` names the pins a part joins inside. The plan is stage L of the gate, in the layout hash, its drawings and lists the run's manufacturing files under M-5; a project whose boards are all bought or hand-wired, with a plan, runs S, L and F without `--eda`. SYNC.footprint no longer notes the parts of a bought or hand-wired board as not dumped – there is no copy in EasyEDA to compare.
+
+## 1.2.0 – 2026-11-09
+
+- **When updating:** easyeda-mcp-pro is pinned to 1.11.0 (was 1.8.0), and server and bridge extension must have the
+  same version. Copy the extension out of the pinned server (`bash <plugin>/edakit/easyeda/mcp-server.sh extension
+  --copy .`), in EasyEDA uninstall the old "MCP Pro Bridge", import the new one, allow "External Interaction", restart
+  EasyEDA, then end every running `easyeda-mcp-pro` server (`pgrep -af easyeda-mcp-pro`; Claude Code's restarts with
+  `/mcp`). `edakit doctor` then shows "bridge extension 1.11.0 = server 1.11.0" (handbook 2.4, 2.5).
+- `schematic check` and stage S close only their own schematic's tabs before they read; the other schematics stay
+  open. easyeda-mcp-pro 1.9.0 reads the nets of the focused page only (M-11, our #865), so a net flag of another open
+  schematic no longer puts a pin on a second net (#117). Another schematic with unsaved changes is no longer a
+  finding `saved`.
+- edakit sends the open project's UUID as `projectId` to easyeda-mcp-pro's tools instead of `"current"`, which its
+  schematic and PCB reads refuse since 1.9.0 (`current-project-uuid-mismatch`).
+
+## 1.1.17 – 2026-11-04
+
+- The explorative DSL, a beta: a project that sets `[beta] dsl = true` in edakit.toml may write its graph as
+  `hardware/graph.circuit` in the circuit language – definitions, usages, loops, parameters, aliases, includes,
+  derivation rules and variants –, its requirements as `hardware/requirements.circuit`, and use `edakit graph
+  fmt|derive|sysml|kerml`, `graph convert --to circuit`, `graph json --map`, `block add --set/--part` and `edakit lsp`
+  with the VS Code extension of `editors/vscode/`. Without the switch nothing changes: such a file, a list of parts
+  folders and those commands are refused with one line that names the switch, every other command line and its
+  errors are as before. The site has a tab "Explorative DSL" (docs/dsl/); the codes of the DSL – DEF.derive,
+  SYNC.graph – run only with the switch and are not in the catalog, `edakit explain` names them.
+- `edakit graph fmt --check FILE …` takes its files after the option on Python 3.11 and 3.12 as well.
+
 ## 1.1.16 – 2026-11-03
 
 - The parts library: C5274290 (LESD5D5.0CT1G) is a bidirectional TVS (`values.tvs = "bidirectional"`, its datasheet's symbol and I–V curve) – LIM.v holds it to VRWM in both directions, PATH.reverse lets a reversed source past it.

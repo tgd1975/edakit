@@ -30,7 +30,7 @@ from .design import natural_key
 
 HERE = Path(__file__).resolve().parent
 MCP_SERVER = HERE / "easyeda" / "mcp-server.sh"
-PROJECT = "current"  # projectId for the MCP tools: the project that is open in EasyEDA
+PROJECT = "current"  # projectId for the MCP tools: the project that is open in EasyEDA – MCPClient sends its UUID
 FOCUS_LOST = "获取器件关联的所有引脚失败"  # EasyEDA: "could not read the pins" – typical when another tab is active
 # Sheet frame of the system library (LIB_Device.search("Drawing-Symbol")); size and fields are set by label_sheet
 FRAME_DEVICE = {"libraryUuid": "0819f05c4eef4c71ace90d822a990e87", "uuid": "754952feec9e48d6afd574513e1ca00b"}
@@ -47,6 +47,7 @@ class MCPClient:
         self.verbose = verbose
         self.lock_mode = lock_mode
         self.next_id = 0
+        self.project_uuid = None   # set by open_project; else read once when a tool asks for PROJECT
         self.proc = subprocess.Popen(command, stdin=subprocess.PIPE, stdout=subprocess.PIPE, text=True,
                                      encoding="utf-8", bufsize=1, cwd=cwd, env={**os.environ, **(env or {})})
         self.lines = queue.Queue()
@@ -90,9 +91,22 @@ class MCPClient:
                 raise MCPError(f"{method}: {msg['error'].get('message', msg['error'])}")
             return msg.get("result", {})
 
+    def project(self, args):
+        """args with projectId PROJECT replaced by the open project's UUID: since easyeda-mcp-pro 1.9.0 the schematic and
+        PCB reads compare it with the open project and refuse "current" (current-project-uuid-mismatch, #884)."""
+        if args.get("projectId") != PROJECT:
+            return args
+        if not self.project_uuid:
+            info = self.call("easyeda_api_call", path="DMT_Project.getCurrentProjectInfo", args=[], confirmWrite=True)
+            self.project_uuid = ((info.get("result") if isinstance(info, dict) else None) or {}).get("uuid")
+            if not self.project_uuid:
+                raise MCPError("no project open in EasyEDA – the tools need its UUID as projectId")
+        return {**args, "projectId": self.project_uuid}
+
     def call(self, tool, timeout=130, **args):
         if not lock.read_only(tool, args):  # library lookups need no claim (lock.READ_ONLY_TOOLS, READ_ONLY_API)
             lock.claim_for_script(renew=True, mode=self.lock_mode)
+        args = self.project(args)
         result = self._request("tools/call", {"name": tool, "arguments": args}, timeout)
         if "structuredContent" in result:
             data = result["structuredContent"]
@@ -109,7 +123,7 @@ class MCPClient:
     def call_image(self, tool, timeout=130, **args):
         """Like call, but returns the image of the answer (PNG bytes) – canvas captures send an image block."""
         lock.claim_for_script(renew=True, mode=self.lock_mode)
-        result = self._request("tools/call", {"name": tool, "arguments": args}, timeout)
+        result = self._request("tools/call", {"name": tool, "arguments": self.project(args)}, timeout)
         for c in result.get("content", []):
             if c.get("type") == "image":
                 return base64.b64decode(c["data"])
@@ -226,6 +240,7 @@ def open_project(mcp, cfg, create=False):
     info = api(mcp, "DMT_Project.getCurrentProjectInfo")
     if info and info.get("friendlyName") == cfg.project:
         memo.write_text(json.dumps({"name": cfg.project, "uuid": info["uuid"]}))
+        mcp.project_uuid = info["uuid"]
         return info["uuid"]
     uuid = None
     if memo.exists():
@@ -255,6 +270,7 @@ def open_project(mcp, cfg, create=False):
         info = api(mcp, "DMT_Project.getCurrentProjectInfo")
         if info and info.get("friendlyName") == cfg.project:
             memo.write_text(json.dumps({"name": cfg.project, "uuid": uuid}))
+            mcp.project_uuid = uuid
             wait_for_documents(mcp)
             return uuid
         time.sleep(2)

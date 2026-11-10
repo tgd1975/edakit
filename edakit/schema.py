@@ -299,7 +299,7 @@ def lint(parts, keys=None):
 def main_lint(cfg, args):
     from .design import load_parts
     from .findings import Report, format_findings
-    parts = load_parts(cfg.parts)
+    parts = load_parts(cfg.parts_dirs or cfg.parts)
     keys = [args.source, *([args.new] if args.new else [])] if args.source else None
     unknown = [k for k in keys or [] if k not in parts]
     rep = Report(lint(parts, keys)).resolve()

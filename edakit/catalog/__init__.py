@@ -46,6 +46,27 @@ def retired():
     return data().get("retired") or {}
 
 
+BETAS = ("dsl",)   # [beta] of edakit.toml: what a code or an engine may belong to before it is part of edakit
+
+
+def beta(name):
+    """The beta a code belongs to – 'dsl', the explorative DSL's – or None: its own `beta` or its engine's. A beta's
+    codes are left out of the catalog, the handbook's generated sections and `edakit rules`; `edakit explain` and the
+    beta's own pages show them."""
+    e = codes().get(name) or {}
+    return e.get("beta") or (engines().get(engine_of(name) or "") or {}).get("beta")
+
+
+def released_codes():
+    """{code: entry} outside every beta, in the catalog's order."""
+    return {n: e for n, e in codes().items() if not beta(n)}
+
+
+def released_engines():
+    """{engine: entry} outside every beta."""
+    return {n: e for n, e in engines().items() if not e.get("beta")}
+
+
 def code(name):
     """The entry of a code, or None."""
     return codes().get(name)
@@ -92,6 +113,11 @@ def table_names():
     return sorted(p.stem for p in (HERE / "tables").glob("*.toml"))
 
 
+def released_tables():
+    """The tables outside every beta – the catalog's page of tables shows these."""
+    return [n for n in table_names() if not (table(n).get("table") or {}).get("beta")]
+
+
 def explain(name, indent="    "):
     """Lines that explain a code: rule, why, fix, sources, severity; for an old ID the codes that replace it."""
     if OLD_ID.fullmatch(name):
@@ -124,6 +150,8 @@ def lint():
         for sev in [e.get("severity"), *(e.get("grades") or {}).values()]:
             if sev not in SEVERITIES:
                 out.append(f"{name}: severity {sev!r} – one of {', '.join(SEVERITIES)}")
+        if e.get("beta") not in (None, *BETAS):
+            out.append(f"{name}: beta {e['beta']!r} – one of {', '.join(BETAS)}")
         for old in e.get("replaces", []):
             if not OLD_ID.fullmatch(old):
                 out.append(f"{name}: replaces {old!r} – no check ID of before the restructuring")
@@ -162,14 +190,15 @@ def main_rules(args):
     """edakit rules: the engines and their codes with titles and severities; with names, as edakit explain."""
     if args.ids:
         return main_explain(args)
-    for eng, e in engines().items():
-        names = [n for n in codes() if engine_of(n) == eng]
+    shown = released_codes()                         # a beta's codes only by name, with edakit explain
+    for eng, e in released_engines().items():
+        names = [n for n in shown if engine_of(n) == eng]
         print(f"{eng} – {e['decides']}")
         for n in names:
-            c = codes()[n]
+            c = shown[n]
             grades = ", ".join(f"{g} {s}" for g, s in (c.get("grades") or {}).items())
             print(f"  {n:<20} {c['severity']:<8} {c['title']}" + (f"  ({grades})" if grades else ""))
-    print(f"\n{len(codes())} codes. Rule, why, fix and sources: edakit explain <code>. Severities are the catalog's; "
+    print(f"\n{len(shown)} codes. Rule, why, fix and sources: edakit explain <code>. Severities are the catalog's; "
           "a project's domains may set others.")
     return 0
 

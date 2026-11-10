@@ -567,16 +567,16 @@ def test_the_drc_reloads_the_pcb_only_on_connection_errors(monkeypatch, first, r
     assert len(done) == reloads and found == ([] if reloads else first)
 
 
-# --- stage S reads the schematic with no other schematic open (#117, M-11) ---------------------------------------------
+# --- stage S reads the schematic as saved, other schematics left open (#117, M-11) -------------------------------------
 
 class FakeSaved:
-    """Two schematics of one project, both open in tabs: the template and the board's schematic, its copy. While the
-    board's schematic is open, the bridge lists one pin of the template on a second net with no primitive there (M-11,
-    pytree's U4.11 on V_LED with layout_tree open); with that tab closed, the template answers as drawn. Records the
-    calls in order."""
+    """Two schematics of one project, both open in tabs: the template and the board's schematic, its copy. Until
+    easyeda-mcp-pro 1.9.0 the bridge listed one pin of the template on a second net while the board's schematic was
+    open (M-11, pytree's U4.11 on V_LED with layout_tree open); `leak` keeps that bridge, to show the check no longer
+    closes the other schematic against it. Records the calls in order."""
 
-    def __init__(self, comps, nets, extra, unsaved=False, other_unsaved=False):
-        self.comps, self.drawn, self.extra = comps, nets, extra
+    def __init__(self, comps, nets, extra, unsaved=False, other_unsaved=False, leak=False):
+        self.comps, self.drawn, self.extra, self.leak = comps, nets, extra, leak
         self.tabs = [{"tabId": "t-tpl1", "title": "generated_main", "isUnSaved": unsaved,
                       "data": {"sch": True, "data-schematic-uuid": "s-template"}},
                      {"tabId": "t-lay1", "title": "layout_main", "isUnSaved": other_unsaved,
@@ -585,7 +585,7 @@ class FakeSaved:
         self.calls = []
 
     def leaking(self):
-        return any(tab["tabId"] == "t-lay1" for tab in self.tabs)
+        return self.leak and any(tab["tabId"] == "t-lay1" for tab in self.tabs)
 
     def call(self, tool, timeout=130, **args):
         if tool == "easyeda_schematic_sheet_info":
@@ -618,7 +618,7 @@ class FakeSaved:
         raise AssertionError(path)
 
 
-def saved_template(cfg, unsaved=False, other_unsaved=False):
+def saved_template(cfg, unsaved=False, other_unsaved=False, leak=False):
     from edakit.design import Design
     design = Design.from_config(cfg)
     board = cfg.board(None)
@@ -626,7 +626,7 @@ def saved_template(cfg, unsaved=False, other_unsaved=False):
     first, second = sorted(nets)[:2]
     pin = nets[first][0]
     sch = [{"reference": d, "lcsc": c.get("lcsc"), "primitiveId": f"p-{d}"} for d, c in comps.items()]
-    return (FakeSaved(sch, nets, (second, pin), unsaved, other_unsaved),
+    return (FakeSaved(sch, nets, (second, pin), unsaved, other_unsaved, leak),
             f"{first}: {pin} is on {sorted([first, second])}")
 
 
@@ -643,24 +643,30 @@ def run_check(cfg, monkeypatch, mcp, tmp_path):
     return schematic.check(cfg, args), json.loads(out.read_text())
 
 
-def test_stage_s_reads_the_template_with_no_other_schematic_open(cfg, monkeypatch, tmp_path):
-    """#117, M-11: with the board's schematic open – stage F focuses it last – the bridge lists a pin of the template on a
-    second net; with it closed the template matches. The check closes every other saved schematic tab before it reads,
-    so the result does not depend on what ran before in the session. The PCB's tab stays."""
+def test_stage_s_leaves_the_other_schematics_open(cfg, monkeypatch, tmp_path):
+    """#117, M-11 fixed in easyeda-mcp-pro 1.9.0: the check closes only the template's saved tabs, to read it from
+    the save; the board's schematic and the PCB stay open, and the template matches."""
     mcp, _ = saved_template(cfg)
     code, found = run_check(cfg, monkeypatch, mcp, tmp_path)
     assert code == 0 and found == {}
-    assert [tab["tabId"] for tab in mcp.tabs] == ["t-tpl1", "t-pcb"]
-    assert mcp.calls.index("DMT_EditorControl.closeDocument") < mcp.calls.index("easyeda_schematic_nets")
+    assert [tab["tabId"] for tab in mcp.tabs] == ["t-tpl1", "t-lay1", "t-pcb"]
+    assert mcp.calls.count("DMT_EditorControl.closeDocument") == 1
 
 
-def test_another_schematic_with_unsaved_changes_stays_open_and_is_named(cfg, monkeypatch, tmp_path):
-    """Another schematic with unsaved changes cannot be closed without losing them: it stays open, and the check names
-    that its nets can show in this one's."""
-    mcp, finding = saved_template(cfg, other_unsaved=True)
+def test_a_bridge_before_1_9_shows_the_leak_again(cfg, monkeypatch, tmp_path):
+    """With a bridge older than 1.9.0 the pin of the template on a second net comes back – the check reports it,
+    it does not hide it by closing other schematics."""
+    mcp, finding = saved_template(cfg, leak=True)
     code, found = run_check(cfg, monkeypatch, mcp, tmp_path)
     assert code == 2 and found["nets"] == [finding]
-    assert found["saved"][0].startswith("layout_main: another schematic with unsaved changes stays open")
+
+
+def test_another_schematic_with_unsaved_changes_is_no_finding(cfg, monkeypatch, tmp_path):
+    """Another schematic with unsaved changes stays open, as every other one does, and is no finding: its nets do not
+    show in this one's."""
+    mcp, _ = saved_template(cfg, other_unsaved=True)
+    code, found = run_check(cfg, monkeypatch, mcp, tmp_path)
+    assert code == 0 and found == {}
 
 
 def test_a_template_with_unsaved_changes_is_not_closed_and_named(cfg, monkeypatch, tmp_path):
@@ -668,13 +674,13 @@ def test_a_template_with_unsaved_changes_is_not_closed_and_named(cfg, monkeypatc
     names that it did not read the saved state."""
     mcp, _ = saved_template(cfg, unsaved=True)
     code, found = run_check(cfg, monkeypatch, mcp, tmp_path)
-    assert [tab["tabId"] for tab in mcp.tabs] == ["t-tpl1", "t-pcb"]
+    assert [tab["tabId"] for tab in mcp.tabs] == ["t-tpl1", "t-lay1", "t-pcb"]
     assert code == 2 and list(found) == ["saved"]
     assert found["saved"][0].startswith("generated_main: unsaved changes in EasyEDA – read as drawn in this session")
 
 
 def test_create_save_reads_the_template_again_from_its_save(cfg, capsys):
-    """`schematic create --save` reads the saved template again, with no other schematic open, against the graph."""
+    """`schematic create --save` reads the saved template again against the graph; the board's schematic stays."""
     from edakit import schematic
     from edakit.design import Design
     mcp, _ = saved_template(cfg)
@@ -683,7 +689,7 @@ def test_create_save_reads_the_template_again_from_its_save(cfg, capsys):
     comps, nets = design.board_comps(board.name), design.board_nets(board.name)
     assert schematic.check_reopened(mcp, "generated_main", comps, nets) == 0
     assert "opened again from the save: matches the graph" in capsys.readouterr().out
-    assert "t-lay1" not in [tab["tabId"] for tab in mcp.tabs]
+    assert "t-lay1" in [tab["tabId"] for tab in mcp.tabs]
 
 
 # --- a project script that focuses the PCB before opening it (#339) ----------------------------------------------------
@@ -700,3 +706,29 @@ def test_focusing_the_pcb_before_open_pcb_says_to_open_it_first(monkeypatch, cal
     with pytest.raises(SystemExit) as e:
         call(None)
     assert "open_pcb(mcp, board.pcb)" in str(e.value) and asked == []
+
+
+# --- projectId: the open project's UUID, not "current" (easyeda-mcp-pro 1.9.0, #884) -------------------------------
+
+def test_the_client_sends_the_open_projects_uuid_as_project_id(monkeypatch):
+    """Since easyeda-mcp-pro 1.9.0 the schematic and PCB reads refuse projectId "current"
+    (current-project-uuid-mismatch): the client reads the open project's UUID once and sends it; open_project sets it."""
+    sent = []
+
+    def request(self, method, params, timeout):
+        sent.append(params["arguments"])
+        if params["arguments"].get("path") == "DMT_Project.getCurrentProjectInfo":
+            return {"structuredContent": {"ok": True, "result": {"uuid": "u-open"}}}
+        return {"structuredContent": {"ok": True}}
+
+    monkeypatch.setattr(eda.MCPClient, "_request", request)
+    monkeypatch.setattr(eda.lock, "claim_for_script", lambda **k: None)
+    mcp = object.__new__(eda.MCPClient)
+    mcp.project_uuid, mcp.lock_mode = None, "off"
+    mcp.call("easyeda_schematic_components", projectId=eda.PROJECT)
+    mcp.call("easyeda_schematic_nets", projectId=eda.PROJECT, scope="focused")
+    mcp.call("easyeda_schematic_search_device", query="C5613")
+    assert [a.get("projectId") for a in sent] == [None, "u-open", "u-open", None]
+    mcp.project_uuid = "u-other"                      # open_project opened another project
+    mcp.call("easyeda_pcb_components", projectId=eda.PROJECT)
+    assert sent[-1]["projectId"] == "u-other"

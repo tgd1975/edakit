@@ -1,0 +1,121 @@
+{
+ "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+ "name": "edakit circuit",
+ "scopeName": "source.circuit",
+ "fileTypes": [
+  "circuit"
+ ],
+ "patterns": [
+  {
+   "include": "#comment"
+  },
+  {
+   "include": "#string"
+  },
+  {
+   "include": "#statement"
+  },
+  {
+   "include": "#locked"
+  },
+  {
+   "include": "#brace"
+  },
+  {
+   "include": "#code"
+  },
+  {
+   "include": "#pin"
+  },
+  {
+   "include": "#quantity"
+  },
+  {
+   "include": "#keyword"
+  },
+  {
+   "include": "#attribute"
+  },
+  {
+   "include": "#designator"
+  },
+  {
+   "include": "#group"
+  }
+ ],
+ "repository": {
+  "comment": {
+   "name": "comment.line.number-sign.circuit",
+   "match": "#.*$"
+  },
+  "string": {
+   "name": "string.quoted.double.circuit",
+   "begin": "\"",
+   "end": "\"",
+   "patterns": [
+    {
+     "name": "constant.character.escape.circuit",
+     "match": "\\\\[\"\\\\]"
+    },
+    {
+     "include": "#brace"
+    }
+   ]
+  },
+  "statement": {
+   "match": "^\\s*(description|requirement|convention|grounds|include|purpose|variant|accept|derive|ground|layout|cable|graph|param|lock|need|part|def|for|net|set|use)(?=\\s|$)",
+   "captures": {
+    "1": {
+     "name": "keyword.control.circuit"
+    }
+   }
+  },
+  "keyword": {
+   "name": "keyword.other.circuit",
+   "match": "(?<![^\\s(,])(satisfies|decision|optional|require|signoff|subject|without|covers|no\\-bom|reason|script|should|source|status|verify|within|about|alias|label|notes|parts|ports|title|from|must|pins|port|rows|bom|may|who|in|nc|of)(?=[\\s),=]|$)"
+  },
+  "attribute": {
+   "name": "variable.parameter.circuit",
+   "match": "(?<![^\\s(,])(easyeda_device|r_ohm_per_wire|load_min_ohm|c_pf_per_m|instrument|l_nh_per_m|off_board|clock_hz|function|isolated|length_m|supplier|i_max_a|config|fn_bus|matrix|pwm_hz|signal|states|board|spare|strip|value|at_m|lcsc|name|type|awg|bus|mm2|ac|fn|to|v)(?=[\\s),=]|$)"
+  },
+  "locked": {
+   "name": "storage.modifier.circuit",
+   "match": "\\(locked\\)"
+  },
+  "brace": {
+   "name": "variable.other.loop.circuit",
+   "match": "\\{[A-Za-z_][A-Za-z0-9_]*(?:[-+*][0-9]+)?\\}"
+  },
+  "code": {
+   "name": "support.constant.code.circuit",
+   "match": "(?<![^\\s\"])[A-Z]+\\.[a-z][a-z0-9_]*(?:[/:][a-z0-9_]+)?(?=[\\s\"]|$)"
+  },
+  "pin": {
+   "name": "entity.name.tag.pin.circuit",
+   "match": "(?<![^\\s(=])[A-Za-z_{][^\\s.\"#]*\\.[^\\s\"#]+"
+  },
+  "quantity": {
+   "name": "constant.numeric.circuit",
+   "match": "(?<![^\\s(=,])-?[0-9]+(?:\\.[0-9]+)?(?:[pnuµμmkKMGR][0-9]*)?(?:\\s?(?:Ω|ohms?|V|A|W|F|H|Hz|°C|s|%))?(?:\\s?\\.\\.\\s?-?[0-9]+(?:\\.[0-9]+)?(?:[pnuµμmkKMGR][0-9]*)?(?:\\s?(?:Ω|ohms?|V|A|W|F|H|Hz|°C|s|%))?)?(?=[\\s),]|$)"
+  },
+  "designator": {
+   "name": "entity.name.type.designator.circuit",
+   "match": "(?<![^\\s(=])[A-Z]{1,3}[0-9]+(?=[\\s)=]|$)"
+  },
+  "group": {
+   "begin": "\\(",
+   "end": "\\)",
+   "patterns": [
+    {
+     "include": "#string"
+    },
+    {
+     "include": "#quantity"
+    },
+    {
+     "include": "#keyword"
+    }
+   ]
+  }
+ }
+}

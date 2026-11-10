@@ -19,7 +19,8 @@ pours and silkscreen.
 
 A bought board on a cable (`bought = true`) or a hand-wired one (`wired = true`, 4.5) has no PCB: `pcb`, `route`,
 `silk`, `fab` and `export` refuse it with one line when `--board` names it, and without `--board` take the one made
-board; `handover` and `export` over all boards leave it out.
+board; `handover` and `export` over all boards leave it out. A hand-wired board built on a perfboard has a layout of
+its own all the same – the plan of the perfboard in its board file, checked and drawn by `edakit perfboard` (7.9).
 
 **On KiCad:** the commands are the same and work on KiCad's files. `pcb parts` writes into the file without a dialog,
 `pcb place --rest` places the parts without a row where EasyEDA's auto-layout does, and `route apply` writes the tracks
@@ -1074,3 +1075,145 @@ is accepted on the part.
 `edakit export` writes per board the schematic as vector PDF (bridge extension 1.7.0 or later; otherwise stitched canvas tiles), the PCB
 PDF, Gerber, BOM, pick and place, netlist, plus a consistent copy of the project file (SQLite backup). Orders are made
 from the gate's files, not from these.
+
+## 7.9 A perfboard
+
+A hand-wired board (`wired = true`, 4.5) soldered on a perfboard – a Euro board with a pad per hole, or with a pad
+over three holes – gets its build plan as text, as a PCB gets its placement plan: where each part sits on the grid,
+where the bridges of bare wire run on the bottom and the insulated wires on top.
+
+edakit builds the nets the plan makes and holds them to the graph, checks grid, bodies, mounting holes and wires, and
+draws the board from both sides with the lists the person who solders it works from. The plan is the board's layout:
+stage L of the gate, in the layout hash, reviewed in M-5 (concept [perfboard-layout](../docs/concepts/new/perfboard-layout.md)).
+
+```bash
+edakit perfboard               # check the plan, draw top and bottom, write cut, build and test lists (offline)
+edakit gate                    # a project of hand-wired boards: S, L and F run without EasyEDA
+```
+
+### The kinds
+
+A kind is a file of data in `edakit/perfboards/`: pitch, hole, pad, copper, the groups of holes the copper joins, the
+usual sizes, the bend a lead takes and the allowances of the cut list. Two come with edakit – `pad-per-hole`
+(Lochraster, no holes joined) and `3-hole-strips` (Lochstreifen, runs of three along each row, from column A). A
+value without a datasheet is marked an assumption there; a current rating only with its source (`copper.max_a`,
+`copper.source`) – none of the two has one yet. Another kind – a stripboard, the pattern of a breadboard – is another
+file with its `groups`.
+
+### The plan
+
+In the board file of the hand-wired board, `hardware/boards/<board>.toml` (10.2). Holes are named by column letter
+and row number as the board prints them, A1 at the top left seen from the top – "R8" is a hole even where a resistor
+has that name; the lists say "hole R8".
+
+```toml
+[perfboard]
+kind = "pad-per-hole"                       # edakit/perfboards/pad-per-hole.toml – or "3-hole-strips"
+holes = [33, 22]                            # the piece used: 33 columns (A to AG) x 22 rows
+
+[[holes]]                                   # mounting holes in mm, as on a PCB
+x = 2.91                                    # x right, y up from the lower left corner seen from the top
+y = 3.44
+d = 3.2
+
+[place]
+U1 = { at = "P9", rot = 270 }               # the hole of pin 1 and the rotation, counterclockwise from the top
+R4 = { at = "H8", rot = 90, span = 5 }      # an axial part with its lead span in holes
+LED3 = { anode = "L3", cathode = "L2" }     # a part with two leads by the holes of its roles
+
+[[wire]]
+net = "GND"
+path = ["N16", "AF16"]                      # side = "bottom" (default): a straight row of bridges, one per step
+
+[[wire]]
+net = "LED_Y2"
+path = ["K10", "Q10", "Q8", "P8"]           # an insulated wire on top: its ends, and the bends between them
+side = "top"
+color = "yellow"
+```
+
+- **A part** sits by the hole of its pin 1 and `rot` (0, 90, 180, 270), or with two leads by the holes of its roles
+  (`anode`/`cathode`, `plus`/`minus`, any two roles of its pins): edakit derives the rotation. By role a yellow LED
+  with its cathode on pin 1 and a green one with its anode there read alike. `span` bends an axial part's leads to that
+  many holes.
+- **Its footprint** comes from where a PCB's comes from (7.4): the geometry beside the board file, `footprint_data` of
+  the parts entry (4.5), else the library footprint `edakit part import` cached. Its body is `body.box` of the entry,
+  else round where the footprint's name says so (`LED-TH_BD5.0`, `CAP-TH_BD10.0`), else the footprint's box; an axial
+  part's body between its leads, by `body.box` or the name (`RES-TH_BD2.5-L6.5`). A module (kind `module`) sits on
+  sockets: its sockets are its bodies, the module above them is raised.
+- **Pins a part joins inside** – a module's two GND pins – count as one node with `joined = [["4", "29"]]` in the
+  parts entry (4.1); a button's pins that share a role are joined without it. A free pin joined so to a pin of a net is
+  on that net.
+- **Wires.** On the bottom only straight rows of bridges between neighbouring holes; two rows meet at a lead or in the
+  middle of another row. Everything else is an insulated wire on top; each end goes through a free hole beside its pin
+  and is joined to it by a bridge below – a lead and a wire do not fit into one hole. Wires may cross and may run under
+  a module on sockets; their colours follow the net (ground black, a supply red) unless `color` names one.
+- **The hand-over** holds as on a PCB: the graph's `layout.edge` and `.near`, a decoupling capacitor next to its IC,
+  and `[near]` of the board file, measured as the gap between the bodies' boxes (`near_mm`, `edge_mm`).
+
+### What it checks
+
+<!-- edakit:generated table PERF -->
+| Code | Title | Severity |
+| --- | --- | --- |
+| [`PERF.net`](../docs/catalog/perf.html#PERF.net) | perfboard plan = graph | error, open: error, short: error, meet: error, label: error, joined: error, inside: note |
+| [`PERF.place`](../docs/catalog/perf.html#PERF.place) | every part in its holes | error, unplaced: error, unknown: error, offboard: error, two: error, role: error, span: error, geometry: error |
+| [`PERF.grid`](../docs/catalog/perf.html#PERF.grid) | leads on the grid | error, bent: note, smd: error |
+| [`PERF.body`](../docs/catalog/perf.html#PERF.body) | bodies apart, spans long enough | error, span: error, under: note |
+| [`PERF.mount`](../docs/catalog/perf.html#PERF.mount) | mounting holes free | error |
+| [`PERF.wire`](../docs/catalog/perf.html#PERF.wire) | bridges straight, wires into free holes | error, corner: error, end: error |
+| [`PERF.current`](../docs/catalog/perf.html#PERF.current) | copper carries the current | error, unknown: note |
+
+Rule, why, fix and sources of each: `edakit explain CODE`, or the code on its page of the catalog.
+<!-- edakit:end -->
+
+- **PERF.net** builds the nets from the holes, the groups the kind joins, the bridges, the wires and the pins joined
+  inside, and names where it goes wrong: open, short, a wire labelled with another net, the hole or strip where two nets
+  meet (meet – where the soldering iron goes), pins that reach their net only inside a plugged-in module (inside).
+- **PERF.place** wants every part of the board placed, its leads on the board, one per hole, a part by role in the
+  holes named; **PERF.grid** every pad on a hole within `tolerance.lead_bend_mm`, and no SMD part.
+- **PERF.body** keeps bodies apart and off the leads and wire ends, an axial span long enough; **PERF.mount** the nuts
+  of the mounting holes free (`keep`, default 1.875 × d); **PERF.wire** the bridges straight and the wire ends in free
+  holes; **PERF.current** the currents of `edakit sim` within the kind's copper rating.
+- **SYNC.plan** holds the hand-over: edge, near, decoupling and `[near]`.
+
+```text
+error   PERF.net/short   GND: +5V (9 pins) and GND (12 pins) and LED_Y1_A (LED3.anode in L2) in one piece of copper
+error   PERF.net/open    LED_Y1: open between R2.1 in L8 | U1.PD2 in L9
+error   PERF.net/meet    L2: joins GND bridges F2 … R2 with LED3.anode (LED_Y1_A)
+```
+
+### What it draws and writes
+
+`edakit perfboard` writes into `<artifacts>/perfboard/<board>/`:
+
+- `top.svg` – the parts from above with their designators and polarity, the insulated wires in their colours with
+  dots where they enter the board, a module on sockets see-through over the wires beneath it, the hole names at the
+  edges, the nuts of the mounting holes;
+- `bottom.svg` – the bottom side seen through the board from above, in the orientation of the top view, A1 at the top
+  left in both: the soldered leads clearly stronger than the empty holes, the bridges as bars coloured by net, a ring
+  where a wire comes through from the top, the strips of a kind that has them;
+- `build.md` – the findings, then four lists:
+  - the **cut list**: the insulated wires by colour with their lengths, the pieces of bare wire grouped by length – a
+    straight row of bridges is one piece, a single bridge beside a wire's end is that wire's stripped end –, every
+    length rounded up to the kind's step or `cut_step_mm`;
+  - the **build list** from low to high, each part with its holes and its polarity, the bridges once the leads they
+    join are in, the test before a module is plugged in;
+  - the **test list** for the multimeter: a supply to ground first with what it should read, per net the holes that
+    must beep, next to each bridge the neighbouring pads of other nets that must not;
+  - the **material**, with the board and the wire as `[[extra]]` lines for `edakit order` (8.4).
+
+The drawings are on a white ground of their own and read alike in the light and the dark theme.
+
+### In the gate
+
+The plan is the hand-wired board's stage L (8.1): every finding a row of its own, the plan clean a passed row
+`PERF.net`. The board file is in the layout hash, with the footprint data of the board's parts (8.2).
+
+The three files above are its manufacturing files: the gate writes them into `fab/<board>/` of the run, the manifest lists them, and
+the fab hash – what M-5 signs – covers them. A project whose boards are all bought or hand-wired, with at least one
+plan, runs stages S, L and F without `--eda`: there is nothing in EasyEDA to compare.
+
+Claude writes the plan as the PCB designer of the round (skill pcb-round): the hand-over, `[perfboard]`, `[place]` and
+the wires as text, `edakit perfboard` until no finding is left, the drawings to you; the agent pcb-reviewer
+reviews it for M-5.

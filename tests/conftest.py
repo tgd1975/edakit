@@ -71,3 +71,29 @@ def project(tmp_path):
             return next(c for c in g["graph"]["components"] if c["designator"] == des)
     return P()
 
+
+
+@pytest.fixture
+def project_circuit(tmp_path):
+    """led-bar in the circuit language (tests/fixtures/led-bar-circuit beside the example's other files)."""
+    import reference
+    return reference.copy_of_circuit(tmp_path / "led-bar-circuit")
+
+
+# The explorative DSL is a beta a project switches on ([beta] dsl = true, edakit/beta.py): the tests of the language
+# work in projects that have it switched on; every other test sees edakit without it.
+DSL_MODULES = ("test_lang_", "test_sync_graph")
+
+
+def dsl_on(root):
+    """Switch the explorative DSL on in the edakit.toml at root."""
+    toml = Path(root) / "edakit.toml"
+    text = toml.read_text(encoding="utf-8")
+    if "\n[beta]" not in text:
+        toml.write_text(text.rstrip("\n") + "\n\n[beta]\ndsl = true\n", encoding="utf-8")
+
+
+@pytest.fixture(autouse=True)
+def _dsl_in_the_language_tests(request):
+    if request.module.__name__.startswith(DSL_MODULES) and "project" in request.fixturenames:
+        dsl_on(request.getfixturevalue("project").root)

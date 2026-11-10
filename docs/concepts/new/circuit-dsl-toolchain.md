@@ -1,8 +1,8 @@
 # Implementation plan: the circuit language toolchain
 
-Status 2026-11-03: T.1 to T.27 built, the decisions 1 to 47 confirmed by the owner, merged as 1.1.3 (#279) and
-withdrawn from main by #287 on the owner's word – a beta, the explorative DSL, on the branch
-`claude/friendly-mccarthy-n4kt6y`, switched on per project in edakit.toml (circuit-dsl-toolchain.md, decision 48).
+Status 2026-11-04: on main as a beta since edakit 1.1.17 (#344) – the explorative DSL, switched on per project with
+`[beta] dsl = true` in edakit.toml (decisions 48 to 51). 2026-11-03: T.1 to T.27 built, the decisions 1 to 47
+confirmed by the owner, merged as 1.1.3 (#279) and withdrawn from main by #287 on the owner's word.
 2026-10-31: plan for [circuit-dsl.md](circuit-dsl.md) and its detail concept
 [circuit-dsl-language.md](circuit-dsl-language.md), asked for by the owner the same day; nothing of the language built
 yet. It is written for one session that builds all four stages – the reader, the compiler, the quantities and
@@ -852,6 +852,16 @@ Written by the session that builds the plan: number, date, decision, reason. Sta
    beta notice of `docs/dsl/` names the switch and no branch; the session start reads the switch as edakit.toml's
    check does; the link of `evals/README.md` into the tab stays. Reason: the owner's "without a word" of 48,
    held to the error texts and the engines as well.
+51. 2026-11-04, on the owner's word ("Mach den Merge"): the beta onto main as edakit 1.1.17 (#344, `8cb348f`), with
+   main of 1.1.16 merged in and main's net key `ac` added to the language's table. A project without the switch
+   reads what it read with 1.1.16 – led-bar's everyday commands byte for byte the same –; the branch
+   `claude/friendly-mccarthy-n4kt6y` is behind it and has nothing main lacks. Two limits of `graph convert --to
+   circuit`, older than the merge and only with the switch, stay open: a designator that starts with a digit
+   (GuitarML's `9v1`) and a graph with empty entries (`nc: []`, `layout: {}`) are refused, nothing written. Reason:
+   48's "until the owner asks", asked.
+52. 2026-11-04, the owner's word: circuit-dsl.md, circuit-dsl-language.md, this plan and circuit-dsl-beta-review.md
+   stay in `docs/concepts/new/` while the DSL is a beta, and move to `done/` – with every link and path that names
+   them, in code and catalog too – once the beta is done. Reason: "Nach done erst, wenn wir Beta erledigt haben".
 
 ## Not in this plan
 
