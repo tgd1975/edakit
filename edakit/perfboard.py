@@ -71,7 +71,7 @@ POLAR = ("anode", "cathode", "plus", "minus")
 ORDER = [("resistor", "Resistors, lying flat"), ("wire", "Insulated wires on top – each end through its hole and "
          "bent onto the pad of the lead beside it"), ("socket", "Sockets"), ("button", "Buttons"),
          ("other", "Other parts"), ("connector", "Connectors"), ("diode", "Diodes"), ("led", "LEDs"),
-         ("capacitor", "Capacitors"), ("bridge", "Bare wire on the bottom, once the leads are in – laid over the "
+         ("capacitor", "Capacitors"), ("bridge", "Bridges on the bottom, once the leads are in – laid over the "
          "pads, soldered at each"), ("test", "Test"), ("plug", "Modules")]
 
 
@@ -1160,7 +1160,7 @@ def draw(res, bottom, title):
         svg.add(f'<circle cx="{x + 40:.2f}" cy="{y:.2f}" r="0.78" fill="#e4d8c0" stroke="#b9a684" stroke-width="0.1"/>'
                 f'<circle cx="{x + 40:.2f}" cy="{y:.2f}" r="0.36" fill="#8a7654"/>')
         svg.text(x + 41.4, y, "empty hole", size=1.3, anchor="start")
-        svg.text(x + 56, y, "bars: bridges of bare wire, coloured by net", size=1.3, anchor="start", fill="#444")
+        svg.text(x + 56, y, "bars: bridges, coloured by net", size=1.3, anchor="start", fill="#444")
         x, y = ml, ly + 3.3
         for net in dict.fromkeys(w["net"] for w in res.wires if w["kind"] == "bridge"):
             svg.add(f'<line x1="{x:.2f}" y1="{y:.2f}" x2="{x + 3:.2f}" y2="{y:.2f}" stroke="{colours.get(net)}" '
@@ -1290,10 +1290,15 @@ def holes_of(w):
     return f"{w['path'][0]}–{w['path'][-1]}"
 
 
+BENDS = ("led", "diode", "capacitor", "resistor")   # parts whose wire leads bend over to the next pad, an LED's first
+
+
 def cutlist(res):
     """Insulated wires by colour and pieces of bare wire by length, every length rounded up to the step – whole
-    millimetres unless the plan's cut_step_mm is coarser (decision 22): a straight row of bridges is one piece; a single bridge beside a wire's end is that wire's stripped end
-    (decision 23)."""
+    millimetres unless the plan's cut_step_mm is coarser (decision 22). A straight row of bridges is one piece; a row
+    that starts at a wire's end is that wire's stripped end, the strip there longer by the row (decision 23, the
+    owner's of 2026-11-10); a single bridge to a hole with the lead of an LED, a diode, a capacitor or a resistor is
+    that lead bent over on the bottom, an LED's first and each lead once (the owner's of 2026-11-10)."""
     plan = res.plan
     cw = plan.kind["wires"]
     step = plan.cut_step_mm or cw["step_mm"]
@@ -1301,22 +1306,70 @@ def cutlist(res):
     def up(x):
         return int(math.ceil(x / step - 1e-9) * step)
 
-    ends = {h for w in res.wires if w["kind"] == "wire" for h in w["holes"]}
-    insulated, bare, by_end = [], [], []
+    ends = {}                           # a wire's end hole -> (wire, 0 at path[0] | 1 at path[-1])
+    for w in res.wires:
+        if w["kind"] == "wire":
+            ends.setdefault(w["holes"][0], (w, 0))
+            ends.setdefault(w["holes"][-1], (w, 1))
+    leads = {}                          # a hole -> (rank, designator, pin) of a lead that bends
+    for d, part in res.placed.items():
+        if part.kind in BENDS and not part.raised:
+            for n, h in part.holes.items():
+                leads[h] = (BENDS.index(part.kind), d, n)
+    longer, bare, by_end, bent, used = defaultdict(float), [], [], [], set()
+    for w in res.wires:
+        if w["kind"] != "bridge":
+            continue
+        hs, steps = w["holes"], len(w["holes"]) - 1
+        end = next((ends[h] for h in (hs[0], hs[-1]) if h in ends and (id(ends[h][0]), ends[h][1]) not in used), None)
+        lead = min((leads[h] for h in hs if h in leads and leads[h] not in used), default=None) if steps == 1 else None
+        if end:
+            used.add((id(end[0]), end[1]))
+            longer[(id(end[0]), end[1])] = (steps - 1) * plan.pitch
+            by_end.append(w)
+        elif lead:
+            used.add(lead)
+            at = res.placed[lead[1]].holes[lead[2]]
+            bent.append({"wire": w, "part": lead[1], "pin": lead[2], "at": at, "to": hs[1] if hs[0] == at else hs[0]})
+        else:
+            bare.append({"mm": up(steps * plan.pitch + 2 * cw["bridge_end_mm"]), "wire": w})
+    insulated = []
     for w in res.wires:
         if w["kind"] == "wire":
             pts = [parse_hole(h) for h in w["path"]]
             top = sum(math.dist(a, b) for a, b in zip(pts, pts[1:])) * plan.pitch
             colour = w.get("color") or ("black" if w["net"] == res.design.ground else
                                         "red" if SUPPLY.match(w["net"]) else "any")
-            insulated.append({"colour": colour, "mm": up(top + cw["slack_mm"] + 2 * cw["strip_mm"]), "wire": w})
-        else:
-            steps = len(w["holes"]) - 1
-            if steps == 1 and (w["holes"][0] in ends or w["holes"][1] in ends):
-                by_end.append(w)
-            else:
-                bare.append({"mm": up(steps * plan.pitch + 2 * cw["bridge_end_mm"]), "wire": w})
-    return {"step": step, "strip": cw["strip_mm"], "insulated": insulated, "bare": bare, "by_end": by_end}
+            strips = tuple(int(math.ceil(cw["strip_mm"] + longer[(id(w), e)] - 1e-9)) for e in (0, 1))
+            insulated.append({"colour": colour, "mm": up(top + cw["slack_mm"] + sum(strips)), "wire": w,
+                              "strips": strips})
+    return {"step": step, "strip": cw["strip_mm"], "insulated": insulated, "bare": bare, "by_end": by_end,
+            "bent": bent}
+
+
+def lead_text(res, d, pin):
+    """R1's lead, D1's anode lead: the lead of a part that bends over to the next pad."""
+    role = ((res.placed[d].entry.get("pins") or {}).get(pin) or {}).get("role")
+    return f"{d}'s {role} lead" if role in POLAR else f"{d}'s lead"
+
+
+def strip_text(i):
+    """What is stripped at each end of an insulated wire, by its holes."""
+    (a, b), path = i["strips"], i["wire"]["path"]
+    return f"{a} mm at {path[0]}, {b} mm at {path[-1]}"
+
+
+def not_cut(res, cut):
+    """The bridges no piece is cut for: the wires' stripped ends and the bent leads – sentences without their capital,
+    for after "Not cut: "."""
+    out = []
+    if cut["by_end"]:
+        out.append("the wires' stripped ends make the bridges " + ", ".join(holes_of(w) for w in cut["by_end"]) + ".")
+    if cut["bent"]:
+        out.append("a lead bent over on the bottom makes the bridges " + ", ".join(
+            f"{holes_of(b['wire'])} ({lead_text(res, b['part'], b['pin'])} in {hole_name(b['at'])})"
+            for b in cut["bent"]) + ".")
+    return out
 
 
 CUT_ROW_MM = 6.0                 # the cut list at 1:1: a row per piece
@@ -1326,26 +1379,26 @@ CUT_COPPER, CUT_TIN = "#c87f4a", "#a9adb3"   # a stripped end of solid copper, t
 def draw_cut(res, title):
     """The cut list at 1:1 (cut.svg): a centimetre ruler over a 1 cm grid, the insulated wires and then the pieces of
     bare wire, each from the longest down and left-aligned at the ruler's zero; beside each its length, for a wire
-    what is stripped at its left and right end, and its holes and net. Printed at 100 % a piece can be laid on it."""
+    what is stripped at its left and right end, by its holes, and its net; below, the bridges no piece is cut for.
+    Printed at 100 % a piece can be laid on it."""
     cut = cutlist(res)
-    strip = cut["strip"]
     ins = sorted(cut["insulated"], key=lambda i: -i["mm"])
     bare = sorted(cut["bare"], key=lambda b: -b["mm"])
     span = max(10, math.ceil(max([i["mm"] for i in ins + bare], default=10) / 10) * 10)
     x0, size = 6.0, 2.5
     rows = [("Insulated wire, solid core, on top", None)] * bool(ins) + [
-        ("insulated", (i["mm"], f"strip {strip:g} mm left, {strip:g} mm right – "
-                       f"{i['colour'] if i['colour'] != 'any' else 'any colour'}, {holes_of(i['wire'])} "
-                       f"{i['wire']['net']}", i)) for i in ins] + [
+        ("insulated", (i["mm"], f"strip {i['strips'][0]} mm left at {i['wire']['path'][0]}, {i['strips'][1]} mm "
+                       f"right at {i['wire']['path'][-1]} – "
+                       f"{i['colour'] if i['colour'] != 'any' else 'any colour'}, {i['wire']['net']}", i)) for i in ins] + [
         ("Bare tinned wire, straight, on the bottom", None)] * bool(bare) + [
         ("bare", (b["mm"], f"{holes_of(b['wire'])} {b['wire']['net']}", b)) for b in bare]
-    note = (f"Not cut: the bridges {', '.join(holes_of(w) for w in cut['by_end'])} are the wires' stripped ends."
-            if cut["by_end"] else "" if ins or bare else "Nothing to cut: the plan has no wire and no bridge.")
+    notes = not_cut(res, cut) or ([] if ins or bare else ["Nothing to cut: the plan has no wire and no bridge."])
     wide = max([11 + len(r[1]) * size * 0.56 for _, r in rows if r] + [0])   # the length, then the text beside it
+    note_w = max([(len(n) + 9) * 2.1 * 0.56 for n in notes] + [0])   # below the rows, from the left edge
     top, ruler = 18.0, 6.5
     y_end = top + ruler + sum((5.0 if i == 0 else 7.0) if r is None else CUT_ROW_MM for i, (_, r) in enumerate(rows))
-    w = max(x0 + span + 4 + wide + 4, 100.0)
-    h = y_end + (6.5 if note else 3)
+    w = max(x0 + span + 4 + wide + 4, x0 + note_w + 4, 100.0)
+    h = y_end + (3.5 + 3.2 * len(notes) if notes else 3)
     svg = Svg(w, h, mm=True)
     svg.text(x0, 5.0, f"{title} – cut list", size=3.4, anchor="start", weight="bold")
     svg.text(x0, 10.0, f"1:1 printed at 100 %, not fitted to the page: 0 to {span // 10} cm must measure {span} mm "
@@ -1379,7 +1432,8 @@ def draw_cut(res, title):
             svg.add(f'<rect class="conductor" x="{x0:.2f}" y="{yc - 0.35:.2f}" width="{mm:.2f}" height="0.7" '
                     f'fill="{CUT_COPPER}"/>')
             colour = WIRE_COLOURS.get(item["colour"], "#8a8a8a")
-            svg.add(f'<rect class="insulation" x="{x0 + strip:.2f}" y="{yc - 0.9:.2f}" width="{mm - 2 * strip:.2f}" '
+            left, right = item["strips"]
+            svg.add(f'<rect class="insulation" x="{x0 + left:.2f}" y="{yc - 0.9:.2f}" width="{mm - left - right:.2f}" '
                     f'height="1.8" rx="0.4" fill="{colour}" stroke="#333" stroke-width="0.12"/>')
         else:
             svg.add(f'<rect class="conductor" x="{x0:.2f}" y="{yc - 0.35:.2f}" width="{mm:.2f}" height="0.7" '
@@ -1389,8 +1443,9 @@ def draw_cut(res, title):
         svg.text(tx + 11, yc, text, size=size, anchor="start", fill="#333")
         svg.add("</g>")
         y += CUT_ROW_MM
-    if note:
-        svg.text(x0, y_end + 3.2, note, size=2.1, anchor="start", fill="#444")
+    for k, n in enumerate(notes):
+        svg.text(x0, y_end + 3.2 + 3.2 * k, "Not cut: " + n if k == 0 else n[0].upper() + n[1:], size=2.1,
+                 anchor="start", fill="#444")
     return svg.done()
 
 
@@ -1414,13 +1469,13 @@ def lists(res, title, findings_too=True):
     out.append("![The cut list at 1:1](cut.svg)\n")
     per_colour = {}
     if cut["insulated"]:
-        out.append(f"**Insulated wire, solid core, on top** – may turn corners; strip {cut['strip']:g} mm at each "
-                   "end: through its hole and over onto the pad of the lead beside it, which makes the bridge to "
-                   "that lead.\n")
-        out += ["| Colour | Length | Holes | Net |", "| --- | --- | --- | --- |"]
+        out.append("**Insulated wire, solid core, on top** – may turn corners; each end stripped as its row says: "
+                   "through its hole and over onto the pad of the lead beside it, which makes the bridge to that lead "
+                   "– a longer end runs on along the bottom over the pads of its row of bridges.\n")
+        out += ["| Colour | Length | Holes | Net | Strip |", "| --- | --- | --- | --- | --- |"]
         for c in dict.fromkeys(i["colour"] for i in cut["insulated"]):
             for i in sorted((i for i in cut["insulated"] if i["colour"] == c), key=lambda i: -i["mm"]):
-                out.append(f"| {c} | {i['mm']} mm | {holes_of(i['wire'])} | {i['wire']['net']} |")
+                out.append(f"| {c} | {i['mm']} mm | {holes_of(i['wire'])} | {i['wire']['net']} | {strip_text(i)} |")
             per_colour[c] = sum(i["mm"] for i in cut["insulated"] if i["colour"] == c)
         out.append("\nPer colour: " + ", ".join(f"{c} {mm} mm" for c, mm in per_colour.items()) + ".\n")
     bare_total = sum(b["mm"] for b in cut["bare"])
@@ -1434,9 +1489,10 @@ def lists(res, title, findings_too=True):
         for mm in sorted(by_len, reverse=True):
             out.append(f"| {mm} mm | {len(by_len[mm])} | " + ", ".join(f"{holes_of(w)} {w['net']}" for w in by_len[mm])
                        + " |")
-        out.append(f"\nIn all {len(cut['bare'])} pieces, {bare_total} mm." + (
-            f" A wire's stripped end makes the {len(cut['by_end'])} bridges beside the wires' ends: " +
-            ", ".join(holes_of(w) for w in cut["by_end"]) + "." if cut["by_end"] else "") + "\n")
+        out.append(f"\nIn all {len(cut['bare'])} pieces, {bare_total} mm.\n")
+    if not_cut(res, cut):
+        out.append("Not cut: " + " ".join(n if k == 0 else n[0].upper() + n[1:] for k, n in enumerate(not_cut(res, cut)))
+                   + "\n")
     out.append("## Build list – from low to high\n")
     groups = defaultdict(list)
     for w in wires:
@@ -1445,6 +1501,9 @@ def lists(res, title, findings_too=True):
         groups[build_group(p)].append(d)
     cut_mm = {id(i["wire"]): i["mm"] for i in cut["insulated"] + cut["bare"]}
     colour_of = {id(i["wire"]): i["colour"] for i in cut["insulated"]}
+    ins_of = {id(i["wire"]): i for i in cut["insulated"]}
+    bent_of = {id(b["wire"]): b for b in cut["bent"]}
+    long_end = {id(w): w for w in cut["by_end"] if len(w["holes"]) > 2}
     modules = [d for d, p in placed.items() if p.raised]
     step = 0
     for key, head in ORDER:
@@ -1465,19 +1524,31 @@ def lists(res, title, findings_too=True):
         for it in items:
             if key == "bridge":
                 if id(it) in cut_mm:
-                    rows.append(f"holes {holes_of(it)} {it['net']} ({cut_mm[id(it)]} mm)")
+                    rows.append(f"holes {holes_of(it)} {it['net']} ({cut_mm[id(it)]} mm of bare wire)")
+                elif (b := bent_of.get(id(it))):
+                    rows.append(f"{lead_text(res, b['part'], b['pin'])} in {hole_name(b['at'])} bent onto the pad of "
+                                f"{hole_name(b['to'])} and cut at its far edge")
+                elif id(it) in long_end:
+                    rows.append(f"the stripped end along holes {holes_of(it)} {it['net']}")
             elif key == "wire":
                 colour = colour_of[id(it)]
                 rows.append(f"{'any colour' if colour == 'any' else colour}, holes {holes_of(it)} {it['net']} "
-                            f"({cut_mm[id(it)]} mm)")
+                            f"({cut_mm[id(it)]} mm; strip {strip_text(ins_of[id(it)])})")
             else:
-                rows.append(build_row(it, placed[it], design))
+                rows.append(build_row(it, placed[it], design) + "".join(
+                    f" – leave {lead_text(res, b['part'], b['pin'])} in {hole_name(b['at'])} long and unsoldered: "
+                    f"bent onto the pad of {hole_name(b['to'])} once the leads are in, it is the bridge there"
+                    for b in cut["bent"] if b["part"] == it))
         if not rows:
             continue
         step += 1
-        tail = (" The bridges beside the wires' ends are their stripped ends." if key == "bridge" and cut["by_end"] else
+        tail = (f" The {'other ' if long_end else ''}bridges beside the wires' ends are their stripped ends."
+                if key == "bridge" and any(
+                    len(w["holes"]) == 2 for w in cut["by_end"]) else
                 " Bend each stripped end along the pad beside it without covering that hole, and do not solder it "
-                "yet: it is soldered with the lead or the bridges in that pad, in their step." if key == "wire" else "")
+                "yet: it is soldered with the lead or the bridges in that pad, in their step." + (
+                    " An end stripped longer runs on along the bottom over the pads of its row of bridges, up to the "
+                    "last one's pad." if long_end else "") if key == "wire" else "")
         out.append(f"{step}. **{head}:** " + "; ".join(rows) + "." + tail)
     out.append("")
     out += test_list(res)

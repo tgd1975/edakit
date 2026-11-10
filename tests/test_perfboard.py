@@ -6,6 +6,7 @@ The project tests/fixtures/perfboard: a pin header J1, a push button SW1, an axi
 14 x 8 holes of a pad per hole – every footprint as data. Each check is seen red once on a copy with one mistake
 built in, the clean plan beside it."""
 
+import html
 import json
 import re
 import shutil
@@ -368,11 +369,16 @@ def test_the_command_draws_both_views_and_writes_the_lists(pb, monkeypatch, caps
     text = build.read_text()
     for line in ("## Cut list – lengths in whole millimetres, rounded up", "| black | 49 mm | L4–B5 | GND |",
                  "| 8 mm | 1 | A4 … C4 VCC |",
-                 "A wire's stripped end makes the 2 bridges beside the wires' ends: L3–L4, A5–B5.",
+                 "Not cut: the wires' stripped ends make the bridges L3–L4, A5–B5. A lead bent over on the bottom "
+                 "makes the bridges F2–G2 (R1's lead in G2), K2–L2 (D1's anode lead in L2).",
+                 "holes A4 … C4 VCC (8 mm of bare wire); R1's lead in G2 bent onto the pad of F2 and cut at its far edge; "
+                 "D1's anode lead in L2 bent onto the pad of K2 and cut at its far edge. The bridges beside the wires' ends are their stripped ends.",
+                 "R1 150 in holes G2–K2 – leave R1's lead in G2 long and unsoldered: bent onto the pad of F2 once the "
+                 "leads are in, it is the bridge there.",
                  "D1 red: anode (long lead) in hole L2, cathode (flat) in hole L3",
                  "| LED_SW | C2 (SW1.1) | F2 (SW1.2), G2 (R1.1) |", "item = \"Lochraster, a pad per hole, 14 x 8 holes\""):
         assert line in text, line
-    order = [text.index(k) for k in ("**Resistors", "**Insulated wires", "**Buttons", "**LEDs", "**Bare wire",
+    order = [text.index(k) for k in ("**Resistors", "**Insulated wires", "**Buttons", "**LEDs", "**Bridges",
                                      "**Test")]
     assert order == sorted(order)                  # from low to high, the bridges once the leads are in (21)
 
@@ -393,7 +399,31 @@ def test_a_board_without_a_plan(project, monkeypatch, capsys):
 def test_the_cut_list_rounds_up_to_its_step(pb):
     pb.edit('holes = [14, 8]', 'holes = [14, 8]\ncut_step_mm = 10')
     cut = perfboard.cutlist(pb.result())
-    assert [b["mm"] for b in cut["bare"]] == [10, 10, 10] and [i["mm"] for i in cut["insulated"]] == [50]
+    assert [b["mm"] for b in cut["bare"]] == [10] and [i["mm"] for i in cut["insulated"]] == [50]
+
+
+def test_a_lead_bends_over_to_its_neighbour(pb):
+    """The owner on 2026-11-10: a single bridge to a hole with the lead of an LED, a diode, a capacitor or a resistor
+    is that lead bent over on the bottom – an LED's first, a lead once; a button's or a header's pins do not bend.
+    What is left is bare wire."""
+    cut = perfboard.cutlist(pb.result())
+    assert [(perfboard.holes_of(b["wire"]), b["part"], perfboard.hole_name(b["at"]), perfboard.hole_name(b["to"]))
+            for b in cut["bent"]] == [("F2–G2", "R1", "G2", "F2"), ("K2–L2", "D1", "L2", "K2")]
+    assert [(b["mm"], perfboard.holes_of(b["wire"])) for b in cut["bare"]] == [(8, "A4 … C4")]   # J1 and SW1 do not bend
+    assert [perfboard.holes_of(w) for w in cut["by_end"]] == ["L3–L4", "A5–B5"]
+
+
+def test_a_row_of_bridges_at_a_wires_end_is_its_stripped_end(pb):
+    """The owner on 2026-11-10: a straight row of bridges that starts at a wire's end is that wire's stripped end, the
+    strip there longer by the row – the black wire ends in C5, and its end runs on along the bottom over B5 to A5."""
+    pb.edit('path = ["L4", "L6", "B6", "B5"]', 'path = ["L4", "L6", "C6", "C5"]')
+    pb.edit('path = ["A5", "B5"]', 'path = ["A5", "C5"]')
+    assert pb.errors() == []
+    cut = perfboard.cutlist(pb.result())
+    (black,) = cut["insulated"]
+    assert black["strips"] == (5, 8) and black["mm"] == 49            # 12 pitches + 5 slack + 5 + 5 + 2.54, up
+    assert [perfboard.holes_of(w) for w in cut["by_end"]] == ["L3–L4", "A5 … C5"]
+    assert [b["mm"] for b in cut["bare"]] == [8]
 
 
 def cut_rows(svg):
@@ -413,18 +443,18 @@ def test_the_cut_list_is_drawn_at_full_size(pb, monkeypatch, capsys):
     monkeypatch.delenv("EDAKIT_CONFIG", raising=False)
     assert cli.main(["perfboard"]) == 0
     d = pb.root / "build" / "edakit" / "perfboard" / "panel"
-    svg = (d / "cut.svg").read_text()
+    svg = html.unescape((d / "cut.svg").read_text())
     w, h, vw, vh = re.search(r'width="([\d.]+)mm" height="([\d.]+)mm" viewBox="0 0 ([\d.]+) ([\d.]+)"', svg).groups()
     assert (w, h) == (vw, vh)                      # a unit of the drawing is a millimetre on paper
     rows = cut_rows(svg)
-    assert [(k, mm) for k, mm, _ in rows] == [("insulated", 49), ("bare", 8), ("bare", 5), ("bare", 5)]
+    assert [(k, mm) for k, mm, _ in rows] == [("insulated", 49), ("bare", 8)]     # F2–G2, K2–L2: bent leads
     zero = rows[0][2][0][1]
-    assert [r[2][0] for r in rows] == [("conductor", zero, 49.0), ("conductor", zero, 8.0), ("conductor", zero, 5.0),
-                                       ("conductor", zero, 5.0)]
+    assert [r[2][0] for r in rows] == [("conductor", zero, 49.0), ("conductor", zero, 8.0)]
     assert rows[0][2][1] == ("insulation", zero + 5, 39.0)            # strip 5 mm at each end
     cm = [float(x) for x in re.findall(r'<line class="cm" x1="([\d.]+)"', svg)]
     assert cm == [zero + 10 * i for i in range(6)]                     # 0 to 5 cm: up to the longest piece, 49 mm
-    for text in ("49 mm", "strip 5 mm left, 5 mm right", "black, L4–B5 GND", "A4 … C4 VCC", "F2–G2",
+    for text in ("49 mm", "strip 5 mm left at L4, 5 mm right at B5 – black, GND", "A4 … C4 VCC",
+                 "A lead bent over on the bottom makes the bridges F2–G2 (R1's lead in G2)",
                  "0 to 5 cm must measure 50 mm on a ruler", "Lengths in whole millimetres, rounded up"):
         assert text in svg, text
     assert "![The cut list at 1:1](cut.svg)" in (d / "build.md").read_text()
@@ -515,12 +545,12 @@ def test_the_example_variant_is_built_from_its_plan(tmp_path, monkeypatch, capsy
     drawn = Path("build/edakit/perfboard/main")
     build, top = (drawn / "build.md").read_text(), (drawn / "top.svg").read_text()
     rows = [ln for ln in page.split("## What you have")[1].splitlines() if ln.startswith("| ")]
-    assert len(rows) == 8 and [r for r in rows if r not in build] == [] and "strip 5 mm at each end" in build
+    assert len(rows) == 4 and [r for r in rows if r not in build] == [] and "(D1's anode lead in J3)" in build
     # its M-5: a holder fits both ways round – its ends named and marked, no stripe; a wire's end soldered with its lead
     assert "BT1 KH-CR2032-2-1: its + end on hole D10, its − end on hole L10" in build and "(stripe)" not in build
     assert "do not solder it yet" in build and "black, holes J1–N10 GND" in build
     assert ">+<" in top and ">−<" in top and "Capacitor" not in top and "mounting holes" not in top
-    assert [(k, mm) for k, mm, _ in cut_rows((drawn / "cut.svg").read_text())][:2] == [("insulated", 49),
+    assert [(k, mm) for k, mm, _ in cut_rows((drawn / "cut.svg").read_text())][:2] == [("insulated", 52),
                                                                                        ("insulated", 41)]
     assert '<img src="../pictures/perfboard-cut.svg"' in page
     for side in ("top", "bottom", "cut"):

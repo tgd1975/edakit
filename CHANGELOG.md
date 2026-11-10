@@ -8,6 +8,11 @@ written once, by `.github/merge.py`, from the fragments in [changes/](changes/RE
 update edakit@edakit`, then `/reload-plugins` or a new session; `edakit version` names the version that runs and what an
 update brings.
 
+## 1.3.1 – 2026-11-10
+
+- `edakit perfboard` cuts no piece of bare wire where something already there makes the bridge: a straight row of bridges that starts at a wire's end is that wire's stripped end, the strip there longer by the row, and a single bridge to a hole with the lead of an LED, a diode, a capacitor or a resistor is that lead bent over on the bottom – an LED's first. The cut list and `cut.svg` give what is stripped at each end by its hole and name the bridges no piece is cut for; the build list leaves a lead that bends long and unsoldered and bends it in the bridges' step.
+- The cut list, the build list and `cut.svg` of a hand-wired board change with it, and so does its fab hash: a signed M-5 is renewed with `edakit gate` and the agent pcb-reviewer.
+
 ## 1.3.0 – 2026-11-10
 
 - `edakit perfboard` draws the cut list at 1:1, `cut.svg` beside `top.svg` and `bottom.svg`: a centimetre ruler over a 1 cm grid, the insulated wires and then the pieces of bare wire, each from the longest down and left-aligned at the ruler's zero, beside each its length, for a wire what is stripped at its left and right end, and its holes and net; printed at 100 % a piece is laid on its row and cut at its end. `build.md` shows it in its cut list, the steps page "Build it on a perfboard" shows the example's.
