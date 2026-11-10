@@ -1,0 +1,145 @@
+{
+ "graph": {
+  "name": "coin-cell-led-perfboard",
+  "version": "1.0",
+  "date": "2026-11-10",
+  "description": "Press the button, the LED lights: the circuit of coin-cell-led with through-hole parts, soldered on a perfboard.",
+  "purpose": {
+   "use": "private",
+   "market": "EU",
+   "notes": "The example of the edakit handbook, chapter 17: built for oneself, a desk gadget for adults, kept out of the reach of small children – the cell comes out by hand (D-5)."
+  },
+  "components": [
+   {
+    "designator": "BT1",
+    "type": "battery_holder",
+    "label": "CR2032 holder",
+    "part": "KH-CR2032-2-1",
+    "lcsc": "C5365915",
+    "pins": {
+     "1": "1",
+     "2": "2"
+    },
+    "notes": "Through-hole holder lying flat, pins 20 mm apart: pin 1 = plus (Kinghelm KH-CR2032-2-1 drawing).",
+    "accept": {
+     "LIM.i/cell": "SW1 is pressed for a moment: while it is held a fresh cell gives up to 9.0 mA, above its 3 mA continuous and below its 15 mA pulse current (Jauch CR 2032 H2B); held longer it costs capacity and voltage, no harm – the voltage drop is in the simulation by the cell's r (D-7)"
+    },
+    "bom": false
+   },
+   {
+    "designator": "SW1",
+    "type": "button",
+    "label": "Push button",
+    "part": "K2-1102DP-C4SW-04",
+    "lcsc": "C110153",
+    "pins": {
+     "1": "1",
+     "2": "2",
+     "3": "3",
+     "4": "4"
+    },
+    "nc": [
+     "2",
+     "4"
+    ],
+    "notes": "6 x 6 mm through-hole: pins 1/2 and 3/4 are connected inside.",
+    "bom": false
+   },
+   {
+    "designator": "R1",
+    "type": "resistor",
+    "label": "LED series resistor",
+    "part": "MFR0W4F1500A50",
+    "lcsc": "C58668",
+    "value": "150",
+    "pins": {
+     "1": "1",
+     "2": "2"
+    },
+    "notes": "150 Ω as in the example: 1.9 mA from a used cell (2.5 V, 40 Ω) into D1 at its highest Vf, 9.0 mA from a fresh cell at its lowest (sim)",
+    "bom": false
+   },
+   {
+    "designator": "D1",
+    "type": "led",
+    "label": "LED (red 5 mm)",
+    "part": "XL-504SURD",
+    "lcsc": "C2895493",
+    "value": "red",
+    "pins": {
+     "1": "A",
+     "2": "K"
+    },
+    "notes": "Red 5 mm: Vf 1.8–2.4 V at 20 mA (XINGLIGHT). Pin 1 is the anode, the square pad.",
+    "bom": false
+   }
+  ],
+  "nets": [
+   {
+    "name": "VBAT",
+    "pins": [
+     "BT1.1",
+     "SW1.1"
+    ],
+    "v": [
+     -3.3,
+     3.3
+    ],
+    "notes": "the cell: 3.0 V nominal, 3.2 V and a little more fresh off load; negative with the cell upside down"
+   },
+   {
+    "name": "LED_SW",
+    "pins": [
+     "SW1.3",
+     "R1.1"
+    ],
+    "v": [
+     -3.3,
+     3.3
+    ],
+    "notes": "the cell's voltage while SW1 is pressed",
+    "accept": {
+     "PATH.reverse": "a cell upside down drives R1 and D1 backwards: D1 blocks, 3.2 V against its VR of 5 V – sim scenario reversed/pressed (LIM.v reverse voltage, SIM.state LED dark); no other part on the board (D-3)"
+    }
+   },
+   {
+    "name": "GND",
+    "pins": [
+     "BT1.2",
+     "D1.2"
+    ],
+    "v": [
+     0,
+     0
+    ]
+   },
+   {
+    "name": "LED_ANODE",
+    "pins": [
+     "R1.2",
+     "D1.1"
+    ],
+    "v": [
+     -3.3,
+     3.3
+    ]
+   }
+  ],
+  "cables": [],
+  "layout": {
+   "fixed": [
+    "BT1",
+    "SW1",
+    "D1"
+   ],
+   "notes": [
+    "the cell (Ø 20 mm) sits in BT1's recess under the clip at its + end and comes out at the round − end: keep that end free to lever it out",
+    "D1 next to SW1: the LED shows the press"
+   ]
+  },
+  "accept": {
+   "HINT.bulk": "no cable and no plug: the cell sits in BT1 on the board, the only load is D1 (at most 11 mA)",
+   "HINT.lithium": "a CR2032 is a primary Li-MnO2 cell, not Li-ion: nothing on the board charges it (LIM.backfeed) and it is not recharged"
+  }
+ }
+}

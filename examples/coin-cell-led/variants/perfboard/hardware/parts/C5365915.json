@@ -1,0 +1,114 @@
+{
+ "lcsc": "C5365915",
+ "mpn": "KH-CR2032-2-1",
+ "manufacturer": "kinghelm(金航标)",
+ "footprint": "BAT-TH_KH-CR2032-2-1",
+ "jlc_class": "Extended Part",
+ "kind": "battery_holder",
+ "pins": {
+  "1": {
+   "name": "1",
+   "type": "passive",
+   "role": "plus"
+  },
+  "2": {
+   "name": "2",
+   "type": "passive",
+   "role": "minus"
+  }
+ },
+ "sources": [
+  "mpn, manufacturer, footprint, jlc_class, pin numbers and names: EasyEDA library data of C5365915, https://easyeda.com/api/products/C5365915/components?version=6.4.19.5, read 2026-11-10 (edakit part import)",
+  "Kinghelm KH-CR2032-2-1 drawing rev F (2020-05-25), PCB hole layout (top view): two holes 20.0 mm apart, '+' at the right one, '-' at the left one; 24.5 × 22.2 mm, 7.4 mm high; pins 20 ± 0.5 mm apart",
+  "library footprint BAT-TH_KH-CR2032-2-1: pad 1 at +10.0 mm, pad 2 at -10.0 mm, its box -13.66 to +11.16 mm – the drawing's 3.5 mm beyond '-' and 1.05 mm beyond '+': pad 1 is plus",
+  "body.box from the drawing: 3.5 mm beyond the '-' hole, 1.05 mm beyond the '+' hole, 22.2 mm wide about the holes' line",
+  "footprint_data: the library footprint BAT-TH_KH-CR2032-2-1 (edakit part import), 2026-11-10 (edakit part footprint) – the print is the copy's in EasyEDA until lines, texts, marks or outline are written",
+  "drawing rev F, side view: the clip end 8.9 ± 0.1 mm high, the wall 7.4 mm – body.h_mm 8.9; '+' is the end with the metal clip, '-' the round open end"
+ ],
+ "verified": {
+  "by": "Claude Opus 5.5 (skill part-search)",
+  "date": "2026-11-10",
+  "datasheet": "Kinghelm KH-CR2032-2-1 drawing, rev F, 2020-05-25",
+  "datasheet_sha256": "9b2ef878f6b44f694dd24d87dd5ed5469762c2f2c7bfa6c0a58f6cb3e721f85d",
+  "checked": [
+   "pin 1 plus, pin 2 minus: the drawing's hole layout and the library footprint's box agree",
+   "through-hole, holes Ø1.3 mm 20.0 mm apart: 8 holes of 2.54 mm on a perfboard, the leads bent by 0.32 mm",
+   "the plus lead 0.4 × 0.9 mm (diagonal 0.98 mm) – tight in a 1.0 mm perfboard hole; the clip end 8.9 mm high (M-1 of the perfboard variant)"
+  ],
+  "open": [
+   {
+    "text": "the holder's + end (the metal clip) on hole D10",
+    "when": "acceptance"
+   }
+  ]
+ },
+ "package": "THT, for one CR2032 cell, lying flat",
+ "datasheet": {
+  "url": "https://datasheet.lcsc.com/datasheet/pdf/dd36461bdc23bb3940aebee03540c3c0.pdf?productCode=C5365915",
+  "pinout_page": 1
+ },
+ "values": {},
+ "limits": {},
+ "body": {
+  "h_mm": 8.9,
+  "box": [
+   -13.5,
+   -11.1,
+   11.0,
+   11.1
+  ]
+ },
+ "lead": {
+  "1": {
+   "shape": "rect",
+   "a_mm": 0.9,
+   "b_mm": 0.4,
+   "tol_mm": null,
+   "hole_rec_mm": 1.3,
+   "source": "Kinghelm KH-CR2032-2-1 drawing rev F: the plus lead 0.4 mm thick (front view) and 0.9 mm wide (side view); PCB hole layout Ø1.3 mm"
+  },
+  "2": {
+   "shape": "rect",
+   "a_mm": 0.7,
+   "b_mm": 0.4,
+   "tol_mm": null,
+   "hole_rec_mm": 1.3,
+   "source": "Kinghelm KH-CR2032-2-1 drawing rev F: the minus lead 0.7 mm wide (front view); its thickness 0.4 mm as the plus lead: assumption"
+  }
+ },
+ "spice": {},
+ "compliance": {
+  "rohs": true,
+  "source": "Kinghelm KH-CR2032-2-1 drawing rev F: RoHS mark, housing PBT, contacts C2680 brass tin-plated"
+ },
+ "footprint_data": {
+  "origin": [
+   0,
+   0
+  ],
+  "pads": {
+   "2": {
+    "x": -10.0,
+    "y": 0.0,
+    "shape": "ELLIPSE",
+    "w": 2.0,
+    "h": 2.0,
+    "hole": [
+     1.2,
+     1.2
+    ]
+   },
+   "1": {
+    "x": 10.0,
+    "y": 0.0,
+    "shape": "ELLIPSE",
+    "w": 2.0,
+    "h": 2.0,
+    "hole": [
+     1.2,
+     1.2
+    ]
+   }
+  }
+ }
+}

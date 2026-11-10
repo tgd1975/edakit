@@ -999,12 +999,15 @@ def wire_colour(w, colours):
     return WIRE_COLOURS.get(w.get("color") or "", colours.get(w["net"], "#555"))
 
 
+MIN_WIDTH_MM = 100      # the drawing at least as wide as the legend's longest line: a small board gets room to its right
+
+
 def draw(res, bottom, title):
     plan, design = res.plan, res.design
     pitch = plan.pitch
     W, H = plan.size_mm()
     ml, mt, mr, mb = 8, 17, 8, 19
-    svg = Svg(W + ml + mr, H + mt + mb)
+    svg = Svg(max(W + ml + mr, MIN_WIDTH_MM), H + mt + mb)
     colours = net_colours(design, list(dict.fromkeys([w["net"] for w in res.wires] + list(res.net_of.values()))))
 
     def X(x):
@@ -1129,7 +1132,7 @@ def draw(res, bottom, title):
         svg.add(f'<circle cx="{x + 1:.2f}" cy="{y:.2f}" r="1.02" fill="#5c6269" stroke="#16181b" '
                 f'stroke-width="0.28"/><circle cx="{x + 1:.2f}" cy="{y:.2f}" r="0.3" fill="#d9dde1"/>')
         svg.text(x + 2.6, y, "soldered lead", size=1.3, anchor="start")
-        svg.add(f'<circle cx="{x + 19:.2f}" cy="{y:.2f}" r="0.62" fill="#ffffff" stroke="#f28e2b" '
+        svg.add(f'<circle cx="{x + 19:.2f}" cy="{y:.2f}" r="0.62" fill="#ffffff" stroke="#777777" '
                 'stroke-width="0.42"/>')
         svg.text(x + 20.4, y, "wire from the top", size=1.3, anchor="start")
         svg.add(f'<circle cx="{x + 40:.2f}" cy="{y:.2f}" r="0.78" fill="#e4d8c0" stroke="#b9a684" stroke-width="0.1"/>'
@@ -1156,8 +1159,15 @@ def draw(res, bottom, title):
                 x += 23
                 if x > ml + W - 15:
                     x, y = ml, y + 2.6
-        svg.text(ml, y + 3, "LED: flat side = cathode, + = anode (long lead).  Capacitor: stripe = minus.  Dashed "
-                 "circles: the nuts of the mounting holes.", size=1.3, anchor="start", fill="#444")
+        kinds = {p.kind for p in res.placed.values()}
+        polar = any({"plus", "minus"} <= {v.get("role") for v in (p.entry.get("pins") or {}).values()}
+                    for p in res.placed.values() if p.kind not in ("capacitor", "led"))
+        marks = [m for m, show in (("LED: flat side = cathode, + = anode (long lead).", "led" in kinds),
+                                   ("Capacitor: stripe = minus.", "capacitor" in kinds),
+                                   ("+ and −: the ends of a holder or connector.", polar),
+                                   ("Dashed circles: the nuts of the mounting holes.", bool(plan.mounts))) if show]
+        if marks:
+            svg.text(ml, y + 3, "  ".join(marks), size=1.3, anchor="start", fill="#444")
     return svg.done()
 
 
@@ -1208,6 +1218,10 @@ def draw_part(svg, d, p, design, X, Y, hc, rect):
     else:
         svg.add(rect(body, "#cfcfcf", "#555"))
         svg.text(cx, cy, d, size=1.2)
+        if "plus" in roles and "minus" in roles:   # a holder fits both ways round: its ends marked (M-5 of LR.7)
+            for role, sign in (("plus", "+"), ("minus", "−")):
+                x, y = hc(holes[roles[role]])
+                svg.text(x + (1.6 if x < cx else -1.6), y, sign, size=1.9, fill="#222", weight="bold")
 
 
 def polar_marks(svg, plus, minus, cx, cy, r, fill, stripe=False):
@@ -1332,6 +1346,7 @@ def lists(res, title, findings_too=True):
     for d, p in sorted(placed.items(), key=lambda kv: natural_key(kv[0])):
         groups[build_group(p)].append(d)
     cut_mm = {id(i["wire"]): i["mm"] for i in cut["insulated"] + cut["bare"]}
+    colour_of = {id(i["wire"]): i["colour"] for i in cut["insulated"]}
     modules = [d for d, p in placed.items() if p.raised]
     step = 0
     for key, head in ORDER:
@@ -1354,15 +1369,17 @@ def lists(res, title, findings_too=True):
                 if id(it) in cut_mm:
                     rows.append(f"holes {holes_of(it)} {it['net']} ({cut_mm[id(it)]} mm)")
             elif key == "wire":
-                rows.append(f"{it.get('color') or 'any colour'}, holes {holes_of(it)} {it['net']} ({cut_mm[id(it)]} "
-                            "mm)")
+                colour = colour_of[id(it)]
+                rows.append(f"{'any colour' if colour == 'any' else colour}, holes {holes_of(it)} {it['net']} "
+                            f"({cut_mm[id(it)]} mm)")
             else:
                 rows.append(build_row(it, placed[it], design))
         if not rows:
             continue
         step += 1
-        tail = " The bridges beside the wires' ends are their stripped ends." if key == "bridge" and cut["by_end"] \
-            else ""
+        tail = (" The bridges beside the wires' ends are their stripped ends." if key == "bridge" and cut["by_end"] else
+                " Bend each stripped end along the pad beside it without covering that hole, and do not solder it "
+                "yet: it is soldered with the lead or the bridges in that pad, in their step." if key == "wire" else "")
         out.append(f"{step}. **{head}:** " + "; ".join(rows) + "." + tail)
     out.append("")
     out += test_list(res)
@@ -1400,8 +1417,11 @@ def build_row(d, p, design):
         return (f"{d} {(e.get('values') or {}).get('color', '')}: anode (long lead) in hole "
                 f"{hole_name(p.holes[roles['anode']])}, cathode (flat) in hole {hole_name(p.holes[roles['cathode']])}")
     if "plus" in roles and "minus" in roles:
-        return (f"{d} {value_of(comp)}: plus in hole {hole_name(p.holes[roles['plus']])}, minus (stripe) in "
-                f"hole {hole_name(p.holes[roles['minus']])}")
+        if p.kind == "capacitor":
+            return (f"{d} {value_of(comp)}: plus in hole {hole_name(p.holes[roles['plus']])}, minus (stripe) in "
+                    f"hole {hole_name(p.holes[roles['minus']])}")
+        return (f"{d} {value_of(comp)}: its + end on hole {hole_name(p.holes[roles['plus']])}, its − end on hole "
+                f"{hole_name(p.holes[roles['minus']])} – find the + on the part, it may fit both ways round")
     if p.kind == "diode" and "anode" in roles and "cathode" in roles:
         return (f"{d}: cathode (ring) in hole {hole_name(p.holes[roles['cathode']])}, anode in hole "
                 f"{hole_name(p.holes[roles['anode']])}")

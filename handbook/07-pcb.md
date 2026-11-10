@@ -1229,9 +1229,10 @@ error   PERF.net/meet    L2: joins GND bridges F2 … R2 with LED3.anode (LED_Y1
 
 `edakit perfboard` writes into `<artifacts>/perfboard/<board>/`:
 
-- `top.svg` – the parts from above with their designators and polarity, the insulated wires in their colours with
-  dots where they enter the board, a module on sockets see-through over the wires beneath it, the hole names at the
-  edges, the nuts of the mounting holes;
+- `top.svg` – the parts from above with their designators and polarity – `+` and `−` at the ends of a holder or a
+  connector, which fit both ways round –, the insulated wires in their colours with dots where they enter the board,
+  a module on sockets see-through over the wires beneath it, the hole names at the edges, the nuts of the mounting
+  holes; the legend names only the marks the board has;
 - `bottom.svg` – the bottom side seen through the board from above, in the orientation of the top view, A1 at the top
   left in both: the soldered leads clearly stronger than the empty holes, the bridges as bars coloured by net, a ring
   where a wire comes through from the top, the strips of a kind that has them;
@@ -1239,8 +1240,9 @@ error   PERF.net/meet    L2: joins GND bridges F2 … R2 with LED3.anode (LED_Y1
   - the **cut list**: the insulated wires by colour with their lengths, the pieces of bare wire grouped by length – a
     straight row of bridges is one piece, a single bridge beside a wire's end is that wire's stripped end –, every
     length rounded up to the kind's step or `cut_step_mm`;
-  - the **build list** from low to high, each part with its holes and its polarity, the bridges once the leads they
-    join are in, the test before a module is plugged in;
+  - the **build list** from low to high, each part with its holes and its polarity, the insulated wires with their
+    stripped ends bent onto the pads but soldered only with the lead or the bridges there, the bridges once the leads
+    they join are in, the test before a module is plugged in;
   - the **test list** for the multimeter: a supply to ground first with what it should read, per net the holes that
     must beep, next to each bridge the neighbouring pads of other nets that must not;
   - the **material**, with the board and the wire as `[[extra]]` lines for `edakit order` (8.4).
