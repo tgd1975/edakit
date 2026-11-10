@@ -13,7 +13,9 @@ reference for LR.1 to LR.4. Its rounds brought decisions 11 to 23: the owner's 1
 
 In implementation since 2026-11-09, on the owner's word ("implementiere das perfboard concept"): LR.1 to LR.6 are
 built in [#365](https://github.com/tgd1975/edakit/pull/365), edakit 1.2.1 – `edakit perfboard`, the codes PERF.*,
-stage L, handbook 7.9; LR.7 and LR.8 are TD-155 and TD-156 in `TODO.md`.
+stage L, handbook 7.9. LR.7's half for coin-cell-led is built in [#370](https://github.com/tgd1975/edakit/pull/370),
+edakit 1.2.4 – `examples/coin-cell-led/variants/perfboard/`, its gate RELEASED offline; blinker-555's half and LR.8 are
+TD-155 and TD-156 in `TODO.md`.
 
 ## Why
 
