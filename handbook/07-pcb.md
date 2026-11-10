@@ -1265,10 +1265,11 @@ error   PERF.net/meet    L2: joins GND bridges F2 … R2 with LED3.anode (LED_Y1
   - the **cut list**: the insulated wires by colour with their lengths and what is stripped at each end, the pieces
     of bare wire grouped by length, every length rounded up to whole millimetres – or to a coarser `cut_step_mm`, a
     whole number of mm –, with the drawing `cut.svg`. A bridge gets no piece where something already there makes it:
-    a straight row of bridges that starts at a wire's end is that wire's stripped end, longer by the row (2.54 mm a
-    bridge beyond the first); a single bridge to a hole with the lead of an LED, a diode, a capacitor or a resistor is
-    that lead bent over on the bottom – an LED's first, each lead once; a button's, a header's or a holder's pins do
-    not bend. What is left is one piece of bare wire per straight row;
+    - a straight row of bridges that starts at a wire's end is that wire's stripped end, longer by the row (2.54 mm a
+      bridge beyond the first);
+    - a single bridge to a hole with the lead of an LED, a diode, a capacitor or a resistor is that lead bent over on
+      the bottom – an LED's first, each lead once; a button's, a header's or a holder's pins do not bend;
+    - what is left is one piece of bare wire per straight row;
   - the **build list** from low to high, each part with its holes and its polarity – a lead that bends over is left
     long and unsoldered –, the insulated wires with their stripped ends bent onto the pads but soldered only with the
     lead or the bridges there, the bridges once the leads they join are in – bare wire, bent leads and a wire's longer
