@@ -8,6 +8,12 @@ written once, by `.github/merge.py`, from the fragments in [changes/](changes/RE
 update edakit@edakit`, then `/reload-plugins` or a new session; `edakit version` names the version that runs and what an
 update brings.
 
+## 1.2.4 – 2026-11-10
+
+- The perfboard in the documentation: the site's tab "A prototype" between "A circuit" and "A board" with the page "Build it on a perfboard", the perfboard plan in the glossary, its drawing on the start page, and the handbook's index pointing to 7.9.
+- coin-cell-led gets a perfboard variant, `examples/coin-cell-led/variants/perfboard/`: through-hole parts, the plan on 14 × 15 holes, M-1, M-6 and M-5 signed (LR.7).
+- `edakit perfboard`: the drawing at least 100 mm wide, so a small board's legend fits; `+` and `−` at the ends of a holder or connector and no "(stripe)" in its build row; the build list says a wire's stripped end is soldered with the lead or bridges in its pad; the wires' colours as in the cut list; the legend names only the marks the board has.
+
 ## 1.2.3 – 2026-11-10
 
 - `edakit schematic copy` names the template EasyEDA cannot read and the way without a copy, `edakit schematic layout --save`, instead of ending on EasyEDA's bare TypeError (#337).
