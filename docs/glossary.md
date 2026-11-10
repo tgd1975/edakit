@@ -160,7 +160,8 @@ Handbook: [14.1 Roles](../handbook/14-design.md#141-roles).
 
 ### Hand-wired board
 
-A board you wire by hand, marked `wired = true`. Like a bought board, it has no PCB or manufacturing files.
+A board you wire by hand, marked `wired = true`. Like a bought board, it has no PCB. Built on a perfboard, its board
+file holds the [perfboard plan](#perfboard-plan).
 Handbook: [4.5 Own parts](../handbook/04-parts-database.md#45-own-parts),
 [8.1 Stages](../handbook/08-release-gate.md#81-stages).
 
@@ -259,6 +260,12 @@ One JSON file per part, named by its LCSC number or its manufacturer part number
 pins and their roles, limits, parameters.
 Handbook: [4 The parts database](../handbook/04-parts-database.md),
 [4.1 Fields](../handbook/04-parts-database.md#41-fields).
+
+### Perfboard plan
+
+The build plan of a hand-wired board on a perfboard, in its board file: each part on the grid of holes, the bridges of
+bare wire below, the insulated wires on top. `edakit perfboard` holds it to the graph and draws both sides.
+Handbook: [7.9 A perfboard](../handbook/07-pcb.md#79-a-perfboard).
 
 ### Placement plan
 

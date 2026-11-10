@@ -9,7 +9,8 @@ yet. The words: the [glossary's first section](glossary.md#the-ten-words-first).
 
 **The circuit.** You say what the circuit must do. Claude writes it as a [hardware graph](glossary.md#hardware-graph):
 parts, nets, pins, each part with its datasheet's limits. edakit checks it, simulates it and draws the schematic. The
-circuit is handed over in writing, a result on its own: enough to wire it by hand or put into a document.
+circuit is handed over in writing, a result on its own: enough to wire by hand,
+[build on a perfboard](steps/prototype.md) or put into a document.
 
 **The board.** From the hand-over, Claude draws the schematic and the PCB in EasyEDA Pro or KiCad, routes it and
 releases the manufacturing files. A release gate checks those files, not the drawing. The order goes into a maker's

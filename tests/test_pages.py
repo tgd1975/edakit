@@ -62,7 +62,7 @@ def test_the_navigation_is_tabs_by_reader_with_short_titles():
     site, out of the navigation."""
     mod = pages()
     tabs = [g for g, _ in mod.NAV]
-    assert tabs == ["Start", "A circuit", "A board", "Extend", "Develop", "Handbook", "Reference", "Explorative DSL",
+    assert tabs == ["Start", "A circuit", "A prototype", "A board", "Extend", "Develop", "Handbook", "Reference", "Explorative DSL",
                     "Inside edakit"]
     chapters = [int(Path(src).name[:2]) for src, _ in dict(mod.NAV)["Handbook"] if Path(src).name[:2].isdigit()]
     assert chapters == sorted(chapters)                          # by number; the index says which to read when

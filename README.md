@@ -7,17 +7,19 @@
 [![License: MIT](https://img.shields.io/github/license/tgd1975/edakit)](LICENSE)
 [![Docs](https://github.com/tgd1975/edakit/actions/workflows/pages.yml/badge.svg?branch=main)](https://tgd1975.github.io/edakit/)
 
-**Circuit design as code.** edakit takes a circuit from an idea to a board ready to order. It is a plugin for Claude
+**Circuit design as code.** edakit takes a circuit from an idea to a prototype on a perfboard or a board ready to
+order. It is a plugin for Claude
 Code and a command line, and everything it works on is text in your repository. In today's words, it specializes an
 agent [harness](https://tgd1975.github.io/edakit/develop/architecture/) for circuit design. The documentation:
 <https://tgd1975.github.io/edakit/>.
 
-| The circuit, drawn by `edakit schematic draw` | The board, from its Gerber files |
-| --- | --- |
-| ![The walkthrough's schematic: a CR2032, a push button, a red LED and its resistor](examples/coin-cell-led/docs/schematic.svg) | ![The walkthrough's round board, top side](examples/coin-cell-led/docs/silk_main_top.png) |
+| The circuit, drawn by `edakit schematic draw` | A prototype, drawn by `edakit perfboard` | The board, from its Gerber files |
+| --- | --- | --- |
+| ![The walkthrough's schematic: a CR2032, a push button, a red LED and its resistor](examples/coin-cell-led/docs/schematic.svg) | ![The Christmas bell's THT circuit on a perfboard, top view](docs/pictures/perfboard-top.svg) | ![The walkthrough's round board, top side](examples/coin-cell-led/docs/silk_main_top.png) |
 
 The walkthrough's example: a coin cell, a button and a red LED, drawn in EasyEDA Pro – every file of it is text in
-[examples/coin-cell-led](examples/coin-cell-led/). The same on KiCad: a 555 blinker in
+[examples/coin-cell-led](examples/coin-cell-led/). The prototype is the Christmas bell's through-hole circuit, its
+plan [checked and drawn](https://tgd1975.github.io/edakit/prototype/) by edakit. The same on KiCad: a 555 blinker in
 [examples/blinker-555](examples/blinker-555/), with
 [its walkthrough](https://tgd1975.github.io/edakit/handbook/18-walkthrough-kicad/).
 
@@ -34,7 +36,7 @@ It checks the walkthrough's circuit in a fraction of a second and shows a findin
 The [quickstart](https://tgd1975.github.io/edakit/start/quickstart/) goes on from there: a finding explained, the simulation,
 the drawn schematic.
 
-- **Makers.** A checked circuit and its drawing, or a board from it: start with the
+- **Makers.** A checked circuit and its drawing, a prototype on a perfboard, or a board from it: start with the
   [quickstart](https://tgd1975.github.io/edakit/start/quickstart/), then follow [the steps](https://tgd1975.github.io/edakit/circuit/).
 - **Engineers.** A rule of your own for edakit's checks:
   [adding a rule](https://tgd1975.github.io/edakit/extend/adding-a-rule/).
