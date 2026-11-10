@@ -29,9 +29,6 @@ to touch.
 
 ## For the owner
 
-- [ ] TD-160 - **Report M-13 upstream:** an issue at oaslananka/easyeda-mcp-pro – pours created through the API come
-      back `no-copper` in the same EasyEDA session (upstream/README.md, M-13; edakit's way out `route fill`, #372). A
-      session drafts it on your word; you post it or give the OK. *(edakit-9d)*
 - [ ] TD-108 - **A photo of the delivered tree:** one picture of the lit tree in its hill into pytree's `docs/img/` –
       it replaces the render on `docs/projects/pytree.md`. *(edakit-ce)*
 
@@ -87,6 +84,9 @@ Nothing to do until there is an answer or a release; whichever session learns of
 
 ## Closed todos
 
+- [x] TD-160 - **Report M-13 upstream:** posted on the owner's word as a data point on
+      oaslananka/easyeda-mcp-pro#480 – the cause found live (EasyEDA's copper engine stale after API changes until the
+      PCB is reloaded); edakit reloads before every fill since 1.3.2 (#386). [2026-11-10]
 - [x] TD-159 - **LR.7, coin-cell-led:** its perfboard variant `examples/coin-cell-led/variants/perfboard/` – through-hole
       parts, the plan on 14 × 15 holes, M-1, M-6 and M-5 signed, the gate RELEASED offline, held by tests; split off
       TD-155 on the owner's word, merged as edakit 1.2.4 (#370). [2026-11-10]
