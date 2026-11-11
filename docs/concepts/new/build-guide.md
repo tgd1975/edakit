@@ -1,12 +1,13 @@
 # The build guide: soldering and first power step by step – and a layout that can be measured
 
 Status 2026-11-11: decided, nothing built – the six questions taken by the owner the same day in a decision round in
-Claude Code's form, five as recommended and the builder's reading as an agent of its own, and the plan's goal set by the owner afterwards:
-it tests the build, not the circuit (decision 7; the table at the end). Asked for by the owner after the bell's two through-hole
-boards arrived bare and a session wrote their build guide: "schreib im edakit projekt ein konzept, dass dieses aufbau
-dokument beschreibt ... und reg dort an, dass im pcb layout design vielleicht messbarkeit berücksichtigt werden sollte
-... uu ein skill, ein agent ... keine ahnung ... überlegt dir im konzept auch, welcher sprachstil verwendet werden
-soll ... und wie und wann das ganze gemacht werden soll". Written against main at `ecd94952`.
+Claude Code's form, five as recommended and the builder's reading as an agent of its own, and the plan's goal set by
+the owner afterwards: it tests the build, not the circuit (decision 7), with a test firmware of its own for what the
+builder sees and hears (decisions 8 and 9; the table at the end). Asked for by the owner after the bell's two
+through-hole boards arrived bare and a session wrote their build guide: "schreib im edakit projekt ein konzept, dass
+dieses aufbau dokument beschreibt ... und reg dort an, dass im pcb layout design vielleicht messbarkeit berücksichtigt
+werden sollte ... uu ein skill, ein agent ... keine ahnung ... überlegt dir im konzept auch, welcher sprachstil
+verwendet werden soll ... und wie und wann das ganze gemacht werden soll". Written against main at `ecd94952`.
 
 The experience behind it is two documents written by hand: pytree's `docs/aufbau.md` and the bell's `docs/aufbau.md`
 with its script `docs/aufbau.py` (automatic_christmas_bell, boards tht and esp32tht, ordered bare on 2026-11-02,
@@ -159,8 +160,9 @@ it before the order. From that follows:
 - **When the plan is complete.** For every part fitted by hand: is there an entry that fails when the part is
   missing, reversed or of the wrong value? That is computed, so the derivation has an end, and the plan lists what no
   entry covers.
-- **What a meter cannot show** – a missing decoupling capacitor – is a line of the test record as a visual check,
-  not a measurement made up for it.
+- **What a meter cannot show** is an entry of another kind, not a measurement made up for it: a step of the test
+  firmware where the builder sees or hears it ("The test firmware" below), and a visual check in the test record
+  where not even that shows it – a missing decoupling capacitor.
 - **Readings and tolerances** come from the parts' data: the part's tolerance and the meter's, not the design's
   margins.
 - **A wrong reading** names causes of the build only. Once they are ruled out, the guide says in one line that the
@@ -205,6 +207,56 @@ pad closer than 4 mm – never an error (decision 2). The 4 mm are provisional: 
 rule – 2.54 mm was the hazard, 3.5 mm was avoided, 4.5 mm was accepted –, so 4 mm reports the first two and not the
 third. A project can set its own distance, and the second board checks the number.
 
+## The test firmware
+
+Added by the owner on 2026-11-11: "den build guide um einen best practice plan bezüglich test-firmware ergänzen ...
+eine firmware, die einem hilft schnell alles zu überprüfen, was durch sichtprüfung (hörprüfung, etc.) im weitesten
+sinne überprüfbar ist".
+
+The bell's guide tests with the product's firmware (its chapter 9). To see five LEDs the builder starts a countdown
+of 60 s, the bell rings at once only on a key combination, and the ESP32 board asks for its Wi-Fi set-up before a
+button can be tried. The product's firmware shows that the product works. It is slow at showing which part does not.
+
+A test firmware is the plan's third kind of entry, beside the meter and the eye: what the builder perceives when the
+firmware drives one thing – an LED lights in its colour, a buzzer sounds, a servo moves, a relay clicks, a display
+shows a pattern – and what the firmware shows when the builder does one thing – a button pressed, a switch set. Its
+goal is the plan's (decision 7): the board was built right.
+
+**What edakit derives.** The firmware contract (`hardware/firmware.json`, handbook 3.5) already holds what such a
+firmware drives and reads: every pin with its direction and active level, the inputs, the PWM nets, the I2C and SPI
+devices, the analog inputs with their dividers, the LEDs of every channel. From it the plan gets its steps: one per
+output with the designators as printed and what is perceived, one per input with what to actuate, one per thing the
+MCU checks alone – a device answers at its address, an input rests at its pull's level, a rail read through its
+divider lies in its tolerance. The steps count in the plan's completeness like a measurement: a part fitted by hand
+is covered by the meter, by the firmware or by the eye. They need the contract (`[firmware]` in edakit.toml); without
+it the plan says so in one line and the guide checks with the product's firmware only.
+
+**What the project writes.** The firmware itself, as a small program of its own beside the product's (decision 8),
+written by the project's session from the steps and the practice below. edakit gives the list and the practice and no
+source: the contract has no firmware format, and it stays so (decision 9).
+
+**The practice**, the rules the skill carries:
+
+- **Of its own, and small.** Without the product's Wi-Fi, settings and sequences. It can be ready at the release,
+  before the product's firmware is, and it runs on a board that works only in part. Two uploads per board are its
+  price.
+- **One thing at a time, in the order printed on the board.** Each output alone, by designator, about 1 s each. A
+  part or a line swapped shows as a wrong order; everything on at once shows nothing.
+- **Named as printed.** The serial line, and a display where the board has one, names what is driven: "D3 red".
+- **Runs without a computer.** It starts with the power and repeats; the serial output is an addition.
+- **An input answers on an output** the walk has already shown to work: a pressed button lights an LED.
+- **What the MCU can check alone comes first**, reported as one sign – good or bad, a bad one with the designator –
+  before the builder has to watch anything.
+- **Fast.** One run under a minute per board; no waiting for the product's times.
+- **Safe on a board built wrong.** One output at a time keeps the current low, an actuator moves a little and is
+  switched off again, and no step relies on a part that may be missing.
+- **Says what it is:** its name, the boards' revisions and its commit at the start, so the record names what tested.
+- **Pins from the contract,** never typed, so the firmware follows the graph.
+
+**In the guide.** A chapter after the measurements with power: upload, then a table of the steps – what is driven,
+what the builder sees or hears, a box to tick – that is part of the test record. The product's firmware follows with
+the acceptance steps of the requirements (decision 6), which no longer have to find a reversed LED.
+
 ## A skill, a command, an agent
 
 The owner left open what does the work. The parts differ in kind, so the proposal splits them:
@@ -212,6 +264,8 @@ The owner left open what does the work. The parts differ in kind, so the proposa
 | Part | Kind | Why |
 | --- | --- | --- |
 | The measuring plan, the pictures, the check that a labelled point lies on its net | code – a command | computed from the graph, the board file and the geometry; the bell's script shows the size |
+| The steps of the test firmware | code – the same command | derived from the firmware contract |
+| The test firmware | the project's source, written by its session | the contract has no firmware format; the practice stands in the skill |
 | The guide's text, its order, the rounds with the owner | a skill, `build-guide` | prose in the project's language, in the register above, written in the session that talks to the owner |
 | Measurability | a catalog code, a line in the hand-over, a point of the layout review | belongs to the layout, before the order |
 | Reading the finished guide as the builder | an agent, `build-guide-reader` | fresh context: it does not know the board, as the reader does not |
@@ -230,7 +284,7 @@ project.
 | The circuit is handed over | the measuring plan is derived and goes into the hand-over | the circuit's session |
 | A layout round | the check on reach and distance; the names at sockets and test pads | the layout's session |
 | The layout review (M-5) | the reviewer judges the plan against the board | pcb-reviewer |
-| The release | the guide's draft: parts, polarity, order, measuring tables and pictures from the released run | the skill |
+| The release | the guide's draft: parts, polarity, order, measuring tables and pictures from the released run; the test firmware from the plan's steps | the skill, the project's session |
 | The boards are at the maker | the agent reads the draft as its builder, then the owner; nothing can change on the board any more, so the guide can be finished while waiting | build-guide-reader, the owner, the skill |
 | Delivery | the first board is built with the guide; what the bench shows goes back into it | the owner, the skill |
 | Every board | the test record is filled in; signed, it is the evidence for M-4 | the owner |
@@ -267,6 +321,9 @@ Decided, none built. In the order they build on each other:
 | BG.4 | The check on reach and distance – a note, a warning under 4 mm –, its catalog entry; the names at sockets and test pads in the silkscreen |
 | BG.5 | The layout reviewer's point; the agent `build-guide-reader`; the record and section 6 from one list, every row with where it comes from, the record as evidence for M-4 |
 | BG.6 | The bell's guide rebuilt with BG.1 to BG.3 and compared with the one written by hand |
+| BG.7 | The steps of the test firmware from the firmware contract – outputs, inputs, what the MCU checks alone –, counted in the plan's completeness; the line where `[firmware]` is missing |
+| BG.8 | The practice of the test firmware in the skill `build-guide`; the guide's chapter and the record's rows from BG.7 |
+| BG.9 | A test firmware for the bell's two boards by BG.7 and BG.8, its run timed against chapter 9 of the guide written by hand |
 
 BG.6 is the test: what the generated draft lacks against the hand-written guide is the list of what the skill still
 has to ask or write. Its measure is the plan's goal: which parts fitted by hand each of the two guides covers.
@@ -274,7 +331,8 @@ has to ask or write. Its measure is the plan's goal: which parts fitted by hand 
 ## Decisions
 
 Taken by the owner on 2026-11-11 in a decision round in Claude Code's form, the recommendation first; five of six as
-recommended.
+recommended. Decision 7 was set by the owner after the round, decisions 8 and 9 were taken in a second round the same
+day, both as recommended.
 
 | # | Question | Recommendation | Alternatives | Decision |
 | --- | --- | --- | --- | --- |
@@ -285,7 +343,12 @@ recommended.
 | 5 | The PDF | it stays the project's script until a second project wants one | edakit builds it | 2026-11-11: as recommended |
 | 6 | The record and M-4 | the filled-in record is the acceptance's evidence, one sheet per board, named in M-4's note; record and section 6 from one list | kept apart, M-4 as today | 2026-11-11: as recommended; made precise the same day with decision 7 – every row names where it comes from, the plan's rows check the build, the acceptance steps come unchanged from the requirements file |
 | 7 | The plan's goal | – (set by the owner after the round) | a plan that also tests whether the circuit is correct: "eine viel aufwändigere testreihe" | 2026-11-11: the plan tests that the board was built right, not that the circuit is correct; an entry gets in when it finds a fault of the build, and the plan is complete when every part fitted by hand is covered or listed as uncovered |
+| 8 | The test firmware's form | a small firmware of its own, without the product's Wi-Fi, settings and sequences | a test mode of the product's firmware; the project decides | 2026-11-11: as recommended |
+| 9 | How far edakit goes with it | the steps derived from the firmware contract and the practice in the skill; the project's session writes the source | edakit writes a skeleton for PlatformIO or MicroPython | 2026-11-11: as recommended |
 
 What Claude had set itself was confirmed the same day: the warning's distance of 4 mm, provisional – it reports the
 bell's 2.54 mm and 3.5 mm and not its 4.5 mm, a project can set its own, and the second board checks it –; the agent
-reads only (Read, Bash), changes nothing and signs nothing while the bell is its only project.
+reads only (Read, Bash), changes nothing and signs nothing while the bell is its only project; the test firmware runs
+without a computer, the serial output an addition, one run takes under a minute per board with about 1 s per output
+in the order of the designators, and its steps need the firmware contract – without `[firmware]` the plan says so in
+one line.
