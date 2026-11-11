@@ -1,6 +1,8 @@
 # The build guide: soldering and first power step by step – and a layout that can be measured
 
-Status 2026-11-11: proposed, nothing decided, nothing built. Asked for by the owner after the bell's two through-hole
+Status 2026-11-11: decided, nothing built – the six questions taken by the owner the same day in a decision round in
+Claude Code's form, five as recommended and the builder's reading as an agent of its own (the table at the end). Asked
+for by the owner after the bell's two through-hole
 boards arrived bare and a session wrote their build guide: "schreib im edakit projekt ein konzept, dass dieses aufbau
 dokument beschreibt ... und reg dort an, dass im pcb layout design vielleicht messbarkeit berücksichtigt werden sollte
 ... uu ein skill, ein agent ... keine ahnung ... überlegt dir im konzept auch, welcher sprachstil verwendet werden
@@ -25,7 +27,7 @@ what state the board is in at each step, and where a probe can be put safely. Th
 1. **The measuring plan as data.** A command derives from the graph what can be measured on the assembled board –
    unpowered and powered –, between which points and with which reading.
 2. **The build guide as a document of the project**, drafted from that plan and the parts list by a skill, in the
-   register below, with pictures edakit draws.
+   register below, with pictures edakit draws, and read by an agent as its builder before the owner reads it.
 3. **Measurability as a matter of the layout.** The plan goes into the hand-over, a check says where a point of the
    plan cannot be reached or only next to a foreign net, and the layout review (M-5) judges the rest.
 
@@ -97,7 +99,8 @@ countdown was described differently from what the firmware does.
 ## The register of a build guide
 
 `docs/style.md` covers edakit's own documentation. A build guide is a project's document in the project's language,
-so it needs a register of its own, short enough to stand in the skill:
+so it needs a register of its own. It stands in the skill `build-guide`, the agent reads it there, and the handbook
+points to it (decision 4):
 
 - **Reader:** someone who solders and measures, understands a circuit and has the board, the parts and this guide on
   the bench. The guide is read one step at a time, between two actions.
@@ -157,6 +160,9 @@ power is on, the meter's mode and the expected reading. The bell's has four grou
 With power on, each rail's voltage with its tolerance. A project adds what its circuit needs; the derived entries are
 a start, not the limit.
 
+The plan is derived on every run and never edited. What a project adds stands in the graph beside the net it
+concerns, in `[nets."+5V"]` (decision 1), so the plan follows every change of the circuit.
+
 The plan has two readers. The guide's tables and pictures are drawn from it. The layout is checked against it.
 
 ### In the hand-over, as a check, in the review
@@ -173,8 +179,10 @@ The plan has two readers. The guide's tables and pictures are drawn from it. The
 - **The review.** The layout reviewer (M-5) gets the plan and judges what a number does not: whether a point can be
   reached with the module plugged in, whether the board can lie flat while it is measured.
 
-Whether the check is an error, a warning or a note, and from which distance on, is open (question 2). The bell gives
-three numbers, not a rule: 2.54 mm was the hazard, 3.5 mm was avoided, 4.5 mm was accepted.
+The check is a note for a net without a reachable place and a warning for a net measured under power with a foreign
+pad closer than 4 mm – never an error (decision 2). The 4 mm are provisional: the bell gives three numbers, not a
+rule – 2.54 mm was the hazard, 3.5 mm was avoided, 4.5 mm was accepted –, so 4 mm reports the first two and not the
+third. A project can set its own distance, and the second board checks the number.
 
 ## A skill, a command, an agent
 
@@ -185,12 +193,14 @@ The owner left open what does the work. The parts differ in kind, so the proposa
 | The measuring plan, the pictures, the check that a labelled point lies on its net | code – a command | computed from the graph, the board file and the geometry; the bell's script shows the size |
 | The guide's text, its order, the rounds with the owner | a skill, `build-guide` | prose in the project's language, in the register above, written in the session that talks to the owner |
 | Measurability | a catalog code, a line in the hand-over, a point of the layout review | belongs to the layout, before the order |
-| Reading the finished guide as the builder | an agent, optional | fresh context: it does not know the board, as the reader does not |
+| Reading the finished guide as the builder | an agent, `build-guide-reader` | fresh context: it does not know the board, as the reader does not |
 
-The agent is the weakest of the four. The review that found the ambiguous instructions also added the explanations
-the owner then struck. A reviewer with a fixed brief – the reader of the register above, findings only for an
-instruction that can be misread or is wrong against the data, no additions – would keep the first and not do the
-second. Whether that needs an agent or a section of the skill is open (question 3).
+The review that found the ambiguous instructions also added the explanations the owner then struck. The agent has a
+fixed brief – the reader of the register above, findings only for an instruction that can be misread or is wrong
+against the data, no additions –, so it keeps the first and does not do the second. It is an agent of its own, not a
+section of the skill (decision 3): its brief is versioned in one place and it can be started without the skill. Like
+electrical-reviewer it reads only (Read, Bash) and changes nothing, and it signs nothing while the bell is its only
+project.
 
 ## When and how
 
@@ -200,7 +210,7 @@ second. Whether that needs an agent or a section of the skill is open (question 
 | A layout round | the check on reach and distance; the names at sockets and test pads | the layout's session |
 | The layout review (M-5) | the reviewer judges the plan against the board | pcb-reviewer |
 | The release | the guide's draft: parts, polarity, order, measuring tables and pictures from the released run | the skill |
-| The boards are at the maker | the owner reads the draft; nothing can change on the board any more, so the guide can be finished while waiting | the owner, the skill |
+| The boards are at the maker | the agent reads the draft as its builder, then the owner; nothing can change on the board any more, so the guide can be finished while waiting | build-guide-reader, the owner, the skill |
 | Delivery | the first board is built with the guide; what the bench shows goes back into it | the owner, the skill |
 | Every board | the test record is filled in; signed, it is the evidence for M-4 | the owner |
 
@@ -215,39 +225,43 @@ where the boards differ.
 handbook 6.6); the pictures are drawn again by the command. The guide names the boards' revisions and its commit.
 
 **The test record and the acceptance.** The record's rows and section 6 of the protocol list partly the same checks.
-One list should feed the other, so that the acceptance steps of a requirement appear in the record and a filled-in
-record is what M-4 signs.
+They come from one list (decision 6): the acceptance steps of a requirement appear in the record, and the filled-in
+record, one sheet per board, named in M-4's note, is what M-4 signs.
 
-**The PDF.** The bell's script turns the Markdown into HTML and prints it with Chromium. Whether edakit should build
-a PDF at all is open (question 5).
+**The PDF.** The bell's script turns the Markdown into HTML and prints it with Chromium. edakit builds no PDF; it stays
+the project's script until a second project wants one, and the header with the revisions and the commit is then the
+part worth sharing (decision 5).
 
 ## Steps
 
-None is decided. In the order they would build on each other:
+Decided, none built. In the order they build on each other:
 
 | Step | What |
 | --- | --- |
-| BG.1 | The measuring plan from the graph: the four groups above, the powered rails; written as a file of the run, listed in the hand-over |
+| BG.1 | The measuring plan from the graph: the four groups above, the powered rails, the project's additions from `[nets.…]`; written as a file of the run, listed in the hand-over |
 | BG.2 | The pictures: the board as assembled, a measuring point from the geometry, the check that it lies on its net |
-| BG.3 | The skill `build-guide` with the register, drafting the guide from BG.1, the parts list and BG.2; the test record |
-| BG.4 | The check on reach and distance, its catalog entry; the names at sockets and test pads in the silkscreen |
-| BG.5 | The layout reviewer's point; the record as evidence for M-4 |
+| BG.3 | The skill `build-guide` with the register, drafting the guide from BG.1, the parts list and BG.2; the test record; the handbook's pointer to the register |
+| BG.4 | The check on reach and distance – a note, a warning under 4 mm –, its catalog entry; the names at sockets and test pads in the silkscreen |
+| BG.5 | The layout reviewer's point; the agent `build-guide-reader`; the record and section 6 from one list, the record as evidence for M-4 |
 | BG.6 | The bell's guide rebuilt with BG.1 to BG.3 and compared with the one written by hand |
 
 BG.6 is the test: what the generated draft lacks against the hand-written guide is the list of what the skill still
 has to ask or write.
 
-## Open for the owner
+## Decisions
 
-1. **The plan's home.** Derived on every run and never edited, or a file of the project that starts derived and is
-   then kept by hand. Recommended: derived, with the project's additions in the graph beside the nets they concern.
-2. **The check's grade and number.** Recommended: a note for a net without a reachable place, a warning for a net
-   measured under power with a foreign pad closer than a distance to be set from more than one board – not an error.
-3. **A reviewing agent** or a section of the skill. Recommended: a section of the skill first; an agent once a second
-   project shows the review is worth a session of its own.
-4. **The register's home.** In the skill only, or also as a page of the handbook a project can read. Recommended: the
-   skill; the handbook gets a pointer.
-5. **The PDF.** edakit builds it, or it stays a project's script. Recommended: it stays the project's until a second
-   project wants one; the header with revision and commit is then the part worth sharing.
-6. **The record and M-4.** Whether a filled-in test record is the acceptance's evidence. Recommended: yes, one sheet
-   per board, named in M-4's note.
+Taken by the owner on 2026-11-11 in a decision round in Claude Code's form, the recommendation first; five of six as
+recommended.
+
+| # | Question | Recommendation | Alternatives | Decision |
+| --- | --- | --- | --- | --- |
+| 1 | The plan's home | derived on every run and never edited, the project's additions in the graph beside the nets they concern | a file of the project that starts derived and is then kept by hand; derived only, no additions | 2026-11-11: as recommended |
+| 2 | The check's grade | a note for a net without a reachable place, a warning for a net measured under power with a foreign pad too close – not an error | an error for the distance; notes only | 2026-11-11: as recommended |
+| 3 | The builder's reading | a section of the skill that starts a subagent with a fixed brief; an agent once a second project shows it is worth one | an agent of its own; no review, the owner reads alone | 2026-11-11: an agent of its own, `build-guide-reader` |
+| 4 | The register's home | in the skill, the handbook points to it | a page of the handbook the skill reads | 2026-11-11: as recommended |
+| 5 | The PDF | it stays the project's script until a second project wants one | edakit builds it | 2026-11-11: as recommended |
+| 6 | The record and M-4 | the filled-in record is the acceptance's evidence, one sheet per board, named in M-4's note; record and section 6 from one list | kept apart, M-4 as today | 2026-11-11: as recommended |
+
+What Claude had set itself was confirmed the same day: the warning's distance of 4 mm, provisional – it reports the
+bell's 2.54 mm and 3.5 mm and not its 4.5 mm, a project can set its own, and the second board checks it –; the agent
+reads only (Read, Bash), changes nothing and signs nothing while the bell is its only project.
