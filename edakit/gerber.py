@@ -29,6 +29,12 @@ FILES = {"top": "Gerber_TopLayer.GTL", "bottom": "Gerber_BottomLayer.GBL", "top_
          "pth": "Drill_PTH_Through.DRL", "vias": "Drill_PTH_Through_Via.DRL", "npth": "Drill_NPTH_Through.DRL",
          "probe": "FlyingProbeTesting.json"}
 REQUIRED = ["top", "bottom", "top_silk", "bottom_silk", "top_mask", "bottom_mask", "outline", "pth", "probe"]
+NO_PLATED = "no plated holes"   # a board without one: EasyEDA Pro exports no plated drill file, none is required (#395)
+
+
+def required(plated=True):
+    """REQUIRED – without the plated drill file on a board that has no plated hole (#395)."""
+    return [k for k in REQUIRED if plated or k != "pth"]
 RES = 0.02  # mm per raster point
 
 

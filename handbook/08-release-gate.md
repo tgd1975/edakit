@@ -132,6 +132,12 @@ through-hole pad without its hole (GEO.hole, and GND open in GEO.copper), a copp
 (FILES.set, and a loose piece in GEO.pour), a plated slot 1.2 mm long in a round pad of 1.4 mm (GEO.hole, and its ring
 of 0.1 mm in GEO.ring). A new check of L or F gets its fault there.
 
+A board without a plated hole – SMD pads only, no via, at most NPTH holes – gets no plated drill file from EasyEDA Pro.
+FILES.set requires it only when pcb.json has a through-hole pad or a via (a run written before pcb.json listed its
+vias: the via drill file); without one GEO.copper joins the layers through no hole, so every net must be connected on
+one layer, and GEO.hole and GEO.ring pass with "no plated holes". A board with plated holes and no file fails as
+before (#395).
+
 ### Project checks
 
 A project holds up the release with checks of its own: a script registered in edakit.toml as `[scripts.<name>]` of kind

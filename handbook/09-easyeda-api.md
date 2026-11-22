@@ -95,7 +95,9 @@ List the available methods with `easyeda_api_inventory` and a `filter`.
 
 - Files: `Gerber_TopLayer.GTL`, `Gerber_BottomLayer.GBL`, silk `GTO/GBO`, mask `GTS/GBS`, outline `GKO`, drills
   `Drill_PTH_Through.DRL`, `Drill_PTH_Through_Via.DRL`, `Drill_NPTH_Through.DRL`, plus `FlyingProbeTesting.json` with
-  every pad (position, size, layer, name `<designator>_<pin>`).
+  every pad (position, size, layer, name `<designator>_<pin>`). A board without a plated hole – SMD pads only, no via
+  – gets no `Drill_PTH_Through.DRL`; edakit then requires none (8.1, FILES.set) and reads its absence as no plated
+  holes. Whether the board has one, it takes from pcb.json: its through-hole pads and its vias.
 - No net attributes (`%TO.N`) in the Gerber files; FlyingProbeTesting.json renames some nets (`NET_3`). Take the net
   of each pad from the graph.
 - Pads are always apertures (flashes), never regions. Pours are regions, and EasyEDA traces the edge of every pour as a

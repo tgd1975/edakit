@@ -1716,3 +1716,51 @@ def test_the_pick_and_place_is_kept_as_easyeda_delivers_it_and_read_either_way(t
         assert [p.name for p in d.iterdir()] == ["cpl_easyeda.csv"]
         rows = fab.read_easyeda_cpl(d)
         assert rows == [dict(zip(head, ["R1", "R0603", "10.5", "20", "T", "90", "Yes"]))], (sep, enc)
+
+
+def smd_only(ex, project, vias=()):
+    """The export of a board without a plated hole (#395): J1's pads made SMD in the PCB, no plated drill file – EasyEDA
+    Pro exports no Drill_PTH_Through.DRL then, the NPTH file with the tooling holes stays. vias: (x, y) of vias the PCB
+    keeps."""
+    for p in ex.comp("J1")["pads"]:
+        p.update(tht=False, Layer=1)
+    at = {ex.at["J1.1"], ex.at["J1.2"]}
+    for layer in ("bottom", "bottom_mask"):       # SMD pads: on TOP only
+        ex.gerber[layer][:] = [i for i in ex.gerber[layer] if not (i[0] == "flash" and tuple(i[2:4]) in at)]
+    for row in ex.probe["pins"]["rows"]:
+        if row[0].startswith("J1_"):
+            row[4] = "SMD"
+    ex.pth = []
+    ex.lost.add("pth")
+    for x, y in vias:
+        via(ex, x, y)
+        ex.pcb.setdefault("vias", []).append({"Net": "GND", "X": x * MIL, "Y": y * MIL})
+        ex.lost.add("vias")
+
+
+def test_a_board_without_plated_holes_needs_no_plated_drill_file(project):
+    """#395: a board without a plated hole passes stages L and F without Drill_PTH_Through.DRL – GEO.copper joins the
+    layers through no hole, GEO.hole and GEO.ring say so, FILES.set does not miss the file."""
+    rows = run(project, smd_only)
+    assert findings(rows) == []
+    said = {r["id"]: r["actual"] for r in rows if r["id"] in ("GEO.hole", "GEO.ring", "FILES.set")
+            and "no plated holes" in r["actual"]}
+    assert sorted(said) == ["FILES.set", "GEO.hole", "GEO.ring"], said
+
+
+def test_a_board_with_a_via_still_needs_the_plated_drill_file(project):
+    """#395: the PCB has a via (pcb.json "vias") but the export no plated drill file – missing, as before."""
+    rows = run(project, lambda ex, p: smd_only(ex, p, vias=[(8, 16)]))
+    failed = [r for r in rows if r["result"] == "fail"]   # the via stands alone: GEO.pour warns about its copper
+    assert sorted(r["id"] for r in failed) == ["FILES.set", "GEO.copper", "GEO.hole", "GEO.ring"]
+    assert all("Drill_PTH_Through.DRL" in r["actual"] for r in failed)
+
+
+def test_an_older_run_with_a_via_drill_file_still_needs_the_plated_one(project):
+    """#395: a pcb.json without "vias" (written before it) – the via drill file shows the plated holes."""
+    def fault(ex, p):
+        smd_only(ex, p)
+        via(ex, 8, 16)
+        ex.lost.add("pth")
+    rows = run(project, fault)
+    assert ("FILES.set", "fail") in findings(rows) and ("GEO.ring", "fail") in findings(rows)

@@ -1262,7 +1262,7 @@ fix = "Export again; correct outline, holes or tooling holes in the board file a
 severity = "error"
 grades = { margin = "warning" }
 details = [
-  "Gerber set complete (a missing file is named here, and GEO.copper, GEO.mark, GEO.hole and GEO.silk, which read it, report it as not checked); outline and mounting holes from the outline layer = plan (± 0.2 mm); tooling holes in the NPTH file, mask open, no copper in the opening",
+  "Gerber set complete (a missing file is named here, and GEO.copper, GEO.mark, GEO.hole and GEO.silk, which read it, report it as not checked); the plated drill file Drill_PTH_Through.DRL only on a board with plated holes – through-hole pads or vias in the PCB: EasyEDA Pro exports none without, and GEO.copper joins the layers through no hole, GEO.hole and GEO.ring say \"no plated holes\" (#395); outline and mounting holes from the outline layer = plan (± 0.2 mm); tooling holes in the NPTH file, mask open, no copper in the opening",
 ]
 replaces = ["F-5"]
 sources = [

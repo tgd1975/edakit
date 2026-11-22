@@ -555,7 +555,8 @@ def area(pts):
 
 def pcb_json(cfg, board):
     """What `fab` reads from EasyEDA into pcb.json, read from the KiCad PCB: components (designator, place in mil,
-    rotation, layer, footprint, pads), tracks of the copper layers, texts, and whether each designator is printed."""
+    rotation, layer, footprint, pads), tracks of the copper layers, texts, whether each designator is printed, and the
+    vias (fab.plated_holes, #395)."""
     pcb = load(cfg, board)
     comps, shown = [], {}
     for ref, fp in parts(pcb):
@@ -586,7 +587,8 @@ def pcb_json(cfg, board):
             tx, ty = from_kicad(*floats(d, "at")[:2])
             strings.append({"Text": str(d[1]), "X": round(tx, 4), "Y": round(ty, 4),
                             "Layer": 3 if value(d, "layer") == "F.SilkS" else 4})
-    return {"components": comps, "lines": lines, "strings": strings, "designators": shown}
+    return {"components": comps, "lines": lines, "strings": strings, "designators": shown,
+            "vias": [{"Net": n, "X": round(x, 4), "Y": round(y, 4)} for x, y, _, n in vias(cfg, board, pcb)]}
 
 
 def vias(cfg, board, pcb=None):
