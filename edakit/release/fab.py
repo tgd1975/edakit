@@ -825,17 +825,30 @@ def silk_bodies(cfg, board, design, data, g, rows):
 def silk_designators(board, design, data, rows):
     """GEO.silk: every part of the `designators` side has a visible designator (read with the PCB into pcb.json), lies
     under a group label ([silk] groups, printed as a text) or a text with its name, or is listed in [silk] unlabelled
-    with the reason – otherwise a warning per part."""
+    with the reason – otherwise a warning per part. With designators = "none" no part is asked for one: none shows its
+    designator on either side (silk apply hides them all), a warning per part that does."""
     from .. import silk
     side = board.silk.get("designators", "top")
-    layer = silk.SIDE[side]
     shown = data.get("designators")
+    what = "designators of both sides" if side == "none" else f"designators of the {side} side"
     if shown is None:
-        rows.add("L", "GEO.silk", board.name, f"designators of the {side} side read with the PCB", False,
+        rows.add("L", "GEO.silk", board.name, f"{what} read with the PCB", False,
                  "pcb.json without the designators (written by an older edakit) – edakit fab without --offline",
                  "read with the PCB")
         return
     want = design.board_comps(board.name)
+    if side == "none":
+        parts = sorted((c["designator"] for c in data["components"] if c.get("designator") in want), key=natural_key)
+        seen = [r for r in parts if shown.get(r)]
+        rows.add("L", "GEO.silk", board.name, f"{what} read with the PCB", True,
+                 f'{len(parts)} parts, [silk] designators = "none": '
+                 + (f"{len(seen)} show{'s' if len(seen) == 1 else ''} a designator" if seen else "none shows a designator"),
+                 "every designator hidden")
+        for r in seen:
+            rows.add("L", "GEO.silk", board.name, f'{r}: visible designator, [silk] designators = "none"', False,
+                     f"{r} shows its designator", "hidden (edakit silk apply hides them all)", "warn")
+        return
+    layer = silk.SIDE[side]
     texts = {s["Text"] for s in data["strings"] if s["Layer"] == layer + 2}
     grouped = {r for name, refs in (board.silk.get("groups") or {}).items() if name in texts for r in refs}
     unlabelled = board.silk.get("unlabelled") or {}
@@ -993,7 +1006,7 @@ def check_visible_print(cfg, board, design, d, rows):
     want = design.board_comps(board.name)
     allowed = {t for t, *_ in silk.silk_texts(board, side)}
     label = silk.board_label_text(cfg, board)
-    if label and s.get("board_label_side", labelled) == side:
+    if label and s.get("board_label_side", silk.print_side(board)) == side:
         allowed.add(label)
     if labelled == side:
         allowed |= set(want) | set(s.get("groups") or {})
@@ -1010,7 +1023,7 @@ def check_visible_print(cfg, board, design, d, rows):
     if not stray:
         rows.add("L", "GEO.silk", board.name, check, True, f"{name}: {len(texts)} PCB text{'' if len(texts) == 1 else 's'}"
                  ", each one the board file puts there" if texts else f"{name}: no PCB text", expected)
-    if labelled == side:
+    if labelled in (side, "none"):    # "none": silk_designators holds every side hidden
         return
     check = f"{name} (visible): no designator shown – [silk] designators is {labelled}"
     shown = data.get("designators")

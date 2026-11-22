@@ -20,8 +20,8 @@ from ...config import BOTTOM, MIL_PER_MM, TOP
 from ...design import natural_key
 from ...silk import (GERBER_KEYS, SIDE, art_shapes, body_findings, board_label_area, board_label_text, board_shape,
                      corner_spot, fixed_findings, fixed_labels, footprint_print, label_box, label_parts, label_size,
-                     part_bodies, picture, place_labels, polygons, printable, side_obstacles, silk_on_openings,
-                     silk_texts, with_bodies)
+                     part_bodies, picture, place_labels, polygons, print_side, printable, side_obstacles,
+                     silk_on_openings, silk_texts, with_bodies)
 from . import board as kb
 from . import cli
 from . import commands
@@ -47,10 +47,11 @@ def apply(cfg, board, step=None, verbose=False):
     step = step or (lambda _: None)
     step("hide designators, remove the last run's print")
     s = board.silk
-    side = s.get("designators", "top")
+    side, none = print_side(board), s.get("designators") == "none"
     h, gap = float(s.get("label_h_mm", 1.0)), float(s.get("gap_mm", 0.25))
     layer = SIDE[side]
     hide = {SIDE[x] for x in s.get("hide", [])} | {layer}   # the placed side is hidden first, then shown at its spot
+    hide |= set(SIDE.values()) if none else set()           # designators = "none": both sides, none shown again
     hide_sides = {SIDE_NAME[x] for x in hide}
     kb.write_silk(cfg, board, {}, [], [], hide_sides)
     step("Gerber export: the footprints' own print")
@@ -68,8 +69,8 @@ def apply(cfg, board, step=None, verbose=False):
     comps = {c["designator"]: c for c in data["components"]}
     tht = {r for r, c in comps.items() if any(p["tht"] for p in c["pads"])} if solder_side else set()
     boxes = kb.part_boxes(cfg, board)
-    parts = {ref: boxes[ref] for ref in label_parts({r: (c["layer"], r in tht) for r, c in comps.items()}, layer,
-                                                     solder_side) if ref in boxes}
+    parts = {} if none else {ref: boxes[ref] for ref in label_parts(
+        {r: (c["layer"], r in tht) for r, c in comps.items()}, layer, solder_side) if ref in boxes}
     other = [r for r in parts if comps[r]["layer"] != layer]   # solder_side: printed as free texts
     bodies = part_bodies(cfg, comps)                           # bodies larger than their footprint (body.box)
     parts, here_bodies = with_bodies(parts, bodies, {r: c["layer"] for r, c in comps.items()}, layer)
@@ -154,13 +155,16 @@ def apply(cfg, board, step=None, verbose=False):
     elif board.revision is None:
         print(f"  ! no board label: set revision in {board.file}")
     kb.write_silk(cfg, board, designators, texts_out, fills_out, hide_sides)
-    print(f"  {side}: {sum(1 for n in placed if n in comps)} of {len((set(parts) - set(there)) | set(here))} "
-          "designators placed"
-          + (f" ({sum(1 for n in placed if n in other)} of {len(other)} through-hole parts of the other side)"
-             if solder_side else "")
-          + (f", fixed: {', '.join(sorted(here, key=natural_key))}" if here else "")
-          + (f", groups {', '.join(g for g in (s.get('groups') or {}) if g in placed)}" if grouped else "")
-          + f"; without room: {', '.join(missing) or '–'}")
+    if none:
+        print(f'  designators: none ([silk] designators = "none"), hidden on both sides: {len(comps)} parts')
+    else:
+        print(f"  {side}: {sum(1 for n in placed if n in comps)} of {len((set(parts) - set(there)) | set(here))} "
+              "designators placed"
+              + (f" ({sum(1 for n in placed if n in other)} of {len(other)} through-hole parts of the other side)"
+                 if solder_side else "")
+              + (f", fixed: {', '.join(sorted(here, key=natural_key))}" if here else "")
+              + (f", groups {', '.join(g for g in (s.get('groups') or {}) if g in placed)}" if grouped else "")
+              + f"; without room: {', '.join(missing) or '–'}")
     for finding in findings:
         print(f"  ! {finding}")
     code = check(cfg, board, fp_silk, step, verbose)
@@ -175,7 +179,7 @@ def check(cfg, board, footprint_silk=None, step=None, verbose=False):
     for side, layer in SIDE.items():
         silk = gerber.shape(gerber.parse_gerber(folder / gerber.FILES[GERBER_KEYS[layer][1]]))
         own = silk.difference(footprint_silk.buffer(0.02)) if footprint_silk is not None and layer == SIDE[
-            board.silk.get("designators", "top")] else silk
+            print_side(board)] else silk
         hit, openings = silk_on_openings(folder, layer, own)
         img = cfg.artifact(f"silk_{board.name}_{side}.png")
         picture(silk, openings, board_shape(board), img, mirror=layer == BOTTOM)

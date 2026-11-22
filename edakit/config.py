@@ -639,6 +639,14 @@ def _board(name, entry, b, file="", project=None, quantity=5):
     silk = b.get("silk", {})
     if not isinstance(silk.get("solder_side", False), bool):
         raise ConfigError(f"board {name}: silk.solder_side must be true or false")
+    if silk.get("designators", "top") not in ("top", "bottom", "none"):
+        raise ConfigError(f"board {name}: silk.designators must be 'top', 'bottom' or 'none' (no side labelled, "
+                          f"both hidden), not {silk['designators']!r}")
+    if silk.get("designators") == "none":   # nothing labelled: what would print a designator contradicts it
+        said = [k for k in ("place", "groups") if silk.get(k)] + (["solder_side"] if silk.get("solder_side") else [])
+        if said:
+            raise ConfigError(f"board {name}: {', '.join('silk.' + k for k in said)} with silk.designators = 'none' – "
+                              "no designator is printed; drop the key or name the side that is labelled")
     if silk.get("board_label_side", "top") not in ("top", "bottom"):
         raise ConfigError(f"board {name}: silk.board_label_side must be 'top' or 'bottom'")
     unlabelled = silk.get("unlabelled", {})

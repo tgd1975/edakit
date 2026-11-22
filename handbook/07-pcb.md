@@ -1111,6 +1111,17 @@ sign-offs with scope `layout`, and M-5 with scope `fab` lapses with the silkscre
   says so with `silkscreen` next to `mask` in `[order]`; FILES.order fails a pair JLCPCB does not print (ordering, 8.4).
 - Run `silk apply` again after every auto-layout and routing – spots depend on parts and vias.
 
+**No designators at all.** A board too small for any label, or one whose owner wants both sides without print, says
+`designators = "none"`: `silk apply` hides the designators of both sides and places none – no group labels, no labels on
+the solder side, no fixed ones (`groups`, `solder_side = true` or `[silk.place]` next to it is a board-file error). The
+artwork, the texts and the board label still print; their default side is then the top. The gate asks no part for a
+designator, so `unlabelled` is not needed for them, and warns on a part that shows one.
+
+```toml
+[silk]
+designators = "none"                                      # 13 x 12.5 mm: no room for any label
+```
+
 ### In the gate
 
 The gate's GEO.silk (8.1) checks the silkscreen as the fab gets it. `silk apply` keeps the silk files of its

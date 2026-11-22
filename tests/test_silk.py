@@ -433,3 +433,38 @@ def test_artwork_with_fit_viewbox_needs_a_viewbox(tmp_path):
     with pytest.raises(config.ConfigError, match=r'a0.svg: fit = "viewbox" needs a viewBox on its <svg> element'):
         silk.art_items(cfg, board, "top")
 
+
+
+# --- [silk] designators = "none" (#396): no side is labelled – both sides hidden, nothing placed.
+
+def test_designators_none_hides_both_sides_and_places_nothing(silk_run, capsys):
+    """Before: designators = "none" raised KeyError (SIDE["none"]), and designators = "top" with hide = ["top",
+    "bottom"] still placed the top's designators – there was no way to say "no side"."""
+    calls = silk_run('designators = "none"\n')
+    hidden = {a[0] for name, a in calls if name == "PCB_PrimitiveAttribute.modify" and a[1] == {"valueVisible": False}}
+    assert hidden == {"ac1", "ac2", "ac3"}           # every designator hidden, whatever its side
+    assert shown(calls) == set()                      # none shown again at a spot
+    assert strings(calls) == {}                       # no free text: no group label, no solder-side label
+    assert all(name != "PCB_Primitive.getPrimitivesBBox" for name, _ in calls)   # nothing to place around
+    assert 'designators: none ([silk] designators = "none"), hidden on both sides' in capsys.readouterr().out
+
+
+def test_designators_none_keeps_the_board_label_on_the_top(silk_run):
+    calls = silk_run('designators = "none"\n', head='revision = "1.0"\n')
+    assert strings(calls)["main rev 1.0"][0] == TOP + 2
+
+
+def test_designators_top_with_both_sides_hidden_still_labels_the_top(silk_run):
+    """The default as before: the designators side is shown at its spots, hide or not."""
+    assert shown(silk_run('designators = "top"\nhide = ["top", "bottom"]\n')) == {"ac1"}
+
+
+@pytest.mark.parametrize("table, said", [
+    ('designators = "left"\n', "silk.designators must be 'top', 'bottom' or 'none'"),
+    ('designators = "none"\ngroups = { IN = ["R1", "R2"] }\n', "silk.groups"),
+    ('designators = "none"\nsolder_side = true\n', "silk.solder_side"),
+    ('designators = "none"\n[silk.place]\nR1 = { x = 5, y = 5 }\n', "silk.place"),
+])
+def test_designators_none_and_what_would_print_them_is_a_board_file_error(tmp_path, table, said):
+    with pytest.raises(config.ConfigError, match=said.replace(".", r"\.").replace("(", r"\(")):
+        project(tmp_path, table)

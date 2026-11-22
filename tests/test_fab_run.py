@@ -1345,6 +1345,28 @@ def test_a_group_label_or_unlabelled_covers_a_part(project):
                 "C2 (no room next to D1)")
 
 
+def no_designators(shown):
+    def fault(ex, p):
+        ex.pcb["designators"].update({"J1": False, "C2": False, "D1": False, **shown})
+        board_file(p, 'edge_ok = ["J1"]', 'edge_ok = ["J1"]\n\n[silk]\ndesignators = "none"')
+    return fault
+
+
+def test_designators_none_asks_for_no_designator(project):
+    """#396: [silk] designators = "none" – before, GEO.silk wanted a visible designator on the top for every part and
+    silk apply raised KeyError; now every part without one passes, unlabelled not needed."""
+    rows = run(project, no_designators({}))
+    assert findings(rows) == []
+    assert l17(rows)["designators of both sides read with the PCB"] == (
+        "pass", '3 parts, [silk] designators = "none": none shows a designator')
+
+
+def test_designators_none_warns_on_a_part_that_shows_its_designator(project):
+    rows = run(project, no_designators({"C2": True}))
+    assert findings(rows) == [("GEO.silk", "warn")]
+    assert l17(rows)['C2: visible designator, [silk] designators = "none"'] == ("warn", "C2 shows its designator")
+
+
 def test_the_acknowledgement_alone_leaves_the_other_kinds_passing(project):
     rows = run(project, import_pending(NO_DIFF))
     other, sync = [r for r in rows if r["id"] == "GEO.drc"]
