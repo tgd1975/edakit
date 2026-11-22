@@ -13,6 +13,7 @@ import textwrap
 from pathlib import Path
 
 import pytest
+from helpers import fresh_example
 
 ROOT = Path(__file__).resolve().parents[1]
 STEPS = ROOT / "docs" / "steps"
@@ -127,8 +128,7 @@ def test_the_pages_quote_commands():
 def test_the_command_prints_what_the_page_quotes(tmp_path, page, command, lines):
     if command in NEEDS_NGSPICE and not shutil.which("ngspice"):
         pytest.skip("ngspice not installed")
-    work = tmp_path / "coin-cell-led"
-    shutil.copytree(EXAMPLE, work, ignore=shutil.ignore_patterns("build"))
+    work = fresh_example(EXAMPLE, tmp_path / "coin-cell-led")
     run = subprocess.run([sys.executable, "-c", "import sys; from edakit.cli import main; sys.exit(main())",
                           *command.split()[1:]], cwd=work, capture_output=True, text=True)
     printed = run.stdout + run.stderr

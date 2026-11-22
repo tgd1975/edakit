@@ -1,5 +1,9 @@
 """What the tests read of edakit check: its findings as (code, text) pairs by severity."""
 
+import datetime as dt
+import json
+import shutil
+
 from edakit import engines
 from edakit.findings import names_place
 
@@ -7,6 +11,21 @@ from edakit.findings import names_place
 def said(f):
     """'Q5: no resistor from …' – the place and what was found, as edakit check prints them."""
     return f.text if names_place(f.text, f.place) else f"{f.place}: {f.text}"
+
+
+def fresh_example(example, work):
+    """A copy of an example as its reader gets it, the stock snapshot read today: what a page quotes of it does not
+    turn pending once the snapshot is older than stock_max_age_days."""
+    shutil.copytree(example, work, ignore=shutil.ignore_patterns("build"))
+    stock = work / "hardware" / "stock.json"
+    if stock.exists():
+        snap = json.loads(stock.read_text(encoding="utf-8"))
+        today = dt.date.today().isoformat()
+        snap["date"] = today
+        for row in snap.get("parts", {}).values():
+            row["date"] = today
+        stock.write_text(json.dumps(snap, indent=1), encoding="utf-8")
+    return work
 
 
 class Checked:
