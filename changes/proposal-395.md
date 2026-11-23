@@ -1,2 +1,0 @@
-patch
-- A board without a plated hole – SMD pads only, no via – passes stages L and F without `Drill_PTH_Through.DRL`, which EasyEDA Pro does not export for it: FILES.set requires the plated drill file only when the PCB has a through-hole pad or a via (pcb.json, which now lists the vias), GEO.copper joins the layers through no hole, GEO.hole and GEO.ring pass with "no plated holes"; a board with plated holes and no file fails as before (#395).
