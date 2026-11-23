@@ -17,6 +17,13 @@ together. [The page](christmas-bell.md).
 A programming advent calendar: a Christmas tree of circuit boards whose 30 LEDs wake day by day as Python tasks are
 solved. The project edakit was grown on. [The page](pytree.md).
 
+## Desk LED
+
+![Desk LED's top side](desk-led/board_main_top.png)
+
+A coin cell, a push button and a green LED on 40 × 40 mm: press the button and the LED lights. An example repository
+with every file edakit works on, from the requirements to the routed board. [The page](desk-led.md).
+
 ## The examples
 
 The two walkthroughs each take a small board through every step, with every file in the repository.
