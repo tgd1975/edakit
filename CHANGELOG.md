@@ -8,6 +8,10 @@ written once, by `.github/merge.py`, from the fragments in [changes/](changes/RE
 update edakit@edakit`, then `/reload-plugins` or a new session; `edakit version` names the version that runs and what an
 update brings.
 
+## 1.3.5 – 2026-11-23
+
+- The board label keeps `[silk] gap_mm` (0.25 mm) from parts, pads, labels, vias and hole keep-outs, as the designators do; before, it could end right at a part's outline (desk-led: 0.09 mm from SW1).
+
 ## 1.3.4 – 2026-11-23
 
 - A board without a plated hole – SMD pads only, no via – passes stages L and F without `Drill_PTH_Through.DRL`, which EasyEDA Pro does not export for it: FILES.set requires the plated drill file only when the PCB has a through-hole pad or a via (pcb.json, which now lists the vias), GEO.copper joins the layers through no hole, GEO.hole and GEO.ring pass with "no plated holes"; a board with plated holes and no file fails as before (#395).
