@@ -2,6 +2,8 @@
 
     edakit silk apply   hide the designators of the sides in [silk] hide of the board file; place those of the side
                         in `designators` next to their part where nothing is in the way; export Gerber, check, DRC
+                        – with designators = "none" hide both sides and place none (no groups, solder_side or
+                        [silk.place] then: a board-file error); art, texts and board label default to the top
     edakit silk check   export Gerber and only check: own silkscreen on solder-mask openings (JLCPCB cuts it off there)
 Both end with EasyEDA's DRC: exit 2 on findings, 3 when the only one is EasyEDA waiting for the import
 acknowledgement (schematic = PCB, compared as `pcb parts` and `pcb nets` do; Design → Import Changes once).
@@ -58,6 +60,13 @@ from .eda import api, ensure_pcb_focus
 from .toolchain import is_kicad
 
 SIDE = {"top": TOP, "bottom": BOTTOM}
+
+
+def print_side(board):
+    """The side [silk] designators labels – with designators = "none" (no side labelled, both hidden) the top: the
+    default side of the artwork, the texts, the fixed rows and the board label."""
+    side = board.silk.get("designators", "top")
+    return "top" if side == "none" else side
 MULTI_LAYER = 12  # EasyEDA layer of through-hole pads
 GERBER_KEYS = {TOP: ("top_mask", "top_silk"), BOTTOM: ("bottom_mask", "bottom_silk")}
 
@@ -119,7 +128,7 @@ def fixed_labels(board):
     """[silk.place] of the board file: {designator: (x, y, rot, side)} – the spot in EasyEDA mm (the rows are plan mm,
     as [place]), the rotation EasyEDA gets (as for [[silk.texts]]), the side the name prints on (default: the
     designators side)."""
-    side = board.silk.get("designators", "top")
+    side = print_side(board)
     return {ref: (*board.eda_point(float(p["x"]), float(p["y"])), float(p.get("rot", 0)), p.get("side", side))
             for ref, p in (board.silk.get("place") or {}).items()}
 
@@ -376,7 +385,7 @@ def art_items(cfg, board, side):
     from .config import ConfigError
     out = []
     for item in board.silk.get("art", []):
-        if item.get("side", board.silk.get("designators", "top")) != side:
+        if item.get("side", print_side(board)) != side:
             continue
         path = cfg.resolve(item["svg"])
         g = svg_geometry(path)
@@ -409,7 +418,7 @@ def silk_texts(board, side):
     """[(text, x, y, rot, h, font)] of [[silk.texts]] on this side, positions in EasyEDA mm."""
     out = []
     for t in board.silk.get("texts", []):
-        if t.get("side", board.silk.get("designators", "top")) == side:
+        if t.get("side", print_side(board)) == side:
             x, y = board.eda_point(float(t["x"]), float(t["y"]))
             out.append((t["text"], x, y, float(t.get("rot", 0)), float(t.get("h_mm", 1.2)), t.get("font", "default")))
     return out
@@ -519,10 +528,11 @@ def apply(cfg, board, mcp, step=None):
     step = step or (lambda _: None)
     step("hide designators, remove the last run's print")
     s = board.silk
-    side = s.get("designators", "top")
+    side, none = print_side(board), s.get("designators") == "none"
     h, gap = float(s.get("label_h_mm", 1.0)), float(s.get("gap_mm", 0.25))
     layer = SIDE[side]
     hide = {SIDE[x] for x in s.get("hide", [])} | {layer}  # the placed side is hidden first, then shown at its spot
+    hide |= set(SIDE.values()) if none else set()          # designators = "none": both sides, none shown again
     ensure_pcb_focus(mcp)
     memo = cfg.artifact(f"silk_strings_{board.name}.json")
     old = json.loads(memo.read_text()) if memo.exists() else {}   # texts and fills edakit created in the last run
@@ -559,7 +569,8 @@ def apply(cfg, board, mcp, step=None):
     solder_side = s.get("solder_side", False)
     tht = through_hole_parts(mcp, comps) if solder_side else set()
     parts = {}
-    for ref in label_parts({r: (c.get("Layer"), r in tht) for r, (_, c) in attrs.items()}, layer, solder_side):
+    for ref in [] if none else label_parts({r: (c.get("Layer"), r in tht) for r, (_, c) in attrs.items()}, layer,
+                                           solder_side):
         bb = api(mcp, "PCB_Primitive.getPrimitivesBBox", [attrs[ref][1]["PrimitiveId"]])
         parts[ref] = (mm(bb["minX"]), mm(bb["minY"]), mm(bb["maxX"]), mm(bb["maxY"]))
     other = [r for r in parts if attrs[r][1].get("Layer") != layer]  # solder_side: printed as free texts
@@ -665,13 +676,16 @@ def apply(cfg, board, mcp, step=None):
         print(f"  ! no board label: set revision in {board.file}")
     memo.write_text(json.dumps(created))
     eda.save_pcb(mcp)
-    print(f"  {side}: {sum(1 for n in placed if n in attrs)} of {len((set(parts) - set(there)) | set(here))} "
-          "designators placed"
-          + (f" ({sum(1 for n in placed if n in other)} of {len(other)} through-hole parts of the other side)"
-             if solder_side else "")
-          + (f", fixed: {', '.join(sorted(here, key=natural_key))}" if here else "")
-          + (f", groups {', '.join(g for g in (s.get('groups') or {}) if g in placed)}" if grouped else "")
-          + f"; without room: {', '.join(missing) or '–'}")
+    if none:
+        print(f'  designators: none ([silk] designators = "none"), hidden on both sides: {len(attrs)} parts')
+    else:
+        print(f"  {side}: {sum(1 for n in placed if n in attrs)} of {len((set(parts) - set(there)) | set(here))} "
+              "designators placed"
+              + (f" ({sum(1 for n in placed if n in other)} of {len(other)} through-hole parts of the other side)"
+                 if solder_side else "")
+              + (f", fixed: {', '.join(sorted(here, key=natural_key))}" if here else "")
+              + (f", groups {', '.join(g for g in (s.get('groups') or {}) if g in placed)}" if grouped else "")
+              + f"; without room: {', '.join(missing) or '–'}")
     if there:
         print(f"  {far}: {len(there)} fixed designator{'s' if len(there) > 1 else ''}: "
               f"{', '.join(sorted(there, key=natural_key))}")
@@ -689,7 +703,7 @@ def check(cfg, board, mcp, footprint_silk=None, step=None):
     for side, layer in SIDE.items():
         silk = gerber.shape(gerber.parse_gerber(folder / gerber.FILES[GERBER_KEYS[layer][1]]))
         own = silk.difference(footprint_silk.buffer(0.02)) if footprint_silk is not None and layer == SIDE[
-            board.silk.get("designators", "top")] else silk
+            print_side(board)] else silk
         hit, openings = silk_on_openings(folder, layer, own)
         img = cfg.artifact(f"silk_{board.name}_{side}.png")
         picture(silk, openings, board_shape(board), img, mirror=layer == BOTTOM)

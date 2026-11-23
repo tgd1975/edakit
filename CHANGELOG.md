@@ -8,6 +8,13 @@ written once, by `.github/merge.py`, from the fragments in [changes/](changes/RE
 update edakit@edakit`, then `/reload-plugins` or a new session; `edakit version` names the version that runs and what an
 update brings.
 
+## 1.3.4 – 2026-11-23
+
+- A board without a plated hole – SMD pads only, no via – passes stages L and F without `Drill_PTH_Through.DRL`, which EasyEDA Pro does not export for it: FILES.set requires the plated drill file only when the PCB has a through-hole pad or a via (pcb.json, which now lists the vias), GEO.copper joins the layers through no hole, GEO.hole and GEO.ring pass with "no plated holes"; a board with plated holes and no file fails as before (#395).
+- `[silk] designators = "none"` leaves a board without designators: `silk apply` hides both sides and places none,
+  GEO.silk asks no part for one and warns on a part that shows one; any other value than `top`, `bottom` or `none` is a
+  board-file error (#396).
+
 ## 1.3.3 – 2026-11-10
 
 - `edakit doctor` runs again in a folder without edakit.toml: since the explorative DSL's refusal (edakit 1.1.x) it stopped with `AttributeError: 'NoneType' object has no attribute 'dsl'` there.

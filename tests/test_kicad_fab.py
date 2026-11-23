@@ -418,6 +418,22 @@ def test_silk_apply_places_the_designators_into_the_kicad_pcb(project, fake_cli)
     assert (cfg.artifacts / "silk_footprints_main").exists()
 
 
+def test_silk_apply_with_designators_none_hides_every_designator_in_the_kicad_pcb(project, fake_cli, capsys):
+    """#396: [silk] designators = "none" – no side labelled, both hidden, as on EasyEDA."""
+    from edakit.toolchain.kicad import silk as ksilk
+    cfg = kicad_project(project)
+    board = cfg.board()
+    board.silk["designators"] = "none"
+    kb.write_parts(cfg, board)
+    assert ksilk.apply(cfg, board) in (0, 2)
+    pcb = kb.load(cfg, board)
+    shown = {ref for ref, fp in kb.parts(pcb)
+             if not any(c[0] == "hide" for c in next(c for c in kb.find(fp, "property") if c[1] == "Reference")
+                        if isinstance(c, list))}
+    assert shown == set()
+    assert 'designators: none ([silk] designators = "none"), hidden on both sides' in capsys.readouterr().out
+
+
 def test_export_on_kicad_keeps_a_copy_of_the_project(project, fake_cli):
     kicad_project(project)
     assert run_cli(project, "pcb", "apply", "--no-scripts") == 0

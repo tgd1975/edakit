@@ -91,7 +91,9 @@ assembly preview at JLCPCB.
        PARTS.stock reads the same offline, from the stock snapshot)
   SYNC.cpl  pick and place: every BOM part exactly once, side and rotation = PCB; sides/SMD as [release] assembly says;
             a maker with a zero orientation of its own ([cpl] zero) gets cpl_<b>_<maker>.csv, turned by [cpl.turns]
-  FILES.set  Gerber set complete; outline and holes = plan (± 0.2 mm); tooling holes in the NPTH file, mask open, no copper
+  FILES.set  Gerber set complete – the plated drill file only on a board with plated holes (fab.plated_holes: through-hole
+            pads and vias of pcb.json; EasyEDA Pro writes none without, and GEO.copper, GEO.hole and GEO.ring then read
+            no plated holes, #395); outline and holes = plan (± 0.2 mm); tooling holes in the NPTH file, mask open, no copper
   SYNC.odb  with a maker of [cart] makers that takes ODB++ (AISLER; fails for the planned maker, warns for another one),
        and with [release] maker_files = "all" on every board with an assembly side (information, as AISLER reads it):
        odb_<board>.zip, exported through easyeda_export_odb, against this run's files – every layer
@@ -247,8 +249,10 @@ def collect(cfg, board, d, verbose=False):
         shown = {ids[a["ParentPrimitiveId"]]: bool(a.get("ValueVisible"))       # GEO.silk: designator printed or hidden
                  for a in map(eda.state, eda.api(mcp, "PCB_PrimitiveAttribute.getAll") or [])
                  if a.get("Key") == "Designator" and a.get("ParentPrimitiveId") in ids}
+        vias = [{k: s.get(k) for k in ("Net", "X", "Y")}              # plated holes without a part (#395)
+                for s in (eda.state(v) for v in eda.api(mcp, "PCB_PrimitiveVia.getAll") or [])]
         (d / "pcb.json").write_text(json.dumps({"components": comps, "lines": lines, "strings": strings,
-                                                "designators": shown}, indent=1))
+                                                "designators": shown, "vias": vias}, indent=1))
         eda.save_pcb(mcp)    # the project copy of the export is the saved state
         found = eda.drc_reloading(mcp)   # reloaded only when it reports Connection Errors (E-7)
         (d / "drc.json").write_text(json.dumps(found, indent=1, ensure_ascii=False))
@@ -821,17 +825,30 @@ def silk_bodies(cfg, board, design, data, g, rows):
 def silk_designators(board, design, data, rows):
     """GEO.silk: every part of the `designators` side has a visible designator (read with the PCB into pcb.json), lies
     under a group label ([silk] groups, printed as a text) or a text with its name, or is listed in [silk] unlabelled
-    with the reason – otherwise a warning per part."""
+    with the reason – otherwise a warning per part. With designators = "none" no part is asked for one: none shows its
+    designator on either side (silk apply hides them all), a warning per part that does."""
     from .. import silk
     side = board.silk.get("designators", "top")
-    layer = silk.SIDE[side]
     shown = data.get("designators")
+    what = "designators of both sides" if side == "none" else f"designators of the {side} side"
     if shown is None:
-        rows.add("L", "GEO.silk", board.name, f"designators of the {side} side read with the PCB", False,
+        rows.add("L", "GEO.silk", board.name, f"{what} read with the PCB", False,
                  "pcb.json without the designators (written by an older edakit) – edakit fab without --offline",
                  "read with the PCB")
         return
     want = design.board_comps(board.name)
+    if side == "none":
+        parts = sorted((c["designator"] for c in data["components"] if c.get("designator") in want), key=natural_key)
+        seen = [r for r in parts if shown.get(r)]
+        rows.add("L", "GEO.silk", board.name, f"{what} read with the PCB", True,
+                 f'{len(parts)} parts, [silk] designators = "none": '
+                 + (f"{len(seen)} show{'s' if len(seen) == 1 else ''} a designator" if seen else "none shows a designator"),
+                 "every designator hidden")
+        for r in seen:
+            rows.add("L", "GEO.silk", board.name, f'{r}: visible designator, [silk] designators = "none"', False,
+                     f"{r} shows its designator", "hidden (edakit silk apply hides them all)", "warn")
+        return
+    layer = silk.SIDE[side]
     texts = {s["Text"] for s in data["strings"] if s["Layer"] == layer + 2}
     grouped = {r for name, refs in (board.silk.get("groups") or {}).items() if name in texts for r in refs}
     unlabelled = board.silk.get("unlabelled") or {}
@@ -989,7 +1006,7 @@ def check_visible_print(cfg, board, design, d, rows):
     want = design.board_comps(board.name)
     allowed = {t for t, *_ in silk.silk_texts(board, side)}
     label = silk.board_label_text(cfg, board)
-    if label and s.get("board_label_side", labelled) == side:
+    if label and s.get("board_label_side", silk.print_side(board)) == side:
         allowed.add(label)
     if labelled == side:
         allowed |= set(want) | set(s.get("groups") or {})
@@ -1006,7 +1023,7 @@ def check_visible_print(cfg, board, design, d, rows):
     if not stray:
         rows.add("L", "GEO.silk", board.name, check, True, f"{name}: {len(texts)} PCB text{'' if len(texts) == 1 else 's'}"
                  ", each one the board file puts there" if texts else f"{name}: no PCB text", expected)
-    if labelled == side:
+    if labelled in (side, "none"):    # "none": silk_designators holds every side hidden
         return
     check = f"{name} (visible): no designator shown – [silk] designators is {labelled}"
     shown = data.get("designators")
@@ -1166,8 +1183,23 @@ def hole_ok(lead, width, length):
     return nominal >= 0 or by_rec, worst < HOLE_PLAY_MM and not by_rec, text
 
 
+def plated_holes(d):
+    """How many plated holes the PCB of the run has: its through-hole pads and its vias, from pcb.json – a pcb.json
+    written before it listed the vias (#395): those of the via drill file. 0: EasyEDA Pro exports no plated drill
+    file, and the checks read its absence as no plated holes."""
+    data = json.loads((d / "pcb.json").read_text()) if (d / "pcb.json").exists() else {}
+    tht = sum(1 for c in data.get("components", []) for p in c.get("pads", []) if p.get("tht"))
+    vias = data["vias"] if "vias" in data else gerber.parse_holes(d / "gerber" / gerber.FILES["vias"])
+    return tht + len(vias)
+
+
+def missing(d, *keys):
+    """gerber.missing in the run's Gerber folder – the plated drill file only on a board that has plated holes."""
+    return gerber.missing(d / "gerber", *(k for k in keys if k != "pth" or plated_holes(d)))
+
+
 def check_drills(board, design, d, rows):
-    if lost := gerber.missing(d / "gerber", "pth"):
+    if lost := missing(d, "pth"):
         rows.add("L", "GEO.hole", board.name, "drill file for the hole check", False, f"{lost[0]} missing (Gerber export)",
                  "present")
         return
@@ -1201,7 +1233,7 @@ def check_drills(board, design, d, rows):
     rows.add("L", "GEO.hole", board.name, "lead size of every through-hole part in the parts database (field lead)",
              not nodata, ", ".join(nodata) or "all", "all")
     rows.add("L", "GEO.hole", board.name, "hole takes the lead at nominal size (diagonal or edge, or manufacturer's value)",
-             not bad, "; ".join(bad[:10]) or f"{n} holes", "play >= 0")
+             not bad, "; ".join(bad[:10]) or (f"{n} holes" if holes else gerber.NO_PLATED), "play >= 0")
     for ref, by_text in tight.items():  # one warning per part, so an accepted warning covers only that part
         rows.add("L", "GEO.hole", board.name, f"{ref}: tight hole – worst case below {HOLE_PLAY_MM} mm play (hole -{HOLE_TOL_MM} "
                  "mm, lead + tolerance): lead only with force, or the part sits higher", False,
@@ -1280,7 +1312,7 @@ def check_rings(board, design, d, rows):
     (walkthrough gaps B1) –, and the copper around the hole only where a layer flashes no pad there. accept
     {"GEO.ring": …} (or "GEO.spacing:holes") on a part or net of the graph lists them as accepted."""
     g = d / "gerber"
-    if lost := gerber.missing(g, "top", "bottom", "pth"):
+    if lost := missing(d, "top", "bottom", "pth"):
         rows.add("L", "GEO.ring", board.name, "Gerber and drill files for the annular rings", False,
                  f"{', '.join(lost)} missing (Gerber export)", "present")
         return
@@ -1352,7 +1384,7 @@ def check_rings(board, design, d, rows):
     narrow.sort(key=natural_key)
     rows.add("L", "GEO.ring", board.name, f"plated holes keep JLCPCB's annular ring: component holes {JLC_RING_MM} mm, vias "
              f"{JLC_VIA_RING_MM} mm (2 layers, 1 oz)", not narrow, "; ".join(narrow[:10])
-             + (f" … ({len(narrow)} holes)" if len(narrow) > 10 else "") or ", ".join(count),
+             + (f" … ({len(narrow)} holes)" if len(narrow) > 10 else "") or (", ".join(count) if holes else gerber.NO_PLATED),
              f">= {JLC_RING_MM} mm (component hole), >= {JLC_VIA_RING_MM} mm (via)")
     for ref, by_text in low.items():   # one warning per part, so an accepted warning covers only that part
         reason = waiver(*(item for item in holes if item[2] == ref))
@@ -1451,7 +1483,7 @@ def check_loops(board, design, d, rows):
 
 def check_copper(board, design, d, rows):
     """GEO.copper on the Gerber files; -> the Copper raster (None when the files are missing) for GEO.spacing/apart."""
-    if lost := gerber.missing(d / "gerber", "top", "bottom", "pth", "probe"):
+    if lost := missing(d, "top", "bottom", "pth", "probe"):
         rows.add("L", "GEO.copper", board.name, "Gerber and drill files for the copper check", False,
                  f"{', '.join(lost)} missing (Gerber export)", "present")
         return None
@@ -1846,9 +1878,11 @@ def check_cpl(cfg, board, design, d, ours, rows):
              + (", SMD only" if assembly.get("smd_only") else "") + " ([release] assembly)", set(mix) <= allowed,
              ", ".join(f"{'Top' if s == 'T' else 'Bottom'} {k} {n}" for (s, k), n in sorted(mix.items())), str(sorted(allowed)))
     g = d / "gerber"
-    lost = gerber.missing(g, *gerber.REQUIRED)
+    need = gerber.required(plated_holes(d))
+    lost = gerber.missing(g, *need)
     rows.add("F", "FILES.set", board.name, "Gerber set complete (copper, silk, mask, outline, drills)", not lost,
-             ", ".join(lost) or f"{len(gerber.REQUIRED)} files", "all")
+             ", ".join(lost) or f"{len(need)} files" + ("" if "pth" in need else f" ({gerber.NO_PLATED}: no "
+                                                         f"{gerber.FILES['pth']} needed)"), "all")
     if not lost:
         check_outline(board, g, rows)
         check_tooling(board, g, rows)

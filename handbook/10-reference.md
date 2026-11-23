@@ -403,10 +403,11 @@ The board file of a hand-wired board (`wired = true`) built on a perfboard (7.9)
 
 The silkscreen's keys, described in 7.7:
 
-- `designators` (side), `hide` (sides), `label_h_mm` (1.0), `gap_mm` (0.25), `groups` {label: [refs]}, `priority`
+- `designators` (side: `"top"`, `"bottom"` or `"none"` – no side labelled, both hidden, the other print's default
+  side the top), `hide` (sides), `label_h_mm` (1.0), `gap_mm` (0.25), `groups` {label: [refs]}, `priority`
   (["TP"]);
 - `unlabelled` ({designator = reason}, none): a part of the `designators` side without a visible designator or group
-  label is a GEO.silk warning;
+  label is a GEO.silk warning; with `designators = "none"` a part that shows one is;
 - `solder_side` (`false`): `true` labels the through-hole parts of the other side on the `designators` side too;
 - `place` (`{}`): `REF = {x, y, rot, side}`, a designator at a fixed spot, as `[place]` fixes a part – plan mm, the
   rotation EasyEDA gets, the side it prints on (the `designators` side). The rest is placed around it; one on a pad,
