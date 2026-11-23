@@ -33,6 +33,15 @@ def test_spot_nearest_to_the_corner_and_clear_of_obstacles():
     assert x > 60 and y < 2
 
 
+def test_label_keeps_the_gap_from_a_part():
+    """A part's box right of the corner: the label ends gap mm before it, not at its edge (desk-led, SW1)."""
+    area = box(0, 0, 40, 40)
+    part = box(13.5, 1, 26, 15)
+    assert corner_spot(area, part, 13.4, 1.2) == (6.7, 0.6)    # without a gap: 0.1 mm from the box
+    x, y = corner_spot(area, part, 13.4, 1.2, gap=0.25)
+    assert box(x - 6.7, y - 0.6, x + 6.7, y + 0.6).distance(part) >= 0.25
+
+
 def test_no_room():
     assert corner_spot(box(0, 0, 10, 5), box(0, 0, 10, 5), 4, 1) is None
 

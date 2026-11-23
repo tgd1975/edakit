@@ -144,7 +144,8 @@ def apply(cfg, board, step=None, verbose=False):
         corner = s.get("board_label_corner", "bottom-left")
         if label_layer == BOTTOM:  # seen from the bottom, left and right swap
             corner = corner.replace("left", "@").replace("right", "left").replace("@", "right")
-        spot = corner_spot(board_label_area(board, area), unary_union([*near, vias, *keeps]), lw, lh, corner)
+        spot = corner_spot(board_label_area(board, area), unary_union([*near, vias, *keeps]), lw, lh, corner,
+                           gap=float(s.get("gap_mm", 0.25)))
         where = f" on the {s['board_label_side']}" if label_layer != layer else ""
         if spot:
             texts_out.append((text, *spot, 0, lh, SIDE_NAME[label_layer]))

@@ -25,7 +25,7 @@ is written all the same. `edakit silk preview` shows them on the last Gerber exp
 
 Board label: the board's title and revision (revision and [silk] board_label of the board file, default
 "{title} rev {revision}", also {project} and {board}) in the free spot nearest to a corner (board_label_corner, default
-"bottom-left" as seen from the printed side), not on pads, parts, labels, vias or the keep-outs of holes. It goes on the
+"bottom-left" as seen from the printed side), gap_mm (0.25) from pads, parts, labels, vias and the keep-outs of holes. It goes on the
 designators side unless board_label_side names the other one, and anywhere on the board unless board_label_region
 (a polygon in plan mm) gives the part it must lie in – the corner is then that region's. Before it prints, every free
 text and fill on the silkscreen layers goes – all of it is silk apply's, the board file says what is printed –, so an
@@ -305,8 +305,9 @@ def side_obstacles(openings, printed, boxes, art=None):
                        + ([art] if art is not None else []))
 
 
-def corner_spot(area, obstacles, w, h, corner="bottom-left", step=0.5):
-    """Centre of a free w x h box nearest to a corner of `area` (inside it, clear of `obstacles`), or None."""
+def corner_spot(area, obstacles, w, h, corner="bottom-left", step=0.5, gap=0.0):
+    """Centre of a free w x h box nearest to a corner of `area` (inside it, at least `gap` mm from `obstacles`), or
+    None."""
     if area.is_empty:
         return None
     x0, y0, x1, y1 = area.bounds
@@ -316,7 +317,7 @@ def corner_spot(area, obstacles, w, h, corner="bottom-left", step=0.5):
     cands = [(x0 + w / 2 + i * step, y0 + h / 2 + j * step) for i in range(max(nx, 0)) for j in range(max(ny, 0))]
     for x, y in sorted(cands, key=lambda p: (p[0] - cx) ** 2 + (p[1] - cy) ** 2):
         b = label_box(x, y, 0, w, h)
-        if area.contains(b) and not b.intersects(obstacles):
+        if area.contains(b) and (obstacles.is_empty or not b.intersects(obstacles) and b.distance(obstacles) >= gap):
             return x, y
     return None
 
@@ -664,7 +665,8 @@ def apply(cfg, board, mcp, step=None):
         corner = s.get("board_label_corner", "bottom-left")
         if label_layer == BOTTOM:  # seen from the bottom, left and right swap
             corner = corner.replace("left", "@").replace("right", "left").replace("@", "right")
-        spot = corner_spot(board_label_area(board, area), unary_union([*near, vias, *keeps]), lw, lh, corner)
+        spot = corner_spot(board_label_area(board, area), unary_union([*near, vias, *keeps]), lw, lh, corner,
+                           gap=float(s.get("gap_mm", 0.25)))
         where = f" on the {s['board_label_side']}" if label_layer != layer else ""
         if spot:
             string(text, *spot, 0, lh, on=label_layer)

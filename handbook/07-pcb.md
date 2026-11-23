@@ -1048,8 +1048,8 @@ side is a finding there – a part's own designator can be accepted on the part 
 ### The board label
 
 `silk apply` also prints the **board label** – title and revision, `"{title} rev {revision}"` by default – at the free
-spot nearest to the bottom-left corner of the printed side (`board_label_corner`), clear of pads, parts, labels, vias
-and the keep-outs of mounting and tooling holes.
+spot nearest to the bottom-left corner of the printed side (`board_label_corner`), `gap_mm` (0.25 mm) clear of pads,
+parts, labels, vias and the keep-outs of mounting and tooling holes, as the designators keep from their part.
 
 The revision comes from `revision` in the board file; without it there is no label. Before it prints, `silk apply`
 removes every free text and fill on the silkscreen layers: all of it is its own, the board file says what is printed,
@@ -1058,8 +1058,8 @@ record of its last run (`<artifacts>/silk_strings_<board>.json`, build output) d
 a text drawn in EasyEDA by hand – it lists as it removes it: a text belongs in `[[silk.texts]]` of the board file.
 
 The label goes on the `designators` side unless `board_label_side = "bottom"` (or `"top"`) names the other one. There
-it keeps clear of that side's mask openings and print (+0.15 mm), the boxes of its parts, its artwork and texts, vias
-and hole keep-outs. `board_label_region = [[x, y], …]` (plan mm) gives the part of the board it must lie in – the part
+it keeps `gap_mm` clear of that side's mask openings and print (+0.15 mm), the boxes of its parts, its artwork and
+texts, vias and hole keep-outs. `board_label_region = [[x, y], …]` (plan mm) gives the part of the board it must lie in – the part
 a stand or an enclosure covers, say; `board_label_corner` is then the corner of that region. Without a free spot there
 the label is left out: "board label …: no free spot in board_label_region". Both keys leave the label as it was when
 they are missing:
