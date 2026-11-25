@@ -9,7 +9,7 @@ this page is the one description of it in edakit.
 Five boards, assembled on the back, from the cart the skill cart filled and checked; the parts from LCSC ship with
 them.
 
-![pytree: the lit tree in its printed snow hill – the project's render of its 3D model](pytree/tree_in_hill.png)
+![pytree: the tree in its printed snow hill, asleep – every LED off but the star, which glows blue](pytree/tree_photo.webp)
 
 ## What it is
 
@@ -21,8 +21,8 @@ them.
 - **The assembly.** JLCPCB makes the board and assembles the back side; the through-hole parts are soldered by hand.
 
 The board and schematic pictures are edakit's, drawn by the gate into the protocol of release 20261101-225744 – the
-board from its Gerber files, the schematic from its graph. The render of the tree in its hill is the project's own,
-from the 3D model of the printed hill; a photo of the delivered tree will replace it.
+board from its Gerber files, the schematic from its graph. The photo of the tree in its hill is the project's own: a
+tree built from that release, asleep before its first day – every LED off but the star.
 
 ## The board
 
