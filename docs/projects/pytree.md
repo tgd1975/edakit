@@ -11,6 +11,8 @@ them.
 
 ![pytree: the tree in its printed snow hill, asleep – every LED off but the star, which glows blue](pytree/tree_photo.webp)
 
+▶ [Video: the tree plays *In the Hall of the Mountain King*](https://www.youtube.com/shorts/s0iBclSiKpc)
+
 ## What it is
 
 - **The tree.** A Waveshare RP2350-Zero on a pin header, three STP08CP05 LED drivers, 30 through-hole LEDs on 24
